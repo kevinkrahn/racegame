@@ -42,5 +42,5 @@ void error(T const& first, Args const&... args)
     error(args...);
 }
 
-#define FATAL_ERROR(...) error(__VA_ARGS__); exit(0);
+#define FATAL_ERROR(...) error(__VA_ARGS__, '\n'); exit(0);
 

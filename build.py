@@ -27,3 +27,5 @@ else:
     subprocess.run(['cmake', '--build', build_dir, '--parallel', job_count])
 
 print('Took {:.2f} seconds'.format(time.time() - start_time))
+
+subprocess.run([os.path.join(utils.getRepoPath(), 'bin', 'game')], cwd=os.path.join(utils.getRepoPath(), 'bin'))

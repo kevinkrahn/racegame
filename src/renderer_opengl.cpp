@@ -22,6 +22,8 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #ifndef NDEBUG
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#else
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_NO_ERROR);
 #endif
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);

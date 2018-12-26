@@ -1,4 +1,5 @@
 #include "game.h"
+#include "datafile.h"
 #include <chrono>
 #include <iostream>
 
@@ -12,6 +13,9 @@ void Game::run()
     {
         FATAL_ERROR("SDL_Init Error: ", SDL_GetError())
     }
+
+    DataFile::Value val = DataFile::load("world.dat");
+    print(val, '\n');
 
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 

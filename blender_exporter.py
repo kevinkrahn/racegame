@@ -1,20 +1,62 @@
 import bpy, bmesh, struct, time, os
 from math import *
 from mathutils import (Euler, Matrix, Vector)
+from enum import Enum
+
+DataType = Enum('DataType', 'string i64 f64 bytearray array dict')
 
 def pack_string(string):
-    MAX_LENGTH = 64 # must match ASSET_NAME_MAX_LENGTH in asset_types.h
-    length = len(string)
-    if length+1 > MAX_LENGTH:
-        raise ValueError('Name ({}) is too long! Max length is {} characters.'.format(string, MAX_LENGTH - 1))
     charBytes = bytes(string, 'ASCII')
-    pad = [0] * (MAX_LENGTH - length)
-    return struct.pack("<" + str(length) + "s" + str(len(pad)) + "B", charBytes, *pad)
+    # TODO: add padding bytes for alignment
+    return struct.pack("<I", len(charBytes)) + charBytes
+
+def pack_list(list):
+    buffer = bytearray()
+    buffer += struct.pack('<I', len(list))
+    for value in list:
+        buffer += pack_value(value)
+    return buffer
+
+def pack_value(val):
+    type_name = type(val).__name__
+    if type_name == 'int':
+        return struct.pack('<Iq', DataType.i64.value, val)
+    elif type_name == 'float':
+        return struct.pack('<Id', DataType.f64.value, val)
+    elif type_name == 'bytearray' or type_name == 'bytes':
+        return struct.pack('<II', DataType.bytearray.value, len(val)) + val
+    elif type_name == 'str':
+        return struct.pack('<I', DataType.string.value) + pack_string(val)
+    elif type_name == 'list':
+        return struct.pack('<I', DataType.array.value) + pack_list(val)
+    elif type_name == 'dict':
+        return struct.pack('<I', DataType.dict.value) + pack_dict(val)
+    else:
+        #raise ValueError('Cannot serialize data type: ' + type_name)
+        print('Ignoring unsupported data type: ', type_name)
+        return None
+
+def pack_dict(dict):
+    pair_buffer = bytearray()
+    pair_count = 0
+    for key, value in dict.items():
+        packedValue = pack_value(value)
+        if packedValue != None:
+            pair_buffer += pack_string(key)
+            pair_buffer += packedValue
+            pair_count += 1
+    return struct.pack('<I', pair_count) + pair_buffer
+
+def get_props(obj):
+    props = {}
+    for (key, value) in obj.items():
+        props[key] = value
+    return props
 
 def namePrefix(path=bpy.data.filepath):
     return os.path.splitext(os.path.basename(path))[0] + '.'
 
-def save_mesh(obj, mesh_map, mesh_buffer):
+def save_mesh(obj, mesh_map):
     mesh_name = namePrefix() + obj.data.name
     if len(obj.modifiers) > 0:
         mesh_name = namePrefix() + obj.name
@@ -23,8 +65,6 @@ def save_mesh(obj, mesh_map, mesh_buffer):
 
     if(mesh_map.get(mesh_name, None) != None):
         return (False, mesh_name)
-    else:
-        mesh_map[mesh_name] = True
 
     mesh = obj.data
     mesh_copy = obj.to_mesh(bpy.context.scene, True, 'PREVIEW')
@@ -45,11 +85,9 @@ def save_mesh(obj, mesh_map, mesh_buffer):
                         result = mesh.vertices[mesh_vi].normal
         return result
 
-    indices = []
+    vertices = []
     vertex_buffer = bytearray()
-    vertex_dict = {}
     vertex_count = 0
-    vertex_list = []
     element_size = 0
 
     if len(mesh.polygons) > 0:
@@ -98,129 +136,67 @@ def save_mesh(obj, mesh_map, mesh_buffer):
                 if (len(tex_coords) == 0):
                     tex_coords = [[0.0, 0.0]]
 
-                vertex_tuple = (position, normal);
+                vertex_count += 1
+                vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
+                                                    normal[0], normal[1], normal[2])
                 for c in colors:
-                    vertex_tuple = vertex_tuple + (c[0], c[1], c[2])
+                    vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
                 for u in tex_coords:
-                    vertex_tuple = vertex_tuple + (u[0], u[1])
-
-                vertex_hash = str(vertex_tuple)
-
-                index = vertex_dict.get(vertex_hash, None)
-                if index == None:
-                    index = vertex_count
-                    vertex_count += 1
-                    vertex_dict[vertex_hash] = index
-                    vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
-                                                        normal[0], normal[1], normal[2])
-                    for c in colors:
-                        vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
-                    for u in tex_coords:
-                        #print("UV: " + str(u[0]) + "," + str(u[1]))
-                        vertex_buffer += struct.pack("<2f", u[0], u[1])
-
-                indices.append(index)
+                    vertex_buffer += struct.pack("<2f", u[0], u[1])
 
     elif len(mesh.edges) > 0:
         element_size = 2
+        for tri in mesh_copy.polygons:
+            for i in tri.vertices:
+                vertex_count += 1
+                position = mesh_copy.vertices[i].co
+                vertex_buffer += struct.pack("<3f", position[0], position[1], position[2])
+
+    else:
+        element_size = 1
         vertex_count = len(mesh_copy.vertices)
         for v in mesh_copy.vertices:
             vertex_buffer += struct.pack("<3f", v.co[0], v.co[1], v.co[2])
 
-        for e in mesh_copy.edges:
-            for i in e.vertices:
-                indices.append(i)
-
-    else:
-        element_size = 1
-        return (False, 'NONE')
-
-    # TODO: export mesh bounding box
-    matrix = obj.matrix_world
-    mesh_buffer += pack_string(mesh_name)
-    mesh_buffer += struct.pack("<IIII16f", max(1, len(mesh_copy.vertex_colors)),
-                            max(1, len(mesh_copy.uv_layers)), vertex_count, len(indices),
-                            matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
-                            matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
-                            matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
-                            matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3])
-    mesh_buffer += struct.pack("<I", element_size)
-    mesh_buffer += vertex_buffer
-    mesh_buffer += struct.pack("<" + "I"*len(indices), *indices)
+    mesh_map[mesh_name] = {
+        'name': mesh_name,
+        'vertex_colors': max(1, len(mesh_copy.vertex_colors)),
+        'uv_layers': max(1, len(mesh_copy.uv_layers)),
+        'vertex_count': vertex_count,
+        'element_size': element_size,
+        'vertex_buffer': vertex_buffer,
+        'properties': get_props(obj.data)
+    }
     return (True, mesh_name)
 
-def save_path(obj, path_buffer, scene):
-    obj.data.resolution_u = 5
-    obj.data.extrude = 0
-    obj.data.bevel_depth = 0
-    obj.data.offset = 0
-    path_mesh = obj.to_mesh(scene, False, 'PREVIEW')
-
-    path_buffer += pack_string(namePrefix() + obj.name)
-    path_buffer += struct.pack("<I", len(path_mesh.vertices))
-
-    for v in path_mesh.vertices:
-        p = obj.matrix_world * v.co
-        path_buffer += struct.pack("<fff", p.x, p.y, p.z)
-
-    return (True, namePrefix() + obj.name)
-
-
 def save_blender_data():
-    start = time.clock()
-
-    print("Exporting blender data...")
-
-    mesh_counter = 0
-    path_counter = 0
-
+    start = time.time()
     mesh_map = {}
-
-    mesh_buffer  = bytearray()
-    path_buffer  = bytearray()
-    scene_buffer = bytearray()
-
-    scene_buffer += struct.pack("<I", len(bpy.data.scenes))
-
+    scenes = []
 
     for scene in bpy.data.scenes:
-        current_scene_entity_buffer = bytearray()
-        obj_count = 0
+        entities = []
 
-        def save_object(obj, data_type, matrix, data_name='NONE'):
-            nonlocal obj_count, current_scene_entity_buffer
-            obj_count += 1
-
-            current_scene_entity_buffer += pack_string(obj.name)
-            current_scene_entity_buffer += pack_string(data_name)
-            current_scene_entity_buffer += struct.pack("<16f",
+        def save_object(obj, matrix, data_name='NONE'):
+            entities.append({
+                'type': obj.type,
+                'name': obj.name,
+                'data_name': data_name,
+                'matrix': struct.pack("<16f",
                     matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
                     matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
                     matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
-                    matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3])
-            current_scene_entity_buffer += struct.pack("<I", data_type)
-            settings = obj.my_settings
-            current_scene_entity_buffer += struct.pack("<I", int(settings.entity_type))
-            current_scene_entity_buffer += struct.pack("<I", settings.collision_enabled)
-            current_scene_entity_buffer += struct.pack("<I", settings.cast_shadows)
-            current_scene_entity_buffer += pack_string(settings.texture)
-            current_scene_entity_buffer += pack_string(settings.shader)
+                    matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]),
+                'properties': get_props(obj)
+            })
 
         for obj in scene.objects:
             if obj.hide_render:
                 continue
 
             if obj.type == 'MESH':
-                result = save_mesh(obj, mesh_map, mesh_buffer)
-                if result[0]:
-                    mesh_counter += 1
-                save_object(obj, 0, obj.matrix_world, result[1])
-
-            elif obj.type == 'CURVE':
-                result = save_path(obj, path_buffer, scene)
-                if result[0]:
-                    path_counter += 1
-                save_object(obj, 1, obj.matrix_world, result[1])
+                result = save_mesh(obj, mesh_map)
+                save_object(obj, obj.matrix_world, result[1])
 
             elif obj.type == 'EMPTY':
                 if obj.dupli_group:
@@ -228,39 +204,32 @@ def save_blender_data():
                         offset = Matrix.Translation(obj.dupli_group.dupli_offset).inverted()
                         matrix = obj.matrix_world * offset * child.matrix_world
                         # TODO: fix
-                        #result = save_mesh(child, mesh_map, mesh_buffer)
+                        #result = save_mesh(child, mesh_map)
                         #save_object(child, 0, matrix, result[1])
                         data_name = namePrefix(
                                 bpy.data.filepath if child.library == None else child.library.filepath) + child.data.name
-                        save_object(child, 0, matrix, data_name)
+                        save_object(child, matrix, data_name)
                 else:
-                    save_object(obj, 2, obj.matrix_world)
+                    save_object(obj, obj.matrix_world)
 
-        current_scene_buffer = bytearray()
-        current_scene_buffer += pack_string(namePrefix() + scene.name)
-        current_scene_buffer += struct.pack("<I", obj_count)
-        current_scene_buffer += current_scene_entity_buffer
+        scenes.append({
+            'type': 'scene',
+            'name': namePrefix() + scene.name,
+            'entities': entities,
+            'properties': get_props(scene)
+        })
 
-        scene_buffer += struct.pack("<I", len(current_scene_buffer))
-        scene_buffer += current_scene_buffer
+    out_file = os.path.join('bin', os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '.dat')
+    with open(out_file, 'bw') as file:
+        file.write(struct.pack('<I', 0x00001111))
+        file.write(pack_value({
+            'meshes': mesh_map,
+            'scenes': scenes
+        }))
+        print('Saved to file:', out_file)
 
-
-    out_file = os.path.join('bin', os.path.basename(bpy.data.filepath) + '.dat')
-    f = open(out_file, 'bw')
-    f.write(scene_buffer)
-    f.write(struct.pack("<I", mesh_counter))
-    f.write(mesh_buffer)
-    f.write(struct.pack("<I", path_counter))
-    f.write(path_buffer)
-    f.close()
-
-    print("Saved to file: ", out_file)
-
-    #print("Export took", time.clock()-start, "seconds")
+    print('Export took', time.time() - start, 'seconds')
     return {'FINISHED'}
-
-#def save_handler(dummy):
-    #pass
 
 if __name__ == "__main__":
     save_blender_data()
