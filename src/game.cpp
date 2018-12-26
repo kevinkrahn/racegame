@@ -1,10 +1,11 @@
 #include "game.h"
+#include <chrono>
 #include <iostream>
 
 void Game::run()
 {
 #ifndef NDEBUG
-    std::cout << "Debug mode" << std::endl;
+    print("Debug mode\n");
 #endif
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -13,44 +14,61 @@ void Game::run()
     }
 
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
-    //SDL_ShowCursor(SDL_DISABLE);
 
     SDL_Event event;
     bool shouldExit = false;
-    bool fullscreen = false;
     while(true)
     {
+        auto frameStartTime = std::chrono::high_resolution_clock::now();
+        input.onFrameBegin();
+
         while(SDL_PollEvent(&event) != 0)
         {
+            input.handleEvent(event);
             if(event.type == SDL_QUIT)
             {
                 shouldExit = true;
             }
-            else if(event.type == SDL_KEYDOWN && !event.key.repeat)
-            {
-                if(event.key.keysym.sym == SDLK_ESCAPE)
-                {
-                    shouldExit = true;
-                }
-                else if(event.key.keysym.sym == SDLK_F4)
-                {
-                    fullscreen = !fullscreen;
-                    SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-                }
-            }
         }
 
-        if(shouldExit)
+        if (input.isKeyPressed(KEY_F4))
+        {
+            config.fullscreen = !config.fullscreen;
+            SDL_SetWindowFullscreen(window, config.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+        }
+
+        if(shouldExit || input.isKeyPressed(KEY_ESCAPE))
         {
             break;
         }
 
-        renderer.render(0.f);
+        renderer.render(deltaTime);
+        input.onFrameEnd();
 
-        //auto deltaTime = seconds(std::chrono::high_resolution_clock::now() - start_time).count();
+        using seconds = std::chrono::duration<f64, std::ratio<1>>;
+        if (!game.config.vsync)
+        {
+            f64 minFrameTime = 1.0 / (f64)game.config.maxFPS;
+            auto frameEndTime = frameStartTime + seconds(minFrameTime);
+            while (std::chrono::high_resolution_clock::now() < frameEndTime)
+            {
+                _mm_pause();
+            }
+        }
+
+        deltaTime = (f32)seconds(std::chrono::high_resolution_clock::now() - frameStartTime).count();
     }
 
     SDL_Quit();
+}
+
+void Game::changeScene(const char* sceneName)
+{
+    if (currentScene)
+    {
+        currentScene->onEnd();
+    }
+    currentScene.reset(new Scene());
 }
 
 /*

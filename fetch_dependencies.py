@@ -1,21 +1,11 @@
 #!/usr/bin/python3
 
-import os, errno, sys, subprocess, urllib.request, zipfile, tempfile, functools
-
-@functools.lru_cache(maxsize=None)
-def getRepoPath():
-    return subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf-8').strip()
-
-def ensureDir(dir):
-    try:
-        os.makedirs(dir)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+import os, sys, subprocess, urllib.request, zipfile, tempfile, functools
+import utils
 
 def fetch(url, name):
-    resultPath = os.path.join(getRepoPath(), 'external', name)
-    ensureDir(os.path.join(getRepoPath(), 'external'))
+    resultPath = os.path.join(utils.getRepoPath(), 'external', name)
+    utils.ensureDir(os.path.join(utils.getRepoPath(), 'external'))
 
     if '.zip' in url:
         if os.path.isdir(resultPath):
@@ -23,7 +13,7 @@ def fetch(url, name):
         else:
             tmpPath = tempfile.mktemp()
             urllib.request.urlretrieve(url, tmpPath)
-            ensureDir(resultPath)
+            utils.ensureDir(resultPath)
             zipfile.ZipFile(tmpPath, 'r').extractall(resultPath)
             return True
     else:
@@ -42,7 +32,7 @@ def downloadAndBuildDependencies():
     fetch('https://glad.dav1d.de/generated/tmpj_E2NXglad/glad.zip', 'glad')
 
     if fetch('https://github.com/NVIDIAGameWorks/PhysX', 'physx'):
-        physxdir = os.path.join(getRepoPath(), 'external', 'physx', 'physx')
+        physxdir = os.path.join(utils.getRepoPath(), 'external', 'physx', 'physx')
         if sys.platform == 'win32':
             subprocess.run([os.path.join(physxDir, 'generate_projects.bat'), 'win32'], cwd=physxdir)
             # TODO

@@ -1,7 +1,6 @@
 #include "renderer.h"
 #include "game.h"
 #include <glad/glad.h>
-#include <iostream>
 
 #ifndef NDEBUG
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
@@ -11,7 +10,7 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severi
     {
         return;
     }
-    std::cout << "OpenGL Debug (" << id << "): " <<  message << '\n';
+    print("OpenGL Debug (", id, "): ", message, '\n');
     //assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
 }
 #endif

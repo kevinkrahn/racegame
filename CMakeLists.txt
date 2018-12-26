@@ -4,7 +4,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 include_directories(
     external
     external/SDL2/include
-    external/glm/glm
+    external/glm
     external/physx/physx/include
     external/physx/pxshared/include
 )

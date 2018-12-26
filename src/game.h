@@ -2,11 +2,15 @@
 
 #include "renderer.h"
 #include "misc.h"
+#include "scene.h"
+#include "input.h"
+#include <memory>
 
 class Game
 {
 public:
     Renderer renderer;
+    Input input;
 
     struct Config
     {
@@ -18,12 +22,13 @@ public:
         f32 renderPercentage = 1.f;
     } config;
 
-    u32 windowWidth = 0;
-    u32 windowHeight = 0;
+    u32 windowWidth;
+    u32 windowHeight;
+    f32 deltaTime = 0.f;
 
     SDL_Window* window = nullptr;
+    std::unique_ptr<Scene> currentScene;
 
     void run();
+    void changeScene(const char* sceneName);
 } game;
-
-#define FATAL_ERROR(...)
