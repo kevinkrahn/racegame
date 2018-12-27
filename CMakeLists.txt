@@ -12,7 +12,7 @@ project(game)
 add_executable(game src/main.cpp external/glad/glad.c)
 target_compile_definitions(game PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>")
 if(UNIX)
-    target_link_libraries(game general SDL2 GL dl pthread)
+    target_link_libraries(game general SDL2 GL dl pthread stdc++fs)
     foreach(LIB_NAME
         libPhysXCooking_static_64.a
         libPhysXVehicle_static_64.a
@@ -30,7 +30,7 @@ elseif(WIN32)
 endif()
 
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -fno-rtti -fno-exceptions")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fno-rtti -fno-exceptions")
 elseif(MSVC)
     foreach(flag_var
             CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE

@@ -6,12 +6,13 @@ import utils
 timestampCacheFilename = os.path.join(utils.getRepoPath(), 'build', 'asset_timestamps')
 timestampCache = {}
 
-try:
-    with open(timestampCacheFilename, 'rb') as file:
-        timestampCache = pickle.load(file)
-except OSError as e:
-    if e.errno != errno.ENOENT:
-        raise
+if not 'force' in sys.argv:
+    try:
+        with open(timestampCacheFilename, 'rb') as file:
+            timestampCache = pickle.load(file)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
 
 def exportFile(blendFile):
     blenderCommand = 'blender' if sys.platform != 'win32' else '"C:/Program Files/Blender Foundation/Blender/blender.exe"'

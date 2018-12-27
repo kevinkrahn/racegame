@@ -7,7 +7,6 @@ DataType = Enum('DataType', 'string i64 f64 bytearray array dict')
 
 def pack_string(string):
     charBytes = bytes(string, 'ASCII')
-    # TODO: add padding bytes for alignment
     return struct.pack("<I", len(charBytes)) + charBytes
 
 def pack_list(list):
@@ -86,8 +85,11 @@ def save_mesh(obj, mesh_map):
         return result
 
     vertices = []
-    vertex_buffer = bytearray()
     vertex_count = 0
+    vertex_buffer = bytearray()
+    vertex_dict = {}
+    indices = []
+    index_buffer = bytearray()
     element_size = 0
 
     if len(mesh.polygons) > 0:
@@ -136,13 +138,26 @@ def save_mesh(obj, mesh_map):
                 if (len(tex_coords) == 0):
                     tex_coords = [[0.0, 0.0]]
 
-                vertex_count += 1
-                vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
-                                                    normal[0], normal[1], normal[2])
+                vertex_tuple = (position[0], position[1], position[2], normal[0], normal[1], normal[2]);
                 for c in colors:
-                    vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
+                    vertex_tuple = vertex_tuple + (c[0], c[1], c[2])
                 for u in tex_coords:
-                    vertex_buffer += struct.pack("<2f", u[0], u[1])
+                    vertex_tuple = vertex_tuple + (u[0], u[1])
+
+                index = vertex_dict.get(vertex_tuple, None)
+                if index == None:
+                    index = vertex_count
+                    vertex_count += 1
+                    vertex_dict[vertex_tuple] = index
+                    vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
+                                                        normal[0], normal[1], normal[2])
+                    for c in colors:
+                        vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
+                    for u in tex_coords:
+                        vertex_buffer += struct.pack("<2f", u[0], u[1])
+
+                indices.append(index)
+                index_buffer += struct.pack('<I', index)
 
     elif len(mesh.edges) > 0:
         element_size = 2
@@ -160,11 +175,13 @@ def save_mesh(obj, mesh_map):
 
     mesh_map[mesh_name] = {
         'name': mesh_name,
-        'vertex_colors': max(1, len(mesh_copy.vertex_colors)),
-        'uv_layers': max(1, len(mesh_copy.uv_layers)),
-        'vertex_count': vertex_count,
+        'num_colors': max(1, len(mesh_copy.vertex_colors)),
+        'num_texcoords': max(1, len(mesh_copy.uv_layers)),
         'element_size': element_size,
         'vertex_buffer': vertex_buffer,
+        'vertex_count': vertex_count,
+        'index_buffer': index_buffer,
+        'index_count': len(indices),
         'properties': get_props(obj.data)
     }
     return (True, mesh_name)
@@ -220,10 +237,13 @@ def save_blender_data():
         })
 
     out_file = os.path.join('bin', os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '.dat')
+    meshes = []
+    for mesh in mesh_map.values():
+        meshes.append(mesh)
     with open(out_file, 'bw') as file:
         file.write(struct.pack('<I', 0x00001111))
         file.write(pack_value({
-            'meshes': mesh_map,
+            'meshes': meshes,
             'scenes': scenes
         }))
         print('Saved to file:', out_file)

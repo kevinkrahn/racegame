@@ -2,6 +2,13 @@
 #include "game.h"
 #include <glad/glad.h>
 
+struct GLMesh
+{
+    GLuint vao, vbo, ebo;
+};
+
+std::vector<GLMesh> meshes;
+
 #ifndef NDEBUG
 void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
                             GLsizei length, const GLchar* message, const void* userParam)
@@ -80,4 +87,46 @@ void Renderer::render(f32 deltaTime)
     */
 
     SDL_GL_SwapWindow(game.window);
+}
+
+u32 Renderer::loadMesh(Mesh const& meshData)
+{
+    GLMesh mesh;
+
+    glCreateBuffers(1, &mesh.vbo);
+    glNamedBufferData(mesh.vbo, meshData.vertices.size() * meshData.stride, meshData.vertices.data(), GL_STATIC_DRAW);
+
+    glCreateBuffers(1, &mesh.ebo);
+    glNamedBufferData(mesh.ebo, meshData.indices.size() * sizeof(meshData.indices[0]), meshData.indices.data(), GL_STATIC_DRAW);
+
+    enum
+    {
+        POSITION_BIND_INDEX,
+        NORMAL_BIND_INDEX,
+        COLOR_BIND_INDEX,
+        TEXCOORD_BIND_INDEX
+    };
+
+    glCreateVertexArrays(1, &mesh.vao);
+    glVertexArrayVertexBuffer(mesh.vao, 0, mesh.vbo, 0, meshData.stride);
+    glVertexArrayElementBuffer(mesh.vao, mesh.ebo);
+
+    glEnableVertexArrayAttrib(mesh.vao, POSITION_BIND_INDEX);
+    glVertexArrayAttribFormat(mesh.vao, POSITION_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(mesh.vao, POSITION_BIND_INDEX, 0);
+
+    glEnableVertexArrayAttrib(mesh.vao, NORMAL_BIND_INDEX);
+    glVertexArrayAttribFormat(mesh.vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
+    glVertexArrayAttribBinding(mesh.vao, NORMAL_BIND_INDEX, 0);
+
+    glEnableVertexArrayAttrib(mesh.vao, COLOR_BIND_INDEX);
+    glVertexArrayAttribFormat(mesh.vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 24);
+    glVertexArrayAttribBinding(mesh.vao, COLOR_BIND_INDEX, 0);
+
+    glEnableVertexArrayAttrib(mesh.vao, TEXCOORD_BIND_INDEX);
+    glVertexArrayAttribFormat(mesh.vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 32);
+    glVertexArrayAttribBinding(mesh.vao, TEXCOORD_BIND_INDEX, 0);
+
+    meshes.push_back(mesh);
+    return (u32)(meshes.size() - 1);
 }

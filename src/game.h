@@ -4,6 +4,7 @@
 #include "misc.h"
 #include "scene.h"
 #include "input.h"
+#include "resources.h"
 #include <memory>
 
 class Game
@@ -11,6 +12,7 @@ class Game
 public:
     Renderer renderer;
     Input input;
+    Resources resources;
 
     struct Config
     {
