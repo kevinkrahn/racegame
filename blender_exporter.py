@@ -1,4 +1,4 @@
-import bpy, bmesh, struct, time, os
+import bpy, bmesh, struct, time, os, errno
 from math import *
 from mathutils import (Euler, Matrix, Vector)
 from enum import Enum
@@ -236,7 +236,13 @@ def save_blender_data():
             'properties': get_props(scene)
         })
 
-    out_file = os.path.join('bin', os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '.dat')
+    out_file = os.path.join('bin', os.path.relpath(bpy.data.filepath, 'assets').replace('.blend', '.dat'))
+    try:
+        os.makedirs(os.path.dirname(out_file))
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
     meshes = []
     for mesh in mesh_map.values():
         meshes.append(mesh)

@@ -1,16 +1,131 @@
 #include "renderer.h"
 #include "game.h"
 #include <glad/glad.h>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <fstream>
+#include <sstream>
 
 struct GLMesh
 {
     GLuint vao, vbo, ebo;
+    u32 numIndices;
 };
 
-std::vector<GLMesh> meshes;
+struct GLShader
+{
+    GLuint program;
+};
+
+struct RenderMesh
+{
+    u32 meshHandle;
+    glm::mat4 worldTransform;
+};
+
+std::vector<GLMesh> loadedMeshes;
+std::vector<Camera> cameras;
+std::vector<RenderMesh> renderList;
+
+glm::vec3 backgroundColor;
+
+GLShader shader;
+
+GLShader loadShader(const char* filename)
+{
+    std::ifstream file(filename);
+    if (!file)
+    {
+        FATAL_ERROR("Cannot load shader file: ", filename);
+    }
+
+    std::stringstream stream;
+    stream << file.rdbuf();
+    file.close();
+    std::string shaderStr = stream.str();
+    const char* vertexShaderCode[] = {
+        "#version 450\n",
+        "#define VERT\n",
+        shaderStr.c_str(),
+    };
+    const char* fragmentShaderCode[] = {
+        "#version 450\n",
+        "#define FRAG\n",
+        shaderStr.c_str(),
+    };
+    const char* geometryShaderCode[] = {
+        "#version 450\n",
+        "#define GEOM\n",
+        shaderStr.c_str(),
+    };
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    //GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(vertexShader, ARRAY_SIZE(vertexShaderCode), vertexShaderCode, 0);
+    glShaderSource(fragmentShader, ARRAY_SIZE(fragmentShaderCode), fragmentShaderCode, 0);
+    //glShaderSource(geometryShader, ARRAY_SIZE(geometryShaderCode), geometryShaderCode, 0);
+
+    GLint success, errorMessageLength;
+
+    glCompileShader(vertexShader);
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, errorMessage.data());
+        error("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+    }
+
+    glCompileShader(fragmentShader);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, errorMessage.data());
+        error("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+    }
+
+    /*
+    glCompileShader(geometryShader);
+    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetShaderInfoLog(geometryShader, errorMessageLength, 0, errorMessage.data());
+        error("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+    }
+    */
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    //glAttachShader(program, geometryShader);
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetProgramInfoLog(program, errorMessageLength, 0, errorMessage.data());
+        error("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    //glDeleteShader(geometryShader);
+
+    return { program };
+}
 
 #ifndef NDEBUG
-void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
+static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
                             GLsizei length, const GLchar* message, const void* userParam)
 {
     if(id == 131169 || id == 131185 || id == 131218 || id == 131204)
@@ -60,9 +175,10 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     SDL_GL_SetSwapInterval(game.config.vsync ? 1 : 0);
 
     //glEnable(GL_MULTISAMPLE);
-    //glEnable(GL_CULL_FACE);
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    shader = loadShader("shaders/shader.glsl");
 
     return window;
 }
@@ -73,14 +189,31 @@ void Renderer::render(f32 deltaTime)
     glViewport(0, 0, game.windowWidth, game.windowHeight);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0, 0, 0, 0);
+    glEnable(GL_CULL_FACE);
+    glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(shader.program);
+
+    Camera const& camera = cameras[0];
+    for (auto const& r : renderList)
+    {
+        glm::mat4 worldViewMatrix = camera.view * r.worldTransform;
+        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(worldViewMatrix));
+        glm::mat4 worldViewProjectionMatrix = camera.projection * worldViewMatrix;
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldViewProjectionMatrix));
+
+        GLMesh const& mesh = loadedMeshes[r.meshHandle];
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    }
 
     // 2D
     /*
     glViewport(0, 0, window_width, window_height);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -127,6 +260,40 @@ u32 Renderer::loadMesh(Mesh const& meshData)
     glVertexArrayAttribFormat(mesh.vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 32);
     glVertexArrayAttribBinding(mesh.vao, TEXCOORD_BIND_INDEX, 0);
 
-    meshes.push_back(mesh);
-    return (u32)(meshes.size() - 1);
+    mesh.numIndices = meshData.indices.size();
+    loadedMeshes.push_back(mesh);
+    return (u32)(loadedMeshes.size() - 1);
+}
+
+void Renderer::setViewportCount(u32 viewports)
+{
+    cameras.resize(viewports);
+}
+
+Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 fov, f32 near, f32 far)
+{
+    Camera cam;
+    cam.position = from;
+    cam.fov = fov;
+    cam.near = near;
+    cam.far = far;
+    cam.view = glm::lookAt(from, to, glm::vec3(0, 0, 1));
+    glm::vec2 dim = glm::vec2(game.windowWidth, game.windowHeight)
+        * viewportLayout[cameras.size() - 1][index].scale;
+    cam.aspectRatio = dim.x / dim.y;
+    cam.projection = glm::perspective(fov, cam.aspectRatio, near, far);
+    cam.viewProjection = cam.projection * cam.view;
+    cameras.push_back(cam);
+
+    return cameras.back();
+}
+
+void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform)
+{
+    renderList.push_back({ mesh.renderHandle, worldTransform });
+}
+
+void Renderer::setBackgroundColor(glm::vec3 color)
+{
+    backgroundColor = color;
 }

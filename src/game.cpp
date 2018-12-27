@@ -17,6 +17,7 @@ void Game::run()
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 
     resources.load();
+    renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
 
     SDL_Event event;
     bool shouldExit = false;
@@ -43,6 +44,14 @@ void Game::run()
         if(shouldExit || input.isKeyPressed(KEY_ESCAPE))
         {
             break;
+        }
+
+        i32 w, h;
+        SDL_GL_GetDrawableSize(window, &w, &h);
+        if(w != (i32)windowWidth || h != (i32)windowHeight)
+        {
+            windowWidth = w;
+            windowHeight = h;
         }
 
         renderer.render(deltaTime);

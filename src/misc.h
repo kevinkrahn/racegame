@@ -44,3 +44,5 @@ void error(T const& first, Args const&... args)
 
 #define FATAL_ERROR(...) error(__VA_ARGS__, '\n'); exit(0);
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
