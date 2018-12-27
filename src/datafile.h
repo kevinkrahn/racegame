@@ -145,14 +145,14 @@ namespace DataFile
             return dict;
         }
 
-        void debugOutput(std::ostream& os) const;
+        void debugOutput(std::ostream& os, u32 indent, bool newline) const;
     };
 
     Value load(const char* filename);
 
     inline std::ostream& operator << (std::ostream& os, Value const& rhs)
     {
-        rhs.debugOutput(os);
+        rhs.debugOutput(os, 0, true);
         return os;
     }
 };

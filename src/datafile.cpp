@@ -89,7 +89,7 @@ DataFile::Value DataFile::Value::readValue(std::ifstream& stream)
     return value;
 }
 
-void DataFile::Value::debugOutput(std::ostream& os) const
+void DataFile::Value::debugOutput(std::ostream& os, u32 indent, bool newline) const
 {
     switch (dataType)
     {
@@ -103,37 +103,52 @@ void DataFile::Value::debugOutput(std::ostream& os) const
             os << real;
             break;
         case DataType::STRING:
-            os << str;
+            os << '"' << str << '"';
             break;
         case DataType::BYTE_ARRAY:
             os << "<bytearray>";
             break;
         case DataType::ARRAY:
-            os << "[ ";
-            for (u32 i=0; i<array.size(); ++i)
+            if (newline)
             {
-                if (i > 0)
-                {
-                    os << ", ";
-                }
-                array[i].debugOutput(os);
+                os << std::string(indent * 2, ' ');
             }
-            os << " ]";
+            if (array.size() == 0)
+            {
+                os << "[]";
+            }
+            else
+            {
+                os << "[\n";
+                for (u32 i=0; i<array.size(); ++i)
+                {
+                    array[i].debugOutput(os, indent + 1, true);
+                    os << ",\n";
+                }
+                os << std::string(indent * 2, ' ') << "]";
+            }
             break;
         case DataType::DICT:
-            os << "{ ";
-            u32 i = 0;
-            for (auto const& pair : dict)
+            if (newline)
             {
-                if (i > 0)
-                {
-                    os << ", ";
-                }
-                os << pair.first << ": ";
-                pair.second.debugOutput(os);
-                ++i;
+                os << std::string(indent * 2, ' ');
             }
-            os << " }";
+            if (dict.size() == 0)
+            {
+                os << "{}";
+            }
+            else
+            {
+                os << "{\n";
+                for (auto const& pair : dict)
+                {
+                    os << std::string((indent + 1) * 2, ' ');
+                    os << pair.first << ": ";
+                    pair.second.debugOutput(os, indent + 1, false);
+                    os << ",\n";
+                }
+                os << std::string(indent * 2, ' ') << "}";
+            }
             break;
     }
 }
