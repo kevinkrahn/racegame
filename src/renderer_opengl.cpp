@@ -189,7 +189,7 @@ void Renderer::render(f32 deltaTime)
     glViewport(0, 0, game.windowWidth, game.windowHeight);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
     glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -225,9 +225,8 @@ void Renderer::render(f32 deltaTime)
 u32 Renderer::loadMesh(Mesh const& meshData)
 {
     GLMesh mesh;
-
     glCreateBuffers(1, &mesh.vbo);
-    glNamedBufferData(mesh.vbo, meshData.vertices.size() * meshData.stride, meshData.vertices.data(), GL_STATIC_DRAW);
+    glNamedBufferData(mesh.vbo, meshData.vertices.size() * sizeof(meshData.vertices[0]), meshData.vertices.data(), GL_STATIC_DRAW);
 
     glCreateBuffers(1, &mesh.ebo);
     glNamedBufferData(mesh.ebo, meshData.indices.size() * sizeof(meshData.indices[0]), meshData.indices.data(), GL_STATIC_DRAW);
@@ -272,7 +271,7 @@ void Renderer::setViewportCount(u32 viewports)
 
 Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 fov, f32 near, f32 far)
 {
-    Camera cam;
+    Camera& cam = cameras[index];
     cam.position = from;
     cam.fov = fov;
     cam.near = near;
@@ -281,11 +280,9 @@ Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 
     glm::vec2 dim = glm::vec2(game.windowWidth, game.windowHeight)
         * viewportLayout[cameras.size() - 1][index].scale;
     cam.aspectRatio = dim.x / dim.y;
-    cam.projection = glm::perspective(fov, cam.aspectRatio, near, far);
+    cam.projection = glm::perspective(glm::radians(fov), cam.aspectRatio, near, far);
     cam.viewProjection = cam.projection * cam.view;
-    cameras.push_back(cam);
-
-    return cameras.back();
+    return cam;
 }
 
 void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform)

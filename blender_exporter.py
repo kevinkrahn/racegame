@@ -138,17 +138,19 @@ def save_mesh(obj, mesh_map):
                 if (len(tex_coords) == 0):
                     tex_coords = [[0.0, 0.0]]
 
-                vertex_tuple = (position[0], position[1], position[2], normal[0], normal[1], normal[2]);
+                vertex = (position[0], position[1], position[2], normal[0], normal[1], normal[2]);
                 for c in colors:
-                    vertex_tuple = vertex_tuple + (c[0], c[1], c[2])
+                    vertex = vertex + (c[0], c[1], c[2])
                 for u in tex_coords:
-                    vertex_tuple = vertex_tuple + (u[0], u[1])
+                    vertex = vertex + (u[0], u[1])
+                #vertex = tuple(map(lambda x: round(x, 4), vertex))
+                #vertex = str(vertex)
 
-                index = vertex_dict.get(vertex_tuple, None)
+                index = vertex_dict.get(vertex, None)
                 if index == None:
                     index = vertex_count
                     vertex_count += 1
-                    vertex_dict[vertex_tuple] = index
+                    vertex_dict[vertex] = index
                     vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
                                                         normal[0], normal[1], normal[2])
                     for c in colors:
@@ -179,9 +181,9 @@ def save_mesh(obj, mesh_map):
         'num_texcoords': max(1, len(mesh_copy.uv_layers)),
         'element_size': element_size,
         'vertex_buffer': vertex_buffer,
-        'vertex_count': vertex_count,
+        'num_vertices': vertex_count,
         'index_buffer': index_buffer,
-        'index_count': len(indices),
+        'num_indices': len(indices),
         'properties': get_props(obj.data)
     }
     return (True, mesh_name)

@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <cassert>
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
@@ -42,7 +43,7 @@ void error(T const& first, Args const&... args)
     error(args...);
 }
 
-#define FATAL_ERROR(...) error(__VA_ARGS__, '\n'); exit(0);
+#define FATAL_ERROR(...) error(__VA_ARGS__, '\n'); assert(0);
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 

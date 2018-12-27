@@ -54,6 +54,10 @@ void Game::run()
             windowHeight = h;
         }
 
+        renderer.setViewportCount(1);
+        renderer.setViewportCamera(0, { 5, 5, 5 }, { 0, 0, 0 }, 50.f);
+        renderer.drawMesh(resources.getMesh("world.Cube"), glm::mat4(1.f));
+
         renderer.render(deltaTime);
         input.onFrameEnd();
 
