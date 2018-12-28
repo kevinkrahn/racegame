@@ -3,6 +3,28 @@
 #include <chrono>
 #include <iostream>
 
+void Game::initPhysX()
+{
+	physx.foundation = PxCreateFoundation(PX_PHYSICS_VERSION, physx.allocator, physx.errorCallback);
+	physx.pvd = PxCreatePvd(*physx.foundation);
+	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+	physx.pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
+
+	physx.physics = PxCreatePhysics(PX_PHYSICS_VERSION, *physx.foundation, PxTolerancesScale(), true, physx.pvd);
+	physx.cooking = PxCreateCooking(PX_PHYSICS_VERSION, *physx.foundation, PxCookingParams(PxTolerancesScale()));
+
+	const u32 PHYSICS_THREADS = 1;
+	physx.dispatcher = PxDefaultCpuDispatcherCreate(PHYSICS_THREADS);
+
+    PxInitVehicleSDK(*physx.physics);
+    PxVehicleSetBasisVectors(PxVec3(0, 0, 1), PxVec3(1, 0, 0));
+    PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
+    const f3 POINT_REJECT_ANGLE = PxPi / 4.0f;
+    const f3 NORMAL_REJECT_ANGLE = PxPi / 4.0f;
+    PxVehicleSetSweepHitRejectionAngles(POINT_REJECT_ANGLE, NORMAL_REJECT_ANGLE);
+    PxVehicleSetMaxHitActorAcceleration(80.f);
+}
+
 void Game::run()
 {
 #ifndef NDEBUG
@@ -84,40 +106,3 @@ void Game::changeScene(const char* sceneName)
     }
     currentScene.reset(new Scene(sceneName));
 }
-
-/*
-#include "PxPhysicsAPI.h"
-using namespace physx;
-
-class PhysXErrorCallback : public PxErrorCallback
-{
-public:
-    virtual void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line)
-    {
-        std::cerr << file << ": " << line << ": " << message << '\n';
-    }
-};
-
-PhysXErrorCallback gErrorCallback;
-PxDefaultAllocator gAllocator;
-PxFoundation* gFoundation = NULL;
-PxPhysics* gPhysics = NULL;
-PxDefaultCpuDispatcher* gDispatcher = NULL;
-PxPvd* gPvd = NULL;
-PxCooking* gCooking = NULL;
-
-void initPhysX()
-{
-	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
-
-	gPvd = PxCreatePvd(*gFoundation);
-	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-	gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
-
-	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
-	gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));
-
-	const unsigned NUM_PHYSICS_THREADS = 1;
-	gDispatcher = PxDefaultCpuDispatcherCreate(NUM_PHYSICS_THREADS);
-}
-*/

@@ -4,6 +4,9 @@
 #include "vehicle.h"
 #include <vector>
 #include <glm/mat4x4.hpp>
+#include <PxPhysicsAPI.h>
+
+using namespace physx;
 
 struct StaticEntity
 {
@@ -26,8 +29,12 @@ class Scene
     std::vector<StaticEntity> staticEntities;
     std::vector<Vehicle> vehicles;
 
+    bool physicsDebugVisualizationEnabled = false;
+    PxScene* physicsScene;
+
 public:
     Scene(const char* name);
+    ~Scene();
 
     void onStart();
     void onEnd();
