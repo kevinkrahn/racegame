@@ -2,12 +2,6 @@
 #include "game.h"
 #include <vehicle/PxVehicleUtil.h>
 
-const u32 WHEEL_FRONT_LEFT  = PxVehicleDrive4WWheelOrder::eFRONT_LEFT;
-const u32 WHEEL_FRONT_RIGHT = PxVehicleDrive4WWheelOrder::eFRONT_RIGHT;
-const u32 WHEEL_REAR_LEFT   = PxVehicleDrive4WWheelOrder::eREAR_LEFT;
-const u32 WHEEL_REAR_RIGHT  = PxVehicleDrive4WWheelOrder::eREAR_RIGHT;
-
-const u32 NUM_WHEELS = 4;
 const u32 QUERY_HITS_PER_WHEEL = 8;
 
 PxF32 steerVsForwardSpeedData[2*8] =
@@ -270,8 +264,10 @@ static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
 }
 
 Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
-        PhysicsVehicleSettings& settings, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials)
+        VehicleData const& data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials)
 {
+    vehicleData = data;
+    PhysicsVehicleSettings& settings = vehicleData.physics;
     sceneQueryData = VehicleSceneQueryData::allocate(1, NUM_WHEELS, QUERY_HITS_PER_WHEEL, 1,
             &WheelSceneQueryPreFilterNonBlocking, &WheelSceneQueryPostFilterNonBlocking, game.physx.allocator);
     batchQuery = VehicleSceneQueryData::setUpBatchedSceneQuery(0, *sceneQueryData, scene);
@@ -598,6 +594,30 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
 }
 
-void Vehicle::onUpdate(f32 deltaTime, u32 vehicleIndex)
+void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
 {
+    updatePhysics(physicsScene, deltaTime, true,
+            game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
+            (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
+            game.input.isKeyDown(KEY_SPACE), true, false);
+
+    // update camera
+    glm::vec3 position = getPosition();
+    game.renderer.setViewportCamera(0, position + glm::vec3(30, 30, 30), position);
+
+    // draw chassis
+    game.renderer.drawMesh(vehicleData.chassisMesh, getTransform());
+
+    // draw wheels
+    for (u32 i=0; i<NUM_WHEELS; ++i)
+    {
+        glm::mat4 m1 = getTransform();
+        glm::mat4 m2 = convert(wheelQueryResults[i].localPose);
+        glm::mat4 wheelTransform = m1 * m2;
+        if ((i & 1) == 0)
+        {
+            //worldPos *= Mat4::rotationZ(m_PI);
+        }
+        game.renderer.drawMesh(i < 2 ? vehicleData.wheelMeshFront : vehicleData.wheelMeshRear, wheelTransform);
+    }
 }

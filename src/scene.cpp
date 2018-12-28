@@ -28,7 +28,7 @@ Scene::Scene(const char* name)
     {
         if (e["type"].string() == "MESH")
         {
-            glm::mat4 transform = glm::make_mat4((f32*)e["matrix"].bytearray().data());
+            glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
             std::string dataName = e["data_name"].string();
             staticEntities.push_back({
                 game.resources.getMesh(dataName.c_str()).renderHandle,
@@ -61,13 +61,29 @@ Scene::~Scene()
 
 void Scene::onStart()
 {
-
+    initVehicleData();
+    const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
+    vehicles.push_back(new Vehicle(physicsScene, glm::mat4(1.f), car, vehicleMaterial, surfaceMaterials));
 }
 
 void Scene::onUpdate(f32 deltaTime)
 {
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
+
+    game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
+    game.renderer.setViewportCount(1);
+    game.renderer.addDirectionalLight(glm::vec3(0.0, 0.0, 1), glm::vec3(1.0));
+
+    for (auto const& e : staticEntities)
+    {
+        game.renderer.drawMesh(e.renderHandle, e.worldTransform);
+    }
+
+    for (u32 i=0; i<vehicles.size(); ++i)
+    {
+        vehicles[i]->onUpdate(deltaTime, physicsScene, i);
+    }
 
     if (game.input.isKeyPressed(KEY_F2))
     {
@@ -85,15 +101,6 @@ void Scene::onUpdate(f32 deltaTime)
         {
 	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
         }
-    }
-
-    game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
-    game.renderer.setViewportCount(1);
-    game.renderer.setViewportCamera(0, { 5, 5, 5 }, { 0, 0, 0 });
-    game.renderer.addDirectionalLight(glm::vec3(1, 1, -1), glm::vec3(1.0));
-    for (auto const& e : staticEntities)
-    {
-        game.renderer.drawMesh(e.renderHandle, e.worldTransform);
     }
 }
 

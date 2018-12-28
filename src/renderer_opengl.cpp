@@ -236,6 +236,8 @@ void Renderer::render(f32 deltaTime)
     */
 
     SDL_GL_SwapWindow(game.window);
+
+    renderList.clear();
 }
 
 u32 Renderer::loadMesh(Mesh const& meshData)
@@ -343,6 +345,6 @@ void Renderer::addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 c
 
 void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
-    worldInfo.sunDirection = -glm::normalize(direction);
+    worldInfo.sunDirection = glm::normalize(direction);
     worldInfo.sunColor = color;
 }

@@ -169,6 +169,15 @@ namespace DataFile
             return array_[index];
         }
 
+        template <typename T>
+        T convertBytes()
+        {
+            assert(dataType == DataType::BYTE_ARRAY);
+            T val;
+            memcpy(&val, bytearray_.data(), bytearray_.size());
+            return val;
+        }
+
         void debugOutput(std::ostream& os, u32 indent, bool newline) const;
     };
 

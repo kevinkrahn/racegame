@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/norm.hpp>
 
+#include <iostream>
+
 #include <PxPhysicsAPI.h>
 using namespace physx;
 
@@ -40,3 +42,16 @@ inline f32 square(f32 v)
 {
     return v * v;
 }
+
+namespace glm
+{
+    std::ostream& operator << (std::ostream& lhs, glm::vec3 const& rhs)
+    {
+        return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << " }";
+    }
+
+    std::ostream& operator << (std::ostream& lhs, glm::vec4 const& rhs)
+    {
+        return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << " }";
+    }
+};

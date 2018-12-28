@@ -13,7 +13,7 @@ layout (location = 3) in vec2 attrTexCoord;
 
 layout (location = 0) uniform mat4 worldMatrix;
 layout (location = 1) uniform mat4 worldViewProjectionMatrix;
-layout (location = 2) uniform mat4 normalMatrix;
+layout (location = 2) uniform mat3 normalMatrix;
 
 layout(location = 0) out vec3 outColor;
 layout(location = 1) out vec3 outNormal;
@@ -24,7 +24,7 @@ void main()
 {
     gl_Position = worldViewProjectionMatrix * vec4(attrPosition, 1.0);
     outColor = attrColor;
-    outNormal = attrNormal;
+    outNormal = normalize(normalMatrix * attrNormal);
     outTexCoord = attrTexCoord;
     outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
 }
