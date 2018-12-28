@@ -20,6 +20,11 @@ struct GLShader
     GLuint program;
 };
 
+struct GLTexture
+{
+    GLuint tex;
+};
+
 struct RenderMesh
 {
     u32 meshHandle;
@@ -34,6 +39,7 @@ struct WorldInfo
 } worldInfo;
 
 std::vector<GLMesh> loadedMeshes;
+std::vector<GLTexture> loadedTextures;
 std::vector<Camera> cameras;
 std::vector<RenderMesh> renderList;
 
@@ -267,6 +273,23 @@ u32 Renderer::loadMesh(Mesh const& meshData)
     mesh.numIndices = meshData.indices.size();
     loadedMeshes.push_back(mesh);
     return (u32)(loadedMeshes.size() - 1);
+}
+
+u32 Renderer::loadTexture(Texture const& texture)
+{
+    GLuint tex;
+    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+    glTextureStorage2D(tex, 0, GL_RGBA, texture.width, texture.height);
+    glTextureSubImage2D(tex, 0, 0, 0, texture.width, texture.height, GL_RGBA,
+            GL_UNSIGNED_BYTE, texture.data);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAX_ANISOTROPY, 8);
+    glGenerateTextureMipmap(tex);
+    loadedTextures.push_back({ tex });
+    return loadedTextures.size() - 1;
 }
 
 void Renderer::setViewportCount(u32 viewports)

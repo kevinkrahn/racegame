@@ -7,6 +7,7 @@ include_directories(
     external/glm
     external/physx/physx/include
     external/physx/pxshared/include
+    external/stb
 )
 project(game)
 add_executable(game src/main.cpp external/glad/glad.c)

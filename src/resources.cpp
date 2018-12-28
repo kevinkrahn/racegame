@@ -1,6 +1,7 @@
 #include "resources.h"
 #include "game.h"
 #include <filesystem>
+#include <stb_image.h>
 
 namespace fs = std::filesystem;
 
@@ -10,7 +11,8 @@ void Resources::load()
     {
         if (fs::is_regular_file(p))
         {
-            if (p.path().extension().string() == ".dat")
+            std::string ext = p.path().extension();
+            if (ext == ".dat")
             {
                 print("Loading data file: ", p.path().c_str(), '\n');
                 DataFile::Value val = DataFile::load(p.path().c_str());
@@ -59,6 +61,33 @@ void Resources::load()
                 {
                     scenes[val["name"].string()] = std::move(val.dict());
                 }
+            }
+            else if (ext == ".bmp" || ext == ".png")
+            {
+                Texture tex;
+                i32 width, height, channels;
+                tex.data = stbi_load(p.path().string().c_str(), &width, &height, &channels, 4);
+                if (!tex.data)
+                {
+                    error("Failed to load image: ", p.path().string(), " (", stbi_failure_reason(), ")\n");
+                    continue;
+                }
+                tex.size = width * height * 4;
+#if 0
+                // premultied alpha
+                for (u32 i=0; i<size; i+=4)
+                {
+                    //f32 a = f32(data[i+3]) / 255.f;
+                    f32 a = powf(f32(data[i+3]) / 255.f, 1.f / 2.2f);
+                    data[i]   = (u8)(data[i] / 255.f * a * 255.f);
+                    data[i+1] = (u8)(data[i+1] / 255.f * a * 255.f);
+                    data[i+2] = (u8)(data[i+2] / 255.f * a * 255.f);
+                }
+#endif
+                tex.renderHandle = game.renderer.loadTexture(tex);
+                textures[p.path().string()] = tex;
+
+                //stbi_image_free(data);
             }
         }
     }

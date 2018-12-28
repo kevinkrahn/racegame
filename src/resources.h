@@ -19,11 +19,21 @@ struct Mesh
     u32 renderHandle;
 };
 
+struct Texture
+{
+    u8* data;
+    u32 size;
+    u32 width;
+    u32 height;
+    u32 renderHandle;
+};
+
 class Resources
 {
 private:
     std::map<std::string, Mesh> meshes;
     std::map<std::string, DataFile::Value::Dict> scenes;
+    std::map<std::string, Texture> textures;
 
 public:
     void load();

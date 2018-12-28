@@ -59,6 +59,7 @@ class Renderer
 public:
     SDL_Window* initWindow(const char* name, u32 width, u32 height);
     u32 loadMesh(Mesh const& mesh);
+    u32 loadTexture(Texture const& texture);
     void render(f32 deltaTime);
 
     void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
