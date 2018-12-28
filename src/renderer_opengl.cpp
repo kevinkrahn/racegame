@@ -46,6 +46,7 @@ std::vector<RenderMesh> renderList;
 glm::vec3 backgroundColor;
 
 GLShader shader;
+GLuint worldInfoUBO;
 
 void glShaderSources(GLuint shader, std::string const& src, std::initializer_list<std::string_view> defines)
 {
@@ -132,6 +133,10 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false)
     glDeleteShader(fragmentShader);
     glDeleteShader(geometryShader);
 
+    glCreateBuffers(1, &worldInfoUBO);
+    glNamedBufferData(worldInfoUBO, sizeof(WorldInfo), &worldInfo, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO);
+
     return { program };
 }
 
@@ -196,11 +201,14 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
 void Renderer::render(f32 deltaTime)
 {
+    worldInfo.time = (f32)getTime();
+    glNamedBufferSubData(worldInfoUBO, 0, sizeof(WorldInfo), &worldInfo);
+
     // 3D
     glViewport(0, 0, game.windowWidth, game.windowHeight);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -212,7 +220,9 @@ void Renderer::render(f32 deltaTime)
         glm::mat4 worldViewMatrix = camera.view * r.worldTransform;
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(worldViewMatrix));
         glm::mat4 worldViewProjectionMatrix = camera.projection * worldViewMatrix;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldViewProjectionMatrix));
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
+        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(worldViewProjectionMatrix));
+        glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);

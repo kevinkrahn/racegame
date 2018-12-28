@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <cassert>
+#include <SDL2/SDL.h>
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
@@ -47,3 +48,8 @@ void error(T const& first, Args const&... args)
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
+inline f64 getTime()
+{
+    static f64 freq = (f64)SDL_GetPerformanceFrequency();
+    return (f64)SDL_GetPerformanceCounter() / freq;
+}

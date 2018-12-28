@@ -1,10 +1,19 @@
+layout (std140, binding = 0) uniform WorldInfo
+{
+    vec3 sunDirection;
+    float time;
+    vec3 sunColor;
+};
+
 #if defined VERT
 layout (location = 0) in vec3 attrPosition;
 layout (location = 1) in vec3 attrNormal;
 layout (location = 2) in vec3 attrColor;
 layout (location = 3) in vec2 attrTexCoord;
 
-layout (location = 0) uniform mat4 worldViewProjectionMatrix;
+layout (location = 0) uniform mat4 worldMatrix;
+layout (location = 1) uniform mat4 worldViewProjectionMatrix;
+layout (location = 2) uniform mat4 normalMatrix;
 
 layout(location = 0) out vec3 outColor;
 layout(location = 1) out vec3 outNormal;
@@ -17,7 +26,7 @@ void main()
     outColor = attrColor;
     outNormal = attrNormal;
     outTexCoord = attrTexCoord;
-    //outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
+    outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
 }
 
 #elif defined FRAG
@@ -32,6 +41,7 @@ layout(location = 3) in vec3 inWorldPosition;
 void main()
 {
     outColor = vec4(inColor, 1.0);
+    outColor.a = (sin(time + inWorldPosition.x + inWorldPosition.y + inWorldPosition.z) + 1.0) * 0.5;
 }
 
 #elif defined GEOM
