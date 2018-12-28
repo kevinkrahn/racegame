@@ -338,16 +338,16 @@ void Renderer::setBackgroundColor(glm::vec3 color)
     backgroundColor = color;
 }
 
-void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation)
+void Renderer::addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation)
 {
 }
 
-void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation)
+void Renderer::addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation)
 {
 }
 
-void addDirectionalLight(glm::vec3 direction, glm::vec3 color)
+void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
-    worldInfo.sunDirection = direction;
+    worldInfo.sunDirection = -glm::normalize(direction);
     worldInfo.sunColor = color;
 }

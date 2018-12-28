@@ -26,6 +26,7 @@ void Scene::onUpdate(f32 deltaTime)
     game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
     game.renderer.setViewportCount(1);
     game.renderer.setViewportCamera(0, { 5, 5, 5 }, { 0, 0, 0 }, 50.f);
+    game.renderer.addDirectionalLight(glm::vec3(1, 1, -1), glm::vec3(1.0));
     for (auto const& e : staticEntities)
     {
         game.renderer.drawMesh(e.renderHandle, e.worldTransform);

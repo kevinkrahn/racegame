@@ -41,7 +41,10 @@ layout(location = 3) in vec3 inWorldPosition;
 void main()
 {
     outColor = vec4(inColor, 1.0);
-    outColor.a = (sin(time + inWorldPosition.x + inWorldPosition.y + inWorldPosition.z) + 1.0) * 0.5;
+    //outColor.a = (sin(time + inWorldPosition.x + inWorldPosition.y + inWorldPosition.z) + 1.0) * 0.5;
+
+    float light = max(dot(normalize(inNormal), sunDirection), 0.1);
+    outColor.rgb *= light;
 }
 
 #elif defined GEOM
