@@ -1,5 +1,4 @@
 #include "resources.h"
-#include "datafile.h"
 #include "game.h"
 #include <filesystem>
 
@@ -15,22 +14,24 @@ void Resources::load()
             {
                 print("Loading data file: ", p.path().c_str(), '\n');
                 DataFile::Value val = DataFile::load(p.path().c_str());
-                print(val.getDict().at("meshes"), '\n');
-                for (auto& val : val.getDict().at("meshes").getArray())
+
+                // meshes
+                //print(val.getDict().at("meshes"), '\n');
+                for (auto& val : val["meshes"].array())
                 {
-                    auto const& meshInfo = val.getDict();
+                    auto& meshInfo = val.dict();
                     print("Loading mesh: ", meshInfo.at("name"), '\n');
-                    u32 elementSize = (u32)meshInfo.at("element_size").getInt();
+                    u32 elementSize = (u32)meshInfo["element_size"].integer();
                     if (elementSize == 3)
                     {
-                        auto const& vertexBuffer = meshInfo.at("vertex_buffer").getByteArray();
-                        auto const& indexBuffer = meshInfo.at("index_buffer").getByteArray();
+                        auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
+                        auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
                         std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
                         std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
-                        u32 numVertices = (u32)meshInfo.at("num_vertices").getInt();
-                        u32 numIndices = (u32)meshInfo.at("num_indices").getInt();
-                        u32 numColors = (u32)meshInfo.at("num_colors").getInt();
-                        u32 numTexCoords = (u32)meshInfo.at("num_texcoords").getInt();
+                        u32 numVertices = (u32)meshInfo["num_vertices"].integer();
+                        u32 numIndices = (u32)meshInfo["num_indices"].integer();
+                        u32 numColors = (u32)meshInfo["num_colors"].integer();
+                        u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
                         u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
                         Mesh meshData = {
@@ -44,13 +45,19 @@ void Resources::load()
                             stride,
                         };
                         meshData.renderHandle = game.renderer.loadMesh(meshData);
-                        meshes[meshInfo.at("name").getString()] = meshData;
+                        meshes[meshInfo["name"].string()] = meshData;
                     }
                     else
                     {
                         Mesh meshData = { {}, {}, 0, 0, elementSize, 3 * sizeof(f32), 0 };
-                        meshes[meshInfo.at("name").getString()] = meshData;
+                        meshes[meshInfo["name"].string()] = meshData;
                     }
+                }
+
+                // scenes
+                for (auto& val : val["scenes"].array())
+                {
+                    scenes[val["name"].string()] = std::move(val.dict());
                 }
             }
         }

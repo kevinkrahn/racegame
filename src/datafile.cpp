@@ -35,48 +35,48 @@ DataFile::Value DataFile::Value::readValue(std::ifstream& stream)
     {
         case DataType::I64:
         {
-            stream.read((char*)&value.integer, sizeof(i64));
+            stream.read((char*)&value.integer_, sizeof(i64));
         } break;
         case DataType::F64:
         {
-            stream.read((char*)&value.real, sizeof(f64));
+            stream.read((char*)&value.real_, sizeof(f64));
         } break;
         case DataType::STRING:
         {
             u32 len;
             stream.read((char*)&len, sizeof(len));
-            new (&value.str) std::string(len, ' ');
-            stream.read(value.str.data(), len);
+            new (&value.str_) std::string(len, ' ');
+            stream.read(value.str_.data(), len);
         } break;
         case DataType::BYTE_ARRAY:
         {
             u32 len;
             stream.read((char*)&len, sizeof(len));
-            new (&value.bytearray) ByteArray(len);
-            stream.read((char*)value.bytearray.data(), len);
+            new (&value.bytearray_) ByteArray(len);
+            stream.read((char*)value.bytearray_.data(), len);
         } break;
         case DataType::ARRAY:
         {
             u32 len;
             stream.read((char*)&len, sizeof(len));
-            new (&value.array) Array(len);
+            new (&value.array_) Array(len);
             for (u32 i=0; i<len; ++i)
             {
-                value.array[i] = readValue(stream);
+                value.array_[i] = readValue(stream);
             }
         } break;
         case DataType::DICT:
         {
             u32 len;
             stream.read((char*)&len, sizeof(len));
-            new (&value.dict) Dict();
+            new (&value.dict_) Dict();
             for (u32 i=0; i<len; ++i)
             {
                 u32 keyLen;
                 stream.read((char*)&keyLen, sizeof(keyLen));
                 std::string key(keyLen, ' ');
                 stream.read(key.data(), keyLen);
-                value.dict[key] = readValue(stream);
+                value.dict_[key] = readValue(stream);
             }
         } break;
         default:
@@ -97,13 +97,13 @@ void DataFile::Value::debugOutput(std::ostream& os, u32 indent, bool newline) co
             os << "None";
             break;
         case DataType::I64:
-            os << integer;
+            os << integer_;
             break;
         case DataType::F64:
-            os << real;
+            os << real_;
             break;
         case DataType::STRING:
-            os << '"' << str << '"';
+            os << '"' << str_ << '"';
             break;
         case DataType::BYTE_ARRAY:
             os << "<bytearray>";
@@ -113,16 +113,16 @@ void DataFile::Value::debugOutput(std::ostream& os, u32 indent, bool newline) co
             {
                 os << std::string(indent * 2, ' ');
             }
-            if (array.size() == 0)
+            if (array_.size() == 0)
             {
                 os << "[]";
             }
             else
             {
                 os << "[\n";
-                for (u32 i=0; i<array.size(); ++i)
+                for (u32 i=0; i<array_.size(); ++i)
                 {
-                    array[i].debugOutput(os, indent + 1, true);
+                    array_[i].debugOutput(os, indent + 1, true);
                     os << ",\n";
                 }
                 os << std::string(indent * 2, ' ') << "]";
@@ -133,14 +133,14 @@ void DataFile::Value::debugOutput(std::ostream& os, u32 indent, bool newline) co
             {
                 os << std::string(indent * 2, ' ');
             }
-            if (dict.size() == 0)
+            if (dict_.size() == 0)
             {
                 os << "{}";
             }
             else
             {
                 os << "{\n";
-                for (auto const& pair : dict)
+                for (auto const& pair : dict_)
                 {
                     os << std::string((indent + 1) * 2, ' ');
                     os << pair.first << ": ";

@@ -36,12 +36,12 @@ namespace DataFile
         DataType dataType = DataType::NONE;
         union
         {
-            String str;
-            i64 integer;
-            f64 real;
-            ByteArray bytearray;
-            Array array;
-            Dict dict;
+            String str_;
+            i64 integer_;
+            f64 real_;
+            ByteArray bytearray_;
+            Array array_;
+            Dict dict_;
         };
 
         static Value readValue(std::ifstream& stream);
@@ -56,16 +56,16 @@ namespace DataFile
                 case DataType::F64:
                     break;
                 case DataType::STRING:
-                    str.~String();
+                    str_.~String();
                     break;
                 case DataType::BYTE_ARRAY:
-                    bytearray.~ByteArray();
+                    bytearray_.~ByteArray();
                     break;
                 case DataType::ARRAY:
-                    array.~Array();
+                    array_.~Array();
                     break;
                 case DataType::DICT:
-                    dict.~Dict();
+                    dict_.~Dict();
                     break;
             }
         }
@@ -82,26 +82,26 @@ namespace DataFile
                 case DataType::NONE:
                     break;
                 case DataType::I64:
-                    this->integer = rhs.integer;
+                    this->integer_ = rhs.integer_;
                     break;
                 case DataType::F64:
-                    this->real = rhs.real;
+                    this->real_ = rhs.real_;
                     break;
                 case DataType::STRING:
-                    new (&this->str) String();
-                    this->str = std::move(rhs.str);
+                    new (&this->str_) String();
+                    this->str_ = std::move(rhs.str_);
                     break;
                 case DataType::BYTE_ARRAY:
-                    new (&this->bytearray) ByteArray();
-                    this->bytearray = std::move(rhs.bytearray);
+                    new (&this->bytearray_) ByteArray();
+                    this->bytearray_ = std::move(rhs.bytearray_);
                     break;
                 case DataType::ARRAY:
-                    new (&this->array) Array();
-                    this->array = std::move(rhs.array);
+                    new (&this->array_) Array();
+                    this->array_ = std::move(rhs.array_);
                     break;
                 case DataType::DICT:
-                    new (&this->dict) Dict();
-                    this->dict = std::move(rhs.dict);
+                    new (&this->dict_) Dict();
+                    this->dict_ = std::move(rhs.dict_);
                     break;
             }
             this->dataType = rhs.dataType;
@@ -109,40 +109,52 @@ namespace DataFile
             return *this;
         }
 
-        std::string const& getString() const
+        std::string& string()
         {
             assert(dataType == DataType::STRING);
-            return str;
+            return str_;
         }
 
-        i64 getInt() const
+        i64& integer()
         {
             assert(dataType == DataType::I64);
-            return integer;
+            return integer_;
         }
 
-        f64 getFloat() const
+        f64& real()
         {
             assert(dataType == DataType::F64);
-            return real;
+            return real_;
         }
 
-        ByteArray const& getByteArray() const
+        ByteArray& bytearray()
         {
             assert(dataType == DataType::BYTE_ARRAY);
-            return bytearray;
+            return bytearray_;
         }
 
-        Array const& getArray() const
+        Array& array()
         {
             assert(dataType == DataType::ARRAY);
-            return array;
+            return array_;
         }
 
-        Dict const& getDict() const
+        Dict& dict()
         {
             assert(dataType == DataType::DICT);
-            return dict;
+            return dict_;
+        }
+
+        Value& operator [] (std::string key)
+        {
+            assert(dataType == DataType::DICT);
+            return dict_[key];
+        }
+
+        Value& operator [] (std::size_t index)
+        {
+            assert(dataType == DataType::ARRAY);
+            return array_[index];
         }
 
         void debugOutput(std::ostream& os, u32 indent, bool newline) const;

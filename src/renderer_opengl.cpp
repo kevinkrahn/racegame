@@ -26,6 +26,13 @@ struct RenderMesh
     glm::mat4 worldTransform;
 };
 
+struct WorldInfo
+{
+    glm::vec3 sunDirection;
+    f32 time;
+    glm::vec3 sunColor;
+} worldInfo;
+
 std::vector<GLMesh> loadedMeshes;
 std::vector<Camera> cameras;
 std::vector<RenderMesh> renderList;
@@ -34,7 +41,20 @@ glm::vec3 backgroundColor;
 
 GLShader shader;
 
-GLShader loadShader(const char* filename)
+void glShaderSources(GLuint shader, std::string const& src, std::initializer_list<std::string_view> defines)
+{
+    std::ostringstream str;
+    str << "#version 450\n";
+    for (auto const& d : defines)
+    {
+        str << "#define " << d << '\n';
+    }
+    std::string tmp = str.str();
+    const char* sources[] = { tmp.c_str(), src.c_str() };
+    glShaderSource(shader, 2, sources, 0);
+}
+
+GLShader loadShader(const char* filename, bool useGeometryShader=false)
 {
     std::ifstream file(filename);
     if (!file)
@@ -46,31 +66,12 @@ GLShader loadShader(const char* filename)
     stream << file.rdbuf();
     file.close();
     std::string shaderStr = stream.str();
-    const char* vertexShaderCode[] = {
-        "#version 450\n",
-        "#define VERT\n",
-        shaderStr.c_str(),
-    };
-    const char* fragmentShaderCode[] = {
-        "#version 450\n",
-        "#define FRAG\n",
-        shaderStr.c_str(),
-    };
-    const char* geometryShaderCode[] = {
-        "#version 450\n",
-        "#define GEOM\n",
-        shaderStr.c_str(),
-    };
-
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    //GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    glShaderSource(vertexShader, ARRAY_SIZE(vertexShaderCode), vertexShaderCode, 0);
-    glShaderSource(fragmentShader, ARRAY_SIZE(fragmentShaderCode), fragmentShaderCode, 0);
-    //glShaderSource(geometryShader, ARRAY_SIZE(geometryShaderCode), geometryShaderCode, 0);
 
     GLint success, errorMessageLength;
+    GLuint program = glCreateProgram();
 
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSources(vertexShader, shaderStr, { "VERT" });
     glCompileShader(vertexShader);
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -80,7 +81,10 @@ GLShader loadShader(const char* filename)
         glGetShaderInfoLog(vertexShader, errorMessageLength, 0, errorMessage.data());
         error("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
+    glAttachShader(program, vertexShader);
 
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSources(fragmentShader, shaderStr, { "FRAG" });
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -90,23 +94,24 @@ GLShader loadShader(const char* filename)
         glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, errorMessage.data());
         error("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
-
-    /*
-    glCompileShader(geometryShader);
-    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(geometryShader, errorMessageLength, 0, errorMessage.data());
-        error("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
-    }
-    */
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
     glAttachShader(program, fragmentShader);
-    //glAttachShader(program, geometryShader);
+
+    GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    if (useGeometryShader)
+    {
+        glShaderSources(geometryShader, shaderStr, { "GEOM" });
+        glCompileShader(geometryShader);
+        glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+            std::string errorMessage(errorMessageLength, ' ');
+            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, errorMessage.data());
+            error("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+        }
+        glAttachShader(program, geometryShader);
+    }
+
     glLinkProgram(program);
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success)
@@ -119,7 +124,7 @@ GLShader loadShader(const char* filename)
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    //glDeleteShader(geometryShader);
+    glDeleteShader(geometryShader);
 
     return { program };
 }
@@ -178,7 +183,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    shader = loadShader("shaders/shader.glsl");
+    shader = loadShader("shaders/shader.glsl", false);
 
     return window;
 }
@@ -287,10 +292,29 @@ Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 
 
 void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform)
 {
-    renderList.push_back({ mesh.renderHandle, worldTransform });
+    drawMesh(mesh.renderHandle, worldTransform);
+}
+
+void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform)
+{
+    renderList.push_back({ renderHandle, worldTransform });
 }
 
 void Renderer::setBackgroundColor(glm::vec3 color)
 {
     backgroundColor = color;
+}
+
+void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation)
+{
+}
+
+void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation)
+{
+}
+
+void addDirectionalLight(glm::vec3 direction, glm::vec3 color)
+{
+    worldInfo.sunDirection = direction;
+    worldInfo.sunColor = color;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "misc.h"
+#include "datafile.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -22,6 +23,7 @@ class Resources
 {
 private:
     std::map<std::string, Mesh> meshes;
+    std::map<std::string, DataFile::Value::Dict> scenes;
 
 public:
     void load();
@@ -32,6 +34,16 @@ public:
         if (iter == meshes.end())
         {
             FATAL_ERROR("Mesh not found: ", name);
+        }
+        return iter->second;
+    }
+
+    DataFile::Value::Dict& getScene(const char* name)
+    {
+        auto iter = scenes.find(name);
+        if (iter == scenes.end())
+        {
+            FATAL_ERROR("Scene not found: ", name);
         }
         return iter->second;
     }

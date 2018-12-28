@@ -66,6 +66,7 @@ public:
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
     void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform);
+    void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform);
 
     void setBackgroundColor(glm::vec3 color);
 

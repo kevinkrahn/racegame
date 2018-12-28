@@ -17,7 +17,8 @@ void Game::run()
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 
     resources.load();
-    renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
+
+    changeScene("world.Scene");
 
     SDL_Event event;
     bool shouldExit = false;
@@ -54,10 +55,7 @@ void Game::run()
             windowHeight = h;
         }
 
-        renderer.setViewportCount(1);
-        renderer.setViewportCamera(0, { 5, 5, 5 }, { 0, 0, 0 }, 50.f);
-        renderer.drawMesh(resources.getMesh("world.Cube"), glm::mat4(1.f));
-
+        currentScene->onUpdate(deltaTime);
         renderer.render(deltaTime);
         input.onFrameEnd();
 
@@ -84,7 +82,7 @@ void Game::changeScene(const char* sceneName)
     {
         currentScene->onEnd();
     }
-    currentScene.reset(new Scene());
+    currentScene.reset(new Scene(sceneName));
 }
 
 /*
