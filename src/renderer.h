@@ -1,11 +1,10 @@
 #pragma once
 
 #include "resources.h"
+#include "math.h"
 
 #include <SDL2/SDL.h>
 #include <vector>
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
 
 struct Camera
 {
@@ -23,34 +22,35 @@ struct ViewportLayout
 {
     glm::vec2 offset;
     glm::vec2 scale;
+    f32 fov;
 };
 
 const u32 MAX_VIEWPORTS = 4;
 ViewportLayout viewportLayout[MAX_VIEWPORTS][MAX_VIEWPORTS] = {
     {
-        { { 0.0f, 0.0f }, { 1.0f, 1.0f } }
+        { { 0.0f, 0.0f }, { 1.0f, 1.0f }, 33 }
     },
     {
-        { { 0.0f, 0.0f }, { 1.0f, 0.5f } },
-        { { 0.0f, 0.5f }, { 1.0f, 0.5f } },
+        { { 0.0f, 0.0f }, { 1.0f, 0.5f }, 26 },
+        { { 0.0f, 0.5f }, { 1.0f, 0.5f }, 26 },
     },
     {
 #if 0
-        { { 0.0f, 0.0f }, { 0.5f, 0.5f } },
-        { { 0.5f, 0.0f }, { 0.5f, 0.5f } },
-        { { 0.0f, 0.5f }, { 0.5f, 0.5f } },
+        { { 0.0f, 0.0f }, { 0.5f, 0.5f }, 26 },
+        { { 0.5f, 0.0f }, { 0.5f, 0.5f }, 26 },
+        { { 0.0f, 0.5f }, { 0.5f, 0.5f }, 26 },
 
 #else
-        { { 0.0f, 0.0f }, { 0.5f, 0.55f } },
-        { { 0.5f, 0.0f }, { 0.5f, 0.55f } },
-        { { 0.0f, 0.55f },{ 0.6f, 0.45f } },
+        { { 0.0f, 0.0f }, { 0.5f, 0.55f }, 26 },
+        { { 0.5f, 0.0f }, { 0.5f, 0.55f }, 26 },
+        { { 0.0f, 0.55f },{ 0.6f, 0.45f }, 26 },
 #endif
     },
     {
-        { { 0.0f, 0.0f }, { 0.5f, 0.5f } },
-        { { 0.5f, 0.0f }, { 0.5f, 0.5f } },
-        { { 0.0f, 0.5f }, { 0.5f, 0.5f } },
-        { { 0.5f, 0.5f }, { 0.5f, 0.5f } },
+        { { 0.0f, 0.0f }, { 0.5f, 0.5f }, 26 },
+        { { 0.5f, 0.0f }, { 0.5f, 0.5f }, 26 },
+        { { 0.0f, 0.5f }, { 0.5f, 0.5f }, 26 },
+        { { 0.5f, 0.5f }, { 0.5f, 0.5f }, 26 },
     },
 };
 
@@ -72,5 +72,5 @@ public:
     void setBackgroundColor(glm::vec3 color);
 
     void setViewportCount(u32 viewports);
-    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 fov, f32 near=0.5f, f32 far=500.f);
+    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 near=0.5f, f32 far=500.f);
 };

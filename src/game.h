@@ -6,6 +6,7 @@
 #include "input.h"
 #include "resources.h"
 #include <memory>
+#include <PxPhysicsAPI.h>
 
 class PhysXErrorCallback : public PxErrorCallback
 {
@@ -48,7 +49,7 @@ public:
 
     u32 windowWidth;
     u32 windowHeight;
-    f32 deltaTime = 0.f;
+    f32 deltaTime;
 
     SDL_Window* window = nullptr;
     std::unique_ptr<Scene> currentScene;

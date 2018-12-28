@@ -1,11 +1,6 @@
 #include "renderer.h"
 #include "game.h"
 #include <glad/glad.h>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
 #include <fstream>
 #include <sstream>
 
@@ -307,18 +302,18 @@ void Renderer::setViewportCount(u32 viewports)
     cameras.resize(viewports);
 }
 
-Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 fov, f32 near, f32 far)
+Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 near, f32 far)
 {
+    ViewportLayout const& layout = viewportLayout[cameras.size() - 1][index];
     Camera& cam = cameras[index];
     cam.position = from;
-    cam.fov = fov;
+    cam.fov = layout.fov;
     cam.near = near;
     cam.far = far;
     cam.view = glm::lookAt(from, to, glm::vec3(0, 0, 1));
-    glm::vec2 dim = glm::vec2(game.windowWidth, game.windowHeight)
-        * viewportLayout[cameras.size() - 1][index].scale;
+    glm::vec2 dim = glm::vec2(game.windowWidth, game.windowHeight) * layout.scale;
     cam.aspectRatio = dim.x / dim.y;
-    cam.projection = glm::perspective(glm::radians(fov), cam.aspectRatio, near, far);
+    cam.projection = glm::perspective(glm::radians(cam.fov), cam.aspectRatio, near, far);
     cam.viewProjection = cam.projection * cam.view;
     return cam;
 }

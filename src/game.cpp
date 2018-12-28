@@ -19,8 +19,8 @@ void Game::initPhysX()
     PxInitVehicleSDK(*physx.physics);
     PxVehicleSetBasisVectors(PxVec3(0, 0, 1), PxVec3(1, 0, 0));
     PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
-    const f3 POINT_REJECT_ANGLE = PxPi / 4.0f;
-    const f3 NORMAL_REJECT_ANGLE = PxPi / 4.0f;
+    const f32 POINT_REJECT_ANGLE = PxPi / 4.0f;
+    const f32 NORMAL_REJECT_ANGLE = PxPi / 4.0f;
     PxVehicleSetSweepHitRejectionAngles(POINT_REJECT_ANGLE, NORMAL_REJECT_ANGLE);
     PxVehicleSetMaxHitActorAcceleration(80.f);
 }
@@ -38,10 +38,11 @@ void Game::run()
 
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 
+    initPhysX();
     resources.load();
-
     changeScene("world.Scene");
 
+    deltaTime = 1.f / (f32)game.config.maxFPS;
     SDL_Event event;
     bool shouldExit = false;
     while(true)
@@ -105,4 +106,5 @@ void Game::changeScene(const char* sceneName)
         currentScene->onEnd();
     }
     currentScene.reset(new Scene(sceneName));
+    currentScene->onStart();
 }

@@ -4,6 +4,7 @@
 #include "renderer_opengl.cpp"
 #include "datafile.cpp"
 #include "resources.cpp"
+#include "vehicle.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

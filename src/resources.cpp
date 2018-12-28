@@ -92,3 +92,35 @@ void Resources::load()
         }
     }
 }
+
+PxTriangleMesh* Resources::getCollisionMesh(std::string const& name)
+{
+    auto trimesh = collisionMeshCache.find(name);
+    if (trimesh != collisionMeshCache.end())
+    {
+        return trimesh->second;
+    }
+    Mesh const& mesh = getMesh(name.c_str());
+
+    PxTriangleMeshDesc desc;
+    desc.points.count = mesh.numVertices;
+    desc.points.stride = mesh.stride;
+    desc.points.data = mesh.vertices.data();
+    desc.triangles.count = mesh.numIndices / 3;
+    desc.triangles.stride = 3 * sizeof(mesh.indices[0]);
+    desc.triangles.data = mesh.indices.data();
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    PxTriangleMeshCookingResult::Enum result;
+    bool status = game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result);
+    if (!status)
+    {
+        FATAL_ERROR("Failed to create collision mesh: ", name);
+    }
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    PxTriangleMesh* t = game.physx.physics->createTriangleMesh(readBuffer);
+    collisionMeshCache[name] = t;
+
+    return t;
+}

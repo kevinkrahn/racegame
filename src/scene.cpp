@@ -1,49 +1,8 @@
 #include "scene.h"
 #include "game.h"
-#include <glm/gtc/type_ptr.hpp>
+#include "vehicle.h"
 
 Scene::Scene(const char* name)
-{
-    auto& sceneData = game.resources.getScene(name);
-    for (auto& e : sceneData["entities"].array())
-    {
-        if (e["type"].string() == "MESH")
-        {
-            staticEntities.push_back({
-                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
-                glm::make_mat4((f32*)e["matrix"].bytearray().data())
-            });
-        }
-    }
-}
-
-Scene::~Scene()
-{
-    physicsScene->release();
-}
-
-PxFilterFlags VehicleFilterShader(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
-{
-    PX_UNUSED(attributes0);
-    PX_UNUSED(attributes1);
-    PX_UNUSED(constantBlock);
-    PX_UNUSED(constantBlockSize);
-
-    if( (0 == (filterData0.word0 & filterData1.word1)) && (0 == (filterData1.word0 & filterData0.word1)) )
-    {
-        return PxFilterFlag::eSUPPRESS;
-    }
-
-    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-    pairFlags |= PxPairFlags(PxU16(filterData0.word2 | filterData1.word2));
-
-    return PxFilterFlags();
-}
-
-void Scene::onStart()
 {
     PxSceneDesc sceneDesc(game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -12.1f);
@@ -59,6 +18,50 @@ void Scene::onStart()
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
     }
+
+	vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.5f);
+	trackMaterial   = game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
+	offroadMaterial = game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
+
+    auto& sceneData = game.resources.getScene(name);
+    for (auto& e : sceneData["entities"].array())
+    {
+        if (e["type"].string() == "MESH")
+        {
+            glm::mat4 transform = glm::make_mat4((f32*)e["matrix"].bytearray().data());
+            std::string dataName = e["data_name"].string();
+            staticEntities.push_back({
+                game.resources.getMesh(dataName.c_str()).renderHandle,
+                transform
+            });
+
+            PxVec3 scale(glm::length(glm::vec3(transform[0])),
+                         glm::length(glm::vec3(transform[1])),
+                         glm::length(glm::vec3(transform[2])));
+
+            PxShape* shape = game.physx.physics->createShape(
+                    PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
+                        PxMeshScale(scale)), *offroadMaterial);
+            shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+            shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+
+	        PxRigidStatic* triMesh = PxCreateStatic(*game.physx.physics, convert(transform), *shape);
+	        physicsScene->addActor(*triMesh);
+
+	        //shape->release();
+	        //triMesh->release();
+        }
+    }
+}
+
+Scene::~Scene()
+{
+    physicsScene->release();
+}
+
+void Scene::onStart()
+{
+
 }
 
 void Scene::onUpdate(f32 deltaTime)
@@ -86,7 +89,7 @@ void Scene::onUpdate(f32 deltaTime)
 
     game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
     game.renderer.setViewportCount(1);
-    game.renderer.setViewportCamera(0, { 5, 5, 5 }, { 0, 0, 0 }, 50.f);
+    game.renderer.setViewportCamera(0, { 5, 5, 5 }, { 0, 0, 0 });
     game.renderer.addDirectionalLight(glm::vec3(1, 1, -1), glm::vec3(1.0));
     for (auto const& e : staticEntities)
     {

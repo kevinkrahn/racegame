@@ -3,7 +3,7 @@ from math import *
 from mathutils import (Euler, Matrix, Vector)
 from enum import Enum
 
-DataType = Enum('DataType', 'string i64 f64 bytearray array dict')
+DataType = Enum('DataType', 'string i64 f64 bytearray array dict bool')
 
 def pack_string(string):
     charBytes = bytes(string, 'ASCII')
@@ -30,6 +30,8 @@ def pack_value(val):
         return struct.pack('<I', DataType.array.value) + pack_list(val)
     elif type_name == 'dict':
         return struct.pack('<I', DataType.dict.value) + pack_dict(val)
+    elif type_name == 'bool':
+        return struct.pack('<II', DataType.bool.value, 1 if val else 0)
     else:
         #raise ValueError('Cannot serialize data type: ' + type_name)
         print('Ignoring unsupported data type: ', type_name)

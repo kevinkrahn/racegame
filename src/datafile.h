@@ -22,6 +22,7 @@ namespace DataFile
         BYTE_ARRAY,
         ARRAY,
         DICT,
+        BOOL,
     };
 
     class Value
@@ -42,6 +43,7 @@ namespace DataFile
             ByteArray bytearray_;
             Array array_;
             Dict dict_;
+            bool bool_;
         };
 
         static Value readValue(std::ifstream& stream);
@@ -54,6 +56,7 @@ namespace DataFile
                 case DataType::NONE:
                 case DataType::I64:
                 case DataType::F64:
+                case DataType::BOOL:
                     break;
                 case DataType::STRING:
                     str_.~String();
@@ -103,6 +106,9 @@ namespace DataFile
                     new (&this->dict_) Dict();
                     this->dict_ = std::move(rhs.dict_);
                     break;
+                case DataType::BOOL:
+                    this->bool_ = rhs.bool_;
+                    break;
             }
             this->dataType = rhs.dataType;
             rhs.dataType = DataType::NONE;
@@ -125,6 +131,12 @@ namespace DataFile
         {
             assert(dataType == DataType::F64);
             return real_;
+        }
+
+        bool& boolean()
+        {
+            assert(dataType == DataType::BOOL);
+            return bool_;
         }
 
         ByteArray& bytearray()

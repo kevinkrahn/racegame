@@ -1,7 +1,7 @@
 #pragma once
 
-#include "misc.h"
 #include "datafile.h"
+#include "math.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -35,6 +35,8 @@ private:
     std::map<std::string, DataFile::Value::Dict> scenes;
     std::map<std::string, Texture> textures;
 
+    std::map<std::string, PxTriangleMesh*> collisionMeshCache;
+
 public:
     void load();
 
@@ -57,4 +59,6 @@ public:
         }
         return iter->second;
     }
+
+    PxTriangleMesh* getCollisionMesh(std::string const& name);
 };

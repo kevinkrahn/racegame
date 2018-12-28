@@ -79,6 +79,10 @@ DataFile::Value DataFile::Value::readValue(std::ifstream& stream)
                 value.dict_[key] = readValue(stream);
             }
         } break;
+        case DataType::BOOL:
+        {
+            stream.read((char*)&value.bool_, sizeof(u32));
+        } break;
         default:
         {
             error("Invalid data type: ", (u32)value.dataType, '\n');
@@ -149,6 +153,9 @@ void DataFile::Value::debugOutput(std::ostream& os, u32 indent, bool newline) co
                 }
                 os << std::string(indent * 2, ' ') << "}";
             }
+            break;
+        case DataType::BOOL:
+            os << (bool_ ? "true" : "false");
             break;
     }
 }
