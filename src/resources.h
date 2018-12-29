@@ -2,6 +2,7 @@
 
 #include "datafile.h"
 #include "math.h"
+#include "font.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -21,8 +22,12 @@ struct Mesh
 
 struct Texture
 {
-    u8* data;
-    u32 size;
+    enum struct Format
+    {
+        RGBA8,
+        R8,
+    };
+    Format format;
     u32 width;
     u32 height;
     u32 renderHandle;
@@ -34,6 +39,7 @@ private:
     std::map<std::string, Mesh> meshes;
     std::map<std::string, DataFile::Value::Dict> scenes;
     std::map<std::string, Texture> textures;
+    std::map<std::string, std::map<u32, Font>> fonts;
 
     std::map<std::string, PxTriangleMesh*> collisionMeshCache;
     std::map<std::string, PxConvexMesh*> convexCollisionMeshCache;
@@ -63,4 +69,31 @@ public:
 
     PxTriangleMesh* getCollisionMesh(std::string const& name);
     PxConvexMesh* getConvexCollisionMesh(std::string const& name);
+
+    Font& getFont(const char* name, u32 height)
+    {
+        auto iter = fonts.find(name);
+        if (iter == fonts.end())
+        {
+            return fonts[name][height] = Font(std::string(name) + ".ttf", height);
+        }
+
+        auto iter2 = iter->second.find(height);
+        if (iter == fonts.end())
+        {
+            return fonts[name][height] = Font(std::string(name) + ".ttf", height);
+        }
+
+        return iter2->second;
+    }
+
+    Texture& getTexture(const char* name)
+    {
+        auto iter = textures.find(name);
+        if (iter == textures.end())
+        {
+            FATAL_ERROR("Texture not found: ", name);
+        }
+        return iter->second;
+    }
 };

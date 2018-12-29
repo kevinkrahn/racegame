@@ -73,7 +73,11 @@ void Scene::onUpdate(f32 deltaTime)
 
     game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
     game.renderer.setViewportCount(1);
-    game.renderer.addDirectionalLight(glm::vec3(0.0, 0.0, 1), glm::vec3(1.0));
+    game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
+    //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
+            //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
+
+    game.resources.getFont("font", 40).drawText("Hello, World!", 50, 50, glm::vec3(1, 0, 0));
 
     for (auto const& e : staticEntities)
     {

@@ -28,6 +28,7 @@ struct RenderMesh
 
 struct WorldInfo
 {
+    glm::mat4 orthoProjection;
     glm::vec3 sunDirection;
     f32 time;
     glm::vec3 sunColor;
@@ -39,6 +40,19 @@ struct DebugVertex
     glm::vec4 color;
 };
 
+struct QuadPoint
+{
+    glm::vec2 xy;
+    glm::vec2 uv;
+};
+
+struct Quad2D
+{
+    GLuint tex;
+    QuadPoint points[4];
+    glm::vec4 color;
+};
+
 const u32 MAX_DEBUG_VERTS = 200000;
 
 std::vector<GLMesh> loadedMeshes;
@@ -46,11 +60,13 @@ std::vector<GLTexture> loadedTextures;
 std::vector<Camera> cameras;
 std::vector<RenderMesh> renderList;
 std::vector<DebugVertex> debugVertices;
+std::vector<Quad2D> renderListQuad2D;
 
 glm::vec3 backgroundColor;
 
 GLShader shader;
 GLShader debugShader;
+GLShader quad2DShader;
 GLuint worldInfoUBO;
 GLMesh debugMesh;
 
@@ -198,6 +214,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     shader = loadShader("shaders/shader.glsl", false);
     debugShader = loadShader("shaders/debug.glsl", false);
+    quad2DShader = loadShader("shaders/quad2D.glsl", false);
 
     // create world info uniform buffer
     glCreateBuffers(1, &worldInfoUBO);
@@ -225,6 +242,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 void Renderer::render(f32 deltaTime)
 {
     worldInfo.time = (f32)getTime();
+    worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
     glNamedBufferSubData(worldInfoUBO, 0, sizeof(WorldInfo), &worldInfo);
 
     // 3D
@@ -241,7 +259,7 @@ void Renderer::render(f32 deltaTime)
     for (auto const& r : renderList)
     {
         glm::mat4 worldViewMatrix = camera.view * r.worldTransform;
-        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(worldViewMatrix));
+        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
         glm::mat4 worldViewProjectionMatrix = camera.projection * worldViewMatrix;
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(worldViewProjectionMatrix));
@@ -265,15 +283,24 @@ void Renderer::render(f32 deltaTime)
     }
 
     // 2D
-    /*
-    glViewport(0, 0, window_width, window_height);
+    glViewport(0, 0, game.windowWidth, game.windowHeight);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    */
+    if (renderListQuad2D.size() > 0)
+    {
+        glUseProgram(quad2DShader.program);
+        glActiveTexture(GL_TEXTURE0);
+        for (auto& q : renderListQuad2D)
+        {
+            glBindTexture(GL_TEXTURE_2D, q.tex);
+            glUniform4fv(0, 4, (GLfloat*)&q.points);
+            glUniform4fv(4, 1, (GLfloat*)&q.color);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        }
+        renderListQuad2D.clear();
+    }
 
     SDL_GL_SwapWindow(game.window);
 
@@ -322,13 +349,27 @@ u32 Renderer::loadMesh(Mesh const& meshData)
     return (u32)(loadedMeshes.size() - 1);
 }
 
-u32 Renderer::loadTexture(Texture const& texture)
+u32 Renderer::loadTexture(Texture const& texture, u8* data, size_t size)
 {
+    GLuint sizedFormat, baseFormat;
+    switch (texture.format)
+    {
+        case Texture::Format::RGBA8:
+            sizedFormat = GL_RGBA8;
+            baseFormat = GL_RGBA;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            break;
+        case Texture::Format::R8:
+            sizedFormat = GL_R8;
+            baseFormat = GL_RED;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            break;
+    }
+
     GLuint tex;
     glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-    glTextureStorage2D(tex, 0, GL_RGBA, texture.width, texture.height);
-    glTextureSubImage2D(tex, 0, 0, 0, texture.width, texture.height, GL_RGBA,
-            GL_UNSIGNED_BYTE, texture.data);
+    glTextureStorage2D(tex, 1, sizedFormat, texture.width, texture.height);
+    glTextureSubImage2D(tex, 0, 0, 0, texture.width, texture.height, baseFormat, GL_UNSIGNED_BYTE, data);
     glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -385,7 +426,7 @@ void Renderer::addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 c
 
 void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
-    worldInfo.sunDirection = glm::normalize(direction);
+    worldInfo.sunDirection = -glm::normalize(direction);
     worldInfo.sunColor = color;
 }
 
@@ -394,4 +435,13 @@ void Renderer::drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
 {
     debugVertices.push_back({ p1, c1 });
     debugVertices.push_back({ p2, c2 });
+}
+
+void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2, glm::vec3 color, f32 alpha)
+{
+    renderListQuad2D.push_back({
+        loadedTextures[texture].tex,
+        { { p1, t1 }, { { p2.x, p1.y }, { t2.x, t1.y } }, { { p1.x, p2.y }, { t1.x, t2.y } }, { p2, t2 } },
+        glm::vec4(color, alpha)
+    });
 }

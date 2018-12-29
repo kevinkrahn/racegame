@@ -1,5 +1,6 @@
 layout (std140, binding = 0) uniform WorldInfo
 {
+    mat4 orthoProjection;
     vec3 sunDirection;
     float time;
     vec3 sunColor;

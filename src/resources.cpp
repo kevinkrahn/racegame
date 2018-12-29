@@ -18,11 +18,9 @@ void Resources::load()
                 DataFile::Value val = DataFile::load(p.path().c_str());
 
                 // meshes
-                //print(val.getDict().at("meshes"), '\n');
                 for (auto& val : val["meshes"].array())
                 {
                     auto& meshInfo = val.dict();
-                    print("Loading mesh: ", meshInfo.at("name"), '\n');
                     u32 elementSize = (u32)meshInfo["element_size"].integer();
                     if (elementSize == 3)
                     {
@@ -66,13 +64,13 @@ void Resources::load()
             {
                 Texture tex;
                 i32 width, height, channels;
-                tex.data = stbi_load(p.path().string().c_str(), &width, &height, &channels, 4);
-                if (!tex.data)
+                u8* data = (u8*)stbi_load(p.path().string().c_str(), &width, &height, &channels, 4);
+                if (!data)
                 {
                     error("Failed to load image: ", p.path().string(), " (", stbi_failure_reason(), ")\n");
                     continue;
                 }
-                tex.size = width * height * 4;
+                size_t size = width * height * 4;
 #if 0
                 // premultied alpha
                 for (u32 i=0; i<size; i+=4)
@@ -84,10 +82,13 @@ void Resources::load()
                     data[i+2] = (u8)(data[i+2] / 255.f * a * 255.f);
                 }
 #endif
-                tex.renderHandle = game.renderer.loadTexture(tex);
-                textures[p.path().string()] = tex;
+                tex.width = width;
+                tex.height = height;
+                tex.format = Texture::Format::RGBA8;
+                tex.renderHandle = game.renderer.loadTexture(tex, data, size);
+                textures[p.path().stem().string()] = tex;
 
-                //stbi_image_free(data);
+                stbi_image_free(data);
             }
         }
     }
