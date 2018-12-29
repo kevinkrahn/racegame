@@ -12,8 +12,14 @@ const u32 NUM_WHEELS = 4;
 
 struct PhysicsVehicleSettings
 {
-    f32 chassisMass = 1000.f;
-    glm::vec3 chassisDimensions = { 5.0f, 2.5f, 2.0f };
+    struct CollisionsMesh
+    {
+        PxConvexMesh* convexMesh;
+        glm::mat4 transform;
+    };
+    std::vector<CollisionsMesh> collisionMeshes;
+
+    f32 chassisDensity = 120.f;
     glm::vec3 chassisCMOffset = { 0.25f, 0.f, -1.f + 0.65f };
 
     f32 wheelMassFront = 30.f;
@@ -58,8 +64,6 @@ struct PhysicsVehicleSettings
     f32 rearAntiRollbarStiffness = 10000.0f;
 
     f32 ackermannAccuracy = 1.f;
-
-    glm::vec3 chassisMOI = glm::vec3(0.f); // will be calculated if left at 0
 
     PxVehicleDifferential4WData::Enum differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
         //PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
@@ -115,6 +119,7 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
     for (auto& e : scene["entities"].array())
     {
         std::string name = e["name"].string();
+        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
         if (name == "Chassis")
         {
             vehicleData->chassisMesh = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
@@ -122,31 +127,34 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
         else if (name == "FL")
         {
             vehicleData->wheelMeshFront = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
-            vehicleData->physics.wheelPositions[WHEEL_FRONT_RIGHT] =
-                e["matrix"].convertBytes<glm::mat4>()[3];
+            vehicleData->physics.wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name == "RL")
         {
             vehicleData->wheelMeshRear = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
-            vehicleData->physics.wheelPositions[WHEEL_REAR_RIGHT] =
-                e["matrix"].convertBytes<glm::mat4>()[3];
+            vehicleData->physics.wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name == "FR")
         {
-            vehicleData->physics.wheelPositions[WHEEL_FRONT_LEFT] =
-                e["matrix"].convertBytes<glm::mat4>()[3];
+            vehicleData->physics.wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
         }
         else if (name == "RR")
         {
-            vehicleData->physics.wheelPositions[WHEEL_REAR_LEFT] =
-                e["matrix"].convertBytes<glm::mat4>()[3];
+            vehicleData->physics.wheelPositions[WHEEL_REAR_LEFT] = transform[3];
         }
         else if (name.find("debris") != std::string::npos)
         {
             vehicleData->debrisChunks.push_back({
                 game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
-                e["matrix"].convertBytes<glm::mat4>(),
+                transform,
                 nullptr
+            });
+        }
+        else if (name.find("Collision") != std::string::npos)
+        {
+            vehicleData->physics.collisionMeshes.push_back({
+                game.resources.getConvexCollisionMesh(e["data_name"].string()),
+                transform
             });
         }
     }
@@ -154,9 +162,8 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
 
 inline void initVehicleData()
 {
-    car.physics.chassisMass = 700.f;
-    car.physics.chassisDimensions = { 3.8f, 2.f, 1.6f };
-    car.physics.chassisCMOffset = { 0.1f, 0.f, -0.7f };
+    car.physics.chassisDensity = 100.f;
+    car.physics.chassisCMOffset = { 0.1f, 0.f, -0.5f };
     car.physics.wheelMassFront = car.physics.wheelMassRear = 20.f;
     car.physics.wheelWidthFront = car.physics.wheelWidthRear = 0.25f;
     car.physics.wheelRadiusFront = car.physics.wheelRadiusRear = 0.4f;

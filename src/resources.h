@@ -36,6 +36,7 @@ private:
     std::map<std::string, Texture> textures;
 
     std::map<std::string, PxTriangleMesh*> collisionMeshCache;
+    std::map<std::string, PxConvexMesh*> convexCollisionMeshCache;
 
 public:
     void load();
@@ -61,4 +62,5 @@ public:
     }
 
     PxTriangleMesh* getCollisionMesh(std::string const& name);
+    PxConvexMesh* getConvexCollisionMesh(std::string const& name);
 };

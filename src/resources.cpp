@@ -112,8 +112,7 @@ PxTriangleMesh* Resources::getCollisionMesh(std::string const& name)
 
     PxDefaultMemoryOutputStream writeBuffer;
     PxTriangleMeshCookingResult::Enum result;
-    bool status = game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result);
-    if (!status)
+    if (!game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result))
     {
         FATAL_ERROR("Failed to create collision mesh: ", name);
     }
@@ -121,6 +120,34 @@ PxTriangleMesh* Resources::getCollisionMesh(std::string const& name)
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
     PxTriangleMesh* t = game.physx.physics->createTriangleMesh(readBuffer);
     collisionMeshCache[name] = t;
+
+    return t;
+}
+
+PxConvexMesh* Resources::getConvexCollisionMesh(std::string const& name)
+{
+    auto convexMesh = convexCollisionMeshCache.find(name);
+    if (convexMesh != convexCollisionMeshCache.end())
+    {
+        return convexMesh->second;
+    }
+    Mesh const& mesh = getMesh(name.c_str());
+
+    PxConvexMeshDesc convexDesc;
+    convexDesc.points.count  = mesh.numVertices;
+    convexDesc.points.stride = mesh.stride;
+    convexDesc.points.data   = mesh.vertices.data();
+    convexDesc.flags         = PxConvexFlag::eCOMPUTE_CONVEX;
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    if (!game.physx.cooking->cookConvexMesh(convexDesc, writeBuffer))
+    {
+        FATAL_ERROR("Failed to create convex collision mesh: ", name);
+    }
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    PxConvexMesh* t = game.physx.physics->createConvexMesh(readBuffer);
+    convexCollisionMeshCache[name] = t;
 
     return t;
 }

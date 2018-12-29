@@ -227,26 +227,6 @@ static PxConvexMesh* createConvexMesh(const PxVec3* verts, const PxU32 numVerts)
     return convexMesh;
 }
 
-static PxConvexMesh* createChassisMesh(glm::vec3 dims)
-{
-    const PxF32 x = dims.x * 0.5f;
-    const PxF32 y = dims.y * 0.5f;
-    const PxF32 z = dims.z * 0.5f;
-    PxVec3 verts[8] =
-    {
-        PxVec3(x,y,-z),
-        PxVec3(x,y,z),
-        PxVec3(x,-y,z),
-        PxVec3(x,-y,-z),
-        PxVec3(-x,y,-z),
-        PxVec3(-x,y,z),
-        PxVec3(-x,-y,z),
-        PxVec3(-x,-y,-z)
-    };
-
-    return createConvexMesh(verts, 8);
-}
-
 static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
 {
     PxVec3 points[2*16];
@@ -273,15 +253,6 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     batchQuery = VehicleSceneQueryData::setUpBatchedSceneQuery(0, *sceneQueryData, scene);
     frictionPairs = createFrictionPairs(settings, surfaceMaterials);
 
-    if (glm::length2(settings.chassisMOI) == 0.f)
-    {
-        glm::vec3 dims = settings.chassisDimensions;
-        settings.chassisMOI = glm::vec3(
-            (dims.y*dims.y + dims.z*dims.z) * settings.chassisMass / 12.0f,
-            (dims.x*dims.x + dims.z*dims.z) * settings.chassisMass / 12.0f,
-            (dims.x*dims.x + dims.y*dims.y) * settings.chassisMass / 12.0f );
-    }
-
     PxConvexMesh* wheelConvexMeshes[NUM_WHEELS];
     PxMaterial* wheelMaterials[NUM_WHEELS];
 
@@ -299,15 +270,10 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
         wheelMaterials[i] = vehicleMaterial;
     }
 
-    PxVehicleChassisData rigidBodyData;
-    rigidBodyData.mMOI = convert(settings.chassisMOI);
-    rigidBodyData.mMass = settings.chassisMass;
-    rigidBodyData.mCMOffset = convert(settings.chassisCMOffset);
-
     PxFilterData chassisSimFilterData(COLLISION_FLAG_CHASSIS, COLLISION_FLAG_CHASSIS, 0, 0);
     PxFilterData wheelSimFilterData(0, 0, 0, 0);
 
-    PxRigidDynamic* actor = game.physx.physics->createRigidDynamic(PxTransform(PxIdentity));
+    PxRigidDynamic* actor = game.physx.physics->createRigidDynamic(convert(transform));
     PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
     PxFilterData chassisQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
 
@@ -320,22 +286,20 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
         wheelShape->setLocalPose(PxTransform(PxIdentity));
     }
 
-    PxConvexMesh* chassisConvexMesh = createChassisMesh(settings.chassisDimensions);
-    PxConvexMesh* chassisConvexMeshes[1] = { chassisConvexMesh };
-    PxMaterial* chassisMaterials[1] = { vehicleMaterial };
-    for(PxU32 i = 0; i < ARRAY_SIZE(chassisConvexMeshes); i++)
+    for (auto const& cm : settings.collisionMeshes)
     {
-        PxShape* chassisShape = PxRigidActorExt::createExclusiveShape(*actor, PxConvexMeshGeometry(chassisConvexMeshes[i]), *chassisMaterials[i]);
+        PxShape* chassisShape = PxRigidActorExt::createExclusiveShape(*actor,
+                PxConvexMeshGeometry(cm.convexMesh), *vehicleMaterial);
         chassisShape->setQueryFilterData(chassisQryFilterData);
         chassisShape->setSimulationFilterData(chassisSimFilterData);
-        chassisShape->setLocalPose(PxTransform(PxIdentity));
+        chassisShape->setLocalPose(convert(cm.transform));
         chassisShape->setContactOffset(0.1f);
         chassisShape->setRestOffset(0.08f);
     }
 
-    actor->setMass(rigidBodyData.mMass);
-    actor->setMassSpaceInertiaTensor(rigidBodyData.mMOI);
-    actor->setCMassLocalPose(PxTransform(rigidBodyData.mCMOffset, PxQuat(PxIdentity)));
+    PxVec3 centerOfMassOffset = convert(settings.chassisCMOffset);
+    PxRigidBodyExt::updateMassAndInertia(*actor, settings.chassisDensity);
+    actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
 
     f32 wheelMOIFront = 0.5f * settings.wheelMassFront * square(settings.wheelRadiusFront);
     f32 wheelMOIRear = 0.5f * settings.wheelMassRear * square(settings.wheelRadiusRear);
@@ -381,8 +345,8 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     // set up suspension
     PxVehicleSuspensionData suspensions[NUM_WHEELS];
     PxF32 suspSprungMasses[NUM_WHEELS];
-    PxVehicleComputeSprungMasses(NUM_WHEELS, wheelCenterOffsets, convert(settings.chassisCMOffset),
-            settings.chassisMass, 2, suspSprungMasses);
+    PxVehicleComputeSprungMasses(NUM_WHEELS, wheelCenterOffsets, centerOfMassOffset,
+            actor->getMass(), 2, suspSprungMasses);
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
         suspensions[i].mMaxCompression = settings.suspensionMaxCompression;
@@ -410,7 +374,7 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     {
         suspTravelDirections[i] = PxVec3(0, 0, -1);
         // wheel center offset is offset from rigid body center of mass.
-        wheelCentreCMOffsets[i] = wheelCenterOffsets[i] - convert(settings.chassisCMOffset);
+        wheelCentreCMOffsets[i] = wheelCenterOffsets[i] - centerOfMassOffset;
         // suspension force application point 0.3 metres below rigid body center of mass.
         suspForceAppCMOffsets[i] = PxVec3(wheelCentreCMOffsets[i].x, wheelCentreCMOffsets[i].y, -0.3f);
         // tire force application point 0.3 metres below rigid body center of mass.
@@ -492,7 +456,6 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     // configure the userdata
     configureUserData(vehicle4W, &actorUserData, wheelShapeUserData);
 
-    vehicle4W->getRigidDynamicActor()->setGlobalPose(convert(transform));
     vehicle4W->getRigidDynamicActor()->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
     scene->addActor(*vehicle4W->getRigidDynamicActor());
 
@@ -616,8 +579,16 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
         glm::mat4 wheelTransform = m1 * m2;
         if ((i & 1) == 0)
         {
-            //worldPos *= Mat4::rotationZ(m_PI);
+            wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
         game.renderer.drawMesh(i < 2 ? vehicleData.wheelMeshFront : vehicleData.wheelMeshRear, wheelTransform);
+    }
+
+    if (game.input.isKeyPressed(KEY_F))
+    {
+        getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
+        getRigidBody()->addTorque(
+                getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
+                PxForceMode::eVELOCITY_CHANGE);
     }
 }
