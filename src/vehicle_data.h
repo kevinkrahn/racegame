@@ -20,7 +20,7 @@ struct PhysicsVehicleSettings
     std::vector<CollisionsMesh> collisionMeshes;
 
     f32 chassisDensity = 120.f;
-    glm::vec3 chassisCMOffset = { 0.25f, 0.f, -1.f + 0.65f };
+    glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
 
     f32 wheelMassFront = 30.f;
     f32 wheelWidthFront = 0.4f;
@@ -157,13 +157,16 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
                 transform
             });
         }
+        else if (name.find("COM") != std::string::npos)
+        {
+            vehicleData->physics.centerOfMass = transform[3];
+        }
     }
 }
 
 inline void initVehicleData()
 {
     car.physics.chassisDensity = 100.f;
-    car.physics.chassisCMOffset = { 0.1f, 0.f, -0.5f };
     car.physics.wheelMassFront = car.physics.wheelMassRear = 20.f;
     car.physics.wheelWidthFront = car.physics.wheelWidthRear = 0.25f;
     car.physics.wheelRadiusFront = car.physics.wheelRadiusRear = 0.4f;

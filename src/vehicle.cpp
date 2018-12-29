@@ -300,7 +300,8 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
         chassisShape->setRestOffset(0.08f);
     }
 
-    PxVec3 centerOfMassOffset = convert(settings.chassisCMOffset);
+    print(settings.centerOfMass, '\n');
+    PxVec3 centerOfMassOffset = convert(settings.centerOfMass);
     PxRigidBodyExt::updateMassAndInertia(*actor, settings.chassisDensity);
     actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
 
