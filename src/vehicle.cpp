@@ -288,8 +288,11 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
 
     for (auto const& cm : settings.collisionMeshes)
     {
+        PxVec3 scale(glm::length(glm::vec3(cm.transform[0])),
+                     glm::length(glm::vec3(cm.transform[1])),
+                     glm::length(glm::vec3(cm.transform[2])));
         PxShape* chassisShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxConvexMeshGeometry(cm.convexMesh), *vehicleMaterial);
+                PxConvexMeshGeometry(cm.convexMesh, PxMeshScale(scale)), *vehicleMaterial);
         chassisShape->setQueryFilterData(chassisQryFilterData);
         chassisShape->setSimulationFilterData(chassisSimFilterData);
         chassisShape->setLocalPose(convert(cm.transform));
