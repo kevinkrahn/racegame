@@ -456,8 +456,8 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     // configure the userdata
     configureUserData(vehicle4W, &actorUserData, wheelShapeUserData);
 
-    vehicle4W->getRigidDynamicActor()->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-    scene->addActor(*vehicle4W->getRigidDynamicActor());
+    actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+    scene->addActor(*actor);
 
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
@@ -563,6 +563,7 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
             game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
             (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
             game.input.isKeyDown(KEY_SPACE), true, false);
+    getRigidBody()->wakeUp();
 
     // update camera
     glm::vec3 position = getPosition();

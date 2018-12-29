@@ -102,6 +102,16 @@ void Scene::onUpdate(f32 deltaTime)
 	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
         }
     }
+
+    if (physicsDebugVisualizationEnabled)
+    {
+        const PxRenderBuffer& rb = physicsScene->getRenderBuffer();
+        for(PxU32 i=0; i < rb.getNbLines(); ++i)
+        {
+            const PxDebugLine& line = rb.getLines()[i];
+            game.renderer.drawLine(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
+        }
+    }
 }
 
 void Scene::onEnd()

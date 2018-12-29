@@ -33,15 +33,26 @@ struct WorldInfo
     glm::vec3 sunColor;
 } worldInfo;
 
+struct DebugVertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
+
+const u32 MAX_DEBUG_VERTS = 200000;
+
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
 std::vector<Camera> cameras;
 std::vector<RenderMesh> renderList;
+std::vector<DebugVertex> debugVertices;
 
 glm::vec3 backgroundColor;
 
 GLShader shader;
+GLShader debugShader;
 GLuint worldInfoUBO;
+GLMesh debugMesh;
 
 void glShaderSources(GLuint shader, std::string const& src, std::initializer_list<std::string_view> defines)
 {
@@ -128,10 +139,6 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false)
     glDeleteShader(fragmentShader);
     glDeleteShader(geometryShader);
 
-    glCreateBuffers(1, &worldInfoUBO);
-    glNamedBufferData(worldInfoUBO, sizeof(WorldInfo), &worldInfo, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO);
-
     return { program };
 }
 
@@ -190,6 +197,27 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     shader = loadShader("shaders/shader.glsl", false);
+    debugShader = loadShader("shaders/debug.glsl", false);
+
+    // create world info uniform buffer
+    glCreateBuffers(1, &worldInfoUBO);
+    glNamedBufferData(worldInfoUBO, sizeof(WorldInfo), &worldInfo, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO);
+
+    // create debug vertex buffer
+    glCreateBuffers(1, &debugMesh.vbo);
+    glNamedBufferData(debugMesh.vbo, sizeof(DebugVertex) * MAX_DEBUG_VERTS, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateVertexArrays(1, &debugMesh.vao);
+    glVertexArrayVertexBuffer(debugMesh.vao, 0, debugMesh.vbo, 0, sizeof(DebugVertex));
+
+    glEnableVertexArrayAttrib(debugMesh.vao, 0);
+    glVertexArrayAttribFormat(debugMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(debugMesh.vao, 0, 0);
+
+    glEnableVertexArrayAttrib(debugMesh.vao, 1);
+    glVertexArrayAttribFormat(debugMesh.vao, 1, 4, GL_FLOAT, GL_FALSE, 12);
+    glVertexArrayAttribBinding(debugMesh.vao, 1, 0);
 
     return window;
 }
@@ -222,6 +250,18 @@ void Renderer::render(f32 deltaTime)
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    if (debugVertices.size() > 0)
+    {
+        glNamedBufferSubData(debugMesh.vbo, 0, debugVertices.size() * sizeof(DebugVertex), debugVertices.data());
+
+        glUseProgram(debugShader.program);
+        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
+
+        glBindVertexArray(debugMesh.vao);
+        glDrawArrays(GL_LINES, 0, debugVertices.size());
+        debugVertices.clear();
     }
 
     // 2D
@@ -347,4 +387,11 @@ void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
     worldInfo.sunDirection = glm::normalize(direction);
     worldInfo.sunColor = color;
+}
+
+void Renderer::drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
+        glm::vec4 const& c1, glm::vec4 const& c2)
+{
+    debugVertices.push_back({ p1, c1 });
+    debugVertices.push_back({ p2, c2 });
 }
