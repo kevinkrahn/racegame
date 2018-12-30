@@ -1,9 +1,11 @@
 #include "scene.h"
 #include "game.h"
 #include "vehicle.h"
+#include <algorithm>
 
 Scene::Scene(const char* name)
 {
+    // create PhysX scene
     PxSceneDesc sceneDesc(game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -12.1f);
     sceneDesc.cpuDispatcher = game.physx.dispatcher;
@@ -19,19 +21,45 @@ Scene::Scene(const char* name)
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
     }
 
+    // create physics materials
 	vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.5f);
 	trackMaterial   = game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
 	offroadMaterial = game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
 
+    // construct scene from blender data
     auto& sceneData = game.resources.getScene(name);
-    for (auto& e : sceneData["entities"].array())
+    auto& entities = sceneData["entities"].array();
+    for (auto& e : entities)
     {
-        if (e["type"].string() == "MESH")
+        std::string entityType = e["type"].string();
+        if (entityType == "MESH")
         {
             glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
             std::string dataName = e["data_name"].string();
+            std::string name = e["name"].string();
+
+            if (name.find("Start") != std::string::npos)
+            {
+                auto it = std::find_if(entities.begin(), entities.end(), [](auto& e) {
+                    return e["name"].string().find("TrackGraph") != std::string::npos;
+                });
+                if (it == entities.end())
+                {
+                    error("Scene does not contain a track graph. The AI will not know where to drive!");
+                }
+                trackGraph = TrackGraph(transform,
+                        game.resources.getMesh((*it)["data_name"].string().c_str()),
+                        (*it)["matrix"].convertBytes<glm::mat4>());
+            }
+
+            Mesh const& mesh = game.resources.getMesh(dataName.c_str());
+            if (mesh.elementSize < 3)
+            {
+                continue;
+            }
+
             staticEntities.push_back({
-                game.resources.getMesh(dataName.c_str()).renderHandle,
+                mesh.renderHandle,
                 transform
             });
 
@@ -39,17 +67,13 @@ Scene::Scene(const char* name)
                          glm::length(glm::vec3(transform[1])),
                          glm::length(glm::vec3(transform[2])));
 
-            PxShape* shape = game.physx.physics->createShape(
+	        PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
+            PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
                         PxMeshScale(scale)), *offroadMaterial);
             shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
-
-	        PxRigidStatic* triMesh = PxCreateStatic(*game.physx.physics, convert(transform), *shape);
-	        physicsScene->addActor(*triMesh);
-
-	        //shape->release();
-	        //triMesh->release();
+	        physicsScene->addActor(*actor);
         }
     }
 }
@@ -77,7 +101,10 @@ void Scene::onUpdate(f32 deltaTime)
     //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
             //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 
-    game.resources.getFont("font", 40).drawText("Hello, World!", 50, 50, glm::vec3(1, 0, 0));
+    game.resources.getFont("font", 80).drawText("Hello, World!", 20, 0, glm::vec3(1));
+    game.resources.getFont("font", 60).drawText("Hello, World!", 20, 100, glm::vec3(1));
+    game.resources.getFont("font", 40).drawText("Hello, World!", 20, 200, glm::vec3(1));
+    game.resources.getFont("font", 20).drawText("Hello, World!", 20, 300, glm::vec3(1));
 
     for (auto const& e : staticEntities)
     {

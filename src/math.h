@@ -10,6 +10,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtx/compatibility.hpp>
 
 #include <iostream>
 
@@ -73,3 +74,29 @@ namespace glm
         return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << " }";
     }
 };
+
+inline glm::vec3 xAxisOf(glm::mat4 const& m)
+{
+    return m[0];
+}
+
+inline glm::vec3 yAxisOf(glm::mat4 const& m)
+{
+    return m[1];
+}
+
+inline glm::vec3 zAxisOf(glm::mat4 const& m)
+{
+    return m[2];
+}
+
+inline glm::vec3 translationOf(glm::mat4 const& m)
+{
+    return m[3];
+}
+
+inline f32 pointDirection(glm::vec2 v1, glm::vec2 v2)
+{
+    glm::vec2 d = v2 - v1;
+    return -atan2f(d.x, d.y);
+}

@@ -2,6 +2,7 @@
 
 #include "misc.h"
 #include "math.h"
+#include "track_graph.h"
 #include <vector>
 #include <PxPhysicsAPI.h>
 
@@ -33,16 +34,6 @@ struct StaticEntity
     glm::mat4 worldTransform;
 };
 
-struct Checkpoint
-{
-    glm::vec3 position;
-    f32 t;
-    glm::vec3 direction;
-    f32 angle;
-    u32 connections[4];
-    u32 connectionCount;
-};
-
 class Scene
 {
 private:
@@ -55,6 +46,8 @@ private:
     PxMaterial* vehicleMaterial;
     PxMaterial* trackMaterial;
     PxMaterial* offroadMaterial;
+
+    TrackGraph trackGraph;
 
 public:
     Scene(const char* name);

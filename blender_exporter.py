@@ -165,11 +165,13 @@ def save_mesh(obj, mesh_map):
 
     elif len(mesh.edges) > 0:
         element_size = 2
-        for tri in mesh_copy.polygons:
-            for i in tri.vertices:
-                vertex_count += 1
-                position = mesh_copy.vertices[i].co
-                vertex_buffer += struct.pack("<3f", position[0], position[1], position[2])
+        vertex_count = len(mesh_copy.vertices)
+        for v in mesh_copy.vertices:
+            vertex_buffer += struct.pack("<3f", v.co[0], v.co[1], v.co[2])
+
+        for e in mesh_copy.edges:
+            for i in e.vertices:
+                indices.append(i)
 
     else:
         element_size = 1

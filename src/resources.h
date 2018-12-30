@@ -79,7 +79,7 @@ public:
         }
 
         auto iter2 = iter->second.find(height);
-        if (iter == fonts.end())
+        if (iter2 == iter->second.end())
         {
             return fonts[name][height] = Font(std::string(name) + ".ttf", height);
         }
