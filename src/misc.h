@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <sstream>
 #include <cassert>
 #include <SDL2/SDL.h>
 
@@ -44,7 +45,31 @@ void error(T const& first, Args const&... args)
     error(args...);
 }
 
-#define FATAL_ERROR(...) error(__VA_ARGS__, '\n'); assert(0);
+template <typename T>
+void _str_(std::ostringstream& ss, T const& val)
+{
+    ss << val;
+}
+
+template <typename T, typename... Args>
+void _str_(std::ostringstream& ss, T const& first, Args const&... args)
+{
+    _str_(ss, first);
+    _str_(ss, args...);
+}
+
+std::ostringstream _ss_;
+template <typename... Args>
+std::string str(Args const&... args)
+{
+    _ss_.str({});
+    _str_(_ss_, args...);
+    return _ss_.str();
+}
+
+#define FATAL_ERROR(...) error("Error: ", __VA_ARGS__, '\n'); \
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", str(__VA_ARGS__).c_str(), nullptr); \
+    abort();
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 

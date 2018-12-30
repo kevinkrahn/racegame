@@ -37,15 +37,19 @@ struct StaticEntity
 class Scene
 {
 private:
+    glm::mat4 start;
+    u32 totalLaps = 4;
+
     std::vector<StaticEntity> staticEntities;
-    std::vector<class Vehicle*> vehicles;
+    std::vector<std::unique_ptr<class Vehicle>> vehicles;
+    std::vector<u32> finishOrder;
 
     bool physicsDebugVisualizationEnabled = false;
-    PxScene* physicsScene;
+    PxScene* physicsScene = nullptr;
 
-    PxMaterial* vehicleMaterial;
-    PxMaterial* trackMaterial;
-    PxMaterial* offroadMaterial;
+    PxMaterial* vehicleMaterial = nullptr;
+    PxMaterial* trackMaterial = nullptr;
+    PxMaterial* offroadMaterial = nullptr;
 
     TrackGraph trackGraph;
 

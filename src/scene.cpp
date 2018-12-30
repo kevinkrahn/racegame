@@ -29,6 +29,7 @@ Scene::Scene(const char* name)
     // construct scene from blender data
     auto& sceneData = game.resources.getScene(name);
     auto& entities = sceneData["entities"].array();
+    bool foundStart = false;
     for (auto& e : entities)
     {
         std::string entityType = e["type"].string();
@@ -40,14 +41,17 @@ Scene::Scene(const char* name)
 
             if (name.find("Start") != std::string::npos)
             {
+                start = transform;
+                foundStart = true;
                 auto it = std::find_if(entities.begin(), entities.end(), [](auto& e) {
                     return e["name"].string().find("TrackGraph") != std::string::npos;
                 });
                 if (it == entities.end())
                 {
-                    error("Scene does not contain a track graph. The AI will not know where to drive!");
+                    error("Scene does not contain a track graph. The AI will not know where to drive!\n");
+                    continue;
                 }
-                trackGraph = TrackGraph(transform,
+                trackGraph = TrackGraph(start,
                         game.resources.getMesh((*it)["data_name"].string().c_str()),
                         (*it)["matrix"].convertBytes<glm::mat4>());
             }
@@ -76,6 +80,11 @@ Scene::Scene(const char* name)
 	        physicsScene->addActor(*actor);
         }
     }
+
+    if (!foundStart)
+    {
+        FATAL_ERROR("Track does not have a starting point!");
+    }
 }
 
 Scene::~Scene()
@@ -85,9 +94,30 @@ Scene::~Scene()
 
 void Scene::onStart()
 {
-    initVehicleData();
-    const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
-    vehicles.push_back(new Vehicle(physicsScene, glm::mat4(1.f), car, vehicleMaterial, surfaceMaterials));
+    const u32 numVehicles = 8;
+    VehicleData& vehicleData = car;
+    for (u32 i=0; i<numVehicles; ++i)
+    {
+        glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
+
+        PxRaycastBuffer hit;
+        PxQueryFilterData filter;
+        filter.flags |= PxQueryFlag::eSTATIC;
+        filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+        PxVec3 from = convert(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 8))));
+        PxVec3 dir = convert(-zAxisOf(start));
+        if (!physicsScene->raycast(from, dir, 30.f, hit, PxHitFlags(PxHitFlag::eDEFAULT), filter))
+        {
+            FATAL_ERROR("The starting point is too high in the air!");
+        }
+
+        glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
+                convert(hit.block.position + hit.block.normal * vehicleData.getRestOffset())) * rotationOf(start);
+
+        const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
+        vehicles.push_back(
+                std::make_unique<Vehicle>(physicsScene, vehicleTransform, vehicleData, vehicleMaterial, surfaceMaterials));
+    }
 }
 
 void Scene::onUpdate(f32 deltaTime)

@@ -35,6 +35,7 @@ public:
     {
         for (auto& l : *this)
         {
+            // TODO: remove this; the destructor will already be called because the data is array of T
             l.~T();
         }
     }

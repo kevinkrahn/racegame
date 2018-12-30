@@ -1,5 +1,6 @@
 #include "game.h"
 #include "datafile.h"
+#include "vehicle_data.h"
 #include <chrono>
 #include <iostream>
 
@@ -40,6 +41,7 @@ void Game::run()
 
     initPhysX();
     resources.load();
+    initVehicleData();
     changeScene("world.Scene");
 
     deltaTime = 1.f / (f32)game.config.maxFPS;

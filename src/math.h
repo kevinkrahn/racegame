@@ -17,6 +17,43 @@
 #include <PxPhysicsAPI.h>
 using namespace physx;
 
+inline glm::vec3 xAxisOf(glm::mat4 const& m)
+{
+    return m[0];
+}
+
+inline glm::vec3 yAxisOf(glm::mat4 const& m)
+{
+    return m[1];
+}
+
+inline glm::vec3 zAxisOf(glm::mat4 const& m)
+{
+    return m[2];
+}
+
+inline glm::vec3 translationOf(glm::mat4 const& m)
+{
+    return m[3];
+}
+
+inline glm::vec3 scaleOf(glm::mat4 const& m)
+{
+    return glm::vec3(
+            glm::length(glm::vec3(m[0])),
+            glm::length(glm::vec3(m[1])),
+            glm::length(glm::vec3(m[2])));
+}
+
+inline glm::mat4 rotationOf(glm::mat4 m)
+{
+    m[0] /= glm::length(glm::vec3(m[0]));
+    m[1] /= glm::length(glm::vec3(m[1]));
+    m[2] /= glm::length(glm::vec3(m[2]));
+    m[3] = glm::vec4(0, 0, 0, 1);
+    return m;
+}
+
 inline glm::vec3 convert(PxVec3 const& v)
 {
     return glm::vec3(v.x, v.y, v.z);
@@ -35,14 +72,8 @@ inline glm::mat4 convert(PxMat44 const& m)
 inline PxTransform convert(glm::mat4 m)
 {
     glm::vec3 pos(m[3]);
-    glm::vec3 scale(glm::length(glm::vec3(m[0])),
-                    glm::length(glm::vec3(m[1])),
-                    glm::length(glm::vec3(m[2])));
-    m[0] /= scale.x;
-    m[1] /= scale.y;
-    m[2] /= scale.z;
-    glm::quat rot = glm::quat_cast(glm::mat3(m));
-    return PxTransform(PxVec3(pos.x, pos.y, pos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
+    glm::quat rot = glm::quat_cast(glm::mat3(rotationOf(m)));
+    return PxTransform(convert(pos), PxQuat(rot.x, rot.y, rot.z, rot.w));
 }
 
 inline f32 square(f32 v)
@@ -74,26 +105,6 @@ namespace glm
         return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << " }";
     }
 };
-
-inline glm::vec3 xAxisOf(glm::mat4 const& m)
-{
-    return m[0];
-}
-
-inline glm::vec3 yAxisOf(glm::mat4 const& m)
-{
-    return m[1];
-}
-
-inline glm::vec3 zAxisOf(glm::mat4 const& m)
-{
-    return m[2];
-}
-
-inline glm::vec3 translationOf(glm::mat4 const& m)
-{
-    return m[3];
-}
 
 inline f32 pointDirection(glm::vec2 v1, glm::vec2 v2)
 {
