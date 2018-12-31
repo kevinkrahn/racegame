@@ -43,6 +43,7 @@ private:
     std::vector<StaticEntity> staticEntities;
     std::vector<std::unique_ptr<class Vehicle>> vehicles;
     std::vector<u32> finishOrder;
+    std::vector<std::vector<glm::vec3>> paths;
 
     bool physicsDebugVisualizationEnabled = false;
     PxScene* physicsScene = nullptr;

@@ -192,17 +192,34 @@ def save_mesh(obj, mesh_map):
     }
     return (True, mesh_name)
 
+def save_path(obj, scene):
+    obj.data.resolution_u = 5
+    obj.data.extrude = 0
+    obj.data.bevel_depth = 0
+    obj.data.offset = 0
+    path_mesh = obj.to_mesh(scene, False, 'PREVIEW')
+
+    buf = bytearray()
+
+    for v in path_mesh.vertices:
+        p = obj.matrix_world * v.co
+        buf += struct.pack("<fff", p.x, p.y, p.z)
+
+    return buf
+
+
 def save_blender_data():
     start = time.time()
     mesh_map = {}
+    path_map = {}
     scenes = []
 
     for scene in bpy.data.scenes:
         entities = []
 
-        def save_object(obj, matrix, data_name='NONE'):
+        def save_object(obj, entityType, matrix, data_name='NONE'):
             entities.append({
-                'type': obj.type,
+                'type': entityType,
                 'name': obj.name,
                 'data_name': data_name,
                 'matrix': struct.pack("<16f",
@@ -222,7 +239,7 @@ def save_blender_data():
 
             if obj.type == 'MESH':
                 result = save_mesh(obj, mesh_map)
-                save_object(obj, obj.matrix_world, result[1])
+                save_object(obj, 'MESH', obj.matrix_world, result[1])
 
             elif obj.type == 'EMPTY':
                 if obj.dupli_group:
@@ -234,9 +251,17 @@ def save_blender_data():
                         #save_object(child, 0, matrix, result[1])
                         data_name = namePrefix(
                                 bpy.data.filepath if child.library == None else child.library.filepath) + child.data.name
-                        save_object(child, matrix, data_name)
+                        save_object(child, 'MESH', matrix, data_name)
                 else:
-                    save_object(obj, obj.matrix_world)
+                    save_object(obj, 'EMPTY', obj.matrix_world)
+
+            elif obj.type == 'CURVE':
+                entities.append({
+                    'type': 'PATH',
+                    'name': obj.name,
+                    'properties': get_props(obj),
+                    'points': save_path(obj, scene)
+                })
 
         scenes.append({
             'type': 'scene',

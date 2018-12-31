@@ -79,6 +79,13 @@ Scene::Scene(const char* name)
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
 	        physicsScene->addActor(*actor);
         }
+        else if (entityType == "PATH")
+        {
+            auto& data = e["points"].bytearray();
+            paths.push_back(std::vector<glm::vec3>(
+                        (glm::vec3*)data.data(),
+                        (glm::vec3*)(data.data() + data.size())));
+        }
     }
 
     if (!foundStart)
