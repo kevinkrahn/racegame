@@ -32,6 +32,8 @@ struct WorldInfo
     glm::vec3 sunDirection;
     f32 time;
     glm::vec3 sunColor;
+    f32 pad;
+    glm::mat4 cameras[MAX_VIEWPORTS];
 } worldInfo;
 
 struct DebugVertex
@@ -53,14 +55,14 @@ struct Quad2D
     glm::vec4 color;
 };
 
-const u32 MAX_DEBUG_VERTS = 200000;
+const u32 MAX_DEBUG_VERTS = 500000;
 
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
-std::vector<Camera> cameras;
 std::vector<RenderMesh> renderList;
 std::vector<DebugVertex> debugVertices;
 std::vector<Quad2D> renderListQuad2D;
+SmallVec<Camera, MAX_VIEWPORTS> cameras;
 
 glm::vec3 backgroundColor;
 
@@ -74,6 +76,7 @@ void glShaderSources(GLuint shader, std::string const& src, std::initializer_lis
 {
     std::ostringstream str;
     str << "#version 450\n";
+    str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -212,7 +215,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    shader = loadShader("shaders/shader.glsl", false);
+    shader = loadShader("shaders/shader.glsl", true);
     debugShader = loadShader("shaders/debug.glsl", false);
     quad2DShader = loadShader("shaders/quad2D.glsl", false);
 
@@ -243,10 +246,27 @@ void Renderer::render(f32 deltaTime)
 {
     worldInfo.time = (f32)getTime();
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
+
+    u32 viewportCount = cameras.size();
+    for (u32 i=0; i<viewportCount; ++i)
+    {
+        worldInfo.cameras[i] = cameras[i].viewProjection;
+    }
+
     glNamedBufferSubData(worldInfoUBO, 0, sizeof(WorldInfo), &worldInfo);
 
     // 3D
-    glViewport(0, 0, game.windowWidth, game.windowHeight);
+    //glViewport(0, 0, game.windowWidth, game.windowHeight);
+    f32 viewports[MAX_VIEWPORTS * 4];
+    for (u32 i=0; i<viewportCount; ++i)
+    {
+        viewports[i*4+0] = viewportLayout[viewportCount-1][i].offset.x * game.windowWidth;
+        viewports[i*4+1] = viewportLayout[viewportCount-1][i].offset.y * game.windowHeight;
+        viewports[i*4+2] = viewportLayout[viewportCount-1][i].scale.x * game.windowWidth;
+        viewports[i*4+3] = viewportLayout[viewportCount-1][i].scale.y * game.windowHeight;
+    }
+
+    glViewportArrayv(0, viewportCount, viewports);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -258,12 +278,9 @@ void Renderer::render(f32 deltaTime)
     Camera const& camera = cameras[0];
     for (auto const& r : renderList)
     {
-        glm::mat4 worldViewMatrix = camera.view * r.worldTransform;
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
-        glm::mat4 worldViewProjectionMatrix = camera.projection * worldViewMatrix;
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(worldViewProjectionMatrix));
-        glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);

@@ -243,11 +243,9 @@ static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
     return createConvexMesh(points, 32);
 }
 
-Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
-        VehicleData const& data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials)
+void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
+	    const PxMaterial** surfaceMaterials, glm::mat4 const& transform)
 {
-    vehicleData = data;
-    PhysicsVehicleSettings& settings = vehicleData.physics;
     sceneQueryData = VehicleSceneQueryData::allocate(1, NUM_WHEELS, QUERY_HITS_PER_WHEEL, 1,
             &WheelSceneQueryPreFilterNonBlocking, &WheelSceneQueryPostFilterNonBlocking, game.physx.allocator);
     batchQuery = VehicleSceneQueryData::setUpBatchedSceneQuery(0, *sceneQueryData, scene);
@@ -468,6 +466,17 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
 }
 
+Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
+        VehicleData const& data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
+        bool isPlayerControlled, bool hasCamera)
+{
+    this->isPlayerControlled = isPlayerControlled;
+    this->hasCamera = hasCamera;
+    this->vehicleData = data;
+
+    setupPhysics(scene, data.physics, vehicleMaterial, surfaceMaterials, transform);
+}
+
 Vehicle::~Vehicle()
 {
 	vehicle4W->getRigidDynamicActor()->release();
@@ -546,6 +555,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         }
     }
 
+    // TODO: do all vehicle physics updates in once pass for better performance
 	PxVehicleWheels* vehicles[1] = { vehicle4W };
 	PxSweepQueryResult* sweepResults = sceneQueryData->getSweepQueryResultBuffer(0);
 	const PxU32 sweepResultsSize = sceneQueryData->getQueryResultBufferSize();
@@ -562,15 +572,33 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
 
 void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
 {
-    updatePhysics(physicsScene, deltaTime, true,
-            game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
-            (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
-            game.input.isKeyDown(KEY_SPACE), true, false);
-    getRigidBody()->wakeUp();
+    if (isPlayerControlled)
+    {
+        updatePhysics(physicsScene, deltaTime, true,
+                game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
+                (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
+                game.input.isKeyDown(KEY_SPACE), true, false);
 
-    // update camera
-    glm::vec3 position = getPosition();
-    game.renderer.setViewportCamera(0, position + glm::vec3(30, 30, 30), position);
+        if (game.input.isKeyPressed(KEY_F))
+        {
+            getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
+            getRigidBody()->addTorque(
+                    getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
+                    PxForceMode::eVELOCITY_CHANGE);
+            //PxRigidBodyExt::addLocalForceAtLocalPos(*getRigidBody(), PxVec3(0, 5000, 0), PxVec3(0, 0, 0), PxForceMode::eIMPULSE);
+        }
+    }
+    else
+    {
+        updatePhysics(physicsScene, deltaTime, true, 0, 0, 0, 0, 0, 0);
+    }
+    //getRigidBody()->wakeUp();
+
+    if (hasCamera)
+    {
+        glm::vec3 pos = getPosition();
+        game.renderer.setViewportCamera(vehicleIndex, pos + glm::vec3(30, 30, 30), pos);
+    }
 
     // draw chassis
     game.renderer.drawMesh(vehicleData.chassisMesh, getTransform());
@@ -586,13 +614,5 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
         game.renderer.drawMesh(i < 2 ? vehicleData.wheelMeshFront : vehicleData.wheelMeshRear, wheelTransform);
-    }
-
-    if (game.input.isKeyPressed(KEY_F))
-    {
-        getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
-        getRigidBody()->addTorque(
-                getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
-                PxForceMode::eVELOCITY_CHANGE);
     }
 }

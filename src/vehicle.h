@@ -48,7 +48,8 @@ private:
 
 class Vehicle
 {
-public:
+private:
+	VehicleData vehicleData;
     PxVehicleDrive4W* vehicle4W;
     ActorUserData actorUserData;
     ShapeUserData wheelShapeUserData[PX_MAX_NB_WHEELS];
@@ -57,10 +58,16 @@ public:
     PxVehicleDrivableSurfaceToTireFrictionPairs* frictionPairs;
 	PxWheelQueryResult wheelQueryResults[PX_MAX_NB_WHEELS];
 	bool isInAir = true;
-	VehicleData vehicleData;
+	bool isPlayerControlled;
+	bool hasCamera;
 
+	void setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
+	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
+
+public:
 	Vehicle(PxScene* scene, glm::mat4 const& transform,
-	        VehicleData const& data, PxMaterial* material, const PxMaterial** surfaceMaterials);
+	        VehicleData const& data, PxMaterial* material, const PxMaterial** surfaceMaterials,
+	        bool isPlayerControlled, bool hasCamera);
 	~Vehicle();
 
 	u32 getNumWheels() const

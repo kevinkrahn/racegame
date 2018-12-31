@@ -116,7 +116,8 @@ void Scene::onStart()
 
         const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
         vehicles.push_back(
-                std::make_unique<Vehicle>(physicsScene, vehicleTransform, vehicleData, vehicleMaterial, surfaceMaterials));
+                std::make_unique<Vehicle>(physicsScene, vehicleTransform, vehicleData, vehicleMaterial,
+                    surfaceMaterials, i == 0, i < 2));
     }
 }
 
@@ -126,15 +127,12 @@ void Scene::onUpdate(f32 deltaTime)
     physicsScene->fetchResults(true);
 
     game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
-    game.renderer.setViewportCount(1);
+    game.renderer.setViewportCount(2);
     game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
     //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
             //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 
-    game.resources.getFont("font", 80).drawText("Hello, World!", 20, 0, glm::vec3(1));
-    game.resources.getFont("font", 60).drawText("Hello, World!", 20, 100, glm::vec3(1));
-    game.resources.getFont("font", 40).drawText("Hello, World!", 20, 200, glm::vec3(1));
-    game.resources.getFont("font", 20).drawText("Hello, World!", 20, 300, glm::vec3(1));
+    game.resources.getFont("font", 30).drawText(str("FPS: ", 1.f / deltaTime).c_str(), 20, 0, glm::vec3(1));
 
     for (auto const& e : staticEntities)
     {
