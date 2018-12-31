@@ -50,6 +50,8 @@ class Vehicle
 {
 private:
 	VehicleData vehicleData;
+
+    // physics data
     PxVehicleDrive4W* vehicle4W;
     ActorUserData actorUserData;
     ShapeUserData wheelShapeUserData[PX_MAX_NB_WHEELS];
@@ -57,9 +59,14 @@ private:
     PxBatchQuery* batchQuery;
     PxVehicleDrivableSurfaceToTireFrictionPairs* frictionPairs;
 	PxWheelQueryResult wheelQueryResults[PX_MAX_NB_WHEELS];
+
+    // gameplay data
 	bool isInAir = true;
 	bool isPlayerControlled;
 	bool hasCamera;
+    glm::vec3 cameraTarget;
+    f32 hitPoints = 100.f;
+    u32 currentLap = 0;
 
 	void setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
@@ -69,11 +76,6 @@ public:
 	        VehicleData const& data, PxMaterial* material, const PxMaterial** surfaceMaterials,
 	        bool isPlayerControlled, bool hasCamera);
 	~Vehicle();
-
-	u32 getNumWheels() const
-	{
-        return vehicle4W->mWheelsSimData.getNbWheels();
-	}
 
     const char* getCurrentGear() const
     {

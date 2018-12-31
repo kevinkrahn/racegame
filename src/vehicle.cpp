@@ -473,6 +473,7 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     this->isPlayerControlled = isPlayerControlled;
     this->hasCamera = hasCamera;
     this->vehicleData = data;
+    this->cameraTarget = translationOf(transform);
 
     setupPhysics(scene, data.physics, vehicleMaterial, surfaceMaterials, transform);
 }
@@ -563,7 +564,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
 
 	const PxVec3 grav = scene->getGravity();
 	PxVehicleWheelQueryResult vehicleQueryResults[1] = {
-	    { wheelQueryResults, getNumWheels() }
+	    { wheelQueryResults, NUM_WHEELS }
 	};
 	PxVehicleUpdates(timestep, grav, *frictionPairs, 1, vehicles, vehicleQueryResults);
 
@@ -597,7 +598,15 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
     if (hasCamera)
     {
         glm::vec3 pos = getPosition();
-        game.renderer.setViewportCamera(vehicleIndex, pos + glm::vec3(30, 30, 30), pos);
+#if 0
+        cameraTarget = pos;
+#else
+        cameraTarget = smoothMove(cameraTarget,
+                pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
+                5.f, deltaTime);
+#endif
+        glm::vec3 camFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * 80.f;
+        game.renderer.setViewportCamera(vehicleIndex, camFrom, pos, 10.f, 200.f);
     }
 
     // draw chassis

@@ -326,6 +326,7 @@ void Renderer::render(f32 deltaTime)
 
 u32 Renderer::loadMesh(Mesh const& meshData)
 {
+    // TODO: load all meshes into one big buffer? (This might improve performance)
     GLMesh mesh;
     glCreateBuffers(1, &mesh.vbo);
     glNamedBufferData(mesh.vbo, meshData.vertices.size() * sizeof(meshData.vertices[0]), meshData.vertices.data(), GL_STATIC_DRAW);

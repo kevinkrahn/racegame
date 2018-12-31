@@ -111,3 +111,13 @@ inline f32 pointDirection(glm::vec2 v1, glm::vec2 v2)
     glm::vec2 d = v2 - v1;
     return -atan2f(d.x, d.y);
 }
+
+inline f32 smoothMove(f32 from, f32 to, f32 amount, f32 deltaTime)
+{
+    return glm::lerp(from, to, 1.f-expf(-amount * deltaTime));
+}
+
+inline glm::vec3 smoothMove(const glm::vec3& from, const glm::vec3& to, f32 amount, f32 deltaTime)
+{
+    return glm::lerp(from, to, 1.f-exp(-amount * deltaTime));
+}
