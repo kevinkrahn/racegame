@@ -210,7 +210,10 @@ def save_blender_data():
                     matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
                     matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
                     matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]),
-                'properties': get_props(obj)
+                'properties': get_props(obj),
+                'bound_x': obj.dimensions.x,
+                'bound_y': obj.dimensions.y,
+                'bound_z': obj.dimensions.z,
             })
 
         for obj in scene.objects:

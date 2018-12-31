@@ -112,6 +112,7 @@ struct VehicleData
 };
 
 VehicleData car;
+VehicleData racecar;
 
 inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
 {
@@ -127,11 +128,15 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
         else if (name == "FL")
         {
             vehicleData->wheelMeshFront = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
+            vehicleData->physics.wheelRadiusFront = e["bound_z"].real() * 0.5f;
+            vehicleData->physics.wheelWidthFront = e["bound_y"].real();
             vehicleData->physics.wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name == "RL")
         {
             vehicleData->wheelMeshRear = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
+            vehicleData->physics.wheelRadiusRear = e["bound_z"].real() * 0.5f;
+            vehicleData->physics.wheelWidthRear = e["bound_y"].real();
             vehicleData->physics.wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name == "FR")
@@ -168,8 +173,6 @@ inline void initVehicleData()
 {
     car.physics.chassisDensity = 100.f;
     car.physics.wheelMassFront = car.physics.wheelMassRear = 20.f;
-    car.physics.wheelWidthFront = car.physics.wheelWidthRear = 0.25f;
-    car.physics.wheelRadiusFront = car.physics.wheelRadiusRear = 0.4f;
     car.physics.frontToeAngle = 0.f;
     car.physics.wheelDampingRate = 0.22f;
     car.physics.offroadDampingRate = 15.f;
@@ -186,30 +189,14 @@ inline void initVehicleData()
     car.physics.clutchStrength = 8.f;
     car.physics.gearRatios = { -4.5f, 0.f, 4.5f, 2.0f, 1.6f, 1.15f, 0.92f };
     car.physics.finalGearRatio = 4.f;
-    car.physics.autoBoxSwitchTime = 0.26f;
-    car.physics.gearSwitchTime = 0.22f;
     car.physics.suspensionMaxCompression = 0.15f;
     car.physics.suspensionMaxDroop = 0.25f;
-    car.physics.frontToeAngle = 0.f;
     car.physics.wheelDampingRate = 0.22f;
     car.physics.offroadDampingRate = 15.f;
     car.physics.trackTireFriction = 3.9f;
     car.physics.offroadTireFriction = 1.25f;
-    car.physics.maxEngineOmega = 700.f;
-    car.physics.peekEngineTorque = 410.f;
-    car.physics.engineDampingFullThrottle = 0.14f;
-    car.physics.engineDampingZeroThrottleClutchEngaged = 2.6f;
-    car.physics.engineDampingZeroThrottleClutchDisengaged = 0.6f;
-    car.physics.maxHandbrakeTorque = 6000.f;
-    car.physics.maxBrakeTorque = 2000.f;
-    car.physics.maxSteerAngle = M_PI * 0.22f;
-    car.physics.clutchStrength = 8.f;
-    car.physics.gearRatios = { -4.5f, 0.f, 4.5f, 2.0f, 1.6f, 1.15f, 0.92f };
-    car.physics.finalGearRatio = 4.f;
     car.physics.autoBoxSwitchTime = 0.26f;
     car.physics.gearSwitchTime = 0.22f;
-    car.physics.suspensionMaxCompression = 0.15f;
-    car.physics.suspensionMaxDroop = 0.25f;
     car.physics.suspensionSpringStrength = 23000.0f;
     car.physics.suspensionSpringDamperRate = 3000.0f;
     car.physics.camberAngleAtRest = 0.f;
@@ -217,7 +204,42 @@ inline void initVehicleData()
     car.physics.camberAngleAtMaxCompression = -0.02f;
     car.physics.frontAntiRollbarStiffness = 8000.0f;
     car.physics.rearAntiRollbarStiffness = 8000.0f;
-    car.physics.ackermannAccuracy = 1.f;
+    car.physics.ackermannAccuracy = 0.6f;
     car.physics.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
     loadVehicleScene("car.Vehicle", &car);
+
+    racecar.physics.chassisDensity = 80.f;
+    racecar.physics.wheelMassFront = racecar.physics.wheelMassRear = 20.f;
+    racecar.physics.frontToeAngle = 0.f;
+    racecar.physics.wheelDampingRate = 0.22f;
+    racecar.physics.offroadDampingRate = 15.f;
+    racecar.physics.trackTireFriction = 5.0f;
+    racecar.physics.offroadTireFriction = 1.0f;
+    racecar.physics.maxEngineOmega = 1000.f;
+    racecar.physics.peekEngineTorque = 600.f;
+    racecar.physics.engineDampingFullThrottle = 0.14f;
+    racecar.physics.engineDampingZeroThrottleClutchEngaged = 2.6f;
+    racecar.physics.engineDampingZeroThrottleClutchDisengaged = 0.6f;
+    racecar.physics.maxHandbrakeTorque = 8000.f;
+    racecar.physics.maxBrakeTorque = 3000.f;
+    racecar.physics.maxSteerAngle = M_PI * 0.3f;
+    racecar.physics.clutchStrength = 12.f;
+    racecar.physics.suspensionMaxCompression = 0.05f;
+    racecar.physics.suspensionMaxDroop = 0.12f;
+    racecar.physics.wheelDampingRate = 0.22f;
+    racecar.physics.offroadDampingRate = 15.f;
+    racecar.physics.trackTireFriction = 3.9f;
+    racecar.physics.offroadTireFriction = 1.25f;
+    racecar.physics.autoBoxSwitchTime = 0.16f;
+    racecar.physics.gearSwitchTime = 0.12f;
+    racecar.physics.suspensionSpringStrength = 30000.0f;
+    racecar.physics.suspensionSpringDamperRate = 5000.0f;
+    racecar.physics.camberAngleAtRest = 0.f;
+    racecar.physics.camberAngleAtMaxDroop = 0.02f;
+    racecar.physics.camberAngleAtMaxCompression = -0.02f;
+    racecar.physics.frontAntiRollbarStiffness = 12000.0f;
+    racecar.physics.rearAntiRollbarStiffness = 12000.0f;
+    racecar.physics.ackermannAccuracy = 1.f;
+    racecar.physics.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+    loadVehicleScene("racecar.Vehicle", &racecar);
 }
