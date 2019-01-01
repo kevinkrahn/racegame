@@ -107,6 +107,7 @@ void Game::changeScene(const char* sceneName)
     {
         currentScene->onEnd();
     }
+    print("Loading scene: ", sceneName, '\n');
     currentScene.reset(new Scene(sceneName));
     currentScene->onStart();
 }

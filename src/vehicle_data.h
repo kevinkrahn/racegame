@@ -17,7 +17,7 @@ struct PhysicsVehicleSettings
         PxConvexMesh* convexMesh;
         glm::mat4 transform;
     };
-    std::vector<CollisionsMesh> collisionMeshes;
+    SmallVec<CollisionsMesh> collisionMeshes;
 
     f32 chassisDensity = 120.f;
     glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
@@ -48,7 +48,7 @@ struct PhysicsVehicleSettings
     f32 autoBoxSwitchTime = 0.25f;
 
     // reverse, neutral, first, second, third...
-    std::vector<f32> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
+    SmallVec<f32> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
     f32 finalGearRatio = 4.f;
 
     f32 suspensionMaxCompression = 0.2f;
@@ -76,9 +76,14 @@ struct PhysicsVehicleSettings
 struct VehicleData
 {
     PhysicsVehicleSettings physics;
-    u32 chassisMesh;
-    u32 wheelMeshFront;
-    u32 wheelMeshRear;
+    struct VehicleMesh
+    {
+        u32 renderHandle;
+        glm::mat4 transform;
+    };
+    SmallVec<VehicleMesh> chassisMeshes;
+    VehicleMesh wheelMeshFront;
+    VehicleMesh wheelMeshRear;
 
     // all [0,1]
     struct
@@ -96,7 +101,7 @@ struct VehicleData
     u32 price;
     f32 baseArmor;
 
-    f32 getRestOffset()
+    f32 getRestOffset() const
     {
         f32 wheelZ = -physics.wheelPositions[0].z;
         return wheelZ + physics.wheelRadiusFront;
@@ -108,7 +113,7 @@ struct VehicleData
         glm::mat4 transform;
         PxShape* collisionShape;
     };
-    std::vector<DebrisChunk> debrisChunks;
+    SmallVec<DebrisChunk, 32> debrisChunks;
 };
 
 VehicleData car;
@@ -121,38 +126,53 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
     {
         std::string name = e["name"].string();
         glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
-        if (name == "Chassis")
+        if (name.find("Chassis") != std::string::npos)
         {
-            vehicleData->chassisMesh = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
+            vehicleData->chassisMeshes.push_back({
+                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                transform
+            });
         }
-        else if (name == "FL")
+        else if (name.find("FL") != std::string::npos)
         {
-            vehicleData->wheelMeshFront = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
+            vehicleData->wheelMeshFront = {
+                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                glm::scale(glm::mat4(1.f), scaleOf(transform))
+            };
             vehicleData->physics.wheelRadiusFront = e["bound_z"].real() * 0.5f;
             vehicleData->physics.wheelWidthFront = e["bound_y"].real();
             vehicleData->physics.wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
-        else if (name == "RL")
+        else if (name.find("RL") != std::string::npos)
         {
-            vehicleData->wheelMeshRear = game.resources.getMesh(e["data_name"].string().c_str()).renderHandle;
+            vehicleData->wheelMeshRear = {
+                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                glm::scale(glm::mat4(1.f), scaleOf(transform))
+            };
             vehicleData->physics.wheelRadiusRear = e["bound_z"].real() * 0.5f;
             vehicleData->physics.wheelWidthRear = e["bound_y"].real();
             vehicleData->physics.wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
-        else if (name == "FR")
+        else if (name.find("FR") != std::string::npos)
         {
             vehicleData->physics.wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
         }
-        else if (name == "RR")
+        else if (name.find("RR") != std::string::npos)
         {
             vehicleData->physics.wheelPositions[WHEEL_REAR_LEFT] = transform[3];
         }
         else if (name.find("debris") != std::string::npos)
         {
+            std::string const& meshName = e["data_name"].string();
+            PxConvexMesh* collisionMesh = game.resources.getConvexCollisionMesh(meshName);
+            PxMaterial* material = game.physx.physics->createMaterial(0.1f, 0.1f, 0.1f);
+            PxShape* shape = game.physx.physics->createShape(
+                    PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
+            material->release();
             vehicleData->debrisChunks.push_back({
-                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                game.resources.getMesh(meshName.c_str()).renderHandle,
                 transform,
-                nullptr
+                shape
             });
         }
         else if (name.find("Collision") != std::string::npos)

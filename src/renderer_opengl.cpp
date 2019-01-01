@@ -72,6 +72,17 @@ GLShader quad2DShader;
 GLuint worldInfoUBO;
 GLMesh debugMesh;
 
+struct Framebuffers
+{
+    GLuint mainFramebuffer;
+    GLuint shadowFramebuffer;
+
+    GLuint mainColorTexture;
+    GLuint mainDepthTexture;
+
+    GLuint shadowDepthTexture;
+} fb;
+
 void glShaderSources(GLuint shader, std::string const& src, std::initializer_list<std::string_view> defines)
 {
     std::ostringstream str;
@@ -239,6 +250,10 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glVertexArrayAttribFormat(debugMesh.vao, 1, 4, GL_FLOAT, GL_FALSE, 12);
     glVertexArrayAttribBinding(debugMesh.vao, 1, 0);
 
+    // create framebuffers
+    glCreateFramebuffers(1, &fb.mainFramebuffer);
+    glCreateFramebuffers(1, &fb.shadowFramebuffer);
+
     return window;
 }
 
@@ -256,6 +271,20 @@ void Renderer::render(f32 deltaTime)
     glNamedBufferSubData(worldInfoUBO, 0, sizeof(WorldInfo), &worldInfo);
 
     // 3D
+
+    /*
+    glDepthMask(GL_TRUE);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    //glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_CLAMP);
+
+    // draw shadow map
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    */
+
     //glViewport(0, 0, game.windowWidth, game.windowHeight);
     f32 viewports[MAX_VIEWPORTS * 4];
     for (u32 i=0; i<viewportCount; ++i)

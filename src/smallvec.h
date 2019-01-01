@@ -6,7 +6,7 @@ template <typename T, u32 maxSize=8>
 class SmallVec
 {
 private:
-    T data_[maxSize];
+    union { T data_[maxSize]; };
     u32 size_;
 
 public:
@@ -35,14 +35,13 @@ public:
     {
         for (auto& l : *this)
         {
-            // TODO: remove this; the destructor will already be called because the data is array of T
             l.~T();
         }
     }
 
-    T* data() { return data_; }
-    u32 size() { return size_; }
-    u32 capacity() { return maxSize; }
+    T* data() const { return data_; }
+    u32 size() const { return size_; }
+    u32 capacity() const { return maxSize; }
 
     // copy push
     void push_back(const T& val)

@@ -467,7 +467,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
 }
 
 Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
-        VehicleData const& data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
+        VehicleData* data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
         bool isPlayerControlled, bool hasCamera)
 {
     this->isPlayerControlled = isPlayerControlled;
@@ -475,7 +475,7 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     this->vehicleData = data;
     this->cameraTarget = translationOf(transform);
 
-    setupPhysics(scene, data.physics, vehicleMaterial, surfaceMaterials, transform);
+    setupPhysics(scene, data->physics, vehicleMaterial, surfaceMaterials, transform);
 }
 
 Vehicle::~Vehicle()
@@ -605,12 +605,16 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
                 pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
                 5.f, deltaTime);
 #endif
-        glm::vec3 camFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * 80.f;
+        f32 camDistance = 60.f;
+        glm::vec3 camFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         game.renderer.setViewportCamera(vehicleIndex, camFrom, pos, 10.f, 200.f);
     }
 
     // draw chassis
-    game.renderer.drawMesh(vehicleData.chassisMesh, getTransform());
+    for (auto& mesh : vehicleData->chassisMeshes)
+    {
+        game.renderer.drawMesh(mesh.renderHandle, getTransform() * mesh.transform);
+    }
 
     // draw wheels
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -622,6 +626,7 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
         {
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
-        game.renderer.drawMesh(i < 2 ? vehicleData.wheelMeshFront : vehicleData.wheelMeshRear, wheelTransform);
+        auto& mesh = i < 2 ? vehicleData->wheelMeshFront : vehicleData->wheelMeshRear;
+        game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
     }
 }

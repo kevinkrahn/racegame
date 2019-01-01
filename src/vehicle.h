@@ -49,7 +49,7 @@ private:
 class Vehicle
 {
 private:
-	VehicleData vehicleData;
+	VehicleData* vehicleData;
 
     // physics data
     PxVehicleDrive4W* vehicle4W;
@@ -73,7 +73,7 @@ private:
 
 public:
 	Vehicle(PxScene* scene, glm::mat4 const& transform,
-	        VehicleData const& data, PxMaterial* material, const PxMaterial** surfaceMaterials,
+	        VehicleData* data, PxMaterial* material, const PxMaterial** surfaceMaterials,
 	        bool isPlayerControlled, bool hasCamera);
 	~Vehicle();
 

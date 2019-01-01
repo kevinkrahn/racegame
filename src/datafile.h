@@ -115,6 +115,8 @@ namespace DataFile
             return *this;
         }
 
+        bool hasValue() const { return this->dataType != DataType::NONE; }
+
         std::string& string()
         {
             assert(dataType == DataType::STRING);
