@@ -35,9 +35,9 @@ public:
 
     struct QueryResult
     {
-        glm::vec3 position;
-        f32 currentLapDistance;
-        f32 lapDistanceLowMark;
+        const Node* lastNode = nullptr;
+        f32 currentLapDistance = 0.f;
+        f32 lapDistanceLowMark = 0.f;
     };
 
     QueryResult findLapDistance(glm::vec3 const& p, f32 currentLapDistance,

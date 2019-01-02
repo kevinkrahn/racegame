@@ -70,9 +70,11 @@ Scene::Scene(const char* name)
                 continue;
             }
 
+            bool isTrack = name.find("Track") != std::string::npos;
             staticEntities.push_back({
                 mesh.renderHandle,
-                transform
+                transform,
+                { isTrack }
             });
 
             PxVec3 scale(glm::length(glm::vec3(transform[0])),
@@ -82,9 +84,10 @@ Scene::Scene(const char* name)
 	        PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
-                        PxMeshScale(scale)), *offroadMaterial);
+                        PxMeshScale(scale)), isTrack ? *trackMaterial : *offroadMaterial);
             shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+            actor->userData = &staticEntities.back().userData;
 	        physicsScene->addActor(*actor);
         }
         else if (entityType == "PATH")
@@ -119,12 +122,8 @@ void Scene::onStart()
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
 
         PxRaycastBuffer hit;
-        PxQueryFilterData filter;
-        filter.flags |= PxQueryFlag::eSTATIC;
-        filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
-        PxVec3 from = convert(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 8))));
-        PxVec3 dir = convert(-zAxisOf(start));
-        if (!physicsScene->raycast(from, dir, 30.f, hit, PxHitFlags(PxHitFlag::eDEFAULT), filter))
+        if (!raycastStatic(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 8))),
+                -zAxisOf(start), 30.f, &hit))
         {
             FATAL_ERROR("The starting point is too high in the air!");
         }
@@ -170,8 +169,8 @@ void Scene::onUpdate(f32 deltaTime)
     }
     f32 maxT = trackGraph.getStartNode()->t;
     std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
-        return maxT - vehicles[a]->currentLapDistance + vehicles[a]->currentLap * maxT >
-               maxT - vehicles[b]->currentLapDistance + vehicles[b]->currentLap * maxT;
+        return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
+               maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
     });
     for (u32 i=0; i<placements.size(); ++i)
     {
@@ -191,8 +190,8 @@ void Scene::onUpdate(f32 deltaTime)
                 "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
                 "\nGear: ", playerVehicle.getCurrentGear(),
                 "\nLap: ", playerVehicle.currentLap, "/", totalLaps,
-                "\nProgress: ", playerVehicle.currentLapDistance,
-                "\nLow Mark: ", playerVehicle.lapDistanceLowMark,
+                "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
+                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark,
                 "\nPosition: ", getPositionName(playerVehicle.placement)).c_str(), 20, 20, glm::vec3(1));
 
     if (game.input.isKeyPressed(KEY_F2))
@@ -238,3 +237,18 @@ void Scene::onEnd()
 {
 }
 
+bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit) const
+{
+    PxQueryFilterData filter;
+    filter.flags |= PxQueryFlag::eSTATIC;
+    filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+    if (hit)
+    {
+        return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+    else
+    {
+        PxRaycastBuffer tmpHit;
+        return physicsScene->raycast(convert(from), convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+}

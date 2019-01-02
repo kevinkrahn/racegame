@@ -1,4 +1,5 @@
 #include "vehicle.h"
+
 #include "game.h"
 #include <vehicle/PxVehicleUtil.h>
 
@@ -176,36 +177,21 @@ static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(PhysicsV
         { SURFACE_TYPE_SAND },
     };
 
+    const u32 numTireTypes = 1;
     PxVehicleDrivableSurfaceToTireFrictionPairs* surfaceTirePairs =
-        PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(MAX_NUM_TIRE_TYPES, MAX_NUM_SURFACE_TYPES);
+        PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(numTireTypes, MAX_NUM_SURFACE_TYPES);
 
-    surfaceTirePairs->setup(MAX_NUM_TIRE_TYPES, MAX_NUM_SURFACE_TYPES, materials, surfaceTypes);
+    surfaceTirePairs->setup(numTireTypes, MAX_NUM_SURFACE_TYPES, materials, surfaceTypes);
 
     for(u32 i = 0; i < MAX_NUM_SURFACE_TYPES; i++)
     {
-        for(u32 j = 0; j < MAX_NUM_TIRE_TYPES; j++)
+        for(u32 j = 0; j < numTireTypes; j++)
         {
             surfaceTirePairs->setTypePairFriction(i, j, frictionTable[i]);
         }
     }
 
     return surfaceTirePairs;
-}
-
-static void configureUserData(PxVehicleWheels* vehicle, ActorUserData* actorUserData, ShapeUserData* shapeUserDatas)
-{
-    vehicle->getRigidDynamicActor()->userData = actorUserData;
-    actorUserData->vehicle = vehicle;
-
-    PxShape* shapes[NUM_WHEELS + 1];
-    vehicle->getRigidDynamicActor()->getShapes(shapes, NUM_WHEELS + 1);
-    for(PxU32 i = 0; i < vehicle->mWheelsSimData.getNbWheels(); i++)
-    {
-        const PxI32 shapeId = vehicle->mWheelsSimData.getWheelShapeMapping(i);
-        shapes[shapeId]->userData = &shapeUserDatas[i];
-        shapeUserDatas[i].isWheel = true;
-        shapeUserDatas[i].wheelId = i;
-    }
 }
 
 static PxConvexMesh* createConvexMesh(const PxVec3* verts, const PxU32 numVerts)
@@ -334,7 +320,8 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     PxVehicleTireData tires[NUM_WHEELS];
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
-        tires[i].mType = NORMAL_TIRE;
+        tires[i].mType = 0;
+        // TODO: investigate other tire parameters
     }
 
     PxVec3 wheelCenterOffsets[NUM_WHEELS];
@@ -455,7 +442,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     wheelsSimData->free();
 
     // configure the userdata
-    configureUserData(vehicle4W, &actorUserData, wheelShapeUserData);
+    actor->userData = &actorUserData;
 
     actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
     scene->addActor(*actor);
@@ -557,7 +544,6 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         }
     }
 
-    // TODO: do all vehicle physics updates in once pass for better performance
 	PxVehicleWheels* vehicles[1] = { vehicle4W };
 	PxSweepQueryResult* sweepResults = sceneQueryData->getSweepQueryResultBuffer(0);
 	const PxU32 sweepResultsSize = sceneQueryData->getQueryResultBufferSize();
@@ -572,97 +558,133 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
 }
 
-void Vehicle::onUpdate(f32 deltaTime, Scene const& scene, u32 vehicleIndex)
+void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 {
-    bool canGo = true;
-    if (isPlayerControlled)
+    if (deadTimer > 0.f)
     {
-        updatePhysics(scene.getPhysicsScene(), deltaTime, true,
-                game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
-                (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
-                game.input.isKeyDown(KEY_SPACE), true, false);
-
-        if (game.input.isKeyPressed(KEY_F))
+        deadTimer -= deltaTime;
+        if (deadTimer <= 0.f)
         {
-            getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
-            getRigidBody()->addTorque(
-                    getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
-                    PxForceMode::eVELOCITY_CHANGE);
+            backupTimer = 0.f;
+            deadTimer = 0.f;
+            hitPoints = 100.f;
+
+            // TODO: instead of using targetOffset, attempt to place the vehicle in the middle of the
+            // road and offset if there is an obstruction
+            const TrackGraph::Node* node = graphResult.lastNode;
+            glm::vec2 dir(node->direction);
+            glm::vec3 pos = node->position -
+                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
+
+            reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
+                  glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
+        }
+        return;
+    }
+
+    bool canGo = true;
+    if (!finishedRace)
+    {
+        if (isPlayerControlled)
+        {
+            updatePhysics(scene.getPhysicsScene(), deltaTime, true,
+                    game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
+                    (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
+                    game.input.isKeyDown(KEY_SPACE), true, false);
+
+            if (game.input.isKeyPressed(KEY_F))
+            {
+                getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
+                getRigidBody()->addTorque(
+                        getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
+                        PxForceMode::eVELOCITY_CHANGE);
+            }
+        }
+        else
+        {
+            i32 previousIndex = targetPointIndex - 1;
+            if (previousIndex < 0) previousIndex = scene.getPaths()[followPathIndex].size();
+
+            glm::vec3 nextP = scene.getPaths()[followPathIndex][targetPointIndex];
+            glm::vec3 previousP = scene.getPaths()[followPathIndex][previousIndex];
+            glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
+            glm::vec3 targetP = nextP -
+                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
+
+            f32 steerAngle = glm::dot(glm::vec2(getRightVector()),
+                    glm::normalize(glm::vec2(getPosition() - targetP)));
+
+            f32 accel = 0.85f;
+            f32 brake = 0.f;
+
+            if (canGo)
+            {
+                backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
+                if (backupTimer > 2.f)
+                {
+                    accel = 0.f;
+                    brake = 1.f;
+                    steerAngle *= -1.f;
+                    if (backupTimer > 3.5f)
+                    {
+                        backupTimer = 0.f;
+                    }
+                }
+            }
+
+            if (!finishedRace)
+            {
+                updatePhysics(scene.getPhysicsScene(), deltaTime, false, accel, brake,
+                        -steerAngle, false, canGo, false);
+            }
+
+            if (glm::length2(nextP - getPosition()) < square(30.f))
+            {
+                ++targetPointIndex;
+                if (targetPointIndex >= scene.getPaths()[followPathIndex].size())
+                {
+                    targetPointIndex = 0;
+                }
+            }
         }
     }
     else
     {
-        i32 previousIndex = targetPointIndex - 1;
-        if (previousIndex < 0) previousIndex = scene.getPaths()[followPathIndex].size();
-
-        glm::vec3 nextP = scene.getPaths()[followPathIndex][targetPointIndex];
-        glm::vec3 previousP = scene.getPaths()[followPathIndex][previousIndex];
-        glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
-        glm::vec3 targetP = nextP -
-            glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
-
-        f32 steerAngle = glm::dot(glm::vec2(getRightVector()),
-                glm::normalize(glm::vec2(getPosition() - targetP)));
-
-        f32 accel = 0.85f;
-        f32 brake = 0.f;
-
-        if (canGo)
+        updatePhysics(scene.getPhysicsScene(), deltaTime, false, 0.f,
+                controlledBrakingTimer > 0.5f ? 0.f : 0.5f, 0.f, 0.f, true, true);
+        if (getForwardSpeed() > 1.f)
         {
-            backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
-            if (backupTimer > 2.f)
-            {
-                accel = 0.f;
-                brake = 1.f;
-                steerAngle *= -1.f;
-                if (backupTimer > 3.5f)
-                {
-                    backupTimer = 0.f;
-                }
-            }
+            controlledBrakingTimer = std::min(controlledBrakingTimer + deltaTime, 1.f);
         }
-
-        if (!finishedRace)
+        else
         {
-            updatePhysics(scene.getPhysicsScene(), deltaTime, false, accel, brake,
-                    -steerAngle, false, canGo, false);
-        }
-
-        if (glm::length2(nextP - getPosition()) < square(30.f))
-        {
-            ++targetPointIndex;
-            if (targetPointIndex >= scene.getPaths()[followPathIndex].size())
-            {
-                targetPointIndex = 0;
-            }
+            controlledBrakingTimer = std::max(controlledBrakingTimer - deltaTime, 0.f);
         }
     }
 
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
-        auto result = scene.getTrackGraph().findLapDistance(getPosition(),
-                currentLapDistance, lapDistanceLowMark, maxSkippableDistance);
-        currentLapDistance = result.currentLapDistance;
-        lapDistanceLowMark = result.lapDistanceLowMark;
+        graphResult = scene.getTrackGraph().findLapDistance(getPosition(),
+                graphResult.currentLapDistance, graphResult.lapDistanceLowMark, maxSkippableDistance);
     }
 
     // check if crossed finish line
-    if (lapDistanceLowMark < maxSkippableDistance)
+    if (graphResult.lapDistanceLowMark < maxSkippableDistance)
     {
         glm::vec3 finishLinePosition = translationOf(scene.getStart());
         glm::vec3 dir = glm::normalize(getPosition() - finishLinePosition);
         if (glm::dot(xAxisOf(scene.getStart()), dir) > 0.f
                 && glm::length2(getPosition() - finishLinePosition) < square(40.f))
         {
-            lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
-            currentLapDistance = scene.getTrackGraph().getStartNode()->t;
+            graphResult.lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
+            graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
             if (currentLap >= scene.getTotalLaps())
             {
                 if (!finishedRace)
                 {
                     finishedRace = true;
-                    //currentScene->finishOrder.push(this);
+                    scene.vehicleFinish(vehicleIndex);
                 }
             }
             currentLap += 1;
@@ -682,6 +704,96 @@ void Vehicle::onUpdate(f32 deltaTime, Scene const& scene, u32 vehicleIndex)
         f32 camDistance = 60.f;
         glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 10.f, 200.f);
+    }
+
+    // destroy vehicle if off track or out of bounds
+    bool onGround = false;
+    if (getPosition().z < -8.f)
+    {
+        hitPoints = 0.f;
+    }
+    else
+    {
+        PxRaycastBuffer hit;
+        if (scene.raycastStatic(getPosition(), { 0, 0, -1 }, 2.5f, &hit))
+        {
+            onGround = true;
+            if (hit.block.actor->userData)
+            {
+                if (!((ActorUserData*)hit.block.actor->userData)->isTrack)
+                {
+                    hitPoints = 0.f;
+                }
+            }
+        }
+    }
+
+    // update wheels
+    u32 numWheelsOnGround = 0;
+    for (u32 i=0; i<NUM_WHEELS; ++i)
+    {
+        auto info = wheelQueryResults[i];
+        if (!info.isInAir)
+        {
+            ++numWheelsOnGround;
+
+            // increase damping when offroad
+            if (info.tireSurfaceMaterial == scene.offroadMaterial)
+            {
+                PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
+                d.mDampingRate = vehicleData->physics.offroadDampingRate;
+                vehicle4W->mWheelsSimData.setWheelData(i, d);
+            }
+            else
+            {
+                PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
+                d.mDampingRate = vehicleData->physics.wheelDampingRate;
+                vehicle4W->mWheelsSimData.setWheelData(i, d);
+            }
+        }
+    }
+
+    // destroy vehicle if it is flipped and unable to move
+    if (onGround && numWheelsOnGround <= 1)
+    {
+        flipTimer += deltaTime;
+        if (flipTimer > 2.5f)
+        {
+            hitPoints = 0.f;
+        }
+    }
+    else
+    {
+        flipTimer = 0.f;
+    }
+
+    // explode
+    if (hitPoints <= 0.f)
+    {
+        for(auto& d : vehicleData->debrisChunks)
+        {
+            /*
+            glm::mat4 t = getTransform();
+			PxTransform tm(convert(t * d.transform));
+			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(tm);
+			body->attachShape(*d.collisionShape);
+			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+			scene.getPhysicsScene()->addActor(*body);
+	        body->setLinearVelocity(
+	                convert(glm::vec3(glm::normalize(rotationOf(t) * glm::vec4(translationOf(d.transform), 1.0)))
+	                    * random(scene.randomSeries, 5.f, 20.f)));
+
+            currentScene->vehicleDebris.push(VehicleDebris{
+                body,
+                d.mesh,
+                tex,
+                chassisMaterial,
+                0.f
+            });
+            */
+        }
+        deadTimer = 1.f;
+        reset(glm::translate(glm::mat4(1.f), { 0, 0, -100 }));
     }
 
     // draw chassis

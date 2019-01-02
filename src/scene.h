@@ -4,9 +4,6 @@
 #include "math.h"
 #include "track_graph.h"
 #include <vector>
-#include <PxPhysicsAPI.h>
-
-using namespace physx;
 
 enum
 {
@@ -28,10 +25,16 @@ enum
     MAX_NUM_SURFACE_TYPES
 };
 
+struct ActorUserData
+{
+    bool isTrack = false;
+};
+
 struct StaticEntity
 {
     u32 renderHandle;
     glm::mat4 worldTransform;
+    ActorUserData userData;
 };
 
 class Scene
@@ -48,13 +51,14 @@ class Scene
     bool trackGraphDebugVisualizationEnabled = false;
     PxScene* physicsScene = nullptr;
 
+    TrackGraph trackGraph;
+
+public:
+    RandomSeries randomSeries;
     PxMaterial* vehicleMaterial = nullptr;
     PxMaterial* trackMaterial = nullptr;
     PxMaterial* offroadMaterial = nullptr;
 
-    TrackGraph trackGraph;
-
-public:
     Scene(const char* name);
     ~Scene();
 
@@ -62,9 +66,13 @@ public:
     void onEnd();
     void onUpdate(f32 deltaTime);
 
+    void vehicleFinish(u32 n) { finishOrder.push_back(n); }
+
     glm::mat4 const& getStart() const { return start; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
     SmallVec<std::vector<glm::vec3>> const& getPaths() const { return paths; }
     u32 getTotalLaps() const { return totalLaps; }
+
+    bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr) const;
 };

@@ -6,7 +6,6 @@
 #include "input.h"
 #include "resources.h"
 #include <memory>
-#include <PxPhysicsAPI.h>
 
 class PhysXErrorCallback : public PxErrorCallback
 {

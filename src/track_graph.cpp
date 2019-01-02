@@ -197,6 +197,7 @@ TrackGraph::QueryResult TrackGraph::findLapDistance(glm::vec3 const& p, f32 curr
 {
     f32 minDistance = FLT_MAX;
     glm::vec3 currentP = glm::vec3(100000);
+    const Node* lastNode;
     for (Node const& node : nodes)
     {
         for (u32 i=0; i<node.connections.size(); ++i)
@@ -227,13 +228,14 @@ TrackGraph::QueryResult TrackGraph::findLapDistance(glm::vec3 const& p, f32 curr
                     minDistance = distance;
                     currentLapDistance = t;
                     currentP = result;
+                    lastNode = nodeA;
                 }
             }
         }
     }
 
     return {
-        currentP,
+        lastNode,
         currentLapDistance,
         std::min(lapDistanceLowMark, currentLapDistance)
     };

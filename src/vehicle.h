@@ -2,25 +2,7 @@
 
 #include "math.h"
 #include "vehicle_data.h"
-#include <PxPhysicsAPI.h>
-
-enum
-{
-    NORMAL_TIRE,
-    MAX_NUM_TIRE_TYPES
-};
-
-struct ActorUserData
-{
-    PxVehicleWheels* vehicle = nullptr;
-    PxActor* actor = nullptr;
-};
-
-struct ShapeUserData
-{
-    bool isWheel = false;
-    PxU32 wheelId = 0xffffffff;
-};
+#include "track_graph.h"
 
 class VehicleSceneQueryData
 {
@@ -54,29 +36,30 @@ private:
 	VehicleData* vehicleData;
 
     // physics data
+    bool isInAir = true;
     PxVehicleDrive4W* vehicle4W;
     ActorUserData actorUserData;
-    ShapeUserData wheelShapeUserData[PX_MAX_NB_WHEELS];
     VehicleSceneQueryData* sceneQueryData;
     PxBatchQuery* batchQuery;
     PxVehicleDrivableSurfaceToTireFrictionPairs* frictionPairs;
 	PxWheelQueryResult wheelQueryResults[PX_MAX_NB_WHEELS];
 
     // gameplay data
-	bool isInAir = true;
 	bool isPlayerControlled = false;
 	bool hasCamera = false;
     glm::vec3 cameraTarget;
     f32 hitPoints = 100.f;
     u32 currentLap = 0;
 	u32 placement = 1;
-    f32 lapDistanceLowMark = 0.f;
-    f32 currentLapDistance = 0.f;
+    TrackGraph::QueryResult graphResult;
     u32 followPathIndex = 0;
     u32 targetPointIndex = 0;
     glm::vec3 targetOffset = glm::vec3(0);
 	f32 backupTimer = 0.f;
+	f32 flipTimer = 0.f;
+	f32 deadTimer = 0.f;
 	bool finishedRace = false;
+	bool controlledBrakingTimer = 0.f;
 
 	void setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
@@ -117,7 +100,7 @@ public:
 
     void reset(glm::mat4 const& transform) const;
 
-    void onUpdate(f32 deltaTime, Scene const& scene, u32 vehicleIndex);
+    void onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex);
 };
 
 PxFilterFlags VehicleFilterShader(
