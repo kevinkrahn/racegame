@@ -30,4 +30,6 @@ public:
 
     Node* getStartNode() const { return startNode; }
     Node* getEndNode() const { return endNode; }
+
+    void debugDraw();
 };

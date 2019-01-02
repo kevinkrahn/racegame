@@ -606,8 +606,8 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
                 5.f, deltaTime);
 #endif
         f32 camDistance = 60.f;
-        glm::vec3 camFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        game.renderer.setViewportCamera(vehicleIndex, camFrom, pos, 10.f, 200.f);
+        glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+        game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 10.f, 200.f);
     }
 
     // draw chassis

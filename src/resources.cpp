@@ -49,7 +49,25 @@ void Resources::load()
                     }
                     else
                     {
-                        Mesh meshData = { {}, {}, 0, 0, elementSize, 3 * sizeof(f32), 0 };
+                        auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
+                        auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
+                        std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
+                        std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
+                        u32 numVertices = (u32)meshInfo["num_vertices"].integer();
+                        u32 numIndices = (u32)meshInfo["num_indices"].integer();
+
+                        u32 stride = elementSize * sizeof(f32);
+                        Mesh meshData = {
+                            std::move(vertices),
+                            std::move(indices),
+                            numVertices,
+                            numIndices,
+                            0,
+                            0,
+                            elementSize,
+                            stride,
+                            u32(-1)
+                        };
                         meshes[meshInfo["name"].string()] = meshData;
                     }
                 }

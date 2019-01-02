@@ -48,12 +48,14 @@ Scene::Scene(const char* name)
                 });
                 if (it == entities.end())
                 {
-                    error("Scene does not contain a track graph. The AI will not know where to drive!\n");
-                    continue;
+                    error("Scene does not contain a track graph.\n");
                 }
-                trackGraph = TrackGraph(start,
-                        game.resources.getMesh((*it)["data_name"].string().c_str()),
-                        (*it)["matrix"].convertBytes<glm::mat4>());
+                else
+                {
+                    trackGraph = TrackGraph(start,
+                            game.resources.getMesh((*it)["data_name"].string().c_str()),
+                            (*it)["matrix"].convertBytes<glm::mat4>());
+                }
             }
 
             Mesh const& mesh = game.resources.getMesh(dataName.c_str());
@@ -127,7 +129,7 @@ void Scene::onStart()
         const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
         vehicles.push_back(
                 std::make_unique<Vehicle>(physicsScene, vehicleTransform, vehicleData, vehicleMaterial,
-                    surfaceMaterials, i == 0, i < 2));
+                    surfaceMaterials, i == 0, i < 1));
     }
 }
 
@@ -137,7 +139,7 @@ void Scene::onUpdate(f32 deltaTime)
     physicsScene->fetchResults(true);
 
     game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
-    game.renderer.setViewportCount(2);
+    game.renderer.setViewportCount(1);
     game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
     //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
             //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
@@ -180,6 +182,16 @@ void Scene::onUpdate(f32 deltaTime)
             const PxDebugLine& line = rb.getLines()[i];
             game.renderer.drawLine(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
         }
+    }
+
+    if (game.input.isKeyPressed(KEY_F3))
+    {
+        trackGraphDebugVisualizationEnabled = !trackGraphDebugVisualizationEnabled;
+    }
+
+    if (trackGraphDebugVisualizationEnabled)
+    {
+        trackGraph.debugDraw();
     }
 }
 

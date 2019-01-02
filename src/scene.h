@@ -46,6 +46,7 @@ private:
     std::vector<std::vector<glm::vec3>> paths;
 
     bool physicsDebugVisualizationEnabled = false;
+    bool trackGraphDebugVisualizationEnabled = false;
     PxScene* physicsScene = nullptr;
 
     PxMaterial* vehicleMaterial = nullptr;

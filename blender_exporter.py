@@ -172,6 +172,7 @@ def save_mesh(obj, mesh_map):
         for e in mesh_copy.edges:
             for i in e.vertices:
                 indices.append(i)
+                index_buffer += struct.pack('<I', i)
 
     else:
         element_size = 1

@@ -1,4 +1,5 @@
 #include "track_graph.h"
+#include "game.h"
 
 void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
 {
@@ -75,7 +76,8 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
     f32 minDist = FLT_MAX;
     for (u32 i=0; i<mesh.numVertices; ++i)
     {
-        glm::vec3 position = transform * glm::vec4((*(glm::vec3*)(mesh.vertices.data() + i*3)), 0.f);
+        const f32* data = mesh.vertices.data();
+        glm::vec3 position = transform * glm::vec4(data[i*3], data[i*3+1], data[i*3+2], 1.f);
         f32 dist = glm::length2(position - glm::vec3(translationOf(startTransform)));
         if (dist < minDist)
         {
@@ -168,4 +170,24 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
 
     startNode = &nodes[startIndex];
     endNode = &nodes[endIndex];
+}
+
+void TrackGraph::debugDraw()
+{
+    u32 arrow = game.resources.getMesh("world.Arrow").renderHandle;
+    for (u32 i=0; i<nodes.size(); ++i)
+    {
+        Node const& c = nodes[i];
+
+        game.renderer.drawMesh(arrow,
+                glm::translate(glm::mat4(1.f), c.position) *
+                    glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
+                    glm::scale(glm::mat4(1.f), glm::vec3(1.25f)));
+
+        for (u32 connection : c.connections)
+        {
+            game.renderer.drawLine(c.position, nodes[connection].position,
+                    glm::vec4(1.f, 0.6f, 0.f, 1.f), glm::vec4(1.f, 0.6f, 0.f, 1.f));
+        }
+    }
 }
