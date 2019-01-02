@@ -155,6 +155,12 @@ void Scene::onUpdate(f32 deltaTime)
         game.renderer.drawMesh(e.renderHandle, e.worldTransform);
     }
 
+    // draw vehicle debris
+    for (auto const& d : vehicleDebris)
+    {
+        game.renderer.drawMesh(d.renderHandle, convert(d.rigidBody->getGlobalPose()));
+    }
+
     // update vehicles
     for (u32 i=0; i<vehicles.size(); ++i)
     {

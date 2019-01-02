@@ -37,12 +37,20 @@ struct StaticEntity
     ActorUserData userData;
 };
 
+struct VehicleDebris
+{
+    PxRigidDynamic* rigidBody;
+    u32 renderHandle;
+    f32 life = 0.f;
+};
+
 class Scene
 {
     glm::mat4 start;
     u32 totalLaps = 4;
 
     std::vector<StaticEntity> staticEntities;
+    std::vector<VehicleDebris> vehicleDebris;
     SmallVec<std::unique_ptr<class Vehicle>> vehicles;
     SmallVec<u32> finishOrder;
     SmallVec<std::vector<glm::vec3>> paths;
@@ -75,4 +83,6 @@ public:
     u32 getTotalLaps() const { return totalLaps; }
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr) const;
+
+    void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
 };

@@ -40,6 +40,5 @@ public:
         f32 lapDistanceLowMark = 0.f;
     };
 
-    QueryResult findLapDistance(glm::vec3 const& p, f32 currentLapDistance,
-            f32 lapDistanceLowMark, f32 maxSkippableDistance) const;
+    void findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const;
 };

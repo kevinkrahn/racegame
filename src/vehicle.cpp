@@ -665,8 +665,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
-        graphResult = scene.getTrackGraph().findLapDistance(getPosition(),
-                graphResult.currentLapDistance, graphResult.lapDistanceLowMark, maxSkippableDistance);
+        scene.getTrackGraph().findLapDistance(getPosition(), graphResult, maxSkippableDistance);
     }
 
     // check if crossed finish line
@@ -772,7 +771,6 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     {
         for(auto& d : vehicleData->debrisChunks)
         {
-            /*
             glm::mat4 t = getTransform();
 			PxTransform tm(convert(t * d.transform));
 			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(tm);
@@ -783,14 +781,11 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 	                convert(glm::vec3(glm::normalize(rotationOf(t) * glm::vec4(translationOf(d.transform), 1.0)))
 	                    * random(scene.randomSeries, 5.f, 20.f)));
 
-            currentScene->vehicleDebris.push(VehicleDebris{
+            scene.createVehicleDebris(VehicleDebris{
                 body,
                 d.mesh,
-                tex,
-                chassisMaterial,
                 0.f
             });
-            */
         }
         deadTimer = 1.f;
         reset(glm::translate(glm::mat4(1.f), { 0, 0, -100 }));

@@ -192,12 +192,9 @@ void TrackGraph::debugDraw() const
     }
 }
 
-TrackGraph::QueryResult TrackGraph::findLapDistance(glm::vec3 const& p, f32 currentLapDistance,
-        f32 lapDistanceLowMark, f32 maxSkippableDistance) const
+void TrackGraph::findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const
 {
     f32 minDistance = FLT_MAX;
-    glm::vec3 currentP = glm::vec3(100000);
-    const Node* lastNode;
     for (Node const& node : nodes)
     {
         for (u32 i=0; i<node.connections.size(); ++i)
@@ -219,24 +216,19 @@ TrackGraph::QueryResult TrackGraph::findLapDistance(glm::vec3 const& p, f32 curr
             f32 distanceAlongLine = glm::clamp(glm::dot(ap, ab) / glm::length2(ab), 0.f, 1.f);
             f32 t = nodeA->t + distanceAlongLine * (nodeB->t - nodeA->t);
 
-            if (lapDistanceLowMark - t < maxSkippableDistance)
+            if (queryResult.lapDistanceLowMark - t < maxSkippableDistance)
             {
                 glm::vec3 result = a + distanceAlongLine * ab;
                 f32 distance = glm::length2(p - result);
                 if (minDistance > distance && distance < square(35))
                 {
                     minDistance = distance;
-                    currentLapDistance = t;
-                    currentP = result;
-                    lastNode = nodeA;
+                    queryResult.currentLapDistance = t;
+                    queryResult.lastNode = nodeA;
                 }
             }
         }
     }
 
-    return {
-        lastNode,
-        currentLapDistance,
-        std::min(lapDistanceLowMark, currentLapDistance)
-    };
+    queryResult.lapDistanceLowMark = std::min(queryResult.lapDistanceLowMark, queryResult.currentLapDistance);
 }
