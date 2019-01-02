@@ -31,5 +31,15 @@ public:
     Node* getStartNode() const { return startNode; }
     Node* getEndNode() const { return endNode; }
 
-    void debugDraw();
+    void debugDraw() const;
+
+    struct QueryResult
+    {
+        glm::vec3 position;
+        f32 currentLapDistance;
+        f32 lapDistanceLowMark;
+    };
+
+    QueryResult findLapDistance(glm::vec3 const& p, f32 currentLapDistance,
+            f32 lapDistanceLowMark, f32 maxSkippableDistance) const;
 };

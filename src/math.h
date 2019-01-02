@@ -121,3 +121,34 @@ inline glm::vec3 smoothMove(const glm::vec3& from, const glm::vec3& to, f32 amou
 {
     return glm::lerp(from, to, 1.f-exp(-amount * deltaTime));
 }
+
+struct RandomSeries
+{
+    u32 state = 1234;
+};
+
+u32 xorshift32(RandomSeries& series)
+{
+	u32 x = series.state;
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	series.state = x;
+	return x;
+}
+
+inline f32 random01(RandomSeries& series)
+{
+    return (f32)((f64)xorshift32(series) / (f64)std::numeric_limits<u32>::max());
+}
+
+inline f32 random(RandomSeries& series, f32 min, f32 max)
+{
+    return random01(series) * (max - min) + min;
+}
+
+// return random integer between min (inclusive) and max (exclusive)
+inline i32 irandom(RandomSeries& series, i32 min, i32 max)
+{
+    return (xorshift32(series) % (max - min)) + min;
+}

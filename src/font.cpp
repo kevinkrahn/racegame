@@ -5,10 +5,9 @@
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
-Font::Font(std::string const& filename, f32 height, u32 startingChar, u32 numGlyphs)
+Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numGlyphs)
 {
     this->startingChar = startingChar;
-    this->height = height;
 
     std::ifstream file(filename, std::ios::binary | std::ios::in | std::ios::ate);
     if(!file)
@@ -24,7 +23,7 @@ Font::Font(std::string const& filename, f32 height, u32 startingChar, u32 numGly
     stbtt_fontinfo fontInfo;
     stbtt_InitFont(&fontInfo, fontData.data(), stbtt_GetFontOffsetForIndex(fontData.data(), 0));
 
-    f32 scale = stbtt_ScaleForPixelHeight(&fontInfo, height);
+    f32 scale = stbtt_ScaleForPixelHeight(&fontInfo, fontSize);
 
     i32 ascent, descent, lineGap;
     stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
@@ -38,7 +37,7 @@ Font::Font(std::string const& filename, f32 height, u32 startingChar, u32 numGly
     const i32 padding = 4;
     stbtt_PackBegin(&c, texData.data(), w, h, 0, padding, nullptr);
 
-    if (!stbtt_PackFontRange(&c, fontData.data(), 0, height, startingChar, numGlyphs, charData.data()))
+    if (!stbtt_PackFontRange(&c, fontData.data(), 0, fontSize, startingChar, numGlyphs, charData.data()))
     {
         // this might mean the atlas is too small
         FATAL_ERROR("Failed to pack font atlas.");
@@ -69,6 +68,11 @@ Font::Font(std::string const& filename, f32 height, u32 startingChar, u32 numGly
                 stbtt_GetCodepointKernAdvance(&fontInfo, i, c+startingChar) * scale;
         }
     }
+
+    // set the line height based on the height of an uppercase character
+    auto &f = glyphs['M'-startingChar];
+    height = f.height;
+    lineHeight = ((ascent - descent) + lineGap) * scale;
 
     Texture fontAtlas;
     fontAtlas.width = w;
@@ -113,7 +117,10 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
             break;
         }
 
-        currentWidth += kerningTable[(*str - startingChar)*glyphs.size() + (*(str+1) - startingChar)];
+        if (*(str+1) != '\n')
+        {
+            currentWidth += kerningTable[(*str - startingChar)*glyphs.size() + (*(str+1) - startingChar)];
+        }
         ++str;
     }
 
@@ -190,7 +197,7 @@ void Font::drawText(const char* str, f32 x, f32 y, glm::vec3 color, f32 alpha,
         x += g.advance * scale;
 
         // kerning
-        if (*(str+1))
+        if (*(str+1) && *(str+1) != '\n')
         {
             x += kerningTable[(*str - startingChar) * glyphs.size() + (*(str+1) - startingChar)] * scale;
         }

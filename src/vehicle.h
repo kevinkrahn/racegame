@@ -49,6 +49,8 @@ private:
 class Vehicle
 {
 private:
+    friend class Scene;
+
 	VehicleData* vehicleData;
 
     // physics data
@@ -62,17 +64,28 @@ private:
 
     // gameplay data
 	bool isInAir = true;
-	bool isPlayerControlled;
-	bool hasCamera;
+	bool isPlayerControlled = false;
+	bool hasCamera = false;
     glm::vec3 cameraTarget;
     f32 hitPoints = 100.f;
     u32 currentLap = 0;
+	u32 placement = 1;
+    f32 lapDistanceLowMark = 0.f;
+    f32 currentLapDistance = 0.f;
+    u32 followPathIndex = 0;
+    u32 targetPointIndex = 0;
+    glm::vec3 targetOffset = glm::vec3(0);
+	f32 backupTimer = 0.f;
+	bool finishedRace = false;
 
 	void setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
 
+    void updatePhysics(PxScene* scene, f32 timestep, bool digital,
+            f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
+
 public:
-	Vehicle(PxScene* scene, glm::mat4 const& transform,
+	Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	        VehicleData* data, PxMaterial* material, const PxMaterial** surfaceMaterials,
 	        bool isPlayerControlled, bool hasCamera);
 	~Vehicle();
@@ -104,10 +117,7 @@ public:
 
     void reset(glm::mat4 const& transform) const;
 
-    void updatePhysics(PxScene* scene, f32 timestep, bool digital,
-            f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
-
-    void onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex);
+    void onUpdate(f32 deltaTime, Scene const& scene, u32 vehicleIndex);
 };
 
 PxFilterFlags VehicleFilterShader(

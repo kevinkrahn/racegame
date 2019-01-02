@@ -172,7 +172,7 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
     endNode = &nodes[endIndex];
 }
 
-void TrackGraph::debugDraw()
+void TrackGraph::debugDraw() const
 {
     u32 arrow = game.resources.getMesh("world.Arrow").renderHandle;
     for (u32 i=0; i<nodes.size(); ++i)
@@ -190,4 +190,51 @@ void TrackGraph::debugDraw()
                     glm::vec4(1.f, 0.6f, 0.f, 1.f), glm::vec4(1.f, 0.6f, 0.f, 1.f));
         }
     }
+}
+
+TrackGraph::QueryResult TrackGraph::findLapDistance(glm::vec3 const& p, f32 currentLapDistance,
+        f32 lapDistanceLowMark, f32 maxSkippableDistance) const
+{
+    f32 minDistance = FLT_MAX;
+    glm::vec3 currentP = glm::vec3(100000);
+    for (Node const& node : nodes)
+    {
+        for (u32 i=0; i<node.connections.size(); ++i)
+        {
+            u32 connectionNodeIndex = node.connections[i];
+            const Node* nodeA = &node;
+            const Node* nodeB = &nodes[connectionNodeIndex];
+            if (nodeA->t > nodeB->t)
+            {
+                nodeA = nodeB;
+                nodeB = &node;
+            }
+
+            glm::vec3 a = nodeA->position;
+            glm::vec3 b = nodeB->position;
+
+            glm::vec3 ap = p - a;
+            glm::vec3 ab = b - a;
+            f32 distanceAlongLine = glm::clamp(glm::dot(ap, ab) / glm::length2(ab), 0.f, 1.f);
+            f32 t = nodeA->t + distanceAlongLine * (nodeB->t - nodeA->t);
+
+            if (lapDistanceLowMark - t < maxSkippableDistance)
+            {
+                glm::vec3 result = a + distanceAlongLine * ab;
+                f32 distance = glm::length2(p - result);
+                if (minDistance > distance && distance < square(35))
+                {
+                    minDistance = distance;
+                    currentLapDistance = t;
+                    currentP = result;
+                }
+            }
+        }
+    }
+
+    return {
+        currentP,
+        currentLapDistance,
+        std::min(lapDistanceLowMark, currentLapDistance)
+    };
 }

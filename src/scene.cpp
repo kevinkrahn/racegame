@@ -3,6 +3,12 @@
 #include "vehicle.h"
 #include <algorithm>
 
+static const char* getPositionName(u32 n)
+{
+    const char* names[] = {"1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"};
+    return names[n];
+}
+
 Scene::Scene(const char* name)
 {
     // create PhysX scene
@@ -128,8 +134,8 @@ void Scene::onStart()
 
         const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
         vehicles.push_back(
-                std::make_unique<Vehicle>(physicsScene, vehicleTransform, vehicleData, vehicleMaterial,
-                    surfaceMaterials, i == 0, i < 1));
+                std::make_unique<Vehicle>(*this, vehicleTransform, -offset,
+                    vehicleData, vehicleMaterial, surfaceMaterials, i == 0, i < 1));
     }
 }
 
@@ -144,17 +150,50 @@ void Scene::onUpdate(f32 deltaTime)
     //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
             //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 
-    game.resources.getFont("font", 30).drawText(str("FPS: ", 1.f / deltaTime).c_str(), 20, 0, glm::vec3(1));
-
+    // draw static entities
     for (auto const& e : staticEntities)
     {
         game.renderer.drawMesh(e.renderHandle, e.worldTransform);
     }
 
+    // update vehicles
     for (u32 i=0; i<vehicles.size(); ++i)
     {
-        vehicles[i]->onUpdate(deltaTime, physicsScene, i);
+        vehicles[i]->onUpdate(deltaTime, *this, i);
     }
+
+    // determine vehicle placement
+    SmallVec<u32> placements;
+    for (u32 i=0; i<vehicles.size(); ++i)
+    {
+        placements.push_back(i);
+    }
+    f32 maxT = trackGraph.getStartNode()->t;
+    std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
+        return maxT - vehicles[a]->currentLapDistance + vehicles[a]->currentLap * maxT >
+               maxT - vehicles[b]->currentLapDistance + vehicles[b]->currentLap * maxT;
+    });
+    for (u32 i=0; i<placements.size(); ++i)
+    {
+        vehicles[placements[i]]->placement = i;
+    }
+
+    // override placement with finish order for vehicles that have finished the race
+    for (u32 i=0; i<finishOrder.size(); ++i)
+    {
+        vehicles[finishOrder[i]]->placement = i;
+    }
+
+    Vehicle const& playerVehicle = *vehicles[0];
+    game.resources.getFont("font", 22).drawText(str(
+                "FPS: ", 1.f / deltaTime,
+                "\nEngine RPM: ", playerVehicle.getEngineRPM(),
+                "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
+                "\nGear: ", playerVehicle.getCurrentGear(),
+                "\nLap: ", playerVehicle.currentLap, "/", totalLaps,
+                "\nProgress: ", playerVehicle.currentLapDistance,
+                "\nLow Mark: ", playerVehicle.lapDistanceLowMark,
+                "\nPosition: ", getPositionName(playerVehicle.placement)).c_str(), 20, 20, glm::vec3(1));
 
     if (game.input.isKeyPressed(KEY_F2))
     {

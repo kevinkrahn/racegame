@@ -466,7 +466,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
 }
 
-Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
+Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
         VehicleData* data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
         bool isPlayerControlled, bool hasCamera)
 {
@@ -474,8 +474,9 @@ Vehicle::Vehicle(PxScene* scene, glm::mat4 const& transform,
     this->hasCamera = hasCamera;
     this->vehicleData = data;
     this->cameraTarget = translationOf(transform);
+    this->targetOffset = startOffset;
 
-    setupPhysics(scene, data->physics, vehicleMaterial, surfaceMaterials, transform);
+    setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
 }
 
 Vehicle::~Vehicle()
@@ -571,11 +572,12 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
 }
 
-void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
+void Vehicle::onUpdate(f32 deltaTime, Scene const& scene, u32 vehicleIndex)
 {
+    bool canGo = true;
     if (isPlayerControlled)
     {
-        updatePhysics(physicsScene, deltaTime, true,
+        updatePhysics(scene.getPhysicsScene(), deltaTime, true,
                 game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
                 (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
                 game.input.isKeyDown(KEY_SPACE), true, false);
@@ -586,14 +588,86 @@ void Vehicle::onUpdate(f32 deltaTime, PxScene* physicsScene, u32 vehicleIndex)
             getRigidBody()->addTorque(
                     getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
                     PxForceMode::eVELOCITY_CHANGE);
-            //PxRigidBodyExt::addLocalForceAtLocalPos(*getRigidBody(), PxVec3(0, 5000, 0), PxVec3(0, 0, 0), PxForceMode::eIMPULSE);
         }
     }
     else
     {
-        updatePhysics(physicsScene, deltaTime, true, 0, 0, 0, 0, 0, 0);
+        i32 previousIndex = targetPointIndex - 1;
+        if (previousIndex < 0) previousIndex = scene.getPaths()[followPathIndex].size();
+
+        glm::vec3 nextP = scene.getPaths()[followPathIndex][targetPointIndex];
+        glm::vec3 previousP = scene.getPaths()[followPathIndex][previousIndex];
+        glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
+        glm::vec3 targetP = nextP -
+            glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
+
+        f32 steerAngle = glm::dot(glm::vec2(getRightVector()),
+                glm::normalize(glm::vec2(getPosition() - targetP)));
+
+        f32 accel = 0.85f;
+        f32 brake = 0.f;
+
+        if (canGo)
+        {
+            backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
+            if (backupTimer > 2.f)
+            {
+                accel = 0.f;
+                brake = 1.f;
+                steerAngle *= -1.f;
+                if (backupTimer > 3.5f)
+                {
+                    backupTimer = 0.f;
+                }
+            }
+        }
+
+        if (!finishedRace)
+        {
+            updatePhysics(scene.getPhysicsScene(), deltaTime, false, accel, brake,
+                    -steerAngle, false, canGo, false);
+        }
+
+        if (glm::length2(nextP - getPosition()) < square(30.f))
+        {
+            ++targetPointIndex;
+            if (targetPointIndex >= scene.getPaths()[followPathIndex].size())
+            {
+                targetPointIndex = 0;
+            }
+        }
     }
-    //getRigidBody()->wakeUp();
+
+    const f32 maxSkippableDistance = 250.f;
+    if (canGo)
+    {
+        auto result = scene.getTrackGraph().findLapDistance(getPosition(),
+                currentLapDistance, lapDistanceLowMark, maxSkippableDistance);
+        currentLapDistance = result.currentLapDistance;
+        lapDistanceLowMark = result.lapDistanceLowMark;
+    }
+
+    // check if crossed finish line
+    if (lapDistanceLowMark < maxSkippableDistance)
+    {
+        glm::vec3 finishLinePosition = translationOf(scene.getStart());
+        glm::vec3 dir = glm::normalize(getPosition() - finishLinePosition);
+        if (glm::dot(xAxisOf(scene.getStart()), dir) > 0.f
+                && glm::length2(getPosition() - finishLinePosition) < square(40.f))
+        {
+            lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
+            currentLapDistance = scene.getTrackGraph().getStartNode()->t;
+            if (currentLap >= scene.getTotalLaps())
+            {
+                if (!finishedRace)
+                {
+                    finishedRace = true;
+                    //currentScene->finishOrder.push(this);
+                }
+            }
+            currentLap += 1;
+        }
+    }
 
     if (hasCamera)
     {

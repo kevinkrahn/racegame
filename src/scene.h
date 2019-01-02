@@ -36,14 +36,13 @@ struct StaticEntity
 
 class Scene
 {
-private:
     glm::mat4 start;
     u32 totalLaps = 4;
 
     std::vector<StaticEntity> staticEntities;
-    std::vector<std::unique_ptr<class Vehicle>> vehicles;
-    std::vector<u32> finishOrder;
-    std::vector<std::vector<glm::vec3>> paths;
+    SmallVec<std::unique_ptr<class Vehicle>> vehicles;
+    SmallVec<u32> finishOrder;
+    SmallVec<std::vector<glm::vec3>> paths;
 
     bool physicsDebugVisualizationEnabled = false;
     bool trackGraphDebugVisualizationEnabled = false;
@@ -62,4 +61,10 @@ public:
     void onStart();
     void onEnd();
     void onUpdate(f32 deltaTime);
+
+    glm::mat4 const& getStart() const { return start; }
+    PxScene* const& getPhysicsScene() const { return physicsScene; }
+    TrackGraph const& getTrackGraph() const { return trackGraph; }
+    SmallVec<std::vector<glm::vec3>> const& getPaths() const { return paths; }
+    u32 getTotalLaps() const { return totalLaps; }
 };
