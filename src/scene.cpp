@@ -116,7 +116,6 @@ Scene::~Scene()
 void Scene::onStart()
 {
     const u32 numVehicles = 8;
-    VehicleData* vehicleData = &car;
     for (u32 i=0; i<numVehicles; ++i)
     {
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
@@ -128,6 +127,7 @@ void Scene::onStart()
             FATAL_ERROR("The starting point is too high in the air!");
         }
 
+        VehicleData* vehicleData = i % 2 == 0 ? &racecar : &car;
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
                 convert(hit.block.position + hit.block.normal * vehicleData->getRestOffset())) * rotationOf(start);
 

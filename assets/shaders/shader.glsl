@@ -51,7 +51,7 @@ void main()
 
 #elif defined GEOM
 
-layout(triangles, invocations=2) in;
+layout(triangles, invocations = 1) in;
 layout(triangle_strip, max_vertices = 3) out;
 
 layout(location = 0) in vec3 inColor[];

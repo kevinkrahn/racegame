@@ -676,7 +676,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     }
 
     // check if crossed finish line
-    if (graphResult.lapDistanceLowMark < maxSkippableDistance)
+    if (!finishedRace && graphResult.lapDistanceLowMark < maxSkippableDistance)
     {
         glm::vec3 finishLinePosition = translationOf(scene.getStart());
         glm::vec3 dir = glm::normalize(getPosition() - finishLinePosition);
@@ -687,13 +687,13 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
             if (currentLap >= scene.getTotalLaps())
             {
-                if (!finishedRace)
-                {
-                    finishedRace = true;
-                    scene.vehicleFinish(vehicleIndex);
-                }
+                finishedRace = true;
+                scene.vehicleFinish(vehicleIndex);
             }
-            currentLap += 1;
+            else
+            {
+                ++currentLap;
+            }
         }
     }
 

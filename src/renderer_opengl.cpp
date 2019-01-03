@@ -66,9 +66,14 @@ SmallVec<Camera, MAX_VIEWPORTS> cameras;
 
 glm::vec3 backgroundColor;
 
-GLShader shader;
-GLShader debugShader;
-GLShader quad2DShader;
+struct Shaders
+{
+    GLShader lit;
+    GLShader debug;
+    GLShader quad2D;
+    GLShader post;
+} shaders;
+
 GLuint worldInfoUBO;
 GLMesh debugMesh;
 
@@ -226,9 +231,10 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    shader = loadShader("shaders/shader.glsl", true);
-    debugShader = loadShader("shaders/debug.glsl", false);
-    quad2DShader = loadShader("shaders/quad2D.glsl", false);
+    shaders.lit = loadShader("shaders/shader.glsl", true);
+    shaders.debug = loadShader("shaders/debug.glsl");
+    shaders.quad2D = loadShader("shaders/quad2D.glsl");
+    shaders.post = loadShader("shaders/post.glsl");
 
     // create world info uniform buffer
     glCreateBuffers(1, &worldInfoUBO);
@@ -250,9 +256,47 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glVertexArrayAttribFormat(debugMesh.vao, 1, 4, GL_FLOAT, GL_FALSE, 12);
     glVertexArrayAttribBinding(debugMesh.vao, 1, 0);
 
-    // create framebuffers
-    glCreateFramebuffers(1, &fb.mainFramebuffer);
-    glCreateFramebuffers(1, &fb.shadowFramebuffer);
+    // main framebuffer
+    glGenTextures(1, &fb.mainColorTexture);
+    glBindTexture(GL_TEXTURE_2D, fb.mainColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glGenTextures(1, &fb.mainDepthTexture);
+    glBindTexture(GL_TEXTURE_2D, fb.mainDepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glGenFramebuffers(1, &fb.mainFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fb.mainDepthTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.mainColorTexture, 0);
+
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    // shadow framebuffer
+    glGenTextures(1, &fb.shadowDepthTexture);
+    glBindTexture(GL_TEXTURE_2D, fb.shadowDepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glGenFramebuffers(1, &fb.shadowFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fb.shadowDepthTexture, 0);
+
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return window;
 }
@@ -260,7 +304,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 void Renderer::render(f32 deltaTime)
 {
     worldInfo.time = (f32)getTime();
-    worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
+    worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.config.resolutionX, (f32)game.config.resolutionY, 0.f);
 
     u32 viewportCount = cameras.size();
     for (u32 i=0; i<viewportCount; ++i)
@@ -289,11 +333,14 @@ void Renderer::render(f32 deltaTime)
     f32 viewports[MAX_VIEWPORTS * 4];
     for (u32 i=0; i<viewportCount; ++i)
     {
-        viewports[i*4+0] = viewportLayout[viewportCount-1][i].offset.x * game.windowWidth;
-        viewports[i*4+1] = viewportLayout[viewportCount-1][i].offset.y * game.windowHeight;
-        viewports[i*4+2] = viewportLayout[viewportCount-1][i].scale.x * game.windowWidth;
-        viewports[i*4+3] = viewportLayout[viewportCount-1][i].scale.y * game.windowHeight;
+        viewports[i*4+0] = viewportLayout[viewportCount-1][i].offset.x * game.config.resolutionX;
+        viewports[i*4+1] = viewportLayout[viewportCount-1][i].offset.y * game.config.resolutionY;
+        viewports[i*4+2] = viewportLayout[viewportCount-1][i].scale.x * game.config.resolutionX;
+        viewports[i*4+3] = viewportLayout[viewportCount-1][i].scale.y * game.config.resolutionY;
     }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
     glViewportArrayv(0, viewportCount, viewports);
     glDepthMask(GL_TRUE);
@@ -302,7 +349,7 @@ void Renderer::render(f32 deltaTime)
     glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(shader.program);
+    glUseProgram(shaders.lit.program);
 
     Camera const& camera = cameras[0];
     for (auto const& r : renderList)
@@ -320,7 +367,7 @@ void Renderer::render(f32 deltaTime)
     {
         glNamedBufferSubData(debugMesh.vbo, 0, debugVertices.size() * sizeof(DebugVertex), debugVertices.data());
 
-        glUseProgram(debugShader.program);
+        glUseProgram(shaders.debug.program);
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
 
         glBindVertexArray(debugMesh.vao);
@@ -329,24 +376,38 @@ void Renderer::render(f32 deltaTime)
     }
 
     // 2D
-    glViewport(0, 0, game.windowWidth, game.windowHeight);
+    glViewport(0, 0, game.config.resolutionX, game.config.resolutionY);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
     if (renderListQuad2D.size() > 0)
     {
-        glUseProgram(quad2DShader.program);
-        glActiveTexture(GL_TEXTURE0);
+        glUseProgram(shaders.quad2D.program);
         for (auto& q : renderListQuad2D)
         {
-            glBindTexture(GL_TEXTURE_2D, q.tex);
+            glBindTextureUnit(0, q.tex);
             glUniform4fv(0, 4, (GLfloat*)&q.points);
             glUniform4fv(4, 1, (GLfloat*)&q.color);
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         }
         renderListQuad2D.clear();
     }
+
+    // render to back buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, game.windowWidth, game.windowHeight);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(shaders.post.program);
+    glm::mat4 matrix = glm::ortho(0.f, (f32)game.windowWidth, 0.f, (f32)game.windowHeight) *
+                    glm::scale(glm::mat4(1.f), glm::vec3(game.windowWidth, game.windowHeight, 1.f));
+    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(matrix));
+    glBindTextureUnit(0, fb.mainColorTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     SDL_GL_SwapWindow(game.window);
 

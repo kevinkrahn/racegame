@@ -213,10 +213,6 @@ inline void initVehicleData()
     car.physics.finalGearRatio = 4.f;
     car.physics.suspensionMaxCompression = 0.15f;
     car.physics.suspensionMaxDroop = 0.25f;
-    car.physics.wheelDampingRate = 0.22f;
-    car.physics.offroadDampingRate = 15.f;
-    car.physics.trackTireFriction = 3.9f;
-    car.physics.offroadTireFriction = 1.25f;
     car.physics.autoBoxSwitchTime = 0.26f;
     car.physics.gearSwitchTime = 0.22f;
     car.physics.suspensionSpringStrength = 23000.0f;
@@ -231,14 +227,14 @@ inline void initVehicleData()
     loadVehicleScene("car.Vehicle", &car);
 
     racecar.physics.chassisDensity = 80.f;
-    racecar.physics.wheelMassFront = racecar.physics.wheelMassRear = 20.f;
+    racecar.physics.wheelMassFront = racecar.physics.wheelMassRear = 22.f;
     racecar.physics.frontToeAngle = 0.f;
     racecar.physics.wheelDampingRate = 0.22f;
     racecar.physics.offroadDampingRate = 15.f;
     racecar.physics.trackTireFriction = 5.0f;
     racecar.physics.offroadTireFriction = 1.0f;
-    racecar.physics.maxEngineOmega = 1000.f;
-    racecar.physics.peekEngineTorque = 600.f;
+    racecar.physics.maxEngineOmega = 900.f;
+    racecar.physics.peekEngineTorque = 900.f;
     racecar.physics.engineDampingFullThrottle = 0.14f;
     racecar.physics.engineDampingZeroThrottleClutchEngaged = 2.6f;
     racecar.physics.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -248,10 +244,6 @@ inline void initVehicleData()
     racecar.physics.clutchStrength = 12.f;
     racecar.physics.suspensionMaxCompression = 0.05f;
     racecar.physics.suspensionMaxDroop = 0.12f;
-    racecar.physics.wheelDampingRate = 0.22f;
-    racecar.physics.offroadDampingRate = 15.f;
-    racecar.physics.trackTireFriction = 3.9f;
-    racecar.physics.offroadTireFriction = 1.25f;
     racecar.physics.autoBoxSwitchTime = 0.16f;
     racecar.physics.gearSwitchTime = 0.12f;
     racecar.physics.suspensionSpringStrength = 30000.0f;
