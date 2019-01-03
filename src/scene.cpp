@@ -74,7 +74,7 @@ Scene::Scene(const char* name)
             staticEntities.push_back({
                 mesh.renderHandle,
                 transform,
-                { isTrack }
+                { isTrack ? ActorUserData::TRACK : ActorUserData::SCENERY }
             });
 
             PxVec3 scale(glm::length(glm::vec3(transform[0])),
@@ -134,7 +134,7 @@ void Scene::onStart()
         const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
         vehicles.push_back(
                 std::make_unique<Vehicle>(*this, vehicleTransform, -offset,
-                    vehicleData, vehicleMaterial, surfaceMaterials, i == 0, i < 1));
+                    vehicleData, vehicleMaterial, surfaceMaterials, i == 0, i < 1, i));
     }
 }
 
@@ -159,6 +159,32 @@ void Scene::onUpdate(f32 deltaTime)
     for (auto const& d : vehicleDebris)
     {
         game.renderer.drawMesh(d.renderHandle, convert(d.rigidBody->getGlobalPose()));
+    }
+
+    // update projectiles
+    for (auto it = projectiles.begin(); it != projectiles.end();)
+    {
+        glm::vec3 prevPosition = it->position;
+        it->position += it->velocity * deltaTime;
+        game.renderer.drawMesh(game.resources.getMesh("world.Bullet"),
+                glm::translate(glm::mat4(1.f), it->position) *
+                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, glm::vec3(0, 0, 1))));
+        // TODO: use sweep instead of raycast
+        PxRaycastBuffer hit;
+        if (raycast(prevPosition,
+                    glm::normalize(it->position - prevPosition),
+                    glm::length(it->position - prevPosition), &hit))
+        {
+            ActorUserData* data = (ActorUserData*)hit.block.actor->userData;
+            if (data && data->entityType == ActorUserData::VEHICLE)
+            {
+                vehicles[data->vehicleIndex]->hitPoints -= 50.f;
+            }
+            it = projectiles.erase(it);
+            continue;
+        }
+
+        ++it;
     }
 
     // update vehicles
@@ -248,6 +274,23 @@ bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
     filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+    if (hit)
+    {
+        return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+    else
+    {
+        PxRaycastBuffer tmpHit;
+        return physicsScene->raycast(convert(from), convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+}
+
+bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit)
+{
+    PxQueryFilterData filter;
+    filter.flags |= PxQueryFlag::eSTATIC;
+    filter.flags |= PxQueryFlag::eDYNAMIC;
+    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0, 0);
     if (hit)
     {
         return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);

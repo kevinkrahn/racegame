@@ -255,11 +255,11 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     }
 
     PxFilterData chassisSimFilterData(COLLISION_FLAG_CHASSIS, COLLISION_FLAG_CHASSIS, 0, 0);
+    PxFilterData chassisQryFilterData(COLLISION_FLAG_CHASSIS, 0, 0, UNDRIVABLE_SURFACE);
     PxFilterData wheelSimFilterData(0, 0, 0, 0);
+    PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
 
     PxRigidDynamic* actor = game.physx.physics->createRigidDynamic(convert(transform));
-    PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
-    PxFilterData chassisQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
 
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
@@ -287,6 +287,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     PxVec3 centerOfMassOffset = convert(settings.centerOfMass);
     PxRigidBodyExt::updateMassAndInertia(*actor, settings.chassisDensity);
     actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
+    actor->userData = &actorUserData;
 
     f32 wheelMOIFront = 0.5f * settings.wheelMassFront * square(settings.wheelRadiusFront);
     f32 wheelMOIRear = 0.5f * settings.wheelMassRear * square(settings.wheelRadiusRear);
@@ -441,9 +442,6 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     vehicle4W->setup(game.physx.physics, actor, *wheelsSimData, driveSimData, NUM_WHEELS - 4);
     wheelsSimData->free();
 
-    // configure the userdata
-    actor->userData = &actorUserData;
-
     actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
     scene->addActor(*actor);
 
@@ -455,7 +453,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
 
 Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
         VehicleData* data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
-        bool isPlayerControlled, bool hasCamera)
+        bool isPlayerControlled, bool hasCamera, u32 vehicleIndex)
 {
     this->isPlayerControlled = isPlayerControlled;
     this->hasCamera = hasCamera;
@@ -464,6 +462,8 @@ Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const
     this->targetOffset = startOffset;
 
     setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
+    actorUserData.entityType = ActorUserData::VEHICLE;
+    actorUserData.vehicleIndex = vehicleIndex;
 }
 
 Vehicle::~Vehicle()
@@ -599,6 +599,13 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                         getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
                         PxForceMode::eVELOCITY_CHANGE);
             }
+
+            if (game.input.isKeyPressed(KEY_C))
+            {
+                scene.createProjectile(getPosition() + getForwardVector() * 3.f,
+                        convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
+                        vehicleIndex);
+            }
         }
         else
         {
@@ -651,7 +658,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     else
     {
         updatePhysics(scene.getPhysicsScene(), deltaTime, false, 0.f,
-                controlledBrakingTimer > 0.5f ? 0.f : 0.5f, 0.f, 0.f, true, true);
+                controlledBrakingTimer < 0.5f ? 0.f : 0.5f, 0.f, 0.f, true, true);
         if (getForwardSpeed() > 1.f)
         {
             controlledBrakingTimer = std::min(controlledBrakingTimer + deltaTime, 1.f);
@@ -719,7 +726,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             onGround = true;
             if (hit.block.actor->userData)
             {
-                if (!((ActorUserData*)hit.block.actor->userData)->isTrack)
+                if (((ActorUserData*)hit.block.actor->userData)->entityType != ActorUserData::TRACK)
                 {
                     hitPoints = 0.f;
                 }
@@ -772,12 +779,12 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         for(auto& d : vehicleData->debrisChunks)
         {
             glm::mat4 t = getTransform();
-			PxTransform tm(convert(t * d.transform));
-			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(tm);
+			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(PxTransform(convert(t * d.transform)));
 			body->attachShape(*d.collisionShape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 			scene.getPhysicsScene()->addActor(*body);
 	        body->setLinearVelocity(
+	                getRigidBody()->getLinearVelocity() +
 	                convert(glm::vec3(glm::normalize(rotationOf(t) * glm::vec4(translationOf(d.transform), 1.0)))
 	                    * random(scene.randomSeries, 5.f, 20.f)));
 

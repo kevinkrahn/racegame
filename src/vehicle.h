@@ -70,7 +70,7 @@ private:
 public:
 	Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	        VehicleData* data, PxMaterial* material, const PxMaterial** surfaceMaterials,
-	        bool isPlayerControlled, bool hasCamera);
+	        bool isPlayerControlled, bool hasCamera, u32 vehicleIndex);
 	~Vehicle();
 
     const char* getCurrentGear() const

@@ -27,7 +27,17 @@ enum
 
 struct ActorUserData
 {
-    bool isTrack = false;
+    enum
+    {
+        TRACK,
+        SCENERY,
+        VEHICLE
+    };
+    u32 entityType;
+    union
+    {
+        u32 vehicleIndex;
+    };
 };
 
 struct StaticEntity
@@ -44,6 +54,13 @@ struct VehicleDebris
     f32 life = 0.f;
 };
 
+struct Projectile
+{
+    glm::vec3 position;
+    glm::vec3 velocity;
+    u32 instigator;
+};
+
 class Scene
 {
     glm::mat4 start;
@@ -54,6 +71,7 @@ class Scene
     SmallVec<std::unique_ptr<class Vehicle>> vehicles;
     SmallVec<u32> finishOrder;
     SmallVec<std::vector<glm::vec3>> paths;
+    std::vector<Projectile> projectiles;
 
     bool physicsDebugVisualizationEnabled = false;
     bool trackGraphDebugVisualizationEnabled = false;
@@ -83,6 +101,11 @@ public:
     u32 getTotalLaps() const { return totalLaps; }
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr) const;
+    bool raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
 
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
+    void createProjectile(glm::vec3 const& position, glm::vec3 const& velocity, u32 instigator)
+    {
+        projectiles.push_back({ position, velocity, instigator });
+    };
 };
