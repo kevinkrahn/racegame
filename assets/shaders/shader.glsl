@@ -43,7 +43,6 @@ layout(location = 3) in vec3 inWorldPosition;
 void main()
 {
     outColor = vec4(inColor, 1.0);
-    //outColor.a = (sin(time + inWorldPosition.x + inWorldPosition.y + inWorldPosition.z) + 1.0) * 0.5;
 
     float light = max(dot(normalize(inNormal), sunDirection), 0.1);
     outColor.rgb *= light;
@@ -51,7 +50,7 @@ void main()
 
 #elif defined GEOM
 
-layout(triangles, invocations = 1) in;
+layout(triangles, invocations = VIEWPORT_COUNT) in;
 layout(triangle_strip, max_vertices = 3) out;
 
 layout(location = 0) in vec3 inColor[];
@@ -66,7 +65,7 @@ layout(location = 3) out vec3 outWorldPosition;
 
 void main()
 {
-    gl_ViewportIndex = gl_InvocationID;
+    gl_Layer = gl_InvocationID;
     gl_Position = cameras[gl_InvocationID] * vec4(inWorldPosition[0], 1.0);
     outColor = inColor[0];
     outNormal = inNormal[0];
@@ -74,7 +73,7 @@ void main()
     outWorldPosition = inWorldPosition[0];
     EmitVertex();
 
-    gl_ViewportIndex = gl_InvocationID;
+    gl_Layer = gl_InvocationID;
     gl_Position = cameras[gl_InvocationID] * vec4(inWorldPosition[1], 1.0);
     outColor = inColor[1];
     outNormal = inNormal[1];
@@ -82,7 +81,7 @@ void main()
     outWorldPosition = inWorldPosition[1];
     EmitVertex();
 
-    gl_ViewportIndex = gl_InvocationID;
+    gl_Layer = gl_InvocationID;
     gl_Position = cameras[gl_InvocationID] * vec4(inWorldPosition[2], 1.0);
     outColor = inColor[2];
     outNormal = inNormal[2];

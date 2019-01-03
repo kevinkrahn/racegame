@@ -3,6 +3,8 @@
 #include "vehicle.h"
 #include <algorithm>
 
+const u32 viewportCount = 4;
+
 static const char* getPositionName(u32 n)
 {
     const char* names[] = {"1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"};
@@ -134,7 +136,7 @@ void Scene::onStart()
         const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
         vehicles.push_back(
                 std::make_unique<Vehicle>(*this, vehicleTransform, -offset,
-                    vehicleData, vehicleMaterial, surfaceMaterials, i == 0, i < 1, i));
+                    vehicleData, vehicleMaterial, surfaceMaterials, i == 0, i < viewportCount, i));
     }
 }
 
@@ -143,8 +145,7 @@ void Scene::onUpdate(f32 deltaTime)
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
 
-    game.renderer.setBackgroundColor(glm::vec3(0.1, 0.1, 0.1));
-    game.renderer.setViewportCount(1);
+    game.renderer.setViewportCount(viewportCount);
     game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
     //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
             //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);

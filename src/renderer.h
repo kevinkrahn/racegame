@@ -18,33 +18,19 @@ struct Camera
     f32 aspectRatio;
 };
 
+const u32 MAX_VIEWPORTS = 4;
 struct ViewportLayout
 {
-    glm::vec2 offset;
-    glm::vec2 scale;
     f32 fov;
+    glm::vec2 scale;
+    glm::vec2 offsets[MAX_VIEWPORTS];
 };
 
-const u32 MAX_VIEWPORTS = 4;
-ViewportLayout viewportLayout[MAX_VIEWPORTS][MAX_VIEWPORTS] = {
-    {
-        { { 0.0f, 0.0f }, { 1.0f, 1.0f }, 33 }
-    },
-    {
-        { { 0.0f, 0.0f }, { 1.0f, 0.5f }, 26 },
-        { { 0.0f, 0.5f }, { 1.0f, 0.5f }, 26 },
-    },
-    {
-        { { 0.0f, 0.0f }, { 0.5f, 0.5f }, 26 },
-        { { 0.5f, 0.0f }, { 0.5f, 0.5f }, 26 },
-        { { 0.0f, 0.5f }, { 0.5f, 0.5f }, 26 },
-    },
-    {
-        { { 0.0f, 0.0f }, { 0.5f, 0.5f }, 26 },
-        { { 0.5f, 0.0f }, { 0.5f, 0.5f }, 26 },
-        { { 0.0f, 0.5f }, { 0.5f, 0.5f }, 26 },
-        { { 0.5f, 0.5f }, { 0.5f, 0.5f }, 26 },
-    },
+ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
+    { 33, { 1.0f, 1.0f }, { { 0.0f, 0.0f } } },
+    { 26, { 1.0f, 0.5f }, { { 0.0f, 0.0f }, { 0.0f, 0.5f } } },
+    { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f } } },
+    { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f }, { 0.5f, 0.5f } } },
 };
 
 class Renderer
@@ -61,8 +47,6 @@ public:
 
     void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform);
     void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform);
-
-    void setBackgroundColor(glm::vec3 color);
 
     void setViewportCount(u32 viewports);
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 near=0.5f, f32 far=500.f);

@@ -34,6 +34,7 @@ struct PhysicsVehicleSettings
     f32 trackTireFriction = 3.f;
     f32 offroadTireFriction = 2.f;
     f32 frontToeAngle = 0.f;
+    f32 rearToeAngle = 0.f;
 
     f32 maxEngineOmega = 600.f;
     f32 peekEngineTorque = 800.f;
@@ -195,7 +196,8 @@ inline void initVehicleData()
 {
     car.physics.chassisDensity = 100.f;
     car.physics.wheelMassFront = car.physics.wheelMassRear = 20.f;
-    car.physics.frontToeAngle = 0.f;
+    car.physics.frontToeAngle = -0.01f;
+    car.physics.rearToeAngle = 0.f;
     car.physics.wheelDampingRate = 0.22f;
     car.physics.offroadDampingRate = 15.f;
     car.physics.trackTireFriction = 3.9f;
@@ -229,21 +231,22 @@ inline void initVehicleData()
     racecar.physics.chassisDensity = 80.f;
     racecar.physics.wheelMassFront = racecar.physics.wheelMassRear = 22.f;
     racecar.physics.frontToeAngle = 0.f;
+    racecar.physics.rearToeAngle = 0.01f;
     racecar.physics.wheelDampingRate = 0.22f;
     racecar.physics.offroadDampingRate = 15.f;
-    racecar.physics.trackTireFriction = 5.0f;
+    racecar.physics.trackTireFriction = 4.4f;
     racecar.physics.offroadTireFriction = 1.0f;
     racecar.physics.maxEngineOmega = 900.f;
     racecar.physics.peekEngineTorque = 900.f;
     racecar.physics.engineDampingFullThrottle = 0.14f;
     racecar.physics.engineDampingZeroThrottleClutchEngaged = 2.6f;
     racecar.physics.engineDampingZeroThrottleClutchDisengaged = 0.6f;
-    racecar.physics.maxHandbrakeTorque = 8000.f;
-    racecar.physics.maxBrakeTorque = 3000.f;
+    racecar.physics.maxHandbrakeTorque = 12000.f;
+    racecar.physics.maxBrakeTorque = 5000.f;
     racecar.physics.maxSteerAngle = M_PI * 0.3f;
     racecar.physics.clutchStrength = 12.f;
-    racecar.physics.suspensionMaxCompression = 0.05f;
-    racecar.physics.suspensionMaxDroop = 0.12f;
+    racecar.physics.suspensionMaxCompression = 0.06f;
+    racecar.physics.suspensionMaxDroop = 0.13f;
     racecar.physics.autoBoxSwitchTime = 0.16f;
     racecar.physics.gearSwitchTime = 0.12f;
     racecar.physics.suspensionSpringStrength = 30000.0f;

@@ -313,6 +313,8 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     }
     wheels[WHEEL_FRONT_LEFT].mToeAngle  =  settings.frontToeAngle;
     wheels[WHEEL_FRONT_RIGHT].mToeAngle = -settings.frontToeAngle;
+    wheels[WHEEL_REAR_LEFT].mToeAngle  =  settings.rearToeAngle;
+    wheels[WHEEL_REAR_RIGHT].mToeAngle = -settings.rearToeAngle;
     wheels[WHEEL_REAR_LEFT].mMaxHandBrakeTorque  = settings.maxHandbrakeTorque;
     wheels[WHEEL_REAR_RIGHT].mMaxHandBrakeTorque = settings.maxHandbrakeTorque;
     wheels[WHEEL_FRONT_LEFT].mMaxSteer = settings.maxSteerAngle;

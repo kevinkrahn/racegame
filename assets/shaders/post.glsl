@@ -26,7 +26,7 @@ vec2 uvs[6] = vec2[](
 
 void main()
 {
-    gl_Position = matrix * vec4(vertices[gl_VertexID], 0.0, 1.0);
+    gl_Position = matrix * vec4((vertices[gl_VertexID]), 0.0, 1.0);
     outTexCoord = uvs[gl_VertexID];
 }
 
@@ -36,11 +36,11 @@ layout(location = 0) out vec4 outColor;
 
 layout(location = 0) in vec2 inTexCoord;
 
-layout(binding = 0) uniform sampler2D tex;
+layout(location = 1) uniform uint layerIndex;
+layout(location = 2, binding = 0) uniform sampler2DArray tex;
 
 void main()
 {
-    //outColor.rgb = outColor.rgb / (outColor.rgb + vec3(1.0));
-    outColor = texture(tex, inTexCoord);
+    outColor = texture(tex, vec3(inTexCoord, layerIndex));
 }
 #endif
