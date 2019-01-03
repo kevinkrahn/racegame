@@ -24,6 +24,8 @@ struct ViewportLayout
     f32 fov;
     glm::vec2 scale;
     glm::vec2 offsets[MAX_VIEWPORTS];
+    //glm::vec2 trackPos;
+    //f32 trackScale;
 };
 
 ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
@@ -31,6 +33,12 @@ ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
     { 26, { 1.0f, 0.5f }, { { 0.0f, 0.0f }, { 0.0f, 0.5f } } },
     { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f } } },
     { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f }, { 0.5f, 0.5f } } },
+};
+
+struct RenderTextureItem
+{
+    u32 renderHandle;
+    glm::mat4 transform;
 };
 
 class Renderer
@@ -53,6 +61,9 @@ public:
 
     void drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
             glm::vec4 const& c1 = glm::vec4(1), glm::vec4 const& c2 = glm::vec4(1));
-    void drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2, glm::vec3 color, f32 alpha=1.f);
+    void drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2,
+            glm::vec3 color, f32 alpha=1.f, bool colorShader=true);
     //void drawQuad2D(u32 texture, glm::vec2 p, f32 angle=0.f, glm::vec3 color=glm::vec3(1.f), f32 alpha=1.f);
+
+    u32 renderTexture(std::vector<RenderTextureItem> const& items, u32 width, u32 height);
 };

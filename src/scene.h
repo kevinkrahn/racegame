@@ -5,6 +5,8 @@
 #include "track_graph.h"
 #include <vector>
 
+const u32 viewportCount = 4;
+
 enum
 {
     COLLISION_FLAG_GROUND  = 1 << 0,
@@ -76,6 +78,8 @@ class Scene
     bool physicsDebugVisualizationEnabled = false;
     bool trackGraphDebugVisualizationEnabled = false;
     PxScene* physicsScene = nullptr;
+
+    u32 trackTexture;
 
     TrackGraph trackGraph;
 

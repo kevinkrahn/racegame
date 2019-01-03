@@ -43,6 +43,9 @@ void Resources::load()
                             numTexCoords,
                             elementSize,
                             stride,
+                            0,
+                            meshInfo["aabb_min"].convertBytes<glm::vec3>(),
+                            meshInfo["aabb_max"].convertBytes<glm::vec3>(),
                         };
                         meshData.renderHandle = game.renderer.loadMesh(meshData);
                         meshes[meshInfo["name"].string()] = meshData;
@@ -66,7 +69,9 @@ void Resources::load()
                             0,
                             elementSize,
                             stride,
-                            u32(-1)
+                            u32(-1),
+                            meshInfo["aabb_min"].convertBytes<glm::vec3>(),
+                            meshInfo["aabb_max"].convertBytes<glm::vec3>(),
                         };
                         meshes[meshInfo["name"].string()] = meshData;
                     }

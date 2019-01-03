@@ -61,7 +61,8 @@ std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
 std::vector<RenderMesh> renderList;
 std::vector<DebugVertex> debugVertices;
-std::vector<Quad2D> renderListQuad2D;
+std::vector<Quad2D> renderListText2D;
+std::vector<Quad2D> renderListTex2D;
 SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 
 u32 viewportGapPixels = 1;
@@ -70,8 +71,10 @@ struct Shaders
 {
     GLShader lit;
     GLShader debug;
-    GLShader quad2D;
+    GLShader text2D;
+    GLShader tex2D;
     GLShader post;
+    GLShader mesh2D;
 } shaders;
 
 GLuint worldInfoUBO;
@@ -91,7 +94,7 @@ struct Framebuffers
     u32 renderHeight;
 } fb;
 
-void glShaderSources(GLuint shader, std::string const& src, std::initializer_list<std::string_view> defines)
+void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string_view> const& defines)
 {
     std::ostringstream str;
     str << "#version 450\n";
@@ -106,7 +109,7 @@ void glShaderSources(GLuint shader, std::string const& src, std::initializer_lis
     glShaderSource(shader, 2, sources, 0);
 }
 
-GLShader loadShader(const char* filename, bool useGeometryShader=false)
+GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec<std::string_view> defines={})
 {
     std::ifstream file(filename);
     if (!file)
@@ -123,7 +126,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false)
     GLuint program = glCreateProgram();
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSources(vertexShader, shaderStr, { "VERT" });
+    glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }));
     glCompileShader(vertexShader);
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -136,7 +139,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false)
     glAttachShader(program, vertexShader);
 
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSources(fragmentShader, shaderStr, { "FRAG" });
+    glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }));
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -151,7 +154,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false)
     GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
     if (useGeometryShader)
     {
-        glShaderSources(geometryShader, shaderStr, { "GEOM" });
+        glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }));
         glCompileShader(geometryShader);
         glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
         if (!success)
@@ -232,13 +235,14 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     SDL_GL_SetSwapInterval(game.config.vsync ? 1 : 0);
 
     //glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     shaders.lit = loadShader("shaders/shader.glsl", true);
     shaders.debug = loadShader("shaders/debug.glsl");
-    shaders.quad2D = loadShader("shaders/quad2D.glsl");
+    shaders.tex2D = loadShader("shaders/quad2D.glsl", false, { "COLOR" });
+    shaders.text2D = loadShader("shaders/quad2D.glsl");
     shaders.post = loadShader("shaders/post.glsl");
+    shaders.mesh2D = loadShader("shaders/mesh2D.glsl");
 
     // create world info uniform buffer
     glCreateBuffers(1, &worldInfoUBO);
@@ -293,7 +297,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     /*
     glGenTextures(1, &fb.shadowDepthTexture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, width, height, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -301,10 +305,10 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     glGenFramebuffers(1, &fb.shadowFramebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.shadowDepthTexture, 0);
+    */
 
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-    */
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -352,6 +356,7 @@ void Renderer::render(f32 deltaTime)
 
     glUseProgram(shaders.lit.program);
 
+    glDisable(GL_BLEND);
     Camera const& camera = cameras[0];
     for (auto const& r : renderList)
     {
@@ -364,6 +369,7 @@ void Renderer::render(f32 deltaTime)
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
 
+    glEnable(GL_BLEND);
     if (debugVertices.size() > 0)
     {
         glNamedBufferSubData(debugMesh.vbo, 0, debugVertices.size() * sizeof(DebugVertex), debugVertices.data());
@@ -377,6 +383,7 @@ void Renderer::render(f32 deltaTime)
     }
 
     // render to back buffer
+    glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -387,7 +394,7 @@ void Renderer::render(f32 deltaTime)
     glUseProgram(shaders.post.program);
     glBindTextureUnit(0, fb.mainColorTexture);
     glm::vec2 res(game.windowWidth, game.windowHeight);
-    glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)game.windowWidth, 0.f, (f32)game.windowHeight);
+    glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
     for (u32 i=0; i<cameras.size(); ++i)
     {
@@ -405,17 +412,30 @@ void Renderer::render(f32 deltaTime)
     }
 
     // 2D
-    if (renderListQuad2D.size() > 0)
+    glEnable(GL_BLEND);
+    if (renderListText2D.size() > 0)
     {
-        glUseProgram(shaders.quad2D.program);
-        for (auto& q : renderListQuad2D)
+        glUseProgram(shaders.text2D.program);
+        for (auto& q : renderListText2D)
         {
             glBindTextureUnit(0, q.tex);
             glUniform4fv(0, 4, (GLfloat*)&q.points);
             glUniform4fv(4, 1, (GLfloat*)&q.color);
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         }
-        renderListQuad2D.clear();
+        renderListText2D.clear();
+    }
+    if (renderListTex2D.size() > 0)
+    {
+        glUseProgram(shaders.tex2D.program);
+        for (auto& q : renderListTex2D)
+        {
+            glBindTextureUnit(0, q.tex);
+            glUniform4fv(0, 4, (GLfloat*)&q.points);
+            glUniform4fv(4, 1, (GLfloat*)&q.color);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        }
+        renderListTex2D.clear();
     }
 
     SDL_GL_SwapWindow(game.window);
@@ -563,11 +583,55 @@ void Renderer::drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
     debugVertices.push_back({ p2, c2 });
 }
 
-void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2, glm::vec3 color, f32 alpha)
+void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2,
+        glm::vec3 color, f32 alpha, bool colorShader)
 {
-    renderListQuad2D.push_back({
+    (colorShader ? renderListTex2D : renderListText2D).push_back({
         loadedTextures[texture].tex,
         { { p1, t1 }, { { p2.x, p1.y }, { t2.x, t1.y } }, { { p1.x, p2.y }, { t1.x, t2.y } }, { p2, t2 } },
         glm::vec4(color, alpha)
     });
+}
+
+u32 Renderer::renderTexture(std::vector<RenderTextureItem> const& items, u32 width, u32 height)
+{
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    GLuint framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex, 0);
+
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    glViewport(0, 0, width, height);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glUseProgram(shaders.mesh2D.program);
+    glDisable(GL_BLEND);
+    for(auto& item : items)
+    {
+        GLMesh const& mesh = loadedMeshes[item.renderHandle];
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    loadedTextures.push_back({ tex });
+    return loadedTextures.size() - 1;
 }

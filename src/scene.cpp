@@ -3,14 +3,6 @@
 #include "vehicle.h"
 #include <algorithm>
 
-const u32 viewportCount = 4;
-
-static const char* getPositionName(u32 n)
-{
-    const char* names[] = {"1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"};
-    return names[n];
-}
-
 Scene::Scene(const char* name)
 {
     // create PhysX scene
@@ -38,6 +30,14 @@ Scene::Scene(const char* name)
     auto& sceneData = game.resources.getScene(name);
     auto& entities = sceneData["entities"].array();
     bool foundStart = false;
+
+    struct TrackMesh
+    {
+        Mesh const& mesh;
+        glm::mat4 transform;
+        f32 boundX, boundY, boundZ;
+    };
+    std::vector<TrackMesh> trackMeshes;
     for (auto& e : entities)
     {
         std::string entityType = e["type"].string();
@@ -79,14 +79,21 @@ Scene::Scene(const char* name)
                 { isTrack ? ActorUserData::TRACK : ActorUserData::SCENERY }
             });
 
-            PxVec3 scale(glm::length(glm::vec3(transform[0])),
-                         glm::length(glm::vec3(transform[1])),
-                         glm::length(glm::vec3(transform[2])));
+            if (isTrack)
+            {
+                trackMeshes.push_back({
+                    mesh,
+                    transform,
+                    (f32)e["bound_x"].real(),
+                    (f32)e["bound_y"].real(),
+                    (f32)e["bound_z"].real(),
+                });
+            }
 
 	        PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
-                        PxMeshScale(scale)), isTrack ? *trackMaterial : *offroadMaterial);
+                        PxMeshScale(convert(scaleOf(transform)))), isTrack ? *trackMaterial : *offroadMaterial);
             shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
             actor->userData = &staticEntities.back().userData;
@@ -100,6 +107,44 @@ Scene::Scene(const char* name)
                         (glm::vec3*)(data.data() + data.size())));
         }
     }
+
+    // render HUD track texture
+    glm::vec3 minP(FLT_MAX), maxP(-FLT_MAX);
+    for (auto& t : trackMeshes)
+    {
+        glm::vec3 min = t.mesh.aabbMin;
+        glm::vec3 max = t.mesh.aabbMax;
+        glm::vec3 corners[8] = {
+            { min.x, min.y, min.z },
+            { max.x, min.y, min.z },
+            { max.x, max.y, min.z },
+            { min.x, max.y, min.z },
+            { min.x, min.y, max.z },
+            { max.x, min.y, max.z },
+            { max.x, max.y, max.z },
+            { min.x, max.y, max.z },
+        };
+        for (glm::vec3& v : corners)
+        {
+            v = glm::vec3(t.transform * glm::vec4(v, 1.0));
+            if (v.x < minP.x) minP.x = v.x;
+            if (v.y < minP.y) minP.y = v.y;
+            if (v.z < minP.z) minP.z = v.z;
+            if (v.x > maxP.x) maxP.x = v.x;
+            if (v.y > maxP.y) maxP.y = v.y;
+            if (v.z > maxP.z) maxP.z = v.z;
+        }
+    }
+    f32 pad = 10.f;
+    glm::mat4 trackOrtho = glm::ortho(minP.x - pad, maxP.x + pad, minP.y - pad,
+            maxP.y + pad, maxP.z + pad, minP.z - pad);
+
+    std::vector<RenderTextureItem> renderItems;
+    for (auto& t : trackMeshes)
+    {
+        renderItems.push_back({ t.mesh.renderHandle, trackOrtho * t.transform });
+    }
+    trackTexture = game.renderer.renderTexture(renderItems, 512, 512);
 
     if (!foundStart)
     {
@@ -147,8 +192,7 @@ void Scene::onUpdate(f32 deltaTime)
 
     game.renderer.setViewportCount(viewportCount);
     game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
-    //game.renderer.drawQuad2D(game.resources.getTexture("circle").renderHandle,
-            //{ 50, 50 }, { 100, 100 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
+    game.renderer.drawQuad2D(trackTexture, { 50, 50 }, { 300, 300 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 
     // draw static entities
     for (auto const& e : staticEntities)
@@ -222,10 +266,8 @@ void Scene::onUpdate(f32 deltaTime)
                 "\nEngine RPM: ", playerVehicle.getEngineRPM(),
                 "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
                 "\nGear: ", playerVehicle.getCurrentGear(),
-                "\nLap: ", playerVehicle.currentLap, "/", totalLaps,
                 "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark,
-                "\nPosition: ", getPositionName(playerVehicle.placement)).c_str(), 20, 20, glm::vec3(1));
+                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), 300, 20, glm::vec3(1));
 
     if (game.input.isKeyPressed(KEY_F2))
     {

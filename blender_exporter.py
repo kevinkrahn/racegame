@@ -180,6 +180,16 @@ def save_mesh(obj, mesh_map):
         for v in mesh_copy.vertices:
             vertex_buffer += struct.pack("<3f", v.co[0], v.co[1], v.co[2])
 
+    minP = [999999.0, 999999, 999999];
+    maxP = [-999999.0, -999999, -999999];
+    for v in mesh_copy.vertices:
+        if v.co[0] < minP[0]: minP[0] = v.co[0];
+        if v.co[1] < minP[1]: minP[1] = v.co[1];
+        if v.co[2] < minP[2]: minP[2] = v.co[2];
+        if v.co[0] > maxP[0]: maxP[0] = v.co[0];
+        if v.co[1] > maxP[1]: maxP[1] = v.co[1];
+        if v.co[2] > maxP[2]: maxP[2] = v.co[2];
+
     mesh_map[mesh_name] = {
         'name': mesh_name,
         'num_colors': max(1, len(mesh_copy.vertex_colors)),
@@ -189,7 +199,9 @@ def save_mesh(obj, mesh_map):
         'num_vertices': vertex_count,
         'index_buffer': index_buffer,
         'num_indices': len(indices),
-        'properties': get_props(obj.data)
+        'properties': get_props(obj.data),
+        'aabb_min': struct.pack("<3f", minP[0], minP[1], minP[2]),
+        'aabb_max': struct.pack("<3f", maxP[0], maxP[1], maxP[2]),
     }
     return (True, mesh_name)
 

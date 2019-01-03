@@ -59,6 +59,21 @@ public:
         ++size_;
     }
 
+    // merge two vecs into one
+    SmallVec<T> concat(SmallVec<T> const& other)
+    {
+        SmallVec<T> v;
+        for (auto const& val : *this)
+        {
+            v.push_back(val);
+        }
+        for (auto const& val : other)
+        {
+            v.push_back(val);
+        }
+        return v;
+    }
+
     // copy insert by index
     void insert(u32 index, const T& val)
     {

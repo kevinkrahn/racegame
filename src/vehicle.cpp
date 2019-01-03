@@ -604,7 +604,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             if (game.input.isKeyPressed(KEY_C))
             {
-                scene.createProjectile(getPosition() + getForwardVector() * 3.f,
+                scene.createProjectile(getPosition() + getForwardVector() * 4.f,
                         convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
                         vehicleIndex);
             }
@@ -709,7 +709,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
                 5.f, deltaTime);
 #endif
-        f32 camDistance = 60.f;
+        f32 camDistance = 80.f;
         glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 10.f, 200.f);
     }
@@ -762,7 +762,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     }
 
     // destroy vehicle if it is flipped and unable to move
-    if (onGround && numWheelsOnGround <= 1)
+    if (onGround && numWheelsOnGround <= 1 && getRigidBody()->getLinearVelocity().magnitude() < 2.f)
     {
         flipTimer += deltaTime;
         if (flipTimer > 2.5f)
@@ -818,5 +818,26 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         }
         auto& mesh = i < 2 ? vehicleData->wheelMeshFront : vehicleData->wheelMeshRear;
         game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
+    }
+
+    // HUD
+    if (hasCamera)
+    {
+        glm::vec2 offset = viewportLayout[viewportCount-1].offsets[vehicleIndex] * glm::vec2(game.windowWidth, game.windowHeight);
+        Font& font1 = game.resources.getFont("font", 30);
+        Font& font2 = game.resources.getFont("font", 60);
+
+        std::string p = str(currentLap);
+        font1.drawText(str("LAP").c_str(), offset.x + 20, offset.y + 20, glm::vec3(1.f));
+        font2.drawText(p.c_str(), offset.x + 65, offset.y + 20, glm::vec3(1.f));
+        font1.drawText(str('/', scene.getTotalLaps()).c_str(),
+                offset.x + 65 + font2.stringDimensions(p.c_str()).x, offset.y + 20, glm::vec3(1.f));
+
+        const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
+
+        p = str(placement + 1);
+        font2.drawText(p.c_str(), offset.x + 150, offset.y + 20, glm::vec3(1.f));
+        font1.drawText(str(placementSuffix[placement]).c_str(),
+                offset.x + 150 + font2.stringDimensions(p.c_str()).x, offset.y + 20, glm::vec3(1.f));
     }
 }

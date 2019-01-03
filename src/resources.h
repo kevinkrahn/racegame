@@ -18,6 +18,8 @@ struct Mesh
     u32 elementSize;
     u32 stride;
     u32 renderHandle;
+    glm::vec3 aabbMin;
+    glm::vec3 aabbMax;
 };
 
 struct Texture

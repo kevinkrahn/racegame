@@ -192,7 +192,7 @@ void Font::drawText(const char* str, f32 x, f32 y, glm::vec3 color, f32 alpha,
         f32 y1 = y0 + g.height * scale;
 
         game.renderer.drawQuad2D(fontAtlasHandle,
-                { x0, y0 }, { x1, y1 }, { g.x0, g.y0 }, { g.x1, g.y1 }, color, alpha);
+                { x0, y0 }, { x1, y1 }, { g.x0, g.y0 }, { g.x1, g.y1 }, color, alpha, false);
 
         x += g.advance * scale;
 

@@ -29,10 +29,10 @@ layout(location = 1) in vec2 inTexCoord;
 
 void main()
 {
-#if 1
-    outColor = inColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
-#else
+#ifdef COLOR
     outColor = inColor * texture(tex, inTexCoord);
+#else
+    outColor = inColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
 #endif
 }
 
