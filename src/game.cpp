@@ -84,6 +84,8 @@ void Game::run()
         renderer.render(deltaTime);
         input.onFrameEnd();
 
+        frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;
+
         using seconds = std::chrono::duration<f64, std::ratio<1>>;
         if (!game.config.vsync)
         {

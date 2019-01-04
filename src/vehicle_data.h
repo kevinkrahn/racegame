@@ -199,9 +199,9 @@ inline void initVehicleData()
     car.physics.frontToeAngle = -0.01f;
     car.physics.rearToeAngle = 0.f;
     car.physics.wheelDampingRate = 0.22f;
-    car.physics.offroadDampingRate = 15.f;
+    car.physics.offroadDampingRate = 50.f;
     car.physics.trackTireFriction = 3.9f;
-    car.physics.offroadTireFriction = 1.25f;
+    car.physics.offroadTireFriction = 1.4f;
     car.physics.maxEngineOmega = 700.f;
     car.physics.peekEngineTorque = 410.f;
     car.physics.engineDampingFullThrottle = 0.14f;
@@ -233,9 +233,9 @@ inline void initVehicleData()
     racecar.physics.frontToeAngle = 0.f;
     racecar.physics.rearToeAngle = 0.01f;
     racecar.physics.wheelDampingRate = 0.22f;
-    racecar.physics.offroadDampingRate = 15.f;
+    racecar.physics.offroadDampingRate = 90.f;
     racecar.physics.trackTireFriction = 4.4f;
-    racecar.physics.offroadTireFriction = 1.0f;
+    racecar.physics.offroadTireFriction = 1.4f;
     racecar.physics.maxEngineOmega = 900.f;
     racecar.physics.peekEngineTorque = 900.f;
     racecar.physics.engineDampingFullThrottle = 0.14f;

@@ -4,6 +4,42 @@
 #include <fstream>
 #include <sstream>
 
+class DynamicBuffer
+{
+private:
+    size_t size;
+    GLuint buffers[MAX_BUFFERED_FRAMES];
+    bool created = false;
+
+public:
+    DynamicBuffer(size_t size) : size(size) {}
+
+    void checkBuffers()
+    {
+        if (!created)
+        {
+            glCreateBuffers(3, buffers);
+            for (u32 i=0; i<MAX_BUFFERED_FRAMES; ++i)
+            {
+                glNamedBufferData(buffers[i], size, nullptr, GL_DYNAMIC_DRAW);
+            }
+            created = true;
+        }
+    }
+
+    GLuint getBuffer()
+    {
+        checkBuffers();
+        return buffers[game.frameIndex];
+    }
+
+    void updateData(void* data, size_t range = 0)
+    {
+        checkBuffers();
+        glNamedBufferSubData(getBuffer(), 0, range == 0 ? size : range, data);
+    }
+};
+
 struct GLMesh
 {
     GLuint vao, vbo, ebo;
@@ -64,8 +100,6 @@ struct TrackTexture
     u32 texRenderHandle;
 } track;
 
-const u32 MAX_DEBUG_VERTS = 500000;
-
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
 std::vector<RenderMesh> renderList;
@@ -86,7 +120,8 @@ struct Shaders
     GLShader mesh2D;
 } shaders;
 
-GLuint worldInfoUBO;
+DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
+DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
 GLMesh debugMesh;
 
 struct Framebuffers
@@ -253,17 +288,8 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     shaders.post = loadShader("shaders/post.glsl");
     shaders.mesh2D = loadShader("shaders/mesh2D.glsl");
 
-    // create world info uniform buffer
-    glCreateBuffers(1, &worldInfoUBO);
-    glNamedBufferData(worldInfoUBO, sizeof(WorldInfo), &worldInfo, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO);
-
     // create debug vertex buffer
-    glCreateBuffers(1, &debugMesh.vbo);
-    glNamedBufferData(debugMesh.vbo, sizeof(DebugVertex) * MAX_DEBUG_VERTS, nullptr, GL_DYNAMIC_DRAW);
-
     glCreateVertexArrays(1, &debugMesh.vao);
-    glVertexArrayVertexBuffer(debugMesh.vao, 0, debugMesh.vbo, 0, sizeof(DebugVertex));
 
     glEnableVertexArrayAttrib(debugMesh.vao, 0);
     glVertexArrayAttribFormat(debugMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
@@ -327,16 +353,16 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
 void Renderer::render(f32 deltaTime)
 {
+    // update worldinfo uniform buffer
     worldInfo.time = (f32)getTime();
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
-
     u32 viewportCount = cameras.size();
     for (u32 i=0; i<viewportCount; ++i)
     {
         worldInfo.cameras[i] = cameras[i].viewProjection;
     }
-
-    glNamedBufferSubData(worldInfoUBO, 0, sizeof(WorldInfo), &worldInfo);
+    worldInfoUBO.updateData(&worldInfo);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
 
     // 3D
 
@@ -381,7 +407,8 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_BLEND);
     if (debugVertices.size() > 0)
     {
-        glNamedBufferSubData(debugMesh.vbo, 0, debugVertices.size() * sizeof(DebugVertex), debugVertices.data());
+        debugVertexBuffer.updateData(debugVertices.data(), debugVertices.size() * sizeof(DebugVertex));
+        glVertexArrayVertexBuffer(debugMesh.vao, 0, debugVertexBuffer.getBuffer(), 0, sizeof(DebugVertex));
 
         glUseProgram(shaders.debug.program);
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));

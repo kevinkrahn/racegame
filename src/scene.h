@@ -47,7 +47,6 @@ struct StaticEntity
 {
     u32 renderHandle;
     glm::mat4 worldTransform;
-    ActorUserData userData;
 };
 
 struct VehicleDebris
@@ -70,6 +69,7 @@ class Scene
     u32 totalLaps = 4;
 
     std::vector<StaticEntity> staticEntities;
+    std::vector<std::unique_ptr<ActorUserData>> physicsUserData;
     std::vector<VehicleDebris> vehicleDebris;
     SmallVec<std::unique_ptr<class Vehicle>> vehicles;
     SmallVec<u32> finishOrder;

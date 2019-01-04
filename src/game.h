@@ -16,6 +16,8 @@ public:
     }
 };
 
+const u32 MAX_BUFFERED_FRAMES = 3;
+
 class Game
 {
     void initPhysX();
@@ -50,6 +52,7 @@ public:
     u32 windowWidth;
     u32 windowHeight;
     f32 deltaTime;
+    u32 frameIndex;
 
     SDL_Window* window = nullptr;
     std::unique_ptr<Scene> currentScene;

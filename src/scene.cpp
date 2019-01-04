@@ -74,10 +74,12 @@ Scene::Scene(const char* name)
 
             bool isTrack = name.find("Track") != std::string::npos;
             bool isSand = name.find("Sand") != std::string::npos;
+            physicsUserData.push_back(std::make_unique<ActorUserData>());
+            physicsUserData.back()->entityType = (isTrack || isSand) ? ActorUserData::TRACK : ActorUserData::SCENERY;
+
             staticEntities.push_back({
                 mesh.renderHandle,
                 transform,
-                { isTrack || isSand ? ActorUserData::TRACK : ActorUserData::SCENERY }
             });
 
             if (isTrack)
@@ -93,13 +95,14 @@ Scene::Scene(const char* name)
 
             PxMaterial* material = isTrack ? trackMaterial : offroadMaterial;
             if (isSand) material = offroadMaterial;
+
 	        PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
                         PxMeshScale(convert(scaleOf(transform)))), *material);
             shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
-            actor->userData = &staticEntities.back().userData;
+            actor->userData = physicsUserData.back().get();
 	        physicsScene->addActor(*actor);
         }
         else if (entityType == "PATH")
