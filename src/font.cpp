@@ -127,35 +127,35 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
     return { std::max(currentWidth, maxWidth), currentHeight };
 }
 
-void Font::drawText(const char* str, f32 x, f32 y, glm::vec3 color, f32 alpha,
+void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,
         f32 scale, HorizontalAlign halign, VerticalAlign valign)
 {
-    f32 startX = x;
+    f32 startX = p.x;
 
     if (halign != HorizontalAlign::LEFT)
     {
         f32 lineWidth = stringDimensions(str, true).x * scale;
         if (halign == HorizontalAlign::CENTER)
         {
-            x -= lineWidth * 0.5f;
+            p.x -= lineWidth * 0.5f;
         }
         else if (halign == HorizontalAlign::RIGHT)
         {
-            x -= lineWidth;
+            p.x -= lineWidth;
         }
     }
 
-    y += height * scale;
+    p.y += height * scale;
     if (valign != VerticalAlign::TOP)
     {
         f32 stringHeight = stringDimensions(str).y * scale;
         if (valign == VerticalAlign::BOTTOM)
         {
-            y -= stringHeight;
+            p.y -= stringHeight;
         }
         else if (valign == VerticalAlign::CENTER)
         {
-            y -= stringHeight * 0.5f;
+            p.y -= stringHeight * 0.5f;
         }
     }
 
@@ -168,38 +168,38 @@ void Font::drawText(const char* str, f32 x, f32 y, glm::vec3 color, f32 alpha,
 
             if (halign == HorizontalAlign::CENTER)
             {
-                x = startX - nextLineWidth * 0.5f;
+                p.x = startX - nextLineWidth * 0.5f;
             }
             else if (halign == HorizontalAlign::LEFT)
             {
-                x = startX;
+                p.x = startX;
             }
             else
             {
-                x = startX - nextLineWidth;
+                p.x = startX - nextLineWidth;
             }
 
-            y += lineHeight * scale;
+            p.y += lineHeight * scale;
 
             continue;
         }
 
         auto &g = glyphs[(u32)(*str - startingChar)];
 
-        f32 x0 = x + g.xOff * scale;
-        f32 y0 = y + g.yOff * scale;
+        f32 x0 = p.x + g.xOff * scale;
+        f32 y0 = p.y + g.yOff * scale;
         f32 x1 = x0 + g.width * scale;
         f32 y1 = y0 + g.height * scale;
 
         game.renderer.drawQuad2D(fontAtlasHandle,
                 { x0, y0 }, { x1, y1 }, { g.x0, g.y0 }, { g.x1, g.y1 }, color, alpha, false);
 
-        x += g.advance * scale;
+        p.x += g.advance * scale;
 
         // kerning
         if (*(str+1) && *(str+1) != '\n')
         {
-            x += kerningTable[(*str - startingChar) * glyphs.size() + (*(str+1) - startingChar)] * scale;
+            p.x += kerningTable[(*str - startingChar) * glyphs.size() + (*(str+1) - startingChar)] * scale;
         }
 
         ++str;

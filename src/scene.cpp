@@ -108,6 +108,11 @@ Scene::Scene(const char* name)
         }
     }
 
+    if (!foundStart)
+    {
+        FATAL_ERROR("Track does not have a starting point!");
+    }
+
     // render HUD track texture
     glm::vec3 minP(FLT_MAX), maxP(-FLT_MAX);
     for (auto& t : trackMeshes)
@@ -135,21 +140,15 @@ Scene::Scene(const char* name)
             if (v.z > maxP.z) maxP.z = v.z;
         }
     }
-    f32 pad = 10.f;
-    glm::mat4 trackOrtho = glm::ortho(minP.x - pad, maxP.x + pad, minP.y - pad,
-            maxP.y + pad, maxP.z + pad, minP.z - pad);
+    f32 pad = 20.f;
+    trackOrtho = glm::ortho(minP.x - pad, maxP.x + pad, minP.y - pad,
+            maxP.y + pad, -maxP.z - 10.f, -minP.z + 10.f);
 
-    std::vector<RenderTextureItem> renderItems;
     for (auto& t : trackMeshes)
     {
-        renderItems.push_back({ t.mesh.renderHandle, trackOrtho * t.transform });
+        trackItems.push_back({ t.mesh.renderHandle, trackOrtho * t.transform });
     }
-    trackTexture = game.renderer.renderTexture(renderItems, 512, 512);
-
-    if (!foundStart)
-    {
-        FATAL_ERROR("Track does not have a starting point!");
-    }
+    trackAspectRatio = (maxP.y - minP.y) / (maxP.x - minP.x);
 }
 
 Scene::~Scene()
@@ -192,7 +191,6 @@ void Scene::onUpdate(f32 deltaTime)
 
     game.renderer.setViewportCount(viewportCount);
     game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
-    game.renderer.drawQuad2D(trackTexture, { 50, 50 }, { 300, 300 }, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 
     // draw static entities
     for (auto const& e : staticEntities)
@@ -260,6 +258,8 @@ void Scene::onUpdate(f32 deltaTime)
         vehicles[finishOrder[i]]->placement = i;
     }
 
+    // debug text
+#if 1
     Vehicle const& playerVehicle = *vehicles[0];
     game.resources.getFont("font", 22).drawText(str(
                 "FPS: ", 1.f / deltaTime,
@@ -267,7 +267,8 @@ void Scene::onUpdate(f32 deltaTime)
                 "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
                 "\nGear: ", playerVehicle.getCurrentGear(),
                 "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), 300, 20, glm::vec3(1));
+                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { 300, 20 }, glm::vec3(1));
+#endif
 
     if (game.input.isKeyPressed(KEY_F2))
     {
@@ -306,6 +307,20 @@ void Scene::onUpdate(f32 deltaTime)
     {
         trackGraph.debugDraw();
     }
+
+    // draw HUD track
+    u32 arrowMesh = game.resources.getMesh("world.TrackArrow").renderHandle;
+    SmallVec<RenderTextureItem, 16> dynamicItems;
+    for (auto const& v : vehicles)
+    {
+        dynamicItems.push_back({
+            arrowMesh,
+            trackOrtho * glm::translate(glm::mat4(1.f), { 0, 0, 2 }) * v->getTransform() * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
+            glm::vec3(1, 0, 0)
+        });
+    }
+    game.renderer.drawTrack2D(trackItems, dynamicItems, 200, (u32)(200 * trackAspectRatio),
+            glm::vec2(game.windowWidth, game.windowHeight) * 0.5f);
 }
 
 void Scene::onEnd()

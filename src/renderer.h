@@ -2,6 +2,7 @@
 
 #include "resources.h"
 #include "math.h"
+#include "smallvec.h"
 
 #include <SDL2/SDL.h>
 #include <vector>
@@ -24,8 +25,6 @@ struct ViewportLayout
     f32 fov;
     glm::vec2 scale;
     glm::vec2 offsets[MAX_VIEWPORTS];
-    //glm::vec2 trackPos;
-    //f32 trackScale;
 };
 
 ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
@@ -39,6 +38,7 @@ struct RenderTextureItem
 {
     u32 renderHandle;
     glm::mat4 transform;
+    glm::vec3 color = glm::vec3(1.0);
 };
 
 class Renderer
@@ -65,5 +65,6 @@ public:
             glm::vec3 color, f32 alpha=1.f, bool colorShader=true);
     //void drawQuad2D(u32 texture, glm::vec2 p, f32 angle=0.f, glm::vec3 color=glm::vec3(1.f), f32 alpha=1.f);
 
-    u32 renderTexture(std::vector<RenderTextureItem> const& items, u32 width, u32 height);
+    void drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
+                     SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos);
 };

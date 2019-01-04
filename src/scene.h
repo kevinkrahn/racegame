@@ -3,6 +3,7 @@
 #include "misc.h"
 #include "math.h"
 #include "track_graph.h"
+#include "renderer.h"
 #include <vector>
 
 const u32 viewportCount = 4;
@@ -79,7 +80,9 @@ class Scene
     bool trackGraphDebugVisualizationEnabled = false;
     PxScene* physicsScene = nullptr;
 
-    u32 trackTexture;
+    glm::mat4 trackOrtho;
+    std::vector<RenderTextureItem> trackItems;
+    f32 trackAspectRatio;
 
     TrackGraph trackGraph;
 

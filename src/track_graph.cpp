@@ -78,7 +78,7 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
     {
         const f32* data = mesh.vertices.data();
         glm::vec3 position = transform * glm::vec4(data[i*3], data[i*3+1], data[i*3+2], 1.f);
-        f32 dist = glm::length2(position - glm::vec3(translationOf(startTransform)));
+        f32 dist = glm::length2(position - translationOf(startTransform));
         if (dist < minDist)
         {
             minDist = dist;
@@ -91,7 +91,6 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
     {
         FATAL_ERROR("There is no track graph vertex close enough to the finish line.");
     }
-    // TODO: move the starting vertex directly under the finish line for consistency
 
     u32 size = mesh.indices.size() / 2;
     for (u32 i=0; i<size; ++i)
@@ -103,6 +102,7 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
     }
 
     Node& start = nodes[startIndex];
+    start.position = glm::vec3(glm::vec2(translationOf(startTransform)), start.position.z) + xAxisOf(startTransform) * 2.f;
     u32 endIndex = nodes.size();
 
     // copy the start node to make the end node

@@ -685,8 +685,6 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         if (glm::dot(xAxisOf(scene.getStart()), dir) > 0.f
                 && glm::length2(getPosition() - finishLinePosition) < square(40.f))
         {
-            graphResult.lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
-            graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
             if (currentLap >= scene.getTotalLaps())
             {
                 finishedRace = true;
@@ -695,6 +693,8 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             else
             {
                 ++currentLap;
+                graphResult.lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
+                graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
             }
         }
     }
@@ -823,21 +823,30 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     // HUD
     if (hasCamera)
     {
+        Font& font1 = game.resources.getFont("font", 32);
+        Font& font2 = game.resources.getFont("font", 64);
+
         glm::vec2 offset = viewportLayout[viewportCount-1].offsets[vehicleIndex] * glm::vec2(game.windowWidth, game.windowHeight);
-        Font& font1 = game.resources.getFont("font", 30);
-        Font& font2 = game.resources.getFont("font", 60);
+        glm::vec2 d(1.f, 1.f);
+        if (offset.y > 0.f)
+        {
+            offset.y = game.windowHeight - font2.getHeight();
+            d.y = -1;
+        }
 
         std::string p = str(currentLap);
-        font1.drawText(str("LAP").c_str(), offset.x + 20, offset.y + 20, glm::vec3(1.f));
-        font2.drawText(p.c_str(), offset.x + 65, offset.y + 20, glm::vec3(1.f));
+        font1.drawText(str("LAP").c_str(), offset + glm::vec2(20, d.y*20), glm::vec3(1.f));
+        font2.drawText(p.c_str(), offset + glm::vec2(70, d.y*20), glm::vec3(1.f));
         font1.drawText(str('/', scene.getTotalLaps()).c_str(),
-                offset.x + 65 + font2.stringDimensions(p.c_str()).x, offset.y + 20, glm::vec3(1.f));
+                offset + glm::vec2(70 + font2.stringDimensions(p.c_str()).x, d.y*20), glm::vec3(1.f));
 
         const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
+        //const glm::vec3 placementColor[] = { { 1, 1, 1 }, { 0.9f, 1, 1 }, { 1.f, 1.f, 0.9f } }
+        glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
 
         p = str(placement + 1);
-        font2.drawText(p.c_str(), offset.x + 150, offset.y + 20, glm::vec3(1.f));
+        font2.drawText(p.c_str(), offset + glm::vec2(150, d.y*20), col);
         font1.drawText(str(placementSuffix[placement]).c_str(),
-                offset.x + 150 + font2.stringDimensions(p.c_str()).x, offset.y + 20, glm::vec3(1.f));
+                offset + glm::vec2(150 + font2.stringDimensions(p.c_str()).x, d.y*20), col);
     }
 }

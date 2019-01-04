@@ -55,6 +55,14 @@ struct Quad2D
     glm::vec4 color;
 };
 
+struct TrackTexture
+{
+    GLuint tex, depthBuffer, framebuffer;
+    u32 width = 0;
+    u32 height = 0;
+    u32 texRenderHandle;
+} track;
+
 const u32 MAX_DEBUG_VERTS = 500000;
 
 std::vector<GLMesh> loadedMeshes;
@@ -593,45 +601,72 @@ void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1,
     });
 }
 
-u32 Renderer::renderTexture(std::vector<RenderTextureItem> const& items, u32 width, u32 height)
+void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
+            SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos)
 {
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (track.width != width || track.height != height)
+    {
+        track.width = width;
+        track.height = height;
 
-    GLuint framebuffer;
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex, 0);
+        glGenTextures(1, &track.tex);
+        glBindTexture(GL_TEXTURE_2D, track.tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        glGenRenderbuffers(1, &track.depthBuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, track.depthBuffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+        glGenFramebuffers(1, &track.framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, track.framebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, track.tex, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, track.depthBuffer);
+
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+        loadedTextures.push_back({ track.tex });
+        track.texRenderHandle = loadedTextures.size() - 1;
+    }
 
     glViewport(0, 0, width, height);
+    glBindFramebuffer(GL_FRAMEBUFFER, track.framebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDepthMask(GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    glUseProgram(shaders.mesh2D.program);
+    glClearColor(0.f, 0.f, 0.f, 0.f);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_BLEND);
-    for(auto& item : items)
+
+    glUseProgram(shaders.mesh2D.program);
+
+    for(auto& item : staticItems)
     {
         GLMesh const& mesh = loadedMeshes[item.renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
+        glUniform3fv(1, 1, (GLfloat*)&item.color);
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    for(auto& item : dynamicItems)
+    {
+        GLMesh const& mesh = loadedMeshes[item.renderHandle];
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
+        glUniform3fv(1, 1, (GLfloat*)&item.color);
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
-    loadedTextures.push_back({ tex });
-    return loadedTextures.size() - 1;
+    glm::vec2 size(width, height);
+    drawQuad2D(track.texRenderHandle, pos-size*0.5f, pos+size*0.5f, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 }

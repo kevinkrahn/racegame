@@ -41,7 +41,9 @@ public:
 
     glm::vec2 stringDimensions(const char* str, bool onlyFirstLine=false) const;
 
-    void drawText(const char* str, f32 x, f32 y, glm::vec3 color, f32 alpha=1.f,
+    void drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha=1.f,
             f32 scale=1.f, HorizontalAlign halign=HorizontalAlign::LEFT,
             VerticalAlign valign=VerticalAlign::TOP);
+
+    f32 getHeight() const { return height; }
 };
