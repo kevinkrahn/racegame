@@ -611,7 +611,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
         track.height = height;
 
         // multisample
-        const u32 samples = 8;
+        const u32 samples = 4;
         glGenTextures(1, &track.multisampleTex);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, track.multisampleTex);
         glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA, width, height, GL_TRUE);

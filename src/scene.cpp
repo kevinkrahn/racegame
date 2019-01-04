@@ -144,14 +144,20 @@ Scene::Scene(const char* name)
         }
     }
     f32 pad = 20.f;
-    trackOrtho = glm::ortho(minP.x - pad, maxP.x + pad, minP.y - pad,
+    trackOrtho = glm::rotate(glm::mat4(1.f), f32(M_PI * -0.5f), { 0, 0, 1 }) * glm::ortho(maxP.x + pad, minP.x - pad, minP.y - pad,
             maxP.y + pad, -maxP.z - 10.f, -minP.z + 10.f);
 
     for (auto& t : trackMeshes)
     {
         trackItems.push_back({ t.mesh.renderHandle, trackOrtho * t.transform });
     }
-    trackAspectRatio = (maxP.y - minP.y) / (maxP.x - minP.x);
+    trackAspectRatio = (maxP.x - minP.x) / (maxP.y - minP.y);
+
+    trackItems.push_back({
+        game.resources.getMesh("world.Quad").renderHandle,
+        trackOrtho * start * glm::translate(glm::mat4(1.f), { 0, 0, -4 }) * glm::scale(glm::mat4(1.f), { 5, 16, 1 }),
+        glm::vec3(0.2f)
+    });
 }
 
 Scene::~Scene()
@@ -316,9 +322,12 @@ void Scene::onUpdate(f32 deltaTime)
     SmallVec<RenderTextureItem, 16> dynamicItems;
     for (auto const& v : vehicles)
     {
+        glm::vec3 pos = v->getPosition();
         dynamicItems.push_back({
             arrowMesh,
-            trackOrtho * glm::translate(glm::mat4(1.f), { 0, 0, 2 }) * v->getTransform() * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
+            trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
+                * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
+                * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
             glm::vec3(1, 0, 0)
         });
     }
