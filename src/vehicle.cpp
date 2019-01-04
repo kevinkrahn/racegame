@@ -462,6 +462,7 @@ Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const
     this->vehicleData = data;
     this->cameraTarget = translationOf(transform);
     this->targetOffset = startOffset;
+    this->startOffset = startOffset;
 
     setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
@@ -606,12 +607,12 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             deadTimer = 0.f;
             hitPoints = 100.f;
 
-            // TODO: instead of using targetOffset, attempt to place the vehicle in the middle of the
+            // TODO: instead of using startOffset, attempt to place the vehicle in the middle of the
             // road and offset if there is an obstruction
             const TrackGraph::Node* node = graphResult.lastNode;
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
-                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
+                glm::vec3(startOffset.x * dir + startOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
@@ -652,11 +653,53 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             glm::vec3 nextP = scene.getPaths()[followPathIndex][targetPointIndex];
             glm::vec3 previousP = scene.getPaths()[followPathIndex][previousIndex];
             glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
+
             glm::vec3 targetP = nextP -
                 glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
-            f32 steerAngle = glm::dot(glm::vec2(getRightVector()),
-                    glm::normalize(glm::vec2(getPosition() - targetP)));
+            glm::vec3 position = getPosition();
+            /*
+            if (scene.sweepStatic(1.f, position, glm::normalize(targetP - position), std::min(50.f, glm::length(position - targetP))))
+            {
+                targetP = nextP;
+            }
+            */
+            f32 steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(position - targetP)));
+
+            f32 forwardTestDist = 13.f;
+            f32 sideTestDist = 9.f;
+            f32 testAngle = 0.65f;
+            glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
+            glm::vec3 testDir2(glm::rotate(glm::mat4(1.f), -testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
+            //game.renderer.drawLine(position, position + testDir1 * sideTestDist);
+            //game.renderer.drawLine(position, position + testDir2 * sideTestDist);
+
+            glm::vec3 testFrom = position + glm::vec3(0, 0, 0.5f);
+            if (scene.sweepStatic(1.1f, testFrom, getForwardVector(), forwardTestDist))
+            {
+                bool left = scene.sweepStatic(0.5f, testFrom, testDir1, sideTestDist);
+                bool right = scene.sweepStatic(0.5f, testFrom, testDir2, sideTestDist);
+                if (!left && !right)
+                {
+                    glm::vec3 d = glm::normalize(targetP - position);
+                    f32 diff1 = glm::dot(d, testDir1);
+                    f32 diff2 = glm::dot(d, testDir2);
+                    steerAngle = diff1 > diff2 ? -0.7 : 0.7;
+                }
+                else if (!left)
+                {
+                    steerAngle = -0.7;
+                }
+                else if (!right)
+                {
+                    steerAngle = 0.7;
+                }
+                else
+                {
+                    targetP = nextP;
+                    steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(position - targetP)));
+                }
+            }
 
             f32 accel = 0.85f;
             f32 brake = 0.f;
@@ -682,7 +725,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                         -steerAngle, false, canGo, false);
             }
 
-            if (glm::length2(nextP - getPosition()) < square(30.f))
+            if (glm::length2(nextP - position) < square(30.f))
             {
                 ++targetPointIndex;
                 if (targetPointIndex >= scene.getPaths()[followPathIndex].size())

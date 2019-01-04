@@ -55,6 +55,7 @@ private:
     u32 followPathIndex = 0;
     u32 targetPointIndex = 0;
     glm::vec3 targetOffset = glm::vec3(0);
+    glm::vec3 startOffset = glm::vec3(0);
 	f32 backupTimer = 0.f;
 	f32 flipTimer = 0.f;
 	f32 deadTimer = 0.f;

@@ -22,7 +22,7 @@ Scene::Scene(const char* name)
     }
 
     // create physics materials
-	vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.5f);
+	vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
 	trackMaterial   = game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
 	offroadMaterial = game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
 
@@ -366,5 +366,40 @@ bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRay
     {
         PxRaycastBuffer tmpHit;
         return physicsScene->raycast(convert(from), convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+}
+
+bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit) const
+{
+    PxQueryFilterData filter;
+    filter.flags |= PxQueryFlag::eSTATIC;
+    filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+    PxTransform initialPose(convert(from), PxQuat(PxIdentity));
+    if (hit)
+    {
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+    else
+    {
+        PxSweepBuffer tmpHit;
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+}
+
+bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit) const
+{
+    PxQueryFilterData filter;
+    filter.flags |= PxQueryFlag::eSTATIC;
+    filter.flags |= PxQueryFlag::eDYNAMIC;
+    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0, 0);
+    PxTransform initialPose(convert(from), PxQuat(PxIdentity));
+    if (hit)
+    {
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+    }
+    else
+    {
+        PxSweepBuffer tmpHit;
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
     }
 }

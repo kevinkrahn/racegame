@@ -109,6 +109,8 @@ public:
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr) const;
     bool raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
+    bool sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr) const;
+    bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr) const;
 
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
     void createProjectile(glm::vec3 const& position, glm::vec3 const& velocity, u32 instigator)

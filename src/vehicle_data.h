@@ -166,7 +166,7 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
         {
             std::string const& meshName = e["data_name"].string();
             PxConvexMesh* collisionMesh = game.resources.getConvexCollisionMesh(meshName);
-            PxMaterial* material = game.physx.physics->createMaterial(0.1f, 0.1f, 0.1f);
+            PxMaterial* material = game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
             PxShape* shape = game.physx.physics->createShape(
                     PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND,
