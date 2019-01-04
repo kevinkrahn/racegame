@@ -57,7 +57,8 @@ struct Quad2D
 
 struct TrackTexture
 {
-    GLuint tex, depthBuffer, framebuffer;
+    GLuint multisampleFramebuffer, multisampleTex, multisampleDepthBuffer;
+    GLuint destFramebuffer, destTex;
     u32 width = 0;
     u32 height = 0;
     u32 texRenderHandle;
@@ -609,34 +610,47 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
         track.width = width;
         track.height = height;
 
-        glGenTextures(1, &track.tex);
-        glBindTexture(GL_TEXTURE_2D, track.tex);
+        // multisample
+        const u32 samples = 8;
+        glGenTextures(1, &track.multisampleTex);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, track.multisampleTex);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA, width, height, GL_TRUE);
+
+        glGenRenderbuffers(1, &track.multisampleDepthBuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, track.multisampleDepthBuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT, width, height);
+
+        glGenFramebuffers(1, &track.multisampleFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, track.multisampleFramebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, track.multisampleTex, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, track.multisampleDepthBuffer);
+
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+        // dest
+        glGenTextures(1, &track.destTex);
+        glBindTexture(GL_TEXTURE_2D, track.destTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glGenRenderbuffers(1, &track.depthBuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, track.depthBuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-
-        glGenFramebuffers(1, &track.framebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, track.framebuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, track.tex, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, track.depthBuffer);
+        glGenFramebuffers(1, &track.destFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, track.destFramebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, track.destTex, 0);
 
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-        loadedTextures.push_back({ track.tex });
+        loadedTextures.push_back({ track.destTex });
         track.texRenderHandle = loadedTextures.size() - 1;
     }
 
     glViewport(0, 0, width, height);
-    glBindFramebuffer(GL_FRAMEBUFFER, track.framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, track.multisampleFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
@@ -664,6 +678,12 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, track.multisampleFramebuffer);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, track.destFramebuffer);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
