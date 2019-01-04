@@ -117,4 +117,6 @@ public:
     {
         projectiles.push_back({ position, velocity, instigator });
     };
+
+    void attackCredit(u32 instigator, u32 victim);
 };

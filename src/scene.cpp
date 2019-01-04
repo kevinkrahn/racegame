@@ -73,10 +73,11 @@ Scene::Scene(const char* name)
             }
 
             bool isTrack = name.find("Track") != std::string::npos;
+            bool isSand = name.find("Sand") != std::string::npos;
             staticEntities.push_back({
                 mesh.renderHandle,
                 transform,
-                { isTrack ? ActorUserData::TRACK : ActorUserData::SCENERY }
+                { isTrack || isSand ? ActorUserData::TRACK : ActorUserData::SCENERY }
             });
 
             if (isTrack)
@@ -90,10 +91,12 @@ Scene::Scene(const char* name)
                 });
             }
 
+            PxMaterial* material = isTrack ? trackMaterial : offroadMaterial;
+            if (isSand) material = offroadMaterial;
 	        PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
-                        PxMeshScale(convert(scaleOf(transform)))), isTrack ? *trackMaterial : *offroadMaterial);
+                        PxMeshScale(convert(scaleOf(transform)))), *material);
             shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
             actor->userData = &staticEntities.back().userData;
@@ -221,7 +224,7 @@ void Scene::onUpdate(f32 deltaTime)
             ActorUserData* data = (ActorUserData*)hit.block.actor->userData;
             if (data && data->entityType == ActorUserData::VEHICLE)
             {
-                vehicles[data->vehicleIndex]->hitPoints -= 50.f;
+                vehicles[data->vehicleIndex]->applyDamage(50.f, it->instigator);
             }
             it = projectiles.erase(it);
             continue;
@@ -334,6 +337,18 @@ void Scene::onUpdate(f32 deltaTime)
 
 void Scene::onEnd()
 {
+}
+
+void Scene::attackCredit(u32 instigator, u32 victim)
+{
+    if (instigator == victim)
+    {
+        vehicles[instigator]->addNotification("ACCIDENT!");
+    }
+    else
+    {
+        vehicles[instigator]->addNotification("ATTACK BONUS!");
+    }
 }
 
 bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit) const

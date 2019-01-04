@@ -463,6 +463,7 @@ Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const
     this->cameraTarget = translationOf(transform);
     this->targetOffset = startOffset;
     this->startOffset = startOffset;
+    this->lastDamagedBy = vehicleIndex;
 
     setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
@@ -569,7 +570,9 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         Font& font1 = game.resources.getFont("font", game.windowHeight * 0.04);
         Font& font2 = game.resources.getFont("font", game.windowHeight * 0.08);
 
-        glm::vec2 offset = viewportLayout[viewportCount-1].offsets[vehicleIndex] * glm::vec2(game.windowWidth, game.windowHeight);
+        ViewportLayout const& layout = viewportLayout[viewportCount-1];
+        glm::vec2 dim(game.windowWidth, game.windowHeight);
+        glm::vec2 offset = layout.offsets[vehicleIndex] * dim;
         glm::vec2 d(1.f, 1.f);
         if (offset.y > 0.f)
         {
@@ -596,6 +599,22 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         font2.drawText(p.c_str(), offset + glm::vec2(o200, d.y*o20), col);
         font1.drawText(str(placementSuffix[placement]).c_str(),
                 offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col);
+
+        // display notifications
+        u32 count = 0;
+        for (auto it = notifications.begin(); it != notifications.end();)
+        {
+            font1.drawText(it->str, layout.offsets[vehicleIndex] * dim + layout.scale * dim * 0.5f - glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.03),
+                    { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER);
+            ++count;
+            it->timeLeft -= deltaTime;
+            if (it->timeLeft <= 0.f)
+            {
+                notifications.erase(it);
+                continue;
+            }
+            ++it;
+        }
     }
 
     if (deadTimer > 0.f)
@@ -796,7 +815,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     bool onGround = false;
     if (getPosition().z < -8.f)
     {
-        hitPoints = 0.f;
+        applyDamage(100.f, vehicleIndex);
     }
     else
     {
@@ -808,7 +827,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             {
                 if (((ActorUserData*)hit.block.actor->userData)->entityType != ActorUserData::TRACK)
                 {
-                    hitPoints = 0.f;
+                    applyDamage(100.f, vehicleIndex);
                 }
             }
         }
@@ -845,7 +864,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         flipTimer += deltaTime;
         if (flipTimer > 2.5f)
         {
-            hitPoints = 0.f;
+            applyDamage(100.f, vehicleIndex);
         }
     }
     else
@@ -876,6 +895,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         }
         deadTimer = 1.f;
         reset(glm::translate(glm::mat4(1.f), { 0, 0, -100 }));
+        scene.attackCredit(lastDamagedBy, vehicleIndex);
     }
 
     // draw chassis

@@ -61,6 +61,14 @@ private:
 	f32 deadTimer = 0.f;
 	bool finishedRace = false;
 	bool controlledBrakingTimer = 0.f;
+	u32 lastDamagedBy;
+
+	struct Notification
+	{
+        const char* str;
+        f32 timeLeft;
+	};
+	SmallVec<Notification> notifications;
 
 	void setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
@@ -100,6 +108,15 @@ public:
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
 
     void reset(glm::mat4 const& transform) const;
+    void applyDamage(f32 amount, u32 instigator)
+    {
+        hitPoints -= amount;
+        lastDamagedBy = instigator;
+    }
+    void addNotification(const char* str)
+    {
+        if (notifications.size() < notifications.capacity()) notifications.push_back({ str, 2.f });
+    }
 
     void onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex);
 };
