@@ -130,6 +130,7 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
 void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,
         f32 scale, HorizontalAlign halign, VerticalAlign valign)
 {
+    p = glm::vec2(glm::floor(p.x), glm::floor(p.y));
     f32 startX = p.x;
 
     if (halign != HorizontalAlign::LEFT)

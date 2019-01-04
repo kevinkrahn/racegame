@@ -261,13 +261,13 @@ void Scene::onUpdate(f32 deltaTime)
     // debug text
 #if 1
     Vehicle const& playerVehicle = *vehicles[0];
-    game.resources.getFont("font", 22).drawText(str(
+    game.resources.getFont("font", 23).drawText(str(
                 "FPS: ", 1.f / deltaTime,
                 "\nEngine RPM: ", playerVehicle.getEngineRPM(),
                 "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
                 "\nGear: ", playerVehicle.getCurrentGear(),
                 "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { 300, 20 }, glm::vec3(1));
+                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { game.windowWidth * 0.38f, 20 }, glm::vec3(1));
 #endif
 
     if (game.input.isKeyPressed(KEY_F2))
@@ -319,8 +319,17 @@ void Scene::onUpdate(f32 deltaTime)
             glm::vec3(1, 0, 0)
         });
     }
-    game.renderer.drawTrack2D(trackItems, dynamicItems, 200, (u32)(200 * trackAspectRatio),
-            glm::vec2(game.windowWidth, game.windowHeight) * 0.5f);
+    u32 size = (u32)(game.windowHeight * 0.22f);
+    glm::vec2 hudTrackPos;
+    if (viewportCount == 1) hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
+    else if (viewportCount == 2) hudTrackPos = glm::vec2(game.windowWidth - size * 0.5f - 60, game.windowHeight * 0.5f);
+    else if (viewportCount == 3)
+    {
+        hudTrackPos = glm::vec2(game.windowWidth, game.windowHeight) * 0.75f;
+        size = (u32)(game.windowHeight * 0.36f);
+    }
+    else if (viewportCount == 4) hudTrackPos = glm::vec2(game.windowWidth, game.windowHeight) * 0.5f;
+    game.renderer.drawTrack2D(trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
 }
 
 void Scene::onEnd()

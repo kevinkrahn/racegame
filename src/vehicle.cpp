@@ -562,6 +562,41 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
 
 void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 {
+    // HUD
+    if (hasCamera)
+    {
+        Font& font1 = game.resources.getFont("font", game.windowHeight * 0.04);
+        Font& font2 = game.resources.getFont("font", game.windowHeight * 0.08);
+
+        glm::vec2 offset = viewportLayout[viewportCount-1].offsets[vehicleIndex] * glm::vec2(game.windowWidth, game.windowHeight);
+        glm::vec2 d(1.f, 1.f);
+        if (offset.y > 0.f)
+        {
+            offset.y = game.windowHeight - font2.getHeight();
+            d.y = -1;
+        }
+
+        f32 o20 = game.windowHeight * 0.02f;
+        f32 o25 = game.windowHeight * 0.03f;
+        f32 o200 = game.windowHeight * 0.20f;
+
+        std::string p = str(currentLap);
+        f32 lapWidth = font1.stringDimensions(str("LAP").c_str()).x;
+        font1.drawText(str("LAP").c_str(), offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
+        font2.drawText(p.c_str(), offset +
+                glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f));
+        font1.drawText(str('/', scene.getTotalLaps()).c_str(),
+                offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p.c_str()).x, d.y*o20), glm::vec3(1.f));
+
+        const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
+        glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
+
+        p = str(placement + 1);
+        font2.drawText(p.c_str(), offset + glm::vec2(o200, d.y*o20), col);
+        font1.drawText(str(placementSuffix[placement]).c_str(),
+                offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col);
+    }
+
     if (deadTimer > 0.f)
     {
         deadTimer -= deltaTime;
@@ -818,35 +853,5 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         }
         auto& mesh = i < 2 ? vehicleData->wheelMeshFront : vehicleData->wheelMeshRear;
         game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
-    }
-
-    // HUD
-    if (hasCamera)
-    {
-        Font& font1 = game.resources.getFont("font", 32);
-        Font& font2 = game.resources.getFont("font", 64);
-
-        glm::vec2 offset = viewportLayout[viewportCount-1].offsets[vehicleIndex] * glm::vec2(game.windowWidth, game.windowHeight);
-        glm::vec2 d(1.f, 1.f);
-        if (offset.y > 0.f)
-        {
-            offset.y = game.windowHeight - font2.getHeight();
-            d.y = -1;
-        }
-
-        std::string p = str(currentLap);
-        font1.drawText(str("LAP").c_str(), offset + glm::vec2(20, d.y*20), glm::vec3(1.f));
-        font2.drawText(p.c_str(), offset + glm::vec2(70, d.y*20), glm::vec3(1.f));
-        font1.drawText(str('/', scene.getTotalLaps()).c_str(),
-                offset + glm::vec2(70 + font2.stringDimensions(p.c_str()).x, d.y*20), glm::vec3(1.f));
-
-        const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
-        //const glm::vec3 placementColor[] = { { 1, 1, 1 }, { 0.9f, 1, 1 }, { 1.f, 1.f, 0.9f } }
-        glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
-
-        p = str(placement + 1);
-        font2.drawText(p.c_str(), offset + glm::vec2(150, d.y*20), col);
-        font1.drawText(str(placementSuffix[placement]).c_str(),
-                offset + glm::vec2(150 + font2.stringDimensions(p.c_str()).x, d.y*20), col);
     }
 }
