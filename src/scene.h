@@ -4,6 +4,7 @@
 #include "math.h"
 #include "track_graph.h"
 #include "renderer.h"
+#include "particle_system.h"
 #include <vector>
 
 const u32 viewportCount = 4;
@@ -91,6 +92,7 @@ public:
     PxMaterial* vehicleMaterial = nullptr;
     PxMaterial* trackMaterial = nullptr;
     PxMaterial* offroadMaterial = nullptr;
+    ParticleSystem smokeParticleSystem;
 
     Scene(const char* name);
     ~Scene();

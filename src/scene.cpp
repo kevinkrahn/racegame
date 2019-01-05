@@ -270,6 +270,9 @@ void Scene::onUpdate(f32 deltaTime)
         vehicles[finishOrder[i]]->placement = i;
     }
 
+    smokeParticleSystem.update(deltaTime);
+    smokeParticleSystem.draw();
+
     // debug text
 #if 1
     Vehicle const& playerVehicle = *vehicles[0];

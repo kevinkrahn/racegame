@@ -7,6 +7,7 @@
 #include "vehicle.cpp"
 #include "font.cpp"
 #include "track_graph.cpp"
+#include "particle_system.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

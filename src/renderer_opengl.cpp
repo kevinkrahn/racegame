@@ -69,7 +69,10 @@ struct WorldInfo
     f32 time;
     glm::vec3 sunColor;
     f32 pad;
-    glm::mat4 cameras[MAX_VIEWPORTS];
+    glm::mat4 cameraViewProjection[MAX_VIEWPORTS];
+    glm::mat4 cameraProjection[MAX_VIEWPORTS];
+    glm::mat4 cameraView[MAX_VIEWPORTS];
+    glm::vec4 cameraPosition[MAX_VIEWPORTS];
 } worldInfo;
 
 struct DebugVertex
@@ -91,6 +94,15 @@ struct Quad2D
     glm::vec4 color;
 };
 
+struct Billboard
+{
+    glm::vec3 position;
+    glm::vec3 scale;
+    u32 texture;
+    glm::vec4 color;
+    f32 angle;
+};
+
 struct TrackTexture
 {
     GLuint multisampleFramebuffer, multisampleTex, multisampleDepthBuffer;
@@ -106,6 +118,7 @@ std::vector<RenderMesh> renderList;
 std::vector<DebugVertex> debugVertices;
 std::vector<Quad2D> renderListText2D;
 std::vector<Quad2D> renderListTex2D;
+std::vector<Billboard> renderListBillboard;
 SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 
 u32 viewportGapPixels = 1;
@@ -118,6 +131,7 @@ struct Shaders
     GLShader tex2D;
     GLShader post;
     GLShader mesh2D;
+    GLShader billboard;
 } shaders;
 
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
@@ -287,6 +301,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     shaders.text2D = loadShader("shaders/quad2D.glsl");
     shaders.post = loadShader("shaders/post.glsl");
     shaders.mesh2D = loadShader("shaders/mesh2D.glsl");
+    shaders.billboard = loadShader("shaders/billboard.glsl", true);
 
     // create debug vertex buffer
     glCreateVertexArrays(1, &debugMesh.vao);
@@ -359,7 +374,10 @@ void Renderer::render(f32 deltaTime)
     u32 viewportCount = cameras.size();
     for (u32 i=0; i<viewportCount; ++i)
     {
-        worldInfo.cameras[i] = cameras[i].viewProjection;
+        worldInfo.cameraViewProjection[i] = cameras[i].viewProjection;
+        worldInfo.cameraProjection[i] = cameras[i].projection;
+        worldInfo.cameraView[i] = cameras[i].view;
+        worldInfo.cameraPosition[i] = glm::vec4(cameras[i].position, 1.0);
     }
     worldInfoUBO.updateData(&worldInfo);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
@@ -416,6 +434,24 @@ void Renderer::render(f32 deltaTime)
         glBindVertexArray(debugMesh.vao);
         glDrawArrays(GL_LINES, 0, debugVertices.size());
         debugVertices.clear();
+    }
+
+    if (renderListBillboard.size() > 0)
+    {
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glUseProgram(shaders.billboard.program);
+        for (auto const& b : renderListBillboard)
+        {
+            glUniform4fv(0, 1, (GLfloat*)&b.color);
+            glm::mat4 translation = glm::translate(glm::mat4(1.f), b.position);
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.f), b.angle, { 0, 0, 1 });
+            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(translation));
+            glUniform3f(2, b.scale.x, b.scale.y, b.scale.z);
+            glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rotation));
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+        renderListBillboard.clear();
     }
 
     // render to back buffer
@@ -560,6 +596,7 @@ void Renderer::setViewportCount(u32 viewports)
         print("Viewport count changed.\n");
         cameras.resize(viewports);
         shaders.lit = loadShader("shaders/shader.glsl", true);
+        shaders.billboard = loadShader("shaders/billboard.glsl", true);
 
         ViewportLayout& layout = viewportLayout[cameras.size() - 1];
         fb.renderWidth = game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
@@ -627,6 +664,11 @@ void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1,
         { { p1, t1 }, { { p2.x, p1.y }, { t2.x, t1.y } }, { { p1.x, p2.y }, { t1.x, t2.y } }, { p2, t2 } },
         glm::vec4(color, alpha)
     });
+}
+
+void Renderer::drawBillboard(u32 texture, glm::vec3 const& position, glm::vec3 const& scale, glm::vec4 const& color, f32 angle)
+{
+    renderListBillboard.push_back({ position, scale, texture, color, angle });
 }
 
 void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,

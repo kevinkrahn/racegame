@@ -4,6 +4,11 @@
 #include "vehicle_data.h"
 #include "track_graph.h"
 
+PxFilterFlags VehicleFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize);
+
 class VehicleSceneQueryData
 {
 public:
@@ -62,6 +67,7 @@ private:
 	bool finishedRace = false;
 	bool controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
+	f32 smokeTimer = 0.f;
 
 	struct Notification
 	{
@@ -120,8 +126,3 @@ public:
 
     void onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex);
 };
-
-PxFilterFlags VehicleFilterShader(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize);

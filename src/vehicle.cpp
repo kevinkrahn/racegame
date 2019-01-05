@@ -834,6 +834,10 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     }
 
     // update wheels
+    glm::mat4 transform = getTransform();
+    smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
+    const f32 smokeInterval = 0.015f;
+    bool smoked = false;
     u32 numWheelsOnGround = 0;
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
@@ -856,7 +860,33 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 vehicle4W->mWheelsSimData.setWheelData(i, d);
             }
         }
+
+        f32 lateralSlip = glm::abs(info.lateralSlip) - 0.4f;
+        f32 longitudinalSlip = glm::abs(info.longitudinalSlip) - 0.6f;
+        f32 slip = glm::max(lateralSlip, longitudinalSlip);
+
+        // create smoke
+        if (slip > 0.f && !info.isInAir)
+        {
+            if (smokeTimer == 0.f)
+            {
+                glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
+
+                glm::vec3 vel(glm::normalize(glm::vec3(
+                    random(scene.randomSeries, -1.f, 1.f),
+                    random(scene.randomSeries, -1.f, 1.f),
+                    random(scene.randomSeries, -1.f, 1.f))));
+                scene.smokeParticleSystem.spawn(
+                    wheelPosition - glm::vec3(0, 0, 0.2f),
+                    (vel + glm::vec3(0, 0, 1)) * 0.8f,
+                    glm::min(1.f, slip));
+
+                smoked = true;
+            }
+        }
     }
+
+    if (smoked) smokeTimer = smokeInterval;
 
     // destroy vehicle if it is flipped and unable to move
     if (onGround && numWheelsOnGround <= 1 && getRigidBody()->getLinearVelocity().magnitude() < 2.f)
@@ -877,14 +907,14 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     {
         for(auto& d : vehicleData->debrisChunks)
         {
-            glm::mat4 t = getTransform();
-			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(PxTransform(convert(t * d.transform)));
+			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(
+			        PxTransform(convert(transform * d.transform)));
 			body->attachShape(*d.collisionShape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 			scene.getPhysicsScene()->addActor(*body);
 	        body->setLinearVelocity(
 	                getRigidBody()->getLinearVelocity() +
-	                convert(glm::vec3(glm::normalize(rotationOf(t) * glm::vec4(translationOf(d.transform), 1.0)))
+	                convert(glm::vec3(glm::normalize(rotationOf(transform) * glm::vec4(translationOf(d.transform), 1.0)))
 	                    * random(scene.randomSeries, 5.f, 20.f)));
 
             scene.createVehicleDebris(VehicleDebris{
@@ -901,15 +931,13 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     // draw chassis
     for (auto& mesh : vehicleData->chassisMeshes)
     {
-        game.renderer.drawMesh(mesh.renderHandle, getTransform() * mesh.transform);
+        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform);
     }
 
     // draw wheels
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
-        glm::mat4 m1 = getTransform();
-        glm::mat4 m2 = convert(wheelQueryResults[i].localPose);
-        glm::mat4 wheelTransform = m1 * m2;
+        glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
         if ((i & 1) == 0)
         {
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));

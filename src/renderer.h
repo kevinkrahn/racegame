@@ -64,6 +64,7 @@ public:
     void drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2,
             glm::vec3 color, f32 alpha=1.f, bool colorShader=true);
     //void drawQuad2D(u32 texture, glm::vec2 p, f32 angle=0.f, glm::vec3 color=glm::vec3(1.f), f32 alpha=1.f);
+    void drawBillboard(u32 texture, glm::vec3 const& position, glm::vec3 const& scale, glm::vec4 const& color, f32 angle);
 
     void drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
                      SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos);

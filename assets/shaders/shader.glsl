@@ -4,7 +4,10 @@ layout (std140, binding = 0) uniform WorldInfo
     vec3 sunDirection;
     float time;
     vec3 sunColor;
-    mat4 cameras[MAX_VIEWPORTS];
+    mat4 cameraViewProjection[MAX_VIEWPORTS];
+    mat4 cameraProjection[MAX_VIEWPORTS];
+    mat4 cameraView[MAX_VIEWPORTS];
+    vec3 cameraPosition[MAX_VIEWPORTS];
 };
 
 #if defined VERT
@@ -66,7 +69,7 @@ layout(location = 3) out vec3 outWorldPosition;
 void main()
 {
     gl_Layer = gl_InvocationID;
-    gl_Position = cameras[gl_InvocationID] * vec4(inWorldPosition[0], 1.0);
+    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[0], 1.0);
     outColor = inColor[0];
     outNormal = inNormal[0];
     outTexCoord = inTexCoord[0];
@@ -74,7 +77,7 @@ void main()
     EmitVertex();
 
     gl_Layer = gl_InvocationID;
-    gl_Position = cameras[gl_InvocationID] * vec4(inWorldPosition[1], 1.0);
+    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[1], 1.0);
     outColor = inColor[1];
     outNormal = inNormal[1];
     outTexCoord = inTexCoord[1];
@@ -82,7 +85,7 @@ void main()
     EmitVertex();
 
     gl_Layer = gl_InvocationID;
-    gl_Position = cameras[gl_InvocationID] * vec4(inWorldPosition[2], 1.0);
+    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[2], 1.0);
     outColor = inColor[2];
     outNormal = inNormal[2];
     outTexCoord = inTexCoord[2];
