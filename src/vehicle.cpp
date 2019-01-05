@@ -864,6 +864,8 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         f32 lateralSlip = glm::abs(info.lateralSlip) - 0.4f;
         f32 longitudinalSlip = glm::abs(info.longitudinalSlip) - 0.6f;
         f32 slip = glm::max(lateralSlip, longitudinalSlip);
+        bool wasWheelSlipping = isWheelSlipping[i];
+        isWheelSlipping[i] = false;
 
         // create smoke
         if (slip > 0.f && !info.isInAir)
@@ -883,6 +885,25 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
                 smoked = true;
             }
+            isWheelSlipping[i] = true;
+        }
+
+        // add tire marks
+        if (isWheelSlipping[i])
+        {
+            f32 wheelRadius = i < 2 ? vehicleData->physics.wheelRadiusFront : vehicleData->physics.wheelRadiusRear;
+            f32 wheelWidth = i < 2 ? vehicleData->physics.wheelWidthFront : vehicleData->physics.wheelWidthRear;
+            //glm::vec3 tp = convert(info.tireContactPoint);
+            glm::vec3 tn = convert(info.tireContactNormal);
+            PxTransform contactPose = info.localPose;
+            //contactPose.p += PxVec3(0, 0, -(wheelRadius - 0.015f));
+            glm::vec3 markPosition = tn * -(wheelRadius - 0.015f)
+                + translationOf(transform * convert(info.localPose));
+            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, glm::vec4(0.2f, 0.2f, 0.2f, 1.f));
+        }
+        else if (wasWheelSlipping)
+        {
+            tireMarkRibbons[i].capWithLastPoint();
         }
     }
 

@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "ribbon.h"
 #include "game.h"
 #include <glad/glad.h>
 #include <fstream>
@@ -7,9 +8,11 @@
 class DynamicBuffer
 {
 private:
-    size_t size;
+    size_t size = 0;
     GLuint buffers[MAX_BUFFERED_FRAMES];
     bool created = false;
+    size_t offset = 0;
+    u32 bufferIndex = 0;
 
 public:
     DynamicBuffer(size_t size) : size(size) {}
@@ -38,7 +41,58 @@ public:
         checkBuffers();
         glNamedBufferSubData(getBuffer(), 0, range == 0 ? size : range, data);
     }
+
+    void* map(size_t dataSize)
+    {
+        if (bufferIndex != game.frameIndex)
+        {
+            offset = 0;
+            bufferIndex = game.frameIndex;
+        }
+
+        assert(offset + dataSize < size);
+
+        void* ptr = glMapNamedBufferRange(getBuffer(), offset, dataSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
+        offset += dataSize;
+        return ptr;
+    }
+
+    void unmap()
+    {
+        glUnmapNamedBuffer(getBuffer());
+    }
 };
+
+#if 0
+class NiceMesh
+{
+private:
+    GLuint vao;
+    GLuint vbo;
+    GLuint ebo;
+    u32 stride = 0;
+
+public:
+    NiceMesh(std::initializer_list<u32> vertexAttributes)
+    {
+        glCreateVertexArrays(1, &vao);
+
+        for (u32 i=0; i<vertexAttributes.size(); ++i)
+        {
+            glEnableVertexArrayAttrib(vao, i);
+            glVertexArrayAttribFormat(vao, i, vertexAttributes[i], GL_FLOAT, GL_FALSE, stride);
+            glVertexArrayAttribBinding(vao, i, 0);
+            stride += sizeof(f32) * vertexAttributes[i];
+        }
+    }
+
+    void setBuffers()
+    {
+        glVertexArrayVertexBuffer(vao, 0, vbo.getBuffer(), 0, stride);
+        glVertexArrayElementBuffer(vao, ebo.getBuffer());
+    }
+};
+#endif
 
 struct GLMesh
 {
@@ -112,6 +166,12 @@ struct TrackTexture
     u32 texRenderHandle;
 } track;
 
+struct RenderInfo
+{
+    u32 count;
+    u32 texture;
+};
+
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
 std::vector<RenderMesh> renderList;
@@ -119,6 +179,7 @@ std::vector<DebugVertex> debugVertices;
 std::vector<Quad2D> renderListText2D;
 std::vector<Quad2D> renderListTex2D;
 std::vector<Billboard> renderListBillboard;
+std::vector<RenderInfo> renderListRibbon;
 SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 
 u32 viewportGapPixels = 1;
@@ -132,11 +193,14 @@ struct Shaders
     GLShader post;
     GLShader mesh2D;
     GLShader billboard;
+    GLShader ribbon;
 } shaders;
 
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
 DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
+DynamicBuffer ribbonVertexBuffer(sizeof(DebugVertex) * 50000);
 GLMesh debugMesh;
+GLMesh ribbonMesh;
 
 struct Framebuffers
 {
@@ -302,6 +366,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     shaders.post = loadShader("shaders/post.glsl");
     shaders.mesh2D = loadShader("shaders/mesh2D.glsl");
     shaders.billboard = loadShader("shaders/billboard.glsl", true);
+    shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
 
     // create debug vertex buffer
     glCreateVertexArrays(1, &debugMesh.vao);
@@ -313,6 +378,25 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glEnableVertexArrayAttrib(debugMesh.vao, 1);
     glVertexArrayAttribFormat(debugMesh.vao, 1, 4, GL_FLOAT, GL_FALSE, 12);
     glVertexArrayAttribBinding(debugMesh.vao, 1, 0);
+
+    // create ribbon vertex buffer
+    glCreateVertexArrays(1, &ribbonMesh.vao);
+
+    glEnableVertexArrayAttrib(ribbonMesh.vao, 0);
+    glVertexArrayAttribFormat(ribbonMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(ribbonMesh.vao, 0, 0);
+
+    glEnableVertexArrayAttrib(ribbonMesh.vao, 1);
+    glVertexArrayAttribFormat(ribbonMesh.vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
+    glVertexArrayAttribBinding(ribbonMesh.vao, 1, 0);
+
+    glEnableVertexArrayAttrib(ribbonMesh.vao, 2);
+    glVertexArrayAttribFormat(ribbonMesh.vao, 2, 4, GL_FLOAT, GL_FALSE, 12 + 12);
+    glVertexArrayAttribBinding(ribbonMesh.vao, 2, 0);
+
+    glEnableVertexArrayAttrib(ribbonMesh.vao, 3);
+    glVertexArrayAttribFormat(ribbonMesh.vao, 3, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 16);
+    glVertexArrayAttribBinding(ribbonMesh.vao, 3, 0);
 
     // main framebuffer
     const u32 layers = cameras.size();
@@ -436,11 +520,31 @@ void Renderer::render(f32 deltaTime)
         debugVertices.clear();
     }
 
+    if (renderListRibbon.size() > 0)
+    {
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glUseProgram(shaders.ribbon.program);
+
+        glVertexArrayVertexBuffer(ribbonMesh.vao, 0, ribbonVertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
+        glBindVertexArray(ribbonMesh.vao);
+
+        u32 offset = 0;
+        for (auto const& r : renderListRibbon)
+        {
+            glDrawArrays(GL_TRIANGLES, offset, r.count);
+            offset += r.count;
+        }
+
+        renderListRibbon.clear();
+    }
+
     if (renderListBillboard.size() > 0)
     {
         glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
         glUseProgram(shaders.billboard.program);
+
         for (auto const& b : renderListBillboard)
         {
             glUniform4fv(0, 1, (GLfloat*)&b.color);
@@ -597,6 +701,7 @@ void Renderer::setViewportCount(u32 viewports)
         cameras.resize(viewports);
         shaders.lit = loadShader("shaders/shader.glsl", true);
         shaders.billboard = loadShader("shaders/billboard.glsl", true);
+        shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
 
         ViewportLayout& layout = viewportLayout[cameras.size() - 1];
         fb.renderWidth = game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
@@ -758,4 +863,16 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
 
     glm::vec2 size(width, height);
     drawQuad2D(track.texRenderHandle, pos-size*0.5f, pos+size*0.5f, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
+}
+
+void Renderer::drawRibbon(Ribbon const& ribbon, u32 texture)
+{
+    u32 size = ribbon.getRequiredBufferSize();
+    if (size > 0)
+    {
+        void* mem = ribbonVertexBuffer.map(size);
+        u32 count = ribbon.writeVerts(mem);
+        ribbonVertexBuffer.unmap();
+        renderListRibbon.push_back({ count, texture });
+    }
 }

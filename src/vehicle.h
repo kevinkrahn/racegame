@@ -3,6 +3,7 @@
 #include "math.h"
 #include "vehicle_data.h"
 #include "track_graph.h"
+#include "ribbon.h"
 
 PxFilterFlags VehicleFilterShader(
     PxFilterObjectAttributes attributes0, PxFilterData filterData0,
@@ -52,6 +53,7 @@ private:
     // gameplay data
 	bool isPlayerControlled = false;
 	bool hasCamera = false;
+	bool finishedRace = false;
     glm::vec3 cameraTarget;
     f32 hitPoints = 100.f;
     u32 currentLap = 0;
@@ -64,10 +66,12 @@ private:
 	f32 backupTimer = 0.f;
 	f32 flipTimer = 0.f;
 	f32 deadTimer = 0.f;
-	bool finishedRace = false;
-	bool controlledBrakingTimer = 0.f;
+	f32 controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
 	f32 smokeTimer = 0.f;
+
+    bool isWheelSlipping[NUM_WHEELS] = {};
+	Ribbon tireMarkRibbons[NUM_WHEELS];
 
 	struct Notification
 	{

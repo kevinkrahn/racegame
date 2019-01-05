@@ -68,4 +68,6 @@ public:
 
     void drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
                      SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos);
+
+    void drawRibbon(class Ribbon const& ribbon, u32 texture);
 };
