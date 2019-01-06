@@ -11,9 +11,10 @@ const u32 viewportCount = 4;
 
 enum
 {
-    COLLISION_FLAG_GROUND  = 1 << 0,
-    COLLISION_FLAG_WHEEL   = 1 << 1,
-    COLLISION_FLAG_CHASSIS = 1 << 2,
+    COLLISION_FLAG_TRACK   = 1 << 0,
+    COLLISION_FLAG_GROUND  = 1 << 1,
+    COLLISION_FLAG_WHEEL   = 1 << 2,
+    COLLISION_FLAG_CHASSIS = 1 << 3,
 };
 
 enum
@@ -112,7 +113,7 @@ public:
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr) const;
     bool raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
     bool sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr) const;
-    bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr) const;
+    bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr) const;
 
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
     void createProjectile(glm::vec3 const& position, glm::vec3 const& velocity, u32 instigator)

@@ -69,6 +69,8 @@ private:
 	f32 controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
 	f32 smokeTimer = 0.f;
+	f32 offsetChangeTimer = 0.f;
+	f32 offsetChangeInterval = 5.f;
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
@@ -86,8 +88,10 @@ private:
     void updatePhysics(PxScene* scene, f32 timestep, bool digital,
             f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
 
+    bool isBlocking(Scene const& scene, f32 radius, glm::vec3 const& dir, f32 dist);
+
 public:
-	Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
+	Vehicle(Scene& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	        VehicleData* data, PxMaterial* material, const PxMaterial** surfaceMaterials,
 	        bool isPlayerControlled, bool hasCamera, u32 vehicleIndex);
 	~Vehicle();

@@ -35,7 +35,6 @@ Scene::Scene(const char* name)
     {
         Mesh const& mesh;
         glm::mat4 transform;
-        f32 boundX, boundY, boundZ;
     };
     std::vector<TrackMesh> trackMeshes;
     for (auto& e : entities)
@@ -84,13 +83,7 @@ Scene::Scene(const char* name)
 
             if (isTrack)
             {
-                trackMeshes.push_back({
-                    mesh,
-                    transform,
-                    (f32)e["bound_x"].real(),
-                    (f32)e["bound_y"].real(),
-                    (f32)e["bound_z"].real(),
-                });
+                trackMeshes.push_back({ mesh, transform });
             }
 
             PxMaterial* material = isTrack ? trackMaterial : offroadMaterial;
@@ -100,8 +93,10 @@ Scene::Scene(const char* name)
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
                         PxMeshScale(convert(scaleOf(transform)))), *material);
-            shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
-            shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+            shape->setQueryFilterData(PxFilterData(
+                        isTrack ? COLLISION_FLAG_TRACK : COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+            shape->setSimulationFilterData(PxFilterData(
+                        isTrack ? COLLISION_FLAG_TRACK : COLLISION_FLAG_GROUND, -1, 0, 0));
             actor->userData = physicsUserData.back().get();
 	        physicsScene->addActor(*actor);
         }
@@ -119,7 +114,6 @@ Scene::Scene(const char* name)
         FATAL_ERROR("Track does not have a starting point!");
     }
 
-    // render HUD track texture
     glm::vec3 minP(FLT_MAX), maxP(-FLT_MAX);
     for (auto& t : trackMeshes)
     {
@@ -174,6 +168,7 @@ Scene::~Scene()
 void Scene::onStart()
 {
     const u32 numVehicles = 8;
+    VehicleData* vehicleDatas[] = { &sportscar, &racecar, &cubevan, &car };
     for (u32 i=0; i<numVehicles; ++i)
     {
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
@@ -185,7 +180,7 @@ void Scene::onStart()
             FATAL_ERROR("The starting point is too high in the air!");
         }
 
-        VehicleData* vehicleData = i % 2 == 0 ? &racecar : &car;
+        VehicleData* vehicleData = vehicleDatas[i % ARRAY_SIZE(vehicleDatas)];
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
                 convert(hit.block.position + hit.block.normal * vehicleData->getRestOffset())) * rotationOf(start);
 
@@ -375,7 +370,7 @@ bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK, 0, 0, 0);
     if (hit)
     {
         return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
@@ -408,7 +403,7 @@ bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir,
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK, 0, 0, 0);
     PxTransform initialPose(convert(from), PxQuat(PxIdentity));
     if (hit)
     {
@@ -421,20 +416,46 @@ bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir,
     }
 }
 
-bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit) const
+class IgnoreActor : public PxQueryFilterCallback
+{
+    PxRigidActor* ignoreActor;
+
+public:
+    IgnoreActor(PxRigidActor* ignoreActor) : ignoreActor(ignoreActor) {}
+
+    PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape,
+            const PxRigidActor* actor, PxHitFlags& queryFlags) override
+    {
+        if (actor == ignoreActor) return PxQueryHitType::eNONE;
+        return PxQueryHitType::eBLOCK;
+    }
+
+    PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit) override
+    {
+	    return PxQueryHitType::eBLOCK;
+    }
+};
+
+bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit, PxRigidActor* ignore) const
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
     filter.flags |= PxQueryFlag::eDYNAMIC;
+    if (ignore)
+    {
+        filter.flags |= PxQueryFlag::ePREFILTER;
+    }
+    IgnoreActor cb(ignore);
     filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0, 0);
     PxTransform initialPose(convert(from), PxQuat(PxIdentity));
     if (hit)
     {
-        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist,
+                *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter, &cb);
     }
     else
     {
         PxSweepBuffer tmpHit;
-        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter, &cb);
     }
 }

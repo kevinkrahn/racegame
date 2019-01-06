@@ -453,7 +453,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
 }
 
-Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
+Vehicle::Vehicle(Scene& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
         VehicleData* data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
         bool isPlayerControlled, bool hasCamera, u32 vehicleIndex)
 {
@@ -464,6 +464,7 @@ Vehicle::Vehicle(Scene const& scene, glm::mat4 const& transform, glm::vec3 const
     this->targetOffset = startOffset;
     this->startOffset = startOffset;
     this->lastDamagedBy = vehicleIndex;
+    this->offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
 
     setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
@@ -560,6 +561,31 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
 	PxVehicleUpdates(timestep, grav, *frictionPairs, 1, vehicles, vehicleQueryResults);
 
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
+}
+
+bool Vehicle::isBlocking(Scene const& scene, f32 radius, glm::vec3 const& dir, f32 dist)
+{
+    PxSweepBuffer hit;
+    if (!scene.sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit, getRigidBody()))
+    {
+        return false;
+    }
+    if (hit.block.actor->getType() == PxActorType::eRIGID_STATIC)
+    {
+        return true;
+    }
+
+    glm::vec3 otherVelocity = convert(((PxRigidDynamic*)hit.block.actor)->getLinearVelocity());
+    glm::vec3 myVelocity = convert(getRigidBody()->getLinearVelocity());
+    if (glm::dot(glm::normalize(otherVelocity), glm::normalize(myVelocity)) > 0.5f)
+    {
+        if (glm::length(myVelocity) - glm::length(otherVelocity) > 1.f)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
@@ -677,15 +703,10 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
             glm::vec3 position = getPosition();
-            /*
-            if (scene.sweepStatic(1.f, position, glm::normalize(targetP - position), std::min(50.f, glm::length(position - targetP))))
-            {
-                targetP = nextP;
-            }
-            */
-            f32 steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(position - targetP)));
+            glm::vec2 dirToTargetP = glm::normalize(glm::vec2(position - targetP));
+            f32 steerAngle = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
 
-            f32 forwardTestDist = 13.f;
+            f32 forwardTestDist = 14.f;
             f32 sideTestDist = 9.f;
             f32 testAngle = 0.65f;
             glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
@@ -693,35 +714,41 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             //game.renderer.drawLine(position, position + testDir1 * sideTestDist);
             //game.renderer.drawLine(position, position + testDir2 * sideTestDist);
 
-            glm::vec3 testFrom = position + glm::vec3(0, 0, 0.5f);
-            if (scene.sweepStatic(1.1f, testFrom, getForwardVector(), forwardTestDist))
+            f32 accel = 0.85f;
+            f32 brake = 0.f;
+            bool isSomethingBlockingMe = isBlocking(scene, vehicleData->collisionWidth / 2 + 0.05f,
+                    getForwardVector(), forwardTestDist);
+            if (isSomethingBlockingMe && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
             {
-                bool left = scene.sweepStatic(0.5f, testFrom, testDir1, sideTestDist);
-                bool right = scene.sweepStatic(0.5f, testFrom, testDir2, sideTestDist);
+                const f32 avoidSteerAmount = 0.5f;
+                bool left = isBlocking(scene, 0.5f, testDir1, sideTestDist);
+                bool right = isBlocking(scene, 0.5f, testDir2, sideTestDist);
                 if (!left && !right)
                 {
                     glm::vec3 d = glm::normalize(targetP - position);
                     f32 diff1 = glm::dot(d, testDir1);
                     f32 diff2 = glm::dot(d, testDir2);
-                    steerAngle = diff1 > diff2 ? -0.7 : 0.7;
+                    steerAngle = diff1 < diff2 ?
+                        std::min(steerAngle, -avoidSteerAmount) : std::max(steerAngle, avoidSteerAmount);
                 }
                 else if (!left)
                 {
-                    steerAngle = -0.7;
+                    steerAngle = std::min(steerAngle, -avoidSteerAmount);
                 }
                 else if (!right)
                 {
-                    steerAngle = 0.7;
+                    steerAngle = std::max(steerAngle, avoidSteerAmount);
                 }
                 else
                 {
                     targetP = nextP;
                     steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(position - targetP)));
+                    if (getForwardSpeed() > 18.f)
+                    {
+                        brake = 0.8f;
+                    }
                 }
             }
-
-            f32 accel = 0.85f;
-            f32 brake = 0.f;
 
             if (canGo)
             {
@@ -731,7 +758,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                     accel = 0.f;
                     brake = 1.f;
                     steerAngle *= -1.f;
-                    if (backupTimer > 3.5f)
+                    if (backupTimer > 5.f || getForwardSpeed() < -9.f)
                     {
                         backupTimer = 0.f;
                     }
@@ -751,6 +778,15 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 {
                     targetPointIndex = 0;
                 }
+            }
+
+            offsetChangeTimer += deltaTime;
+            if (offsetChangeTimer > offsetChangeInterval)
+            {
+                targetOffset.x = random(scene.randomSeries, -8.f, 8.f);
+                targetOffset.y = random(scene.randomSeries, -8.f, 8.f);
+                offsetChangeTimer = 0.f;
+                offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
             }
         }
     }
@@ -820,7 +856,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     else
     {
         PxRaycastBuffer hit;
-        if (scene.raycastStatic(getPosition(), { 0, 0, -1 }, 2.5f, &hit))
+        if (scene.raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit))
         {
             onGround = true;
             if (hit.block.actor->userData)
