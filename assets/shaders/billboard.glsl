@@ -90,20 +90,15 @@ void main()
     modelView[2][2] = scale.z;
     mat4 matrix = cameraProjection[gl_InvocationID] * modelView * rotation;
 
-    gl_Layer = gl_InvocationID;
-    gl_Position = matrix * vec4(inPosition[0], 1.0);
-    outTexCoord = inTexCoord[0];
-    EmitVertex();
+    for (uint i=0; i<3; ++i)
+    {
+        gl_Layer = gl_InvocationID;
+        gl_Position = matrix * vec4(inPosition[i], 1.0);
+        outTexCoord = inTexCoord[i];
+        EmitVertex();
+    }
 
-    gl_Layer = gl_InvocationID;
-    gl_Position = matrix * vec4(inPosition[1], 1.0);
-    outTexCoord = inTexCoord[1];
-    EmitVertex();
-
-    gl_Layer = gl_InvocationID;
-    gl_Position = matrix * vec4(inPosition[2], 1.0);
-    outTexCoord = inTexCoord[2];
-    EmitVertex();
+    EndPrimitive();
 }
 
 #endif

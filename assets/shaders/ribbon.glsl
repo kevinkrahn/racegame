@@ -61,26 +61,15 @@ layout(location = 2) out vec2 outTexCoord;
 
 void main()
 {
-    gl_Layer = gl_InvocationID;
-    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[0], 1.0);
-    outColor = inColor[0];
-    outNormal = inNormal[0];
-    outTexCoord = inTexCoord[0];
-    EmitVertex();
-
-    gl_Layer = gl_InvocationID;
-    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[1], 1.0);
-    outColor = inColor[1];
-    outNormal = inNormal[1];
-    outTexCoord = inTexCoord[1];
-    EmitVertex();
-
-    gl_Layer = gl_InvocationID;
-    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[2], 1.0);
-    outColor = inColor[2];
-    outNormal = inNormal[2];
-    outTexCoord = inTexCoord[2];
-    EmitVertex();
+    for (uint i=0; i<3; ++i)
+    {
+        gl_Layer = gl_InvocationID;
+        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
+        outColor = inColor[i];
+        outNormal = inNormal[i];
+        outTexCoord = inTexCoord[i];
+        EmitVertex();
+    }
 
     EndPrimitive();
 }

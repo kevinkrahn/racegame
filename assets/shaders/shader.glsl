@@ -8,6 +8,8 @@ layout (std140, binding = 0) uniform WorldInfo
     mat4 cameraProjection[MAX_VIEWPORTS];
     mat4 cameraView[MAX_VIEWPORTS];
     vec3 cameraPosition[MAX_VIEWPORTS];
+    mat4 shadowViewProjection[MAX_VIEWPORTS];
+    mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
 };
 
 #if defined VERT
@@ -27,7 +29,6 @@ layout(location = 3) out vec3 outWorldPosition;
 
 void main()
 {
-    //gl_Position = worldViewProjectionMatrix * vec4(attrPosition, 1.0);
     outColor = attrColor;
     outNormal = normalize(normalMatrix * attrNormal);
     outTexCoord = attrTexCoord;
@@ -42,12 +43,53 @@ layout(location = 0) in vec3 inColor;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) in vec3 inWorldPosition;
+layout(location = 4) in vec3 inShadowCoord;
+
+layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
+
+float getShadow()
+{
+#if 0
+    const uint count = 4;
+    vec2 offsets[count] = vec2[](
+        vec2(-0.9420162, -0.39906216),
+        vec2( 0.9455860, -0.76890725),
+        vec2(-0.0941841, -0.92938870),
+        vec2( 0.3449593,  0.29387760)
+    );
+#else
+    const uint count = 9;
+    vec2 offsets[count] = vec2[](
+        vec2( 0.9558100, -0.18159000),
+        vec2( 0.5014700, -0.35807000),
+        vec2( 0.6960700,  0.35559000),
+        vec2(-0.0036825, -0.59150000),
+        vec2( 0.1593000,  0.08975000),
+        vec2(-0.6503100,  0.05818900),
+        vec2( 0.1191500,  0.78449000),
+        vec2(-0.3429600,  0.51575000),
+        vec2(-0.6038000, -0.41527000)
+    );
+#endif
+
+    float shadow = 0.0;
+    for (uint i=0; i<count; ++i)
+    {
+        vec4 texCoord;
+        texCoord.xy = inShadowCoord.xy + offsets[i] / 800.0;
+        texCoord.w = inShadowCoord.z;
+        texCoord.z = gl_Layer;
+        shadow += texture(shadowDepthSampler, texCoord) / count;
+    }
+
+    return shadow;
+}
 
 void main()
 {
     outColor = vec4(inColor, 1.0);
 
-    float light = max(dot(normalize(inNormal), sunDirection), 0.1);
+    float light = max(dot(normalize(inNormal), sunDirection) * getShadow(), 0.4);
     outColor.rgb *= light;
 }
 
@@ -65,32 +107,22 @@ layout(location = 0) out vec3 outColor;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
 layout(location = 3) out vec3 outWorldPosition;
+layout(location = 4) out vec3 outShadowCoord;
 
 void main()
 {
-    gl_Layer = gl_InvocationID;
-    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[0], 1.0);
-    outColor = inColor[0];
-    outNormal = inNormal[0];
-    outTexCoord = inTexCoord[0];
-    outWorldPosition = inWorldPosition[0];
-    EmitVertex();
+    for (uint i=0; i<3; ++i)
+    {
+        gl_Layer = gl_InvocationID;
+        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
+        outColor = inColor[i];
+        outNormal = inNormal[i];
+        outTexCoord = inTexCoord[i];
+        outWorldPosition = inWorldPosition[i];
+        outShadowCoord = (shadowViewProjectionBias[gl_InvocationID] * vec4(inWorldPosition[i], 1.0)).xyz;
+        EmitVertex();
+    }
 
-    gl_Layer = gl_InvocationID;
-    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[1], 1.0);
-    outColor = inColor[1];
-    outNormal = inNormal[1];
-    outTexCoord = inTexCoord[1];
-    outWorldPosition = inWorldPosition[1];
-    EmitVertex();
-
-    gl_Layer = gl_InvocationID;
-    gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[2], 1.0);
-    outColor = inColor[2];
-    outNormal = inNormal[2];
-    outTexCoord = inTexCoord[2];
-    outWorldPosition = inWorldPosition[2];
-    EmitVertex();
     EndPrimitive();
 }
 

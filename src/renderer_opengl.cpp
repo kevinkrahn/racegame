@@ -127,6 +127,8 @@ struct WorldInfo
     glm::mat4 cameraProjection[MAX_VIEWPORTS];
     glm::mat4 cameraView[MAX_VIEWPORTS];
     glm::vec4 cameraPosition[MAX_VIEWPORTS];
+    glm::mat4 shadowViewProjection[MAX_VIEWPORTS];
+    glm::mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
 } worldInfo;
 
 struct DebugVertex
@@ -194,6 +196,7 @@ struct Shaders
     GLShader mesh2D;
     GLShader billboard;
     GLShader ribbon;
+    GLShader shadowDepth;
 } shaders;
 
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
@@ -367,6 +370,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     shaders.mesh2D = loadShader("shaders/mesh2D.glsl");
     shaders.billboard = loadShader("shaders/billboard.glsl", true);
     shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
+    shaders.shadowDepth = loadShader("shaders/shadow.glsl", true);
 
     // create debug vertex buffer
     glCreateVertexArrays(1, &debugMesh.vao);
@@ -428,19 +432,20 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
     // shadow framebuffer
-    /*
     glGenTextures(1, &fb.shadowDepthTexture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
+            game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
     glGenFramebuffers(1, &fb.shadowFramebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.shadowDepthTexture, 0);
-    */
 
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
@@ -448,6 +453,67 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return window;
+}
+
+static void setShadowMatrices()
+{
+    glm::vec3 inverseLightDir = worldInfo.sunDirection;
+    glm::mat4 depthView = glm::lookAt(inverseLightDir, glm::vec3(0), glm::vec3(0, 0, 1));
+    for (u32 i=0; i<cameras.size(); ++i)
+    {
+        Camera const& cam = cameras[i];
+        glm::mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
+
+        glm::vec3 ndc[] = {
+            { -1,  1, 0 },
+            {  1,  1, 0 },
+            {  1, -1, 0 },
+            { -1, -1, 0 },
+
+            { -1,  1, 1 },
+            {  1,  1, 1 },
+            {  1, -1, 1 },
+            { -1, -1, 1 },
+        };
+
+        f32 minx =  FLT_MAX;
+        f32 maxx = -FLT_MAX;
+        f32 miny =  FLT_MAX;
+        f32 maxy = -FLT_MAX;
+        f32 minz =  FLT_MAX;
+        f32 maxz = -FLT_MAX;
+        for (auto& v : ndc)
+        {
+            glm::vec4 b = inverseViewProj * glm::vec4(v, 1.f);
+            v = glm::vec3(b) / b.w;
+
+            if (v.x < minx) minx = v.x;
+            if (v.x > maxx) maxx = v.x;
+            if (v.y < miny) miny = v.y;
+            if (v.y > maxy) maxy = v.y;
+            if (v.z < minz) minz = v.z;
+            if (v.z > maxz) maxz = v.z;
+        }
+
+        glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
+        f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
+        f32 snapMultiple = 2.f * extent / game.config.shadowMapResolution;
+        center.x = snap(center.x, snapMultiple);
+        center.y = snap(center.y, snapMultiple);
+        center.z = snap(center.z, snapMultiple);
+
+        glm::mat4 depthProjection = glm::ortho(center.x-extent, center.x+extent,
+                                            center.y+extent, center.y-extent, -maxz, -minz);
+        glm::mat4 viewProj = depthProjection * depthView;
+
+        worldInfo.shadowViewProjection[i] = viewProj;
+        worldInfo.shadowViewProjectionBias[i] = glm::mat4(
+            0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.5f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.5f, 0.0f,
+            0.5f, 0.5f, 0.5f, 1.0f
+        ) * viewProj;
+    }
 }
 
 void Renderer::render(f32 deltaTime)
@@ -463,48 +529,58 @@ void Renderer::render(f32 deltaTime)
         worldInfo.cameraView[i] = cameras[i].view;
         worldInfo.cameraPosition[i] = glm::vec4(cameras[i].position, 1.0);
     }
+    setShadowMatrices();
     worldInfoUBO.updateData(&worldInfo);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
 
-    // 3D
+    // shadow map
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
-    /*
+    glUseProgram(shaders.shadowDepth.program);
+    glViewport(0, 0, game.config.shadowMapResolution, game.config.shadowMapResolution);
     glDepthMask(GL_TRUE);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    //glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LESS);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+
     glEnable(GL_DEPTH_CLAMP);
-
-    // draw shadow map
-
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    */
-    glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_BLEND);
-
-    glUseProgram(shaders.lit.program);
-
-    // depth prepass
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(2.f, 4096.f);
+    glCullFace(GL_FRONT);
     for (auto const& r : renderList)
     {
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
+        GLMesh const& mesh = loadedMeshes[r.meshHandle];
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    }
+    glCullFace(GL_BACK);
+    glDisable(GL_DEPTH_CLAMP);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glBindTextureUnit(2, fb.shadowDepthTexture);
 
+    // depth prepass
+    glViewport(0, 0, fb.renderWidth, fb.renderHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+    glUseProgram(shaders.lit.program);
+    for (auto const& r : renderList)
+    {
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
 
+    // color pass
     glBindTextureUnit(1, fb.mainDepthTexture);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthFunc(GL_EQUAL);
@@ -519,6 +595,7 @@ void Renderer::render(f32 deltaTime)
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
 
+    // debug lines
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     if (debugVertices.size() > 0)
@@ -535,6 +612,7 @@ void Renderer::render(f32 deltaTime)
         debugVertices.clear();
     }
 
+    // ribbons
     if (renderListRibbon.size() > 0)
     {
         glDepthMask(GL_FALSE);
@@ -554,6 +632,7 @@ void Renderer::render(f32 deltaTime)
         renderListRibbon.clear();
     }
 
+    // billboards
     if (renderListBillboard.size() > 0)
     {
         glDepthMask(GL_FALSE);
@@ -717,15 +796,21 @@ void Renderer::setViewportCount(u32 viewports)
         shaders.lit = loadShader("shaders/shader.glsl", true);
         shaders.billboard = loadShader("shaders/billboard.glsl", true);
         shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
+        shaders.shadowDepth = loadShader("shaders/shadow.glsl", true);
 
         ViewportLayout& layout = viewportLayout[cameras.size() - 1];
         fb.renderWidth = game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
         fb.renderHeight = game.config.resolutionY * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0);
         u32 layers = cameras.size();
+
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainDepthTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
+                game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
     }
 }
 

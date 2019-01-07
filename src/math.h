@@ -152,3 +152,8 @@ inline i32 irandom(RandomSeries& series, i32 min, i32 max)
 {
     return (xorshift32(series) % (max - min)) + min;
 }
+
+inline f32 snap(f32 val, f32 multiple)
+{
+    return glm::floor(val / multiple) * multiple;
+}

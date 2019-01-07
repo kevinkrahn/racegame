@@ -197,7 +197,7 @@ void Scene::onUpdate(f32 deltaTime)
     physicsScene->fetchResults(true);
 
     game.renderer.setViewportCount(viewportCount);
-    game.renderer.addDirectionalLight(glm::vec3(-0.5f, -0.5f, -1.f), glm::vec3(1.0));
+    game.renderer.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
     // draw static entities
     for (auto const& e : staticEntities)
