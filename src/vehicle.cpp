@@ -610,7 +610,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         f32 o25 = game.windowHeight * 0.03f;
         f32 o200 = game.windowHeight * 0.20f;
 
-        std::string p = str(currentLap);
+        std::string p = str(std::min(currentLap, scene.getTotalLaps()));
         f32 lapWidth = font1.stringDimensions(str("LAP").c_str()).x;
         font1.drawText(str("LAP").c_str(), offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
         font2.drawText(p.c_str(), offset +
@@ -818,17 +818,14 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         if (glm::dot(xAxisOf(scene.getStart()), dir) > 0.f
                 && glm::length2(getPosition() - finishLinePosition) < square(40.f))
         {
-            if (currentLap >= scene.getTotalLaps())
+            if (!finishedRace && currentLap >= scene.getTotalLaps())
             {
                 finishedRace = true;
                 scene.vehicleFinish(vehicleIndex);
             }
-            else
-            {
-                ++currentLap;
-                graphResult.lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
-                graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
-            }
+            ++currentLap;
+            graphResult.lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
+            graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
         }
     }
 

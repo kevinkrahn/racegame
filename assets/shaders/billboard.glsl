@@ -48,6 +48,7 @@ layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outColor;
 
 layout(binding = 0) uniform sampler2D texSampler;
+layout(binding = 1) uniform sampler2DArray depthSampler;
 
 layout(location = 0) uniform vec4 color;
 
@@ -55,7 +56,10 @@ void main()
 {
     //outColor = texture(texSampler, inTexCoord) * color;
     outColor = color;
-    //outColor = vec4(1.0);
+
+    float depth = texture(depthSampler, vec3(gl_FragCoord.xy / textureSize(depthSampler, 0).xy, gl_Layer)).r;
+    float d = depth - gl_FragCoord.z;
+    outColor.a *= clamp(d, 0.0, 0.001) * 1000.0;
 }
 
 #elif defined GEOM

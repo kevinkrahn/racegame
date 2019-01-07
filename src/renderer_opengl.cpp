@@ -490,11 +490,24 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_CULL_FACE);
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glDisable(GL_BLEND);
 
     glUseProgram(shaders.lit.program);
 
-    glDisable(GL_BLEND);
-    Camera const& camera = cameras[0];
+    // depth prepass
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    for (auto const& r : renderList)
+    {
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
+
+        GLMesh const& mesh = loadedMeshes[r.meshHandle];
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    glBindTextureUnit(1, fb.mainDepthTexture);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthFunc(GL_EQUAL);
     for (auto const& r : renderList)
     {
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
@@ -506,9 +519,11 @@ void Renderer::render(f32 deltaTime)
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
 
+    glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     if (debugVertices.size() > 0)
     {
+        Camera const& camera = cameras[0];
         debugVertexBuffer.updateData(debugVertices.data(), debugVertices.size() * sizeof(DebugVertex));
         glVertexArrayVertexBuffer(debugMesh.vao, 0, debugVertexBuffer.getBuffer(), 0, sizeof(DebugVertex));
 
