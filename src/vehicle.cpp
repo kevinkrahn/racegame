@@ -875,6 +875,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         auto info = wheelQueryResults[i];
+        bool isWheelOffroad = false;
         if (!info.isInAir)
         {
             ++numWheelsOnGround;
@@ -885,6 +886,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
                 d.mDampingRate = vehicleData->physics.offroadDampingRate;
                 vehicle4W->mWheelsSimData.setWheelData(i, d);
+                isWheelOffroad = true;
             }
             else
             {
@@ -898,15 +900,14 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         f32 longitudinalSlip = glm::abs(info.longitudinalSlip) - 0.6f;
         f32 slip = glm::max(lateralSlip, longitudinalSlip);
         bool wasWheelSlipping = isWheelSlipping[i];
-        isWheelSlipping[i] = false;
+        isWheelSlipping[i] = slip > 0.f && !info.isInAir;
 
         // create smoke
-        if (slip > 0.f && !info.isInAir)
+        if (slip > 0.f && !info.isInAir && !isWheelOffroad)
         {
             if (smokeTimer == 0.f)
             {
                 glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
-
                 glm::vec3 vel(glm::normalize(glm::vec3(
                     random(scene.randomSeries, -1.f, 1.f),
                     random(scene.randomSeries, -1.f, 1.f),
@@ -914,11 +915,28 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 scene.smokeParticleSystem.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
-                    glm::min(1.f, slip));
-
+                    glm::min(1.f, slip * 0.5f));
                 smoked = true;
             }
-            isWheelSlipping[i] = true;
+        }
+
+        if (isWheelOffroad && smokeTimer == 0.f)
+        {
+            f32 wheelRotationSpeed = vehicle4W->mWheelsDynData.getWheelRotationSpeed(i);
+            if (wheelRotationSpeed > 5.f || slip > 0.f)
+            {
+                glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
+                glm::vec3 vel(glm::normalize(glm::vec3(
+                    random(scene.randomSeries, -1.f, 1.f),
+                    random(scene.randomSeries, -1.f, 1.f),
+                    random(scene.randomSeries, -1.f, 1.f))));
+                scene.smokeParticleSystem.spawn(
+                    wheelPosition - glm::vec3(0, 0, 0.2f),
+                    (vel + glm::vec3(0, 0, 1)) * 0.8f,
+                    glm::clamp(glm::max(slip, glm::abs(wheelRotationSpeed * 0.02f)), 0.f, 1.f),
+                    glm::vec4(0.58f, 0.50f, 0.22f, 1.f));
+                smoked = true;
+            }
         }
 
         // add tire marks
@@ -932,7 +950,9 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             //contactPose.p += PxVec3(0, 0, -(wheelRadius - 0.015f));
             glm::vec3 markPosition = tn * -(wheelRadius - 0.015f)
                 + translationOf(transform * convert(info.localPose));
-            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, glm::vec4(0.2f, 0.2f, 0.2f, 1.f));
+            glm::vec4 color = isWheelOffroad ?
+                glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
+            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, color);
         }
         else if (wasWheelSlipping)
         {
