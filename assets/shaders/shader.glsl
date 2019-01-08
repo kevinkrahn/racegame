@@ -46,6 +46,7 @@ layout(location = 3) in vec3 inWorldPosition;
 layout(location = 4) in vec3 inShadowCoord;
 
 layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
+layout(binding = 4) uniform sampler2DArray ssaoTexture;
 
 float getShadow()
 {
@@ -89,8 +90,10 @@ void main()
 {
     outColor = vec4(inColor, 1.0);
 
-    float light = max(dot(normalize(inNormal), sunDirection) * getShadow(), 0.4);
-    outColor.rgb *= light;
+    float directLight = max(dot(normalize(inNormal), sunDirection) * getShadow(), 0.0);
+    outColor.rgb *= max(directLight, 0.4);
+    float ssaoAmount = texture(ssaoTexture, vec3(gl_FragCoord.xy / textureSize(ssaoTexture, 0).xy, gl_Layer)).r;
+    outColor.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
 }
 
 #elif defined GEOM
