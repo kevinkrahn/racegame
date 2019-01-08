@@ -198,6 +198,7 @@ struct Shaders
     GLShader ribbon;
     GLShader shadowDepth;
     GLShader csz;
+    GLShader cszMinify;
     GLShader sao;
     GLShader saoBlur;
 } shaders;
@@ -217,7 +218,7 @@ struct Framebuffers
     GLuint shadowFramebuffer;
     GLuint shadowDepthTexture;
 
-    GLuint cszFramebuffer;
+    GLuint cszFramebuffers[5];
     GLuint cszTexture;
 
     GLuint saoFramebuffer;
@@ -341,8 +342,6 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 #else
     //SDL_GL_SetAttribute(SDL_GL_CONTEXT_NO_ERROR);
 #endif
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
     SDL_Window* window = SDL_CreateWindow(name,
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -368,7 +367,6 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     SDL_GL_SetSwapInterval(game.config.vsync ? 1 : 0);
 
-    //glEnable(GL_MULTISAMPLE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     shaders.lit = loadShader("shaders/shader.glsl", true);
@@ -381,6 +379,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
     shaders.shadowDepth = loadShader("shaders/shadow.glsl", true);
     shaders.csz = loadShader("shaders/csz.glsl", true);
+    shaders.cszMinify = loadShader("shaders/csz_minify.glsl", true);
     shaders.sao = loadShader("shaders/sao.glsl", true);
     shaders.saoBlur = loadShader("shaders/sao_blur.glsl", true);
 
@@ -446,19 +445,30 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     // csv framebuffers
     glGenTextures(1, &fb.cszTexture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, fb.renderWidth, fb.renderHeight, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, ARRAY_SIZE(fb.cszFramebuffers) - 1);
+    for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
+    {
+        i32 w = i32(fb.renderWidth >> (i - 1));
+        i32 h = i32(fb.renderHeight >> (i - 1));
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, i - 1, GL_R32F, w, h, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    }
+
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glm::vec4 borderColor(1.f);
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
 
-    glGenFramebuffers(1, &fb.cszFramebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.cszTexture, 0);
+    glGenFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
+    for (u32 i=0; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.cszTexture, i);
 
-    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
 
     // sao framebuffers
     glGenTextures(1, &fb.saoTexture);
@@ -636,7 +646,7 @@ void Renderer::render(f32 deltaTime)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
     // generate csz texture
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glUseProgram(shaders.csz.program);
     glm::vec4 clipInfo[MAX_VIEWPORTS];
@@ -649,7 +659,19 @@ void Renderer::render(f32 deltaTime)
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindTextureUnit(3, fb.cszTexture);
 
+    // minify csz texture
+    glUseProgram(shaders.cszMinify.program);
+    for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glViewport(0, 0, i32(fb.renderWidth >> i), i32(fb.renderHeight >> i));
+        glUniform1i(0, i-1);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
+
     // scaleable ambient obscurance
+    glViewport(0, 0, fb.renderWidth, fb.renderHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glUseProgram(shaders.sao.program);
@@ -907,6 +929,7 @@ void Renderer::setViewportCount(u32 viewports)
         shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
         shaders.shadowDepth = loadShader("shaders/shadow.glsl", true);
         shaders.csz = loadShader("shaders/csz.glsl", true);
+        shaders.cszMinify = loadShader("shaders/csz_minify.glsl", true);
         shaders.sao = loadShader("shaders/sao.glsl", true);
         shaders.saoBlur = loadShader("shaders/sao_blur.glsl", true);
 
@@ -925,7 +948,12 @@ void Renderer::setViewportCount(u32 viewports)
                 game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, fb.renderWidth, fb.renderHeight, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+        for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
+        {
+            i32 w = i32(fb.renderWidth >> (i - 1));
+            i32 h = i32(fb.renderHeight >> (i - 1));
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, i - 1, GL_R32F, w, h, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+        }
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
