@@ -65,7 +65,7 @@ def fetch_dependencies():
 
             subprocess.run([os.path.abspath(os.path.join(physxdir, 'generate_projects.bat')), 'vc15win64'], cwd=physxdir)
             subprocess.run(['cmake', '--build', os.path.abspath(os.path.join(physxdir, 'compiler', 'vc15win64')),
-                '--parallel', str(os.cpu_count()), '--config', 'checked'], cwd=physxdir)
+                '--parallel', str(os.cpu_count()), '--config', 'debug'], cwd=physxdir)
             subprocess.run(['cmake', '--build', os.path.abspath(os.path.join(physxdir, 'compiler', 'vc15win64')),
                 '--parallel', str(os.cpu_count()), '--config', 'release'], cwd=physxdir)
         else:
