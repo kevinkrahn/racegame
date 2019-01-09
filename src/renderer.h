@@ -55,6 +55,7 @@ public:
 
     void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform);
     void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform);
+    void drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color);
 
     void setViewportCount(u32 viewports);
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f);

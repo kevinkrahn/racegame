@@ -29,14 +29,14 @@ vec3 reconstructNonUnitCSFaceNormal(vec3 C)
     return cross(dFdy(C), dFdx(C));
 }
 
-#define NUM_SAMPLES 11
+#define NUM_SAMPLES 15
 #define LOG_MAX_OFFSET 3
 #define MAX_MIP_LEVEL 4
 #define NUM_SPIRAL_TURNS 7
 #define FAR_PLANE_Z -200.0
 
 const float intensity = 1.0;
-const float radius = 3.0;
+const float radius = 12.0;
 const float bias = 0.01;
 const float intensityDivR6 = intensity / pow(radius, 6.0);
 const float radius2 = radius * radius;

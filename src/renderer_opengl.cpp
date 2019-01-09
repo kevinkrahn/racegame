@@ -117,6 +117,14 @@ struct RenderMesh
     glm::mat4 worldTransform;
 };
 
+struct RenderMeshOverlay
+{
+    u32 meshHandle;
+    u32 viewportIndex;
+    glm::mat4 worldTransform;
+    glm::vec3 color;
+};
+
 struct WorldInfo
 {
     glm::mat4 orthoProjection;
@@ -178,6 +186,7 @@ struct RenderInfo
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
 std::vector<RenderMesh> renderList;
+std::vector<RenderMeshOverlay> renderListOverlay;
 std::vector<DebugVertex> debugVertices;
 std::vector<Quad2D> renderListText2D;
 std::vector<Quad2D> renderListTex2D;
@@ -202,6 +211,7 @@ struct Shaders
     GLShader cszMinify;
     GLShader sao;
     GLShader saoBlur;
+    GLShader overlay;
 } shaders;
 
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
@@ -419,6 +429,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     shaders.cszMinify = loadShader("shaders/csz_minify.glsl", true);
     shaders.sao = loadShader("shaders/sao.glsl", true);
     shaders.saoBlur = loadShader("shaders/sao_blur.glsl", true);
+    shaders.overlay = loadShader("shaders/overlay.glsl", true);
 
     // create debug vertex buffer
     glCreateVertexArrays(1, &debugMesh.vao);
@@ -763,9 +774,26 @@ void Renderer::render(f32 deltaTime)
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
 
+    // overlays
+    glUseProgram(shaders.overlay.program);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    for (auto const& r : renderListOverlay)
+    {
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
+        glUniform3f(1, r.color.x, r.color.y, r.color.z);
+        glUniform1i(2, (i32)r.viewportIndex);
+        GLMesh const& mesh = loadedMeshes[r.meshHandle];
+        glBindVertexArray(mesh.vao);
+        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        renderListOverlay.clear();
+    }
+
     // debug lines
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
     if (debugVertices.size() > 0)
     {
         Camera const& camera = cameras[0];
@@ -1027,6 +1055,11 @@ void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform)
 void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform)
 {
     renderList.push_back({ renderHandle, worldTransform });
+}
+
+void Renderer::drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
+{
+    renderListOverlay.push_back({ renderHandle, viewportIndex, worldTransform, color });
 }
 
 void Renderer::addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation)

@@ -653,12 +653,10 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             deadTimer = 0.f;
             hitPoints = 100.f;
 
-            // TODO: instead of using startOffset, attempt to place the vehicle in the middle of the
-            // road and offset if there is an obstruction
             const TrackGraph::Node* node = graphResult.lastNode;
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
-                glm::vec3(startOffset.x * dir + startOffset.y * glm::vec2(-dir.y, dir.x), 0);
+                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
@@ -780,15 +778,15 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                     targetPointIndex = 0;
                 }
             }
+        }
 
-            offsetChangeTimer += deltaTime;
-            if (offsetChangeTimer > offsetChangeInterval)
-            {
-                targetOffset.x = random(scene.randomSeries, -8.f, 8.f);
-                targetOffset.y = random(scene.randomSeries, -8.f, 8.f);
-                offsetChangeTimer = 0.f;
-                offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
-            }
+        offsetChangeTimer += deltaTime;
+        if (offsetChangeTimer > offsetChangeInterval)
+        {
+            targetOffset.x = random(scene.randomSeries, -8.f, 8.f);
+            targetOffset.y = random(scene.randomSeries, -8.f, 8.f);
+            offsetChangeTimer = 0.f;
+            offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
         }
     }
     else
@@ -830,6 +828,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         }
     }
 
+    glm::mat4 transform = getTransform();
     if (hasCamera)
     {
         glm::vec3 pos = getPosition();
@@ -843,6 +842,32 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         f32 camDistance = 80.f;
         glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 10.f, 200.f);
+
+        // draw arrow if vehicle is hidden behind something
+        glm::vec3 rayStart = getPosition();
+        glm::vec3 diff = cameraFrom - rayStart;
+        glm::vec3 rayDir = glm::normalize(diff);
+        f32 dist = glm::length(diff);
+        PxRaycastBuffer hit;
+        PxQueryFilterData filter;
+        filter.flags |= PxQueryFlag::eANY_HIT;
+        filter.flags |= PxQueryFlag::eSTATIC;
+        filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+        bool visible = false;
+        for (u32 i=0; i<NUM_WHEELS; ++i)
+        {
+            glm::vec3 wheelPosition = transform * glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
+            if (!scene.raycastStatic(wheelPosition, rayDir, dist))
+            {
+                visible = true;
+                break;
+            }
+        }
+        if (!visible)
+        {
+            game.renderer.drawMeshOverlay(game.resources.getMesh("world.Arrow").renderHandle,
+                    vehicleIndex, transform, glm::vec3(1.f));
+        }
     }
 
     // destroy vehicle if off track or out of bounds
@@ -868,7 +893,6 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     }
 
     // update wheels
-    glm::mat4 transform = getTransform();
     smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
     const f32 smokeInterval = 0.015f;
     bool smoked = false;
