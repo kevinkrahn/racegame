@@ -1,14 +1,4 @@
-layout (std140, binding = 0) uniform WorldInfo
-{
-    mat4 orthoProjection;
-    vec3 sunDirection;
-    float time;
-    vec3 sunColor;
-    mat4 cameraViewProjection[MAX_VIEWPORTS];
-    mat4 cameraProjection[MAX_VIEWPORTS];
-    mat4 cameraView[MAX_VIEWPORTS];
-    vec3 cameraPosition[MAX_VIEWPORTS];
-};
+#include "worldinfo.glsl"
 
 #if defined VERT
 
@@ -32,17 +22,27 @@ void main()
 
 #elif defined FRAG
 
+#include "sample_shadow.glsl"
+
 layout(location = 0) out vec4 outColor;
 
 layout(location = 0) in vec4 inColor;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
+layout(location = 3) in vec3 inShadowCoord;
+
+layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
+layout(binding = 4) uniform sampler2DArray ssaoTexture;
 
 void main()
 {
     outColor = inColor;
-    float light = max(dot(normalize(inNormal), sunDirection), 0.1);
-    outColor.rgb *= light;
+
+    float directLight = max(dot(normalize(inNormal), sunDirection)
+            * getShadow(shadowDepthSampler, inShadowCoord), 0.0);
+    outColor.rgb *= max(directLight, 0.4);
+    float ssaoAmount = texture(ssaoTexture, vec3(gl_FragCoord.xy / textureSize(ssaoTexture, 0).xy, gl_Layer)).r;
+    outColor.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
 }
 
 #elif defined GEOM
@@ -58,6 +58,7 @@ layout(location = 3) in vec3 inWorldPosition[];
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
+layout(location = 3) out vec3 outShadowCoord;
 
 void main()
 {
@@ -68,6 +69,7 @@ void main()
         outColor = inColor[i];
         outNormal = inNormal[i];
         outTexCoord = inTexCoord[i];
+        outShadowCoord = (shadowViewProjectionBias[gl_InvocationID] * vec4(inWorldPosition[i], 1.0)).xyz;
         EmitVertex();
     }
 

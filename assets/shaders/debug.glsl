@@ -1,4 +1,5 @@
 #if defined VERT
+
 layout (location = 0) in vec3 attrPosition;
 layout (location = 1) in vec4 attrColor;
 

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cassert>
 #include <SDL2/SDL.h>
+#include <filesystem>
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
@@ -78,3 +79,9 @@ inline f64 getTime()
     static f64 freq = (f64)SDL_GetPerformanceFrequency();
     return (f64)SDL_GetPerformanceCounter() / freq;
 }
+
+#if _WIN32
+namespace fs = std::experimental::filesystem;
+#else
+namespace fs = std::filesystem;
+#endif

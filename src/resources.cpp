@@ -3,12 +3,6 @@
 #include <filesystem>
 #include <stb_image.h>
 
-#if _WIN32
-namespace fs = std::experimental::filesystem;
-#else
-namespace fs = std::filesystem;
-#endif
-
 void Resources::load()
 {
     for (auto& p : fs::recursive_directory_iterator("."))

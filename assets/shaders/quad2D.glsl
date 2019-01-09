@@ -1,9 +1,6 @@
 #if defined VERT
 
-layout (std140, binding = 0) uniform WorldInfo
-{
-    mat4 orthoProjection;
-};
+#include "worldinfo.glsl"
 
 layout(location = 0) uniform vec4 points[4];
 layout(location = 4) uniform vec4 color;
