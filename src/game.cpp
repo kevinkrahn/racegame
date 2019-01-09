@@ -97,7 +97,8 @@ void Game::run()
             }
         }
 
-        deltaTime = (f32)seconds(std::chrono::high_resolution_clock::now() - frameStartTime).count();
+	const f32 maxDeltaTime = 1.f / 30.f;
+        deltaTime = glm::min((f32)seconds(std::chrono::high_resolution_clock::now() - frameStartTime).count(), maxDeltaTime);
     }
 
     SDL_Quit();

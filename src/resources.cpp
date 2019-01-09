@@ -18,7 +18,7 @@ void Resources::load()
             std::string ext = p.path().extension().string();
             if (ext == ".dat")
             {
-                print("Loading data file: ", p.path().c_str(), '\n');
+                print("Loading data file: ", p.path().string(), '\n');
                 DataFile::Value val = DataFile::load(p.path().string().c_str());
 
                 // meshes

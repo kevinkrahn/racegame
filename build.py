@@ -129,8 +129,7 @@ def build_assets(force):
     else:
         print('No assets to save')
 
-def build():
-    build_type = 'debug'
+def build(build_type):
     job_count = str(os.cpu_count())
 
     ensureDir('bin')
@@ -167,6 +166,8 @@ def cleanBuild():
     shutil.rmtree('bin')
 
 parser = ArgumentParser(description='This is a build tool.')
+parser.add_argument('--debug', help='Compile in debug mode. (default)', dest='build_type', action='store_const', const='debug', default='debug')
+parser.add_argument('--release', help='Compile in release mode.', dest='build_type', action='store_const', const='release')
 subparsers = parser.add_subparsers(dest='command')
 compile = subparsers.add_parser('compile')
 clean = subparsers.add_parser('clean')
@@ -174,13 +175,14 @@ assets = subparsers.add_parser('assets')
 deps = subparsers.add_parser('deps')
 
 args = parser.parse_args()
+print('build_type:', args.build_type)
 
 os.chdir(repoPath)
 
 start_time = time.time()
 
 if args.command == 'compile':
-    build()
+    build(args.build_type)
 elif args.command == 'clean':
     cleanBuild()
 elif args.command == 'assets':
@@ -190,7 +192,7 @@ elif args.command == 'deps':
 else:
     fetch_dependencies()
     build_assets(False)
-    if build():
+    if build(args.build_type):
         subprocess.run([os.path.abspath(os.path.join('bin', 'game'))], cwd=os.path.abspath('bin'))
 
 print('Took {:.2f} seconds'.format(time.time() - start_time))

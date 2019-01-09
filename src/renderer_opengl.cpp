@@ -232,7 +232,7 @@ struct Framebuffers
 void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
 {
     std::ostringstream str;
-    str << "#version 440\n";
+    str << "#version 450\n";
     str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
     str << "#define VIEWPORT_COUNT " << cameras.size() << '\n';
     for (auto const& d : defines)
@@ -335,7 +335,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #ifndef NDEBUG
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
