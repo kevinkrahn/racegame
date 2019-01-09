@@ -945,11 +945,9 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         {
             f32 wheelRadius = i < 2 ? vehicleData->physics.wheelRadiusFront : vehicleData->physics.wheelRadiusRear;
             f32 wheelWidth = i < 2 ? vehicleData->physics.wheelWidthFront : vehicleData->physics.wheelWidthRear;
-            //glm::vec3 tp = convert(info.tireContactPoint);
             glm::vec3 tn = convert(info.tireContactNormal);
             PxTransform contactPose = info.localPose;
-            //contactPose.p += PxVec3(0, 0, -(wheelRadius - 0.015f));
-            glm::vec3 markPosition = tn * -(wheelRadius - 0.015f)
+            glm::vec3 markPosition = tn * -wheelRadius
                 + translationOf(transform * convert(info.localPose));
             glm::vec4 color = isWheelOffroad ?
                 glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);

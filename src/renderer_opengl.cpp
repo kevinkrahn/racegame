@@ -783,6 +783,8 @@ void Renderer::render(f32 deltaTime)
     // ribbons
     if (renderListRibbon.size() > 0)
     {
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
         glUseProgram(shaders.ribbon.program);
@@ -798,6 +800,7 @@ void Renderer::render(f32 deltaTime)
         }
 
         renderListRibbon.clear();
+        glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
     // billboards
