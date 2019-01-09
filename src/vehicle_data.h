@@ -43,7 +43,7 @@ struct PhysicsVehicleSettings
     f32 engineDampingZeroThrottleClutchDisengaged = 0.35f;
     f32 maxHandbrakeTorque = 10000.f;
     f32 maxBrakeTorque = 10000.f;
-    f32 maxSteerAngle = M_PI * 0.33f;
+    f32 maxSteerAngle = f32(M_PI) * 0.33f;
     f32 clutchStrength = 10.f;
     f32 gearSwitchTime = 0.2f;
     f32 autoBoxSwitchTime = 0.25f;
@@ -188,7 +188,7 @@ inline void loadVehicleScene(const char* sceneName, VehicleData* vehicleData)
                 transform
             });
             vehicleData->collisionWidth =
-                std::max(vehicleData->collisionWidth, (f32)e["bound_y"].real());
+                glm::max(vehicleData->collisionWidth, (f32)e["bound_y"].real());
         }
         else if (name.find("COM") != std::string::npos)
         {

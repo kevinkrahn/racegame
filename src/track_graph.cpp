@@ -33,9 +33,9 @@ void TrackGraph::subdivide()
     const f32 maxDistance = square(60.f);
     for (u32 index=0; index<nodes.size(); ++index)
     {
-        Node& from = nodes[index];
-        for (u32 i=0; i<from.connections.size(); ++i)
+        for (u32 i=0; i<nodes[index].connections.size(); ++i)
         {
+            Node& from = nodes[index];
             u32 next = from.connections[i];
             Node& to = nodes[next];
             if (glm::length2(from.position - to.position) > maxDistance)
@@ -162,7 +162,7 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
             a = &node;
         }
 
-        node.angle = pointDirection(glm::vec2(b->position), glm::vec2(a->position)) - M_PI * 0.5f;
+        node.angle = pointDirection(glm::vec2(b->position), glm::vec2(a->position)) - f32(M_PI) * 0.5f;
         node.direction = glm::normalize(b->position - a->position);
     }
 
@@ -230,5 +230,5 @@ void TrackGraph::findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f
         }
     }
 
-    queryResult.lapDistanceLowMark = std::min(queryResult.lapDistanceLowMark, queryResult.currentLapDistance);
+    queryResult.lapDistanceLowMark = glm::min(queryResult.lapDistanceLowMark, queryResult.currentLapDistance);
 }

@@ -8,7 +8,7 @@ void ParticleSystem::update(f32 deltaTime)
         f32 t = p->life / p->totalLife;
         if (t >= 1.f)
         {
-            particles.erase(p);
+            p = particles.erase(p);
             continue;
         }
 

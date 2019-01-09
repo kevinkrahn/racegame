@@ -3,7 +3,11 @@
 #include <filesystem>
 #include <stb_image.h>
 
+#if _WIN32
+namespace fs = std::experimental::filesystem;
+#else
 namespace fs = std::filesystem;
+#endif
 
 void Resources::load()
 {
@@ -11,11 +15,11 @@ void Resources::load()
     {
         if (fs::is_regular_file(p))
         {
-            std::string ext = p.path().extension();
+            std::string ext = p.path().extension().string();
             if (ext == ".dat")
             {
                 print("Loading data file: ", p.path().c_str(), '\n');
-                DataFile::Value val = DataFile::load(p.path().c_str());
+                DataFile::Value val = DataFile::load(p.path().string().c_str());
 
                 // meshes
                 for (auto& val : val["meshes"].array())

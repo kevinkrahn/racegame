@@ -476,7 +476,8 @@ Vehicle::~Vehicle()
 	vehicle4W->getRigidDynamicActor()->release();
 	vehicle4W->free();
 	sceneQueryData->free(game.physx.allocator);
-	batchQuery->release();
+    // TODO: find out why this causes an exception
+	//batchQuery->release();
 	frictionPairs->release();
 }
 
@@ -610,7 +611,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         f32 o25 = game.windowHeight * 0.03f;
         f32 o200 = game.windowHeight * 0.20f;
 
-        std::string p = str(std::min(currentLap, scene.getTotalLaps()));
+        std::string p = str(glm::min(currentLap, scene.getTotalLaps()));
         f32 lapWidth = font1.stringDimensions(str("LAP").c_str()).x;
         font1.drawText(str("LAP").c_str(), offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
         font2.drawText(p.c_str(), offset +
@@ -693,7 +694,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         else
         {
             i32 previousIndex = targetPointIndex - 1;
-            if (previousIndex < 0) previousIndex = scene.getPaths()[followPathIndex].size();
+            if (previousIndex < 0) previousIndex = scene.getPaths()[followPathIndex].size() - 1;
 
             glm::vec3 nextP = scene.getPaths()[followPathIndex][targetPointIndex];
             glm::vec3 previousP = scene.getPaths()[followPathIndex][previousIndex];
@@ -729,15 +730,15 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                     f32 diff1 = glm::dot(d, testDir1);
                     f32 diff2 = glm::dot(d, testDir2);
                     steerAngle = diff1 < diff2 ?
-                        std::min(steerAngle, -avoidSteerAmount) : std::max(steerAngle, avoidSteerAmount);
+                        glm::min(steerAngle, -avoidSteerAmount) : glm::max(steerAngle, avoidSteerAmount);
                 }
                 else if (!left)
                 {
-                    steerAngle = std::min(steerAngle, -avoidSteerAmount);
+                    steerAngle = glm::min(steerAngle, -avoidSteerAmount);
                 }
                 else if (!right)
                 {
-                    steerAngle = std::max(steerAngle, avoidSteerAmount);
+                    steerAngle = glm::max(steerAngle, avoidSteerAmount);
                 }
                 else
                 {
@@ -796,11 +797,11 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 controlledBrakingTimer < 0.5f ? 0.f : 0.5f, 0.f, 0.f, true, true);
         if (getForwardSpeed() > 1.f)
         {
-            controlledBrakingTimer = std::min(controlledBrakingTimer + deltaTime, 1.f);
+            controlledBrakingTimer = glm::min(controlledBrakingTimer + deltaTime, 1.f);
         }
         else
         {
-            controlledBrakingTimer = std::max(controlledBrakingTimer - deltaTime, 0.f);
+            controlledBrakingTimer = glm::max(controlledBrakingTimer - deltaTime, 0.f);
         }
     }
 

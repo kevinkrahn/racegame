@@ -12,13 +12,29 @@ private:
 public:
     SmallVec() : size_(0) {}
 
-    SmallVec(std::initializer_list<T> list) : size_(list.size())
+    SmallVec(std::initializer_list<T> list) : size_((u32)list.size())
     {
         T* ptr = data_;
         for (auto& it : list)
         {
             new (ptr) T(it);
             ++ptr;
+        }
+    }
+
+    SmallVec(SmallVec const& other) : size_(other.size_)
+    {
+        for (u32 i=0; i<size_; ++i)
+        {
+            new (data_ + i) T(other.data_[i]);
+        }
+    }
+
+    SmallVec(SmallVec&& other) : size_(other.size_)
+    {
+        for (u32 i=0; i<size_; ++i)
+        {
+            new (data_ + i) T(std::move(other.data_[i]));
         }
     }
 
@@ -31,12 +47,30 @@ public:
         }
     }
 
-    ~SmallVec()
+    ~SmallVec() { clear(); }
+
+    /*
+    SmallVec<T>& operator = (SmallVec<T> const& other)
     {
-        for (auto& l : *this)
+        clear();
+        size_ = other.size_;
+        for (u32 i=0; i<size_; ++i)
         {
-            l.~T();
+            new (data_ + i) T(other.data_[i]);
         }
+        return *this;
+    }
+    */
+
+    SmallVec<T>& operator = (SmallVec<T> && other)
+    {
+        clear();
+        size_ = other.size_;
+        for (u32 i=0; i<size_; ++i)
+        {
+            new (data_ + i) T(std::move(other.data_[i]));
+        }
+        return *this;
     }
 
     T* data() const { return data_; }

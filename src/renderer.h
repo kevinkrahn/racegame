@@ -14,8 +14,8 @@ struct Camera
     glm::mat4 projection;
     glm::mat4 viewProjection;
     f32 fov;
-    f32 near;
-    f32 far;
+    f32 nearPlane;
+    f32 farPlane;
     f32 aspectRatio;
 };
 
@@ -57,7 +57,7 @@ public:
     void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform);
 
     void setViewportCount(u32 viewports);
-    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 near=0.5f, f32 far=500.f);
+    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f);
 
     void drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
             glm::vec4 const& c1 = glm::vec4(1), glm::vec4 const& c2 = glm::vec4(1));

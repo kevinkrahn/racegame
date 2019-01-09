@@ -95,12 +95,12 @@ inline glm::vec4 rgbaFromU32(u32 color, f32 alpha = 1.f)
 
 namespace glm
 {
-    std::ostream& operator << (std::ostream& lhs, glm::vec3 const& rhs)
+    inline std::ostream& operator << (std::ostream& lhs, glm::vec3 const& rhs)
     {
         return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << " }";
     }
 
-    std::ostream& operator << (std::ostream& lhs, glm::vec4 const& rhs)
+    inline std::ostream& operator << (std::ostream& lhs, glm::vec4 const& rhs)
     {
         return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << " }";
     }
@@ -127,14 +127,14 @@ struct RandomSeries
     u32 state = 1234;
 };
 
-u32 xorshift32(RandomSeries& series)
+inline u32 xorshift32(RandomSeries& series)
 {
-	u32 x = series.state;
-	x ^= x << 13;
-	x ^= x >> 17;
-	x ^= x << 5;
-	series.state = x;
-	return x;
+    u32 x = series.state;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    series.state = x;
+    return x;
 }
 
 inline f32 random01(RandomSeries& series)

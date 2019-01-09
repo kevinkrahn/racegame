@@ -34,8 +34,6 @@ private:
 
     bool connected(std::vector<RibbonPoint>::iterator p)
     {
-        auto next = p + 1;
-        auto prev = p - 1;
         if (p->isEnd)
         {
             if (p != points.begin())
@@ -44,11 +42,12 @@ private:
             }
             return false;
         }
+		auto next = p + 1;
         if (next != points.end() && next->color.a > 0.f)
         {
             return true;
         }
-        if (p != points.begin() && prev->color.a > 0.f)
+        if (p != points.begin() && (p - 1)->color.a > 0.f)
         {
             return true;
         }
@@ -102,7 +101,7 @@ public:
                 p->color.a = glm::max(0.f, p->color.a - deltaTime * fadeRate);
                 if (p->color.a <= 0.f && !connected(p))
                 {
-                    points.erase(p);
+                    p = points.erase(p);
                     continue;
                 }
             }

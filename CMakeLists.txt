@@ -3,12 +3,15 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 
 include_directories(
     external
-    external/SDL2/include
+    external/sdl2
     external/glm
     external/physx/physx/include
     external/physx/pxshared/include
     external/stb
 )
+if(WIN32)
+    link_directories(game external/sdl2/lib/x64/)
+endif()
 project(game)
 add_executable(game src/main.cpp external/glad/glad.c)
 target_compile_definitions(game PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>")
@@ -27,19 +30,31 @@ if(UNIX)
         target_link_libraries(game optimized ${CMAKE_SOURCE_DIR}/external/physx/physx/bin/linux.clang/release/${LIB_NAME})
     endforeach()
 elseif(WIN32)
-    target_link_libraries(game opengl32)
+    target_link_libraries(game general opengl32 SDL2 SDL2main)
+    foreach(LIB_NAME
+        PhysXExtensions_static_64.lib
+        PhysXCharacterKinematic_static_64.lib
+        PhysXCommon_64.lib
+        PhysXFoundation_64.lib
+        PhysXCooking_64.lib
+        PhysX_64.lib
+        PhysXVehicle_static_64.lib
+        PhysXPvdSDK_static_64.lib)
+        target_link_libraries(game debug ${CMAKE_SOURCE_DIR}/external/physx/physx/bin/win.x86_64.vc141.md/debug/${LIB_NAME})
+        target_link_libraries(game optimized ${CMAKE_SOURCE_DIR}/external/physx/physx/bin/win.x86_64.vc141.md/release/${LIB_NAME})
+    endforeach()
 endif()
 
 if(UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fno-rtti -fno-exceptions")
 elseif(MSVC)
-    foreach(flag_var
-            CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-            CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        if(${flag_var} MATCHES "/MD")
-            string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-        endif (${flag_var} MATCHES "/MD")
-    endforeach (flag_var)
+    #foreach(flag_var
+    #    CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+    #    CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    #    if(${flag_var} MATCHES "/MD")
+    #        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    #    endif (${flag_var} MATCHES "/MD")
+    #endforeach (flag_var)
 endif()
 
 add_custom_command(TARGET game POST_BUILD COMMAND

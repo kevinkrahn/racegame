@@ -77,13 +77,13 @@ public:
         auto iter = fonts.find(name);
         if (iter == fonts.end())
         {
-            return fonts[name][height] = Font(std::string(name) + ".ttf", height);
+            return fonts[name][height] = Font(std::string(name) + ".ttf", (f32)height);
         }
 
         auto iter2 = iter->second.find(height);
         if (iter2 == iter->second.end())
         {
-            return fonts[name][height] = Font(std::string(name) + ".ttf", height);
+            return fonts[name][height] = Font(std::string(name) + ".ttf", (f32)height);
         }
 
         return iter2->second;

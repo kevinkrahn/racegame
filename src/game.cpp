@@ -6,16 +6,16 @@
 
 void Game::initPhysX()
 {
-	physx.foundation = PxCreateFoundation(PX_PHYSICS_VERSION, physx.allocator, physx.errorCallback);
-	physx.pvd = PxCreatePvd(*physx.foundation);
-	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-	physx.pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
+    physx.foundation = PxCreateFoundation(PX_PHYSICS_VERSION, physx.allocator, physx.errorCallback);
+    physx.pvd = PxCreatePvd(*physx.foundation);
+    PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+    physx.pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
-	physx.physics = PxCreatePhysics(PX_PHYSICS_VERSION, *physx.foundation, PxTolerancesScale(), true, physx.pvd);
-	physx.cooking = PxCreateCooking(PX_PHYSICS_VERSION, *physx.foundation, PxCookingParams(PxTolerancesScale()));
+    physx.physics = PxCreatePhysics(PX_PHYSICS_VERSION, *physx.foundation, PxTolerancesScale(), true, physx.pvd);
+    physx.cooking = PxCreateCooking(PX_PHYSICS_VERSION, *physx.foundation, PxCookingParams(PxTolerancesScale()));
 
-	const u32 PHYSICS_THREADS = 1;
-	physx.dispatcher = PxDefaultCpuDispatcherCreate(PHYSICS_THREADS);
+    const u32 PHYSICS_THREADS = 0;
+    physx.dispatcher = PxDefaultCpuDispatcherCreate(PHYSICS_THREADS);
 
     PxInitVehicleSDK(*physx.physics);
     PxVehicleSetBasisVectors(PxVec3(0, 0, 1), PxVec3(1, 0, 0));

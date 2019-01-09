@@ -27,7 +27,7 @@ public:
     f32 minLife = 1.5f;
     f32 maxLife = 1.8f;
     f32 minAngle = 0.f;
-    f32 maxAngle = M_PI * 2;
+    f32 maxAngle = f32(M_PI) * 2;
     f32 minScale = 0.9f;
     f32 maxScale = 1.1f;
 

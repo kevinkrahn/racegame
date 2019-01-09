@@ -46,7 +46,7 @@ DataFile::Value DataFile::Value::readValue(std::ifstream& stream)
             u32 len;
             stream.read((char*)&len, sizeof(len));
             new (&value.str_) std::string(len, ' ');
-            stream.read(value.str_.data(), len);
+            stream.read(&value.str_[0], len);
         } break;
         case DataType::BYTE_ARRAY:
         {
@@ -75,7 +75,7 @@ DataFile::Value DataFile::Value::readValue(std::ifstream& stream)
                 u32 keyLen;
                 stream.read((char*)&keyLen, sizeof(keyLen));
                 std::string key(keyLen, ' ');
-                stream.read(key.data(), keyLen);
+                stream.read(&key[0], keyLen);
                 value.dict_[key] = readValue(stream);
             }
         } break;

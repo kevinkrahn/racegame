@@ -16,7 +16,7 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     }
 
     auto size = file.tellg();
-    std::vector<u8> fontData(size);
+    std::vector<u8> fontData((u32)size);
     file.seekg(0, std::ios::beg);
     file.read((char*)fontData.data(), size);
 
@@ -96,7 +96,7 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
         }
         if (*str == '\n')
         {
-            maxWidth = std::max(currentWidth, maxWidth);
+            maxWidth = glm::max(currentWidth, maxWidth);
             currentWidth = 0;
             currentHeight += lineHeight;
             if (onlyFirstLine)
@@ -124,7 +124,7 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
         ++str;
     }
 
-    return { std::max(currentWidth, maxWidth), currentHeight };
+    return { glm::max(currentWidth, maxWidth), currentHeight };
 }
 
 void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,

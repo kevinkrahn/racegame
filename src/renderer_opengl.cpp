@@ -229,7 +229,7 @@ struct Framebuffers
     u32 renderHeight;
 } fb;
 
-void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string_view> const& defines)
+void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
 {
     std::ostringstream str;
     str << "#version 450\n";
@@ -244,7 +244,7 @@ void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string
     glShaderSource(shader, 2, sources, 0);
 }
 
-GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec<std::string_view> defines={})
+GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec<std::string> defines={})
 {
     std::ifstream file(filename);
     if (!file)
@@ -268,7 +268,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec
     {
         glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
         std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, errorMessage.data());
+        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
         error("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
     glAttachShader(program, vertexShader);
@@ -281,7 +281,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec
     {
         glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
         std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, errorMessage.data());
+        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
         error("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
     glAttachShader(program, fragmentShader);
@@ -296,7 +296,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec
         {
             glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
             std::string errorMessage(errorMessageLength, ' ');
-            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, errorMessage.data());
+            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
             error("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
         }
         glAttachShader(program, geometryShader);
@@ -308,7 +308,7 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec
     {
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
         std::string errorMessage(errorMessageLength, ' ');
-        glGetProgramInfoLog(program, errorMessageLength, 0, errorMessage.data());
+        glGetProgramInfoLog(program, errorMessageLength, 0, (GLchar*)errorMessage.data());
         error("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
     }
 
@@ -416,8 +416,8 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     // main framebuffer
     const u32 layers = cameras.size();
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
-    fb.renderWidth = game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
-    fb.renderHeight = game.config.resolutionY * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0);
+    fb.renderWidth = (u32)(game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
+    fb.renderHeight = (u32)(game.config.resolutionY * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
 
     glGenTextures(1, &fb.mainColorTexture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
@@ -653,7 +653,7 @@ void Renderer::render(f32 deltaTime)
     for (u32 i=0; i<cameras.size(); ++i)
     {
         Camera const& cam = cameras[i];
-        clipInfo[i] = { cam.near * cam.far, cam.near - cam.far, cam.far, 0.f };
+        clipInfo[i] = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
     }
     glUniform4fv(0, cameras.size(), (GLfloat*)clipInfo);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -963,18 +963,18 @@ void Renderer::setViewportCount(u32 viewports)
     }
 }
 
-Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 near, f32 far)
+Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane, f32 farPlane)
 {
     ViewportLayout const& layout = viewportLayout[cameras.size() - 1];
     Camera& cam = cameras[index];
     cam.position = from;
     cam.fov = layout.fov;
-    cam.near = near;
-    cam.far = far;
+    cam.nearPlane = nearPlane;
+    cam.farPlane = farPlane;
     cam.view = glm::lookAt(from, to, glm::vec3(0, 0, 1));
     glm::vec2 dim = glm::vec2(game.config.resolutionX, game.config.resolutionY) * layout.scale;
     cam.aspectRatio = dim.x / dim.y;
-    cam.projection = glm::perspective(glm::radians(cam.fov), cam.aspectRatio, near, far);
+    cam.projection = glm::perspective(glm::radians(cam.fov), cam.aspectRatio, nearPlane, farPlane);
     cam.viewProjection = cam.projection * cam.view;
     return cam;
 }
