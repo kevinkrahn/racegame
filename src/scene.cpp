@@ -218,7 +218,7 @@ void Scene::onUpdate(f32 deltaTime)
         it->position += it->velocity * deltaTime;
         game.renderer.drawMesh(game.resources.getMesh("world.Bullet"),
                 glm::translate(glm::mat4(1.f), it->position) *
-                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, glm::vec3(0, 0, 1))));
+                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)));
         // TODO: use sweep instead of raycast
         PxRaycastBuffer hit;
         if (raycast(prevPosition,
@@ -271,7 +271,7 @@ void Scene::onUpdate(f32 deltaTime)
     }
 
     smokeParticleSystem.update(deltaTime);
-    smokeParticleSystem.draw();
+    smokeParticleSystem.draw(game.resources.getTexture("smoke").renderHandle);
 
     // debug text
 #if 1

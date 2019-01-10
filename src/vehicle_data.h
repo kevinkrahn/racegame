@@ -302,7 +302,7 @@ inline void initVehicleData()
     sportscar.physics.frontToeAngle = 0.f;
     sportscar.physics.rearToeAngle = 0.01f;
     sportscar.physics.wheelDampingRate = 0.24f;
-    sportscar.physics.offroadDampingRate = 90.f;
+    sportscar.physics.offroadDampingRate = 60.f;
     sportscar.physics.trackTireFriction = 3.0f;
     sportscar.physics.offroadTireFriction = 1.5f;
     sportscar.physics.maxEngineOmega = 600.f;
@@ -312,7 +312,7 @@ inline void initVehicleData()
     sportscar.physics.engineDampingZeroThrottleClutchDisengaged = 0.6f;
     sportscar.physics.maxHandbrakeTorque = 12000.f;
     sportscar.physics.maxBrakeTorque = 12000.f;
-    sportscar.physics.maxSteerAngle = M_PI * 0.3f;
+    sportscar.physics.maxSteerAngle = M_PI * 0.285f;
     sportscar.physics.clutchStrength = 11.f;
     sportscar.physics.suspensionMaxCompression = 0.05f;
     sportscar.physics.suspensionMaxDroop = 0.15f;

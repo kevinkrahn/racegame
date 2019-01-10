@@ -20,7 +20,7 @@ void ParticleSystem::update(f32 deltaTime)
     }
 }
 
-void ParticleSystem::draw()
+void ParticleSystem::draw(u32 texture)
 {
     for (auto p = particles.begin(); p != particles.end(); ++p)
     {
@@ -32,7 +32,7 @@ void ParticleSystem::draw()
             {
                 auto p1 = alphaCurve[i - 1];
                 f32 v = p1.v + (p2.v - p1.v) * ((t - p1.t) / (p2.t - p1.t));
-                game.renderer.drawBillboard(0, p->position, glm::vec3(p->life * p->scale * 0.5f + 0.5f),
+                game.renderer.drawBillboard(texture, p->position, glm::vec3(p->life * p->scale * 0.5f + 0.5f),
                             p->color * glm::vec4(1, 1, 1, v * p->alphaMultiplier), p->angle);
                 break;
             }

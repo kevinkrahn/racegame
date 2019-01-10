@@ -57,5 +57,5 @@ public:
         });
     }
     void update(f32 deltaTime);
-    void draw();
+    void draw(u32 texture);
 };

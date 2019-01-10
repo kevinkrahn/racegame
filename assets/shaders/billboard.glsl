@@ -44,8 +44,7 @@ layout(location = 0) uniform vec4 color;
 
 void main()
 {
-    //outColor = texture(texSampler, inTexCoord) * color;
-    outColor = color;
+    outColor = texture(texSampler, inTexCoord) * color;
 
     float depth = texture(depthSampler, vec3(gl_FragCoord.xy / textureSize(depthSampler, 0).xy, gl_Layer)).r;
     float d = depth - gl_FragCoord.z;

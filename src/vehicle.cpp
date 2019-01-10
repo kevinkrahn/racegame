@@ -665,6 +665,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         return;
     }
 
+    glm::mat4 transform = getTransform();
     bool canGo = true;
     if (!finishedRace)
     {
@@ -687,7 +688,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             {
                 scene.createProjectile(getPosition() + getForwardVector() * 4.f,
                         convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
-                        vehicleIndex);
+                        zAxisOf(transform), vehicleIndex);
             }
         }
         else
@@ -829,7 +830,6 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         }
     }
 
-    glm::mat4 transform = getTransform();
     if (hasCamera)
     {
         glm::vec3 pos = getPosition();
@@ -959,7 +959,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 scene.smokeParticleSystem.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
-                    glm::clamp(glm::max(slip, glm::abs(wheelRotationSpeed * 0.02f)), 0.f, 1.f),
+                    glm::clamp(glm::max(slip, glm::abs(wheelRotationSpeed * 0.022f)), 0.f, 1.f),
                     glm::vec4(0.58f, 0.50f, 0.22f, 1.f));
                 smoked = true;
             }
@@ -1013,7 +1013,11 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 	        body->setLinearVelocity(
 	                getRigidBody()->getLinearVelocity() +
 	                convert(glm::vec3(glm::normalize(rotationOf(transform) * glm::vec4(translationOf(d.transform), 1.0)))
-	                    * random(scene.randomSeries, 5.f, 20.f)));
+	                    * random(scene.randomSeries, 5.f, 22.f) + glm::vec3(0, 0, 5.f)));
+	        body->setAngularVelocity(PxVec3(
+	                    random(scene.randomSeries, 0.f, 8.f),
+	                    random(scene.randomSeries, 0.f, 8.f),
+	                    random(scene.randomSeries, 0.f, 8.f)));
 
             scene.createVehicleDebris(VehicleDebris{
                 body,

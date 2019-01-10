@@ -838,8 +838,14 @@ void Renderer::render(f32 deltaTime)
         glDisable(GL_CULL_FACE);
         glUseProgram(shaders.billboard.program);
 
+        i32 currentTexture = -1;
         for (auto const& b : renderListBillboard)
         {
+            if (currentTexture != (i32)b.texture)
+            {
+                glBindTextureUnit(0, b.texture);
+                currentTexture = (i32)b.texture;
+            }
             glUniform4fv(0, 1, (GLfloat*)&b.color);
             glm::mat4 translation = glm::translate(glm::mat4(1.f), b.position);
             glm::mat4 rotation = glm::rotate(glm::mat4(1.f), b.angle, { 0, 0, 1 });
@@ -1100,7 +1106,7 @@ void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1,
 
 void Renderer::drawBillboard(u32 texture, glm::vec3 const& position, glm::vec3 const& scale, glm::vec4 const& color, f32 angle)
 {
-    renderListBillboard.push_back({ position, scale, texture, color, angle });
+    renderListBillboard.push_back({ position, scale, loadedTextures[texture].tex, color, angle });
 }
 
 void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,

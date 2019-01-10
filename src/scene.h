@@ -62,6 +62,7 @@ struct Projectile
 {
     glm::vec3 position;
     glm::vec3 velocity;
+    glm::vec3 upVector;
     u32 instigator;
 };
 
@@ -116,9 +117,9 @@ public:
     bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr) const;
 
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
-    void createProjectile(glm::vec3 const& position, glm::vec3 const& velocity, u32 instigator)
+    void createProjectile(glm::vec3 const& position, glm::vec3 const& velocity, glm::vec3 const& upVector, u32 instigator)
     {
-        projectiles.push_back({ position, velocity, instigator });
+        projectiles.push_back({ position, velocity, upVector, instigator });
     };
 
     void attackCredit(u32 instigator, u32 victim);
