@@ -686,12 +686,16 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             if (game.input.isKeyPressed(KEY_C))
             {
+                f32 minSpeed = 40.f;
+                glm::vec3 vel = convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * minSpeed;
+                if (glm::length2(vel) < square(minSpeed))
+                {
+                    vel = glm::normalize(vel) * minSpeed;
+                }
                 scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector(),
-                        convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
-                        zAxisOf(transform), vehicleIndex);
+                        vel, zAxisOf(transform), vehicleIndex);
                 scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector(),
-                        convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
-                        zAxisOf(transform), vehicleIndex);
+                        vel, zAxisOf(transform), vehicleIndex);
             }
         }
         else
