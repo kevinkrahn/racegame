@@ -1,5 +1,7 @@
 #include "track_graph.h"
 #include "game.h"
+#include "font.h"
+#include <iomanip>
 
 void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
 {
@@ -131,6 +133,11 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
         ++c;
     }
 
+    if (end.connections.empty())
+    {
+        FATAL_ERROR("Invalid track graph: cannot find any connections to end node.");
+    }
+
     end.t = 0.f;
     for (u32 c : end.connections)
     {
@@ -189,6 +196,13 @@ void TrackGraph::debugDraw() const
             game.renderer.drawLine(c.position, nodes[connection].position,
                     glm::vec4(1.f, 0.6f, 0.f, 1.f), glm::vec4(1.f, 0.6f, 0.f, 1.f));
         }
+
+        glm::vec4 p = game.renderer.getCamera(0).viewProjection *
+            glm::vec4(c.position + glm::vec3(0, 0, 1) * f32(i % 2) * 2.f, 1.f);
+        p.x = (((p.x / p.w) + 1.f) / 2.f) * game.windowWidth;
+        p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * game.windowHeight;
+        game.resources.getFont("font", 23).drawText(str(std::fixed, std::setw(1), c.t).c_str(), { p.x, p.y },
+                glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER);
     }
 }
 

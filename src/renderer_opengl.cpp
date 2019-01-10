@@ -1031,6 +1031,11 @@ void Renderer::setViewportCount(u32 viewports)
     }
 }
 
+Camera& Renderer::getCamera(u32 index)
+{
+    return cameras[index];
+}
+
 Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane, f32 farPlane)
 {
     ViewportLayout const& layout = viewportLayout[cameras.size() - 1];
