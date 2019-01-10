@@ -465,6 +465,7 @@ Vehicle::Vehicle(Scene& scene, glm::mat4 const& transform, glm::vec3 const& star
     this->startOffset = startOffset;
     this->lastDamagedBy = vehicleIndex;
     this->offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
+    this->followPathIndex = irandom(scene.randomSeries, 0, scene.getPaths().size());
 
     setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
