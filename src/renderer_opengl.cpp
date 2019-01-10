@@ -282,8 +282,8 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec
         newLinePos = (newLinePos == std::string::npos) ? shaderStr.size() - 1 : newLinePos;
 
         auto trim = [](std::string const& s) -> std::string {
-            auto front = std::find_if_not(s.begin(),s.end(), [](int c) { return std::isspace(c); });
-            return std::string(front, std::find_if_not(s.rbegin(), std::string::const_reverse_iterator(front), [](int c) { return std::isspace(c); }).base());
+            auto front = std::find_if_not(s.begin(),s.end(), [](int c) { return isspace(c); });
+            return std::string(front, std::find_if_not(s.rbegin(), std::string::const_reverse_iterator(front), [](int c) { return isspace(c); }).base());
         };
         std::string includeStr = trim(shaderStr.substr(offset, newLinePos - offset));
         includeStr.erase(std::remove(includeStr.begin(), includeStr.end(), '"'), includeStr.end());

@@ -34,6 +34,7 @@ vec3 reconstructNonUnitCSFaceNormal(vec3 C)
 #define MAX_MIP_LEVEL 4
 #define NUM_SPIRAL_TURNS 7
 #define FAR_PLANE_Z -200.0
+#define TWO_PI 6.283185307179586
 
 const float intensity = 1.0;
 const float radius = 12.0;
@@ -103,7 +104,8 @@ void main() {
 
     packKey(CSZToKey(C.z), outColor.gb);
 
-    float randomPatternRotationAngle = (3 * ssC.x ^ ssC.y + ssC.x * ssC.y) * 10;
+    //float randomPatternRotationAngle = (3 * ssC.x ^ ssC.y + ssC.x * ssC.y) * 10;
+    float randomPatternRotationAngle = mod((3 * ssC.x ^ ssC.y + ssC.x * ssC.y) * 10, TWO_PI);
     vec3 n_C = reconstructCSFaceNormal(C);
     float diskRadius = -projScale[gl_Layer] * radius / C.z;
 
