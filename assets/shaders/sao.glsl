@@ -104,8 +104,7 @@ void main() {
 
     packKey(CSZToKey(C.z), outColor.gb);
 
-    //float randomPatternRotationAngle = (3 * ssC.x ^ ssC.y + ssC.x * ssC.y) * 10;
-    float randomPatternRotationAngle = mod((3 * ssC.x ^ ssC.y + ssC.x * ssC.y) * 10, TWO_PI);
+    float randomPatternRotationAngle = mod((3 * ssC.x ^ ssC.y + ssC.x * ssC.y) * 10.0, TWO_PI);
     vec3 n_C = reconstructCSFaceNormal(C);
     float diskRadius = -projScale[gl_Layer] * radius / C.z;
 
