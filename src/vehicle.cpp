@@ -686,7 +686,10 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             if (game.input.isKeyPressed(KEY_C))
             {
-                scene.createProjectile(getPosition() + getForwardVector() * 4.f,
+                scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector(),
+                        convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
+                        zAxisOf(transform), vehicleIndex);
+                scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector(),
                         convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * 40.f,
                         zAxisOf(transform), vehicleIndex);
             }

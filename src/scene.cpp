@@ -219,13 +219,27 @@ void Scene::onUpdate(f32 deltaTime)
         game.renderer.drawMesh(game.resources.getMesh("world.Bullet"),
                 glm::translate(glm::mat4(1.f), it->position) *
                 glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)));
-        // TODO: use sweep instead of raycast
-        PxRaycastBuffer hit;
-        if (raycast(prevPosition,
-                    glm::normalize(it->position - prevPosition),
-                    glm::length(it->position - prevPosition), &hit))
+
+        f32 speed = glm::length(it->velocity);
+        PxRaycastBuffer rayHit;
+        f32 dist = 3.f;
+        if (raycastStatic(it->position, { 0, 0, -1 }, dist, &rayHit))
         {
-            ActorUserData* data = (ActorUserData*)hit.block.actor->userData;
+            it->velocity.z = smoothMove(it->velocity.z, 0.f, 5.f, deltaTime);
+            f32 compression = 1.f - rayHit.block.distance;
+            if (rayHit.block.distance < 0.8f && it->velocity.z < 0.f) it->velocity.z = 0.f;
+            if (rayHit.block.distance > 1.2f && it->velocity.z > 0.f) it->velocity.z = 0.f;
+            it->velocity.z += compression * 90.f * deltaTime;
+            it->velocity = glm::normalize(it->velocity) * speed;
+        }
+
+        PxSweepBuffer sweepHit;
+        if (sweep(0.3f, prevPosition,
+                    glm::normalize(it->position - prevPosition),
+                    glm::length(it->position - prevPosition), &sweepHit,
+                    vehicles[it->instigator]->getRigidBody()))
+        {
+            ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
             if (data && data->entityType == ActorUserData::VEHICLE)
             {
                 vehicles[data->vehicleIndex]->applyDamage(50.f, it->instigator);
