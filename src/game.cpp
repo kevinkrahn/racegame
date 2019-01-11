@@ -32,13 +32,14 @@ void Game::run()
     print("Debug mode\n");
 #endif
 
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
     {
         FATAL_ERROR("SDL_Init Error: ", SDL_GetError())
     }
 
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 
+    input.init();
     initPhysX();
     resources.load();
     initVehicleData();
@@ -97,7 +98,7 @@ void Game::run()
             }
         }
 
-	const f32 maxDeltaTime = 1.f / 30.f;
+        const f32 maxDeltaTime = 1.f / 30.f;
         deltaTime = glm::min((f32)seconds(std::chrono::high_resolution_clock::now() - frameStartTime).count(), maxDeltaTime);
     }
 

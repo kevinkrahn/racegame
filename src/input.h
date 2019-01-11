@@ -109,6 +109,39 @@ enum Keys
     KEY_COUNT = 512
 };
 
+enum ControllerButton
+{
+    BUTTON_A,
+    BUTTON_B,
+    BUTTON_X,
+    BUTTON_Y,
+    BUTTON_BACK,
+    BUTTON_GUIDE,
+    BUTTON_START,
+    BUTTON_LEFTSTICK,
+    BUTTON_RIGHTSTICK,
+    BUTTON_LEFTSHOULDER,
+    BUTTON_RIGHTSHOULDER,
+    BUTTON_DPAD_UP,
+    BUTTON_DPAD_DOWN,
+    BUTTON_DPAD_LEFT,
+    BUTTON_DPAD_RIGHT,
+
+    BUTTON_COUNT
+};
+
+enum ControllerAxis
+{
+    AXIS_LEFT_X,
+    AXIS_LEFT_Y,
+    AXIS_RIGHT_X,
+    AXIS_RIGHT_Y,
+    AXIS_TRIGGER_LEFT,
+    AXIS_TRIGGER_RIGHT,
+
+    AXIS_COUNT
+};
+
 class Input
 {
 private:
@@ -123,35 +156,53 @@ private:
     i32 mouseScrollX;
     i32 mouseScrollY;
 
-    void pressMouseButton(u32 button)
+    struct Controller
     {
-        assert(button < MOUSE_BUTTON_COUNT);
-        mouseButtonDown[button] = true;
-        mouseButtonPressed[button] = true;
-    }
-
-    void releaseMouseButton(u32 button)
-    {
-        assert(button < MOUSE_BUTTON_COUNT);
-        mouseButtonDown[button] = false;
-        mouseButtonReleased[button] = true;
-    }
-
-    void pressKey(u32 key)
-    {
-        assert(key < KEY_COUNT);
-        keyDown[key] = true;
-        keyPressed[key] = true;
-    }
-
-    void releaseKey(u32 key)
-    {
-        assert(key < KEY_COUNT);
-        keyDown[key] = false;
-        keyReleased[key] = true;
-    }
+        SDL_GameController* controller = nullptr;
+        bool buttonDown[BUTTON_COUNT] = {};
+        bool buttonPressed[BUTTON_COUNT] = {};
+        bool buttonReleased[BUTTON_COUNT] = {};
+        f32 axis[AXIS_COUNT] = {};
+    };
+    std::vector<Controller> controllers;
 
 public:
+    void init()
+    {
+        u32 numJoysticks = SDL_NumJoysticks();
+        for (u32 i=0; i<numJoysticks; ++i)
+        {
+            if (SDL_IsGameController(i))
+            {
+                controllers.push_back({ SDL_GameControllerOpen(i) });
+            }
+        }
+    }
+
+    bool isControllerButtonDown(u32 controller, u32 button)
+    {
+        assert(controller < controllers.size());
+        return controllers[controller].buttonDown[button];
+    }
+
+    bool isControllerButtonPressed(u32 controller, u32 button)
+    {
+        assert(controller < controllers.size());
+        return controllers[controller].buttonPressed[button];
+    }
+
+    bool isControllerButtonReleased(u32 controller, u32 button)
+    {
+        assert(controller < controllers.size());
+        return controllers[controller].buttonReleased[button];
+    }
+
+    f32 getControllerAxis(u32 controller, u32 axis)
+    {
+        assert(controller < controllers.size());
+        return controllers[controller].axis[axis];
+    }
+
     bool isMouseButtonDown(u32 button)
     {
         assert(button < MOUSE_BUTTON_COUNT);
@@ -206,6 +257,11 @@ public:
         memset(keyReleased, 0, sizeof(keyReleased));
         memset(mouseButtonPressed, 0, sizeof(mouseButtonPressed));
         memset(mouseButtonReleased, 0, sizeof(mouseButtonReleased));
+        for (auto& controller : controllers)
+        {
+            memset(controller.buttonPressed, 0, sizeof(controller.buttonPressed));
+            memset(controller.buttonReleased, 0, sizeof(controller.buttonReleased));
+        }
 
         mouseScrollX = 0;
         mouseScrollY = 0;
@@ -219,26 +275,68 @@ public:
             {
                 if (e.key.repeat == 0)
                 {
-                    pressKey(e.key.keysym.scancode);
+                    u32 key = e.key.keysym.scancode;
+                    keyDown[key] = true;
+                    keyPressed[key] = true;
                 }
             } break;
             case SDL_KEYUP:
             {
-                releaseKey(e.key.keysym.scancode);
+                u32 key = e.key.keysym.scancode;
+                keyDown[key] = false;
+                keyReleased[key] = true;
             } break;
             case SDL_MOUSEBUTTONDOWN:
             {
-                pressMouseButton(e.button.button);
+                u32 button = e.button.button;
+                mouseButtonDown[button] = true;
+                mouseButtonPressed[button] = true;
             } break;
             case SDL_MOUSEBUTTONUP:
             {
-                releaseMouseButton(e.button.button);
+                u32 button = e.button.button;
+                mouseButtonDown[button] = false;
+                mouseButtonReleased[button] = true;
             } break;
             case SDL_MOUSEWHEEL:
             {
                 i32 flip = e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
                 mouseScrollX += e.wheel.x * flip;
                 mouseScrollY += e.wheel.y * flip;
+            } break;
+            case SDL_CONTROLLERDEVICEADDED:
+            {
+                SDL_JoystickID which = e.cdevice.which;
+                controllers.push_back({ SDL_GameControllerOpen(which) });
+            } break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+            {
+                //SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.cdevice.which);
+            } break;
+            case SDL_CONTROLLERDEVICEREMAPPED:
+            {
+                //SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.cdevice.which);
+            } break;
+            case SDL_CONTROLLERAXISMOTION:
+            {
+                SDL_JoystickID which = e.caxis.which;
+                u8 axis = e.caxis.axis;
+                i16 value = e.caxis.value;
+                controllers[which].axis[axis] = value / 32768.f;
+            } break;
+            case SDL_CONTROLLERBUTTONDOWN:
+            {
+                SDL_JoystickID which = e.cbutton.which;
+                u8 button = e.cbutton.button;
+                controllers[which].buttonPressed[button] = true;
+                controllers[which].buttonDown[button] = true;
+            } break;
+            case SDL_CONTROLLERBUTTONUP:
+            {
+                SDL_JoystickID which = e.cbutton.which;
+                u8 button = e.cbutton.button;
+                controllers[which].buttonDown[button] = false;
+                controllers[which].buttonReleased[button] = true;
             } break;
         }
     }

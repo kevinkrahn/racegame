@@ -671,10 +671,19 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     {
         if (isPlayerControlled)
         {
+#if 1
             updatePhysics(scene.getPhysicsScene(), deltaTime, true,
                     game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
                     (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
                     game.input.isKeyDown(KEY_SPACE), true, false);
+#else
+            u32 cid = 0;
+            updatePhysics(scene.getPhysicsScene(), deltaTime, false,
+                    game.input.getControllerAxis(cid, AXIS_TRIGGER_RIGHT),
+                    game.input.getControllerAxis(cid, AXIS_TRIGGER_LEFT),
+                    -game.input.getControllerAxis(cid, AXIS_LEFT_X),
+                    game.input.isControllerButtonPressed(cid, BUTTON_A), true, false);
+#endif
 
             if (game.input.isKeyPressed(KEY_F))
             {
