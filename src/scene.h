@@ -7,7 +7,7 @@
 #include "particle_system.h"
 #include <vector>
 
-const u32 viewportCount = 1;
+const u32 viewportCount = 2;
 
 enum
 {

@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <glm/vec2.hpp>
+#include <map>
 #include "misc.h"
 
 // These values line up with SDL_Button* defines
@@ -118,10 +119,10 @@ enum ControllerButton
     BUTTON_BACK,
     BUTTON_GUIDE,
     BUTTON_START,
-    BUTTON_LEFTSTICK,
-    BUTTON_RIGHTSTICK,
-    BUTTON_LEFTSHOULDER,
-    BUTTON_RIGHTSHOULDER,
+    BUTTON_LEFT_STICK,
+    BUTTON_RIGHT_STICK,
+    BUTTON_LEFT_SHOULDER,
+    BUTTON_RIGHT_SHOULDER,
     BUTTON_DPAD_UP,
     BUTTON_DPAD_DOWN,
     BUTTON_DPAD_LEFT,
@@ -164,7 +165,7 @@ private:
         bool buttonReleased[BUTTON_COUNT] = {};
         f32 axis[AXIS_COUNT] = {};
     };
-    std::vector<Controller> controllers;
+    std::map<u32, Controller> controllers;
 
 public:
     void init()
@@ -174,33 +175,41 @@ public:
         {
             if (SDL_IsGameController(i))
             {
-                controllers.push_back({ SDL_GameControllerOpen(i) });
+                controllers[i] = { SDL_GameControllerOpen(i) };
             }
         }
     }
 
     bool isControllerButtonDown(u32 controller, u32 button)
     {
-        assert(controller < controllers.size());
-        return controllers[controller].buttonDown[button];
+        assert(button < BUTTON_COUNT);
+        auto ctl = controllers.find(controller);
+        if (ctl == controllers.end()) return false;
+        return ctl->second.buttonDown[button];
     }
 
     bool isControllerButtonPressed(u32 controller, u32 button)
     {
-        assert(controller < controllers.size());
-        return controllers[controller].buttonPressed[button];
+        assert(button < BUTTON_COUNT);
+        auto ctl = controllers.find(controller);
+        if (ctl == controllers.end()) return false;
+        return ctl->second.buttonPressed[button];
     }
 
     bool isControllerButtonReleased(u32 controller, u32 button)
     {
-        assert(controller < controllers.size());
-        return controllers[controller].buttonReleased[button];
+        assert(button < BUTTON_COUNT);
+        auto ctl = controllers.find(controller);
+        if (ctl == controllers.end()) return false;
+        return ctl->second.buttonReleased[button];
     }
 
     f32 getControllerAxis(u32 controller, u32 axis)
     {
-        assert(controller < controllers.size());
-        return controllers[controller].axis[axis];
+        assert(axis < AXIS_COUNT);
+        auto ctl = controllers.find(controller);
+        if (ctl == controllers.end()) return false;
+        return ctl->second.axis[axis];
     }
 
     bool isMouseButtonDown(u32 button)
@@ -259,8 +268,8 @@ public:
         memset(mouseButtonReleased, 0, sizeof(mouseButtonReleased));
         for (auto& controller : controllers)
         {
-            memset(controller.buttonPressed, 0, sizeof(controller.buttonPressed));
-            memset(controller.buttonReleased, 0, sizeof(controller.buttonReleased));
+            memset(controller.second.buttonPressed, 0, sizeof(controller.second.buttonPressed));
+            memset(controller.second.buttonReleased, 0, sizeof(controller.second.buttonReleased));
         }
 
         mouseScrollX = 0;
@@ -307,7 +316,7 @@ public:
             case SDL_CONTROLLERDEVICEADDED:
             {
                 SDL_JoystickID which = e.cdevice.which;
-                controllers.push_back({ SDL_GameControllerOpen(which) });
+                controllers[which] = { SDL_GameControllerOpen(which) };
             } break;
             case SDL_CONTROLLERDEVICEREMOVED:
             {

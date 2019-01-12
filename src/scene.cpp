@@ -187,7 +187,7 @@ void Scene::onStart()
         const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
         vehicles.push_back(
                 std::make_unique<Vehicle>(*this, vehicleTransform, -offset,
-                    vehicleData, vehicleMaterial, surfaceMaterials, i == 0, i < viewportCount, i));
+                    vehicleData, vehicleMaterial, surfaceMaterials, i < 2, i < viewportCount, i));
     }
 }
 
@@ -354,7 +354,7 @@ void Scene::onUpdate(f32 deltaTime)
     u32 size = (u32)(game.windowHeight * 0.22f);
     glm::vec2 hudTrackPos;
     if (viewportCount == 1) hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
-    else if (viewportCount == 2) hudTrackPos = glm::vec2(game.windowWidth - size * 0.5f - 60, game.windowHeight * 0.5f);
+    else if (viewportCount == 2) hudTrackPos = glm::vec2(size * 0.5f + 60, game.windowHeight * 0.5f);
     else if (viewportCount == 3)
     {
         hudTrackPos = glm::vec2(game.windowWidth, game.windowHeight) * 0.75f;

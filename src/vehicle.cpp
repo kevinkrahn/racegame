@@ -671,19 +671,28 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     {
         if (isPlayerControlled)
         {
-#if 1
-            updatePhysics(scene.getPhysicsScene(), deltaTime, true,
-                    game.input.isKeyDown(KEY_UP), game.input.isKeyDown(KEY_DOWN),
-                    (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT),
-                    game.input.isKeyDown(KEY_SPACE), true, false);
-#else
-            u32 cid = 0;
-            updatePhysics(scene.getPhysicsScene(), deltaTime, false,
-                    game.input.getControllerAxis(cid, AXIS_TRIGGER_RIGHT),
-                    game.input.getControllerAxis(cid, AXIS_TRIGGER_LEFT),
-                    -game.input.getControllerAxis(cid, AXIS_LEFT_X),
-                    game.input.isControllerButtonPressed(cid, BUTTON_A), true, false);
-#endif
+            f32 accel, brake, steer;
+            bool digital = false;
+            bool shoot = false;
+            if (vehicleIndex == 0)
+            {
+                digital = true;
+                accel = game.input.isKeyDown(KEY_UP);
+                brake = game.input.isKeyDown(KEY_DOWN);
+                steer = (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT);
+                shoot = game.input.isKeyPressed(KEY_C);
+            }
+            else
+            {
+                u32 cid = vehicleIndex - 1;
+                accel = game.input.getControllerAxis(cid, AXIS_TRIGGER_RIGHT);
+                brake = game.input.getControllerAxis(cid, AXIS_TRIGGER_LEFT);
+                steer = -game.input.getControllerAxis(cid, AXIS_LEFT_X);
+                shoot = game.input.isControllerButtonPressed(cid, BUTTON_RIGHT_SHOULDER);
+            }
+
+            updatePhysics(scene.getPhysicsScene(), deltaTime, digital,
+                    accel, brake, steer, false, true, false);
 
             if (game.input.isKeyPressed(KEY_F))
             {
@@ -693,7 +702,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                         PxForceMode::eVELOCITY_CHANGE);
             }
 
-            if (game.input.isKeyPressed(KEY_C))
+            if (shoot)
             {
                 f32 minSpeed = 40.f;
                 glm::vec3 vel = convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * minSpeed;
@@ -701,9 +710,9 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
                 {
                     vel = glm::normalize(vel) * minSpeed;
                 }
-                scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector(),
+                scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
                         vel, zAxisOf(transform), vehicleIndex);
-                scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector(),
+                scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
                         vel, zAxisOf(transform), vehicleIndex);
             }
         }
