@@ -45,7 +45,7 @@ void main()
     float directLight = max(dot(normalize(inNormal), sunDirection)
             * getShadow(shadowDepthSampler, inShadowCoord), 0.0);
     outColor.rgb *= max(directLight, 0.4);
-    float ssaoAmount = texture(ssaoTexture, vec3(gl_FragCoord.xy / textureSize(ssaoTexture, 0).xy, gl_Layer)).r;
+    float ssaoAmount = texelFetch(ssaoTexture, ivec3(gl_FragCoord.xy, gl_Layer), 0).r;
     outColor.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
 }
 

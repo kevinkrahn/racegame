@@ -7,12 +7,11 @@ void main()
 
 #elif defined FRAG
 
+#include "worldinfo.glsl"
+
 layout(location = 0) out vec4 outColor;
 
-layout(location = 0) uniform vec4 projInfo[VIEWPORT_COUNT];
-layout(location = 10) uniform float projScale[VIEWPORT_COUNT];
-
-layout(binding = 3) uniform sampler2DArray depthTexture;
+layout(binding = 3) uniform sampler2DArray cszTexture;
 
 vec3 reconstructCSPosition(vec2 S, float z)
 {
@@ -65,7 +64,7 @@ void packKey(float key, out vec2 p)
 vec3 getPosition(ivec2 ssP)
 {
     vec3 P;
-    P.z = texelFetch(depthTexture, ivec3(ssP, gl_Layer), 0).r;
+    P.z = texelFetch(cszTexture, ivec3(ssP, gl_Layer), 0).r;
     P = reconstructCSPosition(vec2(ssP) + vec2(0.5), P.z);
     return P;
 }
@@ -75,8 +74,8 @@ vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR)
     int mipLevel = clamp(findMSB(int(ssR)) - LOG_MAX_OFFSET, 0, MAX_MIP_LEVEL);
     ivec2 ssP = ivec2(ssR * unitOffset) + ssC;
     vec3 P;
-    ivec2 mipP = clamp(ssP >> mipLevel, ivec2(0), textureSize(depthTexture, mipLevel).xy - ivec2(1));
-    P.z = texelFetch(depthTexture, ivec3(mipP, gl_Layer), mipLevel).r;
+    ivec2 mipP = clamp(ssP >> mipLevel, ivec2(0), textureSize(cszTexture, mipLevel).xy - ivec2(1));
+    P.z = texelFetch(cszTexture, ivec3(mipP, gl_Layer), mipLevel).r;
     P = reconstructCSPosition(vec2(ssP) + vec2(0.5), P.z);
     return P;
 }

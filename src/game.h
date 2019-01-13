@@ -34,7 +34,6 @@ public:
         bool fullscreen = false;
         u32 maxFPS = 200;
         bool vsync = true;
-        f32 renderPercentage = 1.f;
         u32 shadowMapResolution = 2048;
     } config;
 

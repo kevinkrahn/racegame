@@ -72,4 +72,6 @@ public:
                      SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos);
 
     void drawRibbon(class Ribbon const& ribbon, u32 texture);
+
+    void drawDecal(glm::mat4 const& transform, u32 texture);
 };

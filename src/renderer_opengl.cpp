@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <map>
 
 class DynamicBuffer
 {
@@ -103,7 +104,10 @@ struct GLMesh
 
 struct GLShader
 {
+    std::string filename;
     GLuint program;
+    bool hasGeometryShader;
+    SmallVec<std::string> defines;
 };
 
 struct GLTexture
@@ -138,6 +142,8 @@ struct WorldInfo
     glm::vec4 cameraPosition[MAX_VIEWPORTS];
     glm::mat4 shadowViewProjection[MAX_VIEWPORTS];
     glm::mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
+    glm::vec4 projInfo[MAX_VIEWPORTS];
+    glm::vec4 projScale;
 } worldInfo;
 
 struct DebugVertex
@@ -183,6 +189,13 @@ struct RenderInfo
     u32 texture;
 };
 
+struct Decal
+{
+    glm::mat4 worldTransform;
+    u32 texture;
+};
+
+std::map<std::string, GLShader> loadedShaders;
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
 std::vector<RenderMesh> renderList;
@@ -192,33 +205,17 @@ std::vector<Quad2D> renderListText2D;
 std::vector<Quad2D> renderListTex2D;
 std::vector<Billboard> renderListBillboard;
 std::vector<RenderInfo> renderListRibbon;
+std::vector<Decal> renderListDecal;
 SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 
 u32 viewportGapPixels = 1;
-
-struct Shaders
-{
-    GLShader lit;
-    GLShader debug;
-    GLShader text2D;
-    GLShader tex2D;
-    GLShader post;
-    GLShader mesh2D;
-    GLShader billboard;
-    GLShader ribbon;
-    GLShader shadowDepth;
-    GLShader csz;
-    GLShader cszMinify;
-    GLShader sao;
-    GLShader saoBlur;
-    GLShader overlay;
-} shaders;
 
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
 DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
 DynamicBuffer ribbonVertexBuffer(sizeof(DebugVertex) * 50000);
 GLMesh debugMesh;
 GLMesh ribbonMesh;
+GLuint emptyVAO;
 
 struct Framebuffers
 {
@@ -255,7 +252,7 @@ void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string
     glShaderSource(shader, 2, sources, 0);
 }
 
-GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec<std::string> defines={})
+GLShader compileShader(std::string const& filename, bool useGeometryShader, SmallVec<std::string> defines)
 {
     std::ifstream file(filename);
     if (!file)
@@ -363,7 +360,19 @@ GLShader loadShader(const char* filename, bool useGeometryShader=false, SmallVec
     glDeleteShader(fragmentShader);
     glDeleteShader(geometryShader);
 
-    return { program };
+    return { filename, program, useGeometryShader, defines };
+}
+
+void loadShader(std::string const& filename, bool useGeometryShader=false,
+        SmallVec<std::string> defines={}, std::string name="")
+{
+    if (name.empty()) name = fs::path(filename).stem().string();
+    loadedShaders[name] = compileShader(filename, useGeometryShader, defines);
+}
+
+GLuint getShader(const char* name)
+{
+    return loadedShaders[name].program;
 }
 
 #ifndef NDEBUG
@@ -416,20 +425,23 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    shaders.lit = loadShader("shaders/shader.glsl", true);
-    shaders.debug = loadShader("shaders/debug.glsl");
-    shaders.tex2D = loadShader("shaders/quad2D.glsl", false, { "COLOR" });
-    shaders.text2D = loadShader("shaders/quad2D.glsl");
-    shaders.post = loadShader("shaders/post.glsl");
-    shaders.mesh2D = loadShader("shaders/mesh2D.glsl");
-    shaders.billboard = loadShader("shaders/billboard.glsl", true);
-    shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
-    shaders.shadowDepth = loadShader("shaders/shadow.glsl", true);
-    shaders.csz = loadShader("shaders/csz.glsl", true);
-    shaders.cszMinify = loadShader("shaders/csz_minify.glsl", true);
-    shaders.sao = loadShader("shaders/sao.glsl", true);
-    shaders.saoBlur = loadShader("shaders/sao_blur.glsl", true);
-    shaders.overlay = loadShader("shaders/overlay.glsl", true);
+    loadShader("shaders/shader.glsl", true);
+    loadShader("shaders/debug.glsl");
+    loadShader("shaders/quad2D.glsl", false, { "COLOR" }, "tex2D");
+    loadShader("shaders/quad2D.glsl", false, {}, "text2D");
+    loadShader("shaders/post.glsl");
+    loadShader("shaders/mesh2D.glsl");
+    loadShader("shaders/billboard.glsl", true);
+    loadShader("shaders/ribbon.glsl", true);
+    loadShader("shaders/shadow.glsl", true);
+    loadShader("shaders/csz.glsl", true);
+    loadShader("shaders/csz_minify.glsl", true);
+    loadShader("shaders/sao.glsl", true);
+    loadShader("shaders/sao_blur.glsl", true);
+    loadShader("shaders/overlay.glsl", true);
+    loadShader("shaders/decal.glsl", true);
+
+    glCreateVertexArrays(1, &emptyVAO);
 
     // create debug vertex buffer
     glCreateVertexArrays(1, &debugMesh.vao);
@@ -643,13 +655,25 @@ void Renderer::render(f32 deltaTime)
         worldInfo.cameraPosition[i] = glm::vec4(cameras[i].position, 1.0);
     }
     setShadowMatrices();
+    for (u32 i=0; i<cameras.size(); ++i)
+    {
+        Camera const& cam = cameras[i];
+        worldInfo.projInfo[i] = {
+            -2.f / (fb.renderWidth * cam.projection[0][0]),
+            -2.f / (fb.renderHeight * cam.projection[1][1]),
+            (1.f - cam.projection[0][2]) / cam.projection[0][0],
+            (1.f + cam.projection[1][2]) / cam.projection[1][1]
+        };
+        const float scale = glm::abs(2.f * glm::tan(cam.fov * 0.5f));
+        worldInfo.projScale[i] = fb.renderHeight / scale;
+    }
     worldInfoUBO.updateData(&worldInfo);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
 
     // shadow map
     glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
-    glUseProgram(shaders.shadowDepth.program);
+    glUseProgram(getShader("shadow"));
     glViewport(0, 0, game.config.shadowMapResolution, game.config.shadowMapResolution);
     glDepthMask(GL_TRUE);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -682,7 +706,7 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    glUseProgram(shaders.lit.program);
+    glUseProgram(getShader("shader"));
     for (auto const& r : renderList)
     {
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
@@ -694,9 +718,10 @@ void Renderer::render(f32 deltaTime)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
     // generate csz texture
+    glBindVertexArray(emptyVAO);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(shaders.csz.program);
+    glUseProgram(getShader("csz"));
     glm::vec4 clipInfo[MAX_VIEWPORTS];
     for (u32 i=0; i<cameras.size(); ++i)
     {
@@ -708,7 +733,7 @@ void Renderer::render(f32 deltaTime)
     glBindTextureUnit(3, fb.cszTexture);
 
     // minify csz texture
-    glUseProgram(shaders.cszMinify.program);
+    glUseProgram(getShader("csz_minify"));
     for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
@@ -722,44 +747,28 @@ void Renderer::render(f32 deltaTime)
     glViewport(0, 0, fb.renderWidth, fb.renderHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(shaders.sao.program);
-    glm::vec4 projInfo[MAX_VIEWPORTS];
-    f32 projScale[MAX_VIEWPORTS];
-    for (u32 i=0; i<cameras.size(); ++i)
-    {
-        Camera const& cam = cameras[i];
-        projInfo[i] = {
-            -2.f / (fb.renderWidth * cam.projection[0][0]),
-            -2.f / (fb.renderHeight * cam.projection[1][1]),
-            (1.f - cam.projection[0][2]) / cam.projection[0][0],
-            (1.f + cam.projection[1][2]) / cam.projection[1][1]
-        };
-        const float scale = glm::abs(2.f * glm::tan(cam.fov * 0.5f));
-        projScale[i] = fb.renderHeight / scale;
-    }
-    glUniform4fv(0, cameras.size(), (GLfloat*)projInfo);
-    glUniform1fv(10, cameras.size(), (GLfloat*)projScale);
+    glUseProgram(getShader("sao"));
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindTextureUnit(4, fb.saoTexture);
 
 #if 1
+    glUseProgram(getShader("sao_blur"));
+
     // sao hblur
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
-    glUseProgram(shaders.saoBlur.program);
     glUniform2i(0, 1, 0);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindTextureUnit(4, fb.saoBlurTexture);
 
     // sao vblur
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(shaders.saoBlur.program);
     glUniform2i(0, 0, 1);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 #endif
 
     // color pass
     glBindTextureUnit(4, fb.saoTexture);
-    glUseProgram(shaders.lit.program);
+    glUseProgram(getShader("shader"));
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glDepthFunc(GL_EQUAL);
@@ -775,7 +784,7 @@ void Renderer::render(f32 deltaTime)
     }
 
     // overlays
-    glUseProgram(shaders.overlay.program);
+    glUseProgram(getShader("overlay"));
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     for (auto const& r : renderListOverlay)
@@ -800,12 +809,34 @@ void Renderer::render(f32 deltaTime)
         debugVertexBuffer.updateData(debugVertices.data(), debugVertices.size() * sizeof(DebugVertex));
         glVertexArrayVertexBuffer(debugMesh.vao, 0, debugVertexBuffer.getBuffer(), 0, sizeof(DebugVertex));
 
-        glUseProgram(shaders.debug.program);
+        glUseProgram(getShader("debug"));
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
 
         glBindVertexArray(debugMesh.vao);
         glDrawArrays(GL_LINES, 0, debugVertices.size());
         debugVertices.clear();
+    }
+
+    // decals
+    if (renderListDecal.size() > 0)
+    {
+        glUseProgram(getShader("decal"));
+        glBindVertexArray(emptyVAO);
+        glDepthMask(GL_FALSE);
+        u32 tex = 0;
+        for (auto const& d : renderListDecal)
+        {
+            if (d.texture != tex)
+            {
+                tex = d.texture;
+                glBindTextureUnit(0, d.texture);
+            }
+            glm::mat4 inverseWorldTransform = glm::inverse(d.worldTransform);
+            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d.worldTransform));
+            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(inverseWorldTransform));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        renderListDecal.clear();
     }
 
     // ribbons
@@ -815,7 +846,7 @@ void Renderer::render(f32 deltaTime)
         glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
-        glUseProgram(shaders.ribbon.program);
+        glUseProgram(getShader("ribbon"));
 
         glVertexArrayVertexBuffer(ribbonMesh.vao, 0, ribbonVertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
         glBindVertexArray(ribbonMesh.vao);
@@ -836,7 +867,8 @@ void Renderer::render(f32 deltaTime)
     {
         glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
-        glUseProgram(shaders.billboard.program);
+        glUseProgram(getShader("billboard"));
+        glBindVertexArray(emptyVAO);
 
         i32 currentTexture = -1;
         for (auto const& b : renderListBillboard)
@@ -866,11 +898,12 @@ void Renderer::render(f32 deltaTime)
     glViewport(0, 0, game.windowWidth, game.windowHeight);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(shaders.post.program);
+    glUseProgram(getShader("post"));
     glBindTextureUnit(0, fb.mainColorTexture);
     glm::vec2 res(game.windowWidth, game.windowHeight);
     glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
+    glBindVertexArray(emptyVAO);
     for (u32 i=0; i<cameras.size(); ++i)
     {
         glm::vec2 dir = layout.offsets[i];
@@ -890,7 +923,7 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_BLEND);
     if (renderListText2D.size() > 0)
     {
-        glUseProgram(shaders.text2D.program);
+        glUseProgram(getShader("text2D"));
         for (auto& q : renderListText2D)
         {
             glBindTextureUnit(0, q.tex);
@@ -902,7 +935,7 @@ void Renderer::render(f32 deltaTime)
     }
     if (renderListTex2D.size() > 0)
     {
-        glUseProgram(shaders.tex2D.program);
+        glUseProgram(getShader("tex2D"));
         for (auto& q : renderListTex2D)
         {
             glBindTextureUnit(0, q.tex);
@@ -998,14 +1031,15 @@ void Renderer::setViewportCount(u32 viewports)
     {
         print("Viewport count changed.\n");
         cameras.resize(viewports);
-        shaders.lit = loadShader("shaders/shader.glsl", true);
-        shaders.billboard = loadShader("shaders/billboard.glsl", true);
-        shaders.ribbon = loadShader("shaders/ribbon.glsl", true);
-        shaders.shadowDepth = loadShader("shaders/shadow.glsl", true);
-        shaders.csz = loadShader("shaders/csz.glsl", true);
-        shaders.cszMinify = loadShader("shaders/csz_minify.glsl", true);
-        shaders.sao = loadShader("shaders/sao.glsl", true);
-        shaders.saoBlur = loadShader("shaders/sao_blur.glsl", true);
+        for (auto& shader : loadedShaders)
+        {
+            if (shader.second.hasGeometryShader)
+            {
+                glDeleteProgram(shader.second.program);
+                shader.second = compileShader(shader.second.filename,
+                        shader.second.hasGeometryShader, shader.second.defines);
+            }
+        }
 
         ViewportLayout& layout = viewportLayout[cameras.size() - 1];
         fb.renderWidth = game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
@@ -1166,7 +1200,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_BLEND);
 
-    glUseProgram(shaders.mesh2D.program);
+    glUseProgram(getShader("mesh2D"));
 
     for(auto& item : staticItems)
     {
@@ -1208,4 +1242,9 @@ void Renderer::drawRibbon(Ribbon const& ribbon, u32 texture)
         ribbonVertexBuffer.unmap();
         renderListRibbon.push_back({ count, texture });
     }
+}
+
+void Renderer::drawDecal(glm::mat4 const& transform, u32 texture)
+{
+    renderListDecal.push_back({ transform, loadedTextures[texture].tex });
 }

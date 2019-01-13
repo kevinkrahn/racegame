@@ -5,7 +5,7 @@
 layout(location = 0) out vec3 outPosition;
 layout(location = 1) out vec2 outTexCoord;
 
-vec2 vertices[6] = vec2[](
+const vec2 vertices[6] = vec2[](
     vec2(-1, -1),
     vec2( 1, -1),
     vec2( 1,  1),
@@ -15,7 +15,7 @@ vec2 vertices[6] = vec2[](
     vec2(-1, -1)
 );
 
-vec2 uvs[6] = vec2[](
+const vec2 uvs[6] = vec2[](
     vec2(0, 0),
     vec2(1, 0),
     vec2(1, 1),

@@ -90,6 +90,8 @@ private:
 
     bool isBlocking(Scene const& scene, f32 radius, glm::vec3 const& dir, f32 dist);
 
+    void fireWeapon(Scene& scene, u32 vehicleIndex);
+
 public:
 	Vehicle(Scene& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	        VehicleData* data, PxMaterial* material, const PxMaterial** surfaceMaterials,

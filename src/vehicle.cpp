@@ -704,16 +704,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             if (shoot)
             {
-                f32 minSpeed = 40.f;
-                glm::vec3 vel = convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * minSpeed;
-                if (glm::length2(vel) < square(minSpeed))
-                {
-                    vel = glm::normalize(vel) * minSpeed;
-                }
-                scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
-                        vel, zAxisOf(transform), vehicleIndex);
-                scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
-                        vel, zAxisOf(transform), vehicleIndex);
+                fireWeapon(scene, vehicleIndex);
             }
         }
         else
@@ -867,7 +858,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 #endif
         f32 camDistance = 80.f;
         glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 10.f, 200.f);
+        game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 30.f, 180.f);
 
         // draw arrow if vehicle is hidden behind something
         glm::vec3 rayStart = getPosition();
@@ -1072,4 +1063,19 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         auto& mesh = i < 2 ? vehicleData->wheelMeshFront : vehicleData->wheelMeshRear;
         game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
     }
+}
+
+void Vehicle::fireWeapon(Scene& scene, u32 vehicleIndex)
+{
+    glm::mat4 transform = getTransform();
+    f32 minSpeed = 40.f;
+    glm::vec3 vel = convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * minSpeed;
+    if (glm::length2(vel) < square(minSpeed))
+    {
+        vel = glm::normalize(vel) * minSpeed;
+    }
+    scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
+            vel, zAxisOf(transform), vehicleIndex);
+    scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
+            vel, zAxisOf(transform), vehicleIndex);
 }
