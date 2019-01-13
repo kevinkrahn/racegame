@@ -52,7 +52,7 @@ void main()
 
 #elif defined FRAG
 
-#include "sample_shadow.glsl"
+#include "lighting.glsl"
 
 layout(location = 0) out vec4 outColor;
 
@@ -62,9 +62,6 @@ layout(location = 1) uniform mat4 inverseWorldMatrix;
 
 layout(binding = 0) uniform sampler2D tex;
 layout(binding = 1) uniform sampler2DArray depthTexture;
-layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
-layout(binding = 3) uniform sampler2DArray cszTexture;
-layout(binding = 4) uniform sampler2DArray ssaoTexture;
 
 void main()
 {
@@ -81,16 +78,10 @@ void main()
     }
     vec2 uv = localPos.xy * 0.5 + 0.5;
 
-    outColor = texture(tex, uv);
-
     vec3 normal = normalize(-cross(dFdy(worldSpacePosition), dFdx(worldSpacePosition)));
     vec3 shadowCoord = (shadowViewProjectionBias[gl_Layer] * vec4(worldSpacePosition, 1.0)).xyz;
 
-    float directLight = max(dot(normal, sunDirection)
-            * getShadow(shadowDepthSampler, shadowCoord), 0.0);
-    outColor.rgb *= max(directLight, 0.4);
-    float ssaoAmount = texture(ssaoTexture, vec3(gl_FragCoord.xy / textureSize(ssaoTexture, 0).xy, gl_Layer)).r;
-    outColor.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
+    outColor = lighting(texture(tex, uv), normalize(normal), shadowCoord, worldSpacePosition);
 }
 
 #elif defined GEOM

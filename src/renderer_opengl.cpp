@@ -372,7 +372,9 @@ void loadShader(std::string const& filename, bool useGeometryShader=false,
 
 GLuint getShader(const char* name)
 {
-    return loadedShaders[name].program;
+    auto shader = loadedShaders.find(name);
+    assert(shader != loadedShaders.end());
+    return shader->second.program;
 }
 
 #ifndef NDEBUG
@@ -425,7 +427,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    loadShader("shaders/shader.glsl", true);
+    loadShader("shaders/lit.glsl", true);
     loadShader("shaders/debug.glsl");
     loadShader("shaders/quad2D.glsl", false, { "COLOR" }, "tex2D");
     loadShader("shaders/quad2D.glsl", false, {}, "text2D");
@@ -706,7 +708,7 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    glUseProgram(getShader("shader"));
+    glUseProgram(getShader("lit"));
     for (auto const& r : renderList)
     {
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
@@ -768,7 +770,7 @@ void Renderer::render(f32 deltaTime)
 
     // color pass
     glBindTextureUnit(4, fb.saoTexture);
-    glUseProgram(getShader("shader"));
+    glUseProgram(getShader("lit"));
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glDepthFunc(GL_EQUAL);
