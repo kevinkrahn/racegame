@@ -7,8 +7,6 @@
 #include "particle_system.h"
 #include <vector>
 
-const u32 viewportCount = 2;
-
 enum
 {
     COLLISION_FLAG_TRACK   = 1 << 0,
@@ -41,7 +39,7 @@ struct ActorUserData
     u32 entityType;
     union
     {
-        u32 vehicleIndex;
+        class Vehicle* vehicle;
     };
 };
 
@@ -69,6 +67,7 @@ struct Projectile
 class Scene
 {
     glm::mat4 start;
+    u32 viewportCount = 1;
     u32 totalLaps = 4;
 
     std::vector<StaticEntity> staticEntities;
@@ -123,4 +122,6 @@ public:
     };
 
     void attackCredit(u32 instigator, u32 victim);
+
+    u32 getViewportCount() const { return viewportCount; }
 };

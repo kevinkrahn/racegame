@@ -167,10 +167,13 @@ Scene::~Scene()
 
 void Scene::onStart()
 {
-    const u32 numVehicles = 8;
-    VehicleData* vehicleDatas[] = { &sportscar, &racecar, &cubevan, &car };
-    for (u32 i=0; i<numVehicles; ++i)
+    const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
+
+    viewportCount = 0;
+    for (u32 i=0; i<game.state.drivers.size(); ++i)
     {
+        Driver* driver = &game.state.drivers[i];
+
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
 
         PxRaycastBuffer hit;
@@ -180,14 +183,16 @@ void Scene::onStart()
             FATAL_ERROR("The starting point is too high in the air!");
         }
 
-        VehicleData* vehicleData = vehicleDatas[i % ARRAY_SIZE(vehicleDatas)];
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
-                convert(hit.block.position + hit.block.normal * vehicleData->getRestOffset())) * rotationOf(start);
+                convert(hit.block.position + hit.block.normal * driver->vehicleData->getRestOffset())) * rotationOf(start);
 
-        const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
-        vehicles.push_back(
-                std::make_unique<Vehicle>(*this, vehicleTransform, -offset,
-                    vehicleData, vehicleMaterial, surfaceMaterials, i < 2, i < viewportCount, i));
+        vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
+            driver, vehicleMaterial, surfaceMaterials, i));
+
+        if (driver->hasCamera)
+        {
+            ++viewportCount;
+        }
     }
 }
 
@@ -242,7 +247,7 @@ void Scene::onUpdate(f32 deltaTime)
             ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
             if (data && data->entityType == ActorUserData::VEHICLE)
             {
-                vehicles[data->vehicleIndex]->applyDamage(50.f, it->instigator);
+                data->vehicle->applyDamage(50.f, it->instigator);
             }
             it = projectiles.erase(it);
             continue;
@@ -252,9 +257,15 @@ void Scene::onUpdate(f32 deltaTime)
     }
 
     // update vehicles
+    i32 cameraIndex = 0;
     for (u32 i=0; i<vehicles.size(); ++i)
     {
-        vehicles[i]->onUpdate(deltaTime, *this, i);
+        vehicles[i]->onUpdate(deltaTime, vehicles[i]->driver->hasCamera ? cameraIndex : -1);
+        if (vehicles[i]->driver->hasCamera)
+        {
+            ++cameraIndex;
+        }
+
         for (u32 w=0; w<NUM_WHEELS; ++w)
         {
             vehicles[i]->tireMarkRibbons[w].update(deltaTime);
@@ -290,11 +301,12 @@ void Scene::onUpdate(f32 deltaTime)
     // debug text
 #if 1
     Vehicle const& playerVehicle = *vehicles[0];
+    const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
     game.resources.getFont("font", 23).drawText(str(
                 "FPS: ", 1.f / deltaTime,
                 "\nEngine RPM: ", playerVehicle.getEngineRPM(),
                 "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
-                "\nGear: ", playerVehicle.getCurrentGear(),
+                "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
                 "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
                 "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { game.windowWidth * 0.38f, 20 }, glm::vec3(1));
 #endif

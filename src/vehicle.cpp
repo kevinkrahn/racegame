@@ -453,23 +453,23 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
 }
 
-Vehicle::Vehicle(Scene& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
-        VehicleData* data, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
-        bool isPlayerControlled, bool hasCamera, u32 vehicleIndex)
+Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
+	    Driver* driver, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
+	    u32 vehicleIndex)
 {
-    this->isPlayerControlled = isPlayerControlled;
-    this->hasCamera = hasCamera;
-    this->vehicleData = data;
     this->cameraTarget = translationOf(transform);
     this->targetOffset = startOffset;
     this->startOffset = startOffset;
     this->lastDamagedBy = vehicleIndex;
-    this->offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
-    this->followPathIndex = irandom(scene.randomSeries, 0, scene.getPaths().size());
+    this->vehicleIndex = vehicleIndex;
+    this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
+    this->followPathIndex = irandom(scene->randomSeries, 0, scene->getPaths().size());
+    this->driver = driver;
+    this->scene = scene;
 
-    setupPhysics(scene.getPhysicsScene(), data->physics, vehicleMaterial, surfaceMaterials, transform);
+    setupPhysics(scene->getPhysicsScene(), driver->vehicleData->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
-    actorUserData.vehicleIndex = vehicleIndex;
+    actorUserData.vehicle = this;
 }
 
 Vehicle::~Vehicle()
@@ -565,10 +565,10 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
 }
 
-bool Vehicle::isBlocking(Scene const& scene, f32 radius, glm::vec3 const& dir, f32 dist)
+bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
 {
     PxSweepBuffer hit;
-    if (!scene.sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit, getRigidBody()))
+    if (!scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit, getRigidBody()))
     {
         return false;
     }
@@ -590,17 +590,17 @@ bool Vehicle::isBlocking(Scene const& scene, f32 radius, glm::vec3 const& dir, f
     return false;
 }
 
-void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
+void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 {
     // HUD
-    if (hasCamera)
+    if (cameraIndex >= 0)
     {
         Font& font1 = game.resources.getFont("font", game.windowHeight * 0.04);
         Font& font2 = game.resources.getFont("font", game.windowHeight * 0.08);
 
-        ViewportLayout const& layout = viewportLayout[viewportCount-1];
+        ViewportLayout const& layout = viewportLayout[scene->getViewportCount() - 1];
         glm::vec2 dim(game.windowWidth, game.windowHeight);
-        glm::vec2 offset = layout.offsets[vehicleIndex] * dim;
+        glm::vec2 offset = layout.offsets[cameraIndex] * dim;
         glm::vec2 d(1.f, 1.f);
         if (offset.y > 0.f)
         {
@@ -612,12 +612,12 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         f32 o25 = game.windowHeight * 0.03f;
         f32 o200 = game.windowHeight * 0.20f;
 
-        std::string p = str(glm::min(currentLap, scene.getTotalLaps()));
+        std::string p = str(glm::min(currentLap, scene->getTotalLaps()));
         f32 lapWidth = font1.stringDimensions(str("LAP").c_str()).x;
         font1.drawText(str("LAP").c_str(), offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
         font2.drawText(p.c_str(), offset +
                 glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f));
-        font1.drawText(str('/', scene.getTotalLaps()).c_str(),
+        font1.drawText(str('/', scene->getTotalLaps()).c_str(),
                 offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p.c_str()).x, d.y*o20), glm::vec3(1.f));
 
         const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
@@ -632,7 +632,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         u32 count = 0;
         for (auto it = notifications.begin(); it != notifications.end();)
         {
-            font1.drawText(it->str, layout.offsets[vehicleIndex] * dim + layout.scale * dim * 0.5f - glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.03),
+            font1.drawText(it->str, layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f - glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.03),
                     { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER);
             ++count;
             it->timeLeft -= deltaTime;
@@ -667,6 +667,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
     glm::mat4 transform = getTransform();
     bool canGo = true;
+    bool isPlayerControlled = driver->playerProfile != nullptr;
     if (!finishedRace)
     {
         if (isPlayerControlled)
@@ -674,7 +675,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             f32 accel, brake, steer;
             bool digital = false;
             bool shoot = false;
-            if (vehicleIndex == 0)
+            if (driver->useKeyboard)
             {
                 digital = true;
                 accel = game.input.isKeyDown(KEY_UP);
@@ -684,14 +685,13 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             }
             else
             {
-                u32 cid = vehicleIndex - 1;
-                accel = game.input.getControllerAxis(cid, AXIS_TRIGGER_RIGHT);
-                brake = game.input.getControllerAxis(cid, AXIS_TRIGGER_LEFT);
-                steer = -game.input.getControllerAxis(cid, AXIS_LEFT_X);
-                shoot = game.input.isControllerButtonPressed(cid, BUTTON_RIGHT_SHOULDER);
+                accel = game.input.getControllerAxis(driver->controllerID, AXIS_TRIGGER_RIGHT);
+                brake = game.input.getControllerAxis(driver->controllerID, AXIS_TRIGGER_LEFT);
+                steer = -game.input.getControllerAxis(driver->controllerID, AXIS_LEFT_X);
+                shoot = game.input.isControllerButtonPressed(driver->controllerID, BUTTON_RIGHT_SHOULDER);
             }
 
-            updatePhysics(scene.getPhysicsScene(), deltaTime, digital,
+            updatePhysics(scene->getPhysicsScene(), deltaTime, digital,
                     accel, brake, steer, false, true, false);
 
             if (game.input.isKeyPressed(KEY_F))
@@ -704,16 +704,16 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             if (shoot)
             {
-                fireWeapon(scene, vehicleIndex);
+                fireWeapon();
             }
         }
         else
         {
             i32 previousIndex = targetPointIndex - 1;
-            if (previousIndex < 0) previousIndex = scene.getPaths()[followPathIndex].size() - 1;
+            if (previousIndex < 0) previousIndex = scene->getPaths()[followPathIndex].size() - 1;
 
-            glm::vec3 nextP = scene.getPaths()[followPathIndex][targetPointIndex];
-            glm::vec3 previousP = scene.getPaths()[followPathIndex][previousIndex];
+            glm::vec3 nextP = scene->getPaths()[followPathIndex][targetPointIndex];
+            glm::vec3 previousP = scene->getPaths()[followPathIndex][previousIndex];
             glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
 
             glm::vec3 targetP = nextP -
@@ -733,13 +733,13 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             f32 accel = 0.85f;
             f32 brake = 0.f;
-            bool isSomethingBlockingMe = isBlocking(scene, vehicleData->collisionWidth / 2 + 0.05f,
+            bool isSomethingBlockingMe = isBlocking(driver->vehicleData->collisionWidth / 2 + 0.05f,
                     getForwardVector(), forwardTestDist);
             if (isSomethingBlockingMe && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
             {
                 const f32 avoidSteerAmount = 0.5f;
-                bool left = isBlocking(scene, 0.5f, testDir1, sideTestDist);
-                bool right = isBlocking(scene, 0.5f, testDir2, sideTestDist);
+                bool left = isBlocking(0.5f, testDir1, sideTestDist);
+                bool right = isBlocking(0.5f, testDir2, sideTestDist);
                 if (!left && !right)
                 {
                     glm::vec3 d = glm::normalize(targetP - position);
@@ -784,14 +784,14 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 
             if (!finishedRace)
             {
-                updatePhysics(scene.getPhysicsScene(), deltaTime, false, accel, brake,
+                updatePhysics(scene->getPhysicsScene(), deltaTime, false, accel, brake,
                         -steerAngle, false, canGo, false);
             }
 
             if (glm::length2(nextP - position) < square(30.f))
             {
                 ++targetPointIndex;
-                if (targetPointIndex >= scene.getPaths()[followPathIndex].size())
+                if (targetPointIndex >= scene->getPaths()[followPathIndex].size())
                 {
                     targetPointIndex = 0;
                 }
@@ -801,15 +801,15 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         offsetChangeTimer += deltaTime;
         if (offsetChangeTimer > offsetChangeInterval)
         {
-            targetOffset.x = random(scene.randomSeries, -8.f, 8.f);
-            targetOffset.y = random(scene.randomSeries, -8.f, 8.f);
+            targetOffset.x = random(scene->randomSeries, -8.f, 8.f);
+            targetOffset.y = random(scene->randomSeries, -8.f, 8.f);
             offsetChangeTimer = 0.f;
-            offsetChangeInterval = random(scene.randomSeries, 5.f, 15.f);
+            offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
         }
     }
     else
     {
-        updatePhysics(scene.getPhysicsScene(), deltaTime, false, 0.f,
+        updatePhysics(scene->getPhysicsScene(), deltaTime, false, 0.f,
                 controlledBrakingTimer < 0.5f ? 0.f : 0.5f, 0.f, 0.f, true, true);
         if (getForwardSpeed() > 1.f)
         {
@@ -824,29 +824,29 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
-        scene.getTrackGraph().findLapDistance(getPosition(), graphResult, maxSkippableDistance);
+        scene->getTrackGraph().findLapDistance(getPosition(), graphResult, maxSkippableDistance);
     }
 
     // check if crossed finish line
     if (!finishedRace && graphResult.lapDistanceLowMark < maxSkippableDistance)
     {
-        glm::vec3 finishLinePosition = translationOf(scene.getStart());
+        glm::vec3 finishLinePosition = translationOf(scene->getStart());
         glm::vec3 dir = glm::normalize(getPosition() - finishLinePosition);
-        if (glm::dot(xAxisOf(scene.getStart()), dir) > 0.f
+        if (glm::dot(xAxisOf(scene->getStart()), dir) > 0.f
                 && glm::length2(getPosition() - finishLinePosition) < square(40.f))
         {
-            if (!finishedRace && currentLap >= scene.getTotalLaps())
+            if (!finishedRace && currentLap >= scene->getTotalLaps())
             {
                 finishedRace = true;
-                scene.vehicleFinish(vehicleIndex);
+                scene->vehicleFinish(vehicleIndex);
             }
             ++currentLap;
-            graphResult.lapDistanceLowMark = scene.getTrackGraph().getStartNode()->t;
-            graphResult.currentLapDistance = scene.getTrackGraph().getStartNode()->t;
+            graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
+            graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
         }
     }
 
-    if (hasCamera)
+    if (cameraIndex >= 0)
     {
         glm::vec3 pos = getPosition();
 #if 0
@@ -858,7 +858,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
 #endif
         f32 camDistance = 80.f;
         glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        game.renderer.setViewportCamera(vehicleIndex, cameraFrom, cameraTarget, 30.f, 180.f);
+        game.renderer.setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 30.f, 180.f);
 
         // draw arrow if vehicle is hidden behind something
         glm::vec3 rayStart = getPosition();
@@ -874,7 +874,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
             glm::vec3 wheelPosition = transform * glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
-            if (!scene.raycastStatic(wheelPosition, rayDir, dist))
+            if (!scene->raycastStatic(wheelPosition, rayDir, dist))
             {
                 visible = true;
                 break;
@@ -883,7 +883,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         if (!visible)
         {
             game.renderer.drawMeshOverlay(game.resources.getMesh("world.Arrow").renderHandle,
-                    vehicleIndex, transform, glm::vec3(1.f));
+                    cameraIndex, transform, glm::vec3(1.f));
         }
     }
 
@@ -896,7 +896,7 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     else
     {
         PxRaycastBuffer hit;
-        if (scene.raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit))
+        if (scene->raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit))
         {
             onGround = true;
             if (hit.block.actor->userData)
@@ -923,17 +923,17 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             ++numWheelsOnGround;
 
             // increase damping when offroad
-            if (info.tireSurfaceMaterial == scene.offroadMaterial)
+            if (info.tireSurfaceMaterial == scene->offroadMaterial)
             {
                 PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
-                d.mDampingRate = vehicleData->physics.offroadDampingRate;
+                d.mDampingRate = driver->vehicleData->physics.offroadDampingRate;
                 vehicle4W->mWheelsSimData.setWheelData(i, d);
                 isWheelOffroad = true;
             }
             else
             {
                 PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
-                d.mDampingRate = vehicleData->physics.wheelDampingRate;
+                d.mDampingRate = driver->vehicleData->physics.wheelDampingRate;
                 vehicle4W->mWheelsSimData.setWheelData(i, d);
             }
         }
@@ -951,10 +951,10 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             {
                 glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
                 glm::vec3 vel(glm::normalize(glm::vec3(
-                    random(scene.randomSeries, -1.f, 1.f),
-                    random(scene.randomSeries, -1.f, 1.f),
-                    random(scene.randomSeries, -1.f, 1.f))));
-                scene.smokeParticleSystem.spawn(
+                    random(scene->randomSeries, -1.f, 1.f),
+                    random(scene->randomSeries, -1.f, 1.f),
+                    random(scene->randomSeries, -1.f, 1.f))));
+                scene->smokeParticleSystem.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
                     glm::min(1.f, slip * 0.5f));
@@ -969,10 +969,10 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
             {
                 glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
                 glm::vec3 vel(glm::normalize(glm::vec3(
-                    random(scene.randomSeries, -1.f, 1.f),
-                    random(scene.randomSeries, -1.f, 1.f),
-                    random(scene.randomSeries, -1.f, 1.f))));
-                scene.smokeParticleSystem.spawn(
+                    random(scene->randomSeries, -1.f, 1.f),
+                    random(scene->randomSeries, -1.f, 1.f),
+                    random(scene->randomSeries, -1.f, 1.f))));
+                scene->smokeParticleSystem.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
                     glm::clamp(glm::max(slip, glm::abs(wheelRotationSpeed * 0.022f)), 0.f, 1.f),
@@ -984,8 +984,8 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         // add tire marks
         if (isWheelSlipping[i])
         {
-            f32 wheelRadius = i < 2 ? vehicleData->physics.wheelRadiusFront : vehicleData->physics.wheelRadiusRear;
-            f32 wheelWidth = i < 2 ? vehicleData->physics.wheelWidthFront : vehicleData->physics.wheelWidthRear;
+            f32 wheelRadius = i < 2 ? driver->vehicleData->physics.wheelRadiusFront : driver->vehicleData->physics.wheelRadiusRear;
+            f32 wheelWidth = i < 2 ? driver->vehicleData->physics.wheelWidthFront : driver->vehicleData->physics.wheelWidthRear;
             glm::vec3 tn = convert(info.tireContactNormal);
             PxTransform contactPose = info.localPose;
             glm::vec3 markPosition = tn * -wheelRadius
@@ -1019,23 +1019,23 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
     // explode
     if (hitPoints <= 0.f)
     {
-        for(auto& d : vehicleData->debrisChunks)
+        for(auto& d : driver->vehicleData->debrisChunks)
         {
 			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(
 			        PxTransform(convert(transform * d.transform)));
 			body->attachShape(*d.collisionShape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-			scene.getPhysicsScene()->addActor(*body);
+			scene->getPhysicsScene()->addActor(*body);
 	        body->setLinearVelocity(
 	                getRigidBody()->getLinearVelocity() +
 	                convert(glm::vec3(glm::normalize(rotationOf(transform) * glm::vec4(translationOf(d.transform), 1.0)))
-	                    * random(scene.randomSeries, 5.f, 22.f) + glm::vec3(0, 0, 5.f)));
+	                    * random(scene->randomSeries, 5.f, 22.f) + glm::vec3(0, 0, 5.f)));
 	        body->setAngularVelocity(PxVec3(
-	                    random(scene.randomSeries, 0.f, 8.f),
-	                    random(scene.randomSeries, 0.f, 8.f),
-	                    random(scene.randomSeries, 0.f, 8.f)));
+	                    random(scene->randomSeries, 0.f, 8.f),
+	                    random(scene->randomSeries, 0.f, 8.f),
+	                    random(scene->randomSeries, 0.f, 8.f)));
 
-            scene.createVehicleDebris(VehicleDebris{
+            scene->createVehicleDebris(VehicleDebris{
                 body,
                 d.mesh,
                 0.f
@@ -1043,11 +1043,11 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         }
         deadTimer = 1.f;
         reset(glm::translate(glm::mat4(1.f), { 0, 0, -100 }));
-        scene.attackCredit(lastDamagedBy, vehicleIndex);
+        scene->attackCredit(lastDamagedBy, vehicleIndex);
     }
 
     // draw chassis
-    for (auto& mesh : vehicleData->chassisMeshes)
+    for (auto& mesh : driver->vehicleData->chassisMeshes)
     {
         game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform);
     }
@@ -1060,12 +1060,12 @@ void Vehicle::onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex)
         {
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
-        auto& mesh = i < 2 ? vehicleData->wheelMeshFront : vehicleData->wheelMeshRear;
+        auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
         game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
     }
 }
 
-void Vehicle::fireWeapon(Scene& scene, u32 vehicleIndex)
+void Vehicle::fireWeapon()
 {
     glm::mat4 transform = getTransform();
     f32 minSpeed = 40.f;
@@ -1074,8 +1074,8 @@ void Vehicle::fireWeapon(Scene& scene, u32 vehicleIndex)
     {
         vel = glm::normalize(vel) * minSpeed;
     }
-    scene.createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
+    scene->createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
             vel, zAxisOf(transform), vehicleIndex);
-    scene.createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
+    scene->createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
             vel, zAxisOf(transform), vehicleIndex);
 }

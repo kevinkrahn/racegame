@@ -5,6 +5,7 @@
 #include "datafile.cpp"
 #include "resources.cpp"
 #include "vehicle.cpp"
+#include "vehicle_data.cpp"
 #include "font.cpp"
 #include "track_graph.cpp"
 #include "particle_system.cpp"

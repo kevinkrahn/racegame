@@ -43,6 +43,18 @@ void Game::run()
     initPhysX();
     resources.load();
     initVehicleData();
+
+    state.drivers = {
+        Driver(true, true, true, &racecar, 0),
+        Driver(false, false, false, &sportscar),
+        Driver(false, false, false, &car),
+        Driver(false, false, false, &car),
+        Driver(false, false, false, &sportscar),
+        Driver(false, false, false, &cubevan),
+        Driver(false, false, false, &sportscar),
+        Driver(false, false, false, &sportscar),
+    };
+
     changeScene("world.Scene");
 
     deltaTime = 1.f / (f32)game.config.maxFPS;

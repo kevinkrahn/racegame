@@ -5,6 +5,7 @@
 #include "scene.h"
 #include "input.h"
 #include "resources.h"
+#include "driver.h"
 #include <memory>
 
 class PhysXErrorCallback : public PxErrorCallback
@@ -26,6 +27,11 @@ public:
     Renderer renderer;
     Input input;
     Resources resources;
+
+    struct
+    {
+        SmallVec<Driver> drivers;
+    } state;
 
     struct
     {

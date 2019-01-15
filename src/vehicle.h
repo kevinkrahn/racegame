@@ -4,6 +4,7 @@
 #include "vehicle_data.h"
 #include "track_graph.h"
 #include "ribbon.h"
+#include "driver.h"
 
 PxFilterFlags VehicleFilterShader(
     PxFilterObjectAttributes attributes0, PxFilterData filterData0,
@@ -39,7 +40,9 @@ class Vehicle
 private:
     friend class Scene;
 
-	VehicleData* vehicleData;
+	Driver* driver;
+	Scene* scene;
+	u32 vehicleIndex;
 
     // physics data
     bool isInAir = true;
@@ -51,8 +54,6 @@ private:
 	PxWheelQueryResult wheelQueryResults[PX_MAX_NB_WHEELS];
 
     // gameplay data
-	bool isPlayerControlled = false;
-	bool hasCamera = false;
 	bool finishedRace = false;
     glm::vec3 cameraTarget;
     f32 hitPoints = 100.f;
@@ -88,31 +89,15 @@ private:
     void updatePhysics(PxScene* scene, f32 timestep, bool digital,
             f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
 
-    bool isBlocking(Scene const& scene, f32 radius, glm::vec3 const& dir, f32 dist);
+    bool isBlocking(f32 radius, glm::vec3 const& dir, f32 dist);
 
-    void fireWeapon(Scene& scene, u32 vehicleIndex);
+    void fireWeapon();
 
 public:
-	Vehicle(Scene& scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
-	        VehicleData* data, PxMaterial* material, const PxMaterial** surfaceMaterials,
-	        bool isPlayerControlled, bool hasCamera, u32 vehicleIndex);
+	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
+	        Driver* driver, PxMaterial* material, const PxMaterial** surfaceMaterials,
+	        u32 vehicleIndex);
 	~Vehicle();
-
-    const char* getCurrentGear() const
-    {
-        switch (vehicle4W->mDriveDynData.mCurrentGear)
-        {
-            case 0: return "REVERSE";
-            case 1: return "NEUTRAL";
-            case 2: return "1";
-            case 3: return "2";
-            case 4: return "3";
-            case 5: return "4";
-            case 6: return "5";
-            case 7: return "6";
-        }
-        return "";
-    }
 
     f32 getEngineRPM() const { return vehicle4W->mDriveDynData.getEngineRotationSpeed() * 9.5493f + 900.f; }
     f32 getForwardSpeed() const { return vehicle4W->computeForwardSpeed(); }
@@ -134,5 +119,5 @@ public:
         if (notifications.size() < notifications.capacity()) notifications.push_back({ str, 2.f });
     }
 
-    void onUpdate(f32 deltaTime, Scene& scene, u32 vehicleIndex);
+    void onUpdate(f32 deltaTime, i32 cameraIndex);
 };
