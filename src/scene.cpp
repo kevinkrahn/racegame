@@ -152,7 +152,7 @@ Scene::Scene(const char* name)
 
     trackItems.push_back({
         game.resources.getMesh("world.Quad").renderHandle,
-        trackOrtho * start * glm::translate(glm::mat4(1.f), { 0, 0, -4 }) * glm::scale(glm::mat4(1.f), { 5, 16, 1 }),
+        trackOrtho * start * glm::translate(glm::mat4(1.f), { 0, 0, -3 }) * glm::scale(glm::mat4(1.f), { 5, 16, 1 }),
         glm::vec3(0.2f),
         true
     });
