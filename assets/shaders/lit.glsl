@@ -35,9 +35,11 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) in vec3 inWorldPosition;
 layout(location = 4) in vec3 inShadowCoord;
 
+layout(location = 2) uniform vec3 color;
+
 void main()
 {
-    outColor = lighting(vec4(inColor, 1.0), normalize(inNormal), inShadowCoord, inWorldPosition);
+    outColor = lighting(vec4(inColor * color, 1.0), normalize(inNormal), inShadowCoord, inWorldPosition);
 }
 
 #elif defined GEOM

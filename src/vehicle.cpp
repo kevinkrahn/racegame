@@ -883,7 +883,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         if (!visible)
         {
             game.renderer.drawMeshOverlay(game.resources.getMesh("world.Arrow").renderHandle,
-                    cameraIndex, transform, glm::vec3(1.f));
+                    cameraIndex, transform, glm::vec3(driver->vehicleColor));
         }
     }
 
@@ -1038,7 +1038,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             scene->createVehicleDebris(VehicleDebris{
                 body,
                 d.mesh,
-                0.f
+                0.f,
+                driver->vehicleColor
             });
         }
         deadTimer = 1.f;
@@ -1049,7 +1050,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     // draw chassis
     for (auto& mesh : driver->vehicleData->chassisMeshes)
     {
-        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform);
+        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform, driver->vehicleColor);
     }
 
     // draw wheels

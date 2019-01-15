@@ -45,14 +45,14 @@ void Game::run()
     initVehicleData();
 
     state.drivers = {
-        Driver(true, true, true, &racecar, 0),
-        Driver(false, false, false, &sportscar),
-        Driver(false, false, false, &car),
-        Driver(false, false, false, &car),
-        Driver(false, false, false, &sportscar),
-        Driver(false, false, false, &cubevan),
-        Driver(false, false, false, &sportscar),
-        Driver(false, false, false, &sportscar),
+        Driver(true, true, true, &racecar, 0, 0),
+        Driver(false, false, false, &sportscar, 1),
+        Driver(false, false, false, &car, 2),
+        Driver(false, false, false, &car, 8),
+        Driver(false, false, false, &sportscar, 4),
+        Driver(false, false, false, &cubevan, 3),
+        Driver(false, false, false, &sportscar, 6),
+        Driver(false, false, false, &sportscar, 7),
     };
 
     changeScene("world.Scene");

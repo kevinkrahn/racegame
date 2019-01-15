@@ -42,12 +42,12 @@ float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition)
 {
     const float specPower = 100.0;
-    const vec3 ambientDirection = -vec3(0.0, -0.5, 0.1);
+    const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
 
     float shadow = getShadow(shadowDepthSampler, shadowCoord);
 
     float directLight = max(dot(normal, sunDirection) * shadow, 0.0)
-        + max(dot(normal, ambientDirection) * 0.5, 0.0);
+        + max(dot(normal, ambientDirection) * 0.1, 0.0);
     vec3 camDir = normalize(cameraPosition[gl_Layer] - worldPosition);
     vec3 halfDir = normalize(sunDirection + camDir);
     float specularLight = pow(max(dot(normal, halfDir), 0.0), specPower);

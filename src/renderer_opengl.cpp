@@ -119,6 +119,7 @@ struct RenderMesh
 {
     u32 meshHandle;
     glm::mat4 worldTransform;
+    glm::vec3 color;
 };
 
 struct RenderMeshOverlay
@@ -779,6 +780,7 @@ void Renderer::render(f32 deltaTime)
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+        glUniform3f(2, r.color.x, r.color.y, r.color.z);
 
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
@@ -1094,14 +1096,14 @@ Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 
     return cam;
 }
 
-void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform)
+void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, glm::vec3 const& color)
 {
-    drawMesh(mesh.renderHandle, worldTransform);
+    drawMesh(mesh.renderHandle, worldTransform, color);
 }
 
-void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform)
+void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, glm::vec3 const& color)
 {
-    renderList.push_back({ renderHandle, worldTransform });
+    renderList.push_back({ renderHandle, worldTransform, color });
 }
 
 void Renderer::drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
@@ -1209,6 +1211,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
         GLMesh const& mesh = loadedMeshes[item.renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
         glUniform3fv(1, 1, (GLfloat*)&item.color);
+        glUniform1i(2, item.overwriteColor);
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }
@@ -1218,6 +1221,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
         GLMesh const& mesh = loadedMeshes[item.renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
         glUniform3fv(1, 1, (GLfloat*)&item.color);
+        glUniform1i(2, item.overwriteColor);
         glBindVertexArray(mesh.vao);
         glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     }

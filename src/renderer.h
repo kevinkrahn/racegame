@@ -39,6 +39,7 @@ struct RenderTextureItem
     u32 renderHandle;
     glm::mat4 transform;
     glm::vec3 color = glm::vec3(1.0);
+    bool overwriteColor = false;
 };
 
 class Renderer
@@ -53,8 +54,8 @@ public:
     void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
-    void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform);
-    void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform);
+    void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, glm::vec3 const& color=glm::vec3(1.f));
+    void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, glm::vec3 const& color=glm::vec3(1.f));
     void drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color);
 
     void setViewportCount(u32 viewports);

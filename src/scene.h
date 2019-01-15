@@ -54,6 +54,7 @@ struct VehicleDebris
     PxRigidDynamic* rigidBody;
     u32 renderHandle;
     f32 life = 0.f;
+    glm::vec3 color;
 };
 
 struct Projectile
