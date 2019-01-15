@@ -672,7 +672,9 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     {
         if (isPlayerControlled)
         {
-            f32 accel, brake, steer;
+            f32 accel = 0.f;
+            f32 brake = 0.f;
+            f32 steer = 0.f;
             bool digital = false;
             bool shoot = false;
             if (driver->useKeyboard)
@@ -685,10 +687,14 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             }
             else
             {
-                accel = game.input.getControllerAxis(driver->controllerID, AXIS_TRIGGER_RIGHT);
-                brake = game.input.getControllerAxis(driver->controllerID, AXIS_TRIGGER_LEFT);
-                steer = -game.input.getControllerAxis(driver->controllerID, AXIS_LEFT_X);
-                shoot = game.input.isControllerButtonPressed(driver->controllerID, BUTTON_RIGHT_SHOULDER);
+                Controller* controller = game.input.getController(driver->controllerID);
+                if (controller)
+                {
+                    accel = controller->getAxis(AXIS_TRIGGER_RIGHT);
+                    brake = controller->getAxis(AXIS_TRIGGER_LEFT);
+                    steer = -controller->getAxis(AXIS_LEFT_X);
+                    shoot = controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+                }
             }
 
             updatePhysics(scene->getPhysicsScene(), deltaTime, digital,

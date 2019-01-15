@@ -143,6 +143,48 @@ enum ControllerAxis
     AXIS_COUNT
 };
 
+class Controller
+{
+    friend class Input;
+
+private:
+    SDL_GameController* controller = nullptr;
+    bool buttonDown[BUTTON_COUNT] = {};
+    bool buttonPressed[BUTTON_COUNT] = {};
+    bool buttonReleased[BUTTON_COUNT] = {};
+    f32 axis[AXIS_COUNT] = {};
+
+public:
+    Controller() {}
+    Controller(SDL_GameController* controller) : controller(controller) {}
+
+    SDL_GameController* getController() const { return controller; }
+
+    bool isButtonDown(u32 button)
+    {
+        assert(button < BUTTON_COUNT);
+        return buttonDown[button];
+    }
+
+    bool isButtonPressed(u32 button)
+    {
+        assert(button < BUTTON_COUNT);
+        return buttonPressed[button];
+    }
+
+    bool isButtonReleased(u32 button)
+    {
+        assert(button < BUTTON_COUNT);
+        return buttonReleased[button];
+    }
+
+    f32 getAxis(u32 index)
+    {
+        assert(index < AXIS_COUNT);
+        return axis[index];
+    }
+};
+
 class Input
 {
 private:
@@ -156,15 +198,6 @@ private:
 
     i32 mouseScrollX;
     i32 mouseScrollY;
-
-    struct Controller
-    {
-        SDL_GameController* controller = nullptr;
-        bool buttonDown[BUTTON_COUNT] = {};
-        bool buttonPressed[BUTTON_COUNT] = {};
-        bool buttonReleased[BUTTON_COUNT] = {};
-        f32 axis[AXIS_COUNT] = {};
-    };
     std::map<u32, Controller> controllers;
 
 public:
@@ -175,41 +208,18 @@ public:
         {
             if (SDL_IsGameController(i))
             {
-                controllers[i] = { SDL_GameControllerOpen(i) };
+                SDL_GameController* controller = SDL_GameControllerOpen(i);
+                SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+                controllers.emplace(id, controller);
             }
         }
     }
 
-    bool isControllerButtonDown(u32 controller, u32 button)
+    Controller* getController(u32 id)
     {
-        assert(button < BUTTON_COUNT);
-        auto ctl = controllers.find(controller);
-        if (ctl == controllers.end()) return false;
-        return ctl->second.buttonDown[button];
-    }
-
-    bool isControllerButtonPressed(u32 controller, u32 button)
-    {
-        assert(button < BUTTON_COUNT);
-        auto ctl = controllers.find(controller);
-        if (ctl == controllers.end()) return false;
-        return ctl->second.buttonPressed[button];
-    }
-
-    bool isControllerButtonReleased(u32 controller, u32 button)
-    {
-        assert(button < BUTTON_COUNT);
-        auto ctl = controllers.find(controller);
-        if (ctl == controllers.end()) return false;
-        return ctl->second.buttonReleased[button];
-    }
-
-    f32 getControllerAxis(u32 controller, u32 axis)
-    {
-        assert(axis < AXIS_COUNT);
-        auto ctl = controllers.find(controller);
-        if (ctl == controllers.end()) return false;
-        return ctl->second.axis[axis];
+        auto ctl = controllers.find(id);
+        if (ctl == controllers.end()) return nullptr;
+        return &ctl->second;
     }
 
     bool isMouseButtonDown(u32 button)
@@ -315,16 +325,19 @@ public:
             } break;
             case SDL_CONTROLLERDEVICEADDED:
             {
-                SDL_JoystickID which = e.cdevice.which;
-                controllers[which] = { SDL_GameControllerOpen(which) };
+                SDL_GameController* controller = SDL_GameControllerOpen(e.cdevice.which);
+                SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+                print("Controller added: ", id, '\n');
+                controllers.emplace(id, controller);
             } break;
             case SDL_CONTROLLERDEVICEREMOVED:
             {
-                //SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.cdevice.which);
+                controllers.erase(e.cdevice.which);
+                print("Controller removed: ", e.cdevice.which, '\n');
             } break;
             case SDL_CONTROLLERDEVICEREMAPPED:
             {
-                //SDL_GameController* controller = SDL_GameControllerFromInstanceID(e.cdevice.which);
+                print("Controller remapped: ", e.cdevice.which, '\n');
             } break;
             case SDL_CONTROLLERAXISMOTION:
             {
