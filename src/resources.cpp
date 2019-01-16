@@ -81,7 +81,7 @@ void Resources::load()
                     scenes[val["name"].string()] = std::move(val.dict());
                 }
             }
-            else if (ext == ".bmp" || ext == ".png")
+            else if (ext == ".bmp" || ext == ".png" || ext == ".jpg")
             {
                 Texture tex;
                 i32 width, height, channels;

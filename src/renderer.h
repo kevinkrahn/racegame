@@ -75,5 +75,6 @@ public:
 
     void drawRibbon(class Ribbon const& ribbon, u32 texture);
 
-    void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform, u32 texture);
+    void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
+            u32 texture, glm::vec3 const& color = glm::vec3(1.f));
 };

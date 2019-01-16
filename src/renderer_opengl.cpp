@@ -195,6 +195,7 @@ struct Decal
     glm::mat4 worldTransform;
     u32 count;
     u32 texture;
+    glm::vec3 color;
 };
 
 std::map<std::string, GLShader> loadedShaders;
@@ -845,9 +846,7 @@ void Renderer::render(f32 deltaTime)
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
-        glDisable(GL_CULL_FACE);
         glUseProgram(getShader("mesh_decal"));
-        glDisable(GL_DEPTH_TEST);
 
         glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
         glBindVertexArray(decalMesh.vao);
@@ -864,6 +863,7 @@ void Renderer::render(f32 deltaTime)
             glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(d.worldTransform));
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d.worldTransform));
             glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+            glUniform3f(2, d.color.x, d.color.y, d.color.z);
             glDrawArrays(GL_TRIANGLES, offset, d.count);
             offset += d.count;
         }
@@ -1043,9 +1043,11 @@ u32 Renderer::loadTexture(Texture const& texture, u8* data, size_t size)
             break;
     }
 
+    u32 mipLevels = 1 + glm::floor(glm::log2((f32)glm::max(texture.width, texture.height)));
+
     GLuint tex;
     glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-    glTextureStorage2D(tex, 1, sizedFormat, texture.width, texture.height);
+    glTextureStorage2D(tex, mipLevels, sizedFormat, texture.width, texture.height);
     glTextureSubImage2D(tex, 0, 0, 0, texture.width, texture.height, baseFormat, GL_UNSIGNED_BYTE, data);
     glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -1278,14 +1280,14 @@ void Renderer::drawRibbon(Ribbon const& ribbon, u32 texture)
     }
 }
 
-void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform, u32 texture)
+void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
+        u32 texture, glm::vec3 const& color)
 {
-    u32 count = verts.size();
-    if (count > 0)
+    if (verts.size() > 0)
     {
-        void* mem = decalVertexBuffer.map(count * sizeof(DecalVertex));
-        memcpy((void*)verts.data(), mem, count * sizeof(DecalVertex));
+        void* mem = decalVertexBuffer.map(verts.size() * sizeof(DecalVertex));
+        memcpy(mem, (void*)verts.data(), verts.size() * sizeof(DecalVertex));
         decalVertexBuffer.unmap();
-        renderListDecal.push_back({ transform, count, loadedTextures[texture].tex });
+        renderListDecal.push_back({ transform, (u32)verts.size(), loadedTextures[texture].tex, color });
     }
 }

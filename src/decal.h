@@ -109,46 +109,15 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
 
         for (u32 i=0; i<out.size(); ++i)
         {
+            addVertex(out[i]);
             if (i > 2)
             {
-                addVertex(out[i-1]);
                 addVertex(out.front());
+                addVertex(out[i-1]);
             }
-            addVertex(out[i]);
         }
     }
-
-    /*
-    for (u32 i=0; i<outputMesh.size(); ++i)
-    {
-        glm::vec3 v1 = outputMesh[i+0].pos;
-        glm::vec3 v2 = outputMesh[i+1].pos;
-        glm::vec3 v3 = outputMesh[i+2].pos;
-        glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
-        print(std::fixed, std::setprecision(2));
-        print(normal, '\n');
-    }
-    */
 
     return outputMesh;
 }
 
-/*
-void drawDebugDecal(glm::mat4 const& transform, Mesh* mesh, glm::mat4 const& meshTransform)
-{
-    auto verts = createDecal(transform, mesh, meshTransform);
-
-    glm::vec4 offset(0, 0, 0.05f, 0);
-    glm::vec4 color = { 0, 1, 0, 1 };
-    for (u32 i=0; i<verts.size(); i+=3)
-    {
-        glm::vec3 v1 = transform * glm::vec4(verts[i+0].pos, 1.f) + offset;
-        glm::vec3 v2 = transform * glm::vec4(verts[i+1].pos, 1.f) + offset;
-        glm::vec3 v3 = transform * glm::vec4(verts[i+2].pos, 1.f) + offset;
-
-        game.renderer.drawLine(v1, v2, color, color);
-        game.renderer.drawLine(v2, v3, color, color);
-        game.renderer.drawLine(v3, v1, color, color);
-    }
-}
-*/
