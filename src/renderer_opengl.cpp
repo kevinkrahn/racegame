@@ -193,6 +193,7 @@ struct RenderInfo
 struct Decal
 {
     glm::mat4 worldTransform;
+    u32 count;
     u32 texture;
 };
 
@@ -214,8 +215,10 @@ u32 viewportGapPixels = 1;
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
 DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
 DynamicBuffer ribbonVertexBuffer(sizeof(DebugVertex) * 50000);
+DynamicBuffer decalVertexBuffer(sizeof(DecalVertex) * 10000);
 GLMesh debugMesh;
 GLMesh ribbonMesh;
+GLMesh decalMesh;
 GLuint emptyVAO;
 
 struct Framebuffers
@@ -442,7 +445,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     loadShader("shaders/sao.glsl", true);
     loadShader("shaders/sao_blur.glsl", true);
     loadShader("shaders/overlay.glsl", true);
-    loadShader("shaders/decal.glsl", true);
+    loadShader("shaders/mesh_decal.glsl", true);
 
     glCreateVertexArrays(1, &emptyVAO);
 
@@ -475,6 +478,21 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glEnableVertexArrayAttrib(ribbonMesh.vao, 3);
     glVertexArrayAttribFormat(ribbonMesh.vao, 3, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 16);
     glVertexArrayAttribBinding(ribbonMesh.vao, 3, 0);
+
+    // create decal vertex buffer
+    glCreateVertexArrays(1, &decalMesh.vao);
+
+    glEnableVertexArrayAttrib(decalMesh.vao, 0);
+    glVertexArrayAttribFormat(decalMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(decalMesh.vao, 0, 0);
+
+    glEnableVertexArrayAttrib(decalMesh.vao, 1);
+    glVertexArrayAttribFormat(decalMesh.vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
+    glVertexArrayAttribBinding(decalMesh.vao, 1, 0);
+
+    glEnableVertexArrayAttrib(decalMesh.vao, 2);
+    glVertexArrayAttribFormat(decalMesh.vao, 2, 2, GL_FLOAT, GL_FALSE, 12 + 12);
+    glVertexArrayAttribBinding(decalMesh.vao, 2, 0);
 
     // main framebuffer
     const u32 layers = cameras.size();
@@ -824,10 +842,18 @@ void Renderer::render(f32 deltaTime)
     // decals
     if (renderListDecal.size() > 0)
     {
-        glUseProgram(getShader("decal"));
-        glBindVertexArray(emptyVAO);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glUseProgram(getShader("mesh_decal"));
+        glDisable(GL_DEPTH_TEST);
+
+        glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
+        glBindVertexArray(decalMesh.vao);
+
         u32 tex = 0;
+        u32 offset = 0;
         for (auto const& d : renderListDecal)
         {
             if (d.texture != tex)
@@ -835,12 +861,14 @@ void Renderer::render(f32 deltaTime)
                 tex = d.texture;
                 glBindTextureUnit(0, d.texture);
             }
-            glm::mat4 inverseWorldTransform = glm::inverse(d.worldTransform);
+            glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(d.worldTransform));
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d.worldTransform));
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(inverseWorldTransform));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+            glDrawArrays(GL_TRIANGLES, offset, d.count);
+            offset += d.count;
         }
         renderListDecal.clear();
+        glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
     // ribbons
@@ -1250,7 +1278,14 @@ void Renderer::drawRibbon(Ribbon const& ribbon, u32 texture)
     }
 }
 
-void Renderer::drawDecal(glm::mat4 const& transform, u32 texture)
+void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform, u32 texture)
 {
-    renderListDecal.push_back({ transform, loadedTextures[texture].tex });
+    u32 count = verts.size();
+    if (count > 0)
+    {
+        void* mem = decalVertexBuffer.map(count * sizeof(DecalVertex));
+        memcpy((void*)verts.data(), mem, count * sizeof(DecalVertex));
+        decalVertexBuffer.unmap();
+        renderListDecal.push_back({ transform, count, loadedTextures[texture].tex });
+    }
 }

@@ -1073,12 +1073,21 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 
     if (isPlayerControlled)
     {
+        /*
         drawDebugDecal(
                 glm::translate(glm::mat4(1.f), getPosition()) *
                 glm::rotate(glm::mat4(1.f), f32(M_PI * 2), { 0, 1, 0 }) *
                 glm::scale(glm::mat4(1.f), glm::vec3(5.f)),
                 //getTransform() * glm::scale(glm::mat4(1.f), glm::vec3(5.f)),
                 (Mesh*)&game.resources.getMesh("world.Tarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
+        */
+        glm::mat4 decalTransform = 
+                glm::translate(glm::mat4(1.f), getPosition()) *
+                glm::rotate(glm::mat4(1.f), f32(M_PI * 2), { 0, 1, 0 }) *
+                glm::scale(glm::mat4(1.f), glm::vec3(5.f));
+        auto verts = createDecal(decalTransform,
+                (Mesh*)&game.resources.getMesh("world.Tarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
+        game.renderer.drawDecal(verts, decalTransform, 0);
     }
 }
 

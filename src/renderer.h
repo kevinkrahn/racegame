@@ -3,6 +3,7 @@
 #include "resources.h"
 #include "math.h"
 #include "smallvec.h"
+#include "decal.h"
 
 #include <SDL2/SDL.h>
 #include <vector>
@@ -74,5 +75,5 @@ public:
 
     void drawRibbon(class Ribbon const& ribbon, u32 texture);
 
-    void drawDecal(glm::mat4 const& transform, u32 texture);
+    void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform, u32 texture);
 };
