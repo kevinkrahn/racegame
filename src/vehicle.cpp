@@ -1,6 +1,6 @@
 #include "vehicle.h"
-
 #include "game.h"
+#include "decal.h"
 #include <vehicle/PxVehicleUtil.h>
 
 const u32 QUERY_HITS_PER_WHEEL = 8;
@@ -1069,6 +1069,16 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         }
         auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
         game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
+    }
+
+    if (isPlayerControlled)
+    {
+        drawDebugDecal(
+                glm::translate(glm::mat4(1.f), getPosition()) *
+                glm::rotate(glm::mat4(1.f), f32(M_PI * 2), { 0, 1, 0 }) *
+                glm::scale(glm::mat4(1.f), glm::vec3(5.f)),
+                //getTransform() * glm::scale(glm::mat4(1.f), glm::vec3(5.f)),
+                (Mesh*)&game.resources.getMesh("world.Tarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
     }
 }
 

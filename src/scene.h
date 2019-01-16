@@ -67,6 +67,7 @@ struct Projectile
 
 class Scene
 {
+public:
     glm::mat4 start;
     u32 viewportCount = 1;
     u32 totalLaps = 4;

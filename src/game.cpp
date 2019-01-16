@@ -46,7 +46,7 @@ void Game::run()
 
     state.drivers = {
         Driver(true, true, true, &racecar, 0, 0),
-        Driver(true, true, false, &sportscar, 1, 0),
+        Driver(false, false, false, &sportscar, 1, 0),
         Driver(false, false, false, &car, 2),
         Driver(false, false, false, &car, 8),
         Driver(false, false, false, &sportscar, 4),
