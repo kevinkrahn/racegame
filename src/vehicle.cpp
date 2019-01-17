@@ -2,6 +2,7 @@
 #include "game.h"
 #include "decal.h"
 #include <vehicle/PxVehicleUtil.h>
+#include <iomanip>
 
 const u32 QUERY_HITS_PER_WHEEL = 8;
 
@@ -1076,12 +1077,12 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         glm::mat4 decalTransform =
                 transform *
                 //glm::translate(glm::mat4(1.f), getPosition()) *
-                //glm::rotate(glm::mat4(1.f), f32(M_PI), { 0, 1, 0 }) *
+                glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 }) *
                 glm::scale(glm::mat4(1.f), glm::vec3(15.f));
         auto verts1 = createDecal(decalTransform, (Mesh*)&game.resources.getMesh("world.Tarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
         game.renderer.drawDecal(verts1, decalTransform, game.resources.getTexture("thing").renderHandle);
         //auto verts2 = createDecal(decalTransform, (Mesh*)&game.resources.getMesh("world.Railings"), glm::scale(glm::mat4(1.f), glm::vec3(1.f)));
-        //game.renderer.drawDecal(verts2, decalTransform, game.resources.getTexture("grass").renderHandle);
+        //game.renderer.drawDecal(verts2, decalTransform, game.resources.getTexture("thing").renderHandle);
     }
 }
 

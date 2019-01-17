@@ -3,7 +3,6 @@
 #include "math.h"
 #include "resources.h"
 #include "smallvec.h"
-#include <iomanip>
 
 struct DecalVertex
 {
@@ -21,7 +20,7 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
     outputMesh.reserve(30);
 
     auto addVertex = [&](DecalVertex const& vert) {
-        outputMesh.push_back({ vert.pos, glm::normalize(vert.normal), glm::vec2(vert.pos) + glm::vec2(0.5) });
+        outputMesh.push_back({ vert.pos, glm::normalize(vert.normal), glm::vec2(vert.pos.y, vert.pos.z) + glm::vec2(0.5) });
     };
 
     const glm::vec3 planes[] = {
@@ -34,7 +33,7 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
     };
 
     glm::mat4 vertTransform = glm::inverse(transform) * meshTransform;
-    glm::mat3 normalTransform = glm::inverseTranspose(glm::mat3(meshTransform));
+    glm::mat3 normalTransform = glm::inverseTranspose(glm::mat3(vertTransform));
     for (u32 i=0; i<mesh->numIndices; i+=3)
     {
         u32 j = mesh->indices[i+0] * mesh->stride / sizeof(f32);
@@ -52,11 +51,9 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
         v2 = vertTransform * glm::vec4(v2, 1.0);
         v3 = vertTransform * glm::vec4(v3, 1.0);
 
-#if 0
         // skip triangles that are facing away
         glm::vec3 normal = glm::cross(v2 - v1, v3 - v1);
-        if (normal.z < 0.f) continue;
-#endif
+        if (normal.x > 0.f) continue;
 
         // transform normals
         n1 = normalTransform * n1;
