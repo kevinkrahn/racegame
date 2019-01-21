@@ -39,7 +39,7 @@ def fetch(url, name):
             #subprocess.run(['git', 'pull'], cwd=resultPath)
             return False
         else:
-            subprocess.run(['git', 'clone', url, resultPath])
+            subprocess.run(['git', 'clone', '--depth=1', url, resultPath])
             return True
 
 def fetch_dependencies():

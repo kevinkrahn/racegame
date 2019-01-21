@@ -13,6 +13,7 @@ enum
     COLLISION_FLAG_GROUND  = 1 << 1,
     COLLISION_FLAG_WHEEL   = 1 << 2,
     COLLISION_FLAG_CHASSIS = 1 << 3,
+    COLLISION_FLAG_DEBRIS = 1 << 4,
 };
 
 enum
@@ -65,9 +66,9 @@ struct Projectile
     u32 instigator;
 };
 
-class Scene
+class Scene : public PxSimulationEventCallback
 {
-public:
+private:
     glm::mat4 start;
     u32 viewportCount = 1;
     u32 totalLaps = 4;
@@ -89,6 +90,14 @@ public:
     f32 trackAspectRatio;
 
     TrackGraph trackGraph;
+
+    // physx callbacks
+    void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)  { PX_UNUSED(constraints); PX_UNUSED(count); }
+    void onWake(PxActor** actors, PxU32 count)                          { PX_UNUSED(actors); PX_UNUSED(count); }
+    void onSleep(PxActor** actors, PxU32 count)                         { PX_UNUSED(actors); PX_UNUSED(count); }
+    void onTrigger(PxTriggerPair* pairs, PxU32 count)                   { PX_UNUSED(pairs); PX_UNUSED(count); }
+    void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) {}
+    void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
 
 public:
     RandomSeries randomSeries;

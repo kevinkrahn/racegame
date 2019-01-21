@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include_directories(
     external
     external/sdl2

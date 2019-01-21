@@ -53,27 +53,6 @@ PxVehiclePadSmoothingData padSmoothingData = {
 	}
 };
 
-PxFilterFlags VehicleFilterShader(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
-{
-    PX_UNUSED(attributes0);
-    PX_UNUSED(attributes1);
-    PX_UNUSED(constantBlock);
-    PX_UNUSED(constantBlockSize);
-
-    if( (0 == (filterData0.word0 & filterData1.word1)) && (0 == (filterData1.word0 & filterData0.word1)) )
-    {
-        return PxFilterFlag::eSUPPRESS;
-    }
-
-    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-    pairFlags |= PxPairFlags(PxU16(filterData0.word2 | filterData1.word2));
-
-    return PxFilterFlags();
-}
-
 PxQueryHitType::Enum WheelSceneQueryPreFilterNonBlocking(
     PxFilterData filterData0, PxFilterData filterData1,
     const void* constantBlock, PxU32 constantBlockSize,
@@ -1072,6 +1051,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
     }
 
+#if 0
     if (isPlayerControlled)
     {
         glm::mat4 decalTransform =
@@ -1084,6 +1064,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         //auto verts2 = createDecal(decalTransform, (Mesh*)&game.resources.getMesh("world.Railings"), glm::scale(glm::mat4(1.f), glm::vec3(1.f)));
         //game.renderer.drawDecal(verts2, decalTransform, game.resources.getTexture("thing").renderHandle);
     }
+#endif
 }
 
 void Vehicle::fireWeapon()

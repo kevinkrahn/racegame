@@ -3,14 +3,44 @@
 #include "vehicle.h"
 #include <algorithm>
 
+PxFilterFlags vehicleFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+    PX_UNUSED(attributes0);
+    PX_UNUSED(attributes1);
+    PX_UNUSED(constantBlock);
+    PX_UNUSED(constantBlockSize);
+
+    if( (0 == (filterData0.word0 & filterData1.word1)) && (0 == (filterData1.word0 & filterData0.word1)) )
+    {
+        return PxFilterFlag::eSUPPRESS;
+    }
+
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+    pairFlags |= PxPairFlags(PxU16(filterData0.word2 | filterData1.word2));
+
+    if (((filterData0.word0 & COLLISION_FLAG_CHASSIS) || (filterData1.word0 & COLLISION_FLAG_CHASSIS)) &&
+        (!(filterData0.word0 & COLLISION_FLAG_DEBRIS) && !(filterData1.word0 & COLLISION_FLAG_DEBRIS)))
+    {
+        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
+        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+        pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
+    }
+
+    return PxFilterFlags();
+}
+
 Scene::Scene(const char* name)
 {
     // create PhysX scene
     PxSceneDesc sceneDesc(game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -12.1f);
     sceneDesc.cpuDispatcher = game.physx.dispatcher;
-    sceneDesc.filterShader  = VehicleFilterShader;
+    sceneDesc.filterShader  = vehicleFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+    sceneDesc.simulationEventCallback = this;
 
     physicsScene = game.physx.physics->createScene(sceneDesc);
 
@@ -22,9 +52,9 @@ Scene::Scene(const char* name)
     }
 
     // create physics materials
-	vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
-	trackMaterial   = game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
-	offroadMaterial = game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
+    vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
+    trackMaterial   = game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
+    offroadMaterial = game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
 
     // construct scene from blender data
     auto& sceneData = game.resources.getScene(name);
@@ -89,7 +119,7 @@ Scene::Scene(const char* name)
             PxMaterial* material = isTrack ? trackMaterial : offroadMaterial;
             if (isSand) material = offroadMaterial;
 
-	        PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
+            PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
                         PxMeshScale(convert(scaleOf(transform)))), *material);
@@ -98,7 +128,7 @@ Scene::Scene(const char* name)
             shape->setSimulationFilterData(PxFilterData(
                         isTrack ? COLLISION_FLAG_TRACK : COLLISION_FLAG_GROUND, -1, 0, 0));
             actor->userData = physicsUserData.back().get();
-	        physicsScene->addActor(*actor);
+            physicsScene->addActor(*actor);
         }
         else if (entityType == "PATH")
         {
@@ -161,9 +191,9 @@ Scene::Scene(const char* name)
 Scene::~Scene()
 {
     physicsScene->release();
-	vehicleMaterial->release();
-	trackMaterial->release();
-	offroadMaterial->release();
+    vehicleMaterial->release();
+    trackMaterial->release();
+    offroadMaterial->release();
 }
 
 void Scene::onStart()
@@ -317,16 +347,16 @@ void Scene::onUpdate(f32 deltaTime)
         physicsDebugVisualizationEnabled = !physicsDebugVisualizationEnabled;
         if (physicsDebugVisualizationEnabled)
         {
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 2.0f);
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 2.0f);
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 2.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 2.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
         }
         else
         {
-	        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
+            physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
         }
     }
 
@@ -460,7 +490,7 @@ public:
 
     PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit) override
     {
-	    return PxQueryHitType::eBLOCK;
+        return PxQueryHitType::eBLOCK;
     }
 };
 
@@ -485,5 +515,47 @@ bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 d
     {
         PxSweepBuffer tmpHit;
         return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter, &cb);
+    }
+}
+
+void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+{
+    PX_UNUSED((pairHeader));
+    PxContactPairPoint contactPoints[32];
+
+    for(u32 i=0; i<nbPairs; ++i)
+    {
+        u32 contactCount = pairs[i].contactCount;
+        assert(contactCount < ARRAY_SIZE(contactPoints));
+
+        if(contactCount > 0)
+        {
+            pairs[i].extractContacts(contactPoints, contactCount);
+
+            for(u32 j=0; j<contactCount; ++j)
+            {
+                f32 magnitude = contactPoints[j].impulse.magnitude();
+                if (magnitude > 1400.f)
+                {
+                    ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
+                    ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
+                    f32 damage = glm::min(magnitude * 0.001f, 50.f);
+
+                    // apply damage
+                    if (a && a->entityType == ActorUserData::VEHICLE)
+                    {
+                        u32 instigator = (b && b->entityType == ActorUserData::VEHICLE) ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
+                        a->vehicle->applyDamage(damage, instigator);
+                    }
+                    if (b && b->entityType == ActorUserData::VEHICLE)
+                    {
+                        u32 instigator = (a && a->entityType == ActorUserData::VEHICLE) ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
+                        b->vehicle->applyDamage(damage, instigator);
+                    }
+
+                    // TODO: create sparks at contactPoints[j].position
+                }
+            }
+        }
     }
 }

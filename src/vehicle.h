@@ -6,11 +6,6 @@
 #include "ribbon.h"
 #include "driver.h"
 
-PxFilterFlags VehicleFilterShader(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize);
-
 class VehicleSceneQueryData
 {
 public:
@@ -41,7 +36,7 @@ private:
     friend class Scene;
 
 	Driver* driver;
-	Scene* scene;
+	class Scene* scene;
 	u32 vehicleIndex;
 
     // physics data
