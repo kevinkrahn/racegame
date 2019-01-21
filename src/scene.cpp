@@ -520,7 +520,6 @@ bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 d
 
 void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
-    PX_UNUSED((pairHeader));
     PxContactPairPoint contactPoints[32];
 
     for(u32 i=0; i<nbPairs; ++i)

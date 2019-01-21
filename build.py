@@ -159,6 +159,7 @@ def build(build_type):
                 return False
         if subprocess.run(['cmake', '--build', build_dir, '--parallel', job_count]).returncode != 0:
             return False
+        shutil.copy2(os.path.join(build_dir, 'compile_commands.json'), os.path.join(repoPath, 'compile_commands.json'));
     return True
 
 def cleanBuild():
