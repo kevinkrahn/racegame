@@ -6,7 +6,7 @@
 
 struct Sound
 {
-    i16* audioData;
+    std::unique_ptr<i16[]> audioData;
     u32 numSamples;
     u32 numChannels;
 };

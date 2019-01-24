@@ -111,6 +111,18 @@ void Resources::load()
 
                 stbi_image_free(data);
             }
+            else if (ext == ".wav")
+            {
+                auto sound = std::make_unique<Sound>();
+                // TODO
+                sounds[p.path().stem().string()] = std::move(sound);
+            }
+            else if (ext == ".ogg")
+            {
+                auto sound = std::make_unique<Sound>();
+                // TODO
+                sounds[p.path().stem().string()] = std::move(sound);
+            }
         }
     }
 }

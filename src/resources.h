@@ -3,6 +3,7 @@
 #include "datafile.h"
 #include "math.h"
 #include "font.h"
+#include "audio.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -42,6 +43,7 @@ private:
     std::map<std::string, DataFile::Value::Dict> scenes;
     std::map<std::string, Texture> textures;
     std::map<std::string, std::map<u32, Font>> fonts;
+    std::map<std::string, std::unique_ptr<Sound>> sounds;
 
     std::map<std::string, PxTriangleMesh*> collisionMeshCache;
     std::map<std::string, PxConvexMesh*> convexCollisionMeshCache;
@@ -97,5 +99,15 @@ public:
             FATAL_ERROR("Texture not found: ", name);
         }
         return iter->second;
+    }
+
+    Sound* getSound(const char* name)
+    {
+        auto iter = sounds.find(name);
+        if (iter == sounds.end())
+        {
+            FATAL_ERROR("Sound not found: ", name);
+        }
+        return iter->second.get();
     }
 };

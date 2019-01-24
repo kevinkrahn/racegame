@@ -1,7 +1,6 @@
 #include "audio.h"
 #include "math.h"
 #include <SDL2/SDL.h>
-#include <cmath>
 
 void SDLAudioCallback(void* userdata, u8* buf, i32 len)
 {
@@ -36,7 +35,7 @@ static f32 sampleAudio(Sound* sound, f32 position, u32 channel, bool looping)
 void Audio::audioCallback(u8* buf, i32 len)
 {
     {
-        std::scoped_lock<std::mutex> lock(audioMutex);
+        std::lock_guard<std::mutex> lock(audioMutex);
 
         // process playback modifications
         for (auto &m : playbackModifications)
@@ -169,7 +168,7 @@ void Audio::close()
 
 void Audio::setMasterVolume(f32 volume)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::MASTER_VOLUME;
     pm.volume = volume;
@@ -178,7 +177,7 @@ void Audio::setMasterVolume(f32 volume)
 
 void Audio::setMasterPitch(f32 pitch)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::MASTER_PITCH;
     pm.volume = pitch;
@@ -195,7 +194,7 @@ SoundHandle Audio::playSound(Sound* sound, bool loop, f32 pitch, f32 volume, f32
     ps.pan = pan;
     ps.handle = ++nextSoundHandle;
 
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PLAY;
     pm.newSound = ps;
@@ -206,7 +205,7 @@ SoundHandle Audio::playSound(Sound* sound, bool loop, f32 pitch, f32 volume, f32
 
 void Audio::stopSound(SoundHandle handle)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::STOP;
     pm.handle = handle;
@@ -215,7 +214,7 @@ void Audio::stopSound(SoundHandle handle)
 
 void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PITCH;
     pm.pitch = pitch;
@@ -225,7 +224,7 @@ void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
 
 void Audio::setSoundVolume(SoundHandle handle, f32 volume)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::VOLUME;
     pm.volume = volume;
@@ -235,7 +234,7 @@ void Audio::setSoundVolume(SoundHandle handle, f32 volume)
 
 void Audio::setSoundPan(SoundHandle handle, f32 pan)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PAN;
     pm.pan = pan;
@@ -245,7 +244,7 @@ void Audio::setSoundPan(SoundHandle handle, f32 pan)
 
 void Audio::setSoundPaused(SoundHandle handle, bool paused)
 {
-    std::scoped_lock<std::mutex> lock(audioMutex);
+    std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::SET_PAUSED;
     pm.paused = paused;
