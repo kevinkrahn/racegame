@@ -666,7 +666,7 @@ static void setShadowMatrices()
 void Renderer::render(f32 deltaTime)
 {
     // update worldinfo uniform buffer
-    worldInfo.time = (f32)getTime();
+    worldInfo.time = (f32)game.currentTime;
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
     u32 viewportCount = cameras.size();
     for (u32 i=0; i<viewportCount; ++i)

@@ -6,7 +6,16 @@
 
 void Game::initPhysX()
 {
-    physx.foundation = PxCreateFoundation(PX_PHYSICS_VERSION, physx.allocator, physx.errorCallback);
+    static class : public PxErrorCallback
+    {
+    public:
+        virtual void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line)
+        {
+            error(file, ": ", line, ": ", message, '\n');
+        }
+    } errorCallback;
+
+    physx.foundation = PxCreateFoundation(PX_PHYSICS_VERSION, physx.allocator, errorCallback);
     physx.pvd = PxCreatePvd(*physx.foundation);
     PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
     physx.pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
@@ -32,7 +41,7 @@ void Game::run()
     print("Debug mode\n");
 #endif
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
     {
         FATAL_ERROR("SDL_Init Error: ", SDL_GetError())
     }
@@ -40,6 +49,7 @@ void Game::run()
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 
     input.init();
+    audio.init();
     initPhysX();
     resources.load();
     initVehicleData();
@@ -110,10 +120,14 @@ void Game::run()
             }
         }
 
-        const f32 maxDeltaTime = 1.f / 30.f;
-        deltaTime = glm::min((f32)seconds(std::chrono::high_resolution_clock::now() - frameStartTime).count(), maxDeltaTime);
+        const f64 maxDeltaTime = 1.f / 30.f;
+        f64 delta = glm::min(seconds(std::chrono::high_resolution_clock::now() -
+                    frameStartTime).count(), maxDeltaTime) * timeDilation;
+        deltaTime = (f32)delta;
+        currentTime += delta;
     }
 
+    audio.close();
     SDL_Quit();
 }
 

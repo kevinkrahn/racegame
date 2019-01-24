@@ -8,6 +8,8 @@
 #include <SDL2/SDL.h>
 #include <vector>
 
+const u32 MAX_BUFFERED_FRAMES = 3;
+
 struct Camera
 {
     glm::vec3 position;
