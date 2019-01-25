@@ -113,9 +113,35 @@ void Resources::load()
             }
             else if (ext == ".wav")
             {
+                SDL_AudioSpec spec;
+                u32 size;
+                u8* wavBuffer;
+                if (SDL_LoadWAV(p.path().string().c_str(), &spec, &wavBuffer, &size) == nullptr)
+                {
+                    error("Failed to load wav file: ", p.path().string(), "(", SDL_GetError(), ")\n");
+                    continue;
+                }
+
+                if (spec.freq != 44100)
+                {
+                    error("Failed to load wav file: ", p.path().string(), "(Unsupported frequency)\n");
+                    continue;
+                }
+
+                if (spec.format != AUDIO_S16)
+                {
+                    error("Failed to load wav file: ", p.path().string(), "(Unsupported sample format)\n");
+                    continue;
+                }
+
                 auto sound = std::make_unique<Sound>();
-                // TODO
+                sound->numChannels = spec.channels;
+                sound->numSamples = (size / spec.channels) / sizeof(i16);
+                sound->audioData.reset(new i16[size / sizeof(i16)]);
+                memcpy(sound->audioData.get(), wavBuffer, size);
                 sounds[p.path().stem().string()] = std::move(sound);
+
+                SDL_FreeWAV(wavBuffer);
             }
             else if (ext == ".ogg")
             {

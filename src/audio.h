@@ -27,6 +27,7 @@ class Audio
         f32 pitch = 1.f;
         f32 volume = 1.f;
         f32 pan = 1.f;
+        f32 targetPitch = 1.f;
         f32 playPosition = 0.f;
         bool isLooping = false;
         bool isPaused = false;

@@ -67,6 +67,8 @@ private:
 	f32 smokeTimer = 0.f;
 	f32 offsetChangeTimer = 0.f;
 	f32 offsetChangeInterval = 5.f;
+    u32 engineSound = 0;
+    u32 tireSound = 0;
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];

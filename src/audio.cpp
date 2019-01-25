@@ -1,5 +1,6 @@
 #include "audio.h"
 #include "math.h"
+#include "game.h"
 #include <SDL2/SDL.h>
 
 void SDLAudioCallback(void* userdata, u8* buf, i32 len)
@@ -64,7 +65,7 @@ void Audio::audioCallback(u8* buf, i32 len)
                                 it->volume = m.volume;
                                 break;
                             case PlaybackModification::PITCH:
-                                it->pitch = m.pitch;
+                                it->targetPitch = m.pitch;
                                 break;
                             case PlaybackModification::PAN:
                                 it->pan = m.pan;
@@ -94,6 +95,7 @@ void Audio::audioCallback(u8* buf, i32 len)
     {
         f32 left = 0.0f;
         f32 right = 0.0f;
+        f32 bufferPercent = (f32)i / ((f32)(numSamples - 1));
 
         for (PlayingSound* s = playingSounds.begin(); s != playingSounds.end();)
         {
@@ -130,15 +132,25 @@ void Audio::audioCallback(u8* buf, i32 len)
             f32 panRight = (s->pan + 1.0f) * 0.5f;
             f32 panLeft = 1.0f - panRight;
 
-            left  = glm::clamp(left  + sampleLeft  * s->volume * panLeft, -1.0f, 1.0f);
-            right = glm::clamp(right + sampleRight * s->volume * panRight, -1.0f, 1.0f);
+            left  = glm::clamp(left  + sampleLeft  * (s->volume * masterVolume) * panLeft, -1.0f, 1.0f);
+            right = glm::clamp(right + sampleRight * (s->volume * masterVolume) * panRight, -1.0f, 1.0f);
 
-            s->playPosition += s->pitch;
+            f32 pitch = glm::lerp(s->pitch, s->targetPitch, bufferPercent);
+            s->playPosition += pitch * masterPitch * (f32)game.timeDilation;
             s++;
         }
 
         buffer[i*2] = left;
         buffer[i*2+1] = right;
+    }
+
+    for (auto& s : playingSounds)
+    {
+        s.pitch = s.targetPitch;
+        if (s.handle == 1)
+        {
+            //print("Paused: ", s.isPaused, " Pan: ", s.pan, " Volume: ", s.volume, " Pitch: ", s.pitch, " Pos: ", s.playPosition, '\n');
+        }
     }
 }
 

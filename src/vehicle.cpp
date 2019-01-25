@@ -447,6 +447,12 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->driver = driver;
     this->scene = scene;
 
+    if (driver->playerProfile)
+    {
+        engineSound = game.audio.playSound(game.resources.getSound("engine2"), true);
+        tireSound = game.audio.playSound(game.resources.getSound("tires"), true, 1.f, 0.f);
+    }
+
     setupPhysics(scene->getPhysicsScene(), driver->vehicleData->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
     actorUserData.vehicle = this;
@@ -572,6 +578,8 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
 
 void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 {
+    bool isPlayerControlled = driver->playerProfile != nullptr;
+
     // HUD
     if (cameraIndex >= 0)
     {
@@ -628,8 +636,10 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     if (deadTimer > 0.f)
     {
         deadTimer -= deltaTime;
+        if (engineSound) game.audio.setSoundVolume(engineSound, 0.f);
         if (deadTimer <= 0.f)
         {
+            if (engineSound) game.audio.setSoundVolume(engineSound, 1.f);
             backupTimer = 0.f;
             deadTimer = 0.f;
             hitPoints = 100.f;
@@ -647,7 +657,6 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 
     glm::mat4 transform = getTransform();
     bool canGo = true;
-    bool isPlayerControlled = driver->playerProfile != nullptr;
     if (!finishedRace)
     {
         if (isPlayerControlled)
@@ -692,6 +701,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             {
                 fireWeapon();
             }
+
+            game.audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
         }
         else
         {
@@ -900,6 +911,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     const f32 smokeInterval = 0.015f;
     bool smoked = false;
     u32 numWheelsOnGround = 0;
+    bool anyWheelOnRoad = false;
+    f32 maxSlip = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         auto info = wheelQueryResults[i];
@@ -921,6 +934,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
                 PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
                 d.mDampingRate = driver->vehicleData->physics.wheelDampingRate;
                 vehicle4W->mWheelsSimData.setWheelData(i, d);
+                anyWheelOnRoad = true;
             }
         }
 
@@ -929,6 +943,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         f32 slip = glm::max(lateralSlip, longitudinalSlip);
         bool wasWheelSlipping = isWheelSlipping[i];
         isWheelSlipping[i] = slip > 0.f && !info.isInAir;
+        maxSlip = glm::max(maxSlip, slip);
 
         // create smoke
         if (slip > 0.f && !info.isInAir && !isWheelOffroad)
@@ -985,6 +1000,10 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             tireMarkRibbons[i].capWithLastPoint();
         }
     }
+
+    game.audio.setSoundVolume(tireSound,
+            anyWheelOnRoad ? glm::min(1.f, glm::min(maxSlip * 1.2f,
+                    getRigidBody()->getLinearVelocity().magnitude() * 0.1f)) : 0.f);
 
     if (smoked) smokeTimer = smokeInterval;
 
