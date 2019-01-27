@@ -49,7 +49,7 @@ struct PhysicsVehicleSettings
     f32 autoBoxSwitchTime = 0.25f;
 
     // reverse, neutral, first, second, third...
-    SmallVec<f32> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
+    SmallVec<f32, 12> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
     f32 finalGearRatio = 4.f;
 
     f32 suspensionMaxCompression = 0.2f;

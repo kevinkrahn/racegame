@@ -31,9 +31,9 @@
         max-brake-torque: 15000,
         max-steer-angle-degrees: 52,
         clutch-strength: 12,
-        gear-switch-time: 0.1,
-        auto-box-switch-time: 0.15,
-        gear-ratios: [ -4, 0, 4, 2, 1.5, 1.1, 1 ],
+        gear-switch-time: 0.05,
+        auto-box-switch-time: 0.08,
+        gear-ratios: [ -4, 0, 5, 2.7, 2.0, 1.6, 1.2, 1.0, 0.9 ],
         final-gear-ratio: 4.0,
 
         suspension-max-compression: 0.05,
