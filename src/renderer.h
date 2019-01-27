@@ -45,6 +45,17 @@ struct RenderTextureItem
     bool overwriteColor = false;
 };
 
+struct Material
+{
+    u32 shader;
+    u32 textures[4] = {};
+    bool culling = false;
+    bool castShadow = true;
+    bool depthWrite = true;
+    bool depthRead = true;
+    f32 depthOffset = 0.f;
+};
+
 class Renderer
 {
 public:

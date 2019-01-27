@@ -120,6 +120,7 @@ struct RenderMesh
     u32 meshHandle;
     glm::mat4 worldTransform;
     glm::vec3 color;
+    u32 texture;
 };
 
 struct RenderMeshOverlay
@@ -141,7 +142,6 @@ struct WorldInfo
     glm::mat4 cameraProjection[MAX_VIEWPORTS];
     glm::mat4 cameraView[MAX_VIEWPORTS];
     glm::vec4 cameraPosition[MAX_VIEWPORTS];
-    glm::mat4 shadowViewProjection[MAX_VIEWPORTS];
     glm::mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
     glm::vec4 projInfo[MAX_VIEWPORTS];
     glm::vec4 projScale;
@@ -214,6 +214,7 @@ SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 u32 viewportGapPixels = 1;
 
 DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
+DynamicBuffer worldInfoUBOShadow(sizeof(WorldInfo));
 DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
 DynamicBuffer ribbonVertexBuffer(sizeof(DebugVertex) * 50000);
 DynamicBuffer decalVertexBuffer(sizeof(DecalVertex) * 10000);
@@ -440,7 +441,6 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     loadShader("shaders/mesh2D.glsl");
     loadShader("shaders/billboard.glsl", true);
     loadShader("shaders/ribbon.glsl", true);
-    loadShader("shaders/shadow.glsl", true);
     loadShader("shaders/csz.glsl", true);
     loadShader("shaders/csz_minify.glsl", true);
     loadShader("shaders/sao.glsl", true);
@@ -599,10 +599,18 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // create a white texture
+    Texture tex;
+    tex.format = Texture::Format::RGBA8;
+    tex.width = 1;
+    tex.height = 1;
+    u8 white[] = { 255, 255, 255, 255 };
+    u32 index = loadTexture(tex, white, sizeof(white));
+
     return window;
 }
 
-static void setShadowMatrices()
+static void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
 {
     glm::vec3 inverseLightDir = worldInfo.sunDirection;
     glm::mat4 depthView = glm::lookAt(inverseLightDir, glm::vec3(0), glm::vec3(0, 0, 1));
@@ -653,7 +661,7 @@ static void setShadowMatrices()
                                             center.y+extent, center.y-extent, -maxz, -minz);
         glm::mat4 viewProj = depthProjection * depthView;
 
-        worldInfo.shadowViewProjection[i] = viewProj;
+        worldInfoShadow.cameraViewProjection[i] = viewProj;
         worldInfo.shadowViewProjectionBias[i] = glm::mat4(
             0.5f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.5f, 0.0f, 0.0f,
@@ -676,7 +684,6 @@ void Renderer::render(f32 deltaTime)
         worldInfo.cameraView[i] = cameras[i].view;
         worldInfo.cameraPosition[i] = glm::vec4(cameras[i].position, 1.0);
     }
-    setShadowMatrices();
     for (u32 i=0; i<cameras.size(); ++i)
     {
         Camera const& cam = cameras[i];
@@ -689,13 +696,19 @@ void Renderer::render(f32 deltaTime)
         const float scale = glm::abs(2.f * glm::tan(cam.fov * 0.5f));
         worldInfo.projScale[i] = fb.renderHeight / scale;
     }
+
+    WorldInfo worldInfoShadow = worldInfo;
+    setShadowMatrices(worldInfo, worldInfoShadow);
+
     worldInfoUBO.updateData(&worldInfo);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
+    worldInfoUBOShadow.updateData(&worldInfoShadow);
+
+    // bind worldinfo with shadow matrices
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBOShadow.getBuffer());
 
     // shadow map
     glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
-    glUseProgram(getShader("shadow"));
     glViewport(0, 0, game.config.shadowMapResolution, game.config.shadowMapResolution);
     glDepthMask(GL_TRUE);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -703,6 +716,8 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+    glBindTextureUnit(2, fb.shadowDepthTexture);
+    glUseProgram(getShader("lit"));
     glEnable(GL_DEPTH_CLAMP);
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -719,7 +734,9 @@ void Renderer::render(f32 deltaTime)
     glCullFace(GL_BACK);
     glDisable(GL_DEPTH_CLAMP);
     glDisable(GL_POLYGON_OFFSET_FILL);
-    glBindTextureUnit(2, fb.shadowDepthTexture);
+
+    // bind real worldinfo
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
 
     // depth prepass
     glViewport(0, 0, fb.renderWidth, fb.renderHeight);
@@ -794,6 +811,7 @@ void Renderer::render(f32 deltaTime)
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glDepthFunc(GL_EQUAL);
+    glBindTextureUnit(0, loadedTextures[0].tex);
     for (auto const& r : renderList)
     {
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
@@ -1133,7 +1151,7 @@ void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, glm::
 
 void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, glm::vec3 const& color)
 {
-    renderList.push_back({ renderHandle, worldTransform, color });
+    renderList.push_back({ renderHandle, worldTransform, color, 0 });
 }
 
 void Renderer::drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)

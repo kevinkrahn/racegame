@@ -86,6 +86,8 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
         return true;
     };
 
+    // TODO: add support for math expressions
+
     eatSpace(ch);
 
     if (ch == end)
