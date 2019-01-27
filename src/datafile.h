@@ -46,9 +46,10 @@ namespace DataFile
             bool bool_;
         };
 
-        static Value readValue(std::ifstream& stream);
-
     public:
+        static Value readValue(std::ifstream& stream);
+        static Value readValue(std::string::const_iterator& ch, std::string::const_iterator end);
+
         ~Value()
         {
             switch (dataType)
@@ -75,7 +76,6 @@ namespace DataFile
 
         Value() {}
         Value(Value&& other) { *this = std::move(other); }
-        Value(std::ifstream& file);
 
         Value& operator = (Value&& rhs)
         {
@@ -116,6 +116,7 @@ namespace DataFile
         }
 
         bool hasValue() const { return this->dataType != DataType::NONE; }
+        bool hasKey(std::string const& key) const { return this->dataType == DataType::DICT && dict_.count(key) > 0; }
 
         std::string& string()
         {
@@ -123,19 +124,21 @@ namespace DataFile
             return str_;
         }
 
-        i64& integer()
+        i64 integer()
         {
-            assert(dataType == DataType::I64);
+            assert(dataType == DataType::I64 || dataType == DataType::F64);
+            if (dataType == F64) return (i64)real_;
             return integer_;
         }
 
-        f64& real()
+        f64 real()
         {
-            assert(dataType == DataType::F64);
+            assert(dataType == DataType::F64 || dataType == DataType::I64);
+            if (dataType == I64) return (f64)integer_;
             return real_;
         }
 
-        bool& boolean()
+        bool boolean()
         {
             assert(dataType == DataType::BOOL);
             return bool_;

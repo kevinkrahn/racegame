@@ -10,75 +10,81 @@ void Resources::load()
         if (fs::is_regular_file(p))
         {
             std::string ext = p.path().extension().string();
-            if (ext == ".dat")
+            if (ext == ".dat" || ext == ".txt")
             {
                 print("Loading data file: ", p.path().string(), '\n');
                 DataFile::Value val = DataFile::load(p.path().string().c_str());
 
                 // meshes
-                for (auto& val : val["meshes"].array())
+                if (val.hasKey("meshes"))
                 {
-                    auto& meshInfo = val.dict();
-                    u32 elementSize = (u32)meshInfo["element_size"].integer();
-                    if (elementSize == 3)
+                    for (auto& val : val["meshes"].array())
                     {
-                        auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
-                        auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
-                        std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
-                        std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
-                        u32 numVertices = (u32)meshInfo["num_vertices"].integer();
-                        u32 numIndices = (u32)meshInfo["num_indices"].integer();
-                        u32 numColors = (u32)meshInfo["num_colors"].integer();
-                        u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
-                        u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
+                        auto& meshInfo = val.dict();
+                        u32 elementSize = (u32)meshInfo["element_size"].integer();
+                        if (elementSize == 3)
+                        {
+                            auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
+                            auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
+                            std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
+                            std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
+                            u32 numVertices = (u32)meshInfo["num_vertices"].integer();
+                            u32 numIndices = (u32)meshInfo["num_indices"].integer();
+                            u32 numColors = (u32)meshInfo["num_colors"].integer();
+                            u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
+                            u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
-                        Mesh meshData = {
-                            std::move(vertices),
-                            std::move(indices),
-                            numVertices,
-                            numIndices,
-                            numColors,
-                            numTexCoords,
-                            elementSize,
-                            stride,
-                            0,
-                            meshInfo["aabb_min"].convertBytes<glm::vec3>(),
-                            meshInfo["aabb_max"].convertBytes<glm::vec3>(),
-                        };
-                        meshData.renderHandle = game.renderer.loadMesh(meshData);
-                        meshes[meshInfo["name"].string()] = meshData;
-                    }
-                    else
-                    {
-                        auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
-                        auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
-                        std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
-                        std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
-                        u32 numVertices = (u32)meshInfo["num_vertices"].integer();
-                        u32 numIndices = (u32)meshInfo["num_indices"].integer();
+                            Mesh meshData = {
+                                std::move(vertices),
+                                std::move(indices),
+                                numVertices,
+                                numIndices,
+                                numColors,
+                                numTexCoords,
+                                elementSize,
+                                stride,
+                                0,
+                                meshInfo["aabb_min"].convertBytes<glm::vec3>(),
+                                meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                            };
+                            meshData.renderHandle = game.renderer.loadMesh(meshData);
+                            meshes[meshInfo["name"].string()] = meshData;
+                        }
+                        else
+                        {
+                            auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
+                            auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
+                            std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
+                            std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
+                            u32 numVertices = (u32)meshInfo["num_vertices"].integer();
+                            u32 numIndices = (u32)meshInfo["num_indices"].integer();
 
-                        u32 stride = elementSize * sizeof(f32);
-                        Mesh meshData = {
-                            std::move(vertices),
-                            std::move(indices),
-                            numVertices,
-                            numIndices,
-                            0,
-                            0,
-                            elementSize,
-                            stride,
-                            u32(-1),
-                            meshInfo["aabb_min"].convertBytes<glm::vec3>(),
-                            meshInfo["aabb_max"].convertBytes<glm::vec3>(),
-                        };
-                        meshes[meshInfo["name"].string()] = meshData;
+                            u32 stride = elementSize * sizeof(f32);
+                            Mesh meshData = {
+                                std::move(vertices),
+                                std::move(indices),
+                                numVertices,
+                                numIndices,
+                                0,
+                                0,
+                                elementSize,
+                                stride,
+                                u32(-1),
+                                meshInfo["aabb_min"].convertBytes<glm::vec3>(),
+                                meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                            };
+                            meshes[meshInfo["name"].string()] = meshData;
+                        }
                     }
                 }
 
                 // scenes
-                for (auto& val : val["scenes"].array())
+                if (val.hasKey("scenes"))
                 {
-                    scenes[val["name"].string()] = std::move(val.dict());
+                    for (auto& val : val["scenes"].array())
+                    {
+                        scenes[val["name"].string()] = std::move(val.dict());
+                    }
                 }
             }
             else if (ext == ".bmp" || ext == ".png" || ext == ".jpg")
