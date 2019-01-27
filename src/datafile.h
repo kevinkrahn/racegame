@@ -33,6 +33,8 @@ namespace DataFile
         using ByteArray = std::vector<u8>;
         using String = std::string;
 
+        friend Value load(const char* filename);
+
     private:
         DataType dataType = DataType::NONE;
         union
@@ -45,6 +47,24 @@ namespace DataFile
             Dict dict_;
             bool bool_;
         };
+
+#ifndef NDEBUG
+        std::string keyName;
+#define CHECK_TYPE(...) {\
+    DataType types[] = { __VA_ARGS__ };\
+    bool found = false;\
+    for (auto& t : types) {\
+        if (dataType == t) found = true;\
+    }\
+    if (!found) {\
+        std::string typesStr = "";\
+        for (u32 i=0; i<ARRAY_SIZE(types); ++i) typesStr += str(types[i]) + ((i < ARRAY_SIZE(types) - 1) ? ", " : "");\
+        FATAL_ERROR("Failed to read value with key '", keyName, "'. Expected data type to be one of [", typesStr, "], but it is ", dataType, '.');\
+    }\
+}
+#else
+#define CHECK_TYPE(...)
+#endif
 
     public:
         static Value readValue(std::ifstream& stream);
@@ -120,63 +140,67 @@ namespace DataFile
 
         std::string& string()
         {
-            assert(dataType == DataType::STRING);
+            CHECK_TYPE(DataType::STRING);
             return str_;
         }
 
         i64 integer()
         {
-            assert(dataType == DataType::I64 || dataType == DataType::F64);
+            CHECK_TYPE(DataType::I64, DataType::F64);
             if (dataType == F64) return (i64)real_;
             return integer_;
         }
 
         f64 real()
         {
-            assert(dataType == DataType::F64 || dataType == DataType::I64);
+            CHECK_TYPE(DataType::I64, DataType::F64);
             if (dataType == I64) return (f64)integer_;
             return real_;
         }
 
         bool boolean()
         {
-            assert(dataType == DataType::BOOL);
+            CHECK_TYPE(DataType::BOOL);
             return bool_;
         }
 
         ByteArray& bytearray()
         {
-            assert(dataType == DataType::BYTE_ARRAY);
+            CHECK_TYPE(DataType::BYTE_ARRAY);
             return bytearray_;
         }
 
         Array& array()
         {
-            assert(dataType == DataType::ARRAY);
+            CHECK_TYPE(DataType::ARRAY);
             return array_;
         }
 
         Dict& dict()
         {
-            assert(dataType == DataType::DICT);
+            CHECK_TYPE(DataType::DICT);
             return dict_;
         }
 
         Value& operator [] (std::string key)
         {
-            assert(dataType == DataType::DICT);
+            CHECK_TYPE(DataType::DICT);
+#ifndef NDEBUG
+            if (dict_.count(key) == 0) { FATAL_ERROR("Key '", key, "' does not exist."); }
+#endif
             return dict_[key];
         }
 
         Value& operator [] (std::size_t index)
         {
-            assert(dataType == DataType::ARRAY);
+            CHECK_TYPE(DataType::ARRAY);
             return array_[index];
         }
 
         template <typename T>
         T convertBytes()
         {
+            CHECK_TYPE(DataType::BYTE_ARRAY);
             assert(dataType == DataType::BYTE_ARRAY);
             T val;
             memcpy(&val, bytearray_.data(), bytearray_.size());
@@ -191,6 +215,30 @@ namespace DataFile
     inline std::ostream& operator << (std::ostream& os, Value const& rhs)
     {
         rhs.debugOutput(os, 0, true);
+        return os;
+    }
+
+    inline std::ostream& operator << (std::ostream& os, DataType dataType)
+    {
+        switch (dataType)
+        {
+            case NONE:
+                return os << "NONE";
+            case STRING:
+                return os << "STRING";
+            case I64:
+                return os << "I64";
+            case F64:
+                return os << "F64";
+            case BYTE_ARRAY:
+                return os << "BYTE_ARRAY";
+            case ARRAY:
+                return os << "ARRAY";
+            case DICT:
+                return os << "DICT";
+            case BOOL:
+                return os << "BOOL";
+        }
         return os;
     }
 };

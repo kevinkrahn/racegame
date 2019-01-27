@@ -52,17 +52,16 @@ void Game::run()
     audio.init();
     initPhysX();
     resources.load();
-    initVehicleData();
 
     state.drivers = {
-        Driver(true, true, true, &racecar, 0, 0),
-        Driver(false, false, false, &sportscar, 1, 0),
-        Driver(false, false, false, &car, 2),
-        Driver(false, false, false, &car, 8),
-        Driver(false, false, false, &sportscar, 4),
-        Driver(false, false, false, &cubevan, 3),
-        Driver(false, false, false, &sportscar, 6),
-        Driver(false, false, false, &sportscar, 7),
+        Driver(true,  true,  true,  &resources.getVehicleData()[3], 0, 0),
+        Driver(false, false, false, &resources.getVehicleData()[1], 1, 0),
+        Driver(false, false, false, &resources.getVehicleData()[2], 2),
+        Driver(false, false, false, &resources.getVehicleData()[0], 8),
+        Driver(false, false, false, &resources.getVehicleData()[1], 4),
+        Driver(false, false, false, &resources.getVehicleData()[2], 3),
+        Driver(false, false, false, &resources.getVehicleData()[3], 6),
+        Driver(false, false, false, &resources.getVehicleData()[3], 7),
     };
 
     changeScene("world.Scene");

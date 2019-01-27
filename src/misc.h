@@ -4,8 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
-#include <SDL2/SDL.h>
 #include <filesystem>
+#include <SDL2/SDL.h>
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
@@ -68,9 +68,9 @@ std::string str(Args const&... args)
     return _ss_.str();
 }
 
-#define FATAL_ERROR(...) error("Error: ", __VA_ARGS__, '\n'); \
+#define FATAL_ERROR(...) error("Error: ", __VA_ARGS__, '\n'); {\
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", str(__VA_ARGS__).c_str(), nullptr); \
-    abort();
+    abort(); }\
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 

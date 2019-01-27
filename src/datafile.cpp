@@ -35,7 +35,11 @@ Value DataFile::load(const char* filename)
         }
 
         auto begin = str.cbegin();
-        return Value::readValue(begin, str.cend());
+        Value val = Value::readValue(begin, str.cend());
+#ifndef NDEBUG
+        val.keyName = "root";
+#endif
+        return val;
     }
 
     // binary format
@@ -56,7 +60,11 @@ Value DataFile::load(const char* filename)
         return Value();
     }
 
-    return Value::readValue(file);
+    Value val = Value::readValue(file);
+#ifndef NDEBUG
+    val.keyName = "root";
+#endif
+    return val;
 }
 
 Value Value::readValue(std::string::const_iterator& ch, std::string::const_iterator end)
@@ -203,6 +211,9 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
                 ++ch;
 
                 val.dict_[identifier] = readValue(ch, end);
+#ifndef NDEBUG
+                val.dict_[identifier].keyName = identifier;
+#endif
 
                 eatSpace(ch);
                 if (ch == end)
@@ -258,6 +269,9 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
             }
 
             val.array_.push_back(readValue(ch, end));
+#ifndef NDEBUG
+            val.array_.back().keyName = std::to_string(val.array_.size() - 1);
+#endif
 
             eatSpace(ch);
             if (ch == end)
@@ -318,6 +332,9 @@ Value Value::readValue(std::ifstream& stream)
             for (u32 i=0; i<len; ++i)
             {
                 value.array_[i] = readValue(stream);
+#ifndef NDEBUG
+                value.array_[i].keyName = std::to_string(i);
+#endif
             }
         } break;
         case DataType::DICT:
@@ -332,6 +349,9 @@ Value Value::readValue(std::ifstream& stream)
                 std::string key(keyLen, ' ');
                 stream.read(&key[0], keyLen);
                 value.dict_[key] = readValue(stream);
+#ifndef NDEBUG
+                value.dict_[key].keyName = key;
+#endif
             }
         } break;
         case DataType::BOOL:

@@ -4,6 +4,7 @@
 #include "math.h"
 #include "font.h"
 #include "audio.h"
+#include "vehicle_data.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -47,6 +48,8 @@ private:
 
     std::map<std::string, PxTriangleMesh*> collisionMeshCache;
     std::map<std::string, PxConvexMesh*> convexCollisionMeshCache;
+
+    std::vector<VehicleData> vehicleData;
 
 public:
     void load();
@@ -110,4 +113,6 @@ public:
         }
         return iter->second.get();
     }
+
+    std::vector<VehicleData>& getVehicleData() { return vehicleData; }
 };

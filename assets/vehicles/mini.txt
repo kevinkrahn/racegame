@@ -1,0 +1,57 @@
+{
+    vehicles: [{
+        name: "Mini",
+        scene: "mini.Vehicle",
+        description: "Really cool vehicle",
+        price: 5000,
+
+        specs: {
+            acceleration: 0.5,
+            speed: 0.5,
+            armor: 0.5,
+            weight: 0.5,
+            handling: 0.5,
+        },
+
+        chassis-density: 100,
+        wheel-mass-front: 20,
+        wheel-mass-rear: 20,
+        wheel-damping: 0.22,
+        wheel-offroad-damping: 50,
+        wheel-front-toe-angle-degrees: 0,
+        wheel-rear-toe-angle-degrees: 0,
+        track-tire-friction: 3.9,
+        offroad-tire-friction: 1.5,
+
+        max-engine-omega: 700,
+        peek-engine-torque: 410,
+        engine-damping-full-throttle: 0.14,
+        engine-damping-zero-throttle-clutch-engaged: 2.6,
+        engine-damping-zero-throttle-clutch-disengaged: 0.6,
+        max-brake-torque: 2000,
+        max-steer-angle-degrees: 40,
+        clutch-strength: 8,
+        gear-switch-time: 0.22,
+        auto-box-switch-time: 0.26,
+
+        gear-ratios: [ -4.5, 0, 4.5, 2, 1.6, 1.15, 0.93 ],
+        final-gear-ratio: 4.0,
+
+        suspension-max-compression: 0.15,
+        suspension-max-droop: 0.25,
+        suspension-spring-strength: 23000.0,
+        suspension-spring-damper-rate: 3000.0,
+
+        camber-angle-at-rest: 0,
+        camber-angle-at-max-droop: 0.1,
+        camber-angle-at-max-compression: -0.1,
+
+        front-anti-rollbar-stiffness: 8000.0,
+        rear-anti-rollbar-stiffness: 8000.0,
+
+        ackermann-accuracy: 0.5,
+
+        limited-slip-diff: false,
+        driven-wheels: "front"
+    }]
+}
