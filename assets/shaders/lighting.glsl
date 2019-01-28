@@ -39,10 +39,20 @@ float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
     return shadow;
 }
 
+float getFresnel(vec3 normal, vec3 worldPosition)
+{
+    float bias = -0.1f;
+    float scale = 0.8f;
+    float power = 3.f;
+    return max(bias + scale * pow(1.0 + dot(normalize(worldPosition - cameraPosition[gl_Layer]), normal), power), 0.0);
+}
+
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition)
 {
-    const float specPower = 100.0;
+    const float specularPower = 50.0;
+    const float specularStrength = 1.0;
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
+    float fresnel = getFresnel(normal, worldPosition);
 
     float shadow = getShadow(shadowDepthSampler, shadowCoord);
 
@@ -50,10 +60,11 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition)
         + max(dot(normal, ambientDirection) * 0.1, 0.0);
     vec3 camDir = normalize(cameraPosition[gl_Layer] - worldPosition);
     vec3 halfDir = normalize(sunDirection + camDir);
-    float specularLight = pow(max(dot(normal, halfDir), 0.0), specPower);
+    float specularLight = pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength;
 
     color.rgb *= max(directLight, 0.4);
     color.rgb += specularLight * shadow;
+    color.rgb += fresnel * max(shadow, 0.5);
 
     float ssaoAmount = texelFetch(ssaoTexture, ivec3(gl_FragCoord.xy, gl_Layer), 0).r;
     color.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);

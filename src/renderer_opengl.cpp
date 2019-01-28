@@ -115,12 +115,11 @@ struct GLTexture
     GLuint tex;
 };
 
-struct RenderMesh
+struct RenderItem
 {
     u32 meshHandle;
     glm::mat4 worldTransform;
-    glm::vec3 color;
-    u32 texture;
+    Material* material;
 };
 
 struct RenderMeshOverlay
@@ -198,10 +197,11 @@ struct Decal
     glm::vec3 color;
 };
 
-std::map<std::string, GLShader> loadedShaders;
+std::map<std::string, u32> shaderHandleMap;
+std::vector<GLShader> loadedShaders;
 std::vector<GLMesh> loadedMeshes;
 std::vector<GLTexture> loadedTextures;
-std::vector<RenderMesh> renderList;
+std::vector<RenderItem> renderList;
 std::vector<RenderMeshOverlay> renderListOverlay;
 std::vector<DebugVertex> debugVertices;
 std::vector<Quad2D> renderListText2D;
@@ -210,6 +210,7 @@ std::vector<Billboard> renderListBillboard;
 std::vector<RenderInfo> renderListRibbon;
 std::vector<Decal> renderListDecal;
 SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
+Material defaultMaterial;
 
 u32 viewportGapPixels = 1;
 
@@ -258,7 +259,7 @@ void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string
     glShaderSource(shader, 2, sources, 0);
 }
 
-GLShader compileShader(std::string const& filename, bool useGeometryShader, SmallVec<std::string> defines)
+void compileShader(std::string const& filename, SmallVec<std::string> defines, GLShader& shader)
 {
     std::ifstream file(filename);
     if (!file)
@@ -337,7 +338,8 @@ GLShader compileShader(std::string const& filename, bool useGeometryShader, Smal
     glAttachShader(program, fragmentShader);
 
     GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    if (useGeometryShader)
+    bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
+    if (hasGeometryShader)
     {
         glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }));
         glCompileShader(geometryShader);
@@ -366,21 +368,44 @@ GLShader compileShader(std::string const& filename, bool useGeometryShader, Smal
     glDeleteShader(fragmentShader);
     glDeleteShader(geometryShader);
 
-    return { filename, program, useGeometryShader, defines };
+    shader.filename = filename;
+    shader.program = program;
+    shader.defines = std::move(defines);
+    shader.hasGeometryShader = hasGeometryShader;
 }
 
-void loadShader(std::string const& filename, bool useGeometryShader=false,
-        SmallVec<std::string> defines={}, std::string name="")
+u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defines, std::string name)
 {
-    if (name.empty()) name = fs::path(filename).stem().string();
-    loadedShaders[name] = compileShader(filename, useGeometryShader, defines);
+    if (name.empty())
+    {
+        name = fs::path(filename).stem().string();
+    }
+
+    if (shaderHandleMap.count(name) != 0)
+    {
+        return shaderHandleMap[name];
+    }
+
+    GLShader shader = {};
+    compileShader(filename, defines, shader);
+    loadedShaders.push_back(shader);
+    u32 handle = loadedShaders.size() - 1;
+    shaderHandleMap[name] = handle;
+    return handle;
 }
 
-GLuint getShader(const char* name)
+u32 Renderer::getShader(const char* name) const
 {
-    auto shader = loadedShaders.find(name);
-    assert(shader != loadedShaders.end());
-    return shader->second.program;
+    auto it = shaderHandleMap.find(name);
+    assert(it != shaderHandleMap.end());
+    return it->second;
+}
+
+GLuint getShaderProgram(const char* name)
+{
+    auto it = shaderHandleMap.find(name);
+    assert(it != shaderHandleMap.end());
+    return loadedShaders[it->second].program;
 }
 
 #ifndef NDEBUG
@@ -433,22 +458,26 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    loadShader("shaders/lit.glsl", true);
+    loadShader("shaders/lit.glsl");
     loadShader("shaders/debug.glsl");
-    loadShader("shaders/quad2D.glsl", false, { "COLOR" }, "tex2D");
-    loadShader("shaders/quad2D.glsl", false, {}, "text2D");
+    loadShader("shaders/quad2D.glsl", { "COLOR" }, "tex2D");
+    loadShader("shaders/quad2D.glsl", {}, "text2D");
     loadShader("shaders/post.glsl");
     loadShader("shaders/mesh2D.glsl");
-    loadShader("shaders/billboard.glsl", true);
-    loadShader("shaders/ribbon.glsl", true);
-    loadShader("shaders/csz.glsl", true);
-    loadShader("shaders/csz_minify.glsl", true);
-    loadShader("shaders/sao.glsl", true);
-    loadShader("shaders/sao_blur.glsl", true);
-    loadShader("shaders/overlay.glsl", true);
-    loadShader("shaders/mesh_decal.glsl", true);
+    loadShader("shaders/billboard.glsl");
+    loadShader("shaders/ribbon.glsl");
+    loadShader("shaders/csz.glsl");
+    loadShader("shaders/csz_minify.glsl");
+    loadShader("shaders/sao.glsl");
+    loadShader("shaders/sao_blur.glsl");
+    loadShader("shaders/overlay.glsl");
+    loadShader("shaders/mesh_decal.glsl");
 
     glCreateVertexArrays(1, &emptyVAO);
+
+    GLMesh emptyMesh = {};
+    emptyMesh.vao = emptyVAO;
+    loadedMeshes.push_back(emptyMesh);
 
     // create debug vertex buffer
     glCreateVertexArrays(1, &debugMesh.vao);
@@ -717,7 +746,7 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_CULL_FACE);
 
     glBindTextureUnit(2, fb.shadowDepthTexture);
-    glUseProgram(getShader("lit"));
+    glUseProgram(getShaderProgram("lit"));
     glEnable(GL_DEPTH_CLAMP);
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -726,6 +755,10 @@ void Renderer::render(f32 deltaTime)
     glCullFace(GL_FRONT);
     for (auto const& r : renderList)
     {
+        if (!r.material->castShadow)
+        {
+            continue;
+        }
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
@@ -745,9 +778,13 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    glUseProgram(getShader("lit"));
+    glUseProgram(getShaderProgram("lit"));
     for (auto const& r : renderList)
     {
+        if (!r.material->depthWrite)
+        {
+            continue;
+        }
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
@@ -760,7 +797,7 @@ void Renderer::render(f32 deltaTime)
     glBindVertexArray(emptyVAO);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(getShader("csz"));
+    glUseProgram(getShaderProgram("csz"));
     glm::vec4 clipInfo[MAX_VIEWPORTS];
     for (u32 i=0; i<cameras.size(); ++i)
     {
@@ -772,7 +809,7 @@ void Renderer::render(f32 deltaTime)
     glBindTextureUnit(3, fb.cszTexture);
 
     // minify csz texture
-    glUseProgram(getShader("csz_minify"));
+    glUseProgram(getShaderProgram("csz_minify"));
     for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
@@ -786,12 +823,12 @@ void Renderer::render(f32 deltaTime)
     glViewport(0, 0, fb.renderWidth, fb.renderHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(getShader("sao"));
+    glUseProgram(getShaderProgram("sao"));
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindTextureUnit(4, fb.saoTexture);
 
 #if 1
-    glUseProgram(getShader("sao_blur"));
+    glUseProgram(getShaderProgram("sao_blur"));
 
     // sao hblur
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
@@ -807,17 +844,26 @@ void Renderer::render(f32 deltaTime)
 
     // color pass
     glBindTextureUnit(4, fb.saoTexture);
-    glUseProgram(getShader("lit"));
+    glUseProgram(getShaderProgram("lit"));
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glDepthFunc(GL_EQUAL);
-    glBindTextureUnit(0, loadedTextures[0].tex);
     for (auto const& r : renderList)
     {
+        if (r.material->textures.size() == 0)
+        {
+            glBindTextureUnit(0, loadedTextures[0].tex);
+        }
+        else
+        {
+            // TODO: support more than one texture
+            glBindTextureUnit(0, loadedTextures[r.material->textures[0]].tex);
+        }
+
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-        glUniform3f(2, r.color.x, r.color.y, r.color.z);
+        glUniform3f(2, r.material->lighting.color.x, r.material->lighting.color.y, r.material->lighting.color.z);
 
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
@@ -825,7 +871,7 @@ void Renderer::render(f32 deltaTime)
     }
 
     // overlays
-    glUseProgram(getShader("overlay"));
+    glUseProgram(getShaderProgram("overlay"));
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     for (auto const& r : renderListOverlay)
@@ -850,7 +896,7 @@ void Renderer::render(f32 deltaTime)
         debugVertexBuffer.updateData(debugVertices.data(), debugVertices.size() * sizeof(DebugVertex));
         glVertexArrayVertexBuffer(debugMesh.vao, 0, debugVertexBuffer.getBuffer(), 0, sizeof(DebugVertex));
 
-        glUseProgram(getShader("debug"));
+        glUseProgram(getShaderProgram("debug"));
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
 
         glBindVertexArray(debugMesh.vao);
@@ -864,7 +910,7 @@ void Renderer::render(f32 deltaTime)
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
-        glUseProgram(getShader("mesh_decal"));
+        glUseProgram(getShaderProgram("mesh_decal"));
 
         glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
         glBindVertexArray(decalMesh.vao);
@@ -896,7 +942,7 @@ void Renderer::render(f32 deltaTime)
         glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
-        glUseProgram(getShader("ribbon"));
+        glUseProgram(getShaderProgram("ribbon"));
 
         glVertexArrayVertexBuffer(ribbonMesh.vao, 0, ribbonVertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
         glBindVertexArray(ribbonMesh.vao);
@@ -917,7 +963,7 @@ void Renderer::render(f32 deltaTime)
     {
         glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
-        glUseProgram(getShader("billboard"));
+        glUseProgram(getShaderProgram("billboard"));
         glBindVertexArray(emptyVAO);
 
         i32 currentTexture = -1;
@@ -948,7 +994,7 @@ void Renderer::render(f32 deltaTime)
     glViewport(0, 0, game.windowWidth, game.windowHeight);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(getShader("post"));
+    glUseProgram(getShaderProgram("post"));
     glBindTextureUnit(0, fb.mainColorTexture);
     glm::vec2 res(game.windowWidth, game.windowHeight);
     glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
@@ -973,7 +1019,7 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_BLEND);
     if (renderListText2D.size() > 0)
     {
-        glUseProgram(getShader("text2D"));
+        glUseProgram(getShaderProgram("text2D"));
         for (auto& q : renderListText2D)
         {
             glBindTextureUnit(0, q.tex);
@@ -985,7 +1031,7 @@ void Renderer::render(f32 deltaTime)
     }
     if (renderListTex2D.size() > 0)
     {
-        glUseProgram(getShader("tex2D"));
+        glUseProgram(getShaderProgram("tex2D"));
         for (auto& q : renderListTex2D)
         {
             glBindTextureUnit(0, q.tex);
@@ -1013,10 +1059,10 @@ u32 Renderer::loadMesh(Mesh const& meshData)
 
     enum
     {
-        POSITION_BIND_INDEX,
-        NORMAL_BIND_INDEX,
-        COLOR_BIND_INDEX,
-        TEXCOORD_BIND_INDEX
+        POSITION_BIND_INDEX = 0,
+        NORMAL_BIND_INDEX = 1,
+        COLOR_BIND_INDEX = 2,
+        TEXCOORD_BIND_INDEX = 3
     };
 
     glCreateVertexArrays(1, &mesh.vao);
@@ -1032,11 +1078,11 @@ u32 Renderer::loadMesh(Mesh const& meshData)
     glVertexArrayAttribBinding(mesh.vao, NORMAL_BIND_INDEX, 0);
 
     glEnableVertexArrayAttrib(mesh.vao, COLOR_BIND_INDEX);
-    glVertexArrayAttribFormat(mesh.vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 24);
+    glVertexArrayAttribFormat(mesh.vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
     glVertexArrayAttribBinding(mesh.vao, COLOR_BIND_INDEX, 0);
 
     glEnableVertexArrayAttrib(mesh.vao, TEXCOORD_BIND_INDEX);
-    glVertexArrayAttribFormat(mesh.vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 32);
+    glVertexArrayAttribFormat(mesh.vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 12);
     glVertexArrayAttribBinding(mesh.vao, TEXCOORD_BIND_INDEX, 0);
 
     mesh.numIndices = meshData.indices.size();
@@ -1085,11 +1131,10 @@ void Renderer::setViewportCount(u32 viewports)
         cameras.resize(viewports);
         for (auto& shader : loadedShaders)
         {
-            if (shader.second.hasGeometryShader)
+            if (shader.hasGeometryShader)
             {
-                glDeleteProgram(shader.second.program);
-                shader.second = compileShader(shader.second.filename,
-                        shader.second.hasGeometryShader, shader.second.defines);
+                glDeleteProgram(shader.program);
+                compileShader(shader.filename, shader.defines, shader);
             }
         }
 
@@ -1144,14 +1189,18 @@ Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 
     return cam;
 }
 
-void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, glm::vec3 const& color)
+void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, Material* material)
 {
-    drawMesh(mesh.renderHandle, worldTransform, color);
+    drawMesh(mesh.renderHandle, worldTransform, material);
 }
 
-void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, glm::vec3 const& color)
+void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, Material* material)
 {
-    renderList.push_back({ renderHandle, worldTransform, color, 0 });
+    if (!material)
+    {
+        material = &defaultMaterial;
+    }
+    renderList.push_back({ renderHandle, worldTransform, material });
 }
 
 void Renderer::drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
@@ -1252,7 +1301,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_BLEND);
 
-    glUseProgram(getShader("mesh2D"));
+    glUseProgram(getShaderProgram("mesh2D"));
 
     for(auto& item : staticItems)
     {

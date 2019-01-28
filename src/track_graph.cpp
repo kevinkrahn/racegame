@@ -186,10 +186,12 @@ void TrackGraph::debugDraw() const
     {
         Node const& c = nodes[i];
 
+        /*
         game.renderer.drawMesh(arrow,
                 glm::translate(glm::mat4(1.f), c.position) *
                     glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.25f)));
+                    */
 
         for (u32 connection : c.connections)
         {

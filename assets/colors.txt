@@ -1,0 +1,54 @@
+{
+    vehicle-colors: [
+        {
+            name: "Red",
+            color: [ 1.0, 0.1, 0.1 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Green",
+            color: [ 0.1, 1.0, 0.1 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Blue",
+            color: [ 0.1, 0.1, 1.0 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "White",
+            color: [ 0.9, 0.9, 0.9 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Black",
+            color: [ 0.15, 0.15, 0.15 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Orange",
+            color: [ 1.0, 0.6, 0.0 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Cyan",
+            color: [ 0.0, 1.0, 1.0 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Magenta",
+            color: [ 0.9, 0.0, 0.9 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Aruba",
+            color: [ 0.1, 1.0, 0.4 ],
+            material: { shader: "lit" }
+        },
+        {
+            name: "Tan",
+            color: [ 0.7, 0.4, 0.2 ],
+            material: { shader: "lit" }
+        }
+    ]
+}

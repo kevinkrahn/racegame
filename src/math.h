@@ -95,6 +95,11 @@ inline glm::vec4 rgbaFromU32(u32 color, f32 alpha = 1.f)
 
 namespace glm
 {
+    inline std::ostream& operator << (std::ostream& lhs, glm::vec2 const& rhs)
+    {
+        return lhs << "{ " << rhs.x << ", " << rhs.y << " }";
+    }
+
     inline std::ostream& operator << (std::ostream& lhs, glm::vec3 const& rhs)
     {
         return lhs << "{ " << rhs.x << ", " << rhs.y << ", " << rhs.z << " }";

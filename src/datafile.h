@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include "misc.h"
+#include "math.h"
 
 namespace DataFile
 {
@@ -96,6 +97,26 @@ namespace DataFile
 
         Value() {}
         Value(Value&& other) { *this = std::move(other); }
+        explicit Value(std::string const& str)
+        {
+            dataType = DataType::STRING;
+            new (&str_) String(str);
+        }
+        explicit Value(i64 val)
+        {
+            dataType = DataType::I64;
+            integer_ = val;
+        }
+        explicit Value(f64 val)
+        {
+            dataType = DataType::F64;
+            real_ = val;
+        }
+        explicit Value(bool val)
+        {
+            dataType = DataType::BOOL;
+            bool_ = val;
+        }
 
         Value& operator = (Value&& rhs)
         {
@@ -144,11 +165,22 @@ namespace DataFile
             return str_;
         }
 
+        std::string string(std::string const& defaultVal)
+        {
+            return dataType == DataType::NONE ? defaultVal : str_;
+        }
+
         i64 integer()
         {
             CHECK_TYPE(DataType::I64, DataType::F64);
             if (dataType == F64) return (i64)real_;
             return integer_;
+        }
+
+        i64 integer(i64 defaultVal)
+        {
+            if(dataType == DataType::NONE) return defaultVal;
+            return integer();
         }
 
         f64 real()
@@ -158,10 +190,57 @@ namespace DataFile
             return real_;
         }
 
+        f64 real(f64 defaultVal)
+        {
+            if(dataType == DataType::NONE) return defaultVal;
+            return real();
+        }
+
+        glm::vec2 vec2()
+        {
+            CHECK_TYPE(DataType::ARRAY);
+            assert(array_.size() >= 2);
+            return glm::vec2(array_[0].real(), array_[1].real());
+        }
+
+        glm::vec2 vec2(glm::vec2 defaultVal)
+        {
+            return dataType == DataType::NONE ? defaultVal : vec2();
+        }
+
+        glm::vec3 vec3()
+        {
+            CHECK_TYPE(DataType::ARRAY);
+            assert(array_.size() >= 3);
+            return glm::vec3(array_[0].real(), array_[1].real(), array_[2].real());
+        }
+
+        glm::vec3 vec3(glm::vec3 const& defaultVal)
+        {
+            return dataType == DataType::NONE ? defaultVal : vec3();
+        }
+
+        glm::vec4 vec4()
+        {
+            CHECK_TYPE(DataType::ARRAY);
+            assert(array_.size() >= 4);
+            return glm::vec4(array_[0].real(), array_[1].real(), array_[2].real(), array_[3].real());
+        }
+
+        glm::vec4 vec4(glm::vec4 const& defaultVal)
+        {
+            return dataType == DataType::NONE ? defaultVal : vec4();
+        }
+
         bool boolean()
         {
             CHECK_TYPE(DataType::BOOL);
             return bool_;
+        }
+
+        bool boolean(bool defaultVal)
+        {
+            return dataType == DataType::NONE ? defaultVal : boolean();
         }
 
         ByteArray& bytearray()
@@ -185,9 +264,11 @@ namespace DataFile
         Value& operator [] (std::string key)
         {
             CHECK_TYPE(DataType::DICT);
+/*
 #ifndef NDEBUG
             if (dict_.count(key) == 0) { FATAL_ERROR("Key '", key, "' does not exist."); }
 #endif
+*/
             return dict_[key];
         }
 

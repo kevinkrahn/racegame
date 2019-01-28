@@ -983,7 +983,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         }
 
         // add tire marks
-        if (isWheelSlipping[i])
+        if (isWheelSlipping[i] && !isWheelOffroad)
         {
             f32 wheelRadius = i < 2 ? driver->vehicleData->physics.wheelRadiusFront : driver->vehicleData->physics.wheelRadiusRear;
             f32 wheelWidth = i < 2 ? driver->vehicleData->physics.wheelWidthFront : driver->vehicleData->physics.wheelWidthRear;
@@ -991,8 +991,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             PxTransform contactPose = info.localPose;
             glm::vec3 markPosition = tn * -wheelRadius
                 + translationOf(transform * convert(info.localPose));
-            glm::vec4 color = isWheelOffroad ?
-                glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
+            glm::vec4 color = isWheelOffroad ?  glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
             tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, color);
         }
         else if (wasWheelSlipping)
@@ -1055,10 +1054,11 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     // draw chassis
     for (auto& mesh : driver->vehicleData->chassisMeshes)
     {
-        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform, driver->vehicleColor);
+        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform, driver->vehicleMaterial);
     }
 
     // draw wheels
+    Material* material = game.resources.getMaterial("vehicle");
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
@@ -1067,7 +1067,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
         auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
-        game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform);
+        game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform, material);
     }
 
 #if 0

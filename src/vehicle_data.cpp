@@ -141,4 +141,9 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
             vehicle.physics.centerOfMass = transform[3];
         }
     }
+
+    if (data.hasKey("center-of-mass-offset"))
+    {
+        vehicle.physics.centerOfMass = data["center-of-mass-offset"].vec3();
+    }
 }

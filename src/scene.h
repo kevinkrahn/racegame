@@ -5,6 +5,7 @@
 #include "track_graph.h"
 #include "renderer.h"
 #include "particle_system.h"
+#include "material.h"
 #include <vector>
 
 enum
@@ -22,6 +23,7 @@ enum
     UNDRIVABLE_SURFACE = 0x0000ffff
 };
 
+// TODO: I can probably get rid of this
 enum
 {
     SURFACE_TYPE_TARMAC,
@@ -48,6 +50,7 @@ struct StaticEntity
 {
     u32 renderHandle;
     glm::mat4 worldTransform;
+    Material* material = nullptr;
 };
 
 struct VehicleDebris
@@ -56,6 +59,7 @@ struct VehicleDebris
     u32 renderHandle;
     f32 life = 0.f;
     glm::vec3 color;
+    Material* material = nullptr;
 };
 
 struct Projectile

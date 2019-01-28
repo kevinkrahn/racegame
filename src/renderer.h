@@ -4,6 +4,7 @@
 #include "math.h"
 #include "smallvec.h"
 #include "decal.h"
+#include "material.h"
 
 #include <SDL2/SDL.h>
 #include <vector>
@@ -45,31 +46,22 @@ struct RenderTextureItem
     bool overwriteColor = false;
 };
 
-struct Material
-{
-    u32 shader;
-    u32 textures[4] = {};
-    bool culling = false;
-    bool castShadow = true;
-    bool depthWrite = true;
-    bool depthRead = true;
-    f32 depthOffset = 0.f;
-};
-
 class Renderer
 {
 public:
     SDL_Window* initWindow(const char* name, u32 width, u32 height);
     u32 loadMesh(Mesh const& mesh);
     u32 loadTexture(Texture const& texture, u8* data, size_t size);
+    u32 loadShader(std::string const& filename, SmallVec<std::string> defines={}, std::string name="");
+    u32 getShader(const char* name) const;
     void render(f32 deltaTime);
 
     void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
     void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
-    void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, glm::vec3 const& color=glm::vec3(1.f));
-    void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, glm::vec3 const& color=glm::vec3(1.f));
+    void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, Material* material);
+    void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, Material* material);
     void drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color);
 
     void setViewportCount(u32 viewports);

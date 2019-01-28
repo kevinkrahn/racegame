@@ -32,6 +32,10 @@ public:
         u32 maxFPS = 200;
         bool vsync = true;
         u32 shadowMapResolution = 2048;
+
+        // TODO: implement these toggles
+        bool shadowsEnabled = true;
+        bool ssaoEnabled = true;
     } config;
 
     struct

@@ -1,11 +1,13 @@
 #include "resources.h"
 #include "game.h"
+#include "driver.h"
 #include <filesystem>
 #include <stb_image.h>
 
 void Resources::load()
 {
     std::vector<DataFile::Value> vehicleDataValues;
+    std::vector<std::pair<DataFile::Value, Material*>> pendingMaterials;
 
     for (auto& p : fs::recursive_directory_iterator("."))
     {
@@ -97,6 +99,31 @@ void Resources::load()
                         vehicleDataValues.push_back(std::move(val));
                     }
                 }
+
+                // materials
+                if (val.hasKey("materials"))
+                {
+                    for (auto& val : val["materials"].dict())
+                    {
+                        auto mat = std::make_unique<Material>();
+                        pendingMaterials.emplace_back(std::make_pair(std::move(val.second), mat.get()));
+                        materials[val.first] = std::move(mat);
+                    }
+                }
+
+                // vehicle colors
+                if (val.hasKey("vehicle-colors"))
+                {
+                    for (auto& val : val["vehicle-colors"].array())
+                    {
+                        auto col = std::make_unique<VehicleColor>();
+                        col->color = val["color"].vec3();
+                        col->material.reset(new Material);
+                        col->material->lighting.color = col->color;
+                        pendingMaterials.emplace_back(std::make_pair(std::move(val["material"]), col->material.get()));
+                        vehicleColors.emplace_back(std::move(col));
+                    }
+                }
             }
             else if (ext == ".bmp" || ext == ".png" || ext == ".jpg")
             {
@@ -174,6 +201,38 @@ void Resources::load()
     {
         vehicleData.push_back({});
         loadVehicleData(val, vehicleData.back());
+    }
+
+    // finish loading materials now that textures have been loaded
+    for (auto& m : pendingMaterials)
+    {
+        DataFile::Value& mat = m.first;
+        Material* material = m.second;
+        material->shader = game.renderer.getShader(mat["shader"].string().c_str());
+        material->culling = mat["culling"].boolean(material->culling);
+        material->castShadow = mat["cast-shadow"].boolean(material->castShadow);
+        if (mat.hasKey("textures"))
+        {
+            for (auto& t : mat["textures"].array())
+            {
+                material->textures.push_back(getTexture(t.string().c_str()).renderHandle);
+            }
+        }
+        material->depthWrite = mat["depth-write"].boolean(material->depthWrite);
+        material->depthRead = mat["depth-read"].boolean(material->depthRead);
+        material->depthOffset = mat["depth-offset"].real(material->depthOffset);
+        if (mat.hasKey("lighting"))
+        {
+            auto& lighting = mat["lighting"];
+            material->lighting.color = lighting["color"].vec3(material->lighting.color);
+            material->lighting.emit = lighting["emit"].vec3(material->lighting.emit);
+            material->lighting.specularPower = lighting["specular-power"].real(material->lighting.specularPower);
+            material->lighting.specularStrength = lighting["specular-strength"].real(material->lighting.specularStrength);
+            material->lighting.specularColor = lighting["specular-color"].vec3(material->lighting.specularColor);
+            material->lighting.fresnelScale = lighting["fresnel-scale"].real(material->lighting.fresnelScale);
+            material->lighting.fresnelPower = lighting["fresnel-power"].real(material->lighting.fresnelPower);
+            material->lighting.fresnelBias = lighting["fresnel-bias"].real(material->lighting.fresnelBias);
+        }
     }
 }
 

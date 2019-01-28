@@ -112,7 +112,7 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
         {
             Value val;
             val.dataType = DataType::BOOL;
-            val.bool_ = true;
+            val.bool_ = false;
             return val;
         }
         return Value();
@@ -270,10 +270,15 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
                 return Value();
             }
 
-            val.array_.push_back(readValue(ch, end));
+            Value v = readValue(ch, end);
+            bool foundValue = v.dataType != DataType::NONE;
+            if (foundValue)
+            {
+                val.array_.emplace_back(std::move(v));
 #ifndef NDEBUG
-            val.array_.back().keyName = std::to_string(val.array_.size() - 1);
+                val.array_.back().keyName = std::to_string(val.array_.size() - 1);
 #endif
+            }
 
             eatSpace(ch);
             if (ch == end)
@@ -287,7 +292,7 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
                 return val;
             }
 
-            if (*ch != ',')
+            if (foundValue && *ch != ',')
             {
                 error("Expected ',' but found '", *ch, "'\n");
                 return Value();

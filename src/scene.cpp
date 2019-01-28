@@ -106,9 +106,15 @@ Scene::Scene(const char* name)
             physicsUserData.push_back(std::make_unique<ActorUserData>());
             physicsUserData.back()->entityType = (isTrack || isSand) ? ActorUserData::TRACK : ActorUserData::SCENERY;
 
+            Material* mat = nullptr;
+            if (e["properties"].hasKey("material"))
+            {
+                mat = game.resources.getMaterial(e["properties"]["material"].string().c_str());
+            }
             staticEntities.push_back({
                 mesh.renderHandle,
                 transform,
+                mat
             });
 
             if (isTrack)
@@ -238,23 +244,25 @@ void Scene::onUpdate(f32 deltaTime)
     // draw static entities
     for (auto const& e : staticEntities)
     {
-        game.renderer.drawMesh(e.renderHandle, e.worldTransform);
+        game.renderer.drawMesh(e.renderHandle, e.worldTransform, e.material);
     }
 
     // draw vehicle debris
     for (auto const& d : vehicleDebris)
     {
-        game.renderer.drawMesh(d.renderHandle, convert(d.rigidBody->getGlobalPose()), d.color);
+        game.renderer.drawMesh(d.renderHandle, convert(d.rigidBody->getGlobalPose()), d.material);
     }
 
+
     // update projectiles
+    Mesh const& bulletMesh = game.resources.getMesh("world.Bullet");
     for (auto it = projectiles.begin(); it != projectiles.end();)
     {
         glm::vec3 prevPosition = it->position;
         it->position += it->velocity * deltaTime;
-        game.renderer.drawMesh(game.resources.getMesh("world.Bullet"),
+        game.renderer.drawMesh(bulletMesh,
                 glm::translate(glm::mat4(1.f), it->position) *
-                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)));
+                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)), nullptr);
 
         f32 speed = glm::length(it->velocity);
         PxRaycastBuffer rayHit;

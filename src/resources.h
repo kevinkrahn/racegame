@@ -5,6 +5,7 @@
 #include "font.h"
 #include "audio.h"
 #include "vehicle_data.h"
+#include "material.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -45,11 +46,13 @@ private:
     std::map<std::string, Texture> textures;
     std::map<std::string, std::map<u32, Font>> fonts;
     std::map<std::string, std::unique_ptr<Sound>> sounds;
+    std::map<std::string, std::unique_ptr<Material>> materials;
 
     std::map<std::string, PxTriangleMesh*> collisionMeshCache;
     std::map<std::string, PxConvexMesh*> convexCollisionMeshCache;
 
     std::vector<VehicleData> vehicleData;
+    std::vector<std::unique_ptr<struct VehicleColor>> vehicleColors;
 
 public:
     void load();
@@ -115,4 +118,35 @@ public:
     }
 
     std::vector<VehicleData>& getVehicleData() { return vehicleData; }
+    std::vector<std::unique_ptr<VehicleColor>>& getVehicleColors() { return vehicleColors; }
+
+    Material* getMaterial(const char* name)
+    {
+        auto iter = materials.find(name);
+        if (iter == materials.end())
+        {
+            FATAL_ERROR("Material not found: ", name);
+        }
+        return iter->second.get();
+    }
 };
+
+inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
+{
+    struct Vertex
+    {
+        glm::vec3 pos;
+        glm::vec3 normal;
+        glm::vec3 color;
+        glm::vec2 uv;
+    };
+    for (u32 i=0; i<rhs.numVertices; ++i)
+    {
+        Vertex v = *((Vertex*)(((u8*)rhs.vertices.data()) + i * rhs.stride));
+        lhs << "POS:    " << v.pos << '\n';
+        lhs << "NORMAL: " << v.normal << '\n';
+        lhs << "COLOR:  " << v.color << '\n';
+        lhs << "UV:     " << v.uv << '\n';
+    }
+    return lhs;
+}
