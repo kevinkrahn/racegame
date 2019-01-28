@@ -50,6 +50,7 @@ public:
 
     u32 windowWidth;
     u32 windowHeight;
+    f32 realDeltaTime;
     f32 deltaTime;
     f64 currentTime = 0.0;
     f64 timeDilation = 1.0;

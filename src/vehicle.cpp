@@ -1043,7 +1043,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
                 body,
                 d.mesh,
                 0.f,
-                driver->vehicleColor
+                driver->vehicleColor,
+                d.material ? d.material : driver->vehicleMaterial
             });
         }
         deadTimer = 1.f;
@@ -1058,7 +1059,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     }
 
     // draw wheels
-    Material* material = game.resources.getMaterial("vehicle");
+    Material* material = game.resources.getMaterial("wheel");
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);

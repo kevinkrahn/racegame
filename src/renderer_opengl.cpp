@@ -459,6 +459,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     loadShader("shaders/lit.glsl");
+    loadShader("shaders/wheel.glsl");
     loadShader("shaders/debug.glsl");
     loadShader("shaders/quad2D.glsl", { "COLOR" }, "tex2D");
     loadShader("shaders/quad2D.glsl", {}, "text2D");
@@ -735,6 +736,15 @@ void Renderer::render(f32 deltaTime)
     // bind worldinfo with shadow matrices
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBOShadow.getBuffer());
 
+    GLuint currentProgram = 999999;
+    auto useProgram = [&](GLuint program) {
+        if (currentProgram != program)
+        {
+            currentProgram = program;
+            glUseProgram(program);
+        }
+    };
+
     // shadow map
     glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
@@ -746,7 +756,6 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_CULL_FACE);
 
     glBindTextureUnit(2, fb.shadowDepthTexture);
-    glUseProgram(getShaderProgram("lit"));
     glEnable(GL_DEPTH_CLAMP);
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -759,6 +768,7 @@ void Renderer::render(f32 deltaTime)
         {
             continue;
         }
+        useProgram(loadedShaders[r.material->shader].program);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
@@ -778,13 +788,13 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    glUseProgram(getShaderProgram("lit"));
     for (auto const& r : renderList)
     {
         if (!r.material->depthWrite)
         {
             continue;
         }
+        useProgram(loadedShaders[r.material->shader].program);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         GLMesh const& mesh = loadedMeshes[r.meshHandle];
         glBindVertexArray(mesh.vao);
@@ -844,10 +854,10 @@ void Renderer::render(f32 deltaTime)
 
     // color pass
     glBindTextureUnit(4, fb.saoTexture);
-    glUseProgram(getShaderProgram("lit"));
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glDepthFunc(GL_EQUAL);
+    currentProgram = 9999999;
     for (auto const& r : renderList)
     {
         if (r.material->textures.size() == 0)
@@ -859,6 +869,7 @@ void Renderer::render(f32 deltaTime)
             // TODO: support more than one texture
             glBindTextureUnit(0, loadedTextures[r.material->textures[0]].tex);
         }
+        useProgram(loadedShaders[r.material->shader].program);
 
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));

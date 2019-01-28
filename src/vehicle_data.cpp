@@ -80,7 +80,8 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         {
             vehicle.chassisMeshes.push_back({
                 game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
-                transform
+                transform,
+                e.hasKey("material") ? game.resources.getMaterial(e["material"].string().c_str()) : nullptr
             });
         }
         else if (name.find("FL") != std::string::npos)
@@ -124,7 +125,8 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
             vehicle.debrisChunks.push_back({
                 game.resources.getMesh(meshName.c_str()).renderHandle,
                 transform,
-                shape
+                shape,
+                e.hasKey("material") ? game.resources.getMaterial(e["material"].string().c_str()) : nullptr
             });
         }
         else if (name.find("Collision") != std::string::npos)

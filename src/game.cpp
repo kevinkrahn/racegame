@@ -121,9 +121,10 @@ void Game::run()
 
         const f64 maxDeltaTime = 1.f / 30.f;
         f64 delta = glm::min(seconds(std::chrono::high_resolution_clock::now() -
-                    frameStartTime).count(), maxDeltaTime) * timeDilation;
-        deltaTime = (f32)delta;
-        currentTime += delta;
+                    frameStartTime).count(), maxDeltaTime);
+        realDeltaTime = (f32)delta;
+        deltaTime = (f32)(delta * timeDilation);
+        currentTime += delta * timeDilation;
     }
 
     audio.close();

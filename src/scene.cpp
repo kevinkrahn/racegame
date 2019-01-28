@@ -342,7 +342,7 @@ void Scene::onUpdate(f32 deltaTime)
     Vehicle const& playerVehicle = *vehicles[0];
     const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
     game.resources.getFont("font", 23).drawText(str(
-                "FPS: ", 1.f / deltaTime,
+                "FPS: ", 1.f / game.realDeltaTime,
                 "\nEngine RPM: ", playerVehicle.getEngineRPM(),
                 "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
                 "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],

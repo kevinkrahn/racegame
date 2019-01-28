@@ -64,15 +64,15 @@
                 fresnel-bias: 0.0,
             }
         },
-        vehicle: {
-            shader: "lit",
+        wheel: {
+            shader: "wheel",
             culling: true,
             cast-shadow: true,
             textures: [],
             lighting: {
                 color: [ 1, 1, 1 ],
                 emit: [ 0, 0, 0 ],
-                specular-power: 100.0,
+                specular-power: 10.0,
                 specular-strength: 1.0,
                 specular-color: [ 1, 1, 1 ],
                 fresnel-scale: 0.0,

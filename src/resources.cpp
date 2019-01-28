@@ -196,13 +196,6 @@ void Resources::load()
         }
     }
 
-    // finish loading vehicle data now that all the scenes have been loaded
-    for (auto& val : vehicleDataValues)
-    {
-        vehicleData.push_back({});
-        loadVehicleData(val, vehicleData.back());
-    }
-
     // finish loading materials now that textures have been loaded
     for (auto& m : pendingMaterials)
     {
@@ -233,6 +226,13 @@ void Resources::load()
             material->lighting.fresnelPower = lighting["fresnel-power"].real(material->lighting.fresnelPower);
             material->lighting.fresnelBias = lighting["fresnel-bias"].real(material->lighting.fresnelBias);
         }
+    }
+
+    // finish loading vehicle data now that all the scenes have been loaded
+    for (auto& val : vehicleDataValues)
+    {
+        vehicleData.push_back({});
+        loadVehicleData(val, vehicleData.back());
     }
 }
 

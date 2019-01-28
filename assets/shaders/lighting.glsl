@@ -39,20 +39,17 @@ float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
     return shadow;
 }
 
-float getFresnel(vec3 normal, vec3 worldPosition)
+float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float power)
 {
-    float bias = -0.1f;
-    float scale = 0.8f;
-    float power = 3.f;
     return max(bias + scale * pow(1.0 + dot(normalize(worldPosition - cameraPosition[gl_Layer]), normal), power), 0.0);
 }
 
-vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition)
+vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
+        float specularPower=50.0, float specularStrength=1.0, vec3 specularColor=vec3(1.0),
+        float fresnelBias=-0.1, float fresnelScale=0.8, float fresnelPower=3.0)
 {
-    const float specularPower = 50.0;
-    const float specularStrength = 1.0;
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
-    float fresnel = getFresnel(normal, worldPosition);
+    float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
 
     float shadow = getShadow(shadowDepthSampler, shadowCoord);
 
