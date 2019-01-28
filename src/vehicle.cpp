@@ -991,8 +991,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             PxTransform contactPose = info.localPose;
             glm::vec3 markPosition = tn * -wheelRadius
                 + translationOf(transform * convert(info.localPose));
-            glm::vec4 color = isWheelOffroad ?  glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
-            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, color);
+            //glm::vec4 color = isWheelOffroad ?  glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
+            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, glm::vec4(1.0));
         }
         else if (wasWheelSlipping)
         {
@@ -1055,7 +1055,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     // draw chassis
     for (auto& mesh : driver->vehicleData->chassisMeshes)
     {
-        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform, driver->vehicleMaterial);
+        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform,
+                mesh.material ? mesh.material : driver->vehicleMaterial);
     }
 
     // draw wheels

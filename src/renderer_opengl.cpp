@@ -961,6 +961,7 @@ void Renderer::render(f32 deltaTime)
         u32 offset = 0;
         for (auto const& r : renderListRibbon)
         {
+            glBindTextureUnit(0, loadedTextures[r.texture].tex);
             glDrawArrays(GL_TRIANGLES, offset, r.count);
             offset += r.count;
         }

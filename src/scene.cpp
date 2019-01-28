@@ -297,6 +297,7 @@ void Scene::onUpdate(f32 deltaTime)
 
     // update vehicles
     i32 cameraIndex = 0;
+    auto tireMarkTex = game.resources.getTexture("tiremarks").renderHandle;
     for (u32 i=0; i<vehicles.size(); ++i)
     {
         vehicles[i]->onUpdate(deltaTime, vehicles[i]->driver->hasCamera ? cameraIndex : -1);
@@ -308,7 +309,7 @@ void Scene::onUpdate(f32 deltaTime)
         for (u32 w=0; w<NUM_WHEELS; ++w)
         {
             vehicles[i]->tireMarkRibbons[w].update(deltaTime);
-            game.renderer.drawRibbon(vehicles[i]->tireMarkRibbons[w], 0);
+            game.renderer.drawRibbon(vehicles[i]->tireMarkRibbons[w], tireMarkTex);
         }
     }
 
