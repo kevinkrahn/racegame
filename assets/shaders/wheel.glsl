@@ -42,7 +42,7 @@ layout(binding = 0) uniform sampler2D texSampler;
 void main()
 {
     outColor = lighting(texture(texSampler, inTexCoord) * vec4(inColor * color, 1.0),
-            normalize(inNormal), inShadowCoord, inWorldPosition, 5.0, 0.3, glm::vec3(1.0), -0.1, 0.3, 2.0);
+            normalize(inNormal), inShadowCoord, inWorldPosition, 5.0, 0.3, vec3(1.0), -0.1, 0.3, 2.0);
 }
 
 #elif defined GEOM

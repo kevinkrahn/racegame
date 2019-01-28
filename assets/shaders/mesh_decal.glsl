@@ -31,11 +31,11 @@ layout(location = 2) in vec3 inWorldPosition;
 layout(location = 3) in vec3 inShadowCoord;
 
 layout(location = 2) uniform vec3 color;
-layout(binding = 0) uniform sampler2D tex;
+layout(binding = 0) uniform sampler2D texSampler;
 
 void main()
 {
-    outColor = lighting(vec4(color, 1.0) * texture(tex, inTexCoord), normalize(inNormal), inShadowCoord, inWorldPosition);
+    outColor = lighting(texture(texSampler, inTexCoord) * vec4(color, 1.0), normalize(inNormal), inShadowCoord, inWorldPosition, 50.0, 1.0, vec3(1.0), -0.1, 0.8, 3.0);
 }
 
 #elif defined GEOM
