@@ -1,5 +1,6 @@
 #include "datafile.h"
 #include <iomanip>
+#include <cctype>
 
 using namespace DataFile;
 
