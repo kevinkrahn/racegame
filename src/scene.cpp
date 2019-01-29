@@ -253,7 +253,6 @@ void Scene::onUpdate(f32 deltaTime)
         game.renderer.drawMesh(d.renderHandle, convert(d.rigidBody->getGlobalPose()), d.material);
     }
 
-
     // update projectiles
     Mesh const& bulletMesh = game.resources.getMesh("world.Bullet");
     for (auto it = projectiles.begin(); it != projectiles.end();)
@@ -298,12 +297,14 @@ void Scene::onUpdate(f32 deltaTime)
     // update vehicles
     i32 cameraIndex = 0;
     auto tireMarkTex = game.resources.getTexture("tiremarks").renderHandle;
+    SmallVec<glm::vec3> listenerPositions;
     for (u32 i=0; i<vehicles.size(); ++i)
     {
         vehicles[i]->onUpdate(deltaTime, vehicles[i]->driver->hasCamera ? cameraIndex : -1);
         if (vehicles[i]->driver->hasCamera)
         {
             ++cameraIndex;
+            listenerPositions.push_back(vehicles[i]->lastValidPosition);
         }
 
         for (u32 w=0; w<NUM_WHEELS; ++w)
@@ -312,6 +313,7 @@ void Scene::onUpdate(f32 deltaTime)
             game.renderer.drawRibbon(vehicles[i]->tireMarkRibbons[w], tireMarkTex);
         }
     }
+    game.audio.setListeners(listenerPositions);
 
     // determine vehicle placement
     SmallVec<u32> placements;
@@ -561,6 +563,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         b->vehicle->applyDamage(damage, instigator);
                     }
 
+                    game.audio.playSound3D(game.resources.getSound("impact"), convert(contactPoints[j].position));
                     // TODO: create sparks at contactPoints[j].position
                 }
             }

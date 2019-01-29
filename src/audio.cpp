@@ -35,6 +35,8 @@ static f32 sampleAudio(Sound* sound, f32 position, u32 channel, bool looping)
 
 void Audio::audioCallback(u8* buf, i32 len)
 {
+    SmallVec<glm::vec3> listeners;
+
     {
         std::lock_guard<std::mutex> lock(audioMutex);
 
@@ -55,7 +57,7 @@ void Audio::audioCallback(u8* buf, i32 len)
             }
             else
             {
-                for (PlayingSound* it = playingSounds.begin(); it != playingSounds.end();)
+                for (auto it = playingSounds.begin(); it != playingSounds.end();)
                 {
                     if (m.handle == it->handle)
                     {
@@ -70,14 +72,19 @@ void Audio::audioCallback(u8* buf, i32 len)
                             case PlaybackModification::PAN:
                                 it->pan = m.pan;
                                 break;
+                            case PlaybackModification::POSITION:
+                                it->position = m.position;
+                                break;
                             case PlaybackModification::STOP:
                                 playingSounds.erase(it);
                                 continue;
                             case PlaybackModification::SET_PAUSED:
                                 it->isPaused = m.paused;
                                 break;
-                            default:
-                                // should never happen
+                            case PlaybackModification::PLAY:
+                            case PlaybackModification::MASTER_VOLUME:
+                            case PlaybackModification::MASTER_PITCH:
+                                // not handled here
                                 break;
                         }
                     }
@@ -86,6 +93,11 @@ void Audio::audioCallback(u8* buf, i32 len)
             }
         }
         playbackModifications.clear();
+
+        for (auto& p : listenerPositions)
+        {
+            listeners.push_back(p);
+        }
     }
 
     f32* buffer = (f32*)buf;
@@ -97,7 +109,7 @@ void Audio::audioCallback(u8* buf, i32 len)
         f32 right = 0.0f;
         f32 bufferPercent = (f32)i / ((f32)(numSamples - 1));
 
-        for (PlayingSound* s = playingSounds.begin(); s != playingSounds.end();)
+        for (auto s = playingSounds.begin(); s != playingSounds.end();)
         {
             if (s->isPaused)
             {
@@ -132,8 +144,23 @@ void Audio::audioCallback(u8* buf, i32 len)
             f32 panRight = (s->pan + 1.0f) * 0.5f;
             f32 panLeft = 1.0f - panRight;
 
-            left  = glm::clamp(left  + sampleLeft  * (s->volume * masterVolume) * panLeft, -1.0f, 1.0f);
-            right = glm::clamp(right + sampleRight * (s->volume * masterVolume) * panRight, -1.0f, 1.0f);
+            f32 attenuation = 1.f;
+            if (s->is3D)
+            {
+                const f32 maxDistance = 90.f;
+                attenuation = 0.f;
+                for (glm::vec3 const& camPos : listeners)
+                {
+                    f32 distance = glm::length(s->position - camPos);
+                    attenuation = glm::max(attenuation,
+                        glm::clamp(1.f - (distance / maxDistance), 0.f, 1.f));
+                }
+                //attenuation = glm::pow(attenuation, 2.f);
+                attenuation *= attenuation;
+            }
+
+            left  = glm::clamp(left  + sampleLeft  * (s->volume * masterVolume * attenuation) * panLeft, -1.0f, 1.0f);
+            right = glm::clamp(right + sampleRight * (s->volume * masterVolume * attenuation) * panRight, -1.0f, 1.0f);
 
             f32 pitch = glm::lerp(s->pitch, s->targetPitch, bufferPercent);
             s->playPosition += pitch * masterPitch * (f32)game.timeDilation;
@@ -147,10 +174,6 @@ void Audio::audioCallback(u8* buf, i32 len)
     for (auto& s : playingSounds)
     {
         s.pitch = s.targetPitch;
-        if (s.handle == 1)
-        {
-            //print("Paused: ", s.isPaused, " Pan: ", s.pan, " Volume: ", s.volume, " Pitch: ", s.pitch, " Pos: ", s.playPosition, '\n');
-        }
     }
 }
 
@@ -215,6 +238,32 @@ SoundHandle Audio::playSound(Sound* sound, bool loop, f32 pitch, f32 volume, f32
     return ps.handle;
 }
 
+SoundHandle Audio::playSound3D(Sound* sound, glm::vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
+{
+    PlayingSound ps;
+    ps.sound = sound;
+    ps.isLooping = loop;
+    ps.pitch = pitch;
+    ps.volume = volume;
+    ps.pan = pan;
+    ps.is3D = true;
+    ps.position = position;
+    ps.handle = ++nextSoundHandle;
+
+    if (loop)
+    {
+        ps.playPosition = random(randomSeries, 0.f, sound->numSamples);
+    }
+
+    std::lock_guard<std::mutex> lock(audioMutex);
+    PlaybackModification pm;
+    pm.type = PlaybackModification::PLAY;
+    pm.newSound = ps;
+    playbackModifications.push_back(pm);
+
+    return ps.handle;
+}
+
 void Audio::stopSound(SoundHandle handle)
 {
     std::lock_guard<std::mutex> lock(audioMutex);
@@ -254,6 +303,16 @@ void Audio::setSoundPan(SoundHandle handle, f32 pan)
     playbackModifications.push_back(pm);
 }
 
+void Audio::setSoundPosition(SoundHandle handle, glm::vec3 const& position)
+{
+    std::lock_guard<std::mutex> lock(audioMutex);
+    PlaybackModification pm;
+    pm.type = PlaybackModification::POSITION;
+    pm.position = position;
+    pm.handle = handle;
+    playbackModifications.push_back(pm);
+}
+
 void Audio::setSoundPaused(SoundHandle handle, bool paused)
 {
     std::lock_guard<std::mutex> lock(audioMutex);
@@ -262,4 +321,14 @@ void Audio::setSoundPaused(SoundHandle handle, bool paused)
     pm.paused = paused;
     pm.handle = handle;
     playbackModifications.push_back(pm);
+}
+
+void Audio::setListeners(SmallVec<glm::vec3>const& listeners)
+{
+    std::lock_guard<std::mutex> lock(audioMutex);
+    listenerPositions.clear();
+    for (auto& p : listeners)
+    {
+        listenerPositions.push_back(p);
+    }
 }

@@ -446,12 +446,10 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->followPathIndex = irandom(scene->randomSeries, 0, scene->getPaths().size());
     this->driver = driver;
     this->scene = scene;
+    this->lastValidPosition = translationOf(transform);
 
-    if (driver->playerProfile)
-    {
-        engineSound = game.audio.playSound(game.resources.getSound("engine2"), true);
-        tireSound = game.audio.playSound(game.resources.getSound("tires"), true, 1.f, 0.f);
-    }
+    engineSound = game.audio.playSound3D(game.resources.getSound("engine2"), translationOf(transform), true);
+    tireSound = game.audio.playSound3D(game.resources.getSound("tires"), translationOf(transform), true, 1.f, 0.f);
 
     setupPhysics(scene->getPhysicsScene(), driver->vehicleData->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
@@ -637,6 +635,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     {
         deadTimer -= deltaTime;
         if (engineSound) game.audio.setSoundVolume(engineSound, 0.f);
+        if (tireSound) game.audio.setSoundVolume(tireSound, 0.f);
         if (deadTimer <= 0.f)
         {
             if (engineSound) game.audio.setSoundVolume(engineSound, 1.f);
@@ -701,8 +700,6 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             {
                 fireWeapon();
             }
-
-            game.audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
         }
         else
         {
@@ -817,6 +814,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             controlledBrakingTimer = glm::max(controlledBrakingTimer - deltaTime, 0.f);
         }
     }
+    lastValidPosition = getPosition();
 
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
@@ -841,6 +839,16 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
         }
+    }
+
+    if (engineSound)
+    {
+        game.audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
+        game.audio.setSoundPosition(engineSound, lastValidPosition);
+    }
+    if (tireSound)
+    {
+        game.audio.setSoundPosition(tireSound, lastValidPosition);
     }
 
     if (cameraIndex >= 0)

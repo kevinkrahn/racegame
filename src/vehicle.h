@@ -69,6 +69,7 @@ private:
 	f32 offsetChangeInterval = 5.f;
     u32 engineSound = 0;
     u32 tireSound = 0;
+    glm::vec3 lastValidPosition;
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];

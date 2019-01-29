@@ -1180,6 +1180,11 @@ void Renderer::setViewportCount(u32 viewports)
     }
 }
 
+u32 Renderer::getViewportCount() const
+{
+    return cameras.size();
+}
+
 Camera& Renderer::getCamera(u32 index)
 {
     return cameras[index];
