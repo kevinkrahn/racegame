@@ -201,7 +201,7 @@ void Resources::load()
     {
         DataFile::Value& mat = m.first;
         Material* material = m.second;
-        material->shader = game.renderer.getShader(mat["shader"].string().c_str());
+        material->shader = game.renderer.loadShader(mat["shader"].string());
         material->culling = mat["culling"].boolean(material->culling);
         material->castShadow = mat["cast-shadow"].boolean(material->castShadow);
         if (mat.hasKey("textures"))

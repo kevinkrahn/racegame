@@ -378,7 +378,7 @@ u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defi
 {
     if (name.empty())
     {
-        name = fs::path(filename).stem().string();
+        name = filename;
     }
 
     if (shaderHandleMap.count(name) != 0)
@@ -386,8 +386,10 @@ u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defi
         return shaderHandleMap[name];
     }
 
+    std::string fullfilename = "shaders/" + filename + ".glsl";
+
     GLShader shader = {};
-    compileShader(filename, defines, shader);
+    compileShader(fullfilename, defines, shader);
     loadedShaders.push_back(shader);
     u32 handle = loadedShaders.size() - 1;
     shaderHandleMap[name] = handle;
@@ -458,22 +460,20 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    loadShader("shaders/lit.glsl");
-    loadShader("shaders/triplanar.glsl");
-    loadShader("shaders/wheel.glsl");
-    loadShader("shaders/debug.glsl");
-    loadShader("shaders/quad2D.glsl", { "COLOR" }, "tex2D");
-    loadShader("shaders/quad2D.glsl", {}, "text2D");
-    loadShader("shaders/post.glsl");
-    loadShader("shaders/mesh2D.glsl");
-    loadShader("shaders/billboard.glsl");
-    loadShader("shaders/ribbon.glsl");
-    loadShader("shaders/csz.glsl");
-    loadShader("shaders/csz_minify.glsl");
-    loadShader("shaders/sao.glsl");
-    loadShader("shaders/sao_blur.glsl");
-    loadShader("shaders/overlay.glsl");
-    loadShader("shaders/mesh_decal.glsl");
+    loadShader("lit");
+    loadShader("debug");
+    loadShader("quad2D", { "COLOR" }, "tex2D");
+    loadShader("quad2D", {}, "text2D");
+    loadShader("post");
+    loadShader("mesh2D");
+    loadShader("billboard");
+    loadShader("ribbon");
+    loadShader("csz");
+    loadShader("csz_minify");
+    loadShader("sao");
+    loadShader("sao_blur");
+    loadShader("overlay");
+    loadShader("mesh_decal");
 
     glCreateVertexArrays(1, &emptyVAO);
 

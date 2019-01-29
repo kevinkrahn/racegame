@@ -54,14 +54,14 @@ void Game::run()
     resources.load();
 
     state.drivers = {
-        Driver(true,  true,  true,  &resources.getVehicleData()[3], 0, 0),
-        Driver(false, false, false, &resources.getVehicleData()[1], 1, 0),
-        Driver(false, false, false, &resources.getVehicleData()[2], 2),
-        Driver(false, false, false, &resources.getVehicleData()[0], 8),
-        Driver(false, false, false, &resources.getVehicleData()[1], 4),
+        Driver(true,  true,  true,  &resources.getVehicleData()[3], 1, 0),
+        Driver(false, false, false, &resources.getVehicleData()[1], 2, 0),
         Driver(false, false, false, &resources.getVehicleData()[2], 3),
-        Driver(false, false, false, &resources.getVehicleData()[3], 6),
+        Driver(false, false, false, &resources.getVehicleData()[0], 4),
+        Driver(false, false, false, &resources.getVehicleData()[1], 5),
+        Driver(false, false, false, &resources.getVehicleData()[2], 6),
         Driver(false, false, false, &resources.getVehicleData()[3], 7),
+        Driver(false, false, false, &resources.getVehicleData()[3], 8),
     };
 
     changeScene("world.Scene");
