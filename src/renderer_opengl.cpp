@@ -459,6 +459,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     loadShader("shaders/lit.glsl");
+    loadShader("shaders/triplanar.glsl");
     loadShader("shaders/wheel.glsl");
     loadShader("shaders/debug.glsl");
     loadShader("shaders/quad2D.glsl", { "COLOR" }, "tex2D");
@@ -1130,6 +1131,7 @@ u32 Renderer::loadTexture(Texture const& texture, u8* data, size_t size)
     glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(tex, GL_TEXTURE_MAX_ANISOTROPY, 8);
+    glTextureParameterf(tex, GL_TEXTURE_LOD_BIAS, -0.2f);
     glGenerateTextureMipmap(tex);
     loadedTextures.push_back({ tex });
     return loadedTextures.size() - 1;
