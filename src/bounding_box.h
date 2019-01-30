@@ -181,3 +181,41 @@ struct BoundingBox
         return dim.x * dim.y * dim.z;
     }
 };
+
+BoundingBox computeCameraFrustumBoundingBox(glm::mat4 const& viewProj)
+{
+    glm::vec3 ndc[] = {
+        { -1,  1, 0 },
+        {  1,  1, 0 },
+        {  1, -1, 0 },
+        { -1, -1, 0 },
+
+        { -1,  1, 1 },
+        {  1,  1, 1 },
+        {  1, -1, 1 },
+        { -1, -1, 1 },
+    };
+
+    glm::mat4 m = glm::inverse(viewProj);
+
+    f32 minx =  FLT_MAX;
+    f32 maxx = -FLT_MAX;
+    f32 miny =  FLT_MAX;
+    f32 maxy = -FLT_MAX;
+    f32 minz =  FLT_MAX;
+    f32 maxz = -FLT_MAX;
+    for (auto& v : ndc)
+    {
+        glm::vec4 b = m * glm::vec4(v, 1.f);
+        v = glm::vec3(b) / b.w;
+
+        if (v.x < minx) minx = v.x;
+        if (v.x > maxx) maxx = v.x;
+        if (v.y < miny) miny = v.y;
+        if (v.y > maxy) maxy = v.y;
+        if (v.z < minz) minz = v.z;
+        if (v.z > maxz) maxz = v.z;
+    }
+
+    return BoundingBox{ { minx, miny, minz }, { maxx, maxy, maxz } };
+}

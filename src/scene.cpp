@@ -361,6 +361,12 @@ void Scene::onUpdate(f32 deltaTime)
 
     if (physicsDebugVisualizationEnabled)
     {
+        Camera const& cam = game.renderer.getCamera(0);
+        BoundingBox bb = computeCameraFrustumBoundingBox(cam.viewProjection);
+        game.renderer.drawBoundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
+
+        physicsScene->setVisualizationCullingBox(PxBounds3(convert(bb.min), convert(bb.max)));
+
         const PxRenderBuffer& rb = physicsScene->getRenderBuffer();
         for(PxU32 i=0; i < rb.getNbLines(); ++i)
         {

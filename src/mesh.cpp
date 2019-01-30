@@ -12,32 +12,7 @@ void Mesh::buildOctree()
 
 void Mesh::OctreeNode::debugDraw(glm::mat4 const& transform, glm::vec4 const& col)
 {
-    glm::vec3 p[8] = {
-        glm::vec3(transform * glm::vec4(aabb.min.x, aabb.min.y, aabb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.max.x, aabb.min.y, aabb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.max.x, aabb.max.y, aabb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.min.x, aabb.max.y, aabb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.min.x, aabb.min.y, aabb.max.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.max.x, aabb.min.y, aabb.max.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.max.x, aabb.max.y, aabb.max.z, 1.f)),
-        glm::vec3(transform * glm::vec4(aabb.min.x, aabb.max.y, aabb.max.z, 1.f)),
-    };
-
-    glm::vec3 o(0, 0, 0.1f);
-
-    game.renderer.drawLine(p[0]+o, p[1]+o, col, col);
-    game.renderer.drawLine(p[1]+o, p[2]+o, col, col);
-    game.renderer.drawLine(p[2]+o, p[3]+o, col, col);
-    game.renderer.drawLine(p[3]+o, p[0]+o, col, col);
-    game.renderer.drawLine(p[4]+o, p[5]+o, col, col);
-    game.renderer.drawLine(p[5]+o, p[6]+o, col, col);
-    game.renderer.drawLine(p[6]+o, p[7]+o, col, col);
-    game.renderer.drawLine(p[7]+o, p[4]+o, col, col);
-    game.renderer.drawLine(p[0]+o, p[4]+o, col, col);
-    game.renderer.drawLine(p[1]+o, p[5]+o, col, col);
-    game.renderer.drawLine(p[2]+o, p[6]+o, col, col);
-    game.renderer.drawLine(p[3]+o, p[7]+o, col, col);
-
+    game.renderer.drawBoundingBox(aabb, transform, col);
     for (auto& child : children)
     {
         child->debugDraw(transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));

@@ -1253,6 +1253,33 @@ void Renderer::drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
     debugVertices.push_back({ p2, c2 });
 }
 
+void Renderer::drawBoundingBox(BoundingBox const& bb, glm::mat4 const& transform, glm::vec4 const& color)
+{
+    glm::vec3 p[8] = {
+        glm::vec3(transform * glm::vec4(bb.min.x, bb.min.y, bb.min.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.max.x, bb.min.y, bb.min.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.max.x, bb.max.y, bb.min.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.min.x, bb.max.y, bb.min.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.min.x, bb.min.y, bb.max.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.max.x, bb.min.y, bb.max.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.max.x, bb.max.y, bb.max.z, 1.f)),
+        glm::vec3(transform * glm::vec4(bb.min.x, bb.max.y, bb.max.z, 1.f)),
+    };
+
+    drawLine(p[0], p[1], color, color);
+    drawLine(p[1], p[2], color, color);
+    drawLine(p[2], p[3], color, color);
+    drawLine(p[3], p[0], color, color);
+    drawLine(p[4], p[5], color, color);
+    drawLine(p[5], p[6], color, color);
+    drawLine(p[6], p[7], color, color);
+    drawLine(p[7], p[4], color, color);
+    drawLine(p[0], p[4], color, color);
+    drawLine(p[1], p[5], color, color);
+    drawLine(p[2], p[6], color, color);
+    drawLine(p[3], p[7], color, color);
+}
+
 void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2,
         glm::vec3 color, f32 alpha, bool colorShader)
 {
