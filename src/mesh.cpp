@@ -90,3 +90,26 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         }
     }
 }
+
+bool Mesh::OctreeNode::intersect(Mesh const& mesh, BoundingBox const& bb, std::vector<u32>& output) const
+{
+    if (aabb.intersects(bb))
+    {
+        for (u32 index : triangleIndices)
+        {
+            output.push_back(index);
+        }
+        for(auto const& child : children)
+        {
+            child->intersect(mesh, bb, output);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const
+{
+    bb = bb.transform(glm::inverse(transform));
+    return octree->intersect(*this, bb, output);
+}

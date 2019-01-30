@@ -32,9 +32,14 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
         {  0.f,  0.f, -1.f }
     };
 
+    std::vector<u32> indices;
+    BoundingBox decalBoundingBox{ glm::vec3(-1), glm::vec3(1) };
+    decalBoundingBox = decalBoundingBox.transform(transform);
+    mesh->intersect(transform, decalBoundingBox, indices);
+
     glm::mat4 vertTransform = glm::inverse(transform) * meshTransform;
     glm::mat3 normalTransform = glm::inverseTranspose(glm::mat3(vertTransform));
-    for (u32 i=0; i<mesh->numIndices; i+=3)
+    for (u32 i=0; i<(u32)indices.size(); i+=3)
     {
         u32 j = mesh->indices[i+0] * mesh->stride / sizeof(f32);
         glm::vec3 v1(mesh->vertices[j+0], mesh->vertices[j+1], mesh->vertices[j+2]);
