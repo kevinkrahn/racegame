@@ -51,7 +51,11 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
 
+#if SHADOWS_ENABLED
     float shadow = getShadow(shadowDepthSampler, shadowCoord);
+#else
+    float shadow = 1.f;
+#endif
 
     float directLight = max(dot(normal, sunDirection) * shadow, 0.0)
         + max(dot(normal, ambientDirection) * 0.1, 0.0);
@@ -63,8 +67,10 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     color.rgb += specularLight * shadow;
     color.rgb += fresnel * max(shadow, 0.5);
 
+#if SSAO_ENABLED
     float ssaoAmount = texelFetch(ssaoTexture, ivec3(gl_FragCoord.xy, gl_Layer), 0).r;
     color.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
+#endif
 
     return color;
 }

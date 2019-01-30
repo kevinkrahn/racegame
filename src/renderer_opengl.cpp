@@ -250,6 +250,8 @@ void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string
     str << "#version 450\n";
     str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
     str << "#define VIEWPORT_COUNT " << cameras.size() << '\n';
+    str << "#define SHADOWS_ENABLED " << u32(game.config.shadowsEnabled) << '\n';
+    str << "#define SSAO_ENABLED " << u32(game.config.ssaoEnabled) << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -555,77 +557,83 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
-    // csv framebuffers
-    glGenTextures(1, &fb.cszTexture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, ARRAY_SIZE(fb.cszFramebuffers) - 1);
-    for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
+    if (game.config.ssaoEnabled)
     {
-        i32 w = i32(fb.renderWidth >> (i - 1));
-        i32 h = i32(fb.renderHeight >> (i - 1));
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, i - 1, GL_R32F, w, h, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-    }
+        // csv framebuffers
+        glGenTextures(1, &fb.cszTexture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, ARRAY_SIZE(fb.cszFramebuffers) - 1);
+        for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
+        {
+            i32 w = i32(fb.renderWidth >> (i - 1));
+            i32 h = i32(fb.renderHeight >> (i - 1));
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, i - 1, GL_R32F, w, h, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+        }
 
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glm::vec4 borderColor(1.f);
-    glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glm::vec4 borderColor(1.f);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
 
-    glGenFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
-    for (u32 i=0; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.cszTexture, i);
+        glGenFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
+        for (u32 i=0; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.cszTexture, i);
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        }
+
+        // sao framebuffers
+        glGenTextures(1, &fb.saoTexture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+
+        glGenTextures(1, &fb.saoBlurTexture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoBlurTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+
+        glGenFramebuffers(1, &fb.saoFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.saoTexture, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fb.saoBlurTexture, 0);
 
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
     }
 
-    // sao framebuffers
-    glGenTextures(1, &fb.saoTexture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
-
-    glGenTextures(1, &fb.saoBlurTexture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoBlurTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
-
-    glGenFramebuffers(1, &fb.saoFramebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.saoTexture, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fb.saoBlurTexture, 0);
-
-    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
     // shadow framebuffer
-    glGenTextures(1, &fb.shadowDepthTexture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-            game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+    if (game.config.shadowsEnabled)
+    {
+        glGenTextures(1, &fb.shadowDepthTexture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
+                game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
-    glGenFramebuffers(1, &fb.shadowFramebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.shadowDepthTexture, 0);
+        glGenFramebuffers(1, &fb.shadowFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.shadowDepthTexture, 0);
 
-    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -647,6 +655,12 @@ static void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
     glm::mat4 depthView = glm::lookAt(inverseLightDir, glm::vec3(0), glm::vec3(0, 0, 1));
     for (u32 i=0; i<cameras.size(); ++i)
     {
+        if (!game.config.shadowsEnabled)
+        {
+            worldInfo.shadowViewProjectionBias[i] = glm::mat4(0.f);
+            continue;
+        }
+
         Camera const& cam = cameras[i];
         glm::mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
 
@@ -730,12 +744,7 @@ void Renderer::render(f32 deltaTime)
 
     WorldInfo worldInfoShadow = worldInfo;
     setShadowMatrices(worldInfo, worldInfoShadow);
-
     worldInfoUBO.updateData(&worldInfo);
-    worldInfoUBOShadow.updateData(&worldInfoShadow);
-
-    // bind worldinfo with shadow matrices
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBOShadow.getBuffer());
 
     GLuint currentProgram = 999999;
     auto useProgram = [&](GLuint program) {
@@ -747,37 +756,45 @@ void Renderer::render(f32 deltaTime)
     };
 
     // shadow map
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
-
-    glViewport(0, 0, game.config.shadowMapResolution, game.config.shadowMapResolution);
-    glDepthMask(GL_TRUE);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-
-    glBindTextureUnit(2, fb.shadowDepthTexture);
-    glEnable(GL_DEPTH_CLAMP);
-    glDisable(GL_BLEND);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(2.f, 4096.f);
-    glCullFace(GL_FRONT);
-    for (auto const& r : renderList)
+    if (game.config.shadowsEnabled)
     {
-        if (!r.material->castShadow)
+        worldInfoUBOShadow.updateData(&worldInfoShadow);
+
+        // bind worldinfo with shadow matrices
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBOShadow.getBuffer());
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
+
+        glViewport(0, 0, game.config.shadowMapResolution, game.config.shadowMapResolution);
+        glDepthMask(GL_TRUE);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        glBindTextureUnit(2, fb.shadowDepthTexture);
+        glEnable(GL_DEPTH_CLAMP);
+        glDisable(GL_BLEND);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(2.f, 4096.f);
+        glCullFace(GL_FRONT);
+        for (auto const& r : renderList)
         {
-            continue;
+            if (!r.material->castShadow)
+            {
+                continue;
+            }
+            useProgram(loadedShaders[r.material->shader].program);
+            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
+            GLMesh const& mesh = loadedMeshes[r.meshHandle];
+            glBindVertexArray(mesh.vao);
+            glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
         }
-        useProgram(loadedShaders[r.material->shader].program);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-        GLMesh const& mesh = loadedMeshes[r.meshHandle];
-        glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        glCullFace(GL_BACK);
+        glDisable(GL_DEPTH_CLAMP);
+        glDisable(GL_POLYGON_OFFSET_FILL);
     }
-    glCullFace(GL_BACK);
-    glDisable(GL_DEPTH_CLAMP);
-    glDisable(GL_POLYGON_OFFSET_FILL);
 
     // bind real worldinfo
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
@@ -805,53 +822,56 @@ void Renderer::render(f32 deltaTime)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
     // generate csz texture
-    glBindVertexArray(emptyVAO);
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(getShaderProgram("csz"));
-    glm::vec4 clipInfo[MAX_VIEWPORTS];
-    for (u32 i=0; i<cameras.size(); ++i)
+    if (game.config.ssaoEnabled)
     {
-        Camera const& cam = cameras[i];
-        clipInfo[i] = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
-    }
-    glUniform4fv(0, cameras.size(), (GLfloat*)clipInfo);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindTextureUnit(3, fb.cszTexture);
-
-    // minify csz texture
-    glUseProgram(getShaderProgram("csz_minify"));
-    for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+        glBindVertexArray(emptyVAO);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glViewport(0, 0, i32(fb.renderWidth >> i), i32(fb.renderHeight >> i));
-        glUniform1i(0, i-1);
+        glUseProgram(getShaderProgram("csz"));
+        glm::vec4 clipInfo[MAX_VIEWPORTS];
+        for (u32 i=0; i<cameras.size(); ++i)
+        {
+            Camera const& cam = cameras[i];
+            clipInfo[i] = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
+        }
+        glUniform4fv(0, cameras.size(), (GLfloat*)clipInfo);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindTextureUnit(3, fb.cszTexture);
+
+        // minify csz texture
+        glUseProgram(getShaderProgram("csz_minify"));
+        for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            glViewport(0, 0, i32(fb.renderWidth >> i), i32(fb.renderHeight >> i));
+            glUniform1i(0, i-1);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
+
+        // scaleable ambient obscurance
+        glViewport(0, 0, fb.renderWidth, fb.renderHeight);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glUseProgram(getShaderProgram("sao"));
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindTextureUnit(4, fb.saoTexture);
+
+    #if 1
+        glUseProgram(getShaderProgram("sao_blur"));
+
+        // sao hblur
+        glDrawBuffer(GL_COLOR_ATTACHMENT1);
+        glUniform2i(0, 1, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindTextureUnit(4, fb.saoBlurTexture);
+
+        // sao vblur
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glUniform2i(0, 0, 1);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    #endif
     }
-
-    // scaleable ambient obscurance
-    glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUseProgram(getShaderProgram("sao"));
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindTextureUnit(4, fb.saoTexture);
-
-#if 1
-    glUseProgram(getShaderProgram("sao_blur"));
-
-    // sao hblur
-    glDrawBuffer(GL_COLOR_ATTACHMENT1);
-    glUniform2i(0, 1, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindTextureUnit(4, fb.saoBlurTexture);
-
-    // sao vblur
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glUniform2i(0, 0, 1);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-#endif
 
     // color pass
     glBindTextureUnit(4, fb.saoTexture);
