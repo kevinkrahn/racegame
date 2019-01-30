@@ -1084,7 +1084,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         game.renderer.drawMesh(*mesh.mesh, wheelTransform * mesh.transform, material);
     }
 
-#if 0
+#if 1
     if (isPlayerControlled)
     {
         glm::mat4 decalTransform =
@@ -1096,6 +1096,9 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         game.renderer.drawDecal(verts1, decalTransform, game.resources.getTexture("thing").renderHandle);
         //auto verts2 = createDecal(decalTransform, (Mesh*)&game.resources.getMesh("world.Railings"), glm::scale(glm::mat4(1.f), glm::vec3(1.f)));
         //game.renderer.drawDecal(verts2, decalTransform, game.resources.getTexture("thing").renderHandle);
+
+        BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
+        game.renderer.drawBoundingBox(decalBoundingBox.transform(decalTransform), glm::mat4(1.f), glm::vec4(1.f));
     }
 #endif
 }

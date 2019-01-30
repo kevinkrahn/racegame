@@ -12,7 +12,10 @@ void Mesh::buildOctree()
 
 void Mesh::OctreeNode::debugDraw(glm::mat4 const& transform, glm::vec4 const& col)
 {
-    game.renderer.drawBoundingBox(aabb, transform, col);
+    if (triangleIndices.size() > 0 || children.size() > 0)
+        game.renderer.drawBoundingBox(aabb, transform, col);
+    else
+        game.renderer.drawBoundingBox(aabb, transform, glm::vec4(1, 0, 0, 1));
     for (auto& child : children)
     {
         child->debugDraw(transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));
@@ -56,7 +59,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
             {
                 hitIndex = i;
                 ++hitCount;
-                if (hitCount > 2) break;
+                if (hitCount > 1) break;
             }
         }
 
@@ -91,17 +94,18 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
     }
 }
 
-bool Mesh::OctreeNode::intersect(Mesh const& mesh, BoundingBox const& bb, std::vector<u32>& output) const
+bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, std::vector<u32>& output) const
 {
     if (aabb.intersects(bb))
     {
+        //if (triangleIndices.size() > 0) game.renderer.drawBoundingBox(aabb, glm::translate(glm::mat4(1.f), { 0, 0, 0.2f }) * transform, glm::vec4(1, 0, 0, 1));
         for (u32 index : triangleIndices)
         {
             output.push_back(index);
         }
         for(auto const& child : children)
         {
-            child->intersect(mesh, bb, output);
+            child->intersect(mesh, transform, bb, output);
         }
         return true;
     }
@@ -111,5 +115,5 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, BoundingBox const& bb, std::v
 bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const
 {
     bb = bb.transform(glm::inverse(transform));
-    return octree->intersect(*this, bb, output);
+    return octree->intersect(*this, transform, bb, output);
 }

@@ -227,7 +227,7 @@ void Scene::onUpdate(f32 deltaTime)
     for (auto const& e : staticEntities)
     {
         game.renderer.drawMesh(*e.mesh, e.worldTransform, e.material);
-#if 0
+#if 1
         if (e.isTrack)
         {
             e.mesh->octree->debugDraw(e.worldTransform);

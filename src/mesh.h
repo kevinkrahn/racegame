@@ -27,7 +27,7 @@ struct Mesh
 
         void subdivide(Mesh const& mesh);
         void debugDraw(glm::mat4 const& transform, glm::vec4 const& col=glm::vec4(1.f));
-        bool intersect(Mesh const& mesh, BoundingBox const& bb, std::vector<u32>& output) const;
+        bool intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, std::vector<u32>& output) const;
     };
 
     std::unique_ptr<OctreeNode> octree = nullptr;

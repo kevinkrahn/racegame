@@ -1320,6 +1320,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
 {
     if (track.width != width || track.height != height)
     {
+        print("HUD track size changed: ", width, "x", height, "\n");
         track.width = width;
         track.height = height;
 

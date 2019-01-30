@@ -33,12 +33,41 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
     };
 
     std::vector<u32> indices;
-    BoundingBox decalBoundingBox{ glm::vec3(-1), glm::vec3(1) };
-    decalBoundingBox = decalBoundingBox.transform(transform);
-    mesh->intersect(transform, decalBoundingBox, indices);
+    BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
+    mesh->intersect(meshTransform, decalBoundingBox.transform(transform), indices);
 
     glm::mat4 vertTransform = glm::inverse(transform) * meshTransform;
     glm::mat3 normalTransform = glm::inverseTranspose(glm::mat3(vertTransform));
+
+#if 1
+    for (u32 i=0; i<(u32)indices.size(); i+=3)
+    {
+        u32 j = mesh->indices[i+0] * mesh->stride / sizeof(f32);
+        glm::vec3 v1(mesh->vertices[j+0], mesh->vertices[j+1], mesh->vertices[j+2]);
+        glm::vec3 n1(mesh->vertices[j+3], mesh->vertices[j+4], mesh->vertices[j+5]);
+        j = mesh->indices[i+1] * mesh->stride / sizeof(f32);
+        glm::vec3 v2(mesh->vertices[j+0], mesh->vertices[j+1], mesh->vertices[j+2]);
+        glm::vec3 n2(mesh->vertices[j+3], mesh->vertices[j+4], mesh->vertices[j+5]);
+        j = mesh->indices[i+2] * mesh->stride / sizeof(f32);
+        glm::vec3 v3(mesh->vertices[j+0], mesh->vertices[j+1], mesh->vertices[j+2]);
+        glm::vec3 n3(mesh->vertices[j+3], mesh->vertices[j+4], mesh->vertices[j+5]);
+
+        // convert vertex positions to decal local space
+        v1 = vertTransform * glm::vec4(v1, 1.0);
+        v2 = vertTransform * glm::vec4(v2, 1.0);
+        v3 = vertTransform * glm::vec4(v3, 1.0);
+
+        // transform normals
+        n1 = normalTransform * n1;
+        n2 = normalTransform * n2;
+        n3 = normalTransform * n3;
+
+        addVertex(DecalVertex{ v1, n1 });
+        addVertex(DecalVertex{ v2, n2 });
+        addVertex(DecalVertex{ v3, n3 });
+    }
+
+#else
     for (u32 i=0; i<(u32)indices.size(); i+=3)
     {
         u32 j = mesh->indices[i+0] * mesh->stride / sizeof(f32);
@@ -119,6 +148,7 @@ std::vector<DecalVertex> createDecal(glm::mat4 const& transform, Mesh* mesh,
             }
         }
     }
+#endif
 
     return outputMesh;
 }
