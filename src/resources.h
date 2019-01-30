@@ -6,24 +6,10 @@
 #include "audio.h"
 #include "vehicle_data.h"
 #include "material.h"
+#include "mesh.h"
 #include <vector>
 #include <map>
 #include <string>
-
-struct Mesh
-{
-    std::vector<f32> vertices;
-    std::vector<u32> indices;
-    u32 numVertices;
-    u32 numIndices;
-    u32 numColors;
-    u32 numTexCoords;
-    u32 elementSize;
-    u32 stride;
-    u32 renderHandle;
-    glm::vec3 aabbMin;
-    glm::vec3 aabbMax;
-};
 
 struct Texture
 {
@@ -57,14 +43,14 @@ private:
 public:
     void load();
 
-    Mesh const& getMesh(const char* name) const
+    Mesh* getMesh(const char* name)
     {
         auto iter = meshes.find(name);
         if (iter == meshes.end())
         {
             FATAL_ERROR("Mesh not found: ", name);
         }
-        return iter->second;
+        return &iter->second;
     }
 
     DataFile::Value::Dict& getScene(const char* name)

@@ -79,7 +79,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         if (name.find("Chassis") != std::string::npos)
         {
             vehicle.chassisMeshes.push_back({
-                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                game.resources.getMesh(e["data_name"].string().c_str()),
                 transform,
                 e["properties"].hasKey("material") ? game.resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
             });
@@ -87,7 +87,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         else if (name.find("FL") != std::string::npos)
         {
             vehicle.wheelMeshFront = {
-                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                game.resources.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
             vehicle.physics.wheelRadiusFront = e["bound_z"].real() * 0.5f;
@@ -97,7 +97,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         else if (name.find("RL") != std::string::npos)
         {
             vehicle.wheelMeshRear = {
-                game.resources.getMesh(e["data_name"].string().c_str()).renderHandle,
+                game.resources.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
             vehicle.physics.wheelRadiusRear = e["bound_z"].real() * 0.5f;
@@ -123,7 +123,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
                         COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
             vehicle.debrisChunks.push_back({
-                game.resources.getMesh(meshName.c_str()).renderHandle,
+                game.resources.getMesh(meshName.c_str()),
                 transform,
                 shape,
                 e["properties"].hasKey("material") ? game.resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr

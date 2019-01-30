@@ -51,6 +51,7 @@ private:
     // gameplay data
 	bool finishedRace = false;
     glm::vec3 cameraTarget;
+    glm::vec3 cameraFrom;
     f32 hitPoints = 100.f;
     u32 currentLap = 0;
 	u32 placement = 1;

@@ -438,6 +438,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 	    u32 vehicleIndex)
 {
     this->cameraTarget = translationOf(transform);
+    this->cameraFrom = cameraTarget;
     this->targetOffset = startOffset;
     this->startOffset = startOffset;
     this->lastDamagedBy = vehicleIndex;
@@ -855,15 +856,18 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     {
         glm::vec3 pos = getPosition();
 #if 0
-        cameraTarget = pos;
+        cameraTarget = pos + glm::vec3(0, 0, 2.f);
+        cameraFrom = smoothMove(cameraFrom,
+                cameraTarget - getForwardVector() * 10.f + glm::vec3(0, 0, 3.f), 8.f, deltaTime);
+        game.renderer.setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
 #else
         cameraTarget = smoothMove(cameraTarget,
                 pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
                 5.f, deltaTime);
-#endif
         f32 camDistance = 80.f;
-        glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        game.renderer.setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 30.f, 180.f);
+        cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+        game.renderer.setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 32.f, 160.f);
+#endif
 
         // draw arrow if vehicle is hidden behind something
         glm::vec3 rayStart = getPosition();
@@ -887,7 +891,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         }
         if (!visible)
         {
-            game.renderer.drawMeshOverlay(game.resources.getMesh("world.Arrow").renderHandle,
+            game.renderer.drawMeshOverlay(game.resources.getMesh("world.Arrow")->renderHandle,
                     cameraIndex, transform, glm::vec3(driver->vehicleColor));
         }
     }
@@ -1049,7 +1053,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 
             scene->createVehicleDebris(VehicleDebris{
                 body,
-                d.mesh,
+                d.mesh->renderHandle,
                 0.f,
                 driver->vehicleColor,
                 d.material ? d.material : driver->vehicleMaterial
@@ -1061,10 +1065,10 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     }
 
     // draw chassis
-    for (auto& mesh : driver->vehicleData->chassisMeshes)
+    for (auto& m : driver->vehicleData->chassisMeshes)
     {
-        game.renderer.drawMesh(mesh.renderHandle, transform * mesh.transform,
-                mesh.material ? mesh.material : driver->vehicleMaterial);
+        game.renderer.drawMesh(*m.mesh, transform * m.transform,
+                m.material ? m.material : driver->vehicleMaterial);
     }
 
     // draw wheels
@@ -1077,7 +1081,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
         auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
-        game.renderer.drawMesh(mesh.renderHandle, wheelTransform * mesh.transform, material);
+        game.renderer.drawMesh(*mesh.mesh, wheelTransform * mesh.transform, material);
     }
 
 #if 0

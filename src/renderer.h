@@ -40,7 +40,7 @@ ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
 
 struct RenderTextureItem
 {
-    u32 renderHandle;
+    Mesh* mesh;
     glm::mat4 transform;
     glm::vec3 color = glm::vec3(1.0);
     bool overwriteColor = false;
@@ -66,7 +66,7 @@ public:
 
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const;
-    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f);
+    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
     Camera& getCamera(u32 index);
 
     void drawLine(glm::vec3 const& p1, glm::vec3 const& p2,

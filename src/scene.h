@@ -48,9 +48,10 @@ struct ActorUserData
 
 struct StaticEntity
 {
-    u32 renderHandle;
+    Mesh* mesh;
     glm::mat4 worldTransform;
     Material* material = nullptr;
+    bool isTrack = false;
 };
 
 struct VehicleDebris
@@ -85,6 +86,8 @@ private:
     SmallVec<std::vector<glm::vec3>> paths;
     std::vector<Projectile> projectiles;
 
+    bool debugCamera = false;
+    glm::vec3 debugCameraPosition;
     bool physicsDebugVisualizationEnabled = false;
     bool trackGraphDebugVisualizationEnabled = false;
     PxScene* physicsScene = nullptr;

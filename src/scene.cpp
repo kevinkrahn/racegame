@@ -63,7 +63,7 @@ Scene::Scene(const char* name)
 
     struct TrackMesh
     {
-        Mesh const& mesh;
+        Mesh* mesh;
         glm::mat4 transform;
     };
     std::vector<TrackMesh> trackMeshes;
@@ -90,13 +90,13 @@ Scene::Scene(const char* name)
                 else
                 {
                     trackGraph = TrackGraph(start,
-                            game.resources.getMesh((*it)["data_name"].string().c_str()),
+                            *game.resources.getMesh((*it)["data_name"].string().c_str()),
                             (*it)["matrix"].convertBytes<glm::mat4>());
                 }
             }
 
-            Mesh const& mesh = game.resources.getMesh(dataName.c_str());
-            if (mesh.elementSize < 3)
+            Mesh* mesh = game.resources.getMesh(dataName.c_str());
+            if (mesh->elementSize < 3)
             {
                 continue;
             }
@@ -112,9 +112,10 @@ Scene::Scene(const char* name)
                 mat = game.resources.getMaterial(e["properties"]["material"].string().c_str());
             }
             staticEntities.push_back({
-                mesh.renderHandle,
+                mesh,
                 transform,
-                mat
+                mat,
+                isTrack
             });
 
             if (isTrack)
@@ -150,44 +151,25 @@ Scene::Scene(const char* name)
         FATAL_ERROR("Track does not have a starting point!");
     }
 
-    glm::vec3 minP(FLT_MAX), maxP(-FLT_MAX);
+    BoundingBox bb;
     for (auto& t : trackMeshes)
     {
-        glm::vec3 min = t.mesh.aabbMin;
-        glm::vec3 max = t.mesh.aabbMax;
-        glm::vec3 corners[8] = {
-            { min.x, min.y, min.z },
-            { max.x, min.y, min.z },
-            { max.x, max.y, min.z },
-            { min.x, max.y, min.z },
-            { min.x, min.y, max.z },
-            { max.x, min.y, max.z },
-            { max.x, max.y, max.z },
-            { min.x, max.y, max.z },
-        };
-        for (glm::vec3& v : corners)
-        {
-            v = glm::vec3(t.transform * glm::vec4(v, 1.0));
-            if (v.x < minP.x) minP.x = v.x;
-            if (v.y < minP.y) minP.y = v.y;
-            if (v.z < minP.z) minP.z = v.z;
-            if (v.x > maxP.x) maxP.x = v.x;
-            if (v.y > maxP.y) maxP.y = v.y;
-            if (v.z > maxP.z) maxP.z = v.z;
-        }
+        t.mesh->buildOctree();
+        bb = bb.growToFit(t.mesh->aabb.transform(t.transform));
     }
     f32 pad = 30.f;
-    trackOrtho = glm::rotate(glm::mat4(1.f), f32(M_PI * -0.5f), { 0, 0, 1 }) * glm::ortho(maxP.x + pad, minP.x - pad, minP.y - pad,
-            maxP.y + pad, -maxP.z - 10.f, -minP.z + 10.f);
+    trackOrtho = glm::rotate(glm::mat4(1.f), f32(M_PI * -0.5f), { 0, 0, 1 })
+        * glm::ortho(bb.max.x + pad, bb.min.x - pad, bb.min.y - pad,
+                bb.max.y + pad, -bb.max.z - 10.f, -bb.min.z + 10.f);
 
     for (auto& t : trackMeshes)
     {
-        trackItems.push_back({ t.mesh.renderHandle, trackOrtho * t.transform, glm::vec3(1.f), true });
+        trackItems.push_back({ t.mesh, trackOrtho * t.transform, glm::vec3(1.f), true });
     }
-    trackAspectRatio = (maxP.x - minP.x) / (maxP.y - minP.y);
+    trackAspectRatio = (bb.max.x - bb.min.x) / (bb.max.y - bb.min.y);
 
     trackItems.push_back({
-        game.resources.getMesh("world.Quad").renderHandle,
+        game.resources.getMesh("world.Quad"),
         trackOrtho * start * glm::translate(glm::mat4(1.f), { 0, 0, -3 }) * glm::scale(glm::mat4(1.f), { 5, 16, 1 }),
         glm::vec3(0.2f),
         true
@@ -244,7 +226,13 @@ void Scene::onUpdate(f32 deltaTime)
     // draw static entities
     for (auto const& e : staticEntities)
     {
-        game.renderer.drawMesh(e.renderHandle, e.worldTransform, e.material);
+        game.renderer.drawMesh(*e.mesh, e.worldTransform, e.material);
+#if 0
+        if (e.isTrack)
+        {
+            e.mesh->octree->debugDraw(e.worldTransform);
+        }
+#endif
     }
 
     // draw vehicle debris
@@ -254,12 +242,12 @@ void Scene::onUpdate(f32 deltaTime)
     }
 
     // update projectiles
-    Mesh const& bulletMesh = game.resources.getMesh("world.Bullet");
+    Mesh* bulletMesh = game.resources.getMesh("world.Bullet");
     for (auto it = projectiles.begin(); it != projectiles.end();)
     {
         glm::vec3 prevPosition = it->position;
         it->position += it->velocity * deltaTime;
-        game.renderer.drawMesh(bulletMesh,
+        game.renderer.drawMesh(*bulletMesh,
                 glm::translate(glm::mat4(1.f), it->position) *
                 glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)), nullptr);
 
@@ -381,6 +369,35 @@ void Scene::onUpdate(f32 deltaTime)
         }
     }
 
+    if (game.input.isKeyPressed(KEY_F8))
+    {
+        debugCamera = !debugCamera;
+        if (debugCamera)
+        {
+            debugCameraPosition = game.renderer.getCamera(0).position;
+        }
+    }
+    if (debugCamera)
+    {
+        f32 up = (f32)game.input.isKeyDown(KEY_W) - (f32)game.input.isKeyDown(KEY_S);
+        f32 right = (f32)game.input.isKeyDown(KEY_A) - (f32)game.input.isKeyDown(KEY_D);
+        f32 vertical = (f32)game.input.isKeyDown(KEY_SPACE) - (f32)game.input.isKeyDown(KEY_LCTRL);
+
+        glm::vec2 move(up, right);
+        f32 speed = glm::length2(move);
+        if (speed > 0)
+        {
+            move = glm::normalize(move);
+        }
+        glm::vec3 movement = glm::vec3(-move, vertical);
+
+        debugCameraPosition += glm::vec3(movement) * deltaTime * 60.f;
+        f32 camDistance = 20.f;
+        glm::vec3 cameraFrom = debugCameraPosition + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+        glm::vec3 cameraTarget = debugCameraPosition;
+        game.renderer.setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 700.f);
+    }
+
     if (game.input.isKeyPressed(KEY_F3))
     {
         trackGraphDebugVisualizationEnabled = !trackGraphDebugVisualizationEnabled;
@@ -392,7 +409,7 @@ void Scene::onUpdate(f32 deltaTime)
     }
 
     // draw HUD track
-    u32 arrowMesh = game.resources.getMesh("world.TrackArrow").renderHandle;
+    Mesh* arrowMesh = game.resources.getMesh("world.TrackArrow");
     SmallVec<RenderTextureItem, 16> dynamicItems;
     for (auto const& v : vehicles)
     {

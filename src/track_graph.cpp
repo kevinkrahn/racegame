@@ -181,13 +181,13 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
 
 void TrackGraph::debugDraw() const
 {
-    u32 arrow = game.resources.getMesh("world.Arrow").renderHandle;
+    Mesh* arrow = game.resources.getMesh("world.Arrow");
     for (u32 i=0; i<nodes.size(); ++i)
     {
         Node const& c = nodes[i];
 
         /*
-        game.renderer.drawMesh(arrow,
+        game.renderer.drawMesh(*arrow,
                 glm::translate(glm::mat4(1.f), c.position) *
                     glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.25f)));

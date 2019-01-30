@@ -4,6 +4,7 @@
 #include "smallvec.h"
 #include "datafile.h"
 #include "material.h"
+#include "mesh.h"
 
 const u32 WHEEL_FRONT_LEFT  = PxVehicleDrive4WWheelOrder::eFRONT_LEFT;
 const u32 WHEEL_FRONT_RIGHT = PxVehicleDrive4WWheelOrder::eFRONT_RIGHT;
@@ -77,7 +78,7 @@ struct VehicleData
     PhysicsVehicleSettings physics;
     struct VehicleMesh
     {
-        u32 renderHandle;
+        Mesh* mesh;
         glm::mat4 transform;
         Material* material = nullptr;
     };
@@ -109,7 +110,7 @@ struct VehicleData
 
     struct DebrisChunk
     {
-        u32 mesh;
+        Mesh* mesh;
         glm::mat4 transform;
         PxShape* collisionShape;
         Material* material = nullptr;

@@ -857,6 +857,10 @@ void Renderer::render(f32 deltaTime)
     glBindTextureUnit(4, fb.saoTexture);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#if 0
+    glClearColor(0.3f, 0.5f, 0.9f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+#endif
     glDepthFunc(GL_EQUAL);
     currentProgram = 9999999;
     for (auto const& r : renderList)
@@ -1005,6 +1009,7 @@ void Renderer::render(f32 deltaTime)
     glDisable(GL_CULL_FACE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, game.windowWidth, game.windowHeight);
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(getShaderProgram("post"));
@@ -1192,12 +1197,12 @@ Camera& Renderer::getCamera(u32 index)
     return cameras[index];
 }
 
-Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane, f32 farPlane)
+Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane, f32 farPlane, f32 fov)
 {
     ViewportLayout const& layout = viewportLayout[cameras.size() - 1];
     Camera& cam = cameras[index];
     cam.position = from;
-    cam.fov = layout.fov;
+    cam.fov = fov > 0.f ? fov : layout.fov;
     cam.nearPlane = nearPlane;
     cam.farPlane = farPlane;
     cam.view = glm::lookAt(from, to, glm::vec3(0, 0, 1));
@@ -1324,7 +1329,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
 
     for(auto& item : staticItems)
     {
-        GLMesh const& mesh = loadedMeshes[item.renderHandle];
+        GLMesh const& mesh = loadedMeshes[item.mesh->renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
         glUniform3fv(1, 1, (GLfloat*)&item.color);
         glUniform1i(2, item.overwriteColor);
@@ -1334,7 +1339,7 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
 
     for(auto& item : dynamicItems)
     {
-        GLMesh const& mesh = loadedMeshes[item.renderHandle];
+        GLMesh const& mesh = loadedMeshes[item.mesh->renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
         glUniform3fv(1, 1, (GLfloat*)&item.color);
         glUniform1i(2, item.overwriteColor);

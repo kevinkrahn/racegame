@@ -48,11 +48,13 @@ void Resources::load()
                                 elementSize,
                                 stride,
                                 0,
-                                meshInfo["aabb_min"].convertBytes<glm::vec3>(),
-                                meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                                BoundingBox{
+                                    meshInfo["aabb_min"].convertBytes<glm::vec3>(),
+                                    meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                                }
                             };
                             meshData.renderHandle = game.renderer.loadMesh(meshData);
-                            meshes[meshInfo["name"].string()] = meshData;
+                            meshes[meshInfo["name"].string()] = std::move(meshData);
                         }
                         else
                         {
@@ -74,10 +76,12 @@ void Resources::load()
                                 elementSize,
                                 stride,
                                 u32(-1),
-                                meshInfo["aabb_min"].convertBytes<glm::vec3>(),
-                                meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                                BoundingBox{
+                                    meshInfo["aabb_min"].convertBytes<glm::vec3>(),
+                                    meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                                }
                             };
-                            meshes[meshInfo["name"].string()] = meshData;
+                            meshes[meshInfo["name"].string()] = std::move(meshData);
                         }
                     }
                 }
@@ -243,15 +247,15 @@ PxTriangleMesh* Resources::getCollisionMesh(std::string const& name)
     {
         return trimesh->second;
     }
-    Mesh const& mesh = getMesh(name.c_str());
+    Mesh* mesh = getMesh(name.c_str());
 
     PxTriangleMeshDesc desc;
-    desc.points.count = mesh.numVertices;
-    desc.points.stride = mesh.stride;
-    desc.points.data = mesh.vertices.data();
-    desc.triangles.count = mesh.numIndices / 3;
-    desc.triangles.stride = 3 * sizeof(mesh.indices[0]);
-    desc.triangles.data = mesh.indices.data();
+    desc.points.count = mesh->numVertices;
+    desc.points.stride = mesh->stride;
+    desc.points.data = mesh->vertices.data();
+    desc.triangles.count = mesh->numIndices / 3;
+    desc.triangles.stride = 3 * sizeof(mesh->indices[0]);
+    desc.triangles.data = mesh->indices.data();
 
     PxDefaultMemoryOutputStream writeBuffer;
     PxTriangleMeshCookingResult::Enum result;
@@ -274,12 +278,12 @@ PxConvexMesh* Resources::getConvexCollisionMesh(std::string const& name)
     {
         return convexMesh->second;
     }
-    Mesh const& mesh = getMesh(name.c_str());
+    Mesh* mesh = getMesh(name.c_str());
 
     PxConvexMeshDesc convexDesc;
-    convexDesc.points.count  = mesh.numVertices;
-    convexDesc.points.stride = mesh.stride;
-    convexDesc.points.data   = mesh.vertices.data();
+    convexDesc.points.count  = mesh->numVertices;
+    convexDesc.points.stride = mesh->stride;
+    convexDesc.points.data   = mesh->vertices.data();
     convexDesc.flags         = PxConvexFlag::eCOMPUTE_CONVEX;
 
     PxDefaultMemoryOutputStream writeBuffer;
