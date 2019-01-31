@@ -76,7 +76,7 @@ void Audio::audioCallback(u8* buf, i32 len)
                                 it->position = m.position;
                                 break;
                             case PlaybackModification::STOP:
-                                playingSounds.erase(it);
+                                it = playingSounds.erase(it);
                                 continue;
                             case PlaybackModification::SET_PAUSED:
                                 it->isPaused = m.paused;
@@ -124,7 +124,7 @@ void Audio::audioCallback(u8* buf, i32 len)
                 }
                 else
                 {
-                    playingSounds.erase(s);
+                    s = playingSounds.erase(s);
                 }
                 continue;
             }

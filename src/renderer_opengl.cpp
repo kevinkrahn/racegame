@@ -871,10 +871,10 @@ void Renderer::render(f32 deltaTime)
         glUniform2i(0, 0, 1);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     #endif
+        glBindTextureUnit(4, fb.saoTexture);
     }
 
     // color pass
-    glBindTextureUnit(4, fb.saoTexture);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 #if 1

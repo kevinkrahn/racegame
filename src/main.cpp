@@ -1,4 +1,9 @@
 // unity build
+
+#if _WIN32
+#include <windows.h>
+#endif
+
 #include "game.cpp"
 #include "scene.cpp"
 #include "renderer_opengl.cpp"

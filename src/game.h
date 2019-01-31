@@ -1,7 +1,7 @@
 #pragma once
 
-#include "renderer.h"
 #include "misc.h"
+#include "renderer.h"
 #include "scene.h"
 #include "input.h"
 #include "resources.h"
