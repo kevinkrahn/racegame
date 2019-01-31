@@ -22,7 +22,7 @@ struct Mesh
     struct OctreeNode
     {
         BoundingBox aabb;
-        SmallVec<std::unique_ptr<OctreeNode>, 8> children;
+        std::vector<OctreeNode> children;
         std::vector<u32> triangleIndices;
 
         void subdivide(Mesh const& mesh);

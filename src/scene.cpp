@@ -151,7 +151,7 @@ Scene::Scene(const char* name)
         FATAL_ERROR("Track does not have a starting point!");
     }
 
-    BoundingBox bb = {};
+    BoundingBox bb = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
     for (auto& t : trackMeshes)
     {
         t.mesh->buildOctree();

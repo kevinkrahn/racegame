@@ -19,12 +19,16 @@ void Mesh::OctreeNode::debugDraw(glm::mat4 const& transform, glm::vec4 const& co
         game.renderer.drawBoundingBox(aabb, transform, glm::vec4(1, 0, 0, 1));
     for (auto& child : children)
     {
-        child->debugDraw(transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));
+        child.debugDraw(transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));
     }
 }
 
+u32 count = 0;
 void Mesh::OctreeNode::subdivide(Mesh const& mesh)
 {
+    ++count;
+    //print(count, '\n');
+
     u32 crossCount[3] = {};
     glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
     for (u32 i=0; i<triangleIndices.size(); i+=3)
@@ -47,10 +51,12 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         }
     }
 
-    SmallVec<OctreeNode> potentialChildren;
-    potentialChildren.push_back({ { aabb.min, aabb.max } });
+    SmallVec<BoundingBox> childBoxes = {
+        { { aabb.min, aabb.max } }
+    };
+    SmallVec<BoundingBox> splits;
 
-    const f32 minSize = 2.f;
+    const f32 MIN_SIZE = 3.f;
 
     u32 triCount = triangleIndices.size() / 3;
     for (u32 i=0; i<3; ++i)
@@ -61,35 +67,41 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
             continue;
         }
 
-        SmallVec<OctreeNode> splits;
-        for (auto& node : potentialChildren)
+        splits.clear();
+        for (auto& bb : childBoxes)
         {
-            f32 diff = (node.aabb.max[i] - node.aabb.min[i]) * 0.5f;
-            if (diff * 2.f > minSize)
+            f32 diff = (bb.max[i] - bb.min[i]) * 0.5f;
+            if (diff * 2.f > MIN_SIZE)
             {
-                glm::vec3 dim = node.aabb.max - node.aabb.min;
+                glm::vec3 dim = bb.max - bb.min;
                 dim[i] *= 0.5f;
                 glm::vec3 off(0.f);
                 off[i] = diff;
 
-                splits.push_back(OctreeNode{ { node.aabb.min, node.aabb.min + dim} });
-                splits.push_back(OctreeNode{ { node.aabb.min + off, node.aabb.min + off + dim } });
+                splits.push_back({ bb.min, bb.min + dim});
+                splits.push_back({ bb.min + off, bb.min + off + dim });
             }
             else
             {
-                splits.push_back(OctreeNode{ { node.aabb.min, node.aabb.max } });
+                splits.push_back({ bb.min, bb.max });
             }
         }
-        potentialChildren = std::move(splits);
+        childBoxes = std::move(splits);
     }
-    if (potentialChildren.size() == 1)
+    if (childBoxes.size() == 1)
     {
         return;
     }
 
+    children.resize(childBoxes.size());
+    for (u32 i=0; i<childBoxes.size(); ++i)
+    {
+        children[i].aabb = childBoxes[i];
+        childBoxes[i] = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
+    }
+
     std::vector<u32> indices(std::move(triangleIndices));
     triangleIndices = std::vector<u32>();
-    BoundingBox shrinkBB[8] = {};
     for (u32 i=0; i<indices.size(); i+=3)
     {
         u32 j = indices[i+0] * mesh.stride / sizeof(f32);
@@ -101,9 +113,9 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
 
         u32 hitCount = 0;
         u32 hitIndex = 0;
-        for (u32 i=0; i<potentialChildren.size(); ++i)
+        for (u32 i=0; i<children.size(); ++i)
         {
-            BoundingBox const& bb = potentialChildren[i].aabb;
+            BoundingBox const& bb = children[i].aabb;
             if (bb.intersectsTriangle(v0, v1, v2))
             {
                 hitIndex = i;
@@ -124,27 +136,27 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         }
         else
         {
-            potentialChildren[hitIndex].triangleIndices.push_back(indices[i+0]);
-            potentialChildren[hitIndex].triangleIndices.push_back(indices[i+1]);
-            potentialChildren[hitIndex].triangleIndices.push_back(indices[i+2]);
-            shrinkBB[hitIndex].min = glm::min(shrinkBB[hitIndex].min, glm::min(glm::min(v0, v1), v2));
-            shrinkBB[hitIndex].max = glm::max(shrinkBB[hitIndex].max, glm::max(glm::max(v0, v1), v2));
+            children[hitIndex].triangleIndices.push_back(indices[i+0]);
+            children[hitIndex].triangleIndices.push_back(indices[i+1]);
+            children[hitIndex].triangleIndices.push_back(indices[i+2]);
+            childBoxes[hitIndex].min = glm::min(childBoxes[hitIndex].min, glm::min(glm::min(v0, v1), v2));
+            childBoxes[hitIndex].max = glm::max(childBoxes[hitIndex].max, glm::max(glm::max(v0, v1), v2));
         }
     }
 
-    for (u32 i=0; i<potentialChildren.size(); ++i)
+    for (u32 i=0; i<children.size(); ++i)
     {
-        OctreeNode& node = potentialChildren[i];
-        if (node.triangleIndices.size() > 0)
+        children[i].aabb = childBoxes[i];
+        if (children[i].triangleIndices.size() > 6)
         {
-            // TODO: make this work
-            // node.aabb = shrinkBB[i];
-            children.push_back(std::make_unique<OctreeNode>(std::move(node)));
-            if (children.back()->triangleIndices.size() > 6 && children.back()->aabb.volume() > 4.f)
-            {
-                children.back()->subdivide(mesh);
-            }
+            children[i].subdivide(mesh);
         }
+    }
+
+    // remove empty children
+    for (auto it = children.begin(); it != children.end();)
+    {
+        it = it->triangleIndices.size() == 0 ? children.erase(it) : it + 1;
     }
 }
 
@@ -159,7 +171,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
         }
         for(auto const& child : children)
         {
-            child->intersect(mesh, transform, bb, output);
+            child.intersect(mesh, transform, bb, output);
         }
         return true;
     }
