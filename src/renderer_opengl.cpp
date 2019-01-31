@@ -218,7 +218,7 @@ DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
 DynamicBuffer worldInfoUBOShadow(sizeof(WorldInfo));
 DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
 DynamicBuffer ribbonVertexBuffer(sizeof(DebugVertex) * 50000);
-DynamicBuffer decalVertexBuffer(sizeof(DecalVertex) * 10000);
+DynamicBuffer decalVertexBuffer(sizeof(DecalVertex) * 50000);
 GLMesh debugMesh;
 GLMesh ribbonMesh;
 GLMesh decalMesh;
@@ -877,7 +877,7 @@ void Renderer::render(f32 deltaTime)
     glBindTextureUnit(4, fb.saoTexture);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-#if 0
+#if 1
     glClearColor(0.3f, 0.5f, 0.9f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 #endif
@@ -947,6 +947,7 @@ void Renderer::render(f32 deltaTime)
         glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
         glUseProgram(getShaderProgram("mesh_decal"));
+        glDisable(GL_CULL_FACE);
 
         glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
         glBindVertexArray(decalMesh.vao);

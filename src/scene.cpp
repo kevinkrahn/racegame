@@ -151,7 +151,7 @@ Scene::Scene(const char* name)
         FATAL_ERROR("Track does not have a starting point!");
     }
 
-    BoundingBox bb;
+    BoundingBox bb = {};
     for (auto& t : trackMeshes)
     {
         t.mesh->buildOctree();
@@ -227,7 +227,7 @@ void Scene::onUpdate(f32 deltaTime)
     for (auto const& e : staticEntities)
     {
         game.renderer.drawMesh(*e.mesh, e.worldTransform, e.material);
-#if 1
+#if 0
         if (e.isTrack)
         {
             e.mesh->octree->debugDraw(e.worldTransform);
@@ -397,11 +397,11 @@ void Scene::onUpdate(f32 deltaTime)
         }
         glm::vec3 movement = glm::vec3(-move, vertical);
 
-        debugCameraPosition += glm::vec3(movement) * deltaTime * 60.f;
+        debugCameraPosition += glm::vec3(movement) * deltaTime * 80.f;
         f32 camDistance = 20.f;
         glm::vec3 cameraFrom = debugCameraPosition + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         glm::vec3 cameraTarget = debugCameraPosition;
-        game.renderer.setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 700.f);
+        game.renderer.setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 900.f);
     }
 
     if (game.input.isKeyPressed(KEY_F3))

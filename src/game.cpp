@@ -50,6 +50,7 @@ void Game::run()
 
     input.init();
     audio.init();
+    audio.setMasterVolume(0.f);
     initPhysX();
     resources.load();
 
