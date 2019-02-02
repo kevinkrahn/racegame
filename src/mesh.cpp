@@ -23,12 +23,8 @@ void Mesh::OctreeNode::debugDraw(glm::mat4 const& transform, glm::vec4 const& co
     }
 }
 
-u32 count = 0;
 void Mesh::OctreeNode::subdivide(Mesh const& mesh)
 {
-    ++count;
-    //print(count, '\n');
-
     u32 crossCount[3] = {};
     glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
     for (u32 i=0; i<triangleIndices.size(); i+=3)
