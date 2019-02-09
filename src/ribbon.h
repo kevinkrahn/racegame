@@ -26,7 +26,7 @@ class Ribbon
 {
 private:
     std::vector<RibbonPoint> points;
-    f32 minDistanceBetweenPoints = 0.7f;
+    static constexpr f32 minDistanceBetweenPoints = 0.9f;
     f32 texU = 0.f;
     f32 fadeRate = 0.1f;
     f32 fadeDelay = 8.f;
@@ -112,24 +112,42 @@ public:
 
     u32 getRequiredBufferSize() const
     {
+        if (points.size() <= 1)
+        {
+            return 0;
+        }
+
         u32 size = 0;
         bool hasHoldPoint = false;
-        for (auto const& v : points)
-        {
+        auto countPoint = [&](RibbonPoint const& v) {
             if (!hasHoldPoint)
             {
                 if (!v.isEnd) hasHoldPoint = true;
-                continue;
+                return;
             }
             size += sizeof(RibbonVertex) * 6;
             if (v.isEnd) hasHoldPoint = false;
+        };
+
+        for (auto const& v : points)
+        {
+            countPoint(v);
         }
+        if (!points.back().isEnd &&
+            glm::length2(points.back().position - lastPoint.position) > square(0.1f))
+        {
+            countPoint(lastPoint);
+        }
+
         return size;
     }
 
     u32 writeVerts(void* buffer) const
     {
-        if (points.size() <= 1) return 0;
+        if (points.size() <= 1)
+        {
+            return 0;
+        }
 
         RibbonVertex* d = (RibbonVertex*)buffer;
         RibbonPoint holdPoint;
@@ -137,18 +155,18 @@ public:
         bool hasHoldPoint = false;
         bool firstInChain = false;
         u32 vertexCount = 0;
-        for (auto const& v : points)
-        {
+
+        auto writePoint = [&] (RibbonPoint const& v) {
             if (!hasHoldPoint)
             {
                 if (v.isEnd)
                 {
-                    continue;
+                    return;
                 }
                 holdPoint = v;
                 hasHoldPoint = true;
                 firstInChain = true;
-                continue;
+                return;
             }
 
             // TODO: offset based on normal?
@@ -185,6 +203,16 @@ public:
             {
                 hasHoldPoint = false;
             }
+        };
+
+        for (auto const& v : points)
+        {
+            writePoint(v);
+        }
+        if (!points.back().isEnd &&
+            glm::length2(points.back().position - lastPoint.position) > square(0.1f))
+        {
+            writePoint(lastPoint);
         }
 
         return vertexCount;
