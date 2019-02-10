@@ -90,6 +90,7 @@ private:
     glm::vec3 debugCameraPosition;
     bool physicsDebugVisualizationEnabled = false;
     bool trackGraphDebugVisualizationEnabled = false;
+    bool showDebugInfo = false;
     PxScene* physicsScene = nullptr;
 
     glm::mat4 trackOrtho;

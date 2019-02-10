@@ -328,18 +328,23 @@ void Scene::onUpdate(f32 deltaTime)
     smokeParticleSystem.update(deltaTime);
     smokeParticleSystem.draw(game.resources.getTexture("smoke").renderHandle);
 
-    // debug text
-#if 1
-    Vehicle const& playerVehicle = *vehicles[0];
-    const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
-    game.resources.getFont("font", 23).drawText(str(
-                "FPS: ", 1.f / game.realDeltaTime,
-                "\nEngine RPM: ", playerVehicle.getEngineRPM(),
-                "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
-                "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
-                "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-                "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { game.windowWidth * 0.38f, 20 }, glm::vec3(1));
-#endif
+    if (game.input.isKeyPressed(KEY_F1))
+    {
+        showDebugInfo = !showDebugInfo;
+    }
+
+    if (showDebugInfo)
+    {
+        Vehicle const& playerVehicle = *vehicles[0];
+        const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
+        game.resources.getFont("font", 23).drawText(str(
+                    "FPS: ", 1.f / game.realDeltaTime,
+                    "\nEngine RPM: ", playerVehicle.getEngineRPM(),
+                    "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
+                    "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
+                    "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
+                    "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { game.windowWidth * 0.38f, 20 }, glm::vec3(1));
+    }
 
     if (game.input.isKeyPressed(KEY_F2))
     {
@@ -448,13 +453,16 @@ void Scene::onEnd()
 
 void Scene::attackCredit(u32 instigator, u32 victim)
 {
-    if (instigator == victim)
+    if (!vehicles[victim]->finishedRace)
     {
-        vehicles[instigator]->addNotification("ACCIDENT!");
-    }
-    else
-    {
-        vehicles[instigator]->addNotification("ATTACK BONUS!");
+        if (instigator == victim)
+        {
+            vehicles[instigator]->addNotification("ACCIDENT!");
+        }
+        else
+        {
+            vehicles[instigator]->addNotification("ATTACK BONUS!");
+        }
     }
 }
 

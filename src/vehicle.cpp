@@ -448,6 +448,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
+    this->hitPoints = this->maxHitPoints;
 
     engineSound = game.audio.playSound3D(game.resources.getSound("engine2"), translationOf(transform), true);
     tireSound = game.audio.playSound3D(game.resources.getSound("tires"), translationOf(transform), true, 1.f, 0.f);
@@ -594,6 +595,12 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             offset.y = game.windowHeight - font2.getHeight();
             d.y = -1;
         }
+        glm::vec2 vdim = dim * layout.scale;
+        glm::vec2 voffset = layout.offsets[cameraIndex] * dim;
+        if (voffset.y > 0.f)
+        {
+            voffset.y = game.windowHeight;
+        }
 
         f32 o20 = game.windowHeight * 0.02f;
         f32 o25 = game.windowHeight * 0.03f;
@@ -614,6 +621,17 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         font2.drawText(p.c_str(), offset + glm::vec2(o200, d.y*o20), col);
         font1.drawText(str(placementSuffix[placement]).c_str(),
                 offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col);
+
+        // healthbar
+        const f32 healthPercentage = glm::clamp(hitPoints / maxHitPoints, 0.f, 1.f);
+        const f32 maxHealthbarWidth = game.windowHeight * 0.12f;
+        const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
+        const f32 healthbarHeight = game.windowHeight * 0.008f;
+        glm::vec2 pos = voffset + glm::vec2(vdim.x - o20, d.y*o20);
+        game.renderer.drawQuad2D(0, pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
+                pos, {}, {}, glm::vec3(0));
+        game.renderer.drawQuad2D(0, pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
+                pos, {}, {}, glm::mix(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), healthPercentage));
 
         // display notifications
         u32 count = 0;
@@ -642,7 +660,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             if (engineSound) game.audio.setSoundVolume(engineSound, 1.f);
             backupTimer = 0.f;
             deadTimer = 0.f;
-            hitPoints = 100.f;
+            hitPoints = maxHitPoints;
 
             const TrackGraph::Node* node = graphResult.lastNode;
             glm::vec2 dir(node->direction);
@@ -1084,7 +1102,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         game.renderer.drawMesh(*mesh.mesh, wheelTransform * mesh.transform, material);
     }
 
-#if 1
+#if 0
     if (isPlayerControlled)
     {
         glm::mat4 decalTransform =
