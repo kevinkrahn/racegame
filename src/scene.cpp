@@ -139,10 +139,14 @@ Scene::Scene(const char* name)
         }
         else if (entityType == "PATH")
         {
-            auto& data = e["points"].bytearray();
-            paths.push_back(std::vector<glm::vec3>(
-                        (glm::vec3*)data.data(),
-                        (glm::vec3*)(data.data() + data.size())));
+            std::string name = e["name"].string();
+            if (name.find("TrackPath") != std::string::npos)
+            {
+                auto& data = e["points"].bytearray();
+                paths.push_back(std::vector<glm::vec3>(
+                            (glm::vec3*)data.data(),
+                            (glm::vec3*)(data.data() + data.size())));
+            }
         }
     }
 

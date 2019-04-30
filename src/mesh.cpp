@@ -160,7 +160,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
 {
     if (aabb.intersects(bb))
     {
-        game.renderer.drawBoundingBox(aabb, glm::translate(glm::mat4(1.f), { 0, 0, 0.2f }) * transform, glm::vec4(1, 0, 0, 1));
+        //game.renderer.drawBoundingBox(aabb, glm::translate(glm::mat4(1.f), { 0, 0, 0.2f }) * transform, glm::vec4(1, 0, 0, 1));
         for (u32 index : triangleIndices)
         {
             output.push_back(index);

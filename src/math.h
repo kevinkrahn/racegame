@@ -162,3 +162,13 @@ inline f32 snap(f32 val, f32 multiple)
 {
     return glm::floor(val / multiple) * multiple;
 }
+
+inline glm::vec2 lengthdir(f32 angle, f32 len)
+{
+    return glm::vec2(cosf(angle), sinf(angle)) * len;
+}
+
+inline f32 clamp(f32 val, f32 min, f32 max)
+{
+    return val <= min ? min : (val >= max ? max : val);
+}

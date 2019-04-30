@@ -59,8 +59,9 @@ void main()
 
     vec4 tex = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
 
-    outColor = lighting(tex * vec4(inColor, 1.0),
-            normalize(inNormal), inShadowCoord, inWorldPosition, 50.0, 1.0, vec3(1.0), -0.1, 0.8, 3.0);
+    vec4 baseColor = tex * vec4(inColor, 1.0);
+    outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
+            50.0, 1.0, vec3(1.0), -0.1, 0.8, 3.0);
 }
 
 #elif defined GEOM

@@ -8,7 +8,7 @@
             fear: 0.5,
         },
         {
-            name: "Lucy"
+            name: "Lucy",
             driving-skill: 1.0,
             aggression: 0.1,
             awareness: 0.9,

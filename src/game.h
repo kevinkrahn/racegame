@@ -7,6 +7,7 @@
 #include "resources.h"
 #include "driver.h"
 #include "audio.h"
+#include "editor.h"
 #include <memory>
 
 class Game
@@ -32,8 +33,8 @@ public:
         u32 maxFPS = 200;
         bool vsync = true;
         u32 shadowMapResolution = 2048;
-        bool shadowsEnabled = false;
-        bool ssaoEnabled = false;
+        bool shadowsEnabled = true;
+        bool ssaoEnabled = true;
     } config;
 
     struct
@@ -55,7 +56,8 @@ public:
     u32 frameIndex = 0;
 
     SDL_Window* window = nullptr;
-    std::unique_ptr<Scene> currentScene;
+    //std::unique_ptr<Scene> currentScene;
+    std::unique_ptr<Editor> editor;
 
     void run();
     void changeScene(const char* sceneName);

@@ -17,6 +17,7 @@
 #include "audio.cpp"
 #include "driver.cpp"
 #include "mesh.cpp"
+#include "editor.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

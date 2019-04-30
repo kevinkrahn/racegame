@@ -81,10 +81,10 @@
             }
         },
         rock: {
-            shader: "lit",
-            textures: [],
+            shader: "triplanar",
             culling: true,
-            cast-shadow: true
+            cast-shadow: true,
+            textures: [ "rock" ],
         },
         tire-marks: {
             shader: "ribbon",

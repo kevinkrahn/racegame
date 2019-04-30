@@ -196,12 +196,14 @@ private:
     bool keyPressed[KEY_COUNT];
     bool keyReleased[KEY_COUNT];
 
+    SDL_Window* window;
+
     i32 mouseScrollX;
     i32 mouseScrollY;
     std::map<u32, Controller> controllers;
 
 public:
-    void init()
+    void init(SDL_Window* window)
     {
         u32 numJoysticks = SDL_NumJoysticks();
         for (u32 i=0; i<numJoysticks; ++i)
@@ -213,6 +215,8 @@ public:
                 controllers.emplace(id, controller);
             }
         }
+
+        this->window = window;
     }
 
     Controller* getController(u32 id)
@@ -264,6 +268,16 @@ public:
         i32 x, y;
         SDL_GetMouseState(&x, &y);
         return glm::vec2(x, y);
+    }
+
+    void setMousePosition(i32 x, i32 y)
+    {
+        SDL_WarpMouseInWindow(window, x, y);
+    }
+
+    f32 getMouseScroll()
+    {
+        return mouseScrollY;
     }
 
     void onFrameBegin()

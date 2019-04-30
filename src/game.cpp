@@ -48,7 +48,7 @@ void Game::run()
 
     window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
 
-    input.init();
+    input.init(window);
     audio.init();
     audio.setMasterVolume(0.f);
     initPhysX();
@@ -65,7 +65,8 @@ void Game::run()
         Driver(false, false, false, &resources.getVehicleData()[3], 8),
     };
 
-    changeScene("world.Scene");
+    //changeScene("world.Scene");
+    editor.reset(new Editor());
 
     deltaTime = 1.f / (f32)game.config.maxFPS;
     SDL_Event event;
@@ -103,7 +104,8 @@ void Game::run()
             windowHeight = h;
         }
 
-        currentScene->onUpdate(deltaTime);
+        //currentScene->onUpdate(deltaTime);
+        editor->onUpdate(deltaTime);
         renderer.render(deltaTime);
         input.onFrameEnd();
 
@@ -134,6 +136,7 @@ void Game::run()
 
 void Game::changeScene(const char* sceneName)
 {
+    /*
     if (currentScene)
     {
         currentScene->onEnd();
@@ -141,4 +144,5 @@ void Game::changeScene(const char* sceneName)
     print("Loading scene: ", sceneName, '\n');
     currentScene.reset(new Scene(sceneName));
     currentScene->onStart();
+    */
 }
