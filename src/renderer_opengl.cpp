@@ -19,6 +19,15 @@ private:
 public:
     DynamicBuffer(size_t size) : size(size) {}
 
+    void destroy()
+    {
+        if (created)
+        {
+            glDeleteBuffers(3, buffers);
+            created = false;
+        }
+    }
+
     void checkBuffers()
     {
         if (!created)
