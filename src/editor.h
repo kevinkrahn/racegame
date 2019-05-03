@@ -2,6 +2,7 @@
 
 #include "misc.h"
 #include "math.h"
+#include "terrain.h"
 
 class Editor
 {
@@ -12,6 +13,12 @@ class Editor
     glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
     glm::vec2 lastMousePosition;
     glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
+
+    f32 brushRadius = 8.f;
+    f32 brushFalloff = 1.f;
+    f32 brushStrength = 15.f;
+
+    Terrain terrain;
 
 public:
     void onUpdate(f32 deltaTime);

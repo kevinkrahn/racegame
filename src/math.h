@@ -168,7 +168,21 @@ inline glm::vec2 lengthdir(f32 angle, f32 len)
     return glm::vec2(cosf(angle), sinf(angle)) * len;
 }
 
-inline f32 clamp(f32 val, f32 min, f32 max)
+template <typename T>
+inline T clamp(T val, T min, T max)
 {
     return val <= min ? min : (val >= max ? max : val);
+}
+
+inline glm::vec3 screenToWorldRay(glm::vec2 screenPos, glm::vec2 screenSize, glm::mat4 const& view, glm::mat4 const& projection)
+{
+    glm::vec3 pos(
+        (2.f * screenPos.x) / screenSize.x - 1.f,
+        (2.f * screenPos.y) / screenSize.y - 1.f, 1.f
+    );
+    glm::vec4 rayClip(pos.x, pos.y, -1.f, 1.f);
+    glm::vec4 rayEye = inverse(projection) * rayClip;
+    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.f, 0.f);
+    glm::vec3 rayWorld = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
+    return rayWorld;
 }

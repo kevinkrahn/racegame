@@ -18,6 +18,7 @@
 #include "driver.cpp"
 #include "mesh.cpp"
 #include "editor.cpp"
+#include "terrain.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

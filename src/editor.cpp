@@ -39,5 +39,25 @@ void Editor::onUpdate(f32 deltaTime)
     glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(lengthdir(cameraAngle, 1.f), 1.25f)) * cameraDistance;
     game.renderer.setViewportCamera(0, cameraFrom, cameraTarget,  32, 400.f);
 
-    game.renderer.drawMesh(*game.resources.getMesh("world.Terrain"), glm::mat4(1.f), game.resources.getMaterial("grass"));
+    //game.renderer.drawMesh(*game.resources.getMesh("world.Terrain"), glm::mat4(1.f), game.resources.getMaterial("grass"));
+
+    if (game.input.isMouseButtonDown(MOUSE_LEFT)) {
+        glm::vec2 mousePos = game.input.getMousePosition();
+        mousePos.y = game.windowHeight - mousePos.y;
+        Camera const& cam = game.renderer.getCamera(0);
+        glm::vec3 rayDir = screenToWorldRay(mousePos,
+                glm::vec2(game.windowWidth, game.windowHeight), cam.view, cam.projection);
+
+        const f32 step = 0.1f;
+        glm::vec3 p = cam.position;// + step * 10.f;
+        while (p.z > terrain.getZ(glm::vec2(p)))
+        {
+            p += rayDir * step;
+        }
+        game.renderer.drawMesh(*game.resources.getMesh("world.Arrow"), glm::translate(glm::mat4(1.f), p), game.resources.getMaterial("concrete"));
+
+        terrain.raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+    }
+
+    terrain.render();
 }
