@@ -1,5 +1,6 @@
 #include "terrain.h"
 #include "game.h"
+#include "renderer.h"
 
 void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
 {
@@ -10,7 +11,7 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
     u32 width = (this->x2 - this->x1) / tileSize;
     u32 height = (this->y2 - this->y1) / tileSize;
     heightBuffer.reset(new f32[width * height]);
-    RandomSeries s;
+    //RandomSeries s;
     for (u32 x=0; x<width; ++x)
     {
         for (u32 y=0; y<height; ++y)
@@ -40,8 +41,8 @@ void Terrain::render()
             glm::vec3 pos3(x1 + (x + 1) * tileSize, y1 + y * tileSize, z3);
 
             const glm::vec4 color(0.f, 1.f, 0.f, 1.f);
-            game.renderer.drawLine(pos1, pos2, color, color);
-            game.renderer.drawLine(pos1, pos3, color, color);
+            //dbg->line(pos1, pos2, color, color);
+            //dbg->line(pos1, pos3, color, color);
         }
     }
 }
@@ -76,7 +77,7 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
     u32 width = (x2 - x1) / tileSize;
-    u32 height = (y2 - y1) / tileSize;
+    //u32 height = (y2 - y1) / tileSize;
     for (u32 x=minX; x<maxX; ++x)
     {
         for (u32 y=minY; y<maxY; ++y)

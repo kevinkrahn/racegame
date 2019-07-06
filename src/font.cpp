@@ -1,4 +1,5 @@
 #include "font.h"
+#include "renderer.h"
 #include "game.h"
 #include <fstream>
 #include <sstream>
@@ -74,12 +75,7 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     height = f.height;
     lineHeight = ((ascent - descent) + lineGap) * scale;
 
-    Texture fontAtlas;
-    fontAtlas.width = w;
-    fontAtlas.height = h;
-    fontAtlas.format = Texture::Format::R8;
-
-    fontAtlasHandle = game.renderer.loadTexture(fontAtlas, texData.data(), texData.size());
+    textureAtlas = Texture(w, h, Texture::Format::R8, texData.data(), texData.size());
 }
 
 glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
@@ -127,15 +123,15 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
     return { glm::max(currentWidth, maxWidth), currentHeight };
 }
 
-void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,
-        f32 scale, HorizontalAlign halign, VerticalAlign valign)
+void TextRenderable::on2DPass(Renderer* renderer)
 {
-    p = glm::vec2(glm::floor(p.x), glm::floor(p.y));
+    char* str = (char*)text.c_str();
+    glm::vec2 p = glm::vec2(glm::floor(pos.x), glm::floor(pos.y));
     f32 startX = p.x;
 
     if (halign != HorizontalAlign::LEFT)
     {
-        f32 lineWidth = stringDimensions(str, true).x * scale;
+        f32 lineWidth = font->stringDimensions(str, true).x * scale;
         if (halign == HorizontalAlign::CENTER)
         {
             p.x -= lineWidth * 0.5f;
@@ -146,10 +142,10 @@ void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,
         }
     }
 
-    p.y += height * scale;
+    p.y += font->height * scale;
     if (valign != VerticalAlign::TOP)
     {
-        f32 stringHeight = stringDimensions(str).y * scale;
+        f32 stringHeight = font->stringDimensions(str).y * scale;
         if (valign == VerticalAlign::BOTTOM)
         {
             p.y -= stringHeight;
@@ -160,12 +156,15 @@ void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,
         }
     }
 
+    glUseProgram(renderer->getShaderProgram("text2D"));
+    glBindTextureUnit(0, font->textureAtlas.handle);
+
     while (*str)
     {
         if (*str == '\n')
         {
             ++str;
-            f32 nextLineWidth = stringDimensions(str, true).x * scale;
+            f32 nextLineWidth = font->stringDimensions(str, true).x * scale;
 
             if (halign == HorizontalAlign::CENTER)
             {
@@ -180,29 +179,49 @@ void Font::drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha,
                 p.x = startX - nextLineWidth;
             }
 
-            p.y += lineHeight * scale;
+            p.y += font->lineHeight * scale;
 
             continue;
         }
 
-        auto &g = glyphs[(u32)(*str - startingChar)];
+        auto &g = font->glyphs[(u32)(*str - font->startingChar)];
 
         f32 x0 = p.x + g.xOff * scale;
         f32 y0 = p.y + g.yOff * scale;
         f32 x1 = x0 + g.width * scale;
         f32 y1 = y0 + g.height * scale;
 
-        game.renderer.drawQuad2D(fontAtlasHandle,
-                { x0, y0 }, { x1, y1 }, { g.x0, g.y0 }, { g.x1, g.y1 }, color, alpha, false);
+        struct QuadPoint
+        {
+            glm::vec2 xy;
+            glm::vec2 uv;
+        };
+        glm::vec2 p1 = { x0, y0 };
+        glm::vec2 p2 = { x1, y1 };
+        glm::vec2 t1 = { g.x0, g.y0 };
+        glm::vec2 t2 = { g.x1, g.y1 };
+        QuadPoint points[4] = {
+            { p1, t1 },
+            { { p2.x, p1.y }, { t2.x, t1.y } },
+            { { p1.x, p2.y }, { t1.x, t2.y } },
+            { p2, t2 }
+        };
+
+        glm::vec4 col(color, alpha);
+        glUniform4fv(0, 4, (GLfloat*)&points);
+        glUniform4fv(4, 1, (GLfloat*)&col);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         p.x += g.advance * scale;
 
         // kerning
         if (*(str+1) && *(str+1) != '\n')
         {
-            p.x += kerningTable[(*str - startingChar) * glyphs.size() + (*(str+1) - startingChar)] * scale;
+            p.x += font->kerningTable[(*str - font->startingChar) * font->glyphs.size() +
+                (*(str+1) - font->startingChar)] * scale;
         }
 
         ++str;
     }
 }
+

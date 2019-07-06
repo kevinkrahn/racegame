@@ -1,186 +1,23 @@
 #include "renderer.h"
-#include "ribbon.h"
 #include "game.h"
-#include <glad/glad.h>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <map>
 
-class DynamicBuffer
-{
-private:
-    size_t size = 0;
-    GLuint buffers[MAX_BUFFERED_FRAMES];
-    bool created = false;
-    size_t offset = 0;
-    u32 bufferIndex = 0;
-
-public:
-    DynamicBuffer(size_t size) : size(size) {}
-
-    void destroy()
-    {
-        if (created)
-        {
-            glDeleteBuffers(3, buffers);
-            created = false;
-        }
-    }
-
-    void checkBuffers()
-    {
-        if (!created)
-        {
-            glCreateBuffers(3, buffers);
-            for (u32 i=0; i<MAX_BUFFERED_FRAMES; ++i)
-            {
-                glNamedBufferData(buffers[i], size, nullptr, GL_DYNAMIC_DRAW);
-            }
-            created = true;
-        }
-    }
-
-    GLuint getBuffer()
-    {
-        checkBuffers();
-        return buffers[game.frameIndex];
-    }
-
-    void updateData(void* data, size_t range = 0)
-    {
-        checkBuffers();
-        glNamedBufferSubData(getBuffer(), 0, range == 0 ? size : range, data);
-    }
-
-    void* map(size_t dataSize)
-    {
-        if (bufferIndex != game.frameIndex)
-        {
-            offset = 0;
-            bufferIndex = game.frameIndex;
-        }
-
-        assert(offset + dataSize < size);
-
-        void* ptr = glMapNamedBufferRange(getBuffer(), offset, dataSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
-        offset += dataSize;
-        return ptr;
-    }
-
-    void unmap()
-    {
-        glUnmapNamedBuffer(getBuffer());
-    }
-};
-
-#if 0
-class NiceMesh
-{
-private:
-    GLuint vao;
-    GLuint vbo;
-    GLuint ebo;
-    u32 stride = 0;
-
-public:
-    NiceMesh(std::initializer_list<u32> vertexAttributes)
-    {
-        glCreateVertexArrays(1, &vao);
-
-        for (u32 i=0; i<vertexAttributes.size(); ++i)
-        {
-            glEnableVertexArrayAttrib(vao, i);
-            glVertexArrayAttribFormat(vao, i, vertexAttributes[i], GL_FLOAT, GL_FALSE, stride);
-            glVertexArrayAttribBinding(vao, i, 0);
-            stride += sizeof(f32) * vertexAttributes[i];
-        }
-    }
-
-    void setBuffers()
-    {
-        glVertexArrayVertexBuffer(vao, 0, vbo.getBuffer(), 0, stride);
-        glVertexArrayElementBuffer(vao, ebo.getBuffer());
-    }
-};
-#endif
-
-struct GLMesh
-{
-    GLuint vao, vbo, ebo;
-    u32 numIndices;
-};
-
-struct GLShader
-{
-    std::string filename;
-    GLuint program;
-    bool hasGeometryShader;
-    SmallVec<std::string> defines;
-};
-
-struct GLTexture
-{
-    GLuint tex;
-};
-
 struct RenderItem
 {
-    u32 meshHandle;
+    Mesh* mesh;
     glm::mat4 worldTransform;
     Material* material;
 };
 
 struct RenderMeshOverlay
 {
-    u32 meshHandle;
+    Mesh* mesh;
     u32 viewportIndex;
     glm::mat4 worldTransform;
     glm::vec3 color;
-};
-
-struct WorldInfo
-{
-    glm::mat4 orthoProjection;
-    glm::vec3 sunDirection;
-    f32 time;
-    glm::vec3 sunColor;
-    f32 pad;
-    glm::mat4 cameraViewProjection[MAX_VIEWPORTS];
-    glm::mat4 cameraProjection[MAX_VIEWPORTS];
-    glm::mat4 cameraView[MAX_VIEWPORTS];
-    glm::vec4 cameraPosition[MAX_VIEWPORTS];
-    glm::mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
-    glm::vec4 projInfo[MAX_VIEWPORTS];
-    glm::vec4 projScale;
-} worldInfo;
-
-struct DebugVertex
-{
-    glm::vec3 position;
-    glm::vec4 color;
-};
-
-struct QuadPoint
-{
-    glm::vec2 xy;
-    glm::vec2 uv;
-};
-
-struct Quad2D
-{
-    GLuint tex;
-    QuadPoint points[4];
-    glm::vec4 color;
-};
-
-struct Billboard
-{
-    glm::vec3 position;
-    glm::vec3 scale;
-    u32 texture;
-    glm::vec4 color;
-    f32 angle;
 };
 
 struct TrackTexture
@@ -189,78 +26,38 @@ struct TrackTexture
     GLuint destFramebuffer, destTex;
     u32 width = 0;
     u32 height = 0;
-    u32 texRenderHandle;
 } track;
-
-struct RenderInfo
-{
-    u32 count;
-    u32 texture;
-};
 
 struct Decal
 {
     glm::mat4 worldTransform;
     u32 count;
-    u32 texture;
+    Texture* texture;
     glm::vec3 color;
 };
 
-std::map<std::string, u32> shaderHandleMap;
-std::vector<GLShader> loadedShaders;
-std::vector<GLMesh> loadedMeshes;
-std::vector<GLTexture> loadedTextures;
 std::vector<RenderItem> renderList;
 std::vector<RenderMeshOverlay> renderListOverlay;
-std::vector<DebugVertex> debugVertices;
-std::vector<Quad2D> renderListText2D;
-std::vector<Quad2D> renderListTex2D;
-std::vector<Billboard> renderListBillboard;
-std::vector<RenderInfo> renderListRibbon;
 std::vector<Decal> renderListDecal;
-SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 Material defaultMaterial;
 
-u32 viewportGapPixels = 1;
+constexpr u32 viewportGapPixels = 1;
 
-DynamicBuffer worldInfoUBO(sizeof(WorldInfo));
-DynamicBuffer worldInfoUBOShadow(sizeof(WorldInfo));
-DynamicBuffer debugVertexBuffer(sizeof(DebugVertex) * 300000);
-DynamicBuffer ribbonVertexBuffer(sizeof(DebugVertex) * 50000);
-DynamicBuffer decalVertexBuffer(sizeof(DecalVertex) * 50000);
-GLMesh debugMesh;
-GLMesh ribbonMesh;
-GLMesh decalMesh;
-GLuint emptyVAO;
-
-struct Framebuffers
+struct GLMesh
 {
-    GLuint mainFramebuffer;
-    GLuint mainColorTexture;
-    GLuint mainDepthTexture;
+    GLuint vao, vbo, ebo;
+    u32 numIndices;
+};
+GLMesh decalMesh;
 
-    GLuint shadowFramebuffer;
-    GLuint shadowDepthTexture;
-
-    GLuint cszFramebuffers[5];
-    GLuint cszTexture;
-
-    GLuint saoFramebuffer;
-    GLuint saoTexture;
-    GLuint saoBlurTexture;
-
-    u32 renderWidth;
-    u32 renderHeight;
-} fb;
-
-void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
+void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
 {
     std::ostringstream str;
     str << "#version 450\n";
     str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
     str << "#define VIEWPORT_COUNT " << cameras.size() << '\n';
-    str << "#define SHADOWS_ENABLED " << u32(game.config.shadowsEnabled) << '\n';
-    str << "#define SSAO_ENABLED " << u32(game.config.ssaoEnabled) << '\n';
+    str << "#define SHADOWS_ENABLED " << u32(g_game.config.shadowsEnabled) << '\n';
+    str << "#define SSAO_ENABLED " << u32(g_game.config.ssaoEnabled) << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -270,7 +67,7 @@ void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string
     glShaderSource(shader, 2, sources, 0);
 }
 
-void compileShader(std::string const& filename, SmallVec<std::string> defines, GLShader& shader)
+void Renderer::compileShader(std::string const& filename, SmallVec<std::string> defines, GLShader& shader)
 {
     std::ifstream file(filename);
     if (!file)
@@ -414,62 +211,17 @@ u32 Renderer::getShader(const char* name) const
     return it->second;
 }
 
-GLuint getShaderProgram(const char* name)
+GLuint Renderer::getShaderProgram(const char* name) const
 {
     auto it = shaderHandleMap.find(name);
     assert(it != shaderHandleMap.end());
     return loadedShaders[it->second].program;
 }
 
-#ifndef NDEBUG
-static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
-                            GLsizei length, const GLchar* message, const void* userParam)
+void Renderer::init(u32 width, u32 height)
 {
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204)
-    {
-        return;
-    }
-    print("OpenGL Debug (", id, "): ", message, '\n');
-    assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
-}
-#endif
-
-SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
-{
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#ifndef NDEBUG
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
-#else
-    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_NO_ERROR);
-#endif
-
-    SDL_Window* window = SDL_CreateWindow(name,
-            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-            width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    if(!window)
-    {
-        FATAL_ERROR("Failed to create SDL window: ", SDL_GetError())
-    }
-
-    SDL_GLContext context = SDL_GL_CreateContext(window);
-    if(!context)
-    {
-        FATAL_ERROR("Failed to create OpenGL context: ", SDL_GetError())
-    }
-
-    gladLoadGLLoader(SDL_GL_GetProcAddress);
-
-#ifndef NDEBUG
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-    glDebugMessageCallbackARB(glDebugOutput, nullptr);
-    glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-#endif
-
-    SDL_GL_SetSwapInterval(game.config.vsync ? 1 : 0);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    this->width = width;
+    this->height = height;
 
     loadShader("lit");
     loadShader("debug");
@@ -486,41 +238,8 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     loadShader("overlay");
     loadShader("mesh_decal");
 
+    // create empty vao
     glCreateVertexArrays(1, &emptyVAO);
-
-    GLMesh emptyMesh = {};
-    emptyMesh.vao = emptyVAO;
-    loadedMeshes.push_back(emptyMesh);
-
-    // create debug vertex buffer
-    glCreateVertexArrays(1, &debugMesh.vao);
-
-    glEnableVertexArrayAttrib(debugMesh.vao, 0);
-    glVertexArrayAttribFormat(debugMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(debugMesh.vao, 0, 0);
-
-    glEnableVertexArrayAttrib(debugMesh.vao, 1);
-    glVertexArrayAttribFormat(debugMesh.vao, 1, 4, GL_FLOAT, GL_FALSE, 12);
-    glVertexArrayAttribBinding(debugMesh.vao, 1, 0);
-
-    // create ribbon vertex buffer
-    glCreateVertexArrays(1, &ribbonMesh.vao);
-
-    glEnableVertexArrayAttrib(ribbonMesh.vao, 0);
-    glVertexArrayAttribFormat(ribbonMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(ribbonMesh.vao, 0, 0);
-
-    glEnableVertexArrayAttrib(ribbonMesh.vao, 1);
-    glVertexArrayAttribFormat(ribbonMesh.vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
-    glVertexArrayAttribBinding(ribbonMesh.vao, 1, 0);
-
-    glEnableVertexArrayAttrib(ribbonMesh.vao, 2);
-    glVertexArrayAttribFormat(ribbonMesh.vao, 2, 4, GL_FLOAT, GL_FALSE, 12 + 12);
-    glVertexArrayAttribBinding(ribbonMesh.vao, 2, 0);
-
-    glEnableVertexArrayAttrib(ribbonMesh.vao, 3);
-    glVertexArrayAttribFormat(ribbonMesh.vao, 3, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 16);
-    glVertexArrayAttribBinding(ribbonMesh.vao, 3, 0);
 
     // create decal vertex buffer
     glCreateVertexArrays(1, &decalMesh.vao);
@@ -540,8 +259,8 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     // main framebuffer
     const u32 layers = cameras.size();
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
-    fb.renderWidth = (u32)(game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
-    fb.renderHeight = (u32)(game.config.resolutionY * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
+    fb.renderWidth = (u32)(width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
+    fb.renderHeight = (u32)(height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
 
     glGenTextures(1, &fb.mainColorTexture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
@@ -566,7 +285,7 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
-    if (game.config.ssaoEnabled)
+    if (g_game.config.ssaoEnabled)
     {
         // csv framebuffers
         glGenTextures(1, &fb.cszTexture);
@@ -624,12 +343,12 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
     }
 
     // shadow framebuffer
-    if (game.config.shadowsEnabled)
+    if (g_game.config.shadowsEnabled)
     {
         glGenTextures(1, &fb.shadowDepthTexture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-                game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+                g_game.config.shadowMapResolution, g_game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -646,25 +365,15 @@ SDL_Window* Renderer::initWindow(const char* name, u32 width, u32 height)
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // create a white texture
-    Texture tex;
-    tex.format = Texture::Format::RGBA8;
-    tex.width = 1;
-    tex.height = 1;
-    u8 white[] = { 255, 255, 255, 255 };
-    u32 index = loadTexture(tex, white, sizeof(white));
-
-    return window;
 }
 
-static void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
+void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
 {
     glm::vec3 inverseLightDir = worldInfo.sunDirection;
     glm::mat4 depthView = glm::lookAt(inverseLightDir, glm::vec3(0), glm::vec3(0, 0, 1));
     for (u32 i=0; i<cameras.size(); ++i)
     {
-        if (!game.config.shadowsEnabled)
+        if (!g_game.config.shadowsEnabled)
         {
             worldInfo.shadowViewProjectionBias[i] = glm::mat4(0.f);
             continue;
@@ -706,7 +415,7 @@ static void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
 
         glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
         f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
-        f32 snapMultiple = 2.f * extent / game.config.shadowMapResolution;
+        f32 snapMultiple = 2.f * extent / g_game.config.shadowMapResolution;
         center.x = snap(center.x, snapMultiple);
         center.y = snap(center.y, snapMultiple);
         center.z = snap(center.z, snapMultiple);
@@ -727,9 +436,20 @@ static void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
 
 void Renderer::render(f32 deltaTime)
 {
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    std::sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
+        return a.priority > b.priority;
+    });
+
+    for (auto const& r : renderables)
+    {
+        r.renderable->onUpdate(deltaTime);
+    }
+
     // update worldinfo uniform buffer
-    worldInfo.time = (f32)game.currentTime;
-    worldInfo.orthoProjection = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
+    worldInfo.time = (f32)g_game.currentTime;
+    worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     u32 viewportCount = cameras.size();
     for (u32 i=0; i<viewportCount; ++i)
     {
@@ -765,7 +485,7 @@ void Renderer::render(f32 deltaTime)
     };
 
     // shadow map
-    if (game.config.shadowsEnabled)
+    if (g_game.config.shadowsEnabled)
     {
         worldInfoUBOShadow.updateData(&worldInfoShadow);
 
@@ -774,7 +494,7 @@ void Renderer::render(f32 deltaTime)
 
         glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
-        glViewport(0, 0, game.config.shadowMapResolution, game.config.shadowMapResolution);
+        glViewport(0, 0, g_game.config.shadowMapResolution, g_game.config.shadowMapResolution);
         glDepthMask(GL_TRUE);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthFunc(GL_LESS);
@@ -796,9 +516,12 @@ void Renderer::render(f32 deltaTime)
             }
             useProgram(loadedShaders[r.material->shader].program);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-            GLMesh const& mesh = loadedMeshes[r.meshHandle];
-            glBindVertexArray(mesh.vao);
-            glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+            glBindVertexArray(r.mesh->vao);
+            glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
+        }
+        for (auto const& r : renderables)
+        {
+            r.renderable->onShadowPass(this);
         }
         glCullFace(GL_BACK);
         glDisable(GL_DEPTH_CLAMP);
@@ -823,15 +546,18 @@ void Renderer::render(f32 deltaTime)
         }
         useProgram(loadedShaders[r.material->shader].program);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-        GLMesh const& mesh = loadedMeshes[r.meshHandle];
-        glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(r.mesh->vao);
+        glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+    for (auto const& r : renderables)
+    {
+        r.renderable->onDepthPrepass(this);
     }
     glBindTextureUnit(1, fb.mainDepthTexture);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
     // generate csz texture
-    if (game.config.ssaoEnabled)
+    if (g_game.config.ssaoEnabled)
     {
         glBindVertexArray(emptyVAO);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
@@ -892,16 +618,16 @@ void Renderer::render(f32 deltaTime)
 #endif
     glDepthFunc(GL_EQUAL);
     currentProgram = 9999999;
+    Texture* whiteTexture = g_resources.getTexture("white");
     for (auto const& r : renderList)
     {
         if (r.material->textures.size() == 0)
         {
-            glBindTextureUnit(0, loadedTextures[0].tex);
+            glBindTextureUnit(0, whiteTexture->handle);
         }
         else
         {
-            // TODO: support more than one texture
-            glBindTextureUnit(0, loadedTextures[r.material->textures[0]].tex);
+            glBindTextureUnit(0, r.material->textures[0]->handle);
         }
         useProgram(loadedShaders[r.material->shader].program);
 
@@ -910,9 +636,16 @@ void Renderer::render(f32 deltaTime)
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
         glUniform3f(2, r.material->lighting.color.x, r.material->lighting.color.y, r.material->lighting.color.z);
 
-        GLMesh const& mesh = loadedMeshes[r.meshHandle];
-        glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(r.mesh->vao);
+        glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+    for (auto const& r : renderables)
+    {
+        r.renderable->onLitPass(this);
+        if (r.isTemporary)
+        {
+            r.renderable->~Renderable();
+        }
     }
 
     // overlays
@@ -924,29 +657,9 @@ void Renderer::render(f32 deltaTime)
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
         glUniform3f(1, r.color.x, r.color.y, r.color.z);
         glUniform1i(2, (i32)r.viewportIndex);
-        GLMesh const& mesh = loadedMeshes[r.meshHandle];
-        glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(r.mesh->vao);
+        glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
         renderListOverlay.clear();
-    }
-
-    // debug lines
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    if (debugVertices.size() > 0)
-    {
-        Camera const& camera = cameras[0];
-        debugVertexBuffer.updateData(debugVertices.data(), debugVertices.size() * sizeof(DebugVertex));
-        glVertexArrayVertexBuffer(debugMesh.vao, 0, debugVertexBuffer.getBuffer(), 0, sizeof(DebugVertex));
-
-        glUseProgram(getShaderProgram("debug"));
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
-
-        glBindVertexArray(debugMesh.vao);
-        glDrawArrays(GL_LINES, 0, debugVertices.size());
-        debugVertices.clear();
     }
 
     // decals
@@ -961,14 +674,14 @@ void Renderer::render(f32 deltaTime)
         glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
         glBindVertexArray(decalMesh.vao);
 
-        u32 tex = 0;
+        Texture* tex = 0;
         u32 offset = 0;
         for (auto const& d : renderListDecal)
         {
             if (d.texture != tex)
             {
                 tex = d.texture;
-                glBindTextureUnit(0, d.texture);
+                glBindTextureUnit(0, d.texture->handle);
             }
             glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(d.worldTransform));
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d.worldTransform));
@@ -981,71 +694,20 @@ void Renderer::render(f32 deltaTime)
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
-    // ribbons
-    if (renderListRibbon.size() > 0)
-    {
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(0.f, -1000.f);
-        glDepthMask(GL_FALSE);
-        glDisable(GL_CULL_FACE);
-        glUseProgram(getShaderProgram("ribbon"));
-
-        glVertexArrayVertexBuffer(ribbonMesh.vao, 0, ribbonVertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
-        glBindVertexArray(ribbonMesh.vao);
-
-        u32 offset = 0;
-        for (auto const& r : renderListRibbon)
-        {
-            glBindTextureUnit(0, loadedTextures[r.texture].tex);
-            glDrawArrays(GL_TRIANGLES, offset, r.count);
-            offset += r.count;
-        }
-
-        renderListRibbon.clear();
-        glDisable(GL_POLYGON_OFFSET_FILL);
-    }
-
-    // billboards
-    if (renderListBillboard.size() > 0)
-    {
-        glDepthMask(GL_FALSE);
-        glDisable(GL_CULL_FACE);
-        glUseProgram(getShaderProgram("billboard"));
-        glBindVertexArray(emptyVAO);
-
-        i32 currentTexture = -1;
-        for (auto const& b : renderListBillboard)
-        {
-            if (currentTexture != (i32)b.texture)
-            {
-                glBindTextureUnit(0, b.texture);
-                currentTexture = (i32)b.texture;
-            }
-            glUniform4fv(0, 1, (GLfloat*)&b.color);
-            glm::mat4 translation = glm::translate(glm::mat4(1.f), b.position);
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.f), b.angle, { 0, 0, 1 });
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(translation));
-            glUniform3f(2, b.scale.x, b.scale.y, b.scale.z);
-            glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rotation));
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-        }
-        renderListBillboard.clear();
-    }
-
     // render to back buffer
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, game.windowWidth, game.windowHeight);
+    glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(getShaderProgram("post"));
     glBindTextureUnit(0, fb.mainColorTexture);
-    glm::vec2 res(game.windowWidth, game.windowHeight);
-    glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)game.windowWidth, (f32)game.windowHeight, 0.f);
+    glm::vec2 res(g_game.windowWidth, g_game.windowHeight);
+    glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
     glBindVertexArray(emptyVAO);
     for (u32 i=0; i<cameras.size(); ++i)
@@ -1065,111 +727,28 @@ void Renderer::render(f32 deltaTime)
 
     // 2D
     glEnable(GL_BLEND);
-    if (renderListText2D.size() > 0)
+
+    /*
+    std::sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
+        return a.priority > b.priority;
+    });
+    */
+
+    for (auto const& r : renderables2D)
     {
-        glUseProgram(getShaderProgram("text2D"));
-        for (auto& q : renderListText2D)
+        r.renderable->on2DPass(this);
+        if (r.isTemporary)
         {
-            glBindTextureUnit(0, q.tex);
-            glUniform4fv(0, 4, (GLfloat*)&q.points);
-            glUniform4fv(4, 1, (GLfloat*)&q.color);
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            r.renderable->~Renderable2D();
         }
-        renderListText2D.clear();
-    }
-    if (renderListTex2D.size() > 0)
-    {
-        glUseProgram(getShaderProgram("tex2D"));
-        for (auto& q : renderListTex2D)
-        {
-            glBindTextureUnit(0, q.tex);
-            glUniform4fv(0, 4, (GLfloat*)&q.points);
-            glUniform4fv(4, 1, (GLfloat*)&q.color);
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        }
-        renderListTex2D.clear();
     }
 
-    SDL_GL_SwapWindow(game.window);
+    SDL_GL_SwapWindow(g_game.window);
 
     renderList.clear();
-}
-
-u32 Renderer::loadMesh(Mesh const& meshData)
-{
-    // TODO: load all meshes into one big buffer? (This might improve performance)
-    GLMesh mesh;
-    glCreateBuffers(1, &mesh.vbo);
-    glNamedBufferData(mesh.vbo, meshData.vertices.size() * sizeof(meshData.vertices[0]), meshData.vertices.data(), GL_STATIC_DRAW);
-
-    glCreateBuffers(1, &mesh.ebo);
-    glNamedBufferData(mesh.ebo, meshData.indices.size() * sizeof(meshData.indices[0]), meshData.indices.data(), GL_STATIC_DRAW);
-
-    enum
-    {
-        POSITION_BIND_INDEX = 0,
-        NORMAL_BIND_INDEX = 1,
-        COLOR_BIND_INDEX = 2,
-        TEXCOORD_BIND_INDEX = 3
-    };
-
-    glCreateVertexArrays(1, &mesh.vao);
-    glVertexArrayVertexBuffer(mesh.vao, 0, mesh.vbo, 0, meshData.stride);
-    glVertexArrayElementBuffer(mesh.vao, mesh.ebo);
-
-    glEnableVertexArrayAttrib(mesh.vao, POSITION_BIND_INDEX);
-    glVertexArrayAttribFormat(mesh.vao, POSITION_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(mesh.vao, POSITION_BIND_INDEX, 0);
-
-    glEnableVertexArrayAttrib(mesh.vao, NORMAL_BIND_INDEX);
-    glVertexArrayAttribFormat(mesh.vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
-    glVertexArrayAttribBinding(mesh.vao, NORMAL_BIND_INDEX, 0);
-
-    glEnableVertexArrayAttrib(mesh.vao, COLOR_BIND_INDEX);
-    glVertexArrayAttribFormat(mesh.vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
-    glVertexArrayAttribBinding(mesh.vao, COLOR_BIND_INDEX, 0);
-
-    glEnableVertexArrayAttrib(mesh.vao, TEXCOORD_BIND_INDEX);
-    glVertexArrayAttribFormat(mesh.vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 12);
-    glVertexArrayAttribBinding(mesh.vao, TEXCOORD_BIND_INDEX, 0);
-
-    mesh.numIndices = meshData.indices.size();
-    loadedMeshes.push_back(mesh);
-    return (u32)(loadedMeshes.size() - 1);
-}
-
-u32 Renderer::loadTexture(Texture const& texture, u8* data, size_t size)
-{
-    GLuint sizedFormat, baseFormat;
-    switch (texture.format)
-    {
-        case Texture::Format::RGBA8:
-            sizedFormat = GL_RGBA8;
-            baseFormat = GL_RGBA;
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-            break;
-        case Texture::Format::R8:
-            sizedFormat = GL_R8;
-            baseFormat = GL_RED;
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            break;
-    }
-
-    u32 mipLevels = 1 + glm::floor(glm::log2((f32)glm::max(texture.width, texture.height)));
-
-    GLuint tex;
-    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-    glTextureStorage2D(tex, mipLevels, sizedFormat, texture.width, texture.height);
-    glTextureSubImage2D(tex, 0, 0, 0, texture.width, texture.height, baseFormat, GL_UNSIGNED_BYTE, data);
-    glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(tex, GL_TEXTURE_MAX_ANISOTROPY, 8);
-    glTextureParameterf(tex, GL_TEXTURE_LOD_BIAS, -0.2f);
-    glGenerateTextureMipmap(tex);
-    loadedTextures.push_back({ tex });
-    return loadedTextures.size() - 1;
+    renderables.clear();
+    renderables2D.clear();
+    tempRenderBuffer.clear();
 }
 
 void Renderer::setViewportCount(u32 viewports)
@@ -1188,8 +767,8 @@ void Renderer::setViewportCount(u32 viewports)
         }
 
         ViewportLayout& layout = viewportLayout[cameras.size() - 1];
-        fb.renderWidth = game.config.resolutionX * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
-        fb.renderHeight = game.config.resolutionY * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0);
+        fb.renderWidth = width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
+        fb.renderHeight = height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0);
         u32 layers = cameras.size();
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
@@ -1199,7 +778,7 @@ void Renderer::setViewportCount(u32 viewports)
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-                game.config.shadowMapResolution, game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+                g_game.config.shadowMapResolution, g_game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
         for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
@@ -1217,16 +796,6 @@ void Renderer::setViewportCount(u32 viewports)
     }
 }
 
-u32 Renderer::getViewportCount() const
-{
-    return cameras.size();
-}
-
-Camera& Renderer::getCamera(u32 index)
-{
-    return cameras[index];
-}
-
 Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane, f32 farPlane, f32 fov)
 {
     ViewportLayout const& layout = viewportLayout[cameras.size() - 1];
@@ -1236,93 +805,31 @@ Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 
     cam.nearPlane = nearPlane;
     cam.farPlane = farPlane;
     cam.view = glm::lookAt(from, to, glm::vec3(0, 0, 1));
-    glm::vec2 dim = glm::vec2(game.config.resolutionX, game.config.resolutionY) * layout.scale;
+    glm::vec2 dim = glm::vec2(width, height) * layout.scale;
     cam.aspectRatio = dim.x / dim.y;
     cam.projection = glm::perspective(glm::radians(cam.fov), cam.aspectRatio, nearPlane, farPlane);
     cam.viewProjection = cam.projection * cam.view;
     return cam;
 }
 
-void Renderer::drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, Material* material)
-{
-    drawMesh(mesh.renderHandle, worldTransform, material);
-}
-
-void Renderer::drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, Material* material)
+void Renderer::drawMesh(Mesh* mesh, glm::mat4 const& worldTransform, Material* material)
 {
     if (!material)
     {
         material = &defaultMaterial;
     }
-    renderList.push_back({ renderHandle, worldTransform, material });
+    renderList.push_back({ mesh, worldTransform, material });
 }
 
-void Renderer::drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
+void Renderer::drawMeshOverlay(Mesh* mesh, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
 {
-    renderListOverlay.push_back({ renderHandle, viewportIndex, worldTransform, color });
-}
-
-void Renderer::addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation)
-{
-}
-
-void Renderer::addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation)
-{
+    renderListOverlay.push_back({ mesh, viewportIndex, worldTransform, color });
 }
 
 void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
     worldInfo.sunDirection = -glm::normalize(direction);
     worldInfo.sunColor = color;
-}
-
-void Renderer::drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
-        glm::vec4 const& c1, glm::vec4 const& c2)
-{
-    debugVertices.push_back({ p1, c1 });
-    debugVertices.push_back({ p2, c2 });
-}
-
-void Renderer::drawBoundingBox(BoundingBox const& bb, glm::mat4 const& transform, glm::vec4 const& color)
-{
-    glm::vec3 p[8] = {
-        glm::vec3(transform * glm::vec4(bb.min.x, bb.min.y, bb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.max.x, bb.min.y, bb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.max.x, bb.max.y, bb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.min.x, bb.max.y, bb.min.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.min.x, bb.min.y, bb.max.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.max.x, bb.min.y, bb.max.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.max.x, bb.max.y, bb.max.z, 1.f)),
-        glm::vec3(transform * glm::vec4(bb.min.x, bb.max.y, bb.max.z, 1.f)),
-    };
-
-    drawLine(p[0], p[1], color, color);
-    drawLine(p[1], p[2], color, color);
-    drawLine(p[2], p[3], color, color);
-    drawLine(p[3], p[0], color, color);
-    drawLine(p[4], p[5], color, color);
-    drawLine(p[5], p[6], color, color);
-    drawLine(p[6], p[7], color, color);
-    drawLine(p[7], p[4], color, color);
-    drawLine(p[0], p[4], color, color);
-    drawLine(p[1], p[5], color, color);
-    drawLine(p[2], p[6], color, color);
-    drawLine(p[3], p[7], color, color);
-}
-
-void Renderer::drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2,
-        glm::vec3 color, f32 alpha, bool colorShader)
-{
-    (colorShader ? renderListTex2D : renderListText2D).push_back({
-        loadedTextures[texture].tex,
-        { { p1, t1 }, { { p2.x, p1.y }, { t2.x, t1.y } }, { { p1.x, p2.y }, { t1.x, t2.y } }, { p2, t2 } },
-        glm::vec4(color, alpha)
-    });
-}
-
-void Renderer::drawBillboard(u32 texture, glm::vec3 const& position, glm::vec3 const& scale, glm::vec4 const& color, f32 angle)
-{
-    renderListBillboard.push_back({ position, scale, loadedTextures[texture].tex, color, angle });
 }
 
 void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
@@ -1368,9 +875,6 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-        loadedTextures.push_back({ track.destTex });
-        track.texRenderHandle = loadedTextures.size() - 1;
     }
 
     glViewport(0, 0, width, height);
@@ -1387,22 +891,20 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
 
     for(auto& item : staticItems)
     {
-        GLMesh const& mesh = loadedMeshes[item.mesh->renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
         glUniform3fv(1, 1, (GLfloat*)&item.color);
         glUniform1i(2, item.overwriteColor);
-        glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(item.mesh->vao);
+        glDrawElements(GL_TRIANGLES, item.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
 
     for(auto& item : dynamicItems)
     {
-        GLMesh const& mesh = loadedMeshes[item.mesh->renderHandle];
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
         glUniform3fv(1, 1, (GLfloat*)&item.color);
         glUniform1i(2, item.overwriteColor);
-        glBindVertexArray(mesh.vao);
-        glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(item.mesh->vao);
+        glDrawElements(GL_TRIANGLES, item.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, track.multisampleFramebuffer);
@@ -1414,29 +916,17 @@ void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glm::vec2 size(width, height);
-    drawQuad2D(track.texRenderHandle, pos-size*0.5f, pos+size*0.5f, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
-}
-
-void Renderer::drawRibbon(Ribbon const& ribbon, u32 texture)
-{
-    u32 size = ribbon.getRequiredBufferSize();
-    if (size > 0)
-    {
-        void* mem = ribbonVertexBuffer.map(size);
-        u32 count = ribbon.writeVerts(mem);
-        ribbonVertexBuffer.unmap();
-        renderListRibbon.push_back({ count, texture });
-    }
+    //drawQuad2D(track.destTex, pos-size*0.5f, pos+size*0.5f, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 }
 
 void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
-        u32 texture, glm::vec3 const& color)
+        Texture* texture, glm::vec3 const& color)
 {
     if (verts.size() > 0)
     {
         void* mem = decalVertexBuffer.map(verts.size() * sizeof(DecalVertex));
         memcpy(mem, (void*)verts.data(), verts.size() * sizeof(DecalVertex));
         decalVertexBuffer.unmap();
-        renderListDecal.push_back({ transform, (u32)verts.size(), loadedTextures[texture].tex, color });
+        renderListDecal.push_back({ transform, (u32)verts.size(), texture, color });
     }
 }

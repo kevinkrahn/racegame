@@ -3,9 +3,11 @@
 #include "misc.h"
 #include "math.h"
 #include "track_graph.h"
-#include "renderer.h"
-#include "particle_system.h"
 #include "material.h"
+#include "entity.h"
+#include "ribbon.h"
+#include "smoke_particles.h"
+#include "debug_draw.h"
 #include <vector>
 
 enum
@@ -14,21 +16,13 @@ enum
     COLLISION_FLAG_GROUND  = 1 << 1,
     COLLISION_FLAG_WHEEL   = 1 << 2,
     COLLISION_FLAG_CHASSIS = 1 << 3,
-    COLLISION_FLAG_DEBRIS = 1 << 4,
+    COLLISION_FLAG_DEBRIS  = 1 << 4,
 };
 
 enum
 {
     DRIVABLE_SURFACE = 0xffff0000,
     UNDRIVABLE_SURFACE = 0x0000ffff
-};
-
-// TODO: I can probably get rid of this
-enum
-{
-    SURFACE_TYPE_TARMAC,
-    SURFACE_TYPE_SAND,
-    MAX_NUM_SURFACE_TYPES
 };
 
 struct ActorUserData
@@ -57,7 +51,7 @@ struct StaticEntity
 struct VehicleDebris
 {
     PxRigidDynamic* rigidBody;
-    u32 renderHandle;
+    Mesh* mesh;
     f32 life = 0.f;
     glm::vec3 color;
     Material* material = nullptr;
@@ -75,8 +69,10 @@ class Scene : public PxSimulationEventCallback
 {
 private:
     glm::mat4 start;
-    u32 viewportCount = 1;
     u32 totalLaps = 4;
+
+    std::vector<std::unique_ptr<Entity>> entities;
+    std::vector<std::unique_ptr<Entity>> newEntities;
 
     std::vector<StaticEntity> staticEntities;
     std::vector<std::unique_ptr<ActorUserData>> physicsUserData;
@@ -88,9 +84,9 @@ private:
 
     bool debugCamera = false;
     glm::vec3 debugCameraPosition;
-    bool physicsDebugVisualizationEnabled = false;
-    bool trackGraphDebugVisualizationEnabled = false;
-    bool showDebugInfo = false;
+    bool isPhysicsDebugVisualizationEnabled = false;
+    bool isTrackGraphDebugVisualizationEnabled = false;
+    bool isDebugOverlayEnabled = false;
     PxScene* physicsScene = nullptr;
 
     glm::mat4 trackOrtho;
@@ -112,14 +108,17 @@ public:
     PxMaterial* vehicleMaterial = nullptr;
     PxMaterial* trackMaterial = nullptr;
     PxMaterial* offroadMaterial = nullptr;
-    ParticleSystem smokeParticleSystem;
+    SmokeParticles smoke;
+    RibbonRenderable ribbons;
+    DebugDraw debugDraw;
 
     Scene(const char* name);
     ~Scene();
 
     void onStart();
     void onEnd();
-    void onUpdate(f32 deltaTime);
+    void onUpdate(class Renderer* renderer, f32 deltaTime);
+    void onEndUpdate(f32 deltaTime);
 
     void vehicleFinish(u32 n) { finishOrder.push_back(n); }
 
@@ -142,5 +141,13 @@ public:
 
     void attackCredit(u32 instigator, u32 victim);
 
-    u32 getViewportCount() const { return viewportCount; }
+    template <typename T>
+    Entity* spawnEntity() {
+        newEntities.push_back(std::unique_ptr<Entity>(new T()));
+        return newEntities.back().get();
+    }
+
+    void destroyEntity(Entity* e) {
+        e->isMarkedForDeletion = true;
+    }
 };

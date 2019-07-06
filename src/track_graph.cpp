@@ -1,5 +1,8 @@
 #include "track_graph.h"
 #include "game.h"
+#include "renderer.h"
+#include "resources.h"
+#include "debug_draw.h"
 #include "font.h"
 #include <iomanip>
 
@@ -179,15 +182,15 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
     endNode = &nodes[endIndex];
 }
 
-void TrackGraph::debugDraw() const
+void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
 {
-    Mesh* arrow = game.resources.getMesh("world.Arrow");
+    //Mesh* arrow = g_resources.getMesh("world.Arrow");
     for (u32 i=0; i<nodes.size(); ++i)
     {
         Node const& c = nodes[i];
 
         /*
-        game.renderer.drawMesh(*arrow,
+        renderer->drawMesh(arrow,
                 glm::translate(glm::mat4(1.f), c.position) *
                     glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.25f)));
@@ -195,16 +198,18 @@ void TrackGraph::debugDraw() const
 
         for (u32 connection : c.connections)
         {
-            game.renderer.drawLine(c.position, nodes[connection].position,
+            dbg->line(c.position, nodes[connection].position,
                     glm::vec4(1.f, 0.6f, 0.f, 1.f), glm::vec4(1.f, 0.6f, 0.f, 1.f));
         }
 
-        glm::vec4 p = game.renderer.getCamera(0).viewProjection *
+        glm::vec4 p = g_game.renderer->getCamera(0).viewProjection *
             glm::vec4(c.position + glm::vec3(0, 0, 1) * f32(i % 2) * 2.f, 1.f);
-        p.x = (((p.x / p.w) + 1.f) / 2.f) * game.windowWidth;
-        p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * game.windowHeight;
-        game.resources.getFont("font", 23).drawText(str(std::fixed, std::setw(1), c.t).c_str(), { p.x, p.y },
+        p.x = (((p.x / p.w) + 1.f) / 2.f) * g_game.windowWidth;
+        p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * g_game.windowHeight;
+        /*
+        g_resources.getFont("font", 23).drawText(str(std::fixed, std::setw(1), c.t).c_str(), { p.x, p.y },
                 glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER);
+                */
     }
 }
 

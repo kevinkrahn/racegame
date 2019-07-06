@@ -1,6 +1,10 @@
 #include "scene.h"
 #include "game.h"
 #include "vehicle.h"
+#include "renderer.h"
+#include "mesh_renderables.h"
+#include "input.h"
+#include "2d.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -35,14 +39,14 @@ PxFilterFlags vehicleFilterShader(
 Scene::Scene(const char* name)
 {
     // create PhysX scene
-    PxSceneDesc sceneDesc(game.physx.physics->getTolerancesScale());
+    PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -12.1f);
-    sceneDesc.cpuDispatcher = game.physx.dispatcher;
+    sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
     sceneDesc.filterShader  = vehicleFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
     sceneDesc.simulationEventCallback = this;
 
-    physicsScene = game.physx.physics->createScene(sceneDesc);
+    physicsScene = g_game.physx.physics->createScene(sceneDesc);
 
     if (PxPvdSceneClient* pvdClient = physicsScene->getScenePvdClient())
     {
@@ -52,12 +56,12 @@ Scene::Scene(const char* name)
     }
 
     // create physics materials
-    vehicleMaterial = game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
-    trackMaterial   = game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
-    offroadMaterial = game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
+    vehicleMaterial = g_game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
+    trackMaterial   = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
+    offroadMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
 
     // construct scene from blender data
-    auto& sceneData = game.resources.getScene(name);
+    auto& sceneData = g_resources.getScene(name);
     auto& entities = sceneData["entities"].array();
     bool foundStart = false;
 
@@ -90,12 +94,12 @@ Scene::Scene(const char* name)
                 else
                 {
                     trackGraph = TrackGraph(start,
-                            *game.resources.getMesh((*it)["data_name"].string().c_str()),
+                            *g_resources.getMesh((*it)["data_name"].string().c_str()),
                             (*it)["matrix"].convertBytes<glm::mat4>());
                 }
             }
 
-            Mesh* mesh = game.resources.getMesh(dataName.c_str());
+            Mesh* mesh = g_resources.getMesh(dataName.c_str());
             if (mesh->elementSize < 3)
             {
                 continue;
@@ -109,7 +113,7 @@ Scene::Scene(const char* name)
             Material* mat = nullptr;
             if (e["properties"].hasKey("material"))
             {
-                mat = game.resources.getMaterial(e["properties"]["material"].string().c_str());
+                mat = g_resources.getMaterial(e["properties"]["material"].string().c_str());
             }
             staticEntities.push_back({
                 mesh,
@@ -126,9 +130,9 @@ Scene::Scene(const char* name)
             PxMaterial* material = isTrack ? trackMaterial : offroadMaterial;
             if (isSand) material = offroadMaterial;
 
-            PxRigidStatic* actor = game.physx.physics->createRigidStatic(convert(transform));
+            PxRigidStatic* actor = g_game.physx.physics->createRigidStatic(convert(transform));
             PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
-                    PxTriangleMeshGeometry(game.resources.getCollisionMesh(dataName.c_str()),
+                    PxTriangleMeshGeometry(g_resources.getCollisionMesh(dataName.c_str()),
                         PxMeshScale(convert(scaleOf(transform)))), *material);
             shape->setQueryFilterData(PxFilterData(
                         isTrack ? COLLISION_FLAG_TRACK : COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
@@ -173,7 +177,7 @@ Scene::Scene(const char* name)
     trackAspectRatio = (bb.max.x - bb.min.x) / (bb.max.y - bb.min.y);
 
     trackItems.push_back({
-        game.resources.getMesh("world.Quad"),
+        g_resources.getMesh("world.Quad"),
         trackOrtho * start * glm::translate(glm::mat4(1.f), { 0, 0, -3 }) * glm::scale(glm::mat4(1.f), { 5, 16, 1 }),
         glm::vec3(0.2f),
         true
@@ -192,10 +196,9 @@ void Scene::onStart()
 {
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
 
-    viewportCount = 0;
-    for (u32 i=0; i<game.state.drivers.size(); ++i)
+    for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
-        Driver* driver = &game.state.drivers[i];
+        Driver* driver = &g_game.state.drivers[i];
 
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
 
@@ -211,47 +214,43 @@ void Scene::onStart()
 
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
             driver, vehicleMaterial, surfaceMaterials, i));
-
-        if (driver->hasCamera)
-        {
-            ++viewportCount;
-        }
     }
 }
 
-void Scene::onUpdate(f32 deltaTime)
+void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
 
-    game.renderer.setViewportCount(viewportCount);
-    game.renderer.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    u32 viewportCount = (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
+            [](auto& d) { return d.hasCamera; });
+    renderer->setViewportCount(viewportCount);
+    renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+
+    for (auto const& e : entities) {
+        e->onUpdate(renderer, this, deltaTime);
+    }
 
     // draw static entities
     for (auto const& e : staticEntities)
     {
-        game.renderer.drawMesh(*e.mesh, e.worldTransform, e.material);
-#if 0
-        if (e.isTrack)
-        {
-            e.mesh->octree->debugDraw(e.worldTransform);
-        }
-#endif
+        renderer->drawMesh(e.mesh, e.worldTransform, e.material);
     }
 
     // draw vehicle debris
     for (auto const& d : vehicleDebris)
     {
-        game.renderer.drawMesh(d.renderHandle, convert(d.rigidBody->getGlobalPose()), d.material);
+        renderer->drawMesh(d.mesh, convert(d.rigidBody->getGlobalPose()), d.material);
     }
 
     // update projectiles
-    Mesh* bulletMesh = game.resources.getMesh("world.Bullet");
+    Mesh* bulletMesh = g_resources.getMesh("world.Bullet");
     for (auto it = projectiles.begin(); it != projectiles.end();)
     {
         glm::vec3 prevPosition = it->position;
         it->position += it->velocity * deltaTime;
-        game.renderer.drawMesh(*bulletMesh,
+        //renderer->push(LitRenderable());
+        renderer->drawMesh(bulletMesh,
                 glm::translate(glm::mat4(1.f), it->position) *
                 glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)), nullptr);
 
@@ -288,24 +287,17 @@ void Scene::onUpdate(f32 deltaTime)
 
     // update vehicles
     i32 cameraIndex = 0;
-    auto tireMarkTex = game.resources.getTexture("tiremarks").renderHandle;
     SmallVec<glm::vec3> listenerPositions;
     for (u32 i=0; i<vehicles.size(); ++i)
     {
-        vehicles[i]->onUpdate(deltaTime, vehicles[i]->driver->hasCamera ? cameraIndex : -1);
-        if (vehicles[i]->driver->hasCamera)
+        vehicles[i]->onUpdate(renderer, deltaTime, vehicles[i]->getDriver()->hasCamera ? cameraIndex : -1);
+        if (vehicles[i]->getDriver()->hasCamera)
         {
             ++cameraIndex;
             listenerPositions.push_back(vehicles[i]->lastValidPosition);
         }
-
-        for (u32 w=0; w<NUM_WHEELS; ++w)
-        {
-            vehicles[i]->tireMarkRibbons[w].update(deltaTime);
-            game.renderer.drawRibbon(vehicles[i]->tireMarkRibbons[w], tireMarkTex);
-        }
     }
-    game.audio.setListeners(listenerPositions);
+    g_audio.setListeners(listenerPositions);
 
     // determine vehicle placement
     SmallVec<u32> placements;
@@ -329,31 +321,10 @@ void Scene::onUpdate(f32 deltaTime)
         vehicles[finishOrder[i]]->placement = i;
     }
 
-    smokeParticleSystem.update(deltaTime);
-    smokeParticleSystem.draw(game.resources.getTexture("smoke").renderHandle);
-
-    if (game.input.isKeyPressed(KEY_F1))
+    if (g_input.isKeyPressed(KEY_F2))
     {
-        showDebugInfo = !showDebugInfo;
-    }
-
-    if (showDebugInfo)
-    {
-        Vehicle const& playerVehicle = *vehicles[0];
-        const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
-        game.resources.getFont("font", 23).drawText(str(
-                    "FPS: ", 1.f / game.realDeltaTime,
-                    "\nEngine RPM: ", playerVehicle.getEngineRPM(),
-                    "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
-                    "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
-                    "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-                    "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark).c_str(), { game.windowWidth * 0.38f, 20 }, glm::vec3(1));
-    }
-
-    if (game.input.isKeyPressed(KEY_F2))
-    {
-        physicsDebugVisualizationEnabled = !physicsDebugVisualizationEnabled;
-        if (physicsDebugVisualizationEnabled)
+        isPhysicsDebugVisualizationEnabled = !isPhysicsDebugVisualizationEnabled;
+        if (isPhysicsDebugVisualizationEnabled)
         {
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
@@ -368,11 +339,11 @@ void Scene::onUpdate(f32 deltaTime)
         }
     }
 
-    if (physicsDebugVisualizationEnabled)
+    if (isPhysicsDebugVisualizationEnabled)
     {
-        Camera const& cam = game.renderer.getCamera(0);
+        Camera const& cam = renderer->getCamera(0);
         BoundingBox bb = computeCameraFrustumBoundingBox(cam.viewProjection);
-        game.renderer.drawBoundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
+        debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
 
         physicsScene->setVisualizationCullingBox(PxBounds3(convert(bb.min), convert(bb.max)));
 
@@ -380,23 +351,23 @@ void Scene::onUpdate(f32 deltaTime)
         for(PxU32 i=0; i < rb.getNbLines(); ++i)
         {
             const PxDebugLine& line = rb.getLines()[i];
-            game.renderer.drawLine(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
+            debugDraw.line(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
         }
     }
 
-    if (game.input.isKeyPressed(KEY_F8))
+    if (g_input.isKeyPressed(KEY_F8))
     {
         debugCamera = !debugCamera;
         if (debugCamera)
         {
-            debugCameraPosition = game.renderer.getCamera(0).position;
+            debugCameraPosition = renderer->getCamera(0).position;
         }
     }
     if (debugCamera)
     {
-        f32 up = (f32)game.input.isKeyDown(KEY_W) - (f32)game.input.isKeyDown(KEY_S);
-        f32 right = (f32)game.input.isKeyDown(KEY_A) - (f32)game.input.isKeyDown(KEY_D);
-        f32 vertical = (f32)game.input.isKeyDown(KEY_SPACE) - (f32)game.input.isKeyDown(KEY_LCTRL);
+        f32 up = (f32)g_input.isKeyDown(KEY_W) - (f32)g_input.isKeyDown(KEY_S);
+        f32 right = (f32)g_input.isKeyDown(KEY_A) - (f32)g_input.isKeyDown(KEY_D);
+        f32 vertical = (f32)g_input.isKeyDown(KEY_SPACE) - (f32)g_input.isKeyDown(KEY_LCTRL);
 
         glm::vec2 move(up, right);
         f32 speed = glm::length2(move);
@@ -410,21 +381,49 @@ void Scene::onUpdate(f32 deltaTime)
         f32 camDistance = 20.f;
         glm::vec3 cameraFrom = debugCameraPosition + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         glm::vec3 cameraTarget = debugCameraPosition;
-        game.renderer.setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 900.f);
+        renderer->setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 900.f);
     }
 
-    if (game.input.isKeyPressed(KEY_F3))
+    if (g_input.isKeyPressed(KEY_F3))
     {
-        trackGraphDebugVisualizationEnabled = !trackGraphDebugVisualizationEnabled;
+        isTrackGraphDebugVisualizationEnabled = !isTrackGraphDebugVisualizationEnabled;
     }
 
-    if (trackGraphDebugVisualizationEnabled)
+    if (isTrackGraphDebugVisualizationEnabled)
     {
-        trackGraph.debugDraw();
+        trackGraph.debugDraw(&debugDraw, renderer);
     }
+
+    if (g_input.isKeyPressed(KEY_F1))
+    {
+        isDebugOverlayEnabled = !isDebugOverlayEnabled;
+    }
+
+    if (isDebugOverlayEnabled)
+    {
+        Vehicle const& playerVehicle = *vehicles[0];
+        const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
+        Font* font = &g_resources.getFont("font", 20);
+        std::string debugText = str(
+            "FPS: ", 1.f / g_game.realDeltaTime,
+            "\nEngine RPM: ", playerVehicle.getEngineRPM(),
+            "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
+            "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
+            "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
+            "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark);
+        renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
+                    { 220, g_game.windowHeight - (30 + font->stringDimensions(debugText.c_str()).y) },
+                    {}, {}, { 0, 0, 0 }, 0.4));
+        renderer->push(TextRenderable(font, debugText,
+            { 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
+    }
+
+    renderer->add(&ribbons);
+    renderer->add(&smoke);
+    renderer->add(&debugDraw);
 
     // draw HUD track
-    Mesh* arrowMesh = game.resources.getMesh("world.TrackArrow");
+    Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
     SmallVec<RenderTextureItem, 16> dynamicItems;
     for (auto const& v : vehicles)
     {
@@ -434,21 +433,42 @@ void Scene::onUpdate(f32 deltaTime)
             trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
                 * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
                 * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
-            v->driver->vehicleColor,
+            v->getDriver()->vehicleColor,
             false
         });
     }
-    u32 size = (u32)(game.windowHeight * 0.23f);
+    u32 size = (u32)(g_game.windowHeight * 0.23f);
     glm::vec2 hudTrackPos;
     if (viewportCount == 1) hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
-    else if (viewportCount == 2) hudTrackPos = glm::vec2(size * 0.5f + 60, game.windowHeight * 0.5f);
+    else if (viewportCount == 2) hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
     else if (viewportCount == 3)
     {
-        hudTrackPos = glm::vec2(game.windowWidth, game.windowHeight) * 0.75f;
-        size = (u32)(game.windowHeight * 0.36f);
+        hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
+        size = (u32)(g_game.windowHeight * 0.36f);
     }
-    else if (viewportCount == 4) hudTrackPos = glm::vec2(game.windowWidth, game.windowHeight) * 0.5f;
-    game.renderer.drawTrack2D(trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
+    else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+    //renderer->drawTrack2D(trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
+}
+
+void Scene::onEndUpdate(f32 deltaTime)
+{
+    for (auto& e : newEntities) {
+        e->onCreate(this);
+        entities.push_back(std::move(e));
+    }
+    newEntities.clear();
+
+    for (auto it = entities.begin(); it != entities.end();) {
+        if ((*it)->isMarkedForDeletion) {
+            entities.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    std::sort(entities.begin(), entities.end(), [&](auto& a, auto& b) {
+        return a->priority < b->priority;
+    });
 }
 
 void Scene::onEnd()
@@ -598,7 +618,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         b->vehicle->applyDamage(damage, instigator);
                     }
 
-                    game.audio.playSound3D(game.resources.getSound("impact"), convert(contactPoints[j].position));
+                    g_audio.playSound3D(g_resources.getSound("impact"), convert(contactPoints[j].position));
                     // TODO: create sparks at contactPoints[j].position
                 }
             }

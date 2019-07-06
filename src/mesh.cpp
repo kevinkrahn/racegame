@@ -1,5 +1,5 @@
 #include "mesh.h"
-#include "game.h"
+#include "debug_draw.h"
 
 void Mesh::buildOctree()
 {
@@ -11,15 +11,19 @@ void Mesh::buildOctree()
     octree->subdivide(*this);
 }
 
-void Mesh::OctreeNode::debugDraw(glm::mat4 const& transform, glm::vec4 const& col)
+void Mesh::OctreeNode::debugDraw(DebugDraw* dbg, glm::mat4 const& transform, glm::vec4 const& col)
 {
     if (triangleIndices.size() > 0 || children.size() > 0)
-        game.renderer.drawBoundingBox(aabb, transform, col);
+    {
+        dbg->boundingBox(aabb, transform, col);
+    }
     else
-        game.renderer.drawBoundingBox(aabb, transform, glm::vec4(1, 0, 0, 1));
+    {
+        dbg->boundingBox(aabb, transform, glm::vec4(1, 0, 0, 1));
+    }
     for (auto& child : children)
     {
-        child.debugDraw(transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));
+        child.debugDraw(dbg, transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));
     }
 }
 
@@ -160,7 +164,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
 {
     if (aabb.intersects(bb))
     {
-        //game.renderer.drawBoundingBox(aabb, glm::translate(glm::mat4(1.f), { 0, 0, 0.2f }) * transform, glm::vec4(1, 0, 0, 1));
+        //g_game.renderer->drawBoundingBox(aabb, glm::translate(glm::mat4(1.f), { 0, 0, 0.2f }) * transform, glm::vec4(1, 0, 0, 1));
         for (u32 index : triangleIndices)
         {
             output.push_back(index);
@@ -178,4 +182,42 @@ bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32
 {
     bb = bb.transform(glm::inverse(transform));
     return octree->intersect(*this, transform, bb, output);
+}
+
+void Mesh::createVAO()
+{
+    glCreateBuffers(1, &vbo);
+    glNamedBufferData(vbo, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STATIC_DRAW);
+
+    glCreateBuffers(1, &ebo);
+    glNamedBufferData(ebo, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
+
+    enum
+    {
+        POSITION_BIND_INDEX = 0,
+        NORMAL_BIND_INDEX = 1,
+        COLOR_BIND_INDEX = 2,
+        TEXCOORD_BIND_INDEX = 3
+    };
+
+    // TODO: follow vertexFormat
+    glCreateVertexArrays(1, &vao);
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, stride);
+    glVertexArrayElementBuffer(vao, ebo);
+
+    glEnableVertexArrayAttrib(vao, POSITION_BIND_INDEX);
+    glVertexArrayAttribFormat(vao, POSITION_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(vao, POSITION_BIND_INDEX, 0);
+
+    glEnableVertexArrayAttrib(vao, NORMAL_BIND_INDEX);
+    glVertexArrayAttribFormat(vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
+    glVertexArrayAttribBinding(vao, NORMAL_BIND_INDEX, 0);
+
+    glEnableVertexArrayAttrib(vao, COLOR_BIND_INDEX);
+    glVertexArrayAttribFormat(vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
+    glVertexArrayAttribBinding(vao, COLOR_BIND_INDEX, 0);
+
+    glEnableVertexArrayAttrib(vao, TEXCOORD_BIND_INDEX);
+    glVertexArrayAttribFormat(vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 12);
+    glVertexArrayAttribBinding(vao, TEXCOORD_BIND_INDEX, 0);
 }

@@ -163,7 +163,7 @@ void Audio::audioCallback(u8* buf, i32 len)
             right = glm::clamp(right + sampleRight * (s->volume * masterVolume * attenuation) * panRight, -1.0f, 1.0f);
 
             f32 pitch = glm::lerp(s->pitch, s->targetPitch, bufferPercent);
-            s->playPosition += pitch * masterPitch * (f32)game.timeDilation;
+            s->playPosition += pitch * masterPitch * (f32)g_game.timeDilation;
             s++;
         }
 

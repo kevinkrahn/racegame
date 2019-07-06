@@ -6,19 +6,20 @@
 
 #include "game.cpp"
 #include "scene.cpp"
-#include "renderer_opengl.cpp"
+#include "renderer.cpp"
 #include "datafile.cpp"
 #include "resources.cpp"
 #include "vehicle.cpp"
 #include "vehicle_data.cpp"
 #include "font.cpp"
 #include "track_graph.cpp"
-#include "particle_system.cpp"
+#include "smoke_particles.cpp"
 #include "audio.cpp"
 #include "driver.cpp"
 #include "mesh.cpp"
-#include "editor.cpp"
+//#include "editor.cpp"
 #include "terrain.cpp"
+#include "dynamic_buffer.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>
@@ -29,6 +30,6 @@
 
 int main(int argc, char** argv)
 {
-    game.run();
+    g_game.run();
     return EXIT_SUCCESS;
 }

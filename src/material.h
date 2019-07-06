@@ -23,6 +23,6 @@ struct Material
     bool depthWrite = true;
     bool depthRead = true;
     f32 depthOffset = 0.f;
-    SmallVec<u32, 4> textures;
+    SmallVec<struct Texture*, 4> textures;
     LightingDefinition lighting;
 };

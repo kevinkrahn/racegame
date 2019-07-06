@@ -32,9 +32,8 @@ private:
 
 class Vehicle
 {
-private:
-    friend class Scene;
-
+// TODO: should be private
+public:
 	Driver* driver;
 	class Scene* scene;
 	u32 vehicleIndex;
@@ -107,6 +106,7 @@ public:
     glm::vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
     glm::vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
+    Driver* getDriver() const { return driver; }
 
     void reset(glm::mat4 const& transform) const;
     void applyDamage(f32 amount, u32 instigator)
@@ -119,5 +119,5 @@ public:
         if (notifications.size() < notifications.capacity()) notifications.push_back({ str, 2.f });
     }
 
-    void onUpdate(f32 deltaTime, i32 cameraIndex);
+    void onUpdate(class Renderer* renderer, f32 deltaTime, i32 cameraIndex);
 };

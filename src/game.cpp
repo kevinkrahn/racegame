@@ -1,6 +1,11 @@
 #include "game.h"
 #include "datafile.h"
 #include "vehicle_data.h"
+#include "renderer.h"
+#include "scene.h"
+#include "input.h"
+#include "resources.h"
+#include "audio.h"
 #include <chrono>
 #include <iostream>
 
@@ -35,6 +40,19 @@ void Game::initPhysX()
     PxVehicleSetMaxHitActorAcceleration(80.f);
 }
 
+#ifndef NDEBUG
+static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
+                            GLsizei length, const GLchar* message, const void* userParam)
+{
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204)
+    {
+        return;
+    }
+    print("OpenGL Debug (", id, "): ", message, '\n');
+    assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
+}
+#endif
+
 void Game::run()
 {
 #ifndef NDEBUG
@@ -46,52 +64,85 @@ void Game::run()
         FATAL_ERROR("SDL_Init Error: ", SDL_GetError())
     }
 
-    window = renderer.initWindow("The Game", config.resolutionX, config.resolutionY);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#ifndef NDEBUG
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#else
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_NO_ERROR);
+#endif
 
-    input.init(window);
-    audio.init();
-    audio.setMasterVolume(0.f);
+    window = SDL_CreateWindow("The Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+            config.resolutionX, config.resolutionY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    if(!window)
+    {
+        FATAL_ERROR("Failed to create SDL window: ", SDL_GetError())
+    }
+
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+    if(!context)
+    {
+        FATAL_ERROR("Failed to create OpenGL context: ", SDL_GetError())
+    }
+
+    gladLoadGLLoader(SDL_GL_GetProcAddress);
+
+#ifndef NDEBUG
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+    glDebugMessageCallbackARB(glDebugOutput, nullptr);
+    glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+#endif
+
+    SDL_GL_SetSwapInterval(g_game.config.vsync ? 1 : 0);
+
+    renderer.reset(new Renderer());
+    renderer->init(config.resolutionX, config.resolutionY);
+
+    g_input.init(window);
+    g_audio.init();
+    g_audio.setMasterVolume(0.f);
     initPhysX();
-    resources.load();
+    g_resources.load();
 
     state.drivers = {
-        Driver(true,  true,  true,  &resources.getVehicleData()[3], 1, 0),
-        Driver(false, false, false, &resources.getVehicleData()[1], 2, 0),
-        Driver(false, false, false, &resources.getVehicleData()[2], 3),
-        Driver(false, false, false, &resources.getVehicleData()[0], 4),
-        Driver(false, false, false, &resources.getVehicleData()[1], 5),
-        Driver(false, false, false, &resources.getVehicleData()[2], 6),
-        Driver(false, false, false, &resources.getVehicleData()[3], 7),
-        Driver(false, false, false, &resources.getVehicleData()[3], 8),
+        Driver(true,  true,  true,  &g_resources.getVehicleData()[3], 1, 0),
+        Driver(false, false, false, &g_resources.getVehicleData()[1], 2, 0),
+        Driver(false, false, false, &g_resources.getVehicleData()[2], 3),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
+        Driver(false, false, false, &g_resources.getVehicleData()[1], 5),
+        Driver(false, false, false, &g_resources.getVehicleData()[2], 6),
+        Driver(false, false, false, &g_resources.getVehicleData()[3], 7),
+        Driver(false, false, false, &g_resources.getVehicleData()[3], 8),
     };
 
-    //changeScene("world.Scene");
-    editor.reset(new Editor());
+    //changeScene("track2.Scene");
+    changeScene("world.Scene");
 
-    deltaTime = 1.f / (f32)game.config.maxFPS;
+    deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;
     bool shouldExit = false;
     while(true)
     {
         auto frameStartTime = std::chrono::high_resolution_clock::now();
-        input.onFrameBegin();
+        g_input.onFrameBegin();
 
         while(SDL_PollEvent(&event) != 0)
         {
-            input.handleEvent(event);
+            g_input.handleEvent(event);
             if(event.type == SDL_QUIT)
             {
                 shouldExit = true;
             }
         }
 
-        if (input.isKeyPressed(KEY_F4))
+        if (g_input.isKeyPressed(KEY_F4))
         {
             config.fullscreen = !config.fullscreen;
             SDL_SetWindowFullscreen(window, config.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         }
 
-        if(shouldExit || input.isKeyPressed(KEY_ESCAPE))
+        if(shouldExit || g_input.isKeyPressed(KEY_ESCAPE))
         {
             break;
         }
@@ -104,17 +155,17 @@ void Game::run()
             windowHeight = h;
         }
 
-        //currentScene->onUpdate(deltaTime);
-        editor->onUpdate(deltaTime);
-        renderer.render(deltaTime);
-        input.onFrameEnd();
+        currentScene->onUpdate(renderer.get(), deltaTime);
+        renderer->render(deltaTime);
+        currentScene->onEndUpdate(deltaTime);
+        g_input.onFrameEnd();
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;
 
         using seconds = std::chrono::duration<f64, std::ratio<1>>;
-        if (!game.config.vsync)
+        if (!config.vsync)
         {
-            f64 minFrameTime = 1.0 / (f64)game.config.maxFPS;
+            f64 minFrameTime = 1.0 / (f64)config.maxFPS;
             auto frameEndTime = frameStartTime + seconds(minFrameTime);
             while (std::chrono::high_resolution_clock::now() < frameEndTime)
             {
@@ -130,13 +181,12 @@ void Game::run()
         currentTime += delta * timeDilation;
     }
 
-    audio.close();
+    g_audio.close();
     SDL_Quit();
 }
 
 void Game::changeScene(const char* sceneName)
 {
-    /*
     if (currentScene)
     {
         currentScene->onEnd();
@@ -144,5 +194,4 @@ void Game::changeScene(const char* sceneName)
     print("Loading scene: ", sceneName, '\n');
     currentScene.reset(new Scene(sceneName));
     currentScene->onStart();
-    */
 }

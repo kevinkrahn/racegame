@@ -1,4 +1,5 @@
 #include "resources.h"
+#include "renderer.h"
 #include "game.h"
 #include "driver.h"
 #include <filesystem>
@@ -6,6 +7,10 @@
 
 void Resources::load()
 {
+    // load default texture
+    u8 white[] = { 255, 255, 255, 255 };
+    textures["white"] = Texture(1, 1, Texture::Format::RGBA8, white, sizeof(white));
+
     std::vector<DataFile::Value> vehicleDataValues;
     std::vector<std::pair<DataFile::Value, Material*>> pendingMaterials;
 
@@ -38,7 +43,7 @@ void Resources::load()
                             u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
                             u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
-                            Mesh meshData = {
+                            Mesh mesh = {
                                 std::move(vertices),
                                 std::move(indices),
                                 numVertices,
@@ -47,14 +52,13 @@ void Resources::load()
                                 numTexCoords,
                                 elementSize,
                                 stride,
-                                0,
                                 BoundingBox{
                                     meshInfo["aabb_min"].convertBytes<glm::vec3>(),
                                     meshInfo["aabb_max"].convertBytes<glm::vec3>(),
                                 }
                             };
-                            meshData.renderHandle = game.renderer.loadMesh(meshData);
-                            meshes[meshInfo["name"].string()] = std::move(meshData);
+                            mesh.createVAO();
+                            meshes[meshInfo["name"].string()] = std::move(mesh);
                         }
                         else
                         {
@@ -66,7 +70,7 @@ void Resources::load()
                             u32 numIndices = (u32)meshInfo["num_indices"].integer();
 
                             u32 stride = elementSize * sizeof(f32);
-                            Mesh meshData = {
+                            Mesh mesh = {
                                 std::move(vertices),
                                 std::move(indices),
                                 numVertices,
@@ -75,13 +79,12 @@ void Resources::load()
                                 0,
                                 elementSize,
                                 stride,
-                                u32(-1),
                                 BoundingBox{
                                     meshInfo["aabb_min"].convertBytes<glm::vec3>(),
                                     meshInfo["aabb_max"].convertBytes<glm::vec3>(),
                                 }
                             };
-                            meshes[meshInfo["name"].string()] = std::move(meshData);
+                            meshes[meshInfo["name"].string()] = std::move(mesh);
                         }
                     }
                 }
@@ -131,7 +134,6 @@ void Resources::load()
             }
             else if (ext == ".bmp" || ext == ".png" || ext == ".jpg")
             {
-                Texture tex;
                 i32 width, height, channels;
                 u8* data = (u8*)stbi_load(p.path().string().c_str(), &width, &height, &channels, 4);
                 if (!data)
@@ -151,11 +153,7 @@ void Resources::load()
                     data[i+2] = (u8)(data[i+2] / 255.f * a * 255.f);
                 }
 #endif
-                tex.width = width;
-                tex.height = height;
-                tex.format = Texture::Format::RGBA8;
-                tex.renderHandle = game.renderer.loadTexture(tex, data, size);
-                textures[p.path().stem().string()] = tex;
+                textures[p.path().stem().string()] = Texture(width, height, Texture::Format::RGBA8, data, size);
 
                 stbi_image_free(data);
             }
@@ -205,14 +203,14 @@ void Resources::load()
     {
         DataFile::Value& mat = m.first;
         Material* material = m.second;
-        material->shader = game.renderer.loadShader(mat["shader"].string());
+        material->shader = g_game.renderer->loadShader(mat["shader"].string());
         material->culling = mat["culling"].boolean(material->culling);
         material->castShadow = mat["cast-shadow"].boolean(material->castShadow);
         if (mat.hasKey("textures"))
         {
             for (auto& t : mat["textures"].array())
             {
-                material->textures.push_back(getTexture(t.string().c_str()).renderHandle);
+                material->textures.push_back(getTexture(t.string().c_str()));
             }
         }
         material->depthWrite = mat["depth-write"].boolean(material->depthWrite);
@@ -259,13 +257,13 @@ PxTriangleMesh* Resources::getCollisionMesh(std::string const& name)
 
     PxDefaultMemoryOutputStream writeBuffer;
     PxTriangleMeshCookingResult::Enum result;
-    if (!game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result))
+    if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result))
     {
         FATAL_ERROR("Failed to create collision mesh: ", name);
     }
 
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-    PxTriangleMesh* t = game.physx.physics->createTriangleMesh(readBuffer);
+    PxTriangleMesh* t = g_game.physx.physics->createTriangleMesh(readBuffer);
     collisionMeshCache[name] = t;
 
     return t;
@@ -287,13 +285,13 @@ PxConvexMesh* Resources::getConvexCollisionMesh(std::string const& name)
     convexDesc.flags         = PxConvexFlag::eCOMPUTE_CONVEX;
 
     PxDefaultMemoryOutputStream writeBuffer;
-    if (!game.physx.cooking->cookConvexMesh(convexDesc, writeBuffer))
+    if (!g_game.physx.cooking->cookConvexMesh(convexDesc, writeBuffer))
     {
         FATAL_ERROR("Failed to create convex collision mesh: ", name);
     }
 
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-    PxConvexMesh* t = game.physx.physics->createConvexMesh(readBuffer);
+    PxConvexMesh* t = g_game.physx.physics->createConvexMesh(readBuffer);
     convexCollisionMeshCache[name] = t;
 
     return t;

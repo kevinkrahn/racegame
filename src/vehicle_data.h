@@ -71,6 +71,9 @@ struct PhysicsVehicleSettings
     PxVehicleDifferential4WData::Enum differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
 
     glm::vec3 wheelPositions[4];
+
+    // TODO: add downforce property
+    // TODO: add drift speed property
 };
 
 struct VehicleData

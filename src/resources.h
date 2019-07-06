@@ -7,22 +7,10 @@
 #include "vehicle_data.h"
 #include "material.h"
 #include "mesh.h"
+#include "texture.h"
 #include <vector>
 #include <map>
 #include <string>
-
-struct Texture
-{
-    enum struct Format
-    {
-        RGBA8,
-        R8,
-    };
-    Format format;
-    u32 width;
-    u32 height;
-    u32 renderHandle;
-};
 
 class Resources
 {
@@ -83,14 +71,14 @@ public:
         return iter2->second;
     }
 
-    Texture& getTexture(const char* name)
+    Texture* getTexture(const char* name)
     {
         auto iter = textures.find(name);
         if (iter == textures.end())
         {
             FATAL_ERROR("Texture not found: ", name);
         }
-        return iter->second;
+        return &iter->second;
     }
 
     Sound* getSound(const char* name)
@@ -115,7 +103,7 @@ public:
         }
         return iter->second.get();
     }
-};
+} g_resources;
 
 inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
 {

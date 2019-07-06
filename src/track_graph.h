@@ -31,7 +31,7 @@ public:
     Node* getStartNode() const { return startNode; }
     Node* getEndNode() const { return endNode; }
 
-    void debugDraw() const;
+    void debugDraw(class DebugDraw* dbg, class Renderer* renderer) const;
 
     struct QueryResult
     {

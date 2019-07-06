@@ -2,9 +2,10 @@
 
 #include "math.h"
 #include "smallvec.h"
+#include "renderable.h"
 #include <vector>
 
-class ParticleSystem
+class SmokeParticles : public Renderable
 {
 private:
     struct Particle
@@ -56,6 +57,8 @@ public:
             alpha
         });
     }
-    void update(f32 deltaTime);
-    void draw(u32 texture);
+
+    i32 getPriority() const override { return 10000; }
+    void onUpdate(f32 deltaTime) override;
+    void onLitPass(Renderer* renderer) override;
 };

@@ -1,13 +1,7 @@
 #pragma once
 
 #include "misc.h"
-#include "renderer.h"
-#include "scene.h"
-#include "input.h"
-#include "resources.h"
 #include "driver.h"
-#include "audio.h"
-#include "editor.h"
 #include <memory>
 
 class Game
@@ -15,10 +9,7 @@ class Game
     void initPhysX();
 
 public:
-    Renderer renderer;
-    Input input;
-    Resources resources;
-    Audio audio;
+    std::unique_ptr<class Renderer> renderer;
 
     struct
     {
@@ -35,6 +26,7 @@ public:
         u32 shadowMapResolution = 2048;
         bool shadowsEnabled = true;
         bool ssaoEnabled = true;
+        bool ssaoHighQuality = false; // TODO: Implement
     } config;
 
     struct
@@ -56,9 +48,8 @@ public:
     u32 frameIndex = 0;
 
     SDL_Window* window = nullptr;
-    //std::unique_ptr<Scene> currentScene;
-    std::unique_ptr<Editor> editor;
+    std::unique_ptr<class Scene> currentScene;
 
     void run();
     void changeScene(const char* sceneName);
-} game;
+} g_game;

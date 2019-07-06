@@ -1,5 +1,7 @@
 #include "vehicle_data.h"
 #include "game.h"
+#include "resources.h"
+#include "scene.h"
 
 void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
 {
@@ -71,7 +73,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
     vehicle.specs.weight = specs["weight"].real();
     vehicle.specs.handling = specs["handling"].real();
 
-    DataFile::Value::Dict& scene = game.resources.getScene(data["scene"].string().c_str());
+    DataFile::Value::Dict& scene = g_resources.getScene(data["scene"].string().c_str());
     for (auto& e : scene["entities"].array())
     {
         std::string name = e["name"].string();
@@ -79,15 +81,15 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         if (name.find("Chassis") != std::string::npos)
         {
             vehicle.chassisMeshes.push_back({
-                game.resources.getMesh(e["data_name"].string().c_str()),
+                g_resources.getMesh(e["data_name"].string().c_str()),
                 transform,
-                e["properties"].hasKey("material") ? game.resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
+                e["properties"].hasKey("material") ? g_resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
             });
         }
         else if (name.find("FL") != std::string::npos)
         {
             vehicle.wheelMeshFront = {
-                game.resources.getMesh(e["data_name"].string().c_str()),
+                g_resources.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
             vehicle.physics.wheelRadiusFront = e["bound_z"].real() * 0.5f;
@@ -97,7 +99,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         else if (name.find("RL") != std::string::npos)
         {
             vehicle.wheelMeshRear = {
-                game.resources.getMesh(e["data_name"].string().c_str()),
+                g_resources.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
             vehicle.physics.wheelRadiusRear = e["bound_z"].real() * 0.5f;
@@ -115,24 +117,24 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         else if (name.find("debris") != std::string::npos)
         {
             std::string const& meshName = e["data_name"].string();
-            PxConvexMesh* collisionMesh = game.resources.getConvexCollisionMesh(meshName);
-            PxMaterial* material = game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
-            PxShape* shape = game.physx.physics->createShape(
+            PxConvexMesh* collisionMesh = g_resources.getConvexCollisionMesh(meshName);
+            PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
+            PxShape* shape = g_game.physx.physics->createShape(
                     PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
                         COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
             vehicle.debrisChunks.push_back({
-                game.resources.getMesh(meshName.c_str()),
+                g_resources.getMesh(meshName.c_str()),
                 transform,
                 shape,
-                e["properties"].hasKey("material") ? game.resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
+                e["properties"].hasKey("material") ? g_resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
             });
         }
         else if (name.find("Collision") != std::string::npos)
         {
             vehicle.physics.collisionMeshes.push_back({
-                game.resources.getConvexCollisionMesh(e["data_name"].string()),
+                g_resources.getConvexCollisionMesh(e["data_name"].string()),
                 transform
             });
             vehicle.collisionWidth =

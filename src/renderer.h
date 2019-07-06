@@ -1,15 +1,18 @@
 #pragma once
 
+#include "gl.h"
 #include "resources.h"
 #include "math.h"
 #include "smallvec.h"
 #include "decal.h"
 #include "material.h"
+#include "renderable.h"
+#include "dynamic_buffer.h"
+#include "buffer.h"
 
-#include <SDL2/SDL.h>
 #include <vector>
 
-const u32 MAX_BUFFERED_FRAMES = 3;
+GLuint emptyVAO;
 
 struct Camera
 {
@@ -46,42 +49,124 @@ struct RenderTextureItem
     bool overwriteColor = false;
 };
 
+struct GLShader
+{
+    std::string filename;
+    GLuint program;
+    bool hasGeometryShader;
+    SmallVec<std::string> defines;
+};
+
+struct Framebuffers
+{
+    GLuint mainFramebuffer;
+    GLuint mainColorTexture;
+    GLuint mainDepthTexture;
+
+    GLuint shadowFramebuffer;
+    GLuint shadowDepthTexture;
+
+    GLuint cszFramebuffers[5];
+    GLuint cszTexture;
+
+    GLuint saoFramebuffer;
+    GLuint saoTexture;
+    GLuint saoBlurTexture;
+
+    u32 renderWidth;
+    u32 renderHeight;
+};
+
+struct WorldInfo
+{
+    glm::mat4 orthoProjection;
+    glm::vec3 sunDirection;
+    f32 time;
+    glm::vec3 sunColor;
+    f32 pad;
+    glm::mat4 cameraViewProjection[MAX_VIEWPORTS];
+    glm::mat4 cameraProjection[MAX_VIEWPORTS];
+    glm::mat4 cameraView[MAX_VIEWPORTS];
+    glm::vec4 cameraPosition[MAX_VIEWPORTS];
+    glm::mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
+    glm::vec4 projInfo[MAX_VIEWPORTS];
+    glm::vec4 projScale;
+};
+
 class Renderer
 {
+private:
+    Framebuffers fb;
+    WorldInfo worldInfo;
+    DynamicBuffer worldInfoUBO = DynamicBuffer(sizeof(WorldInfo));
+    DynamicBuffer worldInfoUBOShadow = DynamicBuffer(sizeof(WorldInfo));
+    DynamicBuffer decalVertexBuffer = DynamicBuffer(sizeof(DecalVertex) * 50000);
+
+    u32 width;
+    u32 height;
+
+    std::map<std::string, u32> shaderHandleMap;
+    std::vector<GLShader> loadedShaders;
+
+    struct QueuedRenderable
+    {
+        i32 priority;
+        Renderable* renderable;
+        bool isTemporary;
+    };
+    std::vector<QueuedRenderable> renderables;
+
+    struct QueuedRenderable2D
+    {
+        i32 priority;
+        Renderable2D* renderable;
+        bool isTemporary;
+    };
+    std::vector<QueuedRenderable2D> renderables2D;
+
+    SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
+
+    void setShadowMatrices(struct WorldInfo& worldInfo, struct WorldInfo& worldInfoShadow);
+    void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines);
+    void compileShader(std::string const& filename, SmallVec<std::string> defines, struct GLShader& shader);
+
+    Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
+
 public:
-    SDL_Window* initWindow(const char* name, u32 width, u32 height);
-    u32 loadMesh(Mesh const& mesh);
-    u32 loadTexture(Texture const& texture, u8* data, size_t size);
+    void add(Renderable* renderable, bool isTemporary=false) { renderables.push_back({ renderable->getPriority(), renderable, isTemporary }); }
+    void add(Renderable2D* renderable, bool isTemporary=false) { renderables2D.push_back({ renderable->getPriority(), renderable, isTemporary }); }
+    template <typename T>
+    T* push(T&& renderable)
+    {
+        u8* mem = tempRenderBuffer.bump(sizeof(T));
+        new (mem) T(std::move(renderable));
+        T* ptr = reinterpret_cast<T*>(mem);
+        add(ptr);
+        return ptr;
+    }
+
+    void init(u32 width, u32 height);
     u32 loadShader(std::string const& filename, SmallVec<std::string> defines={}, std::string name="");
     u32 getShader(const char* name) const;
+    GLuint getShaderProgram(const char* name) const;
     void render(f32 deltaTime);
 
-    void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
-    void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);
+    //void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
+    //void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
-    void drawMesh(Mesh const& mesh, glm::mat4 const& worldTransform, Material* material);
-    void drawMesh(u32 renderHandle, glm::mat4 const& worldTransform, Material* material);
-    void drawMeshOverlay(u32 renderHandle, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color);
+    void drawMesh(Mesh* mesh, glm::mat4 const& worldTransform, Material* material);
+    void drawMeshOverlay(Mesh* mesh, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color);
 
     void setViewportCount(u32 viewports);
-    u32 getViewportCount() const;
+    u32 getViewportCount() const { return cameras.size(); }
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
-    Camera& getCamera(u32 index);
-
-    void drawLine(glm::vec3 const& p1, glm::vec3 const& p2,
-            glm::vec4 const& c1 = glm::vec4(1), glm::vec4 const& c2 = glm::vec4(1));
-    void drawBoundingBox(BoundingBox const& bb, glm::mat4 const& transform, glm::vec4 const& color);
-    void drawQuad2D(u32 texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1, glm::vec2 t2,
-            glm::vec3 color, f32 alpha=1.f, bool colorShader=true);
-    //void drawQuad2D(u32 texture, glm::vec2 p, f32 angle=0.f, glm::vec3 color=glm::vec3(1.f), f32 alpha=1.f);
-    void drawBillboard(u32 texture, glm::vec3 const& position, glm::vec3 const& scale, glm::vec4 const& color, f32 angle);
+    Camera& getCamera(u32 index) { return cameras[index]; }
 
     void drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
                      SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos);
 
-    void drawRibbon(class Ribbon const& ribbon, u32 texture);
-
     void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
-            u32 texture, glm::vec3 const& color = glm::vec3(1.f));
+            Texture* texture, glm::vec3 const& color = glm::vec3(1.f));
 };
+

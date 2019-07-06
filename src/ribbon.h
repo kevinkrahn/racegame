@@ -1,6 +1,11 @@
 #pragma once
 
 #include "math.h"
+#include "renderable.h"
+#include "gl.h"
+#include "dynamic_buffer.h"
+#include "resources.h"
+#include "renderer.h"
 #include <vector>
 
 struct RibbonPoint
@@ -216,5 +221,98 @@ public:
         }
 
         return vertexCount;
+    }
+};
+
+class RibbonRenderable : public Renderable {
+    struct Chunk
+    {
+        Ribbon* ribbon;
+        u32 count;
+    };
+
+    std::vector<Chunk> chunks;
+    DynamicBuffer vertexBuffer;
+    GLuint vao;
+
+public:
+    RibbonRenderable() : vertexBuffer(sizeof(RibbonVertex) * 40000)
+    {
+        glCreateVertexArrays(1, &vao);
+
+        glEnableVertexArrayAttrib(vao, 0);
+        glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+        glVertexArrayAttribBinding(vao, 0, 0);
+
+        glEnableVertexArrayAttrib(vao, 1);
+        glVertexArrayAttribFormat(vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
+        glVertexArrayAttribBinding(vao, 1, 0);
+
+        glEnableVertexArrayAttrib(vao, 2);
+        glVertexArrayAttribFormat(vao, 2, 4, GL_FLOAT, GL_FALSE, 12 + 12);
+        glVertexArrayAttribBinding(vao, 2, 0);
+
+        glEnableVertexArrayAttrib(vao, 3);
+        glVertexArrayAttribFormat(vao, 3, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 16);
+        glVertexArrayAttribBinding(vao, 3, 0);
+    }
+
+    ~RibbonRenderable()
+    {
+        vertexBuffer.destroy();
+        glDeleteVertexArrays(1, &vao);
+    }
+
+    i32 getPriority() const override { return 9000; }
+
+    void addChunk(Ribbon* ribbon)
+    {
+        u32 size = ribbon->getRequiredBufferSize();
+        if (size > 0)
+        {
+            void* mem = vertexBuffer.map(size);
+            u32 count = ribbon->writeVerts(mem);
+            vertexBuffer.unmap();
+            chunks.push_back({ ribbon, count });
+        }
+    }
+
+    void onUpdate(f32 deltaTime) override
+    {
+        for (auto& chunk : chunks)
+        {
+            chunk.ribbon->update(deltaTime);
+        }
+    }
+
+    void onLitPass(Renderer* renderer) override
+    {
+        if (chunks.empty())
+        {
+            return;
+        }
+
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(0.f, -1000.f);
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        glUseProgram(renderer->getShaderProgram("ribbon"));
+
+        glVertexArrayVertexBuffer(vao, 0, vertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
+        glBindVertexArray(vao);
+
+        Texture* tex = g_resources.getTexture("tiremarks");
+        glBindTextureUnit(0, tex->handle);
+
+        u32 offset = 0;
+        for (auto const& chunk : chunks)
+        {
+            glDrawArrays(GL_TRIANGLES, offset, chunk.count);
+            offset += chunk.count;
+        }
+
+        glDisable(GL_POLYGON_OFFSET_FILL);
+
+        chunks.clear();
     }
 };

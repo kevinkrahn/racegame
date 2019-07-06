@@ -1,6 +1,10 @@
 #include "vehicle.h"
 #include "game.h"
 #include "decal.h"
+#include "scene.h"
+#include "renderer.h"
+#include "2d.h"
+#include "input.h"
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>
 
@@ -147,23 +151,21 @@ PxBatchQuery* VehicleSceneQueryData::setUpBatchedSceneQuery(const PxU32 batchId,
 static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(PhysicsVehicleSettings const& settings,
         const PxMaterial** materials)
 {
-    f32 frictionTable[MAX_NUM_SURFACE_TYPES] = {
-        settings.trackTireFriction, // TARMAC
-        settings.offroadTireFriction, // SAND
+    constexpr u32 NUM_SURFACE_TYPES = 2;
+    f32 frictionTable[NUM_SURFACE_TYPES] = {
+        settings.trackTireFriction,
+        settings.offroadTireFriction,
     };
 
-    PxVehicleDrivableSurfaceType surfaceTypes[MAX_NUM_SURFACE_TYPES] = {
-        { SURFACE_TYPE_TARMAC },
-        { SURFACE_TYPE_SAND },
-    };
+    PxVehicleDrivableSurfaceType surfaceTypes[NUM_SURFACE_TYPES] = { { 0 }, { 1 } };
 
     const u32 numTireTypes = 1;
     PxVehicleDrivableSurfaceToTireFrictionPairs* surfaceTirePairs =
-        PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(numTireTypes, MAX_NUM_SURFACE_TYPES);
+        PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(numTireTypes, NUM_SURFACE_TYPES);
 
-    surfaceTirePairs->setup(numTireTypes, MAX_NUM_SURFACE_TYPES, materials, surfaceTypes);
+    surfaceTirePairs->setup(numTireTypes, NUM_SURFACE_TYPES, materials, surfaceTypes);
 
-    for(u32 i = 0; i < MAX_NUM_SURFACE_TYPES; i++)
+    for(u32 i = 0; i < NUM_SURFACE_TYPES; i++)
     {
         for(u32 j = 0; j < numTireTypes; j++)
         {
@@ -184,10 +186,10 @@ static PxConvexMesh* createConvexMesh(const PxVec3* verts, const PxU32 numVerts)
 
     PxConvexMesh* convexMesh = nullptr;
     PxDefaultMemoryOutputStream buf;
-    if(game.physx.cooking->cookConvexMesh(convexDesc, buf))
+    if(g_game.physx.cooking->cookConvexMesh(convexDesc, buf))
     {
         PxDefaultMemoryInputData id(buf.getData(), buf.getSize());
-        convexMesh = game.physx.physics->createConvexMesh(id);
+        convexMesh = g_game.physx.physics->createConvexMesh(id);
     }
 
     return convexMesh;
@@ -213,7 +215,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
 	    const PxMaterial** surfaceMaterials, glm::mat4 const& transform)
 {
     sceneQueryData = VehicleSceneQueryData::allocate(1, NUM_WHEELS, QUERY_HITS_PER_WHEEL, 1,
-            &WheelSceneQueryPreFilterNonBlocking, &WheelSceneQueryPostFilterNonBlocking, game.physx.allocator);
+            &WheelSceneQueryPreFilterNonBlocking, &WheelSceneQueryPostFilterNonBlocking, g_game.physx.allocator);
     batchQuery = VehicleSceneQueryData::setUpBatchedSceneQuery(0, *sceneQueryData, scene);
     frictionPairs = createFrictionPairs(settings, surfaceMaterials);
 
@@ -239,7 +241,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     PxFilterData wheelSimFilterData(0, 0, 0, 0);
     PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
 
-    PxRigidDynamic* actor = game.physx.physics->createRigidDynamic(convert(transform));
+    PxRigidDynamic* actor = g_game.physx.physics->createRigidDynamic(convert(transform));
 
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
@@ -421,7 +423,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
 
     // create a vehicle from the wheels and drive sim data.
     vehicle4W = PxVehicleDrive4W::allocate(NUM_WHEELS);
-    vehicle4W->setup(game.physx.physics, actor, *wheelsSimData, driveSimData, NUM_WHEELS - 4);
+    vehicle4W->setup(g_game.physx.physics, actor, *wheelsSimData, driveSimData, NUM_WHEELS - 4);
     wheelsSimData->free();
 
     actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
@@ -450,8 +452,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->lastValidPosition = translationOf(transform);
     this->hitPoints = this->maxHitPoints;
 
-    engineSound = game.audio.playSound3D(game.resources.getSound("engine2"), translationOf(transform), true);
-    tireSound = game.audio.playSound3D(game.resources.getSound("tires"), translationOf(transform), true, 1.f, 0.f);
+    engineSound = g_audio.playSound3D(g_resources.getSound("engine2"), translationOf(transform), true);
+    tireSound = g_audio.playSound3D(g_resources.getSound("tires"), translationOf(transform), true, 1.f, 0.f);
 
     setupPhysics(scene->getPhysicsScene(), driver->vehicleData->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
@@ -462,7 +464,7 @@ Vehicle::~Vehicle()
 {
 	vehicle4W->getRigidDynamicActor()->release();
 	vehicle4W->free();
-	sceneQueryData->free(game.physx.allocator);
+	sceneQueryData->free(g_game.physx.allocator);
     // TODO: find out why this causes an exception
 	//batchQuery->release();
 	frictionPairs->release();
@@ -576,69 +578,71 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
-void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
+void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 {
     bool isPlayerControlled = driver->playerProfile != nullptr;
 
     // HUD
     if (cameraIndex >= 0)
     {
-        Font& font1 = game.resources.getFont("font", game.windowHeight * 0.04);
-        Font& font2 = game.resources.getFont("font", game.windowHeight * 0.08);
+        Font& font1 = g_resources.getFont("font", g_game.windowHeight * 0.04);
+        Font& font2 = g_resources.getFont("font", g_game.windowHeight * 0.08);
 
-        ViewportLayout const& layout = viewportLayout[scene->getViewportCount() - 1];
-        glm::vec2 dim(game.windowWidth, game.windowHeight);
+        ViewportLayout const& layout = viewportLayout[renderer->getViewportCount() - 1];
+        glm::vec2 dim(g_game.windowWidth, g_game.windowHeight);
         glm::vec2 offset = layout.offsets[cameraIndex] * dim;
         glm::vec2 d(1.f, 1.f);
         if (offset.y > 0.f)
         {
-            offset.y = game.windowHeight - font2.getHeight();
+            offset.y = g_game.windowHeight - font2.getHeight();
             d.y = -1;
         }
         glm::vec2 vdim = dim * layout.scale;
         glm::vec2 voffset = layout.offsets[cameraIndex] * dim;
         if (voffset.y > 0.f)
         {
-            voffset.y = game.windowHeight;
+            voffset.y = g_game.windowHeight;
         }
 
-        f32 o20 = game.windowHeight * 0.02f;
-        f32 o25 = game.windowHeight * 0.03f;
-        f32 o200 = game.windowHeight * 0.20f;
+        f32 o20 = g_game.windowHeight * 0.02f;
+        f32 o25 = g_game.windowHeight * 0.03f;
+        f32 o200 = g_game.windowHeight * 0.20f;
 
         std::string p = str(glm::min(currentLap, scene->getTotalLaps()));
-        f32 lapWidth = font1.stringDimensions(str("LAP").c_str()).x;
-        font1.drawText(str("LAP").c_str(), offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
-        font2.drawText(p.c_str(), offset +
-                glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f));
-        font1.drawText(str('/', scene->getTotalLaps()).c_str(),
-                offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p.c_str()).x, d.y*o20), glm::vec3(1.f));
+        std::string lapStr = "LAP";
+        f32 lapWidth = font1.stringDimensions(lapStr.c_str()).x;
+        renderer->push(TextRenderable(&font1, lapStr,
+                    offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f)));
+        renderer->push(TextRenderable(&font2, p,
+                    offset + glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f)));
+        renderer->push(TextRenderable(&font1, str('/', scene->getTotalLaps()),
+                    offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p.c_str()).x, d.y*o20), glm::vec3(1.f)));
 
         const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
         glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
 
         p = str(placement + 1);
-        font2.drawText(p.c_str(), offset + glm::vec2(o200, d.y*o20), col);
-        font1.drawText(str(placementSuffix[placement]).c_str(),
-                offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col);
+        renderer->push(TextRenderable(&font2, p, offset + glm::vec2(o200, d.y*o20), col));
+        renderer->push(TextRenderable(&font1, str(placementSuffix[placement]),
+                    offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col));
 
         // healthbar
         const f32 healthPercentage = glm::clamp(hitPoints / maxHitPoints, 0.f, 1.f);
-        const f32 maxHealthbarWidth = game.windowHeight * 0.12f;
+        const f32 maxHealthbarWidth = g_game.windowHeight * 0.12f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
-        const f32 healthbarHeight = game.windowHeight * 0.008f;
+        const f32 healthbarHeight = g_game.windowHeight * 0.008f;
         glm::vec2 pos = voffset + glm::vec2(vdim.x - o20, d.y*o20);
-        game.renderer.drawQuad2D(0, pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
-                pos, {}, {}, glm::vec3(0));
-        game.renderer.drawQuad2D(0, pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
-                pos, {}, {}, glm::mix(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), healthPercentage));
+        renderer->push(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
+                pos, {}, {}, glm::vec3(0)));
+        renderer->push(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
+                pos, {}, {}, glm::mix(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), healthPercentage)));
 
         // display notifications
         u32 count = 0;
         for (auto it = notifications.begin(); it != notifications.end();)
         {
-            font1.drawText(it->str, layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f - glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.03),
-                    { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER);
+            renderer->push(TextRenderable(&font1, it->str, layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f - glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.03),
+                    { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
             ++count;
             it->timeLeft -= deltaTime;
             if (it->timeLeft <= 0.f)
@@ -650,14 +654,19 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         }
     }
 
+    for (u32 i=0; i<NUM_WHEELS; ++i)
+    {
+        scene->ribbons.addChunk(&tireMarkRibbons[i]);
+    }
+
     if (deadTimer > 0.f)
     {
         deadTimer -= deltaTime;
-        if (engineSound) game.audio.setSoundVolume(engineSound, 0.f);
-        if (tireSound) game.audio.setSoundVolume(tireSound, 0.f);
+        if (engineSound) g_audio.setSoundVolume(engineSound, 0.f);
+        if (tireSound) g_audio.setSoundVolume(tireSound, 0.f);
         if (deadTimer <= 0.f)
         {
-            if (engineSound) game.audio.setSoundVolume(engineSound, 1.f);
+            if (engineSound) g_audio.setSoundVolume(engineSound, 1.f);
             backupTimer = 0.f;
             deadTimer = 0.f;
             hitPoints = maxHitPoints;
@@ -687,14 +696,14 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             if (driver->useKeyboard)
             {
                 digital = true;
-                accel = game.input.isKeyDown(KEY_UP);
-                brake = game.input.isKeyDown(KEY_DOWN);
-                steer = (f32)game.input.isKeyDown(KEY_LEFT) - (f32)game.input.isKeyDown(KEY_RIGHT);
-                shoot = game.input.isKeyPressed(KEY_C);
+                accel = g_input.isKeyDown(KEY_UP);
+                brake = g_input.isKeyDown(KEY_DOWN);
+                steer = (f32)g_input.isKeyDown(KEY_LEFT) - (f32)g_input.isKeyDown(KEY_RIGHT);
+                shoot = g_input.isKeyPressed(KEY_C);
             }
             else
             {
-                Controller* controller = game.input.getController(driver->controllerID);
+                Controller* controller = g_input.getController(driver->controllerID);
                 if (controller)
                 {
                     accel = controller->getAxis(AXIS_TRIGGER_RIGHT);
@@ -707,7 +716,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             updatePhysics(scene->getPhysicsScene(), deltaTime, digital,
                     accel, brake, steer, false, true, false);
 
-            if (game.input.isKeyPressed(KEY_F))
+            if (g_input.isKeyPressed(KEY_F))
             {
                 getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
                 getRigidBody()->addTorque(
@@ -741,8 +750,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             f32 testAngle = 0.65f;
             glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
             glm::vec3 testDir2(glm::rotate(glm::mat4(1.f), -testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
-            //game.renderer.drawLine(position, position + testDir1 * sideTestDist);
-            //game.renderer.drawLine(position, position + testDir2 * sideTestDist);
+            //renderer->drawLine(position, position + testDir1 * sideTestDist);
+            //renderer->drawLine(position, position + testDir2 * sideTestDist);
 
             f32 accel = 0.85f;
             f32 brake = 0.f;
@@ -862,12 +871,12 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 
     if (engineSound)
     {
-        game.audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
-        game.audio.setSoundPosition(engineSound, lastValidPosition);
+        g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
+        g_audio.setSoundPosition(engineSound, lastValidPosition);
     }
     if (tireSound)
     {
-        game.audio.setSoundPosition(tireSound, lastValidPosition);
+        g_audio.setSoundPosition(tireSound, lastValidPosition);
     }
 
     if (cameraIndex >= 0)
@@ -877,14 +886,14 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         cameraTarget = pos + glm::vec3(0, 0, 2.f);
         cameraFrom = smoothMove(cameraFrom,
                 cameraTarget - getForwardVector() * 10.f + glm::vec3(0, 0, 3.f), 8.f, deltaTime);
-        game.renderer.setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
+        renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
 #else
         cameraTarget = smoothMove(cameraTarget,
                 pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
                 5.f, deltaTime);
         f32 camDistance = 80.f;
         cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        game.renderer.setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 32.f, 160.f);
+        renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 32.f, 160.f);
 #endif
 
         // draw arrow if vehicle is hidden behind something
@@ -909,7 +918,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         }
         if (!visible)
         {
-            game.renderer.drawMeshOverlay(game.resources.getMesh("world.Arrow")->renderHandle,
+            renderer->drawMeshOverlay(g_resources.getMesh("world.Arrow"),
                     cameraIndex, transform, glm::vec3(driver->vehicleColor));
         }
     }
@@ -985,7 +994,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f))));
-                scene->smokeParticleSystem.spawn(
+                scene->smoke.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
                     glm::min(1.f, slip * 0.5f));
@@ -1003,7 +1012,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f))));
-                scene->smokeParticleSystem.spawn(
+                scene->smoke.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
                     glm::clamp(glm::max(slip, glm::abs(wheelRotationSpeed * 0.022f)), 0.f, 1.f),
@@ -1022,7 +1031,8 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             glm::vec3 markPosition = tn * -wheelRadius
                 + translationOf(transform * convert(info.localPose));
             //glm::vec4 color = isWheelOffroad ?  glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
-            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2, glm::vec4(1.0));
+            tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2,
+                    glm::vec4(1.f, 1.f, 1.f, glm::clamp(slip * 3.f, 0.f, 1.f)));
         }
         else if (wasWheelSlipping)
         {
@@ -1030,7 +1040,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
         }
     }
 
-    game.audio.setSoundVolume(tireSound,
+    g_audio.setSoundVolume(tireSound,
             anyWheelOnRoad ? glm::min(1.f, glm::min(maxSlip * 1.2f,
                     getRigidBody()->getLinearVelocity().magnitude() * 0.1f)) : 0.f);
 
@@ -1055,7 +1065,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     {
         for(auto& d : driver->vehicleData->debrisChunks)
         {
-			PxRigidDynamic* body = game.physx.physics->createRigidDynamic(
+			PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
 			        PxTransform(convert(transform * d.transform)));
 			body->attachShape(*d.collisionShape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
@@ -1071,7 +1081,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
 
             scene->createVehicleDebris(VehicleDebris{
                 body,
-                d.mesh->renderHandle,
+                d.mesh,
                 0.f,
                 driver->vehicleColor,
                 d.material ? d.material : driver->vehicleMaterial
@@ -1085,12 +1095,12 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
     // draw chassis
     for (auto& m : driver->vehicleData->chassisMeshes)
     {
-        game.renderer.drawMesh(*m.mesh, transform * m.transform,
+        renderer->drawMesh(m.mesh, transform * m.transform,
                 m.material ? m.material : driver->vehicleMaterial);
     }
 
     // draw wheels
-    Material* material = game.resources.getMaterial("wheel");
+    Material* material = g_resources.getMaterial("wheel");
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
@@ -1099,7 +1109,7 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
         auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
-        game.renderer.drawMesh(*mesh.mesh, wheelTransform * mesh.transform, material);
+        renderer->drawMesh(mesh.mesh, wheelTransform * mesh.transform, material);
     }
 
 #if 0
@@ -1110,19 +1120,19 @@ void Vehicle::onUpdate(f32 deltaTime, i32 cameraIndex)
                 //glm::translate(glm::mat4(1.f), getPosition()) *
                 glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 }) *
                 glm::scale(glm::mat4(1.f), glm::vec3(4, 15, 15));
-        auto verts1 = createDecal(decalTransform, game.resources.getMesh("world.TrackTarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
-        game.renderer.drawDecal(verts1, decalTransform, game.resources.getTexture("thing").renderHandle);
+        auto verts1 = createDecal(decalTransform, g_resources.getMesh("world.TrackTarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
+        renderer->drawDecal(verts1, decalTransform, g_resources.getTexture("thing"));
         /*
-        Mesh* railings = game.resources.getMesh("world.Railings");
+        Mesh* railings = g_resources.getMesh("world.Railings");
         railings->buildOctree();
         railings->octree->debugDraw(glm::mat4(1.f));
         auto verts2 = createDecal(decalTransform, railings, glm::mat4(1.f));
-        game.renderer.drawDecal(verts2, decalTransform, game.resources.getTexture("thing").renderHandle);
+        renderer->drawDecal(verts2, decalTransform, g_resources.getTexture("thing"));
         */
 
         BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
-        game.renderer.drawBoundingBox(decalBoundingBox.transform(decalTransform), glm::mat4(1.f), glm::vec4(1.f));
-        game.renderer.drawBoundingBox(decalBoundingBox, decalTransform, glm::vec4(0, 1, 0, 1));
+        renderer->drawBoundingBox(decalBoundingBox.transform(decalTransform), glm::mat4(1.f), glm::vec4(1.f));
+        renderer->drawBoundingBox(decalBoundingBox, decalTransform, glm::vec4(0, 1, 0, 1));
     }
 #endif
 }

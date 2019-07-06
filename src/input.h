@@ -376,4 +376,4 @@ public:
             } break;
         }
     }
-};
+} g_input;

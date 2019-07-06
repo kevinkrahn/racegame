@@ -1,6 +1,8 @@
 #pragma once
 
 #include "math.h"
+#include "renderable.h"
+#include "texture.h"
 #include <vector>
 
 enum struct HorizontalAlign
@@ -27,13 +29,14 @@ struct GlyphMetrics
 
 class Font
 {
-private:
-    u32 fontAtlasHandle;
+    Texture textureAtlas;
     f32 height;
     f32 lineHeight;
     u32 startingChar;
     std::vector<GlyphMetrics> glyphs;
     std::vector<f32> kerningTable;
+
+    friend class TextRenderable;
 
 public:
     Font() {};
@@ -41,9 +44,25 @@ public:
 
     glm::vec2 stringDimensions(const char* str, bool onlyFirstLine=false) const;
 
-    void drawText(const char* str, glm::vec2 p, glm::vec3 color, f32 alpha=1.f,
-            f32 scale=1.f, HorizontalAlign halign=HorizontalAlign::LEFT,
-            VerticalAlign valign=VerticalAlign::TOP);
-
     f32 getHeight() const { return height; }
+    f32 getLineHeight() const { return lineHeight; }
+};
+
+class TextRenderable : public Renderable2D
+{
+public:
+    Font* font;
+    std::string text;
+    glm::vec2 pos;
+    glm::vec3 color;
+    f32 alpha = 1.f;
+    f32 scale = 1.f;
+    HorizontalAlign halign;
+    VerticalAlign valign;
+
+    TextRenderable(Font* font, std::string const& text, glm::vec2 pos, glm::vec3 color, f32 alpha=1.f,
+            f32 scale=1.f, HorizontalAlign halign=HorizontalAlign::LEFT,
+            VerticalAlign valign=VerticalAlign::TOP) : font(font), text(text), pos(pos), color(color),
+            alpha(alpha), scale(scale), halign(halign), valign(valign) {}
+    void on2DPass(Renderer* renderer) override;
 };

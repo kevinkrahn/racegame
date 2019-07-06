@@ -93,6 +93,6 @@ public:
     void setSoundPosition(SoundHandle handle, glm::vec3 const& position);
     void setSoundPaused(SoundHandle handle, bool paused);
     void setListeners(SmallVec<glm::vec3>const& listeners);
-};
+} g_audio;
 
 void SDLAudioCallback(void* userdata, u8* buf, i32 len);
