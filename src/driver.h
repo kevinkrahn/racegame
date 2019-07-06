@@ -3,6 +3,8 @@
 #include "math.h"
 #include "vehicle_data.h"
 
+const u32 MAX_VEHICLES = 16;
+
 struct PlayerProfile
 {
     std::string name;

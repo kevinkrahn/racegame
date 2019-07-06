@@ -4,10 +4,11 @@
 #include "datafile.h"
 
 class Entity {
-public:
-    i32 priority = 0;
-
     bool isMarkedForDeletion = false;
+
+public:
+    void destroy() { isMarkedForDeletion = true; }
+    bool isDestroyed() { return isMarkedForDeletion; }
 
     virtual ~Entity() {};
     virtual DataFile::Value serialize() { return {}; }

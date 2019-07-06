@@ -6,6 +6,7 @@
 #include "2d.h"
 #include "input.h"
 #include "mesh_renderables.h"
+#include "entities/projectile.h"
 
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>
@@ -664,6 +665,12 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         scene->ribbons.addChunk(&tireMarkRibbons[i]);
     }
 
+    // draw vehicle debris
+    for (auto const& d : vehicleDebris)
+    {
+        renderer->drawMesh(d.mesh, convert(d.rigidBody->getGlobalPose()), d.material);
+    }
+
     if (deadTimer > 0.f)
     {
         deadTimer -= deltaTime;
@@ -1084,7 +1091,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 	                    random(scene->randomSeries, 0.f, 8.f),
 	                    random(scene->randomSeries, 0.f, 8.f)));
 
-            scene->createVehicleDebris(VehicleDebris{
+            createVehicleDebris(VehicleDebris{
                 body,
                 d.mesh,
                 0.f,
@@ -1151,8 +1158,8 @@ void Vehicle::fireWeapon()
     {
         vel = glm::normalize(vel) * minSpeed;
     }
-    scene->createProjectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
-            vel, zAxisOf(transform), vehicleIndex);
-    scene->createProjectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
-            vel, zAxisOf(transform), vehicleIndex);
+    scene->addEntity(new Projectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
+            vel, zAxisOf(transform), vehicleIndex));
+    scene->addEntity(new Projectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
+            vel, zAxisOf(transform), vehicleIndex));
 }

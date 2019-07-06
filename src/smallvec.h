@@ -62,7 +62,7 @@ public:
     }
     */
 
-    SmallVec<T>& operator = (SmallVec<T> && other)
+    SmallVec<T, maxSize>& operator = (SmallVec<T, maxSize> && other)
     {
         clear();
         size_ = other.size_;

@@ -64,6 +64,12 @@ Scene::Scene(const char* name)
     auto& entities = sceneData["entities"].array();
     bool foundStart = false;
 
+    if (!name)
+    {
+        // hmmmm
+        return;
+    }
+
     struct TrackMesh
     {
         Mesh* mesh;
@@ -236,53 +242,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         renderer->drawMesh(e.mesh, e.worldTransform, e.material);
     }
 
-    // draw vehicle debris
-    for (auto const& d : vehicleDebris)
-    {
-        renderer->drawMesh(d.mesh, convert(d.rigidBody->getGlobalPose()), d.material);
-    }
-
-    // update projectiles
-    Mesh* bulletMesh = g_resources.getMesh("world.Bullet");
-    for (auto it = projectiles.begin(); it != projectiles.end();)
-    {
-        glm::vec3 prevPosition = it->position;
-        it->position += it->velocity * deltaTime;
-        renderer->push(LitRenderable(bulletMesh,
-                glm::translate(glm::mat4(1.f), it->position) *
-                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)), nullptr));
-
-        f32 speed = glm::length(it->velocity);
-        PxRaycastBuffer rayHit;
-        f32 dist = 3.f;
-        if (raycastStatic(it->position, { 0, 0, -1 }, dist, &rayHit))
-        {
-            it->velocity.z = smoothMove(it->velocity.z, 0.f, 5.f, deltaTime);
-            f32 compression = 1.f - rayHit.block.distance;
-            if (rayHit.block.distance < 0.8f && it->velocity.z < 0.f) it->velocity.z = 0.f;
-            if (rayHit.block.distance > 1.2f && it->velocity.z > 0.f) it->velocity.z = 0.f;
-            it->velocity.z += compression * 90.f * deltaTime;
-            it->velocity = glm::normalize(it->velocity) * speed;
-        }
-
-        PxSweepBuffer sweepHit;
-        if (sweep(0.3f, prevPosition,
-                    glm::normalize(it->position - prevPosition),
-                    glm::length(it->position - prevPosition), &sweepHit,
-                    vehicles[it->instigator]->getRigidBody()))
-        {
-            ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
-            if (data && data->entityType == ActorUserData::VEHICLE)
-            {
-                data->vehicle->applyDamage(50.f, it->instigator);
-            }
-            it = projectiles.erase(it);
-            continue;
-        }
-
-        ++it;
-    }
-
     // update vehicles
     i32 cameraIndex = 0;
     SmallVec<glm::vec3> listenerPositions;
@@ -298,7 +257,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     g_audio.setListeners(listenerPositions);
 
     // determine vehicle placement
-    SmallVec<u32> placements;
+    SmallVec<u32, MAX_VEHICLES> placements;
     for (u32 i=0; i<vehicles.size(); ++i)
     {
         placements.push_back(i);
@@ -403,7 +362,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     // draw HUD track
     Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
-    SmallVec<TrackPreview2D::RenderItem, 16> dynamicItems;
+    SmallVec<TrackPreview2D::RenderItem, MAX_VEHICLES> dynamicItems;
     for (auto const& v : vehicles)
     {
         glm::vec3 pos = v->getPosition();
@@ -468,16 +427,12 @@ void Scene::onEndUpdate(f32 deltaTime)
     newEntities.clear();
 
     for (auto it = entities.begin(); it != entities.end();) {
-        if ((*it)->isMarkedForDeletion) {
+        if ((*it)->isDestroyed()) {
             entities.erase(it);
         } else {
             ++it;
         }
     }
-
-    std::sort(entities.begin(), entities.end(), [&](auto& a, auto& b) {
-        return a->priority < b->priority;
-    });
 }
 
 void Scene::onEnd()

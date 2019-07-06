@@ -6,6 +6,7 @@
 #include "input.h"
 #include "resources.h"
 #include "audio.h"
+#include "editor.h"
 #include <chrono>
 #include <iostream>
 
@@ -107,17 +108,29 @@ void Game::run()
 
     state.drivers = {
         Driver(true,  true,  true,  &g_resources.getVehicleData()[3], 1, 0),
-        Driver(false, false, false, &g_resources.getVehicleData()[1], 2, 0),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
         Driver(false, false, false, &g_resources.getVehicleData()[2], 3),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
-        Driver(false, false, false, &g_resources.getVehicleData()[1], 5),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
         Driver(false, false, false, &g_resources.getVehicleData()[2], 6),
         Driver(false, false, false, &g_resources.getVehicleData()[3], 7),
         Driver(false, false, false, &g_resources.getVehicleData()[3], 8),
+
+        /*
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 1),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 2),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 3),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 6),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 7),
+        Driver(false, false, false, &g_resources.getVehicleData()[0], 8),
+        */
     };
 
     //changeScene("track2.Scene");
     changeScene("world.Scene");
+    //changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;

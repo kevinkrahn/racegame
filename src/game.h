@@ -13,7 +13,7 @@ public:
 
     struct
     {
-        SmallVec<Driver> drivers;
+        SmallVec<Driver, MAX_VEHICLES> drivers;
     } state;
 
     struct

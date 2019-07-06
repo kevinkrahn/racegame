@@ -5,6 +5,7 @@
 #include "track_graph.h"
 #include "ribbon.h"
 #include "driver.h"
+#include "scene.h"
 
 class VehicleSceneQueryData
 {
@@ -35,7 +36,7 @@ class Vehicle
 // TODO: should be private
 public:
 	Driver* driver;
-	class Scene* scene;
+	Scene* scene;
 	u32 vehicleIndex;
 
     // physics data
@@ -74,6 +75,18 @@ public:
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
+
+    struct VehicleDebris
+    {
+        PxRigidDynamic* rigidBody;
+        Mesh* mesh;
+        f32 life = 0.f;
+        glm::vec3 color;
+        Material* material = nullptr;
+    };
+
+    std::vector<VehicleDebris> vehicleDebris;
+    void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
 
 	struct Notification
 	{

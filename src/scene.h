@@ -1,6 +1,5 @@
 #pragma once
 
-#include "misc.h"
 #include "math.h"
 #include "track_graph.h"
 #include "material.h"
@@ -8,6 +7,7 @@
 #include "ribbon.h"
 #include "smoke_particles.h"
 #include "debug_draw.h"
+#include "driver.h"
 #include "2d.h"
 #include <vector>
 
@@ -32,12 +32,14 @@ struct ActorUserData
     {
         TRACK,
         SCENERY,
-        VEHICLE
+        VEHICLE,
+        ENTITY,
     };
     u32 entityType;
     union
     {
         class Vehicle* vehicle;
+        Entity* entity;
     };
 };
 
@@ -49,26 +51,18 @@ struct StaticEntity
     bool isTrack = false;
 };
 
-struct VehicleDebris
+enum SceneMode
 {
-    PxRigidDynamic* rigidBody;
-    Mesh* mesh;
-    f32 life = 0.f;
-    glm::vec3 color;
-    Material* material = nullptr;
-};
-
-struct Projectile
-{
-    glm::vec3 position;
-    glm::vec3 velocity;
-    glm::vec3 upVector;
-    u32 instigator;
+    EDITOR,
+    RACE,
+    MENU
 };
 
 class Scene : public PxSimulationEventCallback
 {
 private:
+    SceneMode mode = SceneMode::RACE;
+
     glm::mat4 start;
     u32 totalLaps = 4;
 
@@ -77,11 +71,9 @@ private:
 
     std::vector<StaticEntity> staticEntities;
     std::vector<std::unique_ptr<ActorUserData>> physicsUserData;
-    std::vector<VehicleDebris> vehicleDebris;
-    SmallVec<std::unique_ptr<class Vehicle>> vehicles;
-    SmallVec<u32> finishOrder;
+    SmallVec<u32, MAX_VEHICLES> finishOrder;
     SmallVec<std::vector<glm::vec3>> paths;
-    std::vector<Projectile> projectiles;
+    SmallVec<std::unique_ptr<class Vehicle>, MAX_VEHICLES> vehicles;
 
     bool debugCamera = false;
     glm::vec3 debugCameraPosition;
@@ -123,6 +115,8 @@ public:
     void onEndUpdate(f32 deltaTime);
 
     void vehicleFinish(u32 n) { finishOrder.push_back(n); }
+    Vehicle* getVehicle(u32 n) const { return vehicles[n].get(); }
+    void attackCredit(u32 instigator, u32 victim);
 
     glm::mat4 const& getStart() const { return start; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
@@ -135,21 +129,5 @@ public:
     bool sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr) const;
     bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr) const;
 
-    void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
-    void createProjectile(glm::vec3 const& position, glm::vec3 const& velocity, glm::vec3 const& upVector, u32 instigator)
-    {
-        projectiles.push_back({ position, velocity, upVector, instigator });
-    };
-
-    void attackCredit(u32 instigator, u32 victim);
-
-    template <typename T>
-    Entity* spawnEntity() {
-        newEntities.push_back(std::unique_ptr<Entity>(new T()));
-        return newEntities.back().get();
-    }
-
-    void destroyEntity(Entity* e) {
-        e->isMarkedForDeletion = true;
-    }
+    void addEntity(Entity* entity) { newEntities.push_back(std::unique_ptr<Entity>(entity)); }
 };
