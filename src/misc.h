@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <cassert>
 #include <filesystem>

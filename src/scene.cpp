@@ -4,7 +4,6 @@
 #include "renderer.h"
 #include "mesh_renderables.h"
 #include "input.h"
-#include "2d.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -249,10 +248,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         glm::vec3 prevPosition = it->position;
         it->position += it->velocity * deltaTime;
-        //renderer->push(LitRenderable());
-        renderer->drawMesh(bulletMesh,
+        renderer->push(LitRenderable(bulletMesh,
                 glm::translate(glm::mat4(1.f), it->position) *
-                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)), nullptr);
+                glm::transpose(glm::lookAt(glm::vec3(0.f), it->velocity, it->upVector)), nullptr));
 
         f32 speed = glm::length(it->velocity);
         PxRaycastBuffer rayHit;
@@ -399,32 +397,13 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         isDebugOverlayEnabled = !isDebugOverlayEnabled;
     }
 
-    if (isDebugOverlayEnabled)
-    {
-        Vehicle const& playerVehicle = *vehicles[0];
-        const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
-        Font* font = &g_resources.getFont("font", 20);
-        std::string debugText = str(
-            "FPS: ", 1.f / g_game.realDeltaTime,
-            "\nEngine RPM: ", playerVehicle.getEngineRPM(),
-            "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
-            "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
-            "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-            "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark);
-        renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
-                    { 220, g_game.windowHeight - (30 + font->stringDimensions(debugText.c_str()).y) },
-                    {}, {}, { 0, 0, 0 }, 0.4));
-        renderer->push(TextRenderable(font, debugText,
-            { 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
-    }
-
     renderer->add(&ribbons);
     renderer->add(&smoke);
     renderer->add(&debugDraw);
 
     // draw HUD track
     Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
-    SmallVec<RenderTextureItem, 16> dynamicItems;
+    SmallVec<TrackPreview2D::RenderItem, 16> dynamicItems;
     for (auto const& v : vehicles)
     {
         glm::vec3 pos = v->getPosition();
@@ -447,7 +426,37 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         size = (u32)(g_game.windowHeight * 0.36f);
     }
     else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-    //renderer->drawTrack2D(trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
+
+    trackPreview2D.update(renderer, trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
+    renderer->add(&trackPreview2D);
+
+    if (isDebugOverlayEnabled)
+    {
+        Vehicle const& playerVehicle = *vehicles[0];
+        const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
+        Font* font1 = &g_resources.getFont("font", 20);
+        Font* font2 = &g_resources.getFont("font", 18);
+        std::string debugText = str(
+            "FPS: ", 1.f / g_game.realDeltaTime,
+            "\nEngine RPM: ", playerVehicle.getEngineRPM(),
+            "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
+            "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
+            "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
+            "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark);
+
+        renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
+                    { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText.c_str()).y) },
+                    {}, {}, { 0, 0, 0 }, 0.6));
+        renderer->push(TextRenderable(font1, debugText,
+            { 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
+
+        std::string debugRenderListText = renderer->getDebugRenderList();
+        auto dim = font2->stringDimensions(debugRenderListText.c_str());
+        renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, 10 },
+                    { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6));
+        renderer->push(TextRenderable(font2, debugRenderListText,
+            { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
+    }
 }
 
 void Scene::onEndUpdate(f32 deltaTime)

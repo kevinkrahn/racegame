@@ -292,9 +292,11 @@ public:
             return;
         }
 
+        glEnable(GL_BLEND);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(0.f, -1000.f);
         glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
         glDisable(GL_CULL_FACE);
         glUseProgram(renderer->getShaderProgram("ribbon"));
 
@@ -315,4 +317,6 @@ public:
 
         chunks.clear();
     }
+
+    std::string getDebugString() const override { return "RibbonRenderable"; }
 };

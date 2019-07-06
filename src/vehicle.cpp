@@ -5,6 +5,8 @@
 #include "renderer.h"
 #include "2d.h"
 #include "input.h"
+#include "mesh_renderables.h"
+
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>
 
@@ -587,6 +589,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     {
         Font& font1 = g_resources.getFont("font", g_game.windowHeight * 0.04);
         Font& font2 = g_resources.getFont("font", g_game.windowHeight * 0.08);
+        Font& font3 = g_resources.getFont("font", g_game.windowHeight * 0.05);
 
         ViewportLayout const& layout = viewportLayout[renderer->getViewportCount() - 1];
         glm::vec2 dim(g_game.windowWidth, g_game.windowHeight);
@@ -641,8 +644,10 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         u32 count = 0;
         for (auto it = notifications.begin(); it != notifications.end();)
         {
-            renderer->push(TextRenderable(&font1, it->str, layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f - glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.03),
-                    { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+            renderer->push(TextRenderable(&font3, it->str,
+                layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
+                    glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.04),
+                { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
             ++count;
             it->timeLeft -= deltaTime;
             if (it->timeLeft <= 0.f)
@@ -918,8 +923,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         }
         if (!visible)
         {
-            renderer->drawMeshOverlay(g_resources.getMesh("world.Arrow"),
-                    cameraIndex, transform, glm::vec3(driver->vehicleColor));
+            renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
+                    cameraIndex, transform, glm::vec3(driver->vehicleColor)));
         }
     }
 

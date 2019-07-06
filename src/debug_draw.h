@@ -79,6 +79,7 @@ public:
         glEnable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
+        glDisable(GL_CULL_FACE);
 
         if (verts.size() > 0)
         {
@@ -94,4 +95,6 @@ public:
             verts.clear();
         }
     }
+
+    std::string getDebugString() const override { return "DebugDraw"; };
 };

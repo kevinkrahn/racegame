@@ -10,6 +10,7 @@
 #include "dynamic_buffer.h"
 #include "buffer.h"
 
+#include <algorithm>
 #include <vector>
 
 GLuint emptyVAO;
@@ -39,14 +40,6 @@ ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
     { 26, { 1.0f, 0.5f }, { { 0.0f, 0.0f }, { 0.0f, 0.5f } } },
     { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f } } },
     { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f }, { 0.5f, 0.5f } } },
-};
-
-struct RenderTextureItem
-{
-    Mesh* mesh;
-    glm::mat4 transform;
-    glm::vec3 color = glm::vec3(1.0);
-    bool overwriteColor = false;
 };
 
 struct GLShader
@@ -156,17 +149,50 @@ public:
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
     void drawMesh(Mesh* mesh, glm::mat4 const& worldTransform, Material* material);
-    void drawMeshOverlay(Mesh* mesh, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color);
 
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const { return cameras.size(); }
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
     Camera& getCamera(u32 index) { return cameras[index]; }
 
-    void drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
-                     SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos);
-
     void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
             Texture* texture, glm::vec3 const& color = glm::vec3(1.f));
+
+    std::string getDebugRenderList()
+    {
+        std::sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
+            return a.priority < b.priority;
+        });
+
+        std::string result;
+        std::string prev = str(renderables.front().priority, " - ", renderables.front().renderable->getDebugString());
+        u32 count = 0;
+        u32 items = 0;
+        for (auto it = renderables.begin(); it != renderables.end(); ++it)
+        {
+            std::string t = str(it->priority, " - ", it->renderable->getDebugString());
+            if (t != prev)
+            {
+                if (items != 0)
+                {
+                    result += '\n';
+                }
+                result += prev + " x " + std::to_string(count);
+                prev = std::move(t);
+                count = 1;
+                ++items;
+            }
+            else
+            {
+                ++count;
+            }
+
+            if (it + 1 == renderables.end())
+            {
+                result += "\n" + prev + " x " + std::to_string(count);
+            }
+        }
+        return result;
+    }
 };
 

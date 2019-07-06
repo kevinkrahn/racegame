@@ -8,6 +8,7 @@
 #include "ribbon.h"
 #include "smoke_particles.h"
 #include "debug_draw.h"
+#include "2d.h"
 #include <vector>
 
 enum
@@ -90,7 +91,8 @@ private:
     PxScene* physicsScene = nullptr;
 
     glm::mat4 trackOrtho;
-    std::vector<RenderTextureItem> trackItems;
+    std::vector<TrackPreview2D::RenderItem> trackItems;
+    TrackPreview2D trackPreview2D;
     f32 trackAspectRatio;
 
     TrackGraph trackGraph;

@@ -2,7 +2,6 @@
 #include "game.h"
 #include <fstream>
 #include <sstream>
-#include <algorithm>
 #include <map>
 
 struct RenderItem
@@ -11,22 +10,6 @@ struct RenderItem
     glm::mat4 worldTransform;
     Material* material;
 };
-
-struct RenderMeshOverlay
-{
-    Mesh* mesh;
-    u32 viewportIndex;
-    glm::mat4 worldTransform;
-    glm::vec3 color;
-};
-
-struct TrackTexture
-{
-    GLuint multisampleFramebuffer, multisampleTex, multisampleDepthBuffer;
-    GLuint destFramebuffer, destTex;
-    u32 width = 0;
-    u32 height = 0;
-} track;
 
 struct Decal
 {
@@ -37,7 +20,6 @@ struct Decal
 };
 
 std::vector<RenderItem> renderList;
-std::vector<RenderMeshOverlay> renderListOverlay;
 std::vector<Decal> renderListDecal;
 Material defaultMaterial;
 
@@ -439,7 +421,7 @@ void Renderer::render(f32 deltaTime)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     std::sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
-        return a.priority > b.priority;
+        return a.priority < b.priority;
     });
 
     for (auto const& r : renderables)
@@ -484,6 +466,8 @@ void Renderer::render(f32 deltaTime)
         }
     };
 
+    i32 prevPriority = INT32_MIN;
+
     // shadow map
     if (g_game.config.shadowsEnabled)
     {
@@ -519,9 +503,15 @@ void Renderer::render(f32 deltaTime)
             glBindVertexArray(r.mesh->vao);
             glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
         }
+        prevPriority = INT32_MIN;
         for (auto const& r : renderables)
         {
+            if (r.priority != prevPriority)
+            {
+                r.renderable->onShadowPassPriorityTransition(this);
+            }
             r.renderable->onShadowPass(this);
+            prevPriority = r.priority;
         }
         glCullFace(GL_BACK);
         glDisable(GL_DEPTH_CLAMP);
@@ -549,9 +539,15 @@ void Renderer::render(f32 deltaTime)
         glBindVertexArray(r.mesh->vao);
         glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
+    prevPriority = INT32_MIN;
     for (auto const& r : renderables)
     {
+        if (r.priority != prevPriority)
+        {
+            r.renderable->onDepthPrepassPriorityTransition(this);
+        }
         r.renderable->onDepthPrepass(this);
+        prevPriority = r.priority;
     }
     glBindTextureUnit(1, fb.mainDepthTexture);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -639,27 +635,19 @@ void Renderer::render(f32 deltaTime)
         glBindVertexArray(r.mesh->vao);
         glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
+    prevPriority = INT32_MIN;
     for (auto const& r : renderables)
     {
+        if (r.priority != prevPriority)
+        {
+            r.renderable->onLitPassPriorityTransition(this);
+        }
         r.renderable->onLitPass(this);
+        prevPriority = r.priority;
         if (r.isTemporary)
         {
             r.renderable->~Renderable();
         }
-    }
-
-    // overlays
-    glUseProgram(getShaderProgram("overlay"));
-    glDepthMask(GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
-    for (auto const& r : renderListOverlay)
-    {
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-        glUniform3f(1, r.color.x, r.color.y, r.color.z);
-        glUniform1i(2, (i32)r.viewportIndex);
-        glBindVertexArray(r.mesh->vao);
-        glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
-        renderListOverlay.clear();
     }
 
     // decals
@@ -730,7 +718,7 @@ void Renderer::render(f32 deltaTime)
 
     /*
     std::sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
-        return a.priority > b.priority;
+        return a.priority < b.priority;
     });
     */
 
@@ -821,102 +809,10 @@ void Renderer::drawMesh(Mesh* mesh, glm::mat4 const& worldTransform, Material* m
     renderList.push_back({ mesh, worldTransform, material });
 }
 
-void Renderer::drawMeshOverlay(Mesh* mesh, u32 viewportIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
-{
-    renderListOverlay.push_back({ mesh, viewportIndex, worldTransform, color });
-}
-
 void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
     worldInfo.sunDirection = -glm::normalize(direction);
     worldInfo.sunColor = color;
-}
-
-void Renderer::drawTrack2D(std::vector<RenderTextureItem> const& staticItems,
-            SmallVec<RenderTextureItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos)
-{
-    if (track.width != width || track.height != height)
-    {
-        print("HUD track size changed: ", width, "x", height, "\n");
-        track.width = width;
-        track.height = height;
-
-        // multisample
-        const u32 samples = 4;
-        glGenTextures(1, &track.multisampleTex);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, track.multisampleTex);
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA, width, height, GL_TRUE);
-
-        glGenRenderbuffers(1, &track.multisampleDepthBuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, track.multisampleDepthBuffer);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT, width, height);
-
-        glGenFramebuffers(1, &track.multisampleFramebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, track.multisampleFramebuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, track.multisampleTex, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, track.multisampleDepthBuffer);
-
-        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
-        // dest
-        glGenTextures(1, &track.destTex);
-        glBindTexture(GL_TEXTURE_2D, track.destTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glGenFramebuffers(1, &track.destFramebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, track.destFramebuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, track.destTex, 0);
-
-        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    }
-
-    glViewport(0, 0, width, height);
-    glBindFramebuffer(GL_FRAMEBUFFER, track.multisampleFramebuffer);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glClearColor(0.f, 0.f, 0.f, 0.f);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    glDisable(GL_BLEND);
-
-    glUseProgram(getShaderProgram("mesh2D"));
-
-    for(auto& item : staticItems)
-    {
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
-        glUniform3fv(1, 1, (GLfloat*)&item.color);
-        glUniform1i(2, item.overwriteColor);
-        glBindVertexArray(item.mesh->vao);
-        glDrawElements(GL_TRIANGLES, item.mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
-
-    for(auto& item : dynamicItems)
-    {
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
-        glUniform3fv(1, 1, (GLfloat*)&item.color);
-        glUniform1i(2, item.overwriteColor);
-        glBindVertexArray(item.mesh->vao);
-        glDrawElements(GL_TRIANGLES, item.mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, track.multisampleFramebuffer);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, track.destFramebuffer);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glm::vec2 size(width, height);
-    //drawQuad2D(track.destTex, pos-size*0.5f, pos+size*0.5f, { 0.f, 0.f }, { 1.f, 1.f }, { 1, 1, 1 }, 1.f);
 }
 
 void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
