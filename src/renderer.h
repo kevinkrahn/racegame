@@ -158,6 +158,7 @@ public:
     void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
             Texture* texture, glm::vec3 const& color = glm::vec3(1.f));
 
+    size_t getTempRenderBufferSize() const { return tempRenderBuffer.pos; }
     std::string getDebugRenderList()
     {
         std::sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {

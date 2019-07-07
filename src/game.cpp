@@ -6,7 +6,6 @@
 #include "input.h"
 #include "resources.h"
 #include "audio.h"
-#include "editor.h"
 #include <chrono>
 #include <iostream>
 

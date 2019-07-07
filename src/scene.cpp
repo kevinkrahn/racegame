@@ -4,6 +4,7 @@
 #include "renderer.h"
 #include "mesh_renderables.h"
 #include "input.h"
+#include "terrain.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -66,7 +67,9 @@ Scene::Scene(const char* name)
 
     if (!name)
     {
-        // hmmmm
+        // loading empty scene, so add default terrain
+        terrain = new Terrain();
+        addEntity(terrain);
         return;
     }
 
@@ -199,8 +202,13 @@ Scene::~Scene()
 
 void Scene::onStart()
 {
-    const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
+    if (isEditing)
+    {
+        editor.onStart(this);
+        return;
+    }
 
+    const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
@@ -361,47 +369,47 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->add(&debugDraw);
 
     // draw HUD track
-    Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
-    SmallVec<TrackPreview2D::RenderItem, MAX_VEHICLES> dynamicItems;
-    for (auto const& v : vehicles)
+    if (!isEditing)
     {
-        glm::vec3 pos = v->getPosition();
-        dynamicItems.push_back({
-            arrowMesh,
-            trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
-                * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
-                * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
-            v->getDriver()->vehicleColor,
-            false
-        });
-    }
-    u32 size = (u32)(g_game.windowHeight * 0.23f);
-    glm::vec2 hudTrackPos;
-    if (viewportCount == 1) hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
-    else if (viewportCount == 2) hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
-    else if (viewportCount == 3)
-    {
-        hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
-        size = (u32)(g_game.windowHeight * 0.36f);
-    }
-    else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
+        SmallVec<TrackPreview2D::RenderItem, MAX_VEHICLES> dynamicItems;
+        for (auto const& v : vehicles)
+        {
+            glm::vec3 pos = v->getPosition();
+            dynamicItems.push_back({
+                arrowMesh,
+                trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
+                    * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
+                    * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
+                v->getDriver()->vehicleColor,
+                false
+            });
+        }
+        u32 size = (u32)(g_game.windowHeight * 0.23f);
+        glm::vec2 hudTrackPos;
+        if (viewportCount == 1) hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
+        else if (viewportCount == 2) hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
+        else if (viewportCount == 3)
+        {
+            hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
+            size = (u32)(g_game.windowHeight * 0.36f);
+        }
+        else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
 
-    trackPreview2D.update(renderer, trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
-    renderer->add(&trackPreview2D);
+        trackPreview2D.update(renderer, trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
+        renderer->add(&trackPreview2D);
+    }
 
     if (isDebugOverlayEnabled)
     {
-        Vehicle const& playerVehicle = *vehicles[0];
-        const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
         Font* font1 = &g_resources.getFont("font", 20);
         Font* font2 = &g_resources.getFont("font", 18);
         std::string debugText = str(
             "FPS: ", 1.f / g_game.realDeltaTime,
-            "\nEngine RPM: ", playerVehicle.getEngineRPM(),
-            "\nSpeed: ", playerVehicle.getForwardSpeed() * 3.6f,
-            "\nGear: ", gearNames[playerVehicle.vehicle4W->mDriveDynData.mCurrentGear],
-            "\nProgress: ", playerVehicle.graphResult.currentLapDistance,
-            "\nLow Mark: ", playerVehicle.graphResult.lapDistanceLowMark);
+            "\nDelta: ", g_game.realDeltaTime,
+            "\nDilation: ", g_game.timeDilation,
+            "\nResolution: ", g_game.config.resolutionX, "x", g_game.config.resolutionY,
+            "\nTmpRenderMem: ", std::fixed, std::setprecision(2), renderer->getTempRenderBufferSize() / 1024.f, "kb");
 
         renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
                     { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText.c_str()).y) },
@@ -415,6 +423,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6));
         renderer->push(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
+    }
+
+    if (isEditing)
+    {
+        editor.onUpdate(this, renderer, deltaTime);
     }
 }
 

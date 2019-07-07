@@ -658,6 +658,24 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             }
             ++it;
         }
+
+        // vehicle debug info
+        if (scene->isDebugOverlayEnabled)
+        {
+            Font* f = &g_resources.getFont("font", 20);
+            const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
+            std::string debugText = str(
+                "Engine RPM: ", getEngineRPM(),
+                "\nSpeed: ", getForwardSpeed() * 3.6f,
+                "\nGear: ", gearNames[vehicle4W->mDriveDynData.mCurrentGear],
+                "\nProgress: ", graphResult.currentLapDistance,
+                "\nLow Mark: ", graphResult.lapDistanceLowMark);
+            renderer->push(QuadRenderable(g_resources.getTexture("white"), { 220 + 10, g_game.windowHeight - 10 },
+                        { 220 + 220, g_game.windowHeight - (30 + f->stringDimensions(debugText.c_str()).y) },
+                        {}, {}, { 0, 0, 0 }, 0.6));
+            renderer->push(TextRenderable(f, debugText,
+                { 220 + 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
+        }
     }
 
     for (u32 i=0; i<NUM_WHEELS; ++i)

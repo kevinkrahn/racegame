@@ -2,7 +2,6 @@
 
 #include "misc.h"
 #include "math.h"
-#include "terrain.h"
 
 class Editor
 {

@@ -426,7 +426,7 @@ void Renderer::render(f32 deltaTime)
 
     for (auto const& r : renderables)
     {
-        r.renderable->onUpdate(deltaTime);
+        r.renderable->onBeforeRender(deltaTime);
     }
 
     // update worldinfo uniform buffer

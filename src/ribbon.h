@@ -277,7 +277,7 @@ public:
         }
     }
 
-    void onUpdate(f32 deltaTime) override
+    void onBeforeRender(f32 deltaTime) override
     {
         for (auto& chunk : chunks)
         {

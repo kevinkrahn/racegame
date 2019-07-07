@@ -17,7 +17,7 @@
 #include "audio.cpp"
 #include "driver.cpp"
 #include "mesh.cpp"
-//#include "editor.cpp"
+#include "editor.cpp"
 #include "terrain.cpp"
 #include "dynamic_buffer.cpp"
 #include "entities/projectile.cpp"

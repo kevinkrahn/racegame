@@ -8,6 +8,7 @@
 #include "smoke_particles.h"
 #include "debug_draw.h"
 #include "driver.h"
+#include "editor.h"
 #include "2d.h"
 #include <vector>
 
@@ -51,17 +52,12 @@ struct StaticEntity
     bool isTrack = false;
 };
 
-enum SceneMode
-{
-    EDITOR,
-    RACE,
-    MENU
-};
-
 class Scene : public PxSimulationEventCallback
 {
 private:
-    SceneMode mode = SceneMode::RACE;
+    bool isEditing = true;
+    Editor editor;
+    class Terrain* terrain = nullptr;
 
     glm::mat4 start;
     u32 totalLaps = 4;
@@ -77,9 +73,6 @@ private:
 
     bool debugCamera = false;
     glm::vec3 debugCameraPosition;
-    bool isPhysicsDebugVisualizationEnabled = false;
-    bool isTrackGraphDebugVisualizationEnabled = false;
-    bool isDebugOverlayEnabled = false;
     PxScene* physicsScene = nullptr;
 
     glm::mat4 trackOrtho;
@@ -98,6 +91,10 @@ private:
     void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
 
 public:
+    bool isDebugOverlayEnabled = false;
+    bool isPhysicsDebugVisualizationEnabled = false;
+    bool isTrackGraphDebugVisualizationEnabled = false;
+
     RandomSeries randomSeries;
     PxMaterial* vehicleMaterial = nullptr;
     PxMaterial* trackMaterial = nullptr;

@@ -59,7 +59,7 @@ public:
     }
 
     i32 getPriority() const override { return 10000; }
-    void onUpdate(f32 deltaTime) override;
+    void onBeforeRender(f32 deltaTime) override;
     void onLitPass(Renderer* renderer) override;
 
     std::string getDebugString() const override { return "SmokeParticles"; }
