@@ -60,11 +60,6 @@ Scene::Scene(const char* name)
     trackMaterial   = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
     offroadMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
 
-    // construct scene from blender data
-    auto& sceneData = g_resources.getScene(name);
-    auto& entities = sceneData["entities"].array();
-    bool foundStart = false;
-
     if (!name)
     {
         // loading empty scene, so add default terrain
@@ -72,6 +67,11 @@ Scene::Scene(const char* name)
         addEntity(terrain);
         return;
     }
+
+    // construct scene from blender data
+    auto& sceneData = g_resources.getScene(name);
+    auto& entities = sceneData["entities"].array();
+    bool foundStart = false;
 
     struct TrackMesh
     {
@@ -265,25 +265,28 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     g_audio.setListeners(listenerPositions);
 
     // determine vehicle placement
-    SmallVec<u32, MAX_VEHICLES> placements;
-    for (u32 i=0; i<vehicles.size(); ++i)
+    if (vehicles.size() > 0)
     {
-        placements.push_back(i);
-    }
-    f32 maxT = trackGraph.getStartNode()->t;
-    std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
-        return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
-               maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
-    });
-    for (u32 i=0; i<placements.size(); ++i)
-    {
-        vehicles[placements[i]]->placement = i;
-    }
+        SmallVec<u32, MAX_VEHICLES> placements;
+        for (u32 i=0; i<vehicles.size(); ++i)
+        {
+            placements.push_back(i);
+        }
+        f32 maxT = trackGraph.getStartNode()->t;
+        std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
+            return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
+                maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
+        });
+        for (u32 i=0; i<placements.size(); ++i)
+        {
+            vehicles[placements[i]]->placement = i;
+        }
 
-    // override placement with finish order for vehicles that have finished the race
-    for (u32 i=0; i<finishOrder.size(); ++i)
-    {
-        vehicles[finishOrder[i]]->placement = i;
+        // override placement with finish order for vehicles that have finished the race
+        for (u32 i=0; i<finishOrder.size(); ++i)
+        {
+            vehicles[finishOrder[i]]->placement = i;
+        }
     }
 
     if (g_input.isKeyPressed(KEY_F2))

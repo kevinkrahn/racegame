@@ -29,10 +29,14 @@ public:
 
     Buffer(size_t size, size_t alignment=1) : size(size), pos(0),  alignment(alignment)
     {
-        if (size > 0) data.reset(new u8[size]);
+        if (size > 0)
+        {
+            data.reset(new u8[size]);
+        }
     }
 
-    Buffer(Buffer&& other) {
+    Buffer(Buffer&& other)
+    {
         data = std::move(other.data);
         size = other.size;
         pos = other.pos;
@@ -47,7 +51,8 @@ public:
     Buffer(Buffer const&) = delete;
 
     // move assignment
-    Buffer& operator=(Buffer&& other) {
+    Buffer& operator=(Buffer&& other)
+    {
         data = std::move(other.data);
         size = other.size;
         pos = other.pos;
@@ -106,6 +111,5 @@ public:
     {
         return reinterpret_cast<T>(get());
     }
-
 };
 

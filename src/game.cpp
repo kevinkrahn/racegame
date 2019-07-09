@@ -128,8 +128,8 @@ void Game::run()
     };
 
     //changeScene("track2.Scene");
-    changeScene("world.Scene");
-    //changeScene(nullptr);
+    //changeScene("world.Scene");
+    changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;
@@ -203,7 +203,10 @@ void Game::changeScene(const char* sceneName)
     {
         currentScene->onEnd();
     }
-    print("Loading scene: ", sceneName, '\n');
+    if (sceneName)
+    {
+        print("Loading scene: ", sceneName, '\n');
+    }
     currentScene.reset(new Scene(sceneName));
     currentScene->onStart();
 }

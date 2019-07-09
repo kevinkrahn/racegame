@@ -5,6 +5,7 @@
 #include "scene.h"
 #include "input.h"
 #include "terrain.h"
+#include "mesh_renderables.h"
 
 void Editor::onStart(Scene* scene)
 {
@@ -46,27 +47,26 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
     glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(lengthdir(cameraAngle, 1.f), 1.25f)) * cameraDistance;
-    renderer->setViewportCamera(0, cameraFrom, cameraTarget,  32, 400.f);
+    renderer->setViewportCamera(0, cameraFrom, cameraTarget, 10, 400.f);
 
-    //g_game.renderer.drawMesh(*g_resources.getMesh("world.Terrain"), glm::mat4(1.f), g_resources.getMaterial("grass"));
+    glm::vec2 mousePos = g_input.getMousePosition();
+    mousePos.y = g_game.windowHeight - mousePos.y;
+    Camera const& cam = renderer->getCamera(0);
+    glm::vec3 rayDir = screenToWorldRay(mousePos,
+            glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
 
-    if (g_input.isMouseButtonDown(MOUSE_LEFT)) {
-        glm::vec2 mousePos = g_input.getMousePosition();
-        mousePos.y = g_game.windowHeight - mousePos.y;
-        Camera const& cam = renderer->getCamera(0);
-        glm::vec3 rayDir = screenToWorldRay(mousePos,
-                glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
+    const f32 step = 0.1f;
+    glm::vec3 p = cam.position;// + step * 10.f;
+    while (p.z > scene->terrain->getZ(glm::vec2(p)))
+    {
+        p += rayDir * step;
+    }
 
-        const f32 step = 0.1f;
-        glm::vec3 p = cam.position;// + step * 10.f;
-        /*
-        while (p.z > terrain.getZ(glm::vec2(p)))
-        {
-            p += rayDir * step;
-        }
-        renderer->drawMesh(g_resources.getMesh("world.Arrow"), glm::translate(glm::mat4(1.f), p), g_resources.getMaterial("concrete"));
+    scene->terrain->setBrushSettings(brushRadius, brushFalloff, brushStrength, p);
 
-        terrain.raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
-        */
+    if (g_input.isMouseButtonDown(MOUSE_LEFT))
+    {
+        //renderer->push(LitRenderable(g_resources.getMesh("world.Arrow"), glm::translate(glm::mat4(1.f), p)));
+        scene->terrain->raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
     }
 }

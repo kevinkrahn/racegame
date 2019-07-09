@@ -41,6 +41,7 @@ public:
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override
     {
+        // TODO: create simpler shader for depth pass
         glUseProgram(renderer->getShaderProgram("lit"));
     }
 
@@ -53,6 +54,7 @@ public:
 
     void onShadowPassPriorityTransition(Renderer* renderer) override
     {
+        // TODO: create simpler shader for depth pass
         glUseProgram(renderer->getShaderProgram("lit"));
     }
 

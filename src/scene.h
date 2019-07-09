@@ -57,7 +57,6 @@ class Scene : public PxSimulationEventCallback
 private:
     bool isEditing = true;
     Editor editor;
-    class Terrain* terrain = nullptr;
 
     glm::mat4 start;
     u32 totalLaps = 4;
@@ -102,6 +101,7 @@ public:
     SmokeParticles smoke;
     RibbonRenderable ribbons;
     DebugDraw debugDraw;
+    class Terrain* terrain = nullptr;
 
     Scene(const char* name);
     ~Scene();
