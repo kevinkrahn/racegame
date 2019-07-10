@@ -160,16 +160,16 @@ f32 Terrain::getZ(glm::vec2 pos) const
         tx * (1 - ty) * c10 + (1 - tx) * ty * c01 + tx * ty * c11;
 }
 
-u32 Terrain::getCellX(f32 x) const
+i32 Terrain::getCellX(f32 x) const
 {
-    u32 width = (x2 - x1) / tileSize;
-    return clamp(0u, (u32)((x - x1) / tileSize), width - 1);
+    i32 width = (x2 - x1) / tileSize;
+    return clamp((i32)((x - x1) / tileSize), 0, width - 1);
 }
 
-u32 Terrain::getCellY(f32 y) const
+i32 Terrain::getCellY(f32 y) const
 {
-    u32 height = (y2 - y1) / tileSize;
-    return clamp(0u, (u32)((y - y1) / tileSize), height - 1);
+    i32 height = (y2 - y1) / tileSize;
+    return clamp((i32)((y - y1) / tileSize), 0, height - 1);
 }
 
 void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
@@ -178,15 +178,34 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    u32 width = (x2 - x1) / tileSize;
-    //u32 height = (y2 - y1) / tileSize;
-    for (u32 x=minX; x<maxX; ++x)
+    i32 width = (x2 - x1) / tileSize;
+    for (i32 x=minX; x<=maxX; ++x)
     {
-        for (u32 y=minY; y<maxY; ++y)
+        for (i32 y=minY; y<=maxY; ++y)
         {
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
             f32 d = glm::length(pos - p);
             heightBuffer[y * width + x] += clamp((1.f - (d / radius)), 0.f, 1.f) * amount;
+        }
+    }
+}
+
+void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+{
+    i32 minX = getCellX(pos.x - radius);
+    i32 minY = getCellY(pos.y - radius);
+    i32 maxX = getCellX(pos.x + radius);
+    i32 maxY = getCellY(pos.y + radius);
+    i32 width = (x2 - x1) / tileSize;
+    for (i32 x=minX; x<=maxX; ++x)
+    {
+        for (i32 y=minY; y<=maxY; ++y)
+        {
+            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 scale = 0.1f;
+            f32 noise = glm::perlin(glm::vec2(x, y) * scale);
+            f32 d = glm::length(pos - p);
+            heightBuffer[y * width + x] += clamp((1.f - (d / radius)), 0.f, 1.f) * noise * amount;
         }
     }
 }

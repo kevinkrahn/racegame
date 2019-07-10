@@ -44,14 +44,16 @@ public:
         glDeleteVertexArrays(0, &vao);
     }
 
+    void raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
+
     void generate(f32 heightScale=8.f, f32 scale=0.05f);
     void createBuffers();
     void resize(f32 x1, f32 y1, f32 x2, f32 y2);
-    void raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
     f32 getZ(glm::vec2 pos) const;
     //bool containsPoint(glm::vec2 p) const { return p.x >= x1 && p.y >= y1 && p.x <= x2 && p.y <= y2; };
-    u32 getCellX(f32 x) const;
-    u32 getCellY(f32 y) const;
+    i32 getCellX(f32 x) const;
+    i32 getCellY(f32 y) const;
     glm::vec3 computeNormal(u32 width, u32 height, u32 x, u32 y);
 
     i32 getPriority() const override { return 100; }

@@ -67,7 +67,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         p += rayDir * step;
     }
 
-
     /*
     {
         f32 up = (f32)g_input.isKeyDown(KEY_UP) - (f32)g_input.isKeyDown(KEY_DOWN);
@@ -86,6 +85,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     scene->terrain->setBrushSettings(brushRadius, brushFalloff, brushStrength, p);
     if (g_input.isMouseButtonDown(MOUSE_LEFT))
     {
-        scene->terrain->raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+        //scene->terrain->raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+        scene->terrain->perturb(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
     }
 }
