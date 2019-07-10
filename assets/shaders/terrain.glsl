@@ -33,17 +33,22 @@ layout(location = 3) uniform vec3 brushSettings;
 layout(location = 4) uniform vec3 brushPosition;
 
 layout(binding = 0) uniform sampler2D texSampler;
+layout(binding = 1) uniform sampler2D texSampler2;
 
 void main()
 {
     const float texScale = 0.1;
 
     vec3 blending = abs(inNormal);
+    blending.z *= (blending.z + 0.5);
+    blending.z *= (blending.z + 0.5);
+    blending.z *= (blending.z + 0.5);
+    blending.z *= (blending.z + 0.5);
     blending = normalize(max(blending, 0.00001));
     blending /= vec3(blending.x + blending.y + blending.z);
 
-    vec3 xColor = texture(texSampler, inWorldPosition.yz * texScale).rgb;
-    vec3 yColor = texture(texSampler, inWorldPosition.xz * texScale).rgb;
+    vec3 xColor = texture(texSampler2, inWorldPosition.yz * texScale).rgb;
+    vec3 yColor = texture(texSampler2, inWorldPosition.xz * texScale).rgb;
     vec3 zColor = texture(texSampler, inWorldPosition.xy * texScale).rgb;
 
     vec4 tex = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);

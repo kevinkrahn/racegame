@@ -29,6 +29,7 @@ public:
     Terrain()
     {
         resize(-128, -128, 128, 128);
+        generate();
         createBuffers();
     }
     Terrain(f32 x1, f32 y1, f32 x2, f32 y2)
@@ -43,6 +44,7 @@ public:
         glDeleteVertexArrays(0, &vao);
     }
 
+    void generate(f32 heightScale=8.f, f32 scale=0.05f);
     void createBuffers();
     void resize(f32 x1, f32 y1, f32 x2, f32 y2);
     void raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);

@@ -3,6 +3,8 @@
 #include "renderer.h"
 #include "debug_draw.h"
 #include "scene.h"
+#include "mesh_renderables.h"
+#include <glm/gtc/noise.hpp>
 
 void Terrain::createBuffers()
 {
@@ -31,6 +33,21 @@ void Terrain::createBuffers()
     glVertexArrayAttribBinding(vao, COLOR_BIND_INDEX, 0);
 }
 
+void Terrain::generate(f32 heightScale, f32 scale)
+{
+    u32 width = (x2 - x1) / tileSize;
+    u32 height = (y2 - y1) / tileSize;
+    for (u32 x = 0; x < width; ++x)
+    {
+        for (i32 y = 0; y < height; ++y)
+        {
+            heightBuffer[y * width + x] =
+                glm::perlin(glm::vec2(x, y) * scale) * heightScale +
+                glm::perlin(glm::vec2(x, y) * scale * 4.f) * 0.5f;
+        }
+    }
+}
+
 void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
 {
     this->x1 = snap(x1, tileSize);
@@ -41,13 +58,10 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
     u32 height = (this->y2 - this->y1) / tileSize;
     heightBuffer.resize(width * height);
     vertices.resize(width * height);
-    //RandomSeries s;
     for (u32 x=0; x<width; ++x)
     {
         for (u32 y=0; y<height; ++y)
         {
-            //heightBuffer[i] = random(s, 0.f, 6.f);
-            //heightBuffer[y * width + x] = (sinf((x + y) * 0.5f) + 1.f) * 4.f + random(s, 0.f, 1.f);
             heightBuffer[y * width + x] = 0.f;
         }
     }
@@ -119,30 +133,31 @@ glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
     y = clamp(y, 1u, height - 2);
     f32 hl = heightBuffer[y * width + x - 1];
     f32 hr = heightBuffer[y * width + x + 1];
-    f32 hd = heightBuffer[(y - 1) * height + x];
-    f32 hu = heightBuffer[(y + 1) * height + x];
+    f32 hd = heightBuffer[(y - 1) * width + x];
+    f32 hu = heightBuffer[(y + 1) * width + x];
     glm::vec3 normal(hl - hr, hd - hu, 2.f);
     return glm::normalize(normal);
 }
 
 f32 Terrain::getZ(glm::vec2 pos) const
 {
-    u32 x = (pos.x - x1) / tileSize;
-    u32 y = (pos.y - y1) / tileSize;
-    u32 width = (x2 - x1) / tileSize;
-    u32 height = (y2 - y1) / tileSize;
-    x = clamp(x, 1u, width - 2);
-    y = clamp(y, 1u, height - 2);
+    u32 width = (u32)((x2 - x1) / tileSize);
+    u32 height = (u32)((y2 - y1) / tileSize);
+    f32 x = clamp((pos.x - x1) / tileSize - 0.5f, 0.f, width - 1.f);
+    f32 y = clamp((pos.y - y1) / tileSize - 0.5f, 0.f, height - 1.f);
+    u32 px = (u32)x;
+    u32 py = (u32)y;
 
-    // TODO: interpolate
-    /*
-    f32 hl = heightBuffer[y * width + x - 1];
-    f32 hr = heightBuffer[y * width + x + 1];
-    f32 hd = heightBuffer[(y - 1) * height + x];
-    f32 hu = heightBuffer[(y + 1) * height + x];
-    */
+    f32 c00 = heightBuffer[(py + 0) * width + px + 0];
+    f32 c10 = heightBuffer[(py + 0) * width + px + 1];
+    f32 c01 = heightBuffer[(py + 1) * width + px + 0];
+    f32 c11 = heightBuffer[(py + 1) * width + px + 1];
 
-    return heightBuffer[(y * width) + x];
+    f32 tx = x - px;
+    f32 ty = y - py;
+
+    return (1 - tx) * (1 - ty) * c00 +
+        tx * (1 - ty) * c10 + (1 - tx) * ty * c01 + tx * ty * c11;
 }
 
 u32 Terrain::getCellX(f32 x) const
@@ -198,6 +213,7 @@ void Terrain::onLitPass(class Renderer* renderer)
     glDepthFunc(GL_EQUAL);
     glEnable(GL_CULL_FACE);
     glBindTextureUnit(0, g_resources.getTexture("grass")->handle);
+    glBindTextureUnit(1, g_resources.getTexture("rock")->handle);
     glUseProgram(renderer->getShaderProgram("terrain"));
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
