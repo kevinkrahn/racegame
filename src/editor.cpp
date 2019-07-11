@@ -83,9 +83,37 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     */
 
     scene->terrain->setBrushSettings(brushRadius, brushFalloff, brushStrength, p);
+    if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+    {
+        brushStartZ = scene->terrain->getZ(glm::vec2(p));
+    }
     if (g_input.isMouseButtonDown(MOUSE_LEFT))
     {
-        //scene->terrain->raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
-        scene->terrain->perturb(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+        switch (terrainTool)
+        {
+        case TerrainTool::RAISE:
+            scene->terrain->raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+            break;
+        case TerrainTool::PERTURB:
+            scene->terrain->perturb(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+            break;
+        case TerrainTool::FLATTEN:
+            scene->terrain->flatten(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime, brushStartZ);
+            break;
+        case TerrainTool::SMOOTH:
+            scene->terrain->smooth(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+            break;
+        default:
+            break;
+        }
     }
+    if (g_input.isKeyPressed(KEY_SPACE))
+    {
+        terrainTool = TerrainTool((terrainTool + 1) % TerrainTool::MAX);
+    }
+    const char* toolNames[] = { "Raise", "Perturb", "Flatten", "Smooth" };
+    std::string toolName = toolNames[terrainTool];
+    Font* font = &g_resources.getFont("font", g_game.windowHeight * 0.06);
+    renderer->push(TextRenderable(font, toolName,
+        { g_game.windowWidth - 20, 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::RIGHT, VerticalAlign::TOP));
 }

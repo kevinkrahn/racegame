@@ -46,6 +46,7 @@ void Terrain::generate(f32 heightScale, f32 scale)
                 glm::perlin(glm::vec2(x, y) * scale * 4.f) * 0.5f;
         }
     }
+    isDirty = true;
 }
 
 void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
@@ -65,6 +66,7 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
             heightBuffer[y * width + x] = 0.f;
         }
     }
+    isDirty = true;
 }
 
 void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
@@ -92,37 +94,42 @@ void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     }
     */
 
-    indices.clear();
-    for (u32 x = 0; x < width; ++x)
+    if (isDirty)
     {
-        for (i32 y = 0; y < height; ++y)
+        indices.clear();
+        for (u32 x = 0; x < width; ++x)
         {
-            f32 z = heightBuffer[(y * width) + x];
-            glm::vec3 pos(x1 + x * tileSize, y1 + y * tileSize, z);
-            glm::vec3 normal = computeNormal(width, height, x, y);
-            u32 i = y * width + x;
-            vertices[i] = {
-                pos,
-                normal,
-                { 1, 1, 1 }
-            };
-            //scene->debugDraw.line(pos, pos + normal * 2.f, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
-            if (x < width - 1 && y < height - 1)
+            for (i32 y = 0; y < height; ++y)
             {
-                indices.push_back(y * width + x);
-                indices.push_back(y * width + x + 1);
-                indices.push_back((y + 1) * width + x);
+                f32 z = heightBuffer[(y * width) + x];
+                glm::vec3 pos(x1 + x * tileSize, y1 + y * tileSize, z);
+                glm::vec3 normal = computeNormal(width, height, x, y);
+                u32 i = y * width + x;
+                vertices[i] = {
+                    pos,
+                    normal,
+                    { 1, 1, 1 }
+                };
+                //scene->debugDraw.line(pos, pos + normal * 2.f, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
+                if (x < width - 1 && y < height - 1)
+                {
+                    indices.push_back(y * width + x);
+                    indices.push_back(y * width + x + 1);
+                    indices.push_back((y + 1) * width + x);
 
-                indices.push_back((y + 1) * width + x);
-                indices.push_back(y * width + x + 1);
-                indices.push_back((y + 1) * width + x + 1);
+                    indices.push_back((y + 1) * width + x);
+                    indices.push_back(y * width + x + 1);
+                    indices.push_back((y + 1) * width + x + 1);
+                }
             }
         }
+        glNamedBufferData(vbo, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+        glNamedBufferData(ebo, indices.size() * sizeof(u32), indices.data(), GL_DYNAMIC_DRAW);
+        glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(Vertex));
+        glVertexArrayElementBuffer(vao, ebo);
+
+        isDirty = false;
     }
-    glNamedBufferData(vbo, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
-    glNamedBufferData(ebo, indices.size() * sizeof(u32), indices.data(), GL_DYNAMIC_DRAW);
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(Vertex));
-    glVertexArrayElementBuffer(vao, ebo);
 
     renderer->add(this);
 }
@@ -184,10 +191,11 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
         for (i32 y=minY; y<=maxY; ++y)
         {
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 d = glm::length(pos - p);
-            heightBuffer[y * width + x] += clamp((1.f - (d / radius)), 0.f, 1.f) * amount;
+            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            heightBuffer[y * width + x] += falloff * amount;
         }
     }
+    isDirty = true;
 }
 
 void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
@@ -204,10 +212,57 @@ void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
             f32 scale = 0.1f;
             f32 noise = glm::perlin(glm::vec2(x, y) * scale);
-            f32 d = glm::length(pos - p);
-            heightBuffer[y * width + x] += clamp((1.f - (d / radius)), 0.f, 1.f) * noise * amount;
+            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            heightBuffer[y * width + x] += falloff * noise * amount;
         }
     }
+    isDirty = true;
+}
+
+void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
+{
+    i32 minX = getCellX(pos.x - radius);
+    i32 minY = getCellY(pos.y - radius);
+    i32 maxX = getCellX(pos.x + radius);
+    i32 maxY = getCellY(pos.y + radius);
+    i32 width = (x2 - x1) / tileSize;
+    for (i32 x=minX; x<=maxX; ++x)
+    {
+        for (i32 y=minY; y<=maxY; ++y)
+        {
+            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            f32 currentZ = heightBuffer[y * width + x];
+            heightBuffer[y * width + x] += (z - currentZ) * falloff * amount;
+        }
+    }
+    isDirty = true;
+}
+
+void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+{
+    i32 minX = getCellX(pos.x - radius);
+    i32 minY = getCellY(pos.y - radius);
+    i32 maxX = getCellX(pos.x + radius);
+    i32 maxY = getCellY(pos.y + radius);
+    i32 width = (x2 - x1) / tileSize;
+    i32 height = (y2 - y1) / tileSize;
+    for (i32 x=minX; x<=maxX; ++x)
+    {
+        for (i32 y=minY; y<=maxY; ++y)
+        {
+            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            f32 hl = heightBuffer[y * width + clamp(x - 1, 0, width - 1)];
+            f32 hr = heightBuffer[y * width + clamp(x + 1, 0, width - 1)];
+            f32 hd = heightBuffer[clamp(y - 1, 0, height - 1) * width + x];
+            f32 hu = heightBuffer[clamp(y + 1, 0, height - 1) * width + x];
+            f32 currentZ = heightBuffer[y * width + x];
+            f32 average = (hl + hr + hd + hu) * 0.25f;
+            heightBuffer[y * width + x] += (average - currentZ) * falloff * amount;
+        }
+    }
+    isDirty = true;
 }
 
 void Terrain::onShadowPass(class Renderer* renderer)

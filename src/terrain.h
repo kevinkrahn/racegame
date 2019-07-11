@@ -25,6 +25,8 @@ class Terrain : public Renderable, public Entity
     glm::vec3 brushSettings;
     glm::vec3 brushPosition;
 
+    bool isDirty = true;
+
 public:
     Terrain()
     {
@@ -46,6 +48,8 @@ public:
 
     void raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
     void perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z);
+    void smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
 
     void generate(f32 heightScale=8.f, f32 scale=0.05f);
     void createBuffers();
