@@ -42,7 +42,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     if (g_input.isKeyDown(KEY_LCTRL) && g_input.getMouseScroll() != 0)
     {
-        brushRadius = clamp(brushRadius + g_input.getMouseScroll(), 0.25f, 40.f);
+        brushRadius = clamp(brushRadius + g_input.getMouseScroll(), 2.0f, 40.f);
     }
     else if (g_input.getMouseScroll() != 0)
     {

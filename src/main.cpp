@@ -19,6 +19,7 @@
 #include "mesh.cpp"
 #include "editor.cpp"
 #include "terrain.cpp"
+#include "track.cpp"
 #include "dynamic_buffer.cpp"
 #include "entities/projectile.cpp"
 

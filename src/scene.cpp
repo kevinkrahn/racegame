@@ -5,6 +5,7 @@
 #include "mesh_renderables.h"
 #include "input.h"
 #include "terrain.h"
+#include "track.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -65,6 +66,9 @@ Scene::Scene(const char* name)
         // loading empty scene, so add default terrain
         terrain = new Terrain();
         addEntity(terrain);
+        track = new Track();
+        addEntity(track);
+        isEditing = true;
         return;
     }
 

@@ -348,6 +348,8 @@ void Renderer::init(u32 width, u32 height)
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glLineWidth(3);
+    //glEnable(GL_LINE_SMOOTH);
 }
 
 void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)

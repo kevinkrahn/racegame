@@ -55,7 +55,7 @@ struct StaticEntity
 class Scene : public PxSimulationEventCallback
 {
 private:
-    bool isEditing = true;
+    bool isEditing = false;
     Editor editor;
 
     glm::mat4 start;
@@ -102,6 +102,7 @@ public:
     RibbonRenderable ribbons;
     DebugDraw debugDraw;
     class Terrain* terrain = nullptr;
+    class Track* track = nullptr;
 
     Scene(const char* name);
     ~Scene();
