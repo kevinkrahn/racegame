@@ -11,6 +11,8 @@ class Track : public Renderable, public Entity
     struct Point
     {
         glm::vec3 position;
+        bool isSelected = false;
+        glm::vec3 dragStartPoint;
     };
 
     struct BezierSegment
@@ -24,9 +26,11 @@ class Track : public Renderable, public Entity
     std::vector<Point> points;
     std::vector<BezierSegment> connections;
 
+    i32 lastSelectedPoint = -1;
+    glm::vec2 selectMousePos;
+    glm::vec3 dragStartPoint;
     i32 dragConnectionIndex = -1;
     i32 dragConnectionHandle = -1;
-    i32 dragPointIndex = -1;
     bool isDragging = false;
     glm::vec3 dragOffset;
 

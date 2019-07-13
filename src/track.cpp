@@ -7,7 +7,7 @@
 #include "game.h"
 
 glm::vec4 red = { 1, 0, 0, 1 };
-glm::vec4 brightRed = { 1.f, 0.2f, 0.2f, 1.f };
+glm::vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
 glm::vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
 glm::vec4 brightOrange = { 1.f, 0.65f, 0.1f, 1.f };
 
@@ -41,36 +41,78 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
     f32 radius = 20;
 
+    bool wasAnythingClickedOn = false;
+
+    if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT)
+            && !g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+    {
+        for (auto& point : points)
+        {
+            point.isSelected = false;
+        }
+        lastSelectedPoint = -1;
+    }
+
     for (i32 i=0; i<points.size(); ++i)
     {
         glm::vec3 point = points[i].position;
-
-        glm::vec3 color = red;
         glm::vec2 pointScreen = project(point, renderer->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
 
         if (glm::length(pointScreen - mousePos) < radius && !isDragging)
         {
-            color = brightRed;
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 isMouseHandled = true;
-                dragPointIndex = i;
-                f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), point);
-                dragOffset = point - (cam.position + rayDir * t);
-                isDragging = true;
+                if (g_input.isKeyDown(KEY_LSHIFT))
+                {
+                    points[i].isSelected = false;
+                }
+                else
+                {
+                    selectMousePos = mousePos;
+                    points[i].isSelected = true;
+                    wasAnythingClickedOn = true;
+                    lastSelectedPoint = i;
+                }
             }
         }
-        if (dragPointIndex == i)
+        if (points[i].isSelected)
         {
-            color = brightRed;
-            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), point);
-            points[i].position = cam.position + (rayDir * t + dragOffset);
+            renderer->push(OverlayRenderable(sphere, 0,
+                        glm::translate(glm::mat4(1.f), points[i].position) *
+                        glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }));
         }
-
+        glm::vec3 color = points[i].isSelected ? brightRed : red;
         renderer->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), points[i].position) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color));
+    }
+
+    if (lastSelectedPoint != -1 && g_input.isMouseButtonDown(MOUSE_LEFT))
+    {
+        if (glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
+        {
+            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1),
+                    points[lastSelectedPoint].position);
+            glm::vec3 hitPoint = cam.position + rayDir * t;
+            if (!isDragging)
+            {
+                dragStartPoint = hitPoint;
+            }
+            for (auto& point : points)
+            {
+                if (point.isSelected)
+                {
+                    if (!isDragging)
+                    {
+                        point.dragStartPoint = point.position;
+                    }
+                    point.position = point.dragStartPoint + (hitPoint - dragStartPoint);
+                }
+            }
+            isDragging = true;
+        }
     }
 
     for (i32 i=0; i<connections.size(); ++i)
@@ -109,6 +151,9 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     c2.handleOffsetB = -c.handleOffsetA;
                 }
             }
+            renderer->push(OverlayRenderable(sphere, 0,
+                        glm::translate(glm::mat4(1.f), handleA) *
+                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }));
         }
 
         glm::vec3 colorB = orange;
@@ -143,14 +188,17 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     c2.handleOffsetA = -c.handleOffsetB;
                 }
             }
+            renderer->push(OverlayRenderable(sphere, 0,
+                        glm::translate(glm::mat4(1.f), handleB) *
+                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }));
         }
-
         renderer->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), handleA) *
                     glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorA));
         renderer->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), handleB) *
                     glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorB));
+
         scene->debugDraw.line(points[c.pointIndexA].position,
                 points[c.pointIndexA].position + c.handleOffsetA,
                 glm::vec4(colorA, 1.f), glm::vec4(colorA, 1.f));
@@ -162,9 +210,9 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 
     if (g_input.isMouseButtonReleased(MOUSE_LEFT))
     {
-        dragPointIndex = -1;
         dragConnectionIndex = -1;
         dragConnectionHandle = -1;
         isDragging = false;
+        lastSelectedPoint = -1;
     }
 }
