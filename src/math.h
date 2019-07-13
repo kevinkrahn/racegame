@@ -127,6 +127,17 @@ inline glm::vec3 smoothMove(const glm::vec3& from, const glm::vec3& to, f32 amou
     return glm::lerp(from, to, 1.f-exp(-amount * deltaTime));
 }
 
+inline bool pointInRectangle(glm::vec2 p, glm::vec2 v1, glm::vec2 v2)
+{
+    return p.x >= v1.x && p.y >= v1.y && p.x <= v2.x && p.y <= v2.y;
+}
+
+inline bool pointInRectangle(glm::vec2 p, glm::vec2 v1, f32 width, f32 height)
+{
+    glm::vec2 v2 = v1 + glm::vec2(width, height);
+    return p.x >= v1.x && p.y >= v1.y && p.x <= v2.x && p.y <= v2.y;
+}
+
 struct RandomSeries
 {
     u32 state = 1234;

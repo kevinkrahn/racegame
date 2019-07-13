@@ -55,7 +55,7 @@ void main()
 
     vec4 baseColor = tex * vec4(inColor, 1.0);
     outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
-            10.0, 0.1, vec3(1.0), -0.15, 0.15, 2.2);
+            20.0, 0.01, vec3(1.0), -0.15, 0.15, 2.2);
 
     float d = length(inWorldPosition - brushPosition);
     float t = clamp((1.f - (d / brushSettings.x)), 0.f, 1.f) * (brushSettings.z / 16.f);

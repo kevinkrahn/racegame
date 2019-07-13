@@ -12,7 +12,6 @@ class Editor
     glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
     glm::vec2 lastMousePosition;
     glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
-    glm::vec3 debugP = glm::vec3(0, 0, 0);
 
     f32 brushRadius = 8.f;
     f32 brushFalloff = 1.f;
@@ -20,7 +19,7 @@ class Editor
 
     f32 brushStartZ = 0.f;
 
-    enum TerrainTool
+    enum struct TerrainTool
     {
         RAISE,
         PERTURB,
@@ -28,6 +27,14 @@ class Editor
         SMOOTH,
         MAX
     } terrainTool = TerrainTool::RAISE;
+
+    enum struct EditMode
+    {
+        TERRAIN,
+        TRACK,
+        DECORATION,
+        MAX
+    } editMode = EditMode::TERRAIN;
 
 public:
     void onStart(class Scene* scene);
