@@ -21,7 +21,7 @@ class LitRenderable : public Renderable
     bool castShadow = true;
 
 public:
-    LitRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Texture* texture = nullptr)
+    LitRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Texture* texture = nullptr, glm::vec3 color = {1, 1, 1})
         : mesh(mesh), worldTransform(worldTransform)
     {
         if (!texture)

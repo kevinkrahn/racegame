@@ -189,9 +189,9 @@ inline glm::vec3 screenToWorldRay(glm::vec2 screenPos, glm::vec2 screenSize, glm
 {
     glm::vec3 pos(
         (2.f * screenPos.x) / screenSize.x - 1.f,
-        (2.f * screenPos.y) / screenSize.y - 1.f, 1.f
+        (1.f - (2.f * screenPos.y) / screenSize.y), 1.f
     );
-    glm::vec4 rayClip(pos.x, pos.y, -1.f, 1.f);
+    glm::vec4 rayClip(pos.x, pos.y, 0.f, 1.f);
     glm::vec4 rayEye = inverse(projection) * rayClip;
     rayEye = glm::vec4(rayEye.x, rayEye.y, -1.f, 0.f);
     glm::vec3 rayWorld = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
@@ -204,4 +204,12 @@ inline glm::vec2 project(glm::vec3 const& pos, glm::mat4 const& viewProj)
     f32 x = ((p.x / p.w) + 1.f) / 2.f;
     f32 y = ((-p.y / p.w) + 1.f) / 2.f;
     return { x, y };
+}
+
+inline f32 rayPlaneIntersection(glm::vec3 const& rayOrigin, glm::vec3 const& rayDir,
+        glm::vec3 const& planeNormal, glm::vec3 const& planePoint)
+{
+    f32 denom = glm::dot(planeNormal, rayDir);
+    f32 t = glm::dot(planePoint - rayOrigin, planeNormal) / denom;
+    return t;
 }

@@ -24,6 +24,12 @@ class Track : public Renderable, public Entity
     std::vector<Point> points;
     std::vector<BezierSegment> connections;
 
+    i32 dragConnectionIndex = -1;
+    i32 dragConnectionHandle = -1;
+    i32 dragPointIndex = -1;
+    bool isDragging = false;
+    glm::vec3 dragOffset;
+
     glm::vec3 getPointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, f32 t) const
     {
         f32 u = 1.f - t;
@@ -46,5 +52,5 @@ public:
     }
 
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
-    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool isMouseHandled);
+    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled);
 };

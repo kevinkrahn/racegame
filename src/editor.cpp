@@ -59,7 +59,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     renderer->setViewportCamera(0, cameraFrom, cameraTarget, 10, 400.f);
 
     glm::vec2 mousePos = g_input.getMousePosition();
-    mousePos.y = g_game.windowHeight - mousePos.y;
     Camera const& cam = renderer->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
