@@ -105,12 +105,15 @@ class OverlayRenderable : public Renderable
     Mesh* mesh = nullptr;
     glm::mat4 worldTransform;
     u32 cameraIndex = 0;
+    i32 priorityOffset = 0;
 
 public:
-    OverlayRenderable(Mesh* mesh, u32 cameraIndex, glm::mat4 const& worldTransform, glm::vec3 const& color)
-        : mesh(mesh), cameraIndex(cameraIndex), worldTransform(worldTransform), color(color) {}
+    OverlayRenderable(Mesh* mesh, u32 cameraIndex, glm::mat4 const& worldTransform,
+            glm::vec3 const& color, i32 priorityOffset = 0)
+        : mesh(mesh), cameraIndex(cameraIndex),
+            worldTransform(worldTransform), color(color), priorityOffset(priorityOffset) {}
 
-    i32 getPriority() const override { return 20000; }
+    i32 getPriority() const override { return 20000 + priorityOffset; }
 
     void onLitPassPriorityTransition(Renderer* renderer) override
     {

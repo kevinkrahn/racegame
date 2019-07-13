@@ -8,31 +8,38 @@
 
 class Track : public Renderable, public Entity
 {
+    friend class Editor;
+
     struct Point
     {
         glm::vec3 position;
-        bool isSelected = false;
-        glm::vec3 dragStartPoint;
     };
 
     struct BezierSegment
     {
         glm::vec3 handleOffsetA;
-        u32 pointIndexA;
+        i32 pointIndexA;
         glm::vec3 handleOffsetB;
-        u32 pointIndexB;
+        i32 pointIndexB;
+        f32 widthA;
+        f32 widthB;
     };
 
     std::vector<Point> points;
     std::vector<BezierSegment> connections;
 
-    i32 lastSelectedPoint = -1;
     glm::vec2 selectMousePos;
     glm::vec3 dragStartPoint;
     i32 dragConnectionIndex = -1;
     i32 dragConnectionHandle = -1;
     bool isDragging = false;
     glm::vec3 dragOffset;
+    struct Selection
+    {
+        i32 pointIndex;
+        glm::vec3 dragStartPoint;
+    };
+    std::vector<Selection> selectedPoints;
 
     glm::vec3 getPointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, f32 t) const
     {
@@ -43,6 +50,9 @@ class Track : public Renderable, public Entity
         f32 t3 = t2 * t;
         return glm::vec3(u3 * p0 + (3.f * u2 * t) * p1 + (3.f * u * t2) * p2 + t3 * p3);
     }
+
+    glm::vec3 getPointDir(u32 pointIndex);
+    BezierSegment getPointConnection(u32 pointIndex);
 
 public:
     Track()

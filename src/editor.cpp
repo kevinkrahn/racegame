@@ -18,6 +18,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     renderer->setViewportCount(1);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
+    Texture* white = g_resources.getTexture("white");
+
     f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);
     f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
     glm::vec3 moveDir = (right != 0.f || up != 0.f) ? glm::normalize(glm::vec3(right, up, 0.f)) : glm::vec3(0, 0, 0);
@@ -102,7 +104,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     editMode = EditMode(i);
                 }
             }
-            renderer->push(QuadRenderable(g_resources.getTexture("white"),
+            renderer->push(QuadRenderable(white,
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2,
                         color, alpha));
@@ -162,7 +164,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     terrainTool = TerrainTool(i);
                 }
             }
-            renderer->push(QuadRenderable(g_resources.getTexture("white"),
+            renderer->push(QuadRenderable(white,
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2,
                         color, alpha));
@@ -207,6 +209,82 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::TRACK)
     {
+        if (scene->track->selectedPoints.size() == 1)
+        {
+            i32 pointIndex = scene->track->selectedPoints.back().pointIndex;
+            glm::vec3 xDir = scene->track->getPointDir(pointIndex);
+            if (glm::length2(xDir) > 0.f)
+            {
+                struct TrackItem
+                {
+                    const char* name;
+                    const char* icon;
+                    struct Curve
+                    {
+                        glm::vec3 offset;
+                        glm::vec3 handleOffset;
+                    };
+                    SmallVec<Curve> curves;
+                };
+                TrackItem items[] = {
+                    { "Straight", "straight_track_icon", {
+                        { { 20.f, 0.f, 0.f }, { -4.f, 0.f, 0.f } },
+                    }},
+                };
+
+                u32 itemSize = height * 0.07f;
+                u32 gap = height * 0.015f;
+                f32 totalWidth = itemSize * ARRAY_SIZE(items) + gap * (ARRAY_SIZE(items) - 2);
+                f32 cx = g_game.windowWidth * 0.5f;
+
+                for (u32 i=0; i<ARRAY_SIZE(items); ++i)
+                {
+                    f32 alpha = 0.75f;
+                    glm::vec3 color(0.f);
+                    auto bezierConnection = scene->track->getPointConnection(pointIndex);
+                    glm::vec3 fromHandleOffset = (bezierConnection.pointIndexA == pointIndex)
+                        ? bezierConnection.handleOffsetA : bezierConnection.handleOffsetB;
+
+                    if (pointInRectangle(g_input.getMousePosition(),
+                        { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - gap},
+                        itemSize, itemSize))
+                    {
+                        alpha = 0.9f;
+                        color = glm::vec3(0.3f);
+                        isMouseClickHandled = true;
+                        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                        {
+                            glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
+                            glm::vec3 zDir = glm::cross(xDir, yDir);
+                            glm::mat4 m(1.f);
+                            m[0] = glm::vec4(xDir, m[0].w);
+                            m[1] = glm::vec4(yDir, m[1].w);
+                            m[2] = glm::vec4(zDir, m[2].w);
+                            i32 pIndex = pointIndex;
+                            scene->track->selectedPoints.clear();
+                            for (u32 c = 0; c<items[i].curves.size(); ++c)
+                            {
+                                glm::vec3 p = glm::vec3(m * glm::vec4(items[i].curves[i].offset, 1.f))
+                                    + scene->track->points[pIndex].position;
+                                scene->track->points.push_back({ p });
+                                glm::vec3 h(m * glm::vec4(items[i].curves[i].handleOffset, 1.f));
+                                scene->track->connections.push_back({
+                                    -fromHandleOffset, pIndex, h, (i32)scene->track->points.size() - 1
+                                });
+                                fromHandleOffset = h;
+                                scene->track->selectedPoints.push_back({
+                                        (i32)scene->track->points.size() - 1, {} });
+                            }
+                        }
+                    }
+
+                    renderer->push(QuadRenderable(white,
+                        { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - gap},
+                        itemSize, itemSize, color, alpha));
+                }
+            }
+        }
+
         scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled);
     }
 }

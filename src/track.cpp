@@ -46,11 +46,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT)
             && !g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
     {
-        for (auto& point : points)
-        {
-            point.isSelected = false;
-        }
-        lastSelectedPoint = -1;
+        selectedPoints.clear();
     }
 
     for (i32 i=0; i<points.size(); ++i)
@@ -59,6 +55,10 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         glm::vec2 pointScreen = project(point, renderer->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
 
+        auto it = std::find_if(selectedPoints.begin(), selectedPoints.end(), [&i](Selection& s) -> bool {
+            return s.pointIndex == i;
+        });
+        bool isSelected = it != selectedPoints.end();
         if (glm::length(pointScreen - mousePos) < radius && !isDragging)
         {
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -66,50 +66,53 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 isMouseHandled = true;
                 if (g_input.isKeyDown(KEY_LSHIFT))
                 {
-                    points[i].isSelected = false;
+                    if (it != selectedPoints.end())
+                    {
+                        selectedPoints.erase(it);
+                    }
                 }
                 else
                 {
                     selectMousePos = mousePos;
-                    points[i].isSelected = true;
+                    if (!isSelected)
+                    {
+                        selectedPoints.push_back({ i, {} });
+                    }
                     wasAnythingClickedOn = true;
-                    lastSelectedPoint = i;
                 }
             }
         }
-        if (points[i].isSelected)
+        if (isSelected)
         {
             renderer->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), points[i].position) *
-                        glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }));
+                        glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
         }
-        glm::vec3 color = points[i].isSelected ? brightRed : red;
+        glm::vec3 color = isSelected ? brightRed : red;
         renderer->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), points[i].position) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color));
     }
 
-    if (lastSelectedPoint != -1 && g_input.isMouseButtonDown(MOUSE_LEFT))
+    if (selectedPoints.size() > 0 && g_input.isMouseButtonDown(MOUSE_LEFT))
     {
         if (glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
         {
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1),
-                    points[lastSelectedPoint].position);
+                    points[selectedPoints.back().pointIndex].position);
             glm::vec3 hitPoint = cam.position + rayDir * t;
             if (!isDragging)
             {
                 dragStartPoint = hitPoint;
             }
-            for (auto& point : points)
+            for (auto& s : selectedPoints)
             {
-                if (point.isSelected)
+                if (!isDragging)
                 {
-                    if (!isDragging)
-                    {
-                        point.dragStartPoint = point.position;
-                    }
-                    point.position = point.dragStartPoint + (hitPoint - dragStartPoint);
+                    s.dragStartPoint = points[s.pointIndex].position;
+                    s.dragStartPoint.z = points[selectedPoints.back().pointIndex].position.z;
                 }
+                points[s.pointIndex].position = s.dragStartPoint + (hitPoint - dragStartPoint);
             }
             isDragging = true;
         }
@@ -153,7 +156,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
             renderer->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), handleA) *
-                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }));
+                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
         }
 
         glm::vec3 colorB = orange;
@@ -190,7 +193,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
             renderer->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), handleB) *
-                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }));
+                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
         }
         renderer->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), handleA) *
@@ -213,6 +216,61 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         dragConnectionIndex = -1;
         dragConnectionHandle = -1;
         isDragging = false;
-        lastSelectedPoint = -1;
     }
+}
+
+Track::BezierSegment Track::getPointConnection(u32 pointIndex)
+{
+    for (auto& c : connections)
+    {
+        if (c.pointIndexA == pointIndex || c.pointIndexB == pointIndex)
+        {
+            return c;
+        }
+    }
+    return { {}, -1, {} , -1 };
+}
+
+glm::vec3 Track::getPointDir(u32 pointIndex)
+{
+    glm::vec3 dir;
+    u32 count = 0;
+    for (auto& c : connections)
+    {
+        if (c.pointIndexA == pointIndex)
+        {
+            ++count;
+            if (count > 1)
+            {
+                break;
+            }
+            dir = -glm::normalize(
+                    getPointOnBezierCurve(
+                        points[c.pointIndexA].position,
+                        points[c.pointIndexA].position + c.handleOffsetA,
+                        points[c.pointIndexB].position + c.handleOffsetB,
+                        points[c.pointIndexB].position, 0.01f) -
+                    points[c.pointIndexA].position);
+        }
+        else if (c.pointIndexB == pointIndex)
+        {
+            ++count;
+            if (count > 1)
+            {
+                break;
+            }
+            dir = -glm::normalize(
+                    getPointOnBezierCurve(
+                        points[c.pointIndexA].position,
+                        points[c.pointIndexA].position + c.handleOffsetA,
+                        points[c.pointIndexB].position + c.handleOffsetB,
+                        points[c.pointIndexB].position, 0.99f) -
+                    points[c.pointIndexB].position);
+        }
+    }
+    if (count == 1)
+    {
+        return dir;
+    }
+    return { 0, 0, 0 };
 }
