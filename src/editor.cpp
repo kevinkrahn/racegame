@@ -209,7 +209,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::TRACK)
     {
-        if (scene->track->selectedPoints.size() == 1)
+        if (scene->track->selectedPoints.size() > 0)
         {
             i32 pointIndex = scene->track->selectedPoints.back().pointIndex;
             glm::vec3 xDir = scene->track->getPointDir(pointIndex);
@@ -230,26 +230,36 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     { "Straight", "straight_track_icon", {
                         { { 20.f, 0.f, 0.f }, { -4.f, 0.f, 0.f } },
                     }},
+                    { "Left Turn", "left_turn_track_icon", {
+                        { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
+                        { { 20.f, -20.f, 0.f }, { 0.f, 10.f, 0.f } },
+                    }},
+                    { "Right Turn", "right_turn_track_icon", {
+                        { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
+                        { { 20.f, 20.f, 0.f }, { 0.f, -10.f, 0.f } },
+                    }},
                 };
 
-                u32 itemSize = height * 0.07f;
+                u32 itemSize = height * 0.08f;
+                u32 iconSize = height * 0.08f;
                 u32 gap = height * 0.015f;
                 f32 totalWidth = itemSize * ARRAY_SIZE(items) + gap * (ARRAY_SIZE(items) - 2);
                 f32 cx = g_game.windowWidth * 0.5f;
+                f32 yoffset = height * 0.02f;
 
                 for (u32 i=0; i<ARRAY_SIZE(items); ++i)
                 {
-                    f32 alpha = 0.75f;
+                    f32 alpha = 0.3f;
                     glm::vec3 color(0.f);
                     auto bezierConnection = scene->track->getPointConnection(pointIndex);
                     glm::vec3 fromHandleOffset = (bezierConnection.pointIndexA == pointIndex)
                         ? bezierConnection.handleOffsetA : bezierConnection.handleOffsetB;
 
                     if (pointInRectangle(g_input.getMousePosition(),
-                        { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - gap},
+                        { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
                         itemSize, itemSize))
                     {
-                        alpha = 0.9f;
+                        alpha = 0.75f;
                         color = glm::vec3(0.3f);
                         isMouseClickHandled = true;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -264,13 +274,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             scene->track->selectedPoints.clear();
                             for (u32 c = 0; c<items[i].curves.size(); ++c)
                             {
-                                glm::vec3 p = glm::vec3(m * glm::vec4(items[i].curves[i].offset, 1.f))
+                                glm::vec3 p = glm::vec3(m * glm::vec4(items[i].curves[c].offset, 1.f))
                                     + scene->track->points[pIndex].position;
                                 scene->track->points.push_back({ p });
-                                glm::vec3 h(m * glm::vec4(items[i].curves[i].handleOffset, 1.f));
+                                glm::vec3 h(m * glm::vec4(items[i].curves[c].handleOffset, 1.f));
                                 scene->track->connections.push_back({
                                     -fromHandleOffset, pIndex, h, (i32)scene->track->points.size() - 1
                                 });
+                                pIndex = (i32)scene->track->points.size() - 1;
                                 fromHandleOffset = h;
                                 scene->track->selectedPoints.push_back({
                                         (i32)scene->track->points.size() - 1, {} });
@@ -278,9 +289,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         }
                     }
 
+                    glm::vec2 bp( cx - totalWidth * 0.5f + ((itemSize + gap) * i),
+                            g_game.windowHeight - itemSize - yoffset);
                     renderer->push(QuadRenderable(white,
-                        { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - gap},
-                        itemSize, itemSize, color, alpha));
+                        bp, itemSize, itemSize, color, alpha));
+                    renderer->push(QuadRenderable(g_resources.getTexture(items[i].icon),
+                        bp + glm::vec2((itemSize - iconSize)) * 0.5f, iconSize, iconSize));
                 }
             }
         }

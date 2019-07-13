@@ -202,11 +202,11 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     glm::translate(glm::mat4(1.f), handleB) *
                     glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorB));
 
-        scene->debugDraw.line(points[c.pointIndexA].position,
-                points[c.pointIndexA].position + c.handleOffsetA,
+        scene->debugDraw.line(points[c.pointIndexA].position + glm::vec3(0, 0, 0.01f),
+                points[c.pointIndexA].position + c.handleOffsetA + glm::vec3(0, 0, 0.01f),
                 glm::vec4(colorA, 1.f), glm::vec4(colorA, 1.f));
-        scene->debugDraw.line(points[c.pointIndexB].position,
-                points[c.pointIndexB].position + c.handleOffsetB,
+        scene->debugDraw.line(points[c.pointIndexB].position + glm::vec3(0, 0, 0.01f),
+                points[c.pointIndexB].position + c.handleOffsetB + glm::vec3(0, 0, 0.01f),
                 glm::vec4(colorB, 1.f), glm::vec4(colorB, 1.f));
 
     }

@@ -57,12 +57,9 @@ class Track : public Renderable, public Entity
 public:
     Track()
     {
-        points.push_back(Point{ glm::vec3(0, 0, 5) });
-        points.push_back(Point{ glm::vec3(50, 0, 5) });
-        connections.push_back(BezierSegment{ glm::vec3(10, 10, 0), 0, glm::vec3(-10, 10, 0), 1 });
-
-        points.push_back(Point{ glm::vec3(80, -50, 5) });
-        connections.push_back(BezierSegment{ glm::vec3(10, -10, 0), 1, glm::vec3(20, -10, 0), 2 });
+        points.push_back(Point{ glm::vec3(0, 0, 4) });
+        points.push_back(Point{ glm::vec3(50, 0, 4) });
+        connections.push_back(BezierSegment{ glm::vec3(10, 0, 0), 0, glm::vec3(-10, 0, 0), 1 });
     }
 
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
