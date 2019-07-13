@@ -6,6 +6,7 @@
 #include "input.h"
 #include "terrain.h"
 #include "mesh_renderables.h"
+#include "track.h"
 
 void Editor::onStart(Scene* scene)
 {
@@ -205,5 +206,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             }
         }
     }
-
+    else if (editMode == EditMode::TRACK)
+    {
+        scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled);
+    }
 }

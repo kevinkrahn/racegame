@@ -16,6 +16,12 @@
                 fresnel-bias: 0.0,
             }
         },
+        stripes: {
+            shader: "lit",
+            culling: true,
+            cast-shadow: false,
+            textures: [ "stripes" ],
+        },
         concrete: {
             shader: "lit",
             culling: true,
@@ -81,7 +87,7 @@
             }
         },
         rock: {
-            shader: "triplanar",
+            shader: "triplanar_dull",
             culling: true,
             cast-shadow: true,
             textures: [ "rock" ],

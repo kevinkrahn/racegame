@@ -35,7 +35,6 @@ class Track : public Renderable, public Entity
     }
 
 public:
-    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     Track()
     {
         points.push_back(Point{ glm::vec3(0, 0, 5) });
@@ -45,4 +44,7 @@ public:
         points.push_back(Point{ glm::vec3(80, -50, 5) });
         connections.push_back(BezierSegment{ glm::vec3(10, -10, 0), 1, glm::vec3(20, -10, 0), 2 });
     }
+
+    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool isMouseHandled);
 };

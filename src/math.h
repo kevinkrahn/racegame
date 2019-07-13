@@ -197,3 +197,11 @@ inline glm::vec3 screenToWorldRay(glm::vec2 screenPos, glm::vec2 screenSize, glm
     glm::vec3 rayWorld = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
     return rayWorld;
 }
+
+inline glm::vec2 project(glm::vec3 const& pos, glm::mat4 const& viewProj)
+{
+    glm::vec4 p = viewProj * glm::vec4(pos, 1.f);
+    f32 x = ((p.x / p.w) + 1.f) / 2.f;
+    f32 y = ((-p.y / p.w) + 1.f) / 2.f;
+    return { x, y };
+}
