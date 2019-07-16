@@ -220,6 +220,7 @@ void Renderer::init(u32 width, u32 height)
     loadShader("overlay");
     loadShader("mesh_decal");
     loadShader("terrain");
+    loadShader("track");
 
     // create empty vao
     glCreateVertexArrays(1, &emptyVAO);

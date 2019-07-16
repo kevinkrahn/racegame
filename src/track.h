@@ -10,6 +10,13 @@ class Track : public Renderable, public Entity
 {
     friend class Editor;
 
+    struct Vertex
+    {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec3 color;
+    };
+
     struct Point
     {
         glm::vec3 position;
@@ -23,6 +30,10 @@ class Track : public Renderable, public Entity
         i32 pointIndexB;
         f32 widthA;
         f32 widthB;
+        bool isDirty = true;
+        std::vector<Vertex> vertices;
+        std::vector<u32> indices;
+        GLuint vao = 0, vbo = 0, ebo = 0;
     };
 
     std::vector<Point> points;
@@ -52,7 +63,8 @@ class Track : public Renderable, public Entity
     }
 
     glm::vec3 getPointDir(u32 pointIndex);
-    BezierSegment getPointConnection(u32 pointIndex);
+    BezierSegment* getPointConnection(u32 pointIndex);
+    void createSegmentMesh(BezierSegment& segment);
 
 public:
     Track()
@@ -64,4 +76,9 @@ public:
 
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled);
+    std::string getDebugString() const override { return "Track"; }
+    i32 getPriority() const override { return 50; }
+    void onShadowPass(class Renderer* renderer) override;
+    void onDepthPrepass(class Renderer* renderer) override;
+    void onLitPass(class Renderer* renderer) override;
 };

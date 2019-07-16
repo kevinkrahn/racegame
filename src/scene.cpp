@@ -244,7 +244,13 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
-    for (auto const& e : entities) {
+    if (isEditing)
+    {
+        editor.onUpdate(this, renderer, deltaTime);
+    }
+
+    for (auto const& e : entities)
+    {
         e->onUpdate(renderer, this, deltaTime);
     }
 
@@ -430,11 +436,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6));
         renderer->push(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
-    }
-
-    if (isEditing)
-    {
-        editor.onUpdate(this, renderer, deltaTime);
     }
 }
 

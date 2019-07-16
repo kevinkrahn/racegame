@@ -215,6 +215,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             glm::vec3 xDir = scene->track->getPointDir(pointIndex);
             if (glm::length2(xDir) > 0.f)
             {
+                auto bezierConnection = scene->track->getPointConnection(pointIndex);
+
                 struct TrackItem
                 {
                     const char* name;
@@ -251,9 +253,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 {
                     f32 alpha = 0.3f;
                     glm::vec3 color(0.f);
-                    auto bezierConnection = scene->track->getPointConnection(pointIndex);
-                    glm::vec3 fromHandleOffset = (bezierConnection.pointIndexA == pointIndex)
-                        ? bezierConnection.handleOffsetA : bezierConnection.handleOffsetB;
+                    glm::vec3 fromHandleOffset = (bezierConnection->pointIndexA == pointIndex)
+                        ? bezierConnection->handleOffsetA : bezierConnection->handleOffsetB;
 
                     if (pointInRectangle(g_input.getMousePosition(),
                         { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},

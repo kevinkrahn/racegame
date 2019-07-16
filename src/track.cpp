@@ -15,6 +15,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     for (auto& c : connections)
     {
+        /*
         glm::vec3 prevP;
         for (f32 t=0.f; t<=1.f; t+=0.01f)
         {
@@ -29,7 +30,13 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
             }
             prevP = p;
         }
+        */
+        if (c.isDirty || c.vertices.empty())
+        {
+            createSegmentMesh(c);
+        }
     }
+    renderer->add(this);
 }
 
 void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled)
@@ -121,6 +128,16 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     for (i32 i=0; i<connections.size(); ++i)
     {
         BezierSegment& c = connections[i];
+        if (isDragging)
+        {
+            auto it = std::find_if(selectedPoints.begin(), selectedPoints.end(), [&c](Selection& s) -> bool {
+                return s.pointIndex == c.pointIndexA || s.pointIndex == c.pointIndexB;
+            });
+            if (it != selectedPoints.end())
+            {
+                c.isDirty = true;
+            }
+        }
 
         glm::vec3 colorA = orange;
         glm::vec3 handleA = points[c.pointIndexA].position + c.handleOffsetA;
@@ -142,6 +159,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         }
         if (dragConnectionIndex == i && dragConnectionHandle == 0)
         {
+            c.isDirty = true;
             colorA = brightOrange;
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleA);
             glm::vec3 p = cam.position + rayDir * t + dragOffset;
@@ -149,9 +167,18 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             handleA = points[c.pointIndexA].position + c.handleOffsetA;
             for (auto& c2 : connections)
             {
-                if (&c2 != &c && c2.pointIndexB == c.pointIndexA)
+                if (&c2 != &c)
                 {
-                    c2.handleOffsetB = -c.handleOffsetA;
+                    if (c2.pointIndexB == c.pointIndexA)
+                    {
+                        c2.handleOffsetB = -c.handleOffsetA;
+                        c2.isDirty = true;
+                    }
+                    else if (c2.pointIndexA == c.pointIndexA)
+                    {
+                        c2.handleOffsetA = -c.handleOffsetA;
+                        c2.isDirty = true;
+                    }
                 }
             }
             renderer->push(OverlayRenderable(sphere, 0,
@@ -179,6 +206,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         }
         if (dragConnectionIndex == i && dragConnectionHandle == 1)
         {
+            c.isDirty = true;
             colorB = brightOrange;
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleB);
             glm::vec3 p = cam.position + rayDir * t + dragOffset;
@@ -186,9 +214,18 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             handleB = points[c.pointIndexB].position + c.handleOffsetB;
             for (auto& c2 : connections)
             {
-                if (&c2 != &c && c2.pointIndexA == c.pointIndexB)
+                if (&c2 != &c)
                 {
-                    c2.handleOffsetA = -c.handleOffsetB;
+                    if (c2.pointIndexA == c.pointIndexB)
+                    {
+                        c2.handleOffsetA = -c.handleOffsetB;
+                        c2.isDirty = true;
+                    }
+                    else if (c2.pointIndexB == c.pointIndexB)
+                    {
+                        c2.handleOffsetB = -c.handleOffsetB;
+                        c2.isDirty = true;
+                    }
                 }
             }
             renderer->push(OverlayRenderable(sphere, 0,
@@ -208,7 +245,6 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         scene->debugDraw.line(points[c.pointIndexB].position + glm::vec3(0, 0, 0.01f),
                 points[c.pointIndexB].position + c.handleOffsetB + glm::vec3(0, 0, 0.01f),
                 glm::vec4(colorB, 1.f), glm::vec4(colorB, 1.f));
-
     }
 
     if (g_input.isMouseButtonReleased(MOUSE_LEFT))
@@ -219,16 +255,16 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     }
 }
 
-Track::BezierSegment Track::getPointConnection(u32 pointIndex)
+Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
 {
     for (auto& c : connections)
     {
         if (c.pointIndexA == pointIndex || c.pointIndexB == pointIndex)
         {
-            return c;
+            return &c;
         }
     }
-    return { {}, -1, {} , -1 };
+    return nullptr;
 }
 
 glm::vec3 Track::getPointDir(u32 pointIndex)
@@ -273,4 +309,125 @@ glm::vec3 Track::getPointDir(u32 pointIndex)
         return dir;
     }
     return { 0, 0, 0 };
+}
+
+void Track::createSegmentMesh(BezierSegment& c)
+{
+    c.isDirty = false;
+
+    if (c.vertices.empty())
+    {
+        glCreateBuffers(1, &c.vbo);
+        glCreateBuffers(1, &c.ebo);
+
+        enum
+        {
+            POSITION_BIND_INDEX = 0,
+            NORMAL_BIND_INDEX = 1,
+            COLOR_BIND_INDEX = 2
+        };
+
+        glCreateVertexArrays(1, &c.vao);
+
+        glEnableVertexArrayAttrib(c.vao, POSITION_BIND_INDEX);
+        glVertexArrayAttribFormat(c.vao, POSITION_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
+        glVertexArrayAttribBinding(c.vao, POSITION_BIND_INDEX, 0);
+
+        glEnableVertexArrayAttrib(c.vao, NORMAL_BIND_INDEX);
+        glVertexArrayAttribFormat(c.vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
+        glVertexArrayAttribBinding(c.vao, NORMAL_BIND_INDEX, 0);
+
+        glEnableVertexArrayAttrib(c.vao, COLOR_BIND_INDEX);
+        glVertexArrayAttribFormat(c.vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
+        glVertexArrayAttribBinding(c.vao, COLOR_BIND_INDEX, 0);
+    }
+
+    f32 totalLength = 0.f;
+    glm::vec3 prevP = points[c.pointIndexA].position;
+    for (u32 i=1; i<=10; ++i)
+    {
+        glm::vec3 p = getPointOnBezierCurve(
+                points[c.pointIndexA].position,
+                points[c.pointIndexA].position + c.handleOffsetA,
+                points[c.pointIndexB].position + c.handleOffsetB,
+                points[c.pointIndexB].position, i / 10.f);
+        totalLength += glm::length(prevP - p);
+        prevP = p;
+    }
+
+    c.vertices.clear();
+    c.indices.clear();
+    f32 stepSize = 1.f;
+    u32 totalSteps = totalLength / stepSize;
+    prevP = points[c.pointIndexA].position;
+    for (u32 i=0; i<=totalSteps; ++i)
+    {
+        glm::vec3 p = getPointOnBezierCurve(
+                points[c.pointIndexA].position,
+                points[c.pointIndexA].position + c.handleOffsetA,
+                points[c.pointIndexB].position + c.handleOffsetB,
+                points[c.pointIndexB].position, i / (f32)totalSteps);
+        glm::vec3 xDir = glm::normalize(i == 0 ? c.handleOffsetA :
+                (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
+        glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
+        glm::vec3 zDir = glm::cross(yDir, xDir);
+        f32 width = 6.f;
+        glm::vec3 p1 = p + yDir * width;
+        glm::vec3 p2 = p - yDir * width;
+        glm::vec3 color = { 0, 0, 0 };
+        c.vertices.push_back(Vertex{ p1, zDir, color });
+        c.vertices.push_back(Vertex{ p2, zDir, color });
+        if (i > 0)
+        {
+            c.indices.push_back(i * 2 - 1);
+            c.indices.push_back(i * 2 - 2);
+            c.indices.push_back(i * 2);
+            c.indices.push_back(i * 2);
+            c.indices.push_back(i * 2 + 1);
+            c.indices.push_back(i * 2 - 1);
+        }
+        prevP = p;
+    }
+
+    glBindVertexArray(c.vao);
+    glNamedBufferData(c.vbo, c.vertices.size() * sizeof(Vertex), c.vertices.data(), GL_DYNAMIC_DRAW);
+    glNamedBufferData(c.ebo, c.indices.size() * sizeof(u32), c.indices.data(), GL_DYNAMIC_DRAW);
+    glVertexArrayVertexBuffer(c.vao, 0, c.vbo, 0, sizeof(Vertex));
+    glVertexArrayElementBuffer(c.vao, c.ebo);
+}
+
+void Track::onShadowPass(class Renderer* renderer)
+{
+    glUseProgram(renderer->getShaderProgram("track"));
+    for (auto& c : connections)
+    {
+        glBindVertexArray(c.vao);
+        glDrawElements(GL_TRIANGLES, c.indices.size(), GL_UNSIGNED_INT, 0);
+    }
+}
+
+void Track::onDepthPrepass(class Renderer* renderer)
+{
+    glUseProgram(renderer->getShaderProgram("track"));
+    for (auto& c : connections)
+    {
+        glBindVertexArray(c.vao);
+        glDrawElements(GL_TRIANGLES, c.indices.size(), GL_UNSIGNED_INT, 0);
+    }
+}
+
+void Track::onLitPass(class Renderer* renderer)
+{
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_EQUAL);
+    glEnable(GL_CULL_FACE);
+    glBindTextureUnit(0, g_resources.getTexture("tarmac")->handle);
+    glUseProgram(renderer->getShaderProgram("track"));
+    for (auto& c : connections)
+    {
+        glBindVertexArray(c.vao);
+        glDrawElements(GL_TRIANGLES, c.indices.size(), GL_UNSIGNED_INT, 0);
+    }
 }
