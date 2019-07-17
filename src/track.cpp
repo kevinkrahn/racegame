@@ -39,7 +39,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     renderer->add(this);
 }
 
-void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled)
+void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, GridSettings* gridSettings)
 {
     Mesh* sphere = g_resources.getMesh("world.Sphere");
     glm::vec2 mousePos = g_input.getMousePosition();
@@ -112,6 +112,17 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             {
                 dragStartPoint = hitPoint;
             }
+            glm::vec3 dragTranslation;
+            if (gridSettings->snap)
+            {
+                dragTranslation = glm::vec3(snap(glm::vec2(hitPoint) +
+                        glm::vec2(0.f), gridSettings->cellSize)
+                    - snap(glm::vec2(dragStartPoint), gridSettings->cellSize), 0.f);
+            }
+            else
+            {
+                dragTranslation = hitPoint - dragStartPoint;
+            }
             for (auto& s : selectedPoints)
             {
                 if (!isDragging)
@@ -119,7 +130,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     s.dragStartPoint = points[s.pointIndex].position;
                     s.dragStartPoint.z = points[selectedPoints.back().pointIndex].position.z;
                 }
-                points[s.pointIndex].position = s.dragStartPoint + (hitPoint - dragStartPoint);
+                points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
             }
             isDragging = true;
         }

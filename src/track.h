@@ -73,9 +73,18 @@ public:
         points.push_back(Point{ glm::vec3(50, 0, 4) });
         connections.push_back(BezierSegment{ glm::vec3(10, 0, 0), 0, glm::vec3(-10, 0, 0), 1 });
     }
+    ~Track()
+    {
+        for (auto& c : connections)
+        {
+            glDeleteBuffers(0, &c.vbo);
+            glDeleteBuffers(0, &c.ebo);
+            glDeleteVertexArrays(0, &c.vao);
+        }
+    }
 
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
-    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled);
+    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     std::string getDebugString() const override { return "Track"; }
     i32 getPriority() const override { return 50; }
     void onShadowPass(class Renderer* renderer) override;

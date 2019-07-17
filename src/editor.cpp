@@ -118,6 +118,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         iconSize, iconSize));
         }
         modeSelectionMaxY = offset.y + (buttonHeight + padding * 2) * (f32)EditMode::MAX;
+        /*
+        renderer->push(TextRenderable(fontSmall, "[TAB]",
+                    offset + glm::vec2(height * 0.09f, modeSelectionMaxY),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER));
+        */
     }
 
     scene->terrain->setBrushSettings(0.f, 0.f, 0.f, {});
@@ -211,6 +216,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     {
         if (scene->track->selectedPoints.size() > 0)
         {
+            gridSettings.z = scene->track->points[scene->track->selectedPoints.back().pointIndex].position.z + 0.15f;
             i32 pointIndex = scene->track->selectedPoints.back().pointIndex;
             glm::vec3 xDir = scene->track->getPointDir(pointIndex);
             if (glm::length2(xDir) > 0.f)
@@ -300,6 +306,26 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             }
         }
 
-        scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled);
+        scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled, &gridSettings);
+    }
+
+    if (gridSettings.show && editMode != EditMode::TERRAIN)
+    {
+        f32 gridSize = 40.f;
+        glm::vec4 color = { 1.f, 1.f, 1.f, 0.5f };
+        for (f32 x=-gridSize; x<=gridSize; x+=gridSettings.cellSize)
+        {
+            scene->debugDraw.line(
+                { snap(cameraTarget.x + x, gridSettings.cellSize), snap(cameraTarget.y - gridSize, gridSettings.cellSize), gridSettings.z },
+                { snap(cameraTarget.x + x, gridSettings.cellSize), snap(cameraTarget.y + gridSize, gridSettings.cellSize), gridSettings.z },
+                color, color);
+        }
+        for (f32 y=-gridSize; y<=gridSize; y+=gridSettings.cellSize)
+        {
+            scene->debugDraw.line(
+                { snap(cameraTarget.x - gridSize, gridSettings.cellSize), snap(cameraTarget.y + y, gridSettings.cellSize), gridSettings.z },
+                { snap(cameraTarget.x + gridSize, gridSettings.cellSize), snap(cameraTarget.y + y, gridSettings.cellSize), gridSettings.z },
+                color, color);
+        }
     }
 }

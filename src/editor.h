@@ -3,6 +3,14 @@
 #include "misc.h"
 #include "math.h"
 
+struct GridSettings
+{
+    bool show = true;
+    bool snap = false;
+    f32 cellSize = 4.f;
+    f32 z = 2.f;
+};
+
 class Editor
 {
     f32 cameraDistance = 90.f;
@@ -12,6 +20,8 @@ class Editor
     glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
     glm::vec2 lastMousePosition;
     glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
+
+    GridSettings gridSettings;
 
     f32 brushRadius = 8.f;
     f32 brushFalloff = 1.f;

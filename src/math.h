@@ -174,6 +174,11 @@ inline f32 snap(f32 val, f32 multiple)
     return glm::floor(val / multiple) * multiple;
 }
 
+inline glm::vec2 snap(glm::vec2 val, f32 multiple)
+{
+    return glm::floor(val / multiple) * multiple;
+}
+
 inline glm::vec2 lengthdir(f32 angle, f32 len)
 {
     return glm::vec2(cosf(angle), sinf(angle)) * len;
