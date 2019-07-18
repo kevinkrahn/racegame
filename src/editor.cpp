@@ -46,6 +46,40 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     bool isMouseClickHandled = false;
     //bool isMouseWheelHandled = g_input.getMouseScroll() != 0;
 
+    f32 height = g_game.windowHeight;
+    Font* font = &g_resources.getFont("font", height * 0.03f);
+    Font* fontSmall = &g_resources.getFont("font", height * 0.02f);
+    glm::vec2 mousePos = g_input.getMousePosition();
+    auto button = [&](glm::vec2 pos, const char* text, bool enabled=true) {
+        f32 alpha = 0.75f;
+        f32 textAlpha = 1.f;
+        glm::vec3 color(0.f);
+        bool wasClicked = false;
+        u32 buttonWidth = height * 0.15f;
+        u32 buttonHeight = height * 0.04f;
+        if (!enabled)
+        {
+            alpha = 0.5f;
+            textAlpha = 0.75f;
+        }
+        if (enabled && pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
+        {
+            alpha = 0.9f;
+            color = glm::vec3(0.3f);
+            isMouseClickHandled = true;
+            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                wasClicked = true;
+            }
+        }
+        renderer->push(QuadRenderable(white,
+                pos, buttonWidth, buttonHeight, color, alpha));
+        renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
+                    glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+
+        return wasClicked;
+    };
+
     if (g_input.isKeyDown(KEY_LCTRL) && g_input.getMouseScroll() != 0)
     {
         brushRadius = clamp(brushRadius + g_input.getMouseScroll(), 2.0f, 40.f);
@@ -60,24 +94,20 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(lengthdir(cameraAngle, 1.f), 1.25f)) * cameraDistance;
     renderer->setViewportCamera(0, cameraFrom, cameraTarget, 10, 400.f);
 
-    glm::vec2 mousePos = g_input.getMousePosition();
     Camera const& cam = renderer->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
-
-    f32 height = g_game.windowHeight;
-    Font* font = &g_resources.getFont("font", height * 0.03f);
-    Font* fontSmall = &g_resources.getFont("font", height * 0.018f);
 
     if (g_input.isKeyPressed(KEY_TAB))
     {
         editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
     }
+    glm::vec2 guiOffset(height * 0.012f);
     f32 modeSelectionMaxY = 0.f;
     {
         const char* modeNames[] = { "Terrain", "Track", "Decoration" };
         const char* icons[] = { "terrain_icon", "track_icon", "decoration_icon" };
-        glm::vec2 offset(height * 0.012f);
+        glm::vec2 offset = guiOffset;
         u32 padding = height * 0.015f;
         u32 buttonHeight = height * 0.03f;
         f32 textHeight = font->getHeight();
@@ -142,7 +172,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
         const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth" };
         const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
-        glm::vec2 offset(height * 0.012f, modeSelectionMaxY + height * 0.02f);
+        glm::vec2 offset = guiOffset + glm::vec2(0.f, modeSelectionMaxY);
         u32 padding = height * 0.01f;
         u32 buttonHeight = height * 0.02f;
         f32 textHeight = fontSmall->getHeight();
@@ -305,6 +335,40 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 }
             }
         }
+
+        glm::vec2 buttonOffset = guiOffset + glm::vec2(0, modeSelectionMaxY);
+        glm::vec2 buttonSpacing(0.f, height * 0.045f);
+
+        if (button(buttonOffset, gridSettings.show ? "Show Grid: ON" : "Show Grid: OFF"))
+        {
+            gridSettings.show = !gridSettings.show;
+        }
+        buttonOffset += buttonSpacing;
+
+        if (button(buttonOffset, gridSettings.snap ? "Snap to Grid: ON" : "Snap to Grid: OFF"))
+        {
+            gridSettings.snap = !gridSettings.snap;
+        }
+        buttonOffset += buttonSpacing;
+
+        if (button(buttonOffset, "Connect Points [C]", scene->track->selectedPoints.size() == 2) ||
+                (g_input.isKeyPressed(KEY_C) && scene->track->selectedPoints.size() == 2))
+        {
+            i32 p1 = scene->track->selectedPoints[0].pointIndex;
+            i32 p2 = scene->track->selectedPoints[1].pointIndex;
+            auto c1 = scene->track->getPointConnection(p1);
+            auto c2 = scene->track->getPointConnection(p2);
+            glm::vec3 handle1 = c1 ? (c1->pointIndexA == p1 ? c1->handleOffsetA : c1->handleOffsetB)
+                : glm::vec3(4.f, 0, 0);
+            glm::vec3 handle2 = c2 ? (c2->pointIndexA == p2 ? c2->handleOffsetA : c2->handleOffsetB)
+                : glm::vec3(4.f, 0, 0);
+            scene->track->connections.push_back({
+                -handle1, scene->track->selectedPoints[0].pointIndex,
+                -handle2, scene->track->selectedPoints[1].pointIndex
+            });
+        }
+        buttonOffset += buttonSpacing;
+
 
         scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled, &gridSettings);
     }

@@ -169,6 +169,11 @@ inline i32 irandom(RandomSeries& series, i32 min, i32 max)
     return (xorshift32(series) % (max - min)) + min;
 }
 
+inline glm::vec3 closest(glm::vec3 const& p, glm::vec3 const& v1, glm::vec3 const& v2)
+{
+    return glm::length2(p - v1) < glm::length2(p - v2) ? v1 : v2;
+}
+
 inline f32 snap(f32 val, f32 multiple)
 {
     return glm::floor(val / multiple) * multiple;
