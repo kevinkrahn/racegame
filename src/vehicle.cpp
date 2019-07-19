@@ -145,7 +145,6 @@ PxBatchQuery* VehicleSceneQueryData::setUpBatchedSceneQuery(const PxU32 batchId,
 	sqDesc.queryMemory.sweepTouchBufferSize = maxNumHitResultsInBatch;
 
 	sqDesc.preFilterShader = vehicleSceneQueryData.mPreFilterShader;
-
 	sqDesc.postFilterShader = vehicleSceneQueryData.mPostFilterShader;
 
 	return scene->createBatchQuery(sqDesc);

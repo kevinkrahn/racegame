@@ -46,7 +46,7 @@ void Terrain::generate(f32 heightScale, f32 scale)
                 glm::perlin(glm::vec2(x, y) * scale * 4.f) * 0.5f;
         }
     }
-    isDirty = true;
+    setDirty();
 }
 
 void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
@@ -66,14 +66,34 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
             heightBuffer[y * width + x] = 0.f;
         }
     }
-    isDirty = true;
+    setDirty();
+}
+
+void Terrain::onCreate(Scene* scene)
+{
+    regenerateMesh();
+    regenerateCollisionMesh();
+    if (!actor)
+    {
+        actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
+        PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
+                PxTriangleMeshGeometry(collisionMesh), *scene->offroadMaterial);
+        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+        shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+        ActorUserData* userData = new ActorUserData;
+        userData->entityType = ActorUserData::SCENERY;
+        userData->entity = this;
+        physicsUserData.reset(userData);
+        actor->userData = userData;
+        scene->getPhysicsScene()->addActor(*actor);
+    }
 }
 
 void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
+    /*
     u32 width = (x2 - x1) / tileSize;
     u32 height = (y2 - y1) / tileSize;
-    /*
     for (u32 x = 0; x < width - 1; ++x)
     {
         for (i32 y = 0; y < height - 1; ++y)
@@ -94,43 +114,7 @@ void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     }
     */
 
-    if (isDirty)
-    {
-        indices.clear();
-        for (u32 x = 0; x < width; ++x)
-        {
-            for (i32 y = 0; y < height; ++y)
-            {
-                f32 z = heightBuffer[(y * width) + x];
-                glm::vec3 pos(x1 + x * tileSize, y1 + y * tileSize, z);
-                glm::vec3 normal = computeNormal(width, height, x, y);
-                u32 i = y * width + x;
-                vertices[i] = {
-                    pos,
-                    normal,
-                    { 1, 1, 1 }
-                };
-                //scene->debugDraw.line(pos, pos + normal * 2.f, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
-                if (x < width - 1 && y < height - 1)
-                {
-                    indices.push_back(y * width + x);
-                    indices.push_back(y * width + x + 1);
-                    indices.push_back((y + 1) * width + x);
-
-                    indices.push_back((y + 1) * width + x);
-                    indices.push_back(y * width + x + 1);
-                    indices.push_back((y + 1) * width + x + 1);
-                }
-            }
-        }
-        glNamedBufferData(vbo, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
-        glNamedBufferData(ebo, indices.size() * sizeof(u32), indices.data(), GL_DYNAMIC_DRAW);
-        glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(Vertex));
-        glVertexArrayElementBuffer(vao, ebo);
-
-        isDirty = false;
-    }
-
+    regenerateMesh();
     renderer->add(this);
 }
 
@@ -144,6 +128,82 @@ glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
     f32 hu = heightBuffer[(y + 1) * width + x];
     glm::vec3 normal(hl - hr, hd - hu, 2.f);
     return glm::normalize(normal);
+}
+
+void Terrain::regenerateMesh()
+{
+    if (!isDirty) { return; }
+    isDirty = false;
+    u32 width = (x2 - x1) / tileSize;
+    u32 height = (y2 - y1) / tileSize;
+    indices.clear();
+    for (u32 x = 0; x < width; ++x)
+    {
+        for (i32 y = 0; y < height; ++y)
+        {
+            f32 z = heightBuffer[(y * width) + x];
+            glm::vec3 pos(x1 + x * tileSize, y1 + y * tileSize, z);
+            glm::vec3 normal = computeNormal(width, height, x, y);
+            u32 i = y * width + x;
+            vertices[i] = {
+                pos,
+                normal,
+                { 1, 1, 1 }
+            };
+            //scene->debugDraw.line(pos, pos + normal * 2.f, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
+            if (x < width - 1 && y < height - 1)
+            {
+                indices.push_back(y * width + x);
+                indices.push_back(y * width + x + 1);
+                indices.push_back((y + 1) * width + x);
+
+                indices.push_back((y + 1) * width + x);
+                indices.push_back(y * width + x + 1);
+                indices.push_back((y + 1) * width + x + 1);
+            }
+        }
+    }
+    glNamedBufferData(vbo, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+    glNamedBufferData(ebo, indices.size() * sizeof(u32), indices.data(), GL_DYNAMIC_DRAW);
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(Vertex));
+    glVertexArrayElementBuffer(vao, ebo);
+}
+
+void Terrain::regenerateCollisionMesh()
+{
+    if (!isCollisionMeshDirty) { return; }
+    isCollisionMeshDirty = false;
+    if (collisionMesh)
+    {
+        collisionMesh->release();
+    }
+    PxTriangleMeshDesc desc;
+    desc.points.count = vertices.size();
+    desc.points.stride = sizeof(Vertex);
+    desc.points.data = vertices.data();
+    desc.triangles.count = indices.size() / 3;
+    desc.triangles.stride = 3 * sizeof(indices[0]);
+    desc.triangles.data = indices.data();
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer))
+    {
+        FATAL_ERROR("Failed to create collision mesh for terrain");
+    }
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    collisionMesh = g_game.physx.physics->createTriangleMesh(readBuffer);
+
+    if (actor)
+    {
+        PxShape* shape;
+        actor->getShapes(&shape, 1);
+        PxMaterial* material;
+        shape->getMaterials(&material, 1);
+        actor->detachShape(*shape);
+        PxRigidActorExt::createExclusiveShape(*actor,
+                PxTriangleMeshGeometry(collisionMesh), *material);
+    }
 }
 
 f32 Terrain::getZ(glm::vec2 pos) const
@@ -195,7 +255,7 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
             heightBuffer[y * width + x] += falloff * amount;
         }
     }
-    isDirty = true;
+    setDirty();
 }
 
 void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
@@ -216,7 +276,7 @@ void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
             heightBuffer[y * width + x] += falloff * noise * amount;
         }
     }
-    isDirty = true;
+    setDirty();
 }
 
 void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
@@ -236,7 +296,7 @@ void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
             heightBuffer[y * width + x] += (z - currentZ) * falloff * amount;
         }
     }
-    isDirty = true;
+    setDirty();
 }
 
 void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
@@ -262,7 +322,7 @@ void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
             heightBuffer[y * width + x] += (average - currentZ) * falloff * amount;
         }
     }
-    isDirty = true;
+    setDirty();
 }
 
 void Terrain::onShadowPass(class Renderer* renderer)

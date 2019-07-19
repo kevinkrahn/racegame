@@ -101,6 +101,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (g_input.isKeyPressed(KEY_TAB))
     {
         editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
+        scene->terrain->regenerateCollisionMesh();
     }
     glm::vec2 guiOffset(height * 0.012f);
     f32 modeSelectionMaxY = 0.f;
