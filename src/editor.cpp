@@ -101,7 +101,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (g_input.isKeyPressed(KEY_TAB))
     {
         editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
-        scene->terrain->regenerateCollisionMesh();
+        scene->terrain->regenerateCollisionMesh(scene);
     }
     glm::vec2 guiOffset(height * 0.012f);
     f32 modeSelectionMaxY = 0.f;
@@ -377,7 +377,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (gridSettings.show && editMode != EditMode::TERRAIN)
     {
         f32 gridSize = 40.f;
-        glm::vec4 color = { 1.f, 1.f, 1.f, 0.5f };
+        glm::vec4 color = { 1.f, 1.f, 1.f, 0.2f };
         for (f32 x=-gridSize; x<=gridSize; x+=gridSettings.cellSize)
         {
             scene->debugDraw.line(

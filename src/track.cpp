@@ -11,6 +11,17 @@ glm::vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
 glm::vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
 glm::vec4 brightOrange = { 1.f, 0.65f, 0.1f, 1.f };
 
+void Track::onCreate(Scene* scene)
+{
+    actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
+    ActorUserData* userData = new ActorUserData;
+    userData->entityType = ActorUserData::TRACK;
+    userData->entity = this;
+    physicsUserData.reset(userData);
+    actor->userData = userData;
+    scene->getPhysicsScene()->addActor(*actor);
+}
+
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     for (auto& c : connections)
@@ -33,7 +44,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         */
         if (c.isDirty || c.vertices.empty())
         {
-            createSegmentMesh(c);
+            createSegmentMesh(c, scene);
         }
     }
     renderer->add(this);
@@ -322,7 +333,7 @@ glm::vec3 Track::getPointDir(u32 pointIndex)
     return { 0, 0, 0 };
 }
 
-void Track::createSegmentMesh(BezierSegment& c)
+void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
 {
     c.isDirty = false;
 
@@ -405,6 +416,39 @@ void Track::createSegmentMesh(BezierSegment& c)
     glNamedBufferData(c.ebo, c.indices.size() * sizeof(u32), c.indices.data(), GL_DYNAMIC_DRAW);
     glVertexArrayVertexBuffer(c.vao, 0, c.vbo, 0, sizeof(Vertex));
     glVertexArrayElementBuffer(c.vao, c.ebo);
+
+    // collision mesh
+    PxTriangleMeshDesc desc;
+    desc.points.count = c.vertices.size();
+    desc.points.stride = sizeof(Vertex);
+    desc.points.data = c.vertices.data();
+    desc.triangles.count = c.indices.size() / 3;
+    desc.triangles.stride = 3 * sizeof(c.indices[0]);
+    desc.triangles.data = c.indices.data();
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer))
+    {
+        FATAL_ERROR("Failed to create collision mesh for track segment");
+    }
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    PxTriangleMesh* triMesh = g_game.physx.physics->createTriangleMesh(readBuffer);
+
+    if (!c.collisionShape)
+    {
+        c.collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
+                PxTriangleMeshGeometry(triMesh), *scene->trackMaterial);
+        c.collisionShape->setQueryFilterData(PxFilterData(
+                    COLLISION_FLAG_TRACK, 0, 0, DRIVABLE_SURFACE));
+        c.collisionShape->setSimulationFilterData(PxFilterData(
+                    COLLISION_FLAG_TRACK, -1, 0, 0));
+    }
+    else
+    {
+        c.collisionShape->setGeometry(PxTriangleMeshGeometry(triMesh));
+    }
+    triMesh->release();
 }
 
 void Track::onShadowPass(class Renderer* renderer)

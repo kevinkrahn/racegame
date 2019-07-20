@@ -71,22 +71,16 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
 
 void Terrain::onCreate(Scene* scene)
 {
+    actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
+    ActorUserData* userData = new ActorUserData;
+    userData->entityType = ActorUserData::SCENERY;
+    userData->entity = this;
+    physicsUserData.reset(userData);
+    actor->userData = userData;
+    scene->getPhysicsScene()->addActor(*actor);
+
     regenerateMesh();
-    regenerateCollisionMesh();
-    if (!actor)
-    {
-        actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-        PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(collisionMesh), *scene->offroadMaterial);
-        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
-        shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
-        ActorUserData* userData = new ActorUserData;
-        userData->entityType = ActorUserData::SCENERY;
-        userData->entity = this;
-        physicsUserData.reset(userData);
-        actor->userData = userData;
-        scene->getPhysicsScene()->addActor(*actor);
-    }
+    regenerateCollisionMesh(scene);
 }
 
 void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
@@ -181,14 +175,10 @@ void Terrain::regenerateMesh()
     glVertexArrayElementBuffer(vao, ebo);
 }
 
-void Terrain::regenerateCollisionMesh()
+void Terrain::regenerateCollisionMesh(Scene* scene)
 {
     if (!isCollisionMeshDirty) { return; }
     isCollisionMeshDirty = false;
-    if (collisionMesh)
-    {
-        collisionMesh->release();
-    }
     PxTriangleMeshDesc desc;
     desc.points.count = vertices.size();
     desc.points.stride = sizeof(Vertex);
@@ -204,18 +194,21 @@ void Terrain::regenerateCollisionMesh()
     }
 
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-    collisionMesh = g_game.physx.physics->createTriangleMesh(readBuffer);
-
-    if (actor)
+    PxTriangleMesh* triMesh = g_game.physx.physics->createTriangleMesh(readBuffer);
+    if (actor->getNbShapes() > 0)
     {
         PxShape* shape;
         actor->getShapes(&shape, 1);
-        PxMaterial* material;
-        shape->getMaterials(&material, 1);
-        actor->detachShape(*shape);
-        PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(collisionMesh), *material);
+        shape->setGeometry(PxTriangleMeshGeometry(triMesh));
     }
+    else
+    {
+        PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
+                PxTriangleMeshGeometry(triMesh), *scene->offroadMaterial);
+        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+        shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+    }
+    triMesh->release();
 }
 
 f32 Terrain::getZ(glm::vec2 pos) const

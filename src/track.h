@@ -34,6 +34,7 @@ class Track : public Renderable, public Entity
         std::vector<Vertex> vertices;
         std::vector<u32> indices;
         GLuint vao = 0, vbo = 0, ebo = 0;
+        PxShape* collisionShape = nullptr;
     };
 
     std::vector<Point> points;
@@ -52,6 +53,9 @@ class Track : public Renderable, public Entity
     };
     std::vector<Selection> selectedPoints;
 
+    PxRigidStatic* actor = nullptr;
+    std::unique_ptr<struct ActorUserData> physicsUserData;
+
     glm::vec3 getPointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, f32 t) const
     {
         f32 u = 1.f - t;
@@ -64,7 +68,7 @@ class Track : public Renderable, public Entity
 
     glm::vec3 getPointDir(u32 pointIndex);
     BezierSegment* getPointConnection(u32 pointIndex);
-    void createSegmentMesh(BezierSegment& segment);
+    void createSegmentMesh(BezierSegment& segment, Scene* scene);
 
 public:
     Track()
@@ -82,9 +86,13 @@ public:
             glDeleteVertexArrays(0, &c.vao);
         }
     }
-
-    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
+
+    // entity
+    void onCreate(Scene* scene) override;
+    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+
+    // renderable
     std::string getDebugString() const override { return "Track"; }
     i32 getPriority() const override { return 50; }
     void onShadowPass(class Renderer* renderer) override;

@@ -28,7 +28,6 @@ class Terrain : public Renderable, public Entity
     bool isDirty = true;
     bool isCollisionMeshDirty = true;
 
-    PxTriangleMesh* collisionMesh = nullptr;
     PxRigidStatic* actor = nullptr;
     std::unique_ptr<struct ActorUserData> physicsUserData;
     void setDirty()
@@ -54,10 +53,6 @@ public:
         glDeleteBuffers(0, &vbo);
         glDeleteBuffers(0, &ebo);
         glDeleteVertexArrays(0, &vao);
-        if (collisionMesh)
-        {
-            collisionMesh->release();
-        }
     }
 
     void raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
@@ -74,7 +69,7 @@ public:
     i32 getCellY(f32 y) const;
     glm::vec3 computeNormal(u32 width, u32 height, u32 x, u32 y);
     void regenerateMesh();
-    void regenerateCollisionMesh();
+    void regenerateCollisionMesh(class Scene* scene);
 
     i32 getPriority() const override { return 100; }
 
