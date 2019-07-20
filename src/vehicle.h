@@ -61,6 +61,7 @@ public:
     u32 targetPointIndex = 0;
     glm::vec3 targetOffset = glm::vec3(0);
     glm::vec3 startOffset = glm::vec3(0);
+    glm::mat4 startTransform;
 	f32 backupTimer = 0.f;
 	f32 flipTimer = 0.f;
 	f32 deadTimer = 0.f;

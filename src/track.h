@@ -74,7 +74,7 @@ public:
     Track()
     {
         points.push_back(Point{ glm::vec3(0, 0, 4) });
-        points.push_back(Point{ glm::vec3(50, 0, 4) });
+        points.push_back(Point{ glm::vec3(100, 0, 4) });
         connections.push_back(BezierSegment{ glm::vec3(10, 0, 0), 0, glm::vec3(-10, 0, 0), 1 });
     }
     ~Track()
@@ -87,6 +87,18 @@ public:
         }
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
+    glm::mat4 getStart()
+    {
+        BezierSegment* c = getPointConnection(0);
+        glm::vec3 xDir = glm::normalize(c->handleOffsetA);
+        glm::vec3 yDir = glm::cross(glm::vec3(0, 0, 1), xDir);
+        glm::vec3 zDir = glm::cross(xDir, yDir);
+        glm::mat4 m(1.f);
+        m[0] = glm::vec4(xDir, m[0].w);
+        m[1] = glm::vec4(yDir, m[1].w);
+        m[2] = glm::vec4(zDir, m[2].w);
+        return glm::translate(glm::mat4(1.f), points[0].position + glm::normalize(c->handleOffsetA) * 50.f) * m;
+    }
 
     // entity
     void onCreate(Scene* scene) override;

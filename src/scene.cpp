@@ -204,14 +204,8 @@ Scene::~Scene()
     offroadMaterial->release();
 }
 
-void Scene::onStart()
+void Scene::startRace(glm::mat4 const& start)
 {
-    if (isEditing)
-    {
-        editor.onStart(this);
-        return;
-    }
-
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
@@ -232,6 +226,25 @@ void Scene::onStart()
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
             driver, vehicleMaterial, surfaceMaterials, i));
     }
+    isRaceInProgress = true;
+}
+
+void Scene::stopRace()
+{
+    vehicles.clear();
+    isRaceInProgress = false;
+}
+
+void Scene::onStart()
+{
+    if (isEditing)
+    {
+        editor.onStart(this);
+    }
+    else
+    {
+        startRace(start);
+    }
 }
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
@@ -243,16 +256,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             [](auto& d) { return d.hasCamera; });
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
-
-    if (isEditing)
-    {
-        editor.onUpdate(this, renderer, deltaTime);
-    }
-
-    for (auto const& e : entities)
-    {
-        e->onUpdate(renderer, this, deltaTime);
-    }
 
     // draw static entities
     for (auto const& e : staticEntities)
@@ -274,7 +277,18 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     g_audio.setListeners(listenerPositions);
 
+    if (isEditing)
+    {
+        editor.onUpdate(this, renderer, deltaTime);
+    }
+
+    for (auto const& e : entities)
+    {
+        e->onUpdate(renderer, this, deltaTime);
+    }
+
     // determine vehicle placement
+    /*
     if (vehicles.size() > 0)
     {
         SmallVec<u32, MAX_VEHICLES> placements;
@@ -298,6 +312,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             vehicles[finishOrder[i]]->placement = i;
         }
     }
+    */
 
     if (g_input.isKeyPressed(KEY_F2))
     {
@@ -382,7 +397,8 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->add(&debugDraw);
 
     // draw HUD track
-    if (!isEditing)
+    //if (!isEditing)
+    if (false)
     {
         Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
         SmallVec<TrackPreview2D::RenderItem, MAX_VEHICLES> dynamicItems;

@@ -93,6 +93,7 @@ public:
     bool isDebugOverlayEnabled = false;
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;
+    bool isRaceInProgress = false;
 
     RandomSeries randomSeries;
     PxMaterial* vehicleMaterial = nullptr;
@@ -106,6 +107,9 @@ public:
 
     Scene(const char* name);
     ~Scene();
+
+    void startRace(glm::mat4 const& start);
+    void stopRace();
 
     void onStart();
     void onEnd();

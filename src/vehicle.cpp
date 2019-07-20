@@ -443,12 +443,14 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 {
     this->cameraTarget = translationOf(transform);
     this->cameraFrom = cameraTarget;
+    this->startTransform = transform;
     this->targetOffset = startOffset;
     this->startOffset = startOffset;
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
-    this->followPathIndex = irandom(scene->randomSeries, 0, scene->getPaths().size());
+    this->followPathIndex = scene->getPaths().size() > 0 ?
+        irandom(scene->randomSeries, 0, scene->getPaths().size()) : 0;
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
@@ -700,6 +702,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             deadTimer = 0.f;
             hitPoints = maxHitPoints;
 
+            /*
             const TrackGraph::Node* node = graphResult.lastNode;
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
@@ -707,6 +710,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
+                */
+            reset(startTransform);
         }
         return;
     }
@@ -758,7 +763,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 fireWeapon();
             }
         }
-        else
+        else if (scene->getPaths().size() > 0)
         {
             i32 previousIndex = targetPointIndex - 1;
             if (previousIndex < 0) previousIndex = scene->getPaths()[followPathIndex].size() - 1;
@@ -848,6 +853,10 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 }
             }
         }
+        else
+        {
+            updatePhysics(scene->getPhysicsScene(), deltaTime, false, 0.f, 0.f, -0.f, false, false, false);
+        }
 
         offsetChangeTimer += deltaTime;
         if (offsetChangeTimer > offsetChangeInterval)
@@ -873,6 +882,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     }
     lastValidPosition = getPosition();
 
+    /*
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
@@ -897,6 +907,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
         }
     }
+    */
 
     if (engineSound)
     {
@@ -1117,7 +1128,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             });
         }
         deadTimer = 1.f;
-        reset(glm::translate(glm::mat4(1.f), { 0, 0, -100 }));
+        reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
         scene->attackCredit(lastDamagedBy, vehicleIndex);
     }
 

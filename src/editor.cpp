@@ -15,8 +15,27 @@ void Editor::onStart(Scene* scene)
 
 void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
+    scene->terrain->setBrushSettings(0.f, 0.f, 0.f, {});
+
+    if (g_input.isKeyPressed(KEY_F5))
+    {
+        if (scene->isRaceInProgress)
+        {
+            scene->stopRace();
+        }
+        else
+        {
+            scene->terrain->regenerateCollisionMesh(scene);
+            scene->startRace(scene->track->getStart());
+        }
+    }
+
+    if (scene->isRaceInProgress)
+    {
+        return;
+    }
+
     renderer->setViewportCount(1);
-    renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
     Texture* white = g_resources.getTexture("white");
 
@@ -156,7 +175,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         */
     }
 
-    scene->terrain->setBrushSettings(0.f, 0.f, 0.f, {});
     if (editMode == EditMode::TERRAIN)
     {
         const f32 step = 0.01f;
@@ -303,7 +321,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                         {
                             glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
-                            glm::vec3 zDir = glm::cross(xDir, yDir);
+                            glm::vec3 zDir = glm::cross(yDir, xDir);
                             glm::mat4 m(1.f);
                             m[0] = glm::vec4(xDir, m[0].w);
                             m[1] = glm::vec4(yDir, m[1].w);
