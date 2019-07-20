@@ -150,16 +150,28 @@ void Terrain::regenerateMesh()
                 normal,
                 { 1, 1, 1 }
             };
-            //scene->debugDraw.line(pos, pos + normal * 2.f, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
             if (x < width - 1 && y < height - 1)
             {
-                indices.push_back(y * width + x);
-                indices.push_back(y * width + x + 1);
-                indices.push_back((y + 1) * width + x);
+                if ((x & 1) ? (y & 1) : !(y & 1))
+                {
+                    indices.push_back(y * width + x);
+                    indices.push_back(y * width + x + 1);
+                    indices.push_back((y + 1) * width + x);
 
-                indices.push_back((y + 1) * width + x);
-                indices.push_back(y * width + x + 1);
-                indices.push_back((y + 1) * width + x + 1);
+                    indices.push_back((y + 1) * width + x);
+                    indices.push_back(y * width + x + 1);
+                    indices.push_back((y + 1) * width + x + 1);
+                }
+                else
+                {
+                    indices.push_back(y * width + x);
+                    indices.push_back(y * width + x + 1);
+                    indices.push_back((y + 1) * width + x + 1);
+
+                    indices.push_back((y + 1) * width + x + 1);
+                    indices.push_back((y + 1) * width + x);
+                    indices.push_back(y * width + x);
+                }
             }
         }
     }
