@@ -330,6 +330,179 @@ void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     setDirty();
 }
 
+// adapted from http://ranmantaru.com/blog/2011/10/08/water-erosion-on-heightmap-terrain/
+void Terrain::erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+{
+    amount *= 0.03f;
+
+    i32 minX = getCellX(pos.x - radius);
+    i32 minY = getCellY(pos.y - radius);
+    i32 maxX = getCellX(pos.x + radius);
+    i32 maxY = getCellY(pos.y + radius);
+    i32 width = (x2 - x1) / tileSize;
+    i32 height = (y2 - y1) / tileSize;
+
+    f32 Kq = 5; // soil carrying capacity
+    f32 Kw = 0.006f; // evaporation speed
+    f32 Kr = 0.2f; // erosion speed
+    f32 Kd = 0.4f; // deposition speed
+    f32 Ki = 0.1f; // direction inertia (higher makes smoother channel turns)
+    f32 minSlope = 0.06f; // soil carrying capacity
+    f32 g = 15; // gravity
+    f32 Kg = g * 2;
+    f32 scale = 40.f;
+
+    std::unique_ptr<glm::vec2[]> erosion(new glm::vec2[width * height]);
+
+    const u32 MAX_PATH_LEN = 10;
+
+#define HMAP(X, Y) (heightBuffer[(Y) * width + (X)] / scale)
+
+#define DEPOSIT_AT(X, Z, W) \
+{ \
+f32 delta = ds * (W) * amount; \
+erosion[clamp((Z) * width + (X), 0, (i32)heightBuffer.size())].y += delta; \
+heightBuffer[clamp((Z) * width + (X), 0, (i32)heightBuffer.size())] += delta * scale; \
+}
+
+#define DEPOSIT(H) \
+DEPOSIT_AT(xi  , zi  , (1-xf)*(1-zf)) \
+DEPOSIT_AT(xi+1, zi  ,    xf *(1-zf)) \
+DEPOSIT_AT(xi  , zi+1, (1-xf)*   zf ) \
+DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
+(H)+=ds;
+
+    const u32 iterations = radius * radius;
+    for (u32 i =0; i < iterations; ++i)
+    {
+        //i32 xi = irandom(randomSeries, 0, width - 1);
+        //i32 zi = irandom(randomSeries, 0, height - 1);
+        i32 xi = irandom(randomSeries, minX, maxX);
+        i32 zi = irandom(randomSeries, minY, maxY);
+        f32 xp = xi, zp = zi;
+        f32 xf = 0, zf = 0;
+        f32 h = HMAP(xi, zi);
+        f32 s = 0, v = 0, w = 1;
+        f32 h00 = h;
+        f32 h10 = HMAP(xi+1, zi  );
+        f32 h01 = HMAP(xi  , zi+1);
+        f32 h11 = HMAP(xi+1, zi+1);
+        f32 dx = 0, dz = 0;
+        for (u32 numMoves = 0; numMoves < MAX_PATH_LEN; ++numMoves)
+        {
+            f32 gx = h00 + h01 - h10 - h11;
+            f32 gz = h00 + h10 - h01 - h11;
+            dx = (dx - gx) * Ki + gx;
+            dz = (dz - gz) * Ki + gz;
+
+            f32 dl = sqrtf(dx * dx + dz * dz);
+            if (dl <= FLT_EPSILON)
+            {
+                f32 a = random(randomSeries, 0.f, M_PI_2);
+                dx = cosf(a);
+                dz = sinf(a);
+            }
+            else
+            {
+                dx /= dl;
+                dz /= dl;
+            }
+
+            f32 nxp = xp + dx;
+            f32 nzp = zp + dz;
+
+            i32 nxi = (i32)glm::floor(nxp);
+            i32 nzi = (i32)glm::floor(nzp);
+            f32 nxf = nxp - nxi;
+            f32 nzf = nzp - nzi;
+
+            f32 nh00 = HMAP(nxi  , nzi  );
+            f32 nh10 = HMAP(nxi+1, nzi  );
+            f32 nh01 = HMAP(nxi  , nzi+1);
+            f32 nh11 = HMAP(nxi+1, nzi+1);
+
+            f32 nh = (nh00 * (1 - nxf) + nh10 * nxf) * (1 - nzf) + (nh01 * (1 - nxf) + nh11 * nxf) * nzf;
+            if (nh >= h)
+            {
+                f32 ds = (nh - h) + 0.001f;
+                if (ds >= s)
+                {
+                    ds = s;
+                    DEPOSIT(h)
+                    s = 0;
+                    break;
+                }
+                DEPOSIT(h)
+                s -= ds;
+                v = 0;
+            }
+
+            f32 dh = h - nh;
+            f32 slope = dh;
+            f32 q = glm::max(slope, minSlope) * v * w * Kq;
+            f32 ds = s - q;
+            if (ds >= 0)
+            {
+                ds *= Kd;
+                DEPOSIT(dh)
+                s -= ds;
+            }
+            else
+            {
+                ds *= -Kr;
+                ds = glm::min(ds, dh * 0.99f);
+
+#define ERODE(X, Z, W) \
+{ \
+f32 delta = ds * (W) * amount; \
+heightBuffer          [clamp((Z) * width + (X), 0, (i32)heightBuffer.size())] -= delta * scale; \
+glm::vec2 &e = erosion[clamp((Z) * width + (X), 0, (i32)heightBuffer.size())]; \
+f32 r=e.x, d=e.y; \
+if (delta<=d) d-=delta; \
+else { r+=delta-d; d=0; } \
+e.x=r; e.y=d; \
+}
+
+                for (i32 z = zi - 1; z <= zi + 2; ++z)
+                {
+                    f32 zo = z - zp;
+                    f32 zo2 = zo * zo;
+                    for (i32 x = xi - 1; x <= xi + 2; ++x)
+                    {
+                        f32 xo = x - xp;
+                        f32 w = 1 - (xo * xo + zo2) * 0.25f;
+                        if (w <= 0)
+                        {
+                            continue;
+                        }
+                        w *= 0.1591549430918953f;
+                        ERODE(x, z, w)
+                    }
+                }
+                dh -= ds;
+                s += ds;
+            }
+
+            v = sqrtf(v * v + Kg * dh);
+            w *= 1 - Kw;
+
+            xp = nxp;
+            zp = nzp;
+            xi = nxi;
+            zi = nzi;
+            xf = nxf;
+            zf = nzf;
+
+            h = nh;
+            h00 = nh00;
+            h10 = nh10;
+            h01 = nh01;
+            h11 = nh11;
+        }
+    }
+    setDirty();
+}
+
 void Terrain::onShadowPass(class Renderer* renderer)
 {
     glUseProgram(renderer->getShaderProgram("terrain"));

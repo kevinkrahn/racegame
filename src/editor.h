@@ -35,6 +35,7 @@ class Editor
         PERTURB,
         FLATTEN,
         SMOOTH,
+        ERODE,
         MAX
     } terrainTool = TerrainTool::RAISE;
 

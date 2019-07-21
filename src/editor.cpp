@@ -189,8 +189,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
         }
 
-        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth" };
-        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
+        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode" };
+        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
         glm::vec2 offset = guiOffset + glm::vec2(0.f, modeSelectionMaxY);
         u32 padding = height * 0.01f;
         u32 buttonHeight = height * 0.02f;
@@ -254,6 +254,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     break;
                 case TerrainTool::SMOOTH:
                     scene->terrain->smooth(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+                    break;
+                case TerrainTool::ERODE:
+                    scene->terrain->erode(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
                     break;
                 default:
                     break;
