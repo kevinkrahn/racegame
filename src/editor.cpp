@@ -238,6 +238,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 brushStartZ = scene->terrain->getZ(glm::vec2(p));
+                PxRaycastBuffer hit;
+                if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                {
+                    if (((ActorUserData*)hit.block.actor->userData)->entityType == ActorUserData::TRACK)
+                    {
+                        brushStartZ = glm::max(brushStartZ, hit.block.position.z - 0.05f);
+                    }
+                }
             }
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
             {

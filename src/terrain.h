@@ -41,9 +41,8 @@ class Terrain : public Renderable, public Entity
 public:
     Terrain()
     {
-        //resize(-256, -256, 256, 256);
-        resize(-64, -64, 64, 64);
-        generate(12.f, 0.08f);
+        resize(-256, -256, 256, 256);
+        generate();
         createBuffers();
     }
     Terrain(f32 x1, f32 y1, f32 x2, f32 y2)
@@ -64,7 +63,7 @@ public:
     void smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
     void erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
 
-    void generate(f32 heightScale=10.f, f32 scale=0.05f);
+    void generate(f32 heightScale=4.f, f32 scale=0.05f);
     void createBuffers();
     void resize(f32 x1, f32 y1, f32 x2, f32 y2);
     f32 getZ(glm::vec2 pos) const;
