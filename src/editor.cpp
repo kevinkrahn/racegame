@@ -296,7 +296,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 };
                 TrackItem items[] = {
                     { "Straight", "straight_track_icon", {
-                        { { 20.f, 0.f, 0.f }, { -4.f, 0.f, 0.f } },
+                        { { 50.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
                     }},
                     { "Left Turn", "left_turn_track_icon", {
                         { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },

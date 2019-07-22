@@ -48,6 +48,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         }
     }
     renderer->add(this);
+    renderer->push(LitRenderable(g_resources.getMesh("world.Cube.002"), getStart(), nullptr));
 }
 
 void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, GridSettings* gridSettings)
@@ -393,7 +394,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
                 (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
         glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
         glm::vec3 zDir = glm::cross(yDir, xDir);
-        f32 width = 15.f;
+        f32 width = 12.f;
         glm::vec3 p1 = p + yDir * width;
         glm::vec3 p2 = p - yDir * width;
         glm::vec3 color = { 0, 0, 0 };

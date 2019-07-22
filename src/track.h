@@ -73,9 +73,9 @@ class Track : public Renderable, public Entity
 public:
     Track()
     {
-        points.push_back(Point{ glm::vec3(0, 0, 4) });
-        points.push_back(Point{ glm::vec3(100, 0, 4) });
-        connections.push_back(BezierSegment{ glm::vec3(10, 0, 0), 0, glm::vec3(-10, 0, 0), 1 });
+        points.push_back(Point{ glm::vec3(50, 0, 0.05f) });
+        points.push_back(Point{ glm::vec3(-50, 0, 0.05f) });
+        connections.push_back(BezierSegment{ glm::vec3(-10, 0, 0), 0, glm::vec3(10, 0, 0), 1 });
     }
     ~Track()
     {
@@ -97,7 +97,8 @@ public:
         m[0] = glm::vec4(xDir, m[0].w);
         m[1] = glm::vec4(yDir, m[1].w);
         m[2] = glm::vec4(zDir, m[2].w);
-        return glm::translate(glm::mat4(1.f), points[0].position + glm::normalize(c->handleOffsetA) * 50.f) * m;
+        return glm::translate(glm::mat4(1.f),
+                points[0].position + glm::vec3(0, 0, 3.f) + glm::normalize(c->handleOffsetA) * 50.f) * m;
     }
 
     // entity

@@ -211,7 +211,7 @@ void Scene::startRace(glm::mat4 const& start)
     {
         Driver* driver = &g_game.state.drivers[i];
 
-        glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -9.f + i % 4 * 6, 0.f);
+        glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
 
         PxRaycastBuffer hit;
         if (!raycastStatic(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 8))),
