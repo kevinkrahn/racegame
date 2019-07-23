@@ -9,6 +9,7 @@
 
 struct Mesh
 {
+    std::string name;
     std::vector<f32> vertices;
     std::vector<u32> indices;
     u32 numVertices;
@@ -52,4 +53,31 @@ struct Mesh
 
     bool intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const;
     void createVAO();
+
+    PxTriangleMesh* collisionMesh = nullptr;
+    PxConvexMesh* convexCollisionMesh = nullptr;
+
+    PxTriangleMesh* getCollisionMesh();
+    PxConvexMesh* getConvexCollisionMesh();
 };
+
+inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
+{
+    struct Vertex
+    {
+        glm::vec3 pos;
+        glm::vec3 normal;
+        glm::vec3 color;
+        glm::vec2 uv;
+    };
+    for (u32 i=0; i<rhs.numVertices; ++i)
+    {
+        Vertex v = *((Vertex*)(((u8*)rhs.vertices.data()) + i * rhs.stride));
+        lhs << "POS:    " << v.pos << '\n';
+        lhs << "NORMAL: " << v.normal << '\n';
+        lhs << "COLOR:  " << v.color << '\n';
+        lhs << "UV:     " << v.uv << '\n';
+    }
+    return lhs;
+}
+

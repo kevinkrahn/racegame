@@ -12,7 +12,6 @@ void Resources::load()
     textures["white"] = Texture(1, 1, Texture::Format::RGBA8, white, sizeof(white));
 
     std::vector<DataFile::Value> vehicleDataValues;
-    std::vector<std::pair<DataFile::Value, Material*>> pendingMaterials;
 
     for (auto& p : fs::recursive_directory_iterator("."))
     {
@@ -44,6 +43,7 @@ void Resources::load()
                             u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
                             Mesh mesh = {
+                                meshInfo["name"].string(),
                                 std::move(vertices),
                                 std::move(indices),
                                 numVertices,
@@ -71,6 +71,7 @@ void Resources::load()
 
                             u32 stride = elementSize * sizeof(f32);
                             Mesh mesh = {
+                                meshInfo["name"].string(),
                                 std::move(vertices),
                                 std::move(indices),
                                 numVertices,
@@ -104,31 +105,6 @@ void Resources::load()
                     for (auto& val : val["vehicles"].array())
                     {
                         vehicleDataValues.push_back(std::move(val));
-                    }
-                }
-
-                // materials
-                if (val.hasKey("materials"))
-                {
-                    for (auto& val : val["materials"].dict())
-                    {
-                        auto mat = std::make_unique<Material>();
-                        pendingMaterials.emplace_back(std::make_pair(std::move(val.second), mat.get()));
-                        materials[val.first] = std::move(mat);
-                    }
-                }
-
-                // vehicle colors
-                if (val.hasKey("vehicle-colors"))
-                {
-                    for (auto& val : val["vehicle-colors"].array())
-                    {
-                        auto col = std::make_unique<VehicleColor>();
-                        col->color = val["color"].vec3();
-                        col->material.reset(new Material);
-                        col->material->lighting.color = col->color;
-                        pendingMaterials.emplace_back(std::make_pair(std::move(val["material"]), col->material.get()));
-                        vehicleColors.emplace_back(std::move(col));
                     }
                 }
             }
@@ -198,38 +174,6 @@ void Resources::load()
         }
     }
 
-    // finish loading materials now that textures have been loaded
-    for (auto& m : pendingMaterials)
-    {
-        DataFile::Value& mat = m.first;
-        Material* material = m.second;
-        material->shader = g_game.renderer->loadShader(mat["shader"].string());
-        material->culling = mat["culling"].boolean(material->culling);
-        material->castShadow = mat["cast-shadow"].boolean(material->castShadow);
-        if (mat.hasKey("textures"))
-        {
-            for (auto& t : mat["textures"].array())
-            {
-                material->textures.push_back(getTexture(t.string().c_str()));
-            }
-        }
-        material->depthWrite = mat["depth-write"].boolean(material->depthWrite);
-        material->depthRead = mat["depth-read"].boolean(material->depthRead);
-        material->depthOffset = mat["depth-offset"].real(material->depthOffset);
-        if (mat.hasKey("lighting"))
-        {
-            auto& lighting = mat["lighting"];
-            material->lighting.color = lighting["color"].vec3(material->lighting.color);
-            material->lighting.emit = lighting["emit"].vec3(material->lighting.emit);
-            material->lighting.specularPower = lighting["specular-power"].real(material->lighting.specularPower);
-            material->lighting.specularStrength = lighting["specular-strength"].real(material->lighting.specularStrength);
-            material->lighting.specularColor = lighting["specular-color"].vec3(material->lighting.specularColor);
-            material->lighting.fresnelScale = lighting["fresnel-scale"].real(material->lighting.fresnelScale);
-            material->lighting.fresnelPower = lighting["fresnel-power"].real(material->lighting.fresnelPower);
-            material->lighting.fresnelBias = lighting["fresnel-bias"].real(material->lighting.fresnelBias);
-        }
-    }
-
     // finish loading vehicle data now that all the scenes have been loaded
     for (auto& val : vehicleDataValues)
     {
@@ -238,61 +182,3 @@ void Resources::load()
     }
 }
 
-PxTriangleMesh* Resources::getCollisionMesh(std::string const& name)
-{
-    auto trimesh = collisionMeshCache.find(name);
-    if (trimesh != collisionMeshCache.end())
-    {
-        return trimesh->second;
-    }
-    Mesh* mesh = getMesh(name.c_str());
-
-    PxTriangleMeshDesc desc;
-    desc.points.count = mesh->numVertices;
-    desc.points.stride = mesh->stride;
-    desc.points.data = mesh->vertices.data();
-    desc.triangles.count = mesh->numIndices / 3;
-    desc.triangles.stride = 3 * sizeof(mesh->indices[0]);
-    desc.triangles.data = mesh->indices.data();
-
-    PxDefaultMemoryOutputStream writeBuffer;
-    PxTriangleMeshCookingResult::Enum result;
-    if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result))
-    {
-        FATAL_ERROR("Failed to create collision mesh: ", name);
-    }
-
-    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-    PxTriangleMesh* t = g_game.physx.physics->createTriangleMesh(readBuffer);
-    collisionMeshCache[name] = t;
-
-    return t;
-}
-
-PxConvexMesh* Resources::getConvexCollisionMesh(std::string const& name)
-{
-    auto convexMesh = convexCollisionMeshCache.find(name);
-    if (convexMesh != convexCollisionMeshCache.end())
-    {
-        return convexMesh->second;
-    }
-    Mesh* mesh = getMesh(name.c_str());
-
-    PxConvexMeshDesc convexDesc;
-    convexDesc.points.count  = mesh->numVertices;
-    convexDesc.points.stride = mesh->stride;
-    convexDesc.points.data   = mesh->vertices.data();
-    convexDesc.flags         = PxConvexFlag::eCOMPUTE_CONVEX;
-
-    PxDefaultMemoryOutputStream writeBuffer;
-    if (!g_game.physx.cooking->cookConvexMesh(convexDesc, writeBuffer))
-    {
-        FATAL_ERROR("Failed to create convex collision mesh: ", name);
-    }
-
-    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-    PxConvexMesh* t = g_game.physx.physics->createConvexMesh(readBuffer);
-    convexCollisionMeshCache[name] = t;
-
-    return t;
-}

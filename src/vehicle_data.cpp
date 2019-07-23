@@ -83,7 +83,6 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
             vehicle.chassisMeshes.push_back({
                 g_resources.getMesh(e["data_name"].string().c_str()),
                 transform,
-                e["properties"].hasKey("material") ? g_resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
             });
         }
         else if (name.find("FL") != std::string::npos)
@@ -117,7 +116,8 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         else if (name.find("debris") != std::string::npos)
         {
             std::string const& meshName = e["data_name"].string();
-            PxConvexMesh* collisionMesh = g_resources.getConvexCollisionMesh(meshName);
+            Mesh* mesh = g_resources.getMesh(meshName.c_str());
+            PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
             PxShape* shape = g_game.physx.physics->createShape(
                     PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
@@ -125,16 +125,15 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
                         COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
             vehicle.debrisChunks.push_back({
-                g_resources.getMesh(meshName.c_str()),
+                mesh,
                 transform,
                 shape,
-                e["properties"].hasKey("material") ? g_resources.getMaterial(e["properties"]["material"].string().c_str()) : nullptr
             });
         }
         else if (name.find("Collision") != std::string::npos)
         {
             vehicle.physics.collisionMeshes.push_back({
-                g_resources.getConvexCollisionMesh(e["data_name"].string()),
+                g_resources.getMesh(e["data_name"].string().c_str())->getConvexCollisionMesh(),
                 transform
             });
             vehicle.collisionWidth =

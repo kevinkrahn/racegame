@@ -3,8 +3,6 @@
 #include "math.h"
 #include "vehicle_data.h"
 
-const u32 MAX_VEHICLES = 16;
-
 struct PlayerProfile
 {
     std::string name;
@@ -19,12 +17,6 @@ struct ComputerDriverData
     f32 fear;         // [0,1] how much the AI tries to evade other drivers
 };
 
-struct VehicleColor
-{
-    glm::vec3 color;
-    std::unique_ptr<Material> material;
-};
-
 struct Driver
 {
     u32 leaguePoints = 0;
@@ -37,7 +29,6 @@ struct Driver
 
     VehicleData* vehicleData = nullptr;
     glm::vec3 vehicleColor = { 1.f, 1.f, 1.f };
-    Material* vehicleMaterial;
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard, VehicleData* vehicleData,
             u32 colorIndex, u32 controllerID=0);

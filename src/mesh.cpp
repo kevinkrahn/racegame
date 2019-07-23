@@ -1,5 +1,6 @@
 #include "mesh.h"
 #include "debug_draw.h"
+#include "game.h"
 
 void Mesh::buildOctree()
 {
@@ -220,4 +221,59 @@ void Mesh::createVAO()
     glEnableVertexArrayAttrib(vao, TEXCOORD_BIND_INDEX);
     glVertexArrayAttribFormat(vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 12);
     glVertexArrayAttribBinding(vao, TEXCOORD_BIND_INDEX, 0);
+}
+
+PxTriangleMesh* Mesh::getCollisionMesh()
+{
+    if (collisionMesh)
+    {
+        return collisionMesh;
+    }
+
+    assert(elementSize == 3);
+
+    PxTriangleMeshDesc desc;
+    desc.points.count = numVertices;
+    desc.points.stride = stride;
+    desc.points.data = vertices.data();
+    desc.triangles.count = numIndices / 3;
+    desc.triangles.stride = 3 * sizeof(indices[0]);
+    desc.triangles.data = indices.data();
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    PxTriangleMeshCookingResult::Enum result;
+    if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result))
+    {
+        FATAL_ERROR("Failed to create collision mesh: ", name);
+    }
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    collisionMesh = g_game.physx.physics->createTriangleMesh(readBuffer);
+    return collisionMesh;
+}
+
+PxConvexMesh* Mesh::getConvexCollisionMesh()
+{
+    if (convexCollisionMesh)
+    {
+        return convexCollisionMesh;
+    }
+
+    assert(elementSize == 3);
+
+    PxConvexMeshDesc convexDesc;
+    convexDesc.points.count  = numVertices;
+    convexDesc.points.stride = stride;
+    convexDesc.points.data   = vertices.data();
+    convexDesc.flags         = PxConvexFlag::eCOMPUTE_CONVEX;
+
+    PxDefaultMemoryOutputStream writeBuffer;
+    if (!g_game.physx.cooking->cookConvexMesh(convexDesc, writeBuffer))
+    {
+        FATAL_ERROR("Failed to create convex collision mesh: ", name);
+    }
+
+    PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+    convexCollisionMesh = g_game.physx.physics->createConvexMesh(readBuffer);
+    return convexCollisionMesh;
 }

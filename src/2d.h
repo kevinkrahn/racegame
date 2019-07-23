@@ -88,7 +88,7 @@ public:
     }
 
     void update(Renderer* renderer, std::vector<RenderItem> const& staticItems,
-                SmallVec<RenderItem, 16> const& dynamicItems, u32 width, u32 height, glm::vec2 pos)
+                std::vector<RenderItem> const& dynamicItems, u32 width, u32 height, glm::vec2 pos)
     {
         if (this->width != width || this->height != height)
         {

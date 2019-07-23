@@ -49,7 +49,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
         return;
     }
     print("OpenGL Debug (", id, "): ", message, '\n');
-    assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
+    //assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
 }
 #endif
 
@@ -127,8 +127,6 @@ void Game::run()
         */
     };
 
-    //changeScene("track2.Scene");
-    //changeScene("world.Scene");
     changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.maxFPS;

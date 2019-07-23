@@ -466,6 +466,10 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 
 Vehicle::~Vehicle()
 {
+    for (auto& d : vehicleDebris)
+    {
+        d.rigidBody->release();
+    }
 	vehicle4W->getRigidDynamicActor()->release();
 	vehicle4W->free();
 	sceneQueryData->free(g_game.physx.allocator);
@@ -687,7 +691,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     // draw vehicle debris
     for (auto const& d : vehicleDebris)
     {
-        renderer->drawMesh(d.mesh, convert(d.rigidBody->getGlobalPose()), d.material);
+        renderer->push(LitRenderable(d.mesh, convert(d.rigidBody->getGlobalPose()), nullptr));
     }
 
     if (deadTimer > 0.f)
@@ -711,7 +715,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
                 */
-            reset(startTransform);
+            reset(glm::translate(glm::mat4(1.f), { 0, 0, 5 }) * startTransform);
         }
         return;
     }
@@ -959,7 +963,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         if (!visible)
         {
             renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
-                    cameraIndex, transform, glm::vec3(driver->vehicleColor)));
+                    //cameraIndex, transform, glm::vec3(driver->vehicleColor)));
+                    cameraIndex, transform, glm::vec3(1.f)));
         }
     }
 
@@ -1124,7 +1129,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 d.mesh,
                 0.f,
                 driver->vehicleColor,
-                d.material ? d.material : driver->vehicleMaterial
             });
         }
         deadTimer = 1.f;
@@ -1135,12 +1139,10 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     // draw chassis
     for (auto& m : driver->vehicleData->chassisMeshes)
     {
-        renderer->drawMesh(m.mesh, transform * m.transform,
-                m.material ? m.material : driver->vehicleMaterial);
+        renderer->push(LitRenderable(m.mesh, transform * m.transform, nullptr));
     }
 
     // draw wheels
-    Material* material = g_resources.getMaterial("wheel");
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
@@ -1149,7 +1151,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
         }
         auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
-        renderer->drawMesh(mesh.mesh, wheelTransform * mesh.transform, material);
+        renderer->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
     }
 
 #if 0

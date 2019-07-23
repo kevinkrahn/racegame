@@ -13,7 +13,7 @@ public:
 
     struct
     {
-        SmallVec<Driver, MAX_VEHICLES> drivers;
+        std::vector<Driver> drivers;
     } state;
 
     struct

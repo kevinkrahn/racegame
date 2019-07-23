@@ -5,7 +5,6 @@
 #include "math.h"
 #include "smallvec.h"
 #include "decal.h"
-#include "material.h"
 #include "renderable.h"
 #include "dynamic_buffer.h"
 #include "buffer.h"
@@ -93,7 +92,6 @@ private:
     WorldInfo worldInfo;
     DynamicBuffer worldInfoUBO = DynamicBuffer(sizeof(WorldInfo));
     DynamicBuffer worldInfoUBOShadow = DynamicBuffer(sizeof(WorldInfo));
-    DynamicBuffer decalVertexBuffer = DynamicBuffer(sizeof(DecalVertex) * 50000);
 
     u32 width;
     u32 height;
@@ -148,15 +146,10 @@ public:
     //void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
-    void drawMesh(Mesh* mesh, glm::mat4 const& worldTransform, Material* material);
-
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const { return cameras.size(); }
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
     Camera& getCamera(u32 index) { return cameras[index]; }
-
-    void drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
-            Texture* texture, glm::vec3 const& color = glm::vec3(1.f));
 
     size_t getTempRenderBufferSize() const { return tempRenderBuffer.pos; }
     std::string getDebugRenderList()

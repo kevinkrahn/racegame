@@ -4,6 +4,67 @@
 #include "resources.h"
 #include "smallvec.h"
 
+// TODO: Add decal renderable
+
+/*
+DynamicBuffer decalVertexBuffer = DynamicBuffer(sizeof(DecalVertex) * 50000);
+
+void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
+        Texture* texture, glm::vec3 const& color)
+{
+    if (verts.size() > 0)
+    {
+        void* mem = decalVertexBuffer.map(verts.size() * sizeof(DecalVertex));
+        memcpy(mem, (void*)verts.data(), verts.size() * sizeof(DecalVertex));
+        decalVertexBuffer.unmap();
+        renderListDecal.push_back({ transform, (u32)verts.size(), texture, color });
+    }
+}
+
+// create decal vertex buffer
+glCreateVertexArrays(1, &decalMesh.vao);
+
+glEnableVertexArrayAttrib(decalMesh.vao, 0);
+glVertexArrayAttribFormat(decalMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+glVertexArrayAttribBinding(decalMesh.vao, 0, 0);
+
+glEnableVertexArrayAttrib(decalMesh.vao, 1);
+glVertexArrayAttribFormat(decalMesh.vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
+glVertexArrayAttribBinding(decalMesh.vao, 1, 0);
+
+glEnableVertexArrayAttrib(decalMesh.vao, 2);
+glVertexArrayAttribFormat(decalMesh.vao, 2, 2, GL_FLOAT, GL_FALSE, 12 + 12);
+glVertexArrayAttribBinding(decalMesh.vao, 2, 0);
+
+glEnable(GL_POLYGON_OFFSET_FILL);
+glPolygonOffset(0.f, -1000.f);
+glDepthMask(GL_FALSE);
+glUseProgram(getShaderProgram("mesh_decal"));
+glDisable(GL_CULL_FACE);
+
+glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
+glBindVertexArray(decalMesh.vao);
+
+Texture* tex = 0;
+u32 offset = 0;
+for (auto const& d : renderListDecal)
+{
+    if (d.texture != tex)
+    {
+        tex = d.texture;
+        glBindTextureUnit(0, d.texture->handle);
+    }
+    glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(d.worldTransform));
+    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d.worldTransform));
+    glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+    glUniform3f(2, d.color.x, d.color.y, d.color.z);
+    glDrawArrays(GL_TRIANGLES, offset, d.count);
+    offset += d.count;
+}
+renderListDecal.clear();
+glDisable(GL_POLYGON_OFFSET_FILL);
+*/
+
 struct DecalVertex
 {
     glm::vec3 pos;

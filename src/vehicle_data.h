@@ -3,7 +3,6 @@
 #include "math.h"
 #include "smallvec.h"
 #include "datafile.h"
-#include "material.h"
 #include "mesh.h"
 
 const u32 WHEEL_FRONT_LEFT  = PxVehicleDrive4WWheelOrder::eFRONT_LEFT;
@@ -83,7 +82,6 @@ struct VehicleData
     {
         Mesh* mesh;
         glm::mat4 transform;
-        Material* material = nullptr;
     };
     SmallVec<VehicleMesh> chassisMeshes;
     VehicleMesh wheelMeshFront;
@@ -116,7 +114,6 @@ struct VehicleData
         Mesh* mesh;
         glm::mat4 transform;
         PxShape* collisionShape;
-        Material* material = nullptr;
     };
     SmallVec<DebrisChunk, 32> debrisChunks;
 };

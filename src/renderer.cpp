@@ -4,33 +4,7 @@
 #include <sstream>
 #include <map>
 
-struct RenderItem
-{
-    Mesh* mesh;
-    glm::mat4 worldTransform;
-    Material* material;
-};
-
-struct Decal
-{
-    glm::mat4 worldTransform;
-    u32 count;
-    Texture* texture;
-    glm::vec3 color;
-};
-
-std::vector<RenderItem> renderList;
-std::vector<Decal> renderListDecal;
-Material defaultMaterial;
-
 constexpr u32 viewportGapPixels = 1;
-
-struct GLMesh
-{
-    GLuint vao, vbo, ebo;
-    u32 numIndices;
-};
-GLMesh decalMesh;
 
 void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
 {
@@ -224,21 +198,6 @@ void Renderer::init(u32 width, u32 height)
 
     // create empty vao
     glCreateVertexArrays(1, &emptyVAO);
-
-    // create decal vertex buffer
-    glCreateVertexArrays(1, &decalMesh.vao);
-
-    glEnableVertexArrayAttrib(decalMesh.vao, 0);
-    glVertexArrayAttribFormat(decalMesh.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(decalMesh.vao, 0, 0);
-
-    glEnableVertexArrayAttrib(decalMesh.vao, 1);
-    glVertexArrayAttribFormat(decalMesh.vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
-    glVertexArrayAttribBinding(decalMesh.vao, 1, 0);
-
-    glEnableVertexArrayAttrib(decalMesh.vao, 2);
-    glVertexArrayAttribFormat(decalMesh.vao, 2, 2, GL_FLOAT, GL_FALSE, 12 + 12);
-    glVertexArrayAttribBinding(decalMesh.vao, 2, 0);
 
     // main framebuffer
     const u32 layers = cameras.size();
@@ -461,15 +420,6 @@ void Renderer::render(f32 deltaTime)
     setShadowMatrices(worldInfo, worldInfoShadow);
     worldInfoUBO.updateData(&worldInfo);
 
-    GLuint currentProgram = 999999;
-    auto useProgram = [&](GLuint program) {
-        if (currentProgram != program)
-        {
-            currentProgram = program;
-            glUseProgram(program);
-        }
-    };
-
     i32 prevPriority = INT32_MIN;
 
     // shadow map
@@ -496,17 +446,6 @@ void Renderer::render(f32 deltaTime)
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(2.f, 4096.f);
         glCullFace(GL_FRONT);
-        for (auto const& r : renderList)
-        {
-            if (!r.material->castShadow)
-            {
-                continue;
-            }
-            useProgram(loadedShaders[r.material->shader].program);
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-            glBindVertexArray(r.mesh->vao);
-            glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
-        }
         prevPriority = INT32_MIN;
         for (auto const& r : renderables)
         {
@@ -532,17 +471,6 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-    for (auto const& r : renderList)
-    {
-        if (!r.material->depthWrite)
-        {
-            continue;
-        }
-        useProgram(loadedShaders[r.material->shader].program);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-        glBindVertexArray(r.mesh->vao);
-        glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
     prevPriority = INT32_MIN;
     for (auto const& r : renderables)
     {
@@ -617,28 +545,6 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_COLOR_BUFFER_BIT);
 #endif
     glDepthFunc(GL_EQUAL);
-    currentProgram = 9999999;
-    Texture* whiteTexture = g_resources.getTexture("white");
-    for (auto const& r : renderList)
-    {
-        if (r.material->textures.size() == 0)
-        {
-            glBindTextureUnit(0, whiteTexture->handle);
-        }
-        else
-        {
-            glBindTextureUnit(0, r.material->textures[0]->handle);
-        }
-        useProgram(loadedShaders[r.material->shader].program);
-
-        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(r.worldTransform));
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(r.worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-        glUniform3f(2, r.material->lighting.color.x, r.material->lighting.color.y, r.material->lighting.color.z);
-
-        glBindVertexArray(r.mesh->vao);
-        glDrawElements(GL_TRIANGLES, r.mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
     prevPriority = INT32_MIN;
     for (auto const& r : renderables)
     {
@@ -652,38 +558,6 @@ void Renderer::render(f32 deltaTime)
         {
             r.renderable->~Renderable();
         }
-    }
-
-    // decals
-    if (renderListDecal.size() > 0)
-    {
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(0.f, -1000.f);
-        glDepthMask(GL_FALSE);
-        glUseProgram(getShaderProgram("mesh_decal"));
-        glDisable(GL_CULL_FACE);
-
-        glVertexArrayVertexBuffer(decalMesh.vao, 0, decalVertexBuffer.getBuffer(), 0, sizeof(DecalVertex));
-        glBindVertexArray(decalMesh.vao);
-
-        Texture* tex = 0;
-        u32 offset = 0;
-        for (auto const& d : renderListDecal)
-        {
-            if (d.texture != tex)
-            {
-                tex = d.texture;
-                glBindTextureUnit(0, d.texture->handle);
-            }
-            glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(d.worldTransform));
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d.worldTransform));
-            glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-            glUniform3f(2, d.color.x, d.color.y, d.color.z);
-            glDrawArrays(GL_TRIANGLES, offset, d.count);
-            offset += d.count;
-        }
-        renderListDecal.clear();
-        glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
     // render to back buffer
@@ -720,11 +594,9 @@ void Renderer::render(f32 deltaTime)
     // 2D
     glEnable(GL_BLEND);
 
-    /*
-    std::sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
-        return a.priority < b.priority;
-    });
-    */
+    //std::sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
+        //return a.priority < b.priority;
+    //});
 
     for (auto const& r : renderables2D)
     {
@@ -737,7 +609,6 @@ void Renderer::render(f32 deltaTime)
 
     SDL_GL_SwapWindow(g_game.window);
 
-    renderList.clear();
     renderables.clear();
     renderables2D.clear();
     tempRenderBuffer.clear();
@@ -804,29 +675,8 @@ Camera& Renderer::setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 
     return cam;
 }
 
-void Renderer::drawMesh(Mesh* mesh, glm::mat4 const& worldTransform, Material* material)
-{
-    if (!material)
-    {
-        material = &defaultMaterial;
-    }
-    renderList.push_back({ mesh, worldTransform, material });
-}
-
 void Renderer::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
 {
     worldInfo.sunDirection = -glm::normalize(direction);
     worldInfo.sunColor = color;
-}
-
-void Renderer::drawDecal(std::vector<DecalVertex> const& verts, glm::mat4 const& transform,
-        Texture* texture, glm::vec3 const& color)
-{
-    if (verts.size() > 0)
-    {
-        void* mem = decalVertexBuffer.map(verts.size() * sizeof(DecalVertex));
-        memcpy(mem, (void*)verts.data(), verts.size() * sizeof(DecalVertex));
-        decalVertexBuffer.unmap();
-        renderListDecal.push_back({ transform, (u32)verts.size(), texture, color });
-    }
 }

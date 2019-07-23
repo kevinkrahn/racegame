@@ -83,7 +83,6 @@ public:
         Mesh* mesh;
         f32 life = 0.f;
         glm::vec3 color;
-        Material* material = nullptr;
     };
 
     std::vector<VehicleDebris> vehicleDebris;

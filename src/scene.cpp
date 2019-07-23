@@ -72,109 +72,10 @@ Scene::Scene(const char* name)
         return;
     }
 
-    // construct scene from blender data
-    auto& sceneData = g_resources.getScene(name);
-    auto& entities = sceneData["entities"].array();
-    bool foundStart = false;
-
-    struct TrackMesh
-    {
-        Mesh* mesh;
-        glm::mat4 transform;
-    };
-    std::vector<TrackMesh> trackMeshes;
-    for (auto& e : entities)
-    {
-        std::string entityType = e["type"].string();
-        if (entityType == "MESH")
-        {
-            glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
-            std::string dataName = e["data_name"].string();
-            std::string name = e["name"].string();
-
-            if (name.find("Start") != std::string::npos)
-            {
-                start = transform;
-                foundStart = true;
-                auto it = std::find_if(entities.begin(), entities.end(), [](auto& e) {
-                    return e["name"].string().find("TrackGraph") != std::string::npos;
-                });
-                if (it == entities.end())
-                {
-                    error("Scene does not contain a track graph.\n");
-                }
-                else
-                {
-                    trackGraph = TrackGraph(start,
-                            *g_resources.getMesh((*it)["data_name"].string().c_str()),
-                            (*it)["matrix"].convertBytes<glm::mat4>());
-                }
-            }
-
-            Mesh* mesh = g_resources.getMesh(dataName.c_str());
-            if (mesh->elementSize < 3)
-            {
-                continue;
-            }
-
-            bool isTrack = name.find("Track") != std::string::npos;
-            bool isSand = name.find("Sand") != std::string::npos;
-            physicsUserData.push_back(std::make_unique<ActorUserData>());
-            physicsUserData.back()->entityType = (isTrack || isSand) ? ActorUserData::TRACK : ActorUserData::SCENERY;
-
-            Material* mat = nullptr;
-            if (e["properties"].hasKey("material"))
-            {
-                mat = g_resources.getMaterial(e["properties"]["material"].string().c_str());
-            }
-            staticEntities.push_back({
-                mesh,
-                transform,
-                mat,
-                isTrack
-            });
-
-            if (isTrack)
-            {
-                trackMeshes.push_back({ mesh, transform });
-            }
-
-            PxMaterial* material = isTrack ? trackMaterial : offroadMaterial;
-            if (isSand) material = offroadMaterial;
-
-            PxRigidStatic* actor = g_game.physx.physics->createRigidStatic(convert(transform));
-            PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
-                    PxTriangleMeshGeometry(g_resources.getCollisionMesh(dataName.c_str()),
-                        PxMeshScale(convert(scaleOf(transform)))), *material);
-            shape->setQueryFilterData(PxFilterData(
-                        isTrack ? COLLISION_FLAG_TRACK : COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
-            shape->setSimulationFilterData(PxFilterData(
-                        isTrack ? COLLISION_FLAG_TRACK : COLLISION_FLAG_GROUND, -1, 0, 0));
-            actor->userData = physicsUserData.back().get();
-            physicsScene->addActor(*actor);
-        }
-        else if (entityType == "PATH")
-        {
-            std::string name = e["name"].string();
-            if (name.find("TrackPath") != std::string::npos)
-            {
-                auto& data = e["points"].bytearray();
-                paths.push_back(std::vector<glm::vec3>(
-                            (glm::vec3*)data.data(),
-                            (glm::vec3*)(data.data() + data.size())));
-            }
-        }
-    }
-
-    if (!foundStart)
-    {
-        FATAL_ERROR("Track does not have a starting point!");
-    }
-
+    /*
     BoundingBox bb = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
     for (auto& t : trackMeshes)
     {
-        t.mesh->buildOctree();
         bb = bb.growToFit(t.mesh->aabb.transform(t.transform));
     }
     f32 pad = 30.f;
@@ -182,18 +83,13 @@ Scene::Scene(const char* name)
         * glm::ortho(bb.max.x + pad, bb.min.x - pad, bb.min.y - pad,
                 bb.max.y + pad, -bb.max.z - 10.f, -bb.min.z + 10.f);
 
-    for (auto& t : trackMeshes)
-    {
-        trackItems.push_back({ t.mesh, trackOrtho * t.transform, glm::vec3(1.f), true });
-    }
-    trackAspectRatio = (bb.max.x - bb.min.x) / (bb.max.y - bb.min.y);
-
     trackItems.push_back({
         g_resources.getMesh("world.Quad"),
         trackOrtho * start * glm::translate(glm::mat4(1.f), { 0, 0, -3 }) * glm::scale(glm::mat4(1.f), { 5, 16, 1 }),
         glm::vec3(0.2f),
         true
     });
+    */
 }
 
 Scene::~Scene()
@@ -214,8 +110,8 @@ void Scene::startRace(glm::mat4 const& start)
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
 
         PxRaycastBuffer hit;
-        if (!raycastStatic(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 8))),
-                -zAxisOf(start), 30.f, &hit))
+        if (!raycastStatic(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 10))),
+                -zAxisOf(start), 40.f, &hit))
         {
             FATAL_ERROR("The starting point is too high in the air!");
         }
@@ -226,11 +122,19 @@ void Scene::startRace(glm::mat4 const& start)
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
             driver, vehicleMaterial, surfaceMaterials, i));
     }
+
+    for (u32 i=0; i<vehicles.size(); ++i)
+    {
+        placements.push_back(i);
+    }
+
     isRaceInProgress = true;
 }
 
 void Scene::stopRace()
 {
+    finishOrder.clear();
+    placements.clear();
     vehicles.clear();
     isRaceInProgress = false;
 }
@@ -243,7 +147,7 @@ void Scene::onStart()
     }
     else
     {
-        startRace(start);
+        startRace(track->getStart());
     }
 }
 
@@ -256,12 +160,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             [](auto& d) { return d.hasCamera; });
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
-
-    // draw static entities
-    for (auto const& e : staticEntities)
-    {
-        renderer->drawMesh(e.mesh, e.worldTransform, e.material);
-    }
 
     // update vehicles
     i32 cameraIndex = 0;
@@ -291,11 +189,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     /*
     if (vehicles.size() > 0)
     {
-        SmallVec<u32, MAX_VEHICLES> placements;
-        for (u32 i=0; i<vehicles.size(); ++i)
-        {
-            placements.push_back(i);
-        }
         f32 maxT = trackGraph.getStartNode()->t;
         std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
             return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
@@ -397,11 +290,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->add(&debugDraw);
 
     // draw HUD track
-    //if (!isEditing)
-    if (false)
+    /*
+    if (!isEditing)
     {
         Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
-        SmallVec<TrackPreview2D::RenderItem, MAX_VEHICLES> dynamicItems;
+        std::vector<TrackPreview2D::RenderItem> dynamicItems;
         for (auto const& v : vehicles)
         {
             glm::vec3 pos = v->getPosition();
@@ -428,6 +321,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         trackPreview2D.update(renderer, trackItems, dynamicItems, size, (u32)(size * trackAspectRatio), hudTrackPos);
         renderer->add(&trackPreview2D);
     }
+    */
 
     if (isDebugOverlayEnabled)
     {

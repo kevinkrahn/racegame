@@ -83,6 +83,10 @@ public:
 
     void capWithLastPoint()
     {
+        if (points.empty())
+        {
+            return;
+        }
         RibbonPoint& prevPoint = points.back();
         if (prevPoint.position == lastPoint.position)
         {

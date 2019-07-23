@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "track_graph.h"
-#include "material.h"
 #include "entity.h"
 #include "ribbon.h"
 #include "smoke_particles.h"
@@ -10,6 +9,8 @@
 #include "driver.h"
 #include "editor.h"
 #include "2d.h"
+#include "terrain.h"
+#include "track.h"
 #include <vector>
 
 enum
@@ -44,42 +45,26 @@ struct ActorUserData
     };
 };
 
-struct StaticEntity
-{
-    Mesh* mesh;
-    glm::mat4 worldTransform;
-    Material* material = nullptr;
-    bool isTrack = false;
-};
-
 class Scene : public PxSimulationEventCallback
 {
 private:
     bool isEditing = false;
     Editor editor;
 
-    glm::mat4 start;
-    u32 totalLaps = 4;
-
     std::vector<std::unique_ptr<Entity>> entities;
     std::vector<std::unique_ptr<Entity>> newEntities;
 
-    std::vector<StaticEntity> staticEntities;
-    std::vector<std::unique_ptr<ActorUserData>> physicsUserData;
-    SmallVec<u32, MAX_VEHICLES> finishOrder;
-    SmallVec<std::vector<glm::vec3>> paths;
-    SmallVec<std::unique_ptr<class Vehicle>, MAX_VEHICLES> vehicles;
+    std::vector<u32> finishOrder;
+    std::vector<std::vector<glm::vec3>> paths;
+    std::vector<std::unique_ptr<class Vehicle>> vehicles;
+    std::vector<u32> placements;
 
     bool debugCamera = false;
     glm::vec3 debugCameraPosition;
     PxScene* physicsScene = nullptr;
-
-    glm::mat4 trackOrtho;
-    std::vector<TrackPreview2D::RenderItem> trackItems;
     TrackPreview2D trackPreview2D;
-    f32 trackAspectRatio;
-
     TrackGraph trackGraph;
+    u32 totalLaps = 4;
 
     // physx callbacks
     void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)  { PX_UNUSED(constraints); PX_UNUSED(count); }
@@ -102,8 +87,8 @@ public:
     SmokeParticles smoke;
     RibbonRenderable ribbons;
     DebugDraw debugDraw;
-    class Terrain* terrain = nullptr;
-    class Track* track = nullptr;
+    Terrain* terrain = nullptr;
+    Track* track = nullptr;
 
     Scene(const char* name);
     ~Scene();
@@ -117,13 +102,13 @@ public:
     void onEndUpdate(f32 deltaTime);
 
     void vehicleFinish(u32 n) { finishOrder.push_back(n); }
-    Vehicle* getVehicle(u32 n) const { return vehicles[n].get(); }
+    Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
     void attackCredit(u32 instigator, u32 victim);
 
-    glm::mat4 const& getStart() const { return start; }
+    glm::mat4 getStart() const { return track->getStart(); }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
-    SmallVec<std::vector<glm::vec3>> const& getPaths() const { return paths; }
+    std::vector<std::vector<glm::vec3>> const& getPaths() const { return paths; }
     u32 getTotalLaps() const { return totalLaps; }
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr) const;

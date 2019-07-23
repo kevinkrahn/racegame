@@ -1,0 +1,8 @@
+- Add cloud shadows over the environment
+- Add fog effect
+- Implement gamma-correct rendering (SRGB)
+- Render with pre-multiplied alpha
+- Add explosion effect when vehicle is destroyed
+- Change cursor when hovering over something interactable
+- Add support for importing a heightmap into the editor
+- Add MSAA

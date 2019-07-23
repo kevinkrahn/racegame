@@ -388,6 +388,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             i32 p2 = scene->track->selectedPoints[1].pointIndex;
             auto c1 = scene->track->getPointConnection(p1);
             auto c2 = scene->track->getPointConnection(p2);
+            // TODO: compute new handle offset if the target point already has >= 2 connections
             glm::vec3 handle1 = c1 ? (c1->pointIndexA == p1 ? c1->handleOffsetA : c1->handleOffsetB)
                 : glm::vec3(4.f, 0, 0);
             glm::vec3 handle2 = c2 ? (c2->pointIndexA == p2 ? c2->handleOffsetA : c2->handleOffsetB)

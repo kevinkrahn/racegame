@@ -25,17 +25,23 @@ void Projectile::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         velocity = glm::normalize(velocity) * speed;
     }
 
+    Vehicle* vehicle = scene->getVehicle(instigator);
+    PxRigidBody* ignoreBody = vehicle ? vehicle->getRigidBody() : nullptr;
     PxSweepBuffer sweepHit;
     if (scene->sweep(0.3f, prevPosition,
                 glm::normalize(position - prevPosition),
-                glm::length(position - prevPosition), &sweepHit,
-                scene->getVehicle(instigator)->getRigidBody()))
+                glm::length(position - prevPosition), &sweepHit, ignoreBody))
     {
         ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
         if (data && data->entityType == ActorUserData::VEHICLE)
         {
             data->vehicle->applyDamage(50.f, instigator);
         }
+        this->destroy();
+    }
+
+    if (glm::length2(startPos - position) > 1000.f)
+    {
         this->destroy();
     }
 }
