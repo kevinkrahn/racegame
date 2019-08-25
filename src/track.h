@@ -35,6 +35,13 @@ class Track : public Renderable, public Entity
         std::vector<u32> indices;
         GLuint vao = 0, vbo = 0, ebo = 0;
         PxShape* collisionShape = nullptr;
+
+        void destroy()
+        {
+            glDeleteBuffers(0, &vbo);
+            glDeleteBuffers(0, &ebo);
+            glDeleteVertexArrays(0, &vao);
+        }
     };
 
     std::vector<Point> points;
@@ -69,6 +76,7 @@ class Track : public Renderable, public Entity
     glm::vec3 getPointDir(u32 pointIndex);
     BezierSegment* getPointConnection(u32 pointIndex);
     void createSegmentMesh(BezierSegment& segment, Scene* scene);
+    void offset(Scene* scene, BezierSegment const& segment);
 
 public:
     Track()
@@ -81,9 +89,7 @@ public:
     {
         for (auto& c : connections)
         {
-            glDeleteBuffers(0, &c.vbo);
-            glDeleteBuffers(0, &c.ebo);
-            glDeleteVertexArrays(0, &c.vao);
+            c.destroy();
         }
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);

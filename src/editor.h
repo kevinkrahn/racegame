@@ -5,7 +5,7 @@
 
 struct GridSettings
 {
-    bool show = true;
+    bool show = false;
     bool snap = false;
     f32 cellSize = 4.f;
     f32 z = 2.f;

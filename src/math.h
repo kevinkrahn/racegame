@@ -223,3 +223,31 @@ inline f32 rayPlaneIntersection(glm::vec3 const& rayOrigin, glm::vec3 const& ray
     f32 t = glm::dot(planePoint - rayOrigin, planeNormal) / denom;
     return t;
 }
+
+bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, glm::vec2& out)
+{
+    f32 x1 = p1.x, x2 = p2.x, x3 = p3.x, x4 = p4.x;
+    f32 y1 = p1.y, y2 = p2.y, y3 = p3.y, y4 = p4.y;
+    f32 d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (d == 0)
+    {
+        return false;
+    }
+    f32 pre = (x1*y2 - y1*x2);
+    f32 post = (x3*y4 - y3*x4);
+    f32 x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
+    f32 y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
+    if (x < glm::min(x1, x2) || x > glm::max(x1, x2) ||
+        x < glm::min(x3, x4) || x > glm::max(x3, x4))
+    {
+        return false;
+    }
+    if (y < glm::min(y1, y2) || y > glm::max(y1, y2) ||
+        y < glm::min(y3, y4) || y > glm::max(y3, y4))
+    {
+        return false;
+    }
+    out.x = x;
+    out.y = y;
+    return true;
+}

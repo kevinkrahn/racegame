@@ -22,8 +22,82 @@ void Track::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
+bool collide = false;
+
+void Track::offset(Scene* scene, BezierSegment const& c)
+{
+    f32 totalLength = 0.f;
+    glm::vec3 prevP = points[c.pointIndexA].position;
+    for (u32 i=1; i<=10; ++i)
+    {
+        glm::vec3 p = getPointOnBezierCurve(
+                points[c.pointIndexA].position,
+                points[c.pointIndexA].position + c.handleOffsetA,
+                points[c.pointIndexB].position + c.handleOffsetB,
+                points[c.pointIndexB].position, i / 10.f);
+        totalLength += glm::length(prevP - p);
+        prevP = p;
+    }
+
+    f32 stepSize = 10.f;
+    u32 totalSteps = totalLength / stepSize;
+    prevP = points[c.pointIndexA].position;
+    glm::vec2 prevOffsetP;
+    for (u32 i=0; i<=totalSteps; ++i)
+    {
+        glm::vec3 p = getPointOnBezierCurve(
+                points[c.pointIndexA].position,
+                points[c.pointIndexA].position + c.handleOffsetA,
+                points[c.pointIndexB].position + c.handleOffsetB,
+                points[c.pointIndexB].position, i / (f32)totalSteps) + glm::vec3(0, 0, 0.1f);
+
+        glm::vec3 xDir = glm::normalize(i == 0 ? c.handleOffsetA :
+                (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
+        glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
+        //glm::vec3 zDir = glm::cross(yDir, xDir);
+        f32 width = 16.f;
+        glm::vec2 p11 = prevOffsetP;
+        //glm::vec2 p11 = prevP + yDir1 * width;
+        glm::vec2 p12 = p + yDir * width;
+        if (i > 0)
+        {
+            if (collide)
+            {
+                glm::vec2 out;
+                glm::vec3 pp = p;
+                for (u32 j=1; j<=2; ++j)
+                {
+                    glm::vec3 nextP = getPointOnBezierCurve(
+                            points[c.pointIndexA].position,
+                            points[c.pointIndexA].position + c.handleOffsetA,
+                            points[c.pointIndexB].position + c.handleOffsetB,
+                            points[c.pointIndexB].position, (i + j) / (f32)totalSteps) + glm::vec3(0, 0, 0.1f);
+
+                    glm::vec3 xDir2 = glm::normalize(nextP - pp);
+                    glm::vec3 yDir2 = glm::cross(xDir2, glm::vec3(0, 0, 1));
+                    glm::vec2 p21 = pp + yDir2 * width;
+                    glm::vec2 p22 = nextP + yDir2 * width;
+                    pp = nextP;
+
+                    if (lineIntersection(p11, p12, p21, p22, out))
+                    {
+                        p12 = out;
+                    }
+                }
+            }
+            scene->debugDraw.line(glm::vec3(p11, prevP.z), glm::vec3(p12, p.z), red, red);
+        }
+        prevOffsetP = p12;
+        prevP = p;
+    }
+}
+
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
+    if (g_input.isKeyPressed(KEY_O))
+    {
+        collide = !collide;
+    }
     for (auto& c : connections)
     {
         /*
@@ -37,11 +111,12 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
                     points[c.pointIndexB].position, t);
             if (t > 0.f)
             {
-                scene->debugDraw.line(p, prevP, red, red);
+                scene->debugDraw.line(p, prevP, orange, orange);
             }
             prevP = p;
         }
         */
+        //offset(scene, c);
         if (c.isDirty || c.vertices.empty())
         {
             createSegmentMesh(c, scene);
@@ -68,7 +143,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         selectedPoints.clear();
     }
 
-    for (i32 i=0; i<points.size(); ++i)
+    for (i32 i=0; i<points.size();)
     {
         glm::vec3 point = points[i].position;
         glm::vec2 pointScreen = project(point, renderer->getCamera(0).viewProjection)
@@ -78,6 +153,41 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             return s.pointIndex == i;
         });
         bool isSelected = it != selectedPoints.end();
+
+        if (isSelected)
+        {
+            i32 d = (i32)g_input.isKeyPressed(KEY_Q) - (i32)g_input.isKeyPressed(KEY_E);
+            if (d != 0)
+            {
+                points[i].position.z += 2.f * d;
+                for (auto& c : connections)
+                {
+                    if (c.pointIndexA == i || c.pointIndexB == i)
+                    {
+                        c.isDirty = true;
+                    }
+                }
+            }
+
+            if (points.size() > 1 && connections.size() > 1 && g_input.isKeyPressed(KEY_DELETE))
+            {
+                for (auto it = connections.begin(); it != connections.end();)
+                {
+                    if (it->pointIndexA == i || it->pointIndexB == i)
+                    {
+                        it->destroy();
+                        connections.erase(it);
+                    }
+                    else
+                    {
+                        ++it;
+                    }
+                }
+                points.erase(points.begin() + i);
+                continue;
+            }
+        }
+
         if (glm::length(pointScreen - mousePos) < radius && !isDragging)
         {
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -111,6 +221,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         renderer->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), points[i].position) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color));
+        ++i;
     }
 
     if (selectedPoints.size() > 0 && g_input.isMouseButtonDown(MOUSE_LEFT))
