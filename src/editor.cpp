@@ -69,7 +69,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     Font* font = &g_resources.getFont("font", height * 0.03f);
     Font* fontSmall = &g_resources.getFont("font", height * 0.02f);
     glm::vec2 mousePos = g_input.getMousePosition();
-    auto button = [&](glm::vec2 pos, const char* text, bool enabled=true) {
+    auto button = [&](glm::vec2& pos, glm::vec2 spacing, const char* text, bool enabled=true) {
         f32 alpha = 0.75f;
         f32 textAlpha = 1.f;
         glm::vec3 color(0.f);
@@ -95,6 +95,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 pos, buttonWidth, buttonHeight, color, alpha));
         renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
                     glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        pos += spacing;
 
         return wasClicked;
     };
@@ -175,6 +176,22 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         */
     }
 
+    glm::vec2 buttonOffset = guiOffset + glm::vec2(0, modeSelectionMaxY);
+    glm::vec2 buttonSpacing(0.f, height * 0.045f);
+
+    if (editMode != EditMode::TERRAIN)
+    {
+        if (button(buttonOffset, buttonSpacing, gridSettings.show ? "Show Grid: ON" : "Show Grid: OFF"))
+        {
+            gridSettings.show = !gridSettings.show;
+        }
+
+        if (button(buttonOffset, buttonSpacing, gridSettings.snap ? "Snap to Grid: ON" : "Snap to Grid: OFF"))
+        {
+            gridSettings.snap = !gridSettings.snap;
+        }
+    }
+
     if (editMode == EditMode::TERRAIN)
     {
         const f32 step = 0.01f;
@@ -191,7 +208,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
         const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode" };
         const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
-        glm::vec2 offset = guiOffset + glm::vec2(0.f, modeSelectionMaxY);
+        glm::vec2 offset = buttonOffset;
         u32 padding = height * 0.01f;
         u32 buttonHeight = height * 0.02f;
         f32 textHeight = fontSmall->getHeight();
@@ -274,54 +291,61 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::TRACK)
     {
-        if (scene->track->selectedPoints.size() > 0)
+        if (button(buttonOffset, buttonSpacing, "Connect Points [C]", scene->track->canConnect()) ||
+                (g_input.isKeyPressed(KEY_C) && scene->track->canConnect()))
         {
-            gridSettings.z = scene->track->points[scene->track->selectedPoints.back().pointIndex].position.z + 0.15f;
-            i32 pointIndex = scene->track->selectedPoints.back().pointIndex;
-            glm::vec3 xDir = scene->track->getPointDir(pointIndex);
-            if (glm::length2(xDir) > 0.f)
-            {
-                auto bezierConnection = scene->track->getPointConnection(pointIndex);
+            scene->track->connectPoints();
+        }
 
-                struct TrackItem
-                {
-                    const char* name;
-                    const char* icon;
-                    struct Curve
-                    {
-                        glm::vec3 offset;
-                        glm::vec3 handleOffset;
-                    };
-                    SmallVec<Curve> curves;
-                };
-                TrackItem items[] = {
-                    { "Straight", "straight_track_icon", {
-                        { { 50.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
-                    }},
-                    { "Left Turn", "left_turn_track_icon", {
-                        { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
-                        { { 20.f, -20.f, 0.f }, { 0.f, 10.f, 0.f } },
-                    }},
-                    { "Right Turn", "right_turn_track_icon", {
-                        { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
-                        { { 20.f, 20.f, 0.f }, { 0.f, -10.f, 0.f } },
-                    }},
-                };
+        if (button(buttonOffset, buttonSpacing, "New Railing"))
+        {
+            placeMode = PlaceMode::NEW_RAILING;
+        }
+
+        if (button(buttonOffset, buttonSpacing, "New Offroad Area"))
+        {
+            placeMode = PlaceMode::NEW_OFFROAD;
+        }
+
+        if (button(buttonOffset, buttonSpacing, "New Track Marking"))
+        {
+            placeMode = PlaceMode::NEW_MARKING;
+        }
+
+        if (placeMode != PlaceMode::NONE)
+        {
+            glm::vec3 p = scene->track->previewRailingPlacement(scene, renderer, cam.position, rayDir);
+            if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                scene->track->placeRailing(p);
+                placeMode = PlaceMode::NONE;
+            }
+
+            if (g_input.isKeyPressed(KEY_ESCAPE))
+            {
+                placeMode = PlaceMode::NONE;
+            }
+        }
+
+        if (scene->track->hasSelection())
+        {
+            if (scene->track->canExtendTrack())
+            {
+                i32 pointIndex = scene->track->getSelectedPointIndex();
+                Track::Point const& point = scene->track->getPoint(pointIndex);
+                gridSettings.z = point.position.z + 0.15f;
 
                 u32 itemSize = height * 0.08f;
                 u32 iconSize = height * 0.08f;
                 u32 gap = height * 0.015f;
-                f32 totalWidth = itemSize * ARRAY_SIZE(items) + gap * (ARRAY_SIZE(items) - 2);
+                f32 totalWidth = itemSize * ARRAY_SIZE(prefabTrackItems) + gap * (ARRAY_SIZE(prefabTrackItems) - 2);
                 f32 cx = g_game.windowWidth * 0.5f;
                 f32 yoffset = height * 0.02f;
 
-                for (u32 i=0; i<ARRAY_SIZE(items); ++i)
+                for (u32 i=0; i<ARRAY_SIZE(prefabTrackItems); ++i)
                 {
                     f32 alpha = 0.3f;
                     glm::vec3 color(0.f);
-                    glm::vec3 fromHandleOffset = (bezierConnection->pointIndexA == pointIndex)
-                        ? bezierConnection->handleOffsetA : bezierConnection->handleOffsetB;
-
                     if (pointInRectangle(g_input.getMousePosition(),
                         { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
                         itemSize, itemSize))
@@ -331,28 +355,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         isMouseClickHandled = true;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                         {
-                            glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
-                            glm::vec3 zDir = glm::cross(yDir, xDir);
-                            glm::mat4 m(1.f);
-                            m[0] = glm::vec4(xDir, m[0].w);
-                            m[1] = glm::vec4(yDir, m[1].w);
-                            m[2] = glm::vec4(zDir, m[2].w);
-                            i32 pIndex = pointIndex;
-                            scene->track->selectedPoints.clear();
-                            for (u32 c = 0; c<items[i].curves.size(); ++c)
-                            {
-                                glm::vec3 p = glm::vec3(m * glm::vec4(items[i].curves[c].offset, 1.f))
-                                    + scene->track->points[pIndex].position;
-                                scene->track->points.push_back({ p });
-                                glm::vec3 h(m * glm::vec4(items[i].curves[c].handleOffset, 1.f));
-                                scene->track->connections.push_back({
-                                    -fromHandleOffset, pIndex, h, (i32)scene->track->points.size() - 1
-                                });
-                                pIndex = (i32)scene->track->points.size() - 1;
-                                fromHandleOffset = h;
-                                scene->track->selectedPoints.push_back({
-                                        (i32)scene->track->points.size() - 1, {} });
-                            }
+                            scene->track->extendTrack(i);
                         }
                     }
 
@@ -360,46 +363,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             g_game.windowHeight - itemSize - yoffset);
                     renderer->push(QuadRenderable(white,
                         bp, itemSize, itemSize, color, alpha));
-                    renderer->push(QuadRenderable(g_resources.getTexture(items[i].icon),
+                    renderer->push(QuadRenderable(g_resources.getTexture(prefabTrackItems[i].icon),
                         bp + glm::vec2((itemSize - iconSize)) * 0.5f, iconSize, iconSize));
                 }
             }
         }
-
-        glm::vec2 buttonOffset = guiOffset + glm::vec2(0, modeSelectionMaxY);
-        glm::vec2 buttonSpacing(0.f, height * 0.045f);
-
-        if (button(buttonOffset, gridSettings.show ? "Show Grid: ON" : "Show Grid: OFF"))
-        {
-            gridSettings.show = !gridSettings.show;
-        }
-        buttonOffset += buttonSpacing;
-
-        if (button(buttonOffset, gridSettings.snap ? "Snap to Grid: ON" : "Snap to Grid: OFF"))
-        {
-            gridSettings.snap = !gridSettings.snap;
-        }
-        buttonOffset += buttonSpacing;
-
-        if (button(buttonOffset, "Connect Points [C]", scene->track->selectedPoints.size() == 2) ||
-                (g_input.isKeyPressed(KEY_C) && scene->track->selectedPoints.size() == 2))
-        {
-            i32 p1 = scene->track->selectedPoints[0].pointIndex;
-            i32 p2 = scene->track->selectedPoints[1].pointIndex;
-            auto c1 = scene->track->getPointConnection(p1);
-            auto c2 = scene->track->getPointConnection(p2);
-            // TODO: compute new handle offset if the target point already has >= 2 connections
-            glm::vec3 handle1 = c1 ? (c1->pointIndexA == p1 ? c1->handleOffsetA : c1->handleOffsetB)
-                : glm::vec3(4.f, 0, 0);
-            glm::vec3 handle2 = c2 ? (c2->pointIndexA == p2 ? c2->handleOffsetA : c2->handleOffsetB)
-                : glm::vec3(4.f, 0, 0);
-            scene->track->connections.push_back({
-                -handle1, scene->track->selectedPoints[0].pointIndex,
-                -handle2, scene->track->selectedPoints[1].pointIndex
-            });
-        }
-        buttonOffset += buttonSpacing;
-
 
         scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled, &gridSettings);
     }

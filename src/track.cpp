@@ -24,74 +24,6 @@ void Track::onCreate(Scene* scene)
 
 bool collide = false;
 
-void Track::offset(Scene* scene, BezierSegment const& c)
-{
-    f32 totalLength = 0.f;
-    glm::vec3 prevP = points[c.pointIndexA].position;
-    for (u32 i=1; i<=10; ++i)
-    {
-        glm::vec3 p = getPointOnBezierCurve(
-                points[c.pointIndexA].position,
-                points[c.pointIndexA].position + c.handleOffsetA,
-                points[c.pointIndexB].position + c.handleOffsetB,
-                points[c.pointIndexB].position, i / 10.f);
-        totalLength += glm::length(prevP - p);
-        prevP = p;
-    }
-
-    f32 stepSize = 10.f;
-    u32 totalSteps = totalLength / stepSize;
-    prevP = points[c.pointIndexA].position;
-    glm::vec2 prevOffsetP;
-    for (u32 i=0; i<=totalSteps; ++i)
-    {
-        glm::vec3 p = getPointOnBezierCurve(
-                points[c.pointIndexA].position,
-                points[c.pointIndexA].position + c.handleOffsetA,
-                points[c.pointIndexB].position + c.handleOffsetB,
-                points[c.pointIndexB].position, i / (f32)totalSteps) + glm::vec3(0, 0, 0.1f);
-
-        glm::vec3 xDir = glm::normalize(i == 0 ? c.handleOffsetA :
-                (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
-        glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
-        //glm::vec3 zDir = glm::cross(yDir, xDir);
-        f32 width = 16.f;
-        glm::vec2 p11 = prevOffsetP;
-        //glm::vec2 p11 = prevP + yDir1 * width;
-        glm::vec2 p12 = p + yDir * width;
-        if (i > 0)
-        {
-            if (collide)
-            {
-                glm::vec2 out;
-                glm::vec3 pp = p;
-                for (u32 j=1; j<=2; ++j)
-                {
-                    glm::vec3 nextP = getPointOnBezierCurve(
-                            points[c.pointIndexA].position,
-                            points[c.pointIndexA].position + c.handleOffsetA,
-                            points[c.pointIndexB].position + c.handleOffsetB,
-                            points[c.pointIndexB].position, (i + j) / (f32)totalSteps) + glm::vec3(0, 0, 0.1f);
-
-                    glm::vec3 xDir2 = glm::normalize(nextP - pp);
-                    glm::vec3 yDir2 = glm::cross(xDir2, glm::vec3(0, 0, 1));
-                    glm::vec2 p21 = pp + yDir2 * width;
-                    glm::vec2 p22 = nextP + yDir2 * width;
-                    pp = nextP;
-
-                    if (lineIntersection(p11, p12, p21, p22, out))
-                    {
-                        p12 = out;
-                    }
-                }
-            }
-            scene->debugDraw.line(glm::vec3(p11, prevP.z), glm::vec3(p12, p.z), red, red);
-        }
-        prevOffsetP = p12;
-        prevP = p;
-    }
-}
-
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     if (g_input.isKeyPressed(KEY_O))
@@ -116,7 +48,6 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
             prevP = p;
         }
         */
-        //offset(scene, c);
         if (c.isDirty || c.vertices.empty())
         {
             createSegmentMesh(c, scene);
@@ -140,7 +71,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT)
             && !g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
     {
-        selectedPoints.clear();
+        clearSelection();
     }
 
     for (i32 i=0; i<points.size();)
@@ -389,6 +320,75 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     }
 }
 
+void Track::extendTrack(i32 prefabCurveIndex)
+{
+    i32 pointIndex = getSelectedPointIndex();
+    BezierSegment* bezierConnection = getPointConnection(pointIndex);
+    glm::vec3 fromHandleOffset = (bezierConnection->pointIndexA == pointIndex)
+        ? bezierConnection->handleOffsetA : bezierConnection->handleOffsetB;
+    glm::vec3 xDir = getPointDir(pointIndex);
+    glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
+    glm::vec3 zDir = glm::cross(yDir, xDir);
+    glm::mat4 m(1.f);
+    m[0] = glm::vec4(xDir, m[0].w);
+    m[1] = glm::vec4(yDir, m[1].w);
+    m[2] = glm::vec4(zDir, m[2].w);
+    i32 pIndex = pointIndex;
+    selectedPoints.clear();
+    for (u32 c = 0; c<prefabTrackItems[prefabCurveIndex].curves.size(); ++c)
+    {
+        glm::vec3 p = glm::vec3(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].offset, 1.f))
+            + points[pIndex].position;
+        points.push_back({ p });
+        glm::vec3 h(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
+        connections.push_back({
+            -fromHandleOffset, pIndex, h, (i32)points.size() - 1
+        });
+        pIndex = (i32)points.size() - 1;
+        fromHandleOffset = h;
+        selectedPoints.push_back({ (i32)points.size() - 1, {} });
+    }
+}
+
+void Track::connectPoints()
+{
+    assert(canConnect());
+
+    i32 p1 = selectedPoints[0].pointIndex;
+    i32 p2 = selectedPoints[1].pointIndex;
+    auto c1 = getPointConnection(p1);
+    auto c2 = getPointConnection(p2);
+    // TODO: compute new handle offset if the target point already has >= 2 connections
+    glm::vec3 handle1 = c1 ? (c1->pointIndexA == p1 ? c1->handleOffsetA : c1->handleOffsetB)
+        : glm::vec3(4.f, 0, 0);
+    glm::vec3 handle2 = c2 ? (c2->pointIndexA == p2 ? c2->handleOffsetA : c2->handleOffsetB)
+        : glm::vec3(4.f, 0, 0);
+    connections.push_back({
+        -handle1, selectedPoints[0].pointIndex,
+        -handle2, selectedPoints[1].pointIndex
+    });
+}
+
+glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir)
+{
+    glm::vec3 p = { 0, 0, 0 };
+    PxRaycastBuffer hit;
+    if (scene->raycastStatic(camPos, mouseRayDir, 10000.f, &hit))
+    {
+        p = convert(hit.block.position);
+        Mesh* sphere = g_resources.getMesh("world.Sphere");
+        renderer->push(OverlayRenderable(sphere, 0,
+                    glm::translate(glm::mat4(1.f), p) *
+                    glm::scale(glm::mat4(1.f), glm::vec3(1.f)), glm::vec3(0, 0, 1)));
+    }
+    return p;
+}
+
+void Track::placeRailing(glm::vec3 const& p)
+{
+    print("hi\n");
+}
+
 Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
 {
     for (auto& c : connections)
@@ -401,7 +401,7 @@ Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
     return nullptr;
 }
 
-glm::vec3 Track::getPointDir(u32 pointIndex)
+glm::vec3 Track::getPointDir(u32 pointIndex) const
 {
     glm::vec3 dir;
     u32 count = 0;
@@ -503,8 +503,8 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
                 points[c.pointIndexB].position, i / (f32)totalSteps);
         glm::vec3 xDir = glm::normalize(i == 0 ? c.handleOffsetA :
                 (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
-        glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
-        glm::vec3 zDir = glm::cross(yDir, xDir);
+        glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
+        glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
         f32 width = 12.f;
         glm::vec3 p1 = p + yDir * width;
         glm::vec3 p2 = p - yDir * width;

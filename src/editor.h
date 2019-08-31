@@ -47,6 +47,15 @@ class Editor
         MAX
     } editMode = EditMode::TERRAIN;
 
+    enum struct PlaceMode
+    {
+        NONE,
+        NEW_RAILING,
+        NEW_MARKING,
+        NEW_OFFROAD,
+        MAX
+    } placeMode = PlaceMode::NONE;
+
 public:
     void onStart(class Scene* scene);
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);

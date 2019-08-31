@@ -41,8 +41,7 @@ class Terrain : public Renderable, public Entity
 public:
     Terrain()
     {
-        //resize(-256, -256, 256, 256);
-        resize(-100, -100, 100, 100);
+        resize(-256, -256, 256, 256);
         //generate();
         createBuffers();
     }

@@ -44,7 +44,7 @@ void Game::initPhysX()
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
                             GLsizei length, const GLchar* message, const void* userParam)
 {
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204)
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
     {
         return;
     }
@@ -75,13 +75,13 @@ void Game::run()
 
     window = SDL_CreateWindow("The Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
             config.resolutionX, config.resolutionY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-    if(!window)
+    if (!window)
     {
         FATAL_ERROR("Failed to create SDL window: ", SDL_GetError())
     }
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
-    if(!context)
+    if (!context)
     {
         FATAL_ERROR("Failed to create OpenGL context: ", SDL_GetError())
     }
@@ -132,15 +132,15 @@ void Game::run()
     deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;
     bool shouldExit = false;
-    while(true)
+    while (true)
     {
         auto frameStartTime = std::chrono::high_resolution_clock::now();
         g_input.onFrameBegin();
 
-        while(SDL_PollEvent(&event) != 0)
+        while (SDL_PollEvent(&event) != 0)
         {
             g_input.handleEvent(event);
-            if(event.type == SDL_QUIT)
+            if (event.type == SDL_QUIT)
             {
                 shouldExit = true;
             }
@@ -152,14 +152,14 @@ void Game::run()
             SDL_SetWindowFullscreen(window, config.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         }
 
-        if(shouldExit || g_input.isKeyPressed(KEY_ESCAPE))
+        if (shouldExit)
         {
             break;
         }
 
         i32 w, h;
         SDL_GL_GetDrawableSize(window, &w, &h);
-        if(w != (i32)windowWidth || h != (i32)windowHeight)
+        if (w != (i32)windowWidth || h != (i32)windowHeight)
         {
             windowWidth = w;
             windowHeight = h;
