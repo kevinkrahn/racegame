@@ -213,8 +213,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
         }
 
-        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode" };
-        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
+        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track" };
+        // TODO: icons
+        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
         glm::vec2 offset = buttonOffset;
         u32 padding = height * 0.01f;
         u32 buttonHeight = height * 0.02f;
@@ -263,12 +264,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             {
                 brushStartZ = scene->terrain->getZ(glm::vec2(p));
                 PxRaycastBuffer hit;
-                if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit, COLLISION_FLAG_TRACK))
                 {
-                    if (((ActorUserData*)hit.block.actor->userData)->entityType == ActorUserData::TRACK)
-                    {
-                        brushStartZ = glm::max(brushStartZ, hit.block.position.z - 0.05f);
-                    }
+                    brushStartZ = glm::max(brushStartZ, hit.block.position.z - 0.06f);
                 }
             }
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
@@ -289,6 +287,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     break;
                 case TerrainTool::ERODE:
                     scene->terrain->erode(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+                    break;
+                case TerrainTool::MATCH_TRACK:
+                    scene->terrain->matchTrack(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime, scene);
                     break;
                 default:
                     break;

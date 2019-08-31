@@ -108,10 +108,11 @@ void Scene::startRace(glm::mat4 const& start)
         Driver* driver = &g_game.state.drivers[i];
 
         glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
+        glm::vec3 zdir = glm::normalize(zAxisOf(start));
 
         PxRaycastBuffer hit;
-        if (!raycastStatic(translationOf(glm::translate(start, offset + glm::vec3(0, 0, 10))),
-                -zAxisOf(start), 40.f, &hit))
+        if (!raycastStatic(translationOf(glm::translate(start, offset + zdir * 10.f)),
+                -zdir, 200.f, &hit))
         {
             FATAL_ERROR("The starting point is too high in the air!");
         }
@@ -385,11 +386,11 @@ void Scene::attackCredit(u32 instigator, u32 victim)
     }
 }
 
-bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit) const
+bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit, u32 flags) const
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK, 0, 0, 0);
+    filter.data = PxFilterData(flags, 0, 0, 0);
     if (hit)
     {
         return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
@@ -418,11 +419,11 @@ bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRay
     }
 }
 
-bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit) const
+bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit, u32 flags) const
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK, 0, 0, 0);
+    filter.data = PxFilterData(flags, 0, 0, 0);
     PxTransform initialPose(convert(from), PxQuat(PxIdentity));
     if (hit)
     {

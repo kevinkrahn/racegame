@@ -62,6 +62,7 @@ public:
     void flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z);
     void smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
     void erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, class Scene* scene);
 
     void generate(f32 heightScale=4.f, f32 scale=0.05f);
     void createBuffers();

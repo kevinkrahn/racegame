@@ -503,6 +503,42 @@ e.x=r; e.y=d; \
     setDirty();
 }
 
+void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Scene* scene)
+{
+    i32 minX = getCellX(pos.x - radius);
+    i32 minY = getCellY(pos.y - radius);
+    i32 maxX = getCellX(pos.x + radius);
+    i32 maxY = getCellY(pos.y + radius);
+    i32 width = (x2 - x1) / tileSize;
+    for (i32 x=minX; x<=maxX; ++x)
+    {
+        for (i32 y=minY; y<=maxY; ++y)
+        {
+            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            f32 currentZ = heightBuffer[y * width + x];
+            f32 z = currentZ;
+            glm::vec3 from = glm::vec3(p.x, p.y, 1000.f);
+            glm::vec3 rayDir = glm::vec3(0, 0, -1);
+            PxRaycastBuffer rayHit;
+            if (scene->raycastStatic(from, rayDir, 10000.f, &rayHit, COLLISION_FLAG_TRACK))
+            {
+                z = rayHit.block.position.z - 0.15f;
+            }
+            else
+            {
+                PxSweepBuffer sweepHit;
+                if (scene->sweepStatic(9.f, from, rayDir, 10000.f, &sweepHit, COLLISION_FLAG_TRACK))
+                {
+                    z = sweepHit.block.position.z - 0.45f;
+                }
+            }
+            heightBuffer[y * width + x] += (z - currentZ) * falloff * amount;
+        }
+    }
+    setDirty();
+}
+
 void Terrain::onShadowPass(class Renderer* renderer)
 {
     glUseProgram(renderer->getShaderProgram("terrain"));

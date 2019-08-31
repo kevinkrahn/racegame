@@ -36,6 +36,7 @@ class Editor
         FLATTEN,
         SMOOTH,
         ERODE,
+        MATCH_TRACK,
         MAX
     } terrainTool = TerrainTool::RAISE;
 
