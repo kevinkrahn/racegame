@@ -6,6 +6,7 @@
 #include "entity.h"
 #include "gl.h"
 #include "smallvec.h"
+#include "mesh.h"
 
 struct TrackItem
 {
@@ -108,17 +109,36 @@ private:
     std::vector<Point> points;
     std::vector<BezierSegment> connections;
 
-    glm::vec2 selectMousePos;
-    glm::vec3 dragStartPoint;
-    i32 dragConnectionIndex = -1;
-    i32 dragConnectionHandle = -1;
-    bool isDragging = false;
-    glm::vec3 dragOffset;
     struct Selection
     {
         i32 pointIndex;
         glm::vec3 dragStartPoint;
     };
+
+    struct RailingPoint
+    {
+        glm::vec3 position;
+        glm::vec3 handleOffsetA;
+        glm::vec3 handleOffsetB;
+    };
+
+    struct Railing
+    {
+        std::vector<RailingPoint> points;
+        Mesh mesh;
+        std::vector<Selection> selectedPoints;
+        bool isDirty = false;
+    };
+
+    std::vector<Railing> railings;
+
+    glm::vec2 selectMousePos;
+    glm::vec3 dragStartPoint;
+    i32 dragRailingIndex = -1;
+    i32 dragConnectionIndex = -1;
+    i32 dragConnectionHandle = -1;
+    bool isDragging = false;
+    glm::vec3 dragOffset;
     std::vector<Selection> selectedPoints;
 
     PxRigidStatic* actor = nullptr;
@@ -169,6 +189,7 @@ public:
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
     void placeRailing(glm::vec3 const& p);
     bool canConnect() const { return selectedPoints.size() == 2; }
+    bool canSubdivide() const { return false; } // TODO: implement
     bool canExtendTrack() const
     {
         if (!hasSelection())
@@ -181,6 +202,7 @@ public:
     }
     void extendTrack(i32 prefabCurveIndex);
     void connectPoints();
+    void subdividePoints();
     bool hasSelection() const { return selectedPoints.size() > 0; }
     i32 getSelectedPointIndex() {
         assert(hasSelection());
@@ -191,7 +213,7 @@ public:
         return points[index];
     }
     glm::vec3 getPointDir(u32 pointIndex) const;
-    void clearSelection() { selectedPoints.clear(); }
+    void clearSelection();
 
     // entity
     void onCreate(Scene* scene) override;

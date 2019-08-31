@@ -29,6 +29,13 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->startRace(scene->track->getStart());
         }
     }
+    else if (g_input.isKeyPressed(KEY_ESCAPE))
+    {
+        if (scene->isRaceInProgress)
+        {
+            scene->stopRace();
+        }
+    }
 
     if (scene->isRaceInProgress)
     {
@@ -297,6 +304,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->track->connectPoints();
         }
 
+        if (button(buttonOffset, buttonSpacing, "Subdivide [V]", scene->track->canSubdivide()) ||
+                (g_input.isKeyPressed(KEY_V) && scene->track->canSubdivide()))
+        {
+            scene->track->subdividePoints();
+        }
+
         if (button(buttonOffset, buttonSpacing, "New Railing"))
         {
             placeMode = PlaceMode::NEW_RAILING;
@@ -369,7 +382,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             }
         }
 
-        scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled, &gridSettings);
+        if (placeMode == PlaceMode::NONE)
+        {
+            scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled, &gridSettings);
+        }
     }
 
     if (gridSettings.show && editMode != EditMode::TERRAIN)
