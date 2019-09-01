@@ -214,6 +214,7 @@ public:
     }
     glm::vec3 getPointDir(u32 pointIndex) const;
     void clearSelection();
+    void buildTrackGraph(class TrackGraph* trackGraph);
 
     // entity
     void onCreate(Scene* scene) override;

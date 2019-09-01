@@ -5,6 +5,7 @@
 #include "mesh_renderables.h"
 #include "input.h"
 #include "game.h"
+#include "track_graph.h"
 
 glm::vec4 red = { 1.f, 0.f, 0.f, 1.f };
 glm::vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
@@ -757,24 +758,13 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         glVertexArrayAttribBinding(c.vao, COLOR_BIND_INDEX, 0);
     }
 
-    f32 totalLength = 0.f;
-    glm::vec3 prevP = points[c.pointIndexA].position;
-    for (u32 i=1; i<=10; ++i)
-    {
-        glm::vec3 p = getPointOnBezierCurve(
-                points[c.pointIndexA].position,
-                points[c.pointIndexA].position + c.handleOffsetA,
-                points[c.pointIndexB].position + c.handleOffsetB,
-                points[c.pointIndexB].position, i / 10.f);
-        totalLength += glm::length(prevP - p);
-        prevP = p;
-    }
+    f32 totalLength = c.getLength(points);
 
     c.vertices.clear();
     c.indices.clear();
     f32 stepSize = 1.f;
     u32 totalSteps = totalLength / stepSize;
-    prevP = points[c.pointIndexA].position;
+    glm::vec3 prevP = points[c.pointIndexA].position;
     for (u32 i=0; i<=totalSteps; ++i)
     {
         glm::vec3 p = getPointOnBezierCurve(
@@ -878,4 +868,34 @@ void Track::onLitPass(class Renderer* renderer)
         glBindVertexArray(c.vao);
         glDrawElements(GL_TRIANGLES, c.indices.size(), GL_UNSIGNED_INT, 0);
     }
+}
+
+void Track::buildTrackGraph(TrackGraph* trackGraph)
+{
+    trackGraph->clear();
+    for (Point& p : points)
+    {
+        trackGraph->addNode(p.position);
+    }
+    u32 nodeIndex = points.size();
+    for (BezierSegment& c : connections)
+    {
+        f32 totalLength = c.getLength(points);
+        f32 stepSize = 30.f;
+        u32 totalSteps = glm::max(2u, (u32)(totalLength / stepSize));
+        u32 startNodeIndex = nodeIndex;
+        for (u32 i=1; i<totalSteps; ++i)
+        {
+            glm::vec3 p = c.pointOnCurve(points, i / (f32)totalSteps);
+            trackGraph->addNode(p);
+            if (i > 1)
+            {
+                trackGraph->addConnection(nodeIndex - 1, nodeIndex);
+            }
+            ++nodeIndex;
+        }
+        trackGraph->addConnection(c.pointIndexA, startNodeIndex);
+        trackGraph->addConnection(nodeIndex - 1, c.pointIndexB);
+    }
+    trackGraph->rebuild(getStart());
 }

@@ -4,6 +4,8 @@
 #include "resources.h"
 #include "debug_draw.h"
 #include "font.h"
+#include "track.h"
+#include "mesh_renderables.h"
 #include <iomanip>
 
 void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
@@ -70,40 +72,35 @@ void TrackGraph::subdivide()
     }
 }
 
-TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::mat4 const& transform)
+void TrackGraph::addNode(glm::vec3 const& position)
 {
-    if (mesh.elementSize != 2)
-    {
-        FATAL_ERROR("Track graph mesh must be an edge mesh.");
-    }
+    nodes.push_back({ position });
+}
 
+void TrackGraph::addConnection(u32 fromIndex, u32 toIndex)
+{
+    nodes[fromIndex].connections.push_back(toIndex);
+    nodes[toIndex].connections.push_back(fromIndex);
+}
+
+void TrackGraph::rebuild(glm::mat4 const& startTransform)
+{
     u32 startIndex;
     f32 minDist = FLT_MAX;
-    for (u32 i=0; i<mesh.numVertices; ++i)
+    for (u32 i=0; i<nodes.size(); ++i)
     {
-        const f32* data = mesh.vertices.data();
-        glm::vec3 position = transform * glm::vec4(data[i*3], data[i*3+1], data[i*3+2], 1.f);
-        f32 dist = glm::length2(position - translationOf(startTransform));
+        Node const& node = nodes[i];
+        f32 dist = glm::length2(node.position - translationOf(startTransform));
         if (dist < minDist)
         {
             minDist = dist;
             startIndex = i;
         }
-        nodes.push_back({ position });
     }
 
     if (minDist > square(50.f))
     {
-        FATAL_ERROR("There is no track graph vertex close enough to the finish line.");
-    }
-
-    u32 size = mesh.indices.size() / 2;
-    for (u32 i=0; i<size; ++i)
-    {
-        u32 index1 = mesh.indices[i * 2];
-        u32 index2 = mesh.indices[i * 2 + 1];
-        nodes[index1].connections.push_back(index2);
-        nodes[index2].connections.push_back(index1);
+        error("There is no track graph vertex close enough to the finish line.\n");
     }
 
     Node& start = nodes[startIndex];
@@ -138,7 +135,7 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
 
     if (end.connections.empty())
     {
-        FATAL_ERROR("Invalid track graph: cannot find any connections to end node.");
+        error("Invalid track graph: cannot find any connections to end node.\n");
     }
 
     end.t = 0.f;
@@ -176,7 +173,7 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
         node.direction = glm::normalize(b->position - a->position);
     }
 
-    subdivide();
+    //subdivide();
 
     startNode = &nodes[startIndex];
     endNode = &nodes[endIndex];
@@ -184,17 +181,15 @@ TrackGraph::TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::m
 
 void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
 {
-    //Mesh* arrow = g_resources.getMesh("world.Arrow");
+    Mesh* arrowMesh = g_resources.getMesh("world.Arrow");
     for (u32 i=0; i<nodes.size(); ++i)
     {
         Node const& c = nodes[i];
 
-        /*
-        renderer->drawMesh(arrow,
+        renderer->push(LitRenderable(arrowMesh,
                 glm::translate(glm::mat4(1.f), c.position) *
                     glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
-                    glm::scale(glm::mat4(1.f), glm::vec3(1.25f)));
-                    */
+                    glm::scale(glm::mat4(1.f), glm::vec3(1.25f)), nullptr));
 
         for (u32 connection : c.connections)
         {

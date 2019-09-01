@@ -706,7 +706,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             deadTimer = 0.f;
             hitPoints = maxHitPoints;
 
-            /*
             const TrackGraph::Node* node = graphResult.lastNode;
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
@@ -714,7 +713,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
-                */
             reset(glm::translate(glm::mat4(1.f), { 0, 0, 5 }) * startTransform);
         }
         return;
@@ -886,7 +884,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     }
     lastValidPosition = getPosition();
 
-    /*
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
@@ -911,7 +908,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
         }
     }
-    */
 
     if (engineSound)
     {

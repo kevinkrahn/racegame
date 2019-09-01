@@ -102,6 +102,7 @@ Scene::~Scene()
 
 void Scene::startRace(glm::mat4 const& start)
 {
+    track->buildTrackGraph(&trackGraph);
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
@@ -187,7 +188,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     }
 
     // determine vehicle placement
-    /*
     if (vehicles.size() > 0)
     {
         f32 maxT = trackGraph.getStartNode()->t;
@@ -206,7 +206,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             vehicles[finishOrder[i]]->placement = i;
         }
     }
-    */
 
     if (g_input.isKeyPressed(KEY_F2))
     {

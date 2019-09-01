@@ -26,7 +26,16 @@ private:
 
 public:
     TrackGraph() {}
-    TrackGraph(glm::mat4 const& startTransform, Mesh const& mesh, glm::mat4 const& transform);
+
+    void clear()
+    {
+        nodes.clear();
+        startNode = nullptr;
+        endNode = nullptr;
+    }
+    void addNode(glm::vec3 const& position);
+    void addConnection(u32 fromIndex, u32 toIndex);
+    void rebuild(glm::mat4 const& startTransform);
 
     Node* getStartNode() const { return startNode; }
     Node* getEndNode() const { return endNode; }
