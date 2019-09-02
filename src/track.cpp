@@ -149,7 +149,19 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                         ++it;
                     }
                 }
+                selectedPoints.erase(it);
                 points.erase(points.begin() + i);
+                for (auto& conn : connections)
+                {
+                    if (conn.pointIndexA > i)
+                    {
+                        --conn.pointIndexA;
+                    }
+                    if (conn.pointIndexB > i)
+                    {
+                        --conn.pointIndexB;
+                    }
+                }
                 continue;
             }
         }
@@ -234,6 +246,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             {
                 if (&c2 != &c)
                 {
+                    // TODO: only modify handles that are opposite
                     if (c2.pointIndexB == c.pointIndexA)
                     {
                         c2.handleOffsetB = -c.handleOffsetA;
@@ -281,6 +294,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             {
                 if (&c2 != &c)
                 {
+                    // TODO: only modify handles that are opposite
                     if (c2.pointIndexA == c.pointIndexB)
                     {
                         c2.handleOffsetA = -c.handleOffsetB;
@@ -624,22 +638,50 @@ void Track::extendTrack(i32 prefabCurveIndex)
     }
 }
 
+// TODO: something is still wrong with this
 void Track::connectPoints()
 {
     assert(canConnect());
 
-    i32 p1 = selectedPoints[0].pointIndex;
-    i32 p2 = selectedPoints[1].pointIndex;
-    auto c1 = getPointConnection(p1);
-    auto c2 = getPointConnection(p2);
-    // TODO: compute new handle offset if the target point already has >= 2 connections
-    glm::vec3 handle1 = c1 ? (c1->pointIndexA == p1 ? c1->handleOffsetA : c1->handleOffsetB)
-        : glm::vec3(4.f, 0, 0);
-    glm::vec3 handle2 = c2 ? (c2->pointIndexA == p2 ? c2->handleOffsetA : c2->handleOffsetB)
-        : glm::vec3(4.f, 0, 0);
+    i32 index1 = selectedPoints[0].pointIndex;
+    i32 index2 = selectedPoints[1].pointIndex;
+    Point const& p1 = points[index1];
+    Point const& p2 = points[index2];
+
+    glm::vec3 handle1 = (p1.position - p2.position) * 0.3f;
+    glm::vec3 handle2 = -handle1;
+
+    u32 connectionCount1 = 0;
+    u32 connectionCount2 = 0;
+    for (auto& c : connections)
+    {
+        if (c.pointIndexA == index1 || c.pointIndexB == index1)
+        {
+            ++connectionCount1;
+        }
+        if (c.pointIndexA == index2 || c.pointIndexB == index2)
+        {
+            ++connectionCount2;
+        }
+    }
+
+    if (connectionCount1 == 1)
+    {
+        auto c1 = getPointConnection(index1);
+        handle1 = c1 ? (c1->pointIndexA == index1 ? c1->handleOffsetA : c1->handleOffsetB)
+            : glm::vec3(4.f, 0, 0);
+    }
+
+    if (connectionCount2 == 1)
+    {
+        auto c2 = getPointConnection(index1);
+        handle2 = c2 ? (c2->pointIndexA == index2 ? c2->handleOffsetA : c2->handleOffsetB)
+            : glm::vec3(4.f, 0, 0);
+    }
+
     connections.push_back({
-        -handle1, selectedPoints[0].pointIndex,
-        -handle2, selectedPoints[1].pointIndex
+        -handle1, index1,
+        -handle2, index2
     });
 }
 

@@ -55,7 +55,6 @@ private:
     std::vector<std::unique_ptr<Entity>> newEntities;
 
     std::vector<u32> finishOrder;
-    std::vector<std::vector<glm::vec3>> paths;
     std::vector<std::unique_ptr<class Vehicle>> vehicles;
     std::vector<u32> placements;
 
@@ -108,7 +107,6 @@ public:
     glm::mat4 getStart() const { return track->getStart(); }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
-    std::vector<std::vector<glm::vec3>> const& getPaths() const { return paths; }
     u32 getTotalLaps() const { return totalLaps; }
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,

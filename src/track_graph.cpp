@@ -6,9 +6,10 @@
 #include "font.h"
 #include "track.h"
 #include "mesh_renderables.h"
+#include "input.h"
 #include <iomanip>
 
-void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
+void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex, u32 pathIndex)
 {
     Node& to = nodes[toIndex];
     Node& from = nodes[fromIndex];
@@ -19,6 +20,8 @@ void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
         return;
     }
 
+    paths[pathIndex].push_back(to.position);
+
     to.t = travelTime;
 
     if (toIndex == endIndex)
@@ -26,48 +29,20 @@ void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
         return;
     }
 
-    for (u32 c : to.connections)
+    u32 branchCount = 0;
+    std::vector<glm::vec3> pathToHere = paths[pathIndex];
+    for (u32 i=0; i<to.connections.size(); ++i)
     {
+        u32 c = to.connections[i];
         if (c != fromIndex)
         {
-            computeTravelTime(c, toIndex, endIndex);
-        }
-    }
-}
-
-void TrackGraph::subdivide()
-{
-    const f32 maxDistance = square(60.f);
-    for (u32 index=0; index<nodes.size(); ++index)
-    {
-        for (u32 i=0; i<nodes[index].connections.size(); ++i)
-        {
-            Node& from = nodes[index];
-            u32 next = from.connections[i];
-            Node& to = nodes[next];
-            if (glm::length2(from.position - to.position) > maxDistance)
+            if (branchCount > 0)
             {
-                Node middle = {
-                    glm::lerp(from.position, to.position, 0.5f),
-                    glm::lerp(from.t, to.t, 0.5f),
-                    from.t > to.t ? from.direction : to.direction,
-                    from.t > to.t ? from.angle : to.angle
-                };
-                middle.connections.push_back(next);
-                middle.connections.push_back(index);
-
-                for (u32 j=0; j<to.connections.size(); ++j)
-                {
-                    if (to.connections[j] == index)
-                    {
-                        to.connections[j] = nodes.size();
-                        break;
-                    }
-                }
-
-                from.connections[i] = nodes.size();
-                nodes.push_back(middle);
+                pathIndex = paths.size();
+                paths.push_back(pathToHere);
             }
+            computeTravelTime(c, toIndex, endIndex, pathIndex);
+            ++branchCount;
         }
     }
 }
@@ -141,46 +116,97 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     end.t = 0.f;
     for (u32 c : end.connections)
     {
-        computeTravelTime(c, endIndex, startIndex);
+        paths.push_back({ start.position });
+        computeTravelTime(c, endIndex, startIndex, (u32)paths.size() - 1);
     }
 
-    // compute checkpoint angles
-    for (Node& node : nodes)
+    std::vector<f32> pathLengths;
+    for (auto it = paths.begin(); it != paths.end();)
     {
-        if (node.connections.empty())
+        // remove paths that didn't reach the end
+        if (it->back() != start.position)
         {
+            paths.erase(it);
             continue;
         }
 
-        Node* min = &nodes[node.connections.front()];
-        for (auto const& connection : node.connections)
+        // compute the length of the path
+        f32 totalLength = 0.f;
+        for (u32 i=1; i<it->size(); ++i)
         {
-            if (nodes[connection].t < min->t)
-            {
-                min = &nodes[connection];
-            }
+            totalLength += glm::length((*it)[i] - (*it)[i-1]);
         }
+        pathLengths.push_back(totalLength);
 
-        Node* a = min;
-        Node* b = &node;
-        if (a->t < b->t)
-        {
-            b = a;
-            a = &node;
-        }
+        // paths are built backwards, so they must be reversed
+        std::reverse(it->begin(), it->end());
 
-        node.angle = pointDirection(glm::vec2(b->position), glm::vec2(a->position)) - f32(M_PI) * 0.5f;
-        node.direction = glm::normalize(b->position - a->position);
+        ++it;
     }
 
-    //subdivide();
+    // sort paths based on length
+    for (u32 i=1; i<(u32)paths.size(); ++i)
+    {
+        for (u32 j=i; j>0 && pathLengths[j-1] > pathLengths[j]; --j)
+        {
+            std::swap(paths[j], paths[j-1]);
+        }
+    }
+
+    // set node angles
+    for (auto it = paths.rbegin(); it != paths.rend(); ++it)
+    {
+        for (u32 i=0; i<it->size(); ++i)
+        {
+            for (auto &node : nodes)
+            {
+                if (node.position == (*it)[i])
+                {
+                    glm::vec3 fromPosition;
+                    glm::vec3 toPosition;
+                    if (i < it->size() - 1)
+                    {
+                        toPosition = (*it)[i];
+                        fromPosition = (*it)[i+1];
+                    }
+                    else
+                    {
+                        toPosition = (*it)[i-1];
+                        fromPosition = (*it)[i];
+                    }
+                    node.angle = pointDirection(glm::vec2(fromPosition), glm::vec2(toPosition)) - f32(M_PI) * 0.5f;
+                    node.direction = fromPosition - toPosition;
+                    break;
+                }
+            }
+        }
+    }
+
+    end.angle = start.angle;
+    end.direction = start.direction;
+
+    print("Built track graph: ", nodes.size(), " nodes, ", paths.size(), " paths\n");
 
     startNode = &nodes[startIndex];
     endNode = &nodes[endIndex];
 }
 
+i32 pathPointDrawCount = 0;
 void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
 {
+    if (g_input.isKeyPressed(KEY_O))
+    {
+        --pathPointDrawCount;
+        if (pathPointDrawCount < 0)
+        {
+            pathPointDrawCount = 0;
+        }
+    }
+    if (g_input.isKeyPressed(KEY_P))
+    {
+        ++pathPointDrawCount;
+    }
+
     Mesh* arrowMesh = g_resources.getMesh("world.Arrow");
     for (u32 i=0; i<nodes.size(); ++i)
     {
@@ -205,6 +231,27 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
         g_resources.getFont("font", 23).drawText(str(std::fixed, std::setw(1), c.t).c_str(), { p.x, p.y },
                 glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER);
                 */
+    }
+
+    glm::vec4 colors[] = {
+        { 1, 0, 0, 1 },
+        { 0, 1, 0, 1 },
+        { 0, 0, 1, 1 },
+        { 0, 1, 1, 1 },
+        { 1, 0, 1, 1 },
+    };
+    for (u32 pathIndex=0; pathIndex < paths.size(); ++pathIndex)
+    {
+        for (u32 i=1; i<paths[pathIndex].size(); ++i)
+        {
+            if (i > pathPointDrawCount)
+            {
+                break;
+            }
+            glm::vec4 col = colors[pathIndex % ARRAY_SIZE(colors)];
+            glm::vec3 zoffset(0, 0, pathIndex * 2);
+            dbg->line(paths[pathIndex][i] + zoffset, paths[pathIndex][i-1] + zoffset, col, col);
+        }
     }
 }
 

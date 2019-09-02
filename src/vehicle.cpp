@@ -449,8 +449,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
-    this->followPathIndex = scene->getPaths().size() > 0 ?
-        irandom(scene->randomSeries, 0, scene->getPaths().size()) : 0;
+    this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
+        irandom(scene->randomSeries, 0, scene->getTrackGraph().getPaths().size()) : 0;
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
@@ -713,7 +713,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
-            reset(glm::translate(glm::mat4(1.f), { 0, 0, 5 }) * startTransform);
         }
         return;
     }
@@ -765,13 +764,15 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 fireWeapon();
             }
         }
-        else if (scene->getPaths().size() > 0)
+        else if (scene->getTrackGraph().getPaths().size() > 0)
         {
-            i32 previousIndex = targetPointIndex - 1;
-            if (previousIndex < 0) previousIndex = scene->getPaths()[followPathIndex].size() - 1;
+            auto const& paths = scene->getTrackGraph().getPaths();
 
-            glm::vec3 nextP = scene->getPaths()[followPathIndex][targetPointIndex];
-            glm::vec3 previousP = scene->getPaths()[followPathIndex][previousIndex];
+            i32 previousIndex = targetPointIndex - 1;
+            if (previousIndex < 0) previousIndex = paths[followPathIndex].size() - 1;
+
+            glm::vec3 nextP = paths[followPathIndex][targetPointIndex];
+            glm::vec3 previousP = paths[followPathIndex][previousIndex];
             glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
 
             glm::vec3 targetP = nextP -
@@ -842,6 +843,10 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
             if (!finishedRace)
             {
+                if (std::isnan(steerAngle))
+                {
+                    steerAngle = 0.f;
+                }
                 updatePhysics(scene->getPhysicsScene(), deltaTime, false, accel, brake,
                         -steerAngle, false, canGo, false);
             }
@@ -849,7 +854,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             if (glm::length2(nextP - position) < square(30.f))
             {
                 ++targetPointIndex;
-                if (targetPointIndex >= scene->getPaths()[followPathIndex].size())
+                if (targetPointIndex >= paths[followPathIndex].size())
                 {
                     targetPointIndex = 0;
                 }

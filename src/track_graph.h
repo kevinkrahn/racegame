@@ -21,14 +21,18 @@ private:
     Node* startNode = nullptr;
     Node* endNode = nullptr;
 
-    void computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex);
+    void computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex, u32 pathIndex);
     void subdivide();
+
+    std::vector<std::vector<glm::vec3>> paths;
+    void computePaths();
 
 public:
     TrackGraph() {}
 
     void clear()
     {
+        paths.clear();
         nodes.clear();
         startNode = nullptr;
         endNode = nullptr;
@@ -50,4 +54,6 @@ public:
     };
 
     void findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const;
+
+    std::vector<std::vector<glm::vec3>> const& getPaths() const { return paths; }
 };
