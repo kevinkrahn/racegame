@@ -19,7 +19,7 @@ namespace DataFile
         NONE,
         STRING,
         I64,
-        F64,
+        F32,
         BYTE_ARRAY,
         ARRAY,
         DICT,
@@ -42,7 +42,7 @@ namespace DataFile
         {
             String str_;
             i64 integer_;
-            f64 real_;
+            f32 real_;
             ByteArray bytearray_;
             Array array_;
             Dict dict_;
@@ -78,7 +78,7 @@ namespace DataFile
             {
                 case DataType::NONE:
                 case DataType::I64:
-                case DataType::F64:
+                case DataType::F32:
                 case DataType::BOOL:
                     break;
                 case DataType::STRING:
@@ -114,9 +114,9 @@ namespace DataFile
             dataType = DataType::I64;
             integer_ = val;
         }
-        explicit Value(f64 val)
+        explicit Value(f32 val)
         {
-            dataType = DataType::F64;
+            dataType = DataType::F32;
             real_ = val;
         }
         explicit Value(bool val)
@@ -135,7 +135,7 @@ namespace DataFile
                 case DataType::I64:
                     this->integer_ = rhs.integer_;
                     break;
-                case DataType::F64:
+                case DataType::F32:
                     this->real_ = rhs.real_;
                     break;
                 case DataType::STRING:
@@ -168,7 +168,7 @@ namespace DataFile
                 case DataType::I64:
                     this->integer_ = rhs.integer_;
                     break;
-                case DataType::F64:
+                case DataType::F32:
                     this->real_ = rhs.real_;
                     break;
                 case DataType::STRING:
@@ -220,8 +220,8 @@ namespace DataFile
 
         i64 integer()
         {
-            CHECK_TYPE(DataType::I64, DataType::F64);
-            if (dataType == F64) return (i64)real_;
+            CHECK_TYPE(DataType::I64, DataType::F32);
+            if (dataType == F32) return (i64)real_;
             return integer_;
         }
 
@@ -231,10 +231,10 @@ namespace DataFile
             return integer();
         }
 
-        f64 real()
+        f32 real()
         {
-            CHECK_TYPE(DataType::I64, DataType::F64);
-            if (dataType == I64) return (f64)integer_;
+            CHECK_TYPE(DataType::I64, DataType::F32);
+            if (dataType == I64) return (f32)integer_;
             return real_;
         }
 
@@ -245,16 +245,16 @@ namespace DataFile
             integer_ = val;
         }
 
-        f64 real(f64 defaultVal)
+        f32 real(f32 defaultVal)
         {
             if(dataType == DataType::NONE) return defaultVal;
             return real();
         }
 
-        void setReal(i64 val)
+        void setReal(f64 val)
         {
             this->~Value();
-            dataType = DataType::F64;
+            dataType = DataType::F32;
             real_ = val;
         }
 
@@ -446,10 +446,31 @@ namespace DataFile
         return v;
     }
 
-    Value makeReal(f64 val)
+    Value makeReal(f32 val)
     {
         Value v;
         v.setReal(val);
+        return v;
+    }
+
+    Value makeVec2(glm::vec2 val)
+    {
+        Value v;
+        v.setVec2(val);
+        return v;
+    }
+
+    Value makeVec3(glm::vec3 const& val)
+    {
+        Value v;
+        v.setVec3(val);
+        return v;
+    }
+
+    Value makeVec4(glm::vec4 const& val)
+    {
+        Value v;
+        v.setVec4(val);
         return v;
     }
 
@@ -507,8 +528,8 @@ namespace DataFile
                 return os << "STRING";
             case I64:
                 return os << "I64";
-            case F64:
-                return os << "F64";
+            case F32:
+                return os << "F32";
             case BYTE_ARRAY:
                 return os << "BYTE_ARRAY";
             case ARRAY:

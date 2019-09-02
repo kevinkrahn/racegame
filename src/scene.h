@@ -11,6 +11,7 @@
 #include "2d.h"
 #include "terrain.h"
 #include "track.h"
+#include "datafile.h"
 #include <vector>
 
 enum
@@ -48,7 +49,7 @@ struct ActorUserData
 class Scene : public PxSimulationEventCallback
 {
 private:
-    bool isEditing = false;
+    bool isEditing = true;
     Editor editor;
 
     std::vector<std::unique_ptr<Entity>> entities;
@@ -94,6 +95,9 @@ public:
 
     void startRace(glm::mat4 const& start);
     void stopRace();
+
+    DataFile::Value serialize();
+    void deserialize(DataFile::Value& data);
 
     void onStart();
     void onEnd();

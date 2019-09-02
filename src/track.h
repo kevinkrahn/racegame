@@ -56,19 +56,27 @@ private:
         i32 pointIndexA;
         glm::vec3 handleOffsetB;
         i32 pointIndexB;
-        f32 widthA;
-        f32 widthB;
+        f32 widthA = 12.f;
+        f32 widthB = 12.f;
+
         bool isDirty = true;
         std::vector<Vertex> vertices;
         std::vector<u32> indices;
         GLuint vao = 0, vbo = 0, ebo = 0;
         PxShape* collisionShape = nullptr;
 
-        void destroy()
+        void destroy(Track* track)
         {
-            glDeleteBuffers(0, &vbo);
-            glDeleteBuffers(0, &ebo);
-            glDeleteVertexArrays(0, &vao);
+            if (vao)
+            {
+                glDeleteBuffers(0, &vbo);
+                glDeleteBuffers(0, &ebo);
+                glDeleteVertexArrays(0, &vao);
+            }
+            if (collisionShape)
+            {
+                track->actor->detachShape(*collisionShape);
+            }
         }
 
         glm::vec3 pointOnCurve(std::vector<Point> const& points, f32 t) const
@@ -170,7 +178,7 @@ public:
     {
         for (auto& c : connections)
         {
-            c.destroy();
+            c.destroy(this);
         }
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
@@ -221,6 +229,8 @@ public:
     // entity
     void onCreate(Scene* scene) override;
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    DataFile::Value serialize() override;
+    void deserialize(DataFile::Value& data) override;
 
     // renderable
     std::string getDebugString() const override { return "Track"; }

@@ -196,8 +196,8 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
         Value val;
         if (foundDot)
         {
-            val.dataType = DataType::F64;
-            val.real_ = std::stod(digits);
+            val.dataType = DataType::F32;
+            val.real_ = std::stof(digits);
         }
         else
         {
@@ -342,9 +342,9 @@ Value Value::readValue(std::ifstream& stream)
         {
             stream.read((char*)&value.integer_, sizeof(i64));
         } break;
-        case DataType::F64:
+        case DataType::F32:
         {
-            stream.read((char*)&value.real_, sizeof(f64));
+            stream.read((char*)&value.real_, sizeof(f32));
         } break;
         case DataType::STRING:
         {
@@ -355,6 +355,7 @@ Value Value::readValue(std::ifstream& stream)
         } break;
         case DataType::BYTE_ARRAY:
         {
+            // TODO: should byte array be 4-byte aligned?
             u32 len;
             stream.read((char*)&len, sizeof(len));
             new (&value.bytearray_) ByteArray(len);
@@ -413,9 +414,9 @@ void Value::write(std::ofstream& stream) const
         {
             stream.write((char*)&integer_, sizeof(i64));
         } break;
-        case DataType::F64:
+        case DataType::F32:
         {
-            stream.write((char*)&real_, sizeof(f64));
+            stream.write((char*)&real_, sizeof(f32));
         } break;
         case DataType::STRING:
         {
@@ -471,7 +472,7 @@ void Value::debugOutput(std::ostream& os, u32 indent, bool newline) const
         case DataType::I64:
             os << integer_;
             break;
-        case DataType::F64:
+        case DataType::F32:
             os << std::fixed << std::setprecision(4);
             os << real_;
             break;

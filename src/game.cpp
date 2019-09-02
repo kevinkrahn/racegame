@@ -165,6 +165,16 @@ void Game::run()
             windowHeight = h;
         }
 
+        if (nextScene)
+        {
+            if (currentScene)
+            {
+                currentScene->onEnd();
+            }
+            currentScene = std::move(nextScene);
+            currentScene->onStart();
+        }
+
         currentScene->onUpdate(renderer.get(), deltaTime);
         renderer->render(deltaTime);
         currentScene->onEndUpdate(deltaTime);
@@ -197,14 +207,5 @@ void Game::run()
 
 void Game::changeScene(const char* sceneName)
 {
-    if (currentScene)
-    {
-        currentScene->onEnd();
-    }
-    if (sceneName)
-    {
-        print("Loading scene: ", sceneName, '\n');
-    }
-    currentScene.reset(new Scene(sceneName));
-    currentScene->onStart();
+    nextScene.reset(new Scene(sceneName));
 }

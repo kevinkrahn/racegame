@@ -3,7 +3,7 @@ from math import *
 from mathutils import (Euler, Matrix, Vector)
 from enum import Enum
 
-DataType = Enum('DataType', 'string i64 f64 bytearray array dict bool')
+DataType = Enum('DataType', 'string i64 f32 bytearray array dict bool')
 
 def pack_string(string):
     charBytes = bytes(string, 'ASCII')
@@ -21,7 +21,7 @@ def pack_value(val):
     if type_name == 'int':
         return struct.pack('<Iq', DataType.i64.value, val)
     elif type_name == 'float':
-        return struct.pack('<Id', DataType.f64.value, val)
+        return struct.pack('<If', DataType.f32.value, val)
     elif type_name == 'bytearray' or type_name == 'bytes':
         return struct.pack('<II', DataType.bytearray.value, len(val)) + val
     elif type_name == 'str':

@@ -68,9 +68,12 @@ Scene::Scene(const char* name)
         addEntity(terrain);
         track = new Track();
         addEntity(track);
-        isEditing = true;
+        //isEditing = true;
         return;
     }
+
+    auto data = DataFile::load(name);
+    deserialize(data);
 
     /*
     BoundingBox bb = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
@@ -520,3 +523,45 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
         }
     }
 }
+
+DataFile::Value Scene::serialize()
+{
+    DataFile::Value dict = DataFile::makeDict();
+    dict["name"] = DataFile::makeString("Scene");
+    dict["entities"] = DataFile::makeArray();
+    DataFile::Value::Array& entityArray = dict["entities"].array();
+
+    for (auto& entity : this->entities)
+    {
+        DataFile::Value entityData = entity->serialize();
+        if (entityData.hasValue())
+        {
+            entityArray.push_back(std::move(entityData));
+        }
+    }
+
+    return dict;
+}
+
+void Scene::deserialize(DataFile::Value& data)
+{
+    auto& entityArray = data["entities"].array();
+    for (auto& val : entityArray)
+    {
+        SerializedEntityID entityID = (SerializedEntityID)val["entityID"].integer();
+        switch (entityID)
+        {
+            case SerializedEntityID::TERRAIN:
+                this->terrain = new Terrain();
+                this->terrain->deserialize(val);
+                this->addEntity(this->terrain);
+                break;
+            case SerializedEntityID::TRACK:
+                this->track = new Track();
+                this->track->deserialize(val);
+                this->addEntity(this->track);
+                break;
+        }
+    }
+}
+

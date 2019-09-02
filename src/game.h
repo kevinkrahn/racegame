@@ -49,6 +49,7 @@ public:
 
     SDL_Window* window = nullptr;
     std::unique_ptr<class Scene> currentScene;
+    std::unique_ptr<class Scene> nextScene;
 
     void run();
     void changeScene(const char* sceneName);

@@ -141,7 +141,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 {
                     if (it->pointIndexA == i || it->pointIndexB == i)
                     {
-                        it->destroy();
+                        it->destroy(this);
                         connections.erase(it);
                     }
                     else
@@ -856,16 +856,17 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
     glm::vec3 prevP = points[c.pointIndexA].position;
     for (u32 i=0; i<=totalSteps; ++i)
     {
+        f32 t = (f32)i / (f32)totalSteps;
         glm::vec3 p = getPointOnBezierCurve(
                 points[c.pointIndexA].position,
                 points[c.pointIndexA].position + c.handleOffsetA,
                 points[c.pointIndexB].position + c.handleOffsetB,
-                points[c.pointIndexB].position, i / (f32)totalSteps);
+                points[c.pointIndexB].position, t);
         glm::vec3 xDir = glm::normalize(i == 0 ? c.handleOffsetA :
                 (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
         glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
         glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
-        f32 width = 12.f;
+        f32 width = glm::lerp(c.widthA, c.widthB, t);
         glm::vec3 p1 = p + yDir * width;
         glm::vec3 p2 = p - yDir * width;
         glm::vec3 color = { 0, 0, 0 };
@@ -988,4 +989,98 @@ void Track::buildTrackGraph(TrackGraph* trackGraph)
         trackGraph->addConnection(nodeIndex - 1, c.pointIndexB);
     }
     trackGraph->rebuild(getStart());
+}
+
+DataFile::Value Track::serialize()
+{
+    DataFile::Value dict = DataFile::makeDict();
+    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::TRACK);
+
+    dict["points"] = DataFile::makeArray();
+    auto& pointsArray = dict["points"].array();
+    for (auto& point : points)
+    {
+        auto pointData = DataFile::makeDict();
+        pointData["position"] = DataFile::makeVec3(point.position);
+        pointsArray.push_back(std::move(pointData));
+    }
+
+    dict["connections"] = DataFile::makeArray();
+    auto& connectionArray = dict["connections"].array();
+    for (auto& connection : connections)
+    {
+        auto connectionData = DataFile::makeDict();
+        connectionData["handleOffsetA"] = DataFile::makeVec3(connection.handleOffsetA);
+        connectionData["pointIndexA"] = DataFile::makeInteger(connection.pointIndexA);
+        connectionData["handleOffsetB"] = DataFile::makeVec3(connection.handleOffsetB);
+        connectionData["pointIndexB"] = DataFile::makeInteger(connection.pointIndexB);
+        connectionData["widthA"] = DataFile::makeReal(connection.widthA);
+        connectionData["widthB"] = DataFile::makeReal(connection.widthB);
+        connectionArray.push_back(std::move(connectionData));
+    }
+
+    dict["railings"] = DataFile::makeArray();
+    auto& railingArray = dict["railings"].array();
+    for (auto& railing : railings)
+    {
+        auto railingData = DataFile::makeDict();
+        railingData["points"] = DataFile::makeArray();
+        auto& railingPointsArray = railingData["points"].array();
+        for (auto& point : railing.points)
+        {
+            auto pointData = DataFile::makeDict();
+            pointData["position"] = DataFile::makeVec3(point.position);
+            pointData["handleOffsetA"] = DataFile::makeVec3(point.handleOffsetA);
+            pointData["handleOffsetB"] = DataFile::makeVec3(point.handleOffsetB);
+            railingPointsArray.push_back(std::move(pointData));
+        }
+
+        railingArray.push_back(std::move(railingData));
+    }
+
+    return dict;
+}
+
+void Track::deserialize(DataFile::Value& data)
+{
+    points.clear();
+    connections.clear();
+    railings.clear();
+
+    auto& pointArray = data["points"].array();
+    for (auto& p : pointArray)
+    {
+        points.push_back({
+            p["position"].vec3()
+        });
+    }
+
+    auto& connectionArray = data["connections"].array();
+    for (auto& c : connectionArray)
+    {
+        connections.push_back({
+            c["handleOffsetA"].vec3(),
+            (i32)c["pointIndexA"].integer(),
+            c["handleOffsetB"].vec3(),
+            (i32)c["pointIndexB"].integer(),
+            (f32)c["widthA"].real(),
+            (f32)c["widthB"].real(),
+        });
+    }
+
+    auto& railingArray = data["railings"].array();
+    for (auto& r : railingArray)
+    {
+        auto& pointsArray = r["points"].array();
+        Railing railing;
+        for (auto& point : pointsArray)
+        {
+            railing.points.push_back({
+                point["position"].vec3(),
+                point["handleOffsetA"].vec3(),
+                point["handleOffsetB"].vec3(),
+            });
+        }
+        railings.push_back(std::move(railing));
+    }
 }

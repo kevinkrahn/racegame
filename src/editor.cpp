@@ -17,6 +17,18 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
     scene->terrain->setBrushSettings(0.f, 0.f, 0.f, {});
 
+    if (g_input.isKeyPressed(KEY_F9))
+    {
+        const char* filename = "saved_scene.dat";
+        print("Saving scene to file: ", filename, '\n');
+        DataFile::save(scene->serialize(), filename);
+    }
+
+    if (g_input.isKeyPressed(KEY_F10))
+    {
+        g_game.changeScene("saved_scene.dat");
+    }
+
     if (g_input.isKeyPressed(KEY_F5))
     {
         if (scene->isRaceInProgress)

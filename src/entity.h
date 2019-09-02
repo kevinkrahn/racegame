@@ -12,9 +12,15 @@ public:
 
     virtual ~Entity() {};
     virtual DataFile::Value serialize() { return {}; }
-    virtual std::unique_ptr<Entity> deserialize(DataFile::Value& data) { return nullptr; }
+    virtual void deserialize(DataFile::Value& data) {}
     virtual std::unique_ptr<Entity> editorInstantiate(class Editor* editor) { return nullptr; }
 
     virtual void onCreate(class Scene* scene) {}
     virtual void onUpdate(class Renderer* renderer, class Scene* scene, f32 deltaTime) {}
+};
+
+enum struct SerializedEntityID
+{
+    TERRAIN,
+    TRACK,
 };

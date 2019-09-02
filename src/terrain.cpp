@@ -569,3 +569,32 @@ void Terrain::onLitPass(class Renderer* renderer)
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
 
+DataFile::Value Terrain::serialize()
+{
+    DataFile::Value dict = DataFile::makeDict();
+    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::TERRAIN);
+    dict["tileSize"] = DataFile::makeReal(tileSize);
+    dict["x1"] = DataFile::makeReal(x1);
+    dict["y1"] = DataFile::makeReal(y1);
+    dict["x2"] = DataFile::makeReal(x2);
+    dict["y2"] = DataFile::makeReal(y2);
+    dict["heightBuffer"] = DataFile::makeBytearray(std::move(
+                DataFile::Value::ByteArray(
+                    (u8*)heightBuffer.data(),
+                    (u8*)(heightBuffer.data() + heightBuffer.size()))));
+    return dict;
+}
+
+void Terrain::deserialize(DataFile::Value& data)
+{
+    tileSize = (f32)data["tileSize"].real();
+    x1 = (f32)data["x1"].real();
+    y1 = (f32)data["y1"].real();
+    x2 = (f32)data["x2"].real();
+    y2 = (f32)data["y2"].real();
+    auto& heightBufferBytes = data["heightBuffer"].bytearray();
+    f32* dataBegin = (f32*)heightBufferBytes.data();
+    f32* dataEnd = dataBegin + heightBufferBytes.size() / sizeof(f32);
+    heightBuffer.assign(dataBegin, dataEnd);
+}
+
