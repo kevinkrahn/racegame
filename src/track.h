@@ -137,6 +137,8 @@ private:
     i32 dragRailingIndex = -1;
     i32 dragConnectionIndex = -1;
     i32 dragConnectionHandle = -1;
+    i32 dragOppositeConnectionIndex = -1;
+    i32 dragOppositeConnectionHandle = -1;
     bool isDragging = false;
     glm::vec3 dragOffset;
     std::vector<Selection> selectedPoints;

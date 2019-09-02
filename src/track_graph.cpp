@@ -175,7 +175,7 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
                         fromPosition = (*it)[i];
                     }
                     node.angle = pointDirection(glm::vec2(fromPosition), glm::vec2(toPosition)) - f32(M_PI) * 0.5f;
-                    node.direction = fromPosition - toPosition;
+                    node.direction = glm::normalize(fromPosition - toPosition);
                     break;
                 }
             }

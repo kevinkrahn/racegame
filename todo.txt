@@ -6,3 +6,4 @@
 - Change cursor when hovering over something interactable
 - Add support for importing a heightmap into the editor
 - Add MSAA
+- Export mesh tangents and add normal maps

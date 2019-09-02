@@ -232,6 +232,33 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 glm::vec3 p = cam.position + rayDir * t;
                 dragOffset = handleA - p;
                 isDragging = true;
+                for (i32 connectionIndex = 0; connectionIndex < connections.size(); ++connectionIndex)
+                {
+                    BezierSegment const& c2 = connections[connectionIndex];
+                    if (&c2 != &c)
+                    {
+                        if (c2.pointIndexB == c.pointIndexA)
+                        {
+                            if (1.f - glm::dot(-glm::normalize(c2.handleOffsetB),
+                                        glm::normalize(c.handleOffsetA)) < 0.01f)
+                            {
+                                dragOppositeConnectionIndex = connectionIndex;
+                                dragOppositeConnectionHandle = 1;
+                                break;
+                            }
+                        }
+                        else if (c2.pointIndexA == c.pointIndexA)
+                        {
+                            if (1.f - glm::dot(-glm::normalize(c2.handleOffsetA),
+                                        glm::normalize(c.handleOffsetA)) < 0.01f)
+                            {
+                                dragOppositeConnectionIndex = connectionIndex;
+                                dragOppositeConnectionHandle = 0;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
         if (dragRailingIndex == -1 && dragConnectionIndex == i && dragConnectionHandle == 0)
@@ -242,21 +269,17 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             glm::vec3 p = cam.position + rayDir * t + dragOffset;
             c.handleOffsetA = p - points[c.pointIndexA].position;
             handleA = points[c.pointIndexA].position + c.handleOffsetA;
-            for (auto& c2 : connections)
+            if (dragOppositeConnectionIndex != -1)
             {
-                if (&c2 != &c)
+                BezierSegment& c2 = connections[dragOppositeConnectionIndex];
+                c2.isDirty = true;
+                if (dragOppositeConnectionHandle == 0)
                 {
-                    // TODO: only modify handles that are opposite
-                    if (c2.pointIndexB == c.pointIndexA)
-                    {
-                        c2.handleOffsetB = -c.handleOffsetA;
-                        c2.isDirty = true;
-                    }
-                    else if (c2.pointIndexA == c.pointIndexA)
-                    {
-                        c2.handleOffsetA = -c.handleOffsetA;
-                        c2.isDirty = true;
-                    }
+                    c2.handleOffsetA = -c.handleOffsetA;
+                }
+                else if (dragOppositeConnectionHandle == 1)
+                {
+                    c2.handleOffsetB = -c.handleOffsetA;
                 }
             }
             renderer->push(OverlayRenderable(sphere, 0,
@@ -280,6 +303,34 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 glm::vec3 p = cam.position + rayDir * t;
                 dragOffset = handleB - p;
                 isDragging = true;
+                for (i32 connectionIndex = 0; connectionIndex < connections.size(); ++connectionIndex)
+                {
+                    BezierSegment const& c2 = connections[connectionIndex];
+                    if (&c2 == &c)
+                    {
+                        continue;
+                    }
+                    if (c2.pointIndexB == c.pointIndexB)
+                    {
+                        if (1.f - glm::dot(-glm::normalize(c2.handleOffsetB),
+                                    glm::normalize(c.handleOffsetB)) < 0.01f)
+                        {
+                            dragOppositeConnectionIndex = connectionIndex;
+                            dragOppositeConnectionHandle = 1;
+                            break;
+                        }
+                    }
+                    else if (c2.pointIndexA == c.pointIndexB)
+                    {
+                        if (1.f - glm::dot(-glm::normalize(c2.handleOffsetA),
+                                    glm::normalize(c.handleOffsetB)) < 0.01f)
+                        {
+                            dragOppositeConnectionIndex = connectionIndex;
+                            dragOppositeConnectionHandle = 0;
+                            break;
+                        }
+                    }
+                }
             }
         }
         if (dragRailingIndex == -1 && dragConnectionIndex == i && dragConnectionHandle == 1)
@@ -290,21 +341,17 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             glm::vec3 p = cam.position + rayDir * t + dragOffset;
             c.handleOffsetB = p - points[c.pointIndexB].position;
             handleB = points[c.pointIndexB].position + c.handleOffsetB;
-            for (auto& c2 : connections)
+            if (dragOppositeConnectionIndex != -1)
             {
-                if (&c2 != &c)
+                BezierSegment& c2 = connections[dragOppositeConnectionIndex];
+                c2.isDirty = true;
+                if (dragOppositeConnectionHandle == 0)
                 {
-                    // TODO: only modify handles that are opposite
-                    if (c2.pointIndexA == c.pointIndexB)
-                    {
-                        c2.handleOffsetA = -c.handleOffsetB;
-                        c2.isDirty = true;
-                    }
-                    else if (c2.pointIndexB == c.pointIndexB)
-                    {
-                        c2.handleOffsetB = -c.handleOffsetB;
-                        c2.isDirty = true;
-                    }
+                    c2.handleOffsetA = -c.handleOffsetB;
+                }
+                else if (dragOppositeConnectionHandle == 1)
+                {
+                    c2.handleOffsetB = -c.handleOffsetB;
                 }
             }
             renderer->push(OverlayRenderable(sphere, 0,
@@ -604,6 +651,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         dragRailingIndex = -1;
         dragConnectionIndex = -1;
         dragConnectionHandle = -1;
+        dragOppositeConnectionIndex = -1;
+        dragOppositeConnectionHandle = -1;
         isDragging = false;
     }
 }
@@ -668,15 +717,13 @@ void Track::connectPoints()
     if (connectionCount1 == 1)
     {
         auto c1 = getPointConnection(index1);
-        handle1 = c1 ? (c1->pointIndexA == index1 ? c1->handleOffsetA : c1->handleOffsetB)
-            : glm::vec3(4.f, 0, 0);
+        handle1 = c1->pointIndexA == index1 ? c1->handleOffsetA : c1->handleOffsetB;
     }
 
     if (connectionCount2 == 1)
     {
-        auto c2 = getPointConnection(index1);
-        handle2 = c2 ? (c2->pointIndexA == index2 ? c2->handleOffsetA : c2->handleOffsetB)
-            : glm::vec3(4.f, 0, 0);
+        auto c2 = getPointConnection(index2);
+        handle2 = c2->pointIndexA == index2 ? c2->handleOffsetA : c2->handleOffsetB;
     }
 
     connections.push_back({
