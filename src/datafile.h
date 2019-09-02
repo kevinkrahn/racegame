@@ -10,10 +10,10 @@
 #include "misc.h"
 #include "math.h"
 
+#define MAGIC_NUMBER 0x00001111
+
 namespace DataFile
 {
-    const u32 MAGIC_NUMBER = 0x00001111;
-
     enum DataType : u32
     {
         NONE,
@@ -70,6 +70,7 @@ namespace DataFile
     public:
         static Value readValue(std::ifstream& stream);
         static Value readValue(std::string::const_iterator& ch, std::string::const_iterator end);
+        void write(std::ofstream& stream) const;
 
         ~Value()
         {
@@ -96,7 +97,13 @@ namespace DataFile
         }
 
         Value() {}
+        Value(Value const& other) { *this = other; }
         Value(Value&& other) { *this = std::move(other); }
+        explicit Value(std::string&& str)
+        {
+            dataType = DataType::STRING;
+            new (&str_) String(std::move(str));
+        }
         explicit Value(std::string const& str)
         {
             dataType = DataType::STRING;
@@ -116,6 +123,39 @@ namespace DataFile
         {
             dataType = DataType::BOOL;
             bool_ = val;
+        }
+
+        Value& operator = (Value const& rhs)
+        {
+            this->~Value();
+            switch (rhs.dataType)
+            {
+                case DataType::NONE:
+                    break;
+                case DataType::I64:
+                    this->integer_ = rhs.integer_;
+                    break;
+                case DataType::F64:
+                    this->real_ = rhs.real_;
+                    break;
+                case DataType::STRING:
+                    new (&this->str_) String(rhs.str_);
+                    break;
+                case DataType::BYTE_ARRAY:
+                    new (&this->bytearray_) ByteArray(rhs.bytearray_);
+                    break;
+                case DataType::ARRAY:
+                    new (&this->array_) Array(rhs.array_);
+                    break;
+                case DataType::DICT:
+                    new (&this->dict_) Dict(rhs.dict_);
+                    break;
+                case DataType::BOOL:
+                    this->bool_ = rhs.bool_;
+                    break;
+            }
+            this->dataType = rhs.dataType;
+            return *this;
         }
 
         Value& operator = (Value&& rhs)
@@ -170,6 +210,14 @@ namespace DataFile
             return dataType == DataType::NONE ? defaultVal : str_;
         }
 
+        void setString(std::string const& val)
+        {
+            Value v;
+            v.dataType = DataType::STRING;
+            new (&v.str_) std::string(val);
+            *this = std::move(v);
+        }
+
         i64 integer()
         {
             CHECK_TYPE(DataType::I64, DataType::F64);
@@ -190,10 +238,24 @@ namespace DataFile
             return real_;
         }
 
+        void setInteger(i64 val)
+        {
+            this->~Value();
+            dataType = DataType::I64;
+            integer_ = val;
+        }
+
         f64 real(f64 defaultVal)
         {
             if(dataType == DataType::NONE) return defaultVal;
             return real();
+        }
+
+        void setReal(i64 val)
+        {
+            this->~Value();
+            dataType = DataType::F64;
+            real_ = val;
         }
 
         glm::vec2 vec2()
@@ -208,6 +270,15 @@ namespace DataFile
             return dataType == DataType::NONE ? defaultVal : vec2();
         }
 
+        void setVec2(glm::vec2 val)
+        {
+            this->~Value();
+            dataType = DataType::ARRAY;
+            new (&array_) Array(2);
+            array_[0].setReal(val.x);
+            array_[1].setReal(val.y);
+        }
+
         glm::vec3 vec3()
         {
             CHECK_TYPE(DataType::ARRAY);
@@ -218,6 +289,16 @@ namespace DataFile
         glm::vec3 vec3(glm::vec3 const& defaultVal)
         {
             return dataType == DataType::NONE ? defaultVal : vec3();
+        }
+
+        void setVec3(glm::vec3 const& val)
+        {
+            this->~Value();
+            dataType = DataType::ARRAY;
+            new (&array_) Array(3);
+            array_[0].setReal(val.x);
+            array_[1].setReal(val.y);
+            array_[2].setReal(val.z);
         }
 
         glm::vec4 vec4()
@@ -232,6 +313,17 @@ namespace DataFile
             return dataType == DataType::NONE ? defaultVal : vec4();
         }
 
+        void setVec4(glm::vec4 const& val)
+        {
+            this->~Value();
+            dataType = DataType::ARRAY;
+            new (&array_) Array(4);
+            array_[0].setReal(val.x);
+            array_[1].setReal(val.y);
+            array_[2].setReal(val.z);
+            array_[3].setReal(val.w);
+        }
+
         bool boolean()
         {
             CHECK_TYPE(DataType::BOOL);
@@ -243,10 +335,31 @@ namespace DataFile
             return dataType == DataType::NONE ? defaultVal : boolean();
         }
 
+        void setBoolean(bool val)
+        {
+            this->~Value();
+            dataType = DataType::BOOL;
+            bool_ = val;
+        }
+
         ByteArray& bytearray()
         {
             CHECK_TYPE(DataType::BYTE_ARRAY);
             return bytearray_;
+        }
+
+        void setBytearray(ByteArray && val)
+        {
+            this->~Value();
+            dataType = DataType::BYTE_ARRAY;
+            new (&bytearray_) ByteArray(std::move(val));
+        }
+
+        void setBytearray(ByteArray const& val)
+        {
+            this->~Value();
+            dataType = DataType::BYTE_ARRAY;
+            new (&bytearray_) ByteArray(val);
         }
 
         Array& array()
@@ -255,10 +368,31 @@ namespace DataFile
             return array_;
         }
 
+        void setArray(Array const& val)
+        {
+            this->~Value();
+            dataType = DataType::ARRAY;
+            new (&array_) Array(val);
+        }
+
+        void setArray(Array && val)
+        {
+            this->~Value();
+            dataType = DataType::ARRAY;
+            new (&array_) Array(std::move(val));
+        }
+
         Dict& dict()
         {
             CHECK_TYPE(DataType::DICT);
             return dict_;
+        }
+
+        void setDict(Dict && val)
+        {
+            this->~Value();
+            dataType = DataType::DICT;
+            new (&dict_) Dict(std::move(val));
         }
 
         Value& operator [] (std::string key)
@@ -291,7 +425,71 @@ namespace DataFile
         void debugOutput(std::ostream& os, u32 indent, bool newline) const;
     };
 
+    Value makeString(std::string const& val)
+    {
+        Value v;
+        v.setString(val);
+        return v;
+    }
+
+    Value makeString(std::string&& val)
+    {
+        Value v;
+        v.setString(std::move(val));
+        return v;
+    }
+
+    Value makeInteger(i64 val)
+    {
+        Value v;
+        v.setInteger(val);
+        return v;
+    }
+
+    Value makeReal(f64 val)
+    {
+        Value v;
+        v.setReal(val);
+        return v;
+    }
+
+    Value makeArray(Value::Array const& val = {})
+    {
+        Value v;
+        v.setArray(val);
+        return v;
+    }
+
+    Value makeArray(Value::Array&& val)
+    {
+        Value v;
+        v.setArray(std::move(val));
+        return v;
+    }
+
+    Value makeBytearray(Value::ByteArray const& val = {})
+    {
+        Value v;
+        v.setBytearray(val);
+        return v;
+    }
+
+    Value makeBytearray(Value::ByteArray&& val)
+    {
+        Value v;
+        v.setBytearray(std::move(val));
+        return v;
+    }
+
+    Value makeDict()
+    {
+        Value v;
+        v.setDict({});
+        return v;
+    }
+
     Value load(const char* filename);
+    void save(Value const& val, const char* filename);
 
     inline std::ostream& operator << (std::ostream& os, Value const& rhs)
     {

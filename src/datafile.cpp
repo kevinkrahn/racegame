@@ -68,6 +68,34 @@ Value DataFile::load(const char* filename)
     return val;
 }
 
+void DataFile::save(DataFile::Value const& val, const char* filename)
+{
+    // text format
+    if (fs::path(filename).extension() == ".txt")
+    {
+        std::ofstream file(filename);
+        if (!file)
+        {
+            error("Failed to open data file for writing: ", filename, '\n');
+            return;
+        }
+        file << val;
+        return;
+    }
+
+    // binary format
+    std::ofstream file(filename, std::ios::binary);
+    if (!file)
+    {
+        error("Failed to open binary data file for writing: ", filename, '\n');
+        return;
+    }
+
+    u32 magic = MAGIC_NUMBER;
+    file.write((char*)&magic, sizeof(u32));
+    val.write(file);
+}
+
 Value Value::readValue(std::string::const_iterator& ch, std::string::const_iterator end)
 {
     auto eatSpace = [&](std::string::const_iterator& ch) {
@@ -374,6 +402,63 @@ Value Value::readValue(std::ifstream& stream)
     }
 
     return value;
+}
+
+void Value::write(std::ofstream& stream) const
+{
+    stream.write((char*)&dataType, sizeof(DataType));
+    switch (dataType)
+    {
+        case DataType::I64:
+        {
+            stream.write((char*)&integer_, sizeof(i64));
+        } break;
+        case DataType::F64:
+        {
+            stream.write((char*)&real_, sizeof(f64));
+        } break;
+        case DataType::STRING:
+        {
+            u32 len = (u32)str_.size();
+            stream.write((char*)&len, sizeof(len));
+            stream.write(str_.data(), len);
+        } break;
+        case DataType::BYTE_ARRAY:
+        {
+            u32 len = (u32)bytearray_.size();
+            stream.write((char*)&len, sizeof(len));
+            stream.write((char*)bytearray_.data(), len);
+        } break;
+        case DataType::ARRAY:
+        {
+            u32 len = (u32)array_.size();
+            stream.write((char*)&len, sizeof(len));
+            for (u32 i=0; i<len; ++i)
+            {
+                array_[i].write(stream);
+            }
+        } break;
+        case DataType::DICT:
+        {
+            u32 len = (u32)dict_.size();
+            stream.write((char*)&len, sizeof(len));
+            for (auto& pair : dict_)
+            {
+                u32 keyLen = (u32)pair.first.size();
+                stream.write((char*)&keyLen, sizeof(keyLen));
+                stream.write(pair.first.data(), keyLen);
+                pair.second.write(stream);
+            }
+        } break;
+        case DataType::BOOL:
+        {
+            stream.write((char*)&bool_, sizeof(u32));
+        } break;
+        default:
+        {
+            error("Cannot save value: Invalid data type: ", (u32)dataType, '\n');
+        } break;
+    }
 }
 
 void Value::debugOutput(std::ostream& os, u32 indent, bool newline) const
