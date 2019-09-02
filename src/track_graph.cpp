@@ -9,28 +9,43 @@
 #include "input.h"
 #include <iomanip>
 
-void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex, u32 pathIndex)
+void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
 {
     Node& to = nodes[toIndex];
     Node& from = nodes[fromIndex];
     f32 travelTime = from.t + glm::length(from.position - to.position);
-
     if (to.t <= travelTime)
     {
         return;
     }
-
-    paths[pathIndex].push_back(to.position);
-
     to.t = travelTime;
-
     if (toIndex == endIndex)
     {
         return;
     }
+    for (u32 i=0; i<to.connections.size(); ++i)
+    {
+        u32 c = to.connections[i];
+        if (c != fromIndex)
+        {
+            computeTravelTime(c, toIndex, endIndex);
+        }
+    }
+}
 
+void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
+        std::vector<std::vector<u32>>& nodeIndexPaths)
+{
+    std::vector<u32>& path = nodeIndexPaths[pathIndex];
+    // never visit the same node twice
+    if (std::find(path.begin(), path.end(), toIndex) != path.end())
+    {
+        return;
+    }
+    Node& to = nodes[toIndex];
+    nodeIndexPaths[pathIndex].push_back(toIndex);
     u32 branchCount = 0;
-    std::vector<glm::vec3> pathToHere = paths[pathIndex];
+    std::vector<u32> pathToHere = nodeIndexPaths[pathIndex];
     for (u32 i=0; i<to.connections.size(); ++i)
     {
         u32 c = to.connections[i];
@@ -38,10 +53,10 @@ void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex, u32
         {
             if (branchCount > 0)
             {
-                pathIndex = paths.size();
-                paths.push_back(pathToHere);
+                pathIndex = nodeIndexPaths.size();
+                nodeIndexPaths.push_back(pathToHere);
             }
-            computeTravelTime(c, toIndex, endIndex, pathIndex);
+            computePath(c, toIndex, pathIndex, nodeIndexPaths);
             ++branchCount;
         }
     }
@@ -116,17 +131,23 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     end.t = 0.f;
     for (u32 c : end.connections)
     {
-        paths.push_back({ start.position });
-        computeTravelTime(c, endIndex, startIndex, (u32)paths.size() - 1);
+        computeTravelTime(c, endIndex, startIndex);
+    }
+
+    std::vector<std::vector<u32>> nodeIndexPaths;
+    for (u32 c : start.connections)
+    {
+        nodeIndexPaths.push_back({ startIndex });
+        computePath(c, startIndex, (u32)nodeIndexPaths.size() - 1, nodeIndexPaths);
     }
 
     std::vector<f32> pathLengths;
-    for (auto it = paths.begin(); it != paths.end();)
+    for (auto it = nodeIndexPaths.begin(); it != nodeIndexPaths.end();)
     {
-        // remove paths that didn't reach the end
-        if (it->back() != start.position)
+        // filter out paths that didn't reach the end
+        if (it->back() != endIndex)
         {
-            paths.erase(it);
+            nodeIndexPaths.erase(it);
             continue;
         }
 
@@ -134,53 +155,64 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
         f32 totalLength = 0.f;
         for (u32 i=1; i<it->size(); ++i)
         {
-            totalLength += glm::length((*it)[i] - (*it)[i-1]);
+            totalLength +=
+                glm::length(nodes[(*it)[i]].position - nodes[(*it)[i-1]].position);
         }
         pathLengths.push_back(totalLength);
-
-        // paths are built backwards, so they must be reversed
-        std::reverse(it->begin(), it->end());
 
         ++it;
     }
 
     // sort paths based on length
-    for (u32 i=1; i<(u32)paths.size(); ++i)
+    for (u32 i=1; i<(u32)nodeIndexPaths.size(); ++i)
     {
         for (u32 j=i; j>0 && pathLengths[j-1] > pathLengths[j]; --j)
         {
-            std::swap(paths[j], paths[j-1]);
+            std::swap(nodeIndexPaths[j], nodeIndexPaths[j-1]);
         }
     }
 
+    // convert node indices to positions
+    for (auto& indexPath : nodeIndexPaths)
+    {
+        std::vector<glm::vec3> path;
+        path.reserve(indexPath.size());
+        for (u32 nodeIndex : indexPath)
+        {
+            path.push_back(nodes[nodeIndex].position);
+        }
+        paths.push_back(std::move(path));
+    }
+
     // set node angles
-    for (auto it = paths.rbegin(); it != paths.rend(); ++it)
+    for (auto it = nodeIndexPaths.rbegin(); it != nodeIndexPaths.rend(); ++it)
     {
         for (u32 i=0; i<it->size(); ++i)
         {
-            for (auto &node : nodes)
+            glm::vec3 fromPosition;
+            glm::vec3 toPosition;
+            if (i < it->size() - 1)
             {
-                if (node.position == (*it)[i])
-                {
-                    glm::vec3 fromPosition;
-                    glm::vec3 toPosition;
-                    if (i < it->size() - 1)
-                    {
-                        toPosition = (*it)[i];
-                        fromPosition = (*it)[i+1];
-                    }
-                    else
-                    {
-                        toPosition = (*it)[i-1];
-                        fromPosition = (*it)[i];
-                    }
-                    node.angle = pointDirection(glm::vec2(fromPosition), glm::vec2(toPosition)) - f32(M_PI) * 0.5f;
-                    node.direction = glm::normalize(fromPosition - toPosition);
-                    break;
-                }
+                toPosition = nodes[(*it)[i]].position;
+                fromPosition = nodes[(*it)[i+1]].position;
             }
+            else
+            {
+                toPosition = nodes[(*it)[i-1]].position;
+                fromPosition = nodes[(*it)[i]].position;
+            }
+            nodes[(*it)[i]].angle = pointDirection(glm::vec2(fromPosition), glm::vec2(toPosition)) - f32(M_PI) * 0.5f;
+            nodes[(*it)[i]].direction = glm::normalize(fromPosition - toPosition);
         }
     }
+
+#if 0
+    // if there are lots of paths, remove the longest ones
+    if (nodeIndexPaths.size() > 8)
+    {
+        nodeIndexPaths.erase(nodeIndexPaths.begin() + 8, nodeIndexPaths.end());
+    }
+#endif
 
     end.angle = start.angle;
     end.direction = start.direction;
@@ -227,10 +259,12 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
             glm::vec4(c.position + glm::vec3(0, 0, 1) * f32(i % 2) * 2.f, 1.f);
         p.x = (((p.x / p.w) + 1.f) / 2.f) * g_game.windowWidth;
         p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * g_game.windowHeight;
-        /*
-        g_resources.getFont("font", 23).drawText(str(std::fixed, std::setw(1), c.t).c_str(), { p.x, p.y },
-                glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER);
-                */
+#if 0
+        renderer->push(TextRenderable(
+                    &g_resources.getFont("font", 23),
+                    str(std::fixed, std::setw(1), c.t), { p.x, p.y },
+                    glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
+#endif
     }
 
     glm::vec4 colors[] = {

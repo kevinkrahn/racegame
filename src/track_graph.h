@@ -21,8 +21,9 @@ private:
     Node* startNode = nullptr;
     Node* endNode = nullptr;
 
-    void computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex, u32 pathIndex);
-    void subdivide();
+    void computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex);
+    void computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
+            std::vector<std::vector<u32>>& nodeIndexPaths);
 
     std::vector<std::vector<glm::vec3>> paths;
     void computePaths();

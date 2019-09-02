@@ -973,6 +973,7 @@ void Track::buildTrackGraph(TrackGraph* trackGraph)
         f32 stepSize = 30.f;
         u32 totalSteps = glm::max(2u, (u32)(totalLength / stepSize));
         u32 startNodeIndex = nodeIndex;
+        // TODO: distribute points more evenly
         for (u32 i=1; i<totalSteps; ++i)
         {
             glm::vec3 p = c.pointOnCurve(points, i / (f32)totalSteps);
