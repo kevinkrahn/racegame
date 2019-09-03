@@ -357,6 +357,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 default:
                     break;
                 }
+                clickHandledUntilRelease = true;
             }
         }
     }
@@ -395,6 +396,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 scene->track->placeRailing(p);
+                isMouseClickHandled = true;
+                clickHandledUntilRelease = true;
                 placeMode = PlaceMode::NONE;
             }
 
@@ -432,6 +435,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         isMouseClickHandled = true;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                         {
+                            clickHandledUntilRelease = true;
                             scene->track->extendTrack(i);
                         }
                     }
