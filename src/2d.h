@@ -61,14 +61,6 @@ class TrackPreview2D : public Renderable2D {
     Vertex points[4];
 
 public:
-    struct RenderItem
-    {
-        Mesh* mesh;
-        glm::mat4 transform;
-        glm::vec3 color = glm::vec3(1.0);
-        bool overwriteColor = false;
-    };
-
     TrackPreview2D() {}
     ~TrackPreview2D()
     {
@@ -87,8 +79,7 @@ public:
         glDeleteTextures(1, &destTex);
     }
 
-    void update(Renderer* renderer, std::vector<RenderItem> const& staticItems,
-                std::vector<RenderItem> const& dynamicItems, u32 width, u32 height, glm::vec2 pos)
+    void beginUpdate(Renderer* renderer, u32 width, u32 height)
     {
         if (this->width != width || this->height != height)
         {
@@ -149,25 +140,20 @@ public:
         glDisable(GL_BLEND);
 
         glUseProgram(renderer->getShaderProgram("mesh2D"));
+    }
 
-        for (auto& item : staticItems)
-        {
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
-            glUniform3fv(1, 1, (GLfloat*)&item.color);
-            glUniform1i(2, item.overwriteColor);
-            glBindVertexArray(item.mesh->vao);
-            glDrawElements(GL_TRIANGLES, item.mesh->numIndices, GL_UNSIGNED_INT, 0);
-        }
+    void drawItem(GLuint vao, u32 numIndices, glm::mat4 const& transform,
+            glm::vec3 const& color=glm::vec3(1.0), bool overwriteColor=false)
+    {
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniform3fv(1, 1, (GLfloat*)&color);
+        glUniform1i(2, overwriteColor);
+        glBindVertexArray(vao);
+        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+    }
 
-        for (auto& item : dynamicItems)
-        {
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(item.transform));
-            glUniform3fv(1, 1, (GLfloat*)&item.color);
-            glUniform1i(2, item.overwriteColor);
-            glBindVertexArray(item.mesh->vao);
-            glDrawElements(GL_TRIANGLES, item.mesh->numIndices, GL_UNSIGNED_INT, 0);
-        }
-
+    void endUpdate(glm::vec2 pos)
+    {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, this->multisampleFramebuffer);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, this->destFramebuffer);

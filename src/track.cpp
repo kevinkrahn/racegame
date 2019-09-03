@@ -6,6 +6,7 @@
 #include "input.h"
 #include "game.h"
 #include "track_graph.h"
+#include "2d.h"
 
 glm::vec4 red = { 1.f, 0.f, 0.f, 1.f };
 glm::vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
@@ -25,14 +26,8 @@ void Track::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
-bool collide = false;
-
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
-    if (g_input.isKeyPressed(KEY_O))
-    {
-        collide = !collide;
-    }
     for (auto& c : connections)
     {
         /*
@@ -849,6 +844,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
 
     f32 totalLength = c.getLength(points);
 
+    c.boundingBox = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
     c.vertices.clear();
     c.indices.clear();
     f32 stepSize = 1.f;
@@ -881,8 +877,11 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
             c.indices.push_back(i * 2 + 1);
             c.indices.push_back(i * 2 - 1);
         }
+        c.boundingBox.min = glm::min(c.boundingBox.min, glm::min(p1, p2));
+        c.boundingBox.max = glm::max(c.boundingBox.max, glm::max(p1, p2));
         prevP = p;
     }
+    computeBoundingBox();
 
     glBindVertexArray(c.vao);
     glNamedBufferData(c.vbo, c.vertices.size() * sizeof(Vertex), c.vertices.data(), GL_DYNAMIC_DRAW);
@@ -1082,5 +1081,33 @@ void Track::deserialize(DataFile::Value& data)
             });
         }
         railings.push_back(std::move(railing));
+    }
+}
+
+void Track::computeBoundingBox()
+{
+    boundingBox = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
+    for (auto& c : connections)
+    {
+        boundingBox = boundingBox.growToFit(c.boundingBox);
+    }
+    f32 minSize = 100.f;
+    glm::vec2 addSize = glm::max(glm::vec2(0.f),
+        glm::vec2(minSize) - (glm::vec2(boundingBox.max) - glm::vec2(boundingBox.min)));
+    boundingBox.min -= glm::vec3(addSize * 0.5f, 0.f);
+    boundingBox.max += glm::vec3(addSize * 0.5f, 0.f);
+}
+
+void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection)
+{
+    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    trackPreview->drawItem(
+        quadMesh->vao, quadMesh->numIndices,
+        orthoProjection * getStart()* glm::translate(glm::mat4(1.f), { 0, 0, -2 })
+            * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.2f), true);
+    for (auto& c : connections)
+    {
+        trackPreview->drawItem(c.vao, c.indices.size(),
+                orthoProjection, glm::vec3(1.0), true);
     }
 }

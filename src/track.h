@@ -49,6 +49,8 @@ public:
         glm::vec3 position;
     };
 
+    BoundingBox boundingBox;
+
 private:
     struct BezierSegment
     {
@@ -64,6 +66,7 @@ private:
         std::vector<u32> indices;
         GLuint vao = 0, vbo = 0, ebo = 0;
         PxShape* collisionShape = nullptr;
+        BoundingBox boundingBox;
 
         void destroy(Track* track)
         {
@@ -166,6 +169,7 @@ private:
 
     BezierSegment* getPointConnection(u32 pointIndex);
     void createSegmentMesh(BezierSegment& segment, Scene* scene);
+    void computeBoundingBox();
 
 public:
     Track()
@@ -214,17 +218,21 @@ public:
     void connectPoints();
     void subdividePoints();
     bool hasSelection() const { return selectedPoints.size() > 0; }
-    i32 getSelectedPointIndex() {
+    i32 getSelectedPointIndex()
+    {
         assert(hasSelection());
         return selectedPoints.back().pointIndex;
     }
-    Point const& getPoint(i32 index) {
+    Point const& getPoint(i32 index)
+    {
         assert(points.size() > index);
         return points[index];
     }
     glm::vec3 getPointDir(u32 pointIndex) const;
     void clearSelection();
     void buildTrackGraph(class TrackGraph* trackGraph);
+    void drawTrackPreview(class TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection);
+    BoundingBox getBoundingBox() const { return boundingBox; }
 
     // entity
     void onCreate(Scene* scene) override;
