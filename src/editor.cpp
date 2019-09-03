@@ -357,7 +357,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 default:
                     break;
                 }
-                clickHandledUntilRelease = true;
             }
         }
     }

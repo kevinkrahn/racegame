@@ -7,6 +7,14 @@
 #include "gl.h"
 #include <vector>
 
+enum VertexAttribute
+{
+    FLOAT1,
+    FLOAT2,
+    FLOAT3,
+    FLOAT4
+};
+
 struct Mesh
 {
     std::string name;
@@ -20,21 +28,7 @@ struct Mesh
     u32 stride;
     BoundingBox aabb;
 
-    enum VertexAttribute
-    {
-        FLOAT1,
-        FLOAT2,
-        FLOAT3,
-        FLOAT4
-    };
-
-    SmallVec<float> vertexFormat = {
-        VertexAttribute::FLOAT3,
-        VertexAttribute::FLOAT3,
-        VertexAttribute::FLOAT3,
-        VertexAttribute::FLOAT2,
-    };
-
+    SmallVec<VertexAttribute> vertexFormat;
     GLuint vao = 0, vbo = 0, ebo = 0;
 
     struct OctreeNode
@@ -59,6 +53,8 @@ struct Mesh
 
     PxTriangleMesh* getCollisionMesh();
     PxConvexMesh* getConvexCollisionMesh();
+
+    void destroy();
 };
 
 inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)

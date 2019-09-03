@@ -67,8 +67,15 @@ private:
         GLuint vao = 0, vbo = 0, ebo = 0;
         PxShape* collisionShape = nullptr;
         BoundingBox boundingBox;
+        Track* track;
 
-        void destroy(Track* track)
+        BezierSegment(Track* track) : track(track) { }
+        BezierSegment(BezierSegment const& other) = delete;
+        BezierSegment(BezierSegment&& other) = default;
+        BezierSegment& operator = (BezierSegment const& other) = delete;
+        BezierSegment& operator = (BezierSegment && other) = default;
+
+        ~BezierSegment()
         {
             if (vao)
             {
@@ -139,6 +146,25 @@ private:
         Mesh mesh;
         std::vector<Selection> selectedPoints;
         bool isDirty = false;
+        PxRigidStatic* actor = nullptr;
+        Track* track = nullptr;
+        std::unique_ptr<struct ActorUserData> physicsUserData;
+
+        Railing(Track* track) : track(track) {};
+        Railing(Railing const& other) = delete;
+        Railing(Railing&& other) = default;
+        Railing& operator = (Railing const& other) = delete;
+        Railing& operator = (Railing && other) = default;
+        ~Railing()
+        {
+            if (actor)
+            {
+                actor->release();
+            }
+            mesh.destroy();
+        }
+
+        void updateMesh();
     };
 
     std::vector<Railing> railings;
@@ -153,6 +179,7 @@ private:
     bool isDragging = false;
     glm::vec3 dragOffset;
     std::vector<Selection> selectedPoints;
+    Scene* scene;
 
     PxRigidStatic* actor = nullptr;
     std::unique_ptr<struct ActorUserData> physicsUserData;
@@ -176,14 +203,15 @@ public:
     {
         points.push_back(Point{ glm::vec3(50, 0, 0.05f) });
         points.push_back(Point{ glm::vec3(-50, 0, 0.05f) });
-        connections.push_back(BezierSegment{ glm::vec3(-10, 0, 0), 0, glm::vec3(10, 0, 0), 1 });
+        BezierSegment segment(this);
+        segment.handleOffsetA = glm::vec3(-10, 0, 0);
+        segment.pointIndexA = 0;
+        segment.handleOffsetB = glm::vec3(10, 0, 0);
+        segment.pointIndexB = 1;
+        connections.push_back(std::move(segment));
     }
     ~Track()
     {
-        for (auto& c : connections)
-        {
-            c.destroy(this);
-        }
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     glm::mat4 getStart()

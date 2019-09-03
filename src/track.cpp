@@ -24,6 +24,7 @@ void Track::onCreate(Scene* scene)
     physicsUserData.reset(userData);
     actor->userData = userData;
     scene->getPhysicsScene()->addActor(*actor);
+    this->scene = scene;
 }
 
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
@@ -52,8 +53,13 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         }
     }
 
-    for (auto const& railing : railings)
+    for (auto& railing : railings)
     {
+        if (railing.isDirty)
+        {
+            railing.updateMesh();
+        }
+
         for (size_t i=1; i<railing.points.size(); ++i)
         {
             RailingPoint const& point = railing.points[i];
@@ -136,7 +142,6 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 {
                     if (it->pointIndexA == i || it->pointIndexB == i)
                     {
-                        it->destroy(this);
                         connections.erase(it);
                     }
                     else
@@ -675,9 +680,14 @@ void Track::extendTrack(i32 prefabCurveIndex)
             + points[pIndex].position;
         points.push_back({ p });
         glm::vec3 h(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
-        connections.push_back({
-            -fromHandleOffset, pIndex, h, (i32)points.size() - 1
-        });
+
+        BezierSegment segment(this);
+        segment.handleOffsetA = -fromHandleOffset;
+        segment.pointIndexA = pIndex;
+        segment.handleOffsetB = h;
+        segment.pointIndexB = (i32)points.size() - 1;
+        connections.push_back(std::move(segment));
+
         pIndex = (i32)points.size() - 1;
         fromHandleOffset = h;
         selectedPoints.push_back({ (i32)points.size() - 1, {} });
@@ -723,10 +733,12 @@ void Track::connectPoints()
         handle2 = c2->pointIndexA == index2 ? c2->handleOffsetA : c2->handleOffsetB;
     }
 
-    connections.push_back({
-        -handle1, index1,
-        -handle2, index2
-    });
+    BezierSegment segment(this);
+    segment.handleOffsetA = -handle1;
+    segment.pointIndexA = index1;
+    segment.handleOffsetB = -handle2;
+    segment.pointIndexB = index2;
+    connections.push_back(std::move(segment));
 }
 
 void Track::subdividePoints()
@@ -751,10 +763,9 @@ glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::
 
 void Track::placeRailing(glm::vec3 const& p)
 {
-    railings.push_back({
-        { { p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) } },
-        {}
-    });
+    Railing railing(this);
+    railing.points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
+    railings.push_back(std::move(railing));
 }
 
 Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
@@ -1059,21 +1070,21 @@ void Track::deserialize(DataFile::Value& data)
     auto& connectionArray = data["connections"].array();
     for (auto& c : connectionArray)
     {
-        connections.push_back({
-            c["handleOffsetA"].vec3(),
-            (i32)c["pointIndexA"].integer(),
-            c["handleOffsetB"].vec3(),
-            (i32)c["pointIndexB"].integer(),
-            (f32)c["widthA"].real(),
-            (f32)c["widthB"].real(),
-        });
+        BezierSegment segment(this);
+        segment.handleOffsetA = c["handleOffsetA"].vec3();
+        segment.pointIndexA = (i32)c["pointIndexA"].integer();
+        segment.handleOffsetB = c["handleOffsetB"].vec3();
+        segment.pointIndexB = (i32)c["pointIndexB"].integer();
+        segment.widthA = (f32)c["widthA"].real();
+        segment.widthB = (f32)c["widthB"].real();
+        connections.push_back(std::move(segment));
     }
 
     auto& railingArray = data["railings"].array();
     for (auto& r : railingArray)
     {
         auto& pointsArray = r["points"].array();
-        Railing railing;
+        Railing railing(this);
         for (auto& point : pointsArray)
         {
             railing.points.push_back({
@@ -1111,5 +1122,48 @@ void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orth
     {
         trackPreview->drawItem(c.vao, c.indices.size(),
                 orthoProjection, glm::vec3(1.0), true);
+    }
+}
+
+void Track::Railing::updateMesh()
+{
+    isDirty = false;
+
+    if (!actor)
+    {
+        actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
+        ActorUserData* userData = new ActorUserData;
+        userData->entityType = ActorUserData::TRACK;
+        userData->entity = nullptr;
+        physicsUserData.reset(userData);
+        actor->userData = userData;
+        track->scene->getPhysicsScene()->addActor(*actor);
+    }
+
+    mesh.vertices.clear();
+    mesh.indices.clear();
+
+    std::vector<glm::vec3> polyLine;
+    u32 steps = 64;
+    polyLine.reserve(points.size() * steps);
+    for (size_t i=1; i<points.size(); ++i)
+    {
+        RailingPoint const& point = points[i];
+        RailingPoint const& prevPoint = points[i-1];
+        for (u32 i=0; i<steps; ++i)
+        {
+            glm::vec3 p = track->getPointOnBezierCurve(
+                    prevPoint.position,
+                    prevPoint.position + prevPoint.handleOffsetB,
+                    point.position + point.handleOffsetA,
+                    point.position, i / (f32)steps);
+            polyLine.push_back(p);
+        }
+    }
+
+    Mesh* railingMesh = g_resources.getMesh("world.Arrow");
+    for (u32 i=0; i<railingMesh->numVertices; ++i)
+    {
+        // warp the vertices onto the curve
     }
 }

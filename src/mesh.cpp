@@ -187,40 +187,48 @@ bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32
 
 void Mesh::createVAO()
 {
+    assert(vertexFormat.size() > 0);
+
+    destroy();
+
     glCreateBuffers(1, &vbo);
     glNamedBufferData(vbo, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STATIC_DRAW);
 
     glCreateBuffers(1, &ebo);
     glNamedBufferData(ebo, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
 
-    enum
-    {
-        POSITION_BIND_INDEX = 0,
-        NORMAL_BIND_INDEX = 1,
-        COLOR_BIND_INDEX = 2,
-        TEXCOORD_BIND_INDEX = 3
-    };
-
-    // TODO: follow vertexFormat
     glCreateVertexArrays(1, &vao);
     glVertexArrayVertexBuffer(vao, 0, vbo, 0, stride);
     glVertexArrayElementBuffer(vao, ebo);
 
-    glEnableVertexArrayAttrib(vao, POSITION_BIND_INDEX);
-    glVertexArrayAttribFormat(vao, POSITION_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(vao, POSITION_BIND_INDEX, 0);
-
-    glEnableVertexArrayAttrib(vao, NORMAL_BIND_INDEX);
-    glVertexArrayAttribFormat(vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
-    glVertexArrayAttribBinding(vao, NORMAL_BIND_INDEX, 0);
-
-    glEnableVertexArrayAttrib(vao, COLOR_BIND_INDEX);
-    glVertexArrayAttribFormat(vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
-    glVertexArrayAttribBinding(vao, COLOR_BIND_INDEX, 0);
-
-    glEnableVertexArrayAttrib(vao, TEXCOORD_BIND_INDEX);
-    glVertexArrayAttribFormat(vao, TEXCOORD_BIND_INDEX, 2, GL_FLOAT, GL_FALSE, 12 + 12 + 12);
-    glVertexArrayAttribBinding(vao, TEXCOORD_BIND_INDEX, 0);
+    u32 offset = 0;
+    for (u32 i=0; i<vertexFormat.size(); ++i)
+    {
+        u32 numElements = 0;
+        switch (vertexFormat[i])
+        {
+            case VertexAttribute::FLOAT1:
+                numElements = 1;
+                break;
+            case VertexAttribute::FLOAT2:
+                numElements = 2;
+                break;
+            case VertexAttribute::FLOAT3:
+                numElements = 3;
+                break;
+            case VertexAttribute::FLOAT4:
+                numElements = 4;
+                break;
+            default:
+                FATAL_ERROR("Invalid vertex format");
+                break;
+        }
+        u32 bindIndex = i;
+        glEnableVertexArrayAttrib(vao, bindIndex);
+        glVertexArrayAttribFormat(vao, bindIndex, numElements, GL_FLOAT, GL_FALSE, offset);
+        glVertexArrayAttribBinding(vao, bindIndex, 0);
+        offset += numElements * sizeof(f32);
+    }
 }
 
 PxTriangleMesh* Mesh::getCollisionMesh()
@@ -276,4 +284,23 @@ PxConvexMesh* Mesh::getConvexCollisionMesh()
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
     convexCollisionMesh = g_game.physx.physics->createConvexMesh(readBuffer);
     return convexCollisionMesh;
+}
+
+void Mesh::destroy()
+{
+    if (vao)
+    {
+        glDeleteBuffers(0, &vbo);
+        glDeleteBuffers(0, &ebo);
+        glDeleteVertexArrays(0, &vao);
+    }
+    octree.reset();
+    if (collisionMesh)
+    {
+        collisionMesh->release();
+    }
+    if (convexCollisionMesh)
+    {
+        convexCollisionMesh->release();
+    }
 }

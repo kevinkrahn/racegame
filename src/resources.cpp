@@ -42,6 +42,12 @@ void Resources::load()
                             u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
                             u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
+                            SmallVec<VertexAttribute> vertexFormat = {
+                                VertexAttribute::FLOAT3, // position
+                                VertexAttribute::FLOAT3, // normal
+                                VertexAttribute::FLOAT3, // color
+                                VertexAttribute::FLOAT2, // uv
+                            };
                             Mesh mesh = {
                                 meshInfo["name"].string(),
                                 std::move(vertices),
@@ -55,7 +61,8 @@ void Resources::load()
                                 BoundingBox{
                                     meshInfo["aabb_min"].convertBytes<glm::vec3>(),
                                     meshInfo["aabb_max"].convertBytes<glm::vec3>(),
-                                }
+                                },
+                                vertexFormat
                             };
                             mesh.createVAO();
                             meshes[meshInfo["name"].string()] = std::move(mesh);
