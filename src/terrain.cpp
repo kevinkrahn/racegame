@@ -256,8 +256,8 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
         for (i32 y=minY; y<=maxY; ++y)
         {
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
-            heightBuffer[y * width + x] += falloff * amount;
+            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            heightBuffer[y * width + x] += t * amount;
         }
     }
     setDirty();
@@ -277,8 +277,8 @@ void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
             f32 scale = 0.1f;
             f32 noise = glm::perlin(glm::vec2(x, y) * scale);
-            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
-            heightBuffer[y * width + x] += falloff * noise * amount;
+            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            heightBuffer[y * width + x] += t * noise * amount;
         }
     }
     setDirty();
@@ -296,9 +296,9 @@ void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
         for (i32 y=minY; y<=maxY; ++y)
         {
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
             f32 currentZ = heightBuffer[y * width + x];
-            heightBuffer[y * width + x] += (z - currentZ) * falloff * amount;
+            heightBuffer[y * width + x] += (z - currentZ) * t * amount;
         }
     }
     setDirty();
@@ -317,14 +317,14 @@ void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
         for (i32 y=minY; y<=maxY; ++y)
         {
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
             f32 hl = heightBuffer[y * width + clamp(x - 1, 0, width - 1)];
             f32 hr = heightBuffer[y * width + clamp(x + 1, 0, width - 1)];
             f32 hd = heightBuffer[clamp(y - 1, 0, height - 1) * width + x];
             f32 hu = heightBuffer[clamp(y + 1, 0, height - 1) * width + x];
             f32 currentZ = heightBuffer[y * width + x];
             f32 average = (hl + hr + hd + hu) * 0.25f;
-            heightBuffer[y * width + x] += (average - currentZ) * falloff * amount;
+            heightBuffer[y * width + x] += (average - currentZ) * t * amount;
         }
     }
     setDirty();
@@ -515,7 +515,7 @@ void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Sce
         for (i32 y=minY; y<=maxY; ++y)
         {
             glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 falloff = clamp((1.f - (glm::length(pos - p) / radius)), 0.f, 1.f);
+            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
             f32 currentZ = heightBuffer[y * width + x];
             f32 z = currentZ;
             glm::vec3 from = glm::vec3(p.x, p.y, 1000.f);
@@ -533,7 +533,7 @@ void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Sce
                     z = sweepHit.block.position.z - 0.45f;
                 }
             }
-            heightBuffer[y * width + x] += (z - currentZ) * falloff * amount;
+            heightBuffer[y * width + x] += (z - currentZ) * t * amount;
         }
     }
     setDirty();

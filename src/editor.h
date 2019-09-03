@@ -21,6 +21,8 @@ class Editor
     glm::vec2 lastMousePosition;
     glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
 
+    bool clickHandledUntilRelease = false;
+
     GridSettings gridSettings;
 
     f32 brushRadius = 8.f;

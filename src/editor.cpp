@@ -105,6 +105,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             alpha = 0.9f;
             color = glm::vec3(0.3f);
             isMouseClickHandled = true;
+            clickHandledUntilRelease = true;
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 wasClicked = true;
@@ -118,6 +119,49 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
         return wasClicked;
     };
+    auto slider = [&](glm::vec2& pos, glm::vec2 spacing, std::string&& text, f32 min, f32 max, f32& val) {
+        f32 alpha = 0.75f;
+        f32 textAlpha = 1.f;
+        glm::vec3 color(0.f);
+        bool wasClicked = false;
+        u32 buttonWidth = height * 0.15f;
+        u32 buttonHeight = height * 0.04f;
+        if (pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
+        {
+            alpha = 0.9f;
+            color = glm::vec3(0.3f);
+            if (g_input.isMouseButtonDown(MOUSE_LEFT))
+            {
+                isMouseClickHandled = true;
+                clickHandledUntilRelease = true;
+                wasClicked = true;
+                f32 t = (mousePos.x - pos.x) / buttonWidth;
+                val = min + (max - min) * t;
+            }
+        }
+        renderer->push(QuadRenderable(white,
+                pos, buttonWidth, buttonHeight, color, alpha));
+        renderer->push(QuadRenderable(white,
+                pos, buttonWidth * ((val - min) / (max - min)), buttonHeight * 0.1f,
+                val >= 0.f ? glm::vec3(0.0f, 0.f, 0.9f) : glm::vec3(0.9f, 0.f, 0.f), alpha));
+        renderer->push(TextRenderable(fontSmall, std::move(text), pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
+                    glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        pos += spacing;
+
+        return wasClicked;
+    };
+
+    if (clickHandledUntilRelease)
+    {
+        if (g_input.isMouseButtonReleased(MOUSE_LEFT))
+        {
+            clickHandledUntilRelease = false;
+        }
+        else
+        {
+            isMouseClickHandled = true;
+        }
+    }
 
     if (g_input.isKeyDown(KEY_LCTRL) && g_input.getMouseScroll() != 0)
     {
@@ -267,7 +311,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             renderer->push(QuadRenderable(g_resources.getTexture(icons[i]),
                         offset + glm::vec2(padding, padding + (buttonHeight + padding * 2) * i),
                         iconSize, iconSize));
+
+            buttonOffset.y += buttonHeight + padding * 2 ;
         }
+
+        buttonOffset.y += height * 0.01f;
+        slider(buttonOffset, buttonSpacing, str("Brush Radius: ", std::fixed, std::setprecision(1), brushRadius), 2.f, 40.f, brushRadius);
+        slider(buttonOffset, buttonSpacing, str("Brush Falloff: ", std::fixed, std::setprecision(1), brushFalloff), 0.2f, 10.f, brushFalloff);
+        slider(buttonOffset, buttonSpacing, str("Brush Strength: ", std::fixed, std::setprecision(1), brushStrength), -30.f, 30.f, brushStrength);
 
         if (!isMouseClickHandled)
         {
@@ -292,16 +343,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     scene->terrain->perturb(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
                     break;
                 case TerrainTool::FLATTEN:
-                    scene->terrain->flatten(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime, brushStartZ);
+                    scene->terrain->flatten(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime, brushStartZ);
                     break;
                 case TerrainTool::SMOOTH:
-                    scene->terrain->smooth(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+                    scene->terrain->smooth(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime);
                     break;
                 case TerrainTool::ERODE:
-                    scene->terrain->erode(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+                    scene->terrain->erode(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime);
                     break;
                 case TerrainTool::MATCH_TRACK:
-                    scene->terrain->matchTrack(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime, scene);
+                    scene->terrain->matchTrack(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime, scene);
                     break;
                 default:
                     break;
