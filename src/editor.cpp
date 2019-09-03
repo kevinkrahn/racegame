@@ -105,9 +105,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             alpha = 0.9f;
             color = glm::vec3(0.3f);
             isMouseClickHandled = true;
-            clickHandledUntilRelease = true;
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
+                clickHandledUntilRelease = true;
                 wasClicked = true;
             }
         }
@@ -130,9 +130,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         {
             alpha = 0.9f;
             color = glm::vec3(0.3f);
+            isMouseClickHandled = true;
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
             {
-                isMouseClickHandled = true;
                 clickHandledUntilRelease = true;
                 wasClicked = true;
                 f32 t = (mousePos.x - pos.x) / buttonWidth;

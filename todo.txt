@@ -7,3 +7,4 @@
 - Add support for importing a heightmap into the editor
 - Add MSAA
 - Export mesh tangents and add normal maps
+- Add grass placement system (auto-stick to terrain, overlapping objects automatically destroy it)

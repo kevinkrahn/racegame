@@ -227,6 +227,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 glm::vec3 p = cam.position + rayDir * t;
                 dragOffset = handleA - p;
                 isDragging = true;
+                // TODO: don't move the other handle if a certain key is pressed (ALT?)
                 for (i32 connectionIndex = 0; connectionIndex < connections.size(); ++connectionIndex)
                 {
                     BezierSegment const& c2 = connections[connectionIndex];
@@ -298,6 +299,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 glm::vec3 p = cam.position + rayDir * t;
                 dragOffset = handleB - p;
                 isDragging = true;
+                // TODO: don't move the other handle if a certain key is pressed (ALT?)
                 for (i32 connectionIndex = 0; connectionIndex < connections.size(); ++connectionIndex)
                 {
                     BezierSegment const& c2 = connections[connectionIndex];
