@@ -54,8 +54,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         return;
     }
 
-    renderer->setViewportCount(1);
-
     Texture* white = g_resources.getTexture("white");
 
     f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);

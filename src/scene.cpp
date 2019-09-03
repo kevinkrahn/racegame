@@ -142,7 +142,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
 
-    u32 viewportCount = (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
+    u32 viewportCount = (isEditing && !isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
