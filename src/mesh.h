@@ -20,8 +20,8 @@ struct Mesh
     std::string name;
     std::vector<f32> vertices;
     std::vector<u32> indices;
-    u32 numVertices;
-    u32 numIndices;
+    u32 numVertices; // TODO: why?
+    u32 numIndices; // TODO: why?
     u32 numColors;
     u32 numTexCoords;
     u32 elementSize;
@@ -29,6 +29,7 @@ struct Mesh
     BoundingBox aabb;
 
     SmallVec<VertexAttribute> vertexFormat;
+    u32 formatStride;
     GLuint vao = 0, vbo = 0, ebo = 0;
 
     struct OctreeNode

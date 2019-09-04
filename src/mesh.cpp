@@ -229,6 +229,7 @@ void Mesh::createVAO()
         glVertexArrayAttribBinding(vao, bindIndex, 0);
         offset += numElements * sizeof(f32);
     }
+    formatStride = offset;
 }
 
 PxTriangleMesh* Mesh::getCollisionMesh()

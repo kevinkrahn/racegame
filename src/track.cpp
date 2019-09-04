@@ -35,7 +35,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         glm::vec3 prevP;
         for (f32 t=0.f; t<=1.f; t+=0.01f)
         {
-            glm::vec3 p = getPointOnBezierCurve(
+            glm::vec3 p = pointOnBezierCurve(
                     points[c.pointIndexA].position,
                     points[c.pointIndexA].position + c.handleOffsetA,
                     points[c.pointIndexB].position + c.handleOffsetB,
@@ -67,7 +67,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
             glm::vec3 prevP;
             for (f32 t=0.f; t<=1.f; t+=0.01f)
             {
-                glm::vec3 p = getPointOnBezierCurve(
+                glm::vec3 p = pointOnBezierCurve(
                         prevPoint.position,
                         prevPoint.position + prevPoint.handleOffsetB,
                         point.position + point.handleOffsetA,
@@ -78,6 +78,11 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
                 }
                 prevP = p;
             }
+        }
+
+        if (railing.mesh.vao)
+        {
+            renderer->push(LitRenderable(&railing.mesh, glm::mat4(1.f)));
         }
     }
 
@@ -643,6 +648,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     s.dragStartPoint.z = startZ;
                 }
                 railing.points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
+                railing.isDirty = true;
             }
         }
         isDragging = true;
@@ -794,7 +800,7 @@ glm::vec3 Track::getPointDir(u32 pointIndex) const
                 break;
             }
             dir = -glm::normalize(
-                    getPointOnBezierCurve(
+                    pointOnBezierCurve(
                         points[c.pointIndexA].position,
                         points[c.pointIndexA].position + c.handleOffsetA,
                         points[c.pointIndexB].position + c.handleOffsetB,
@@ -809,7 +815,7 @@ glm::vec3 Track::getPointDir(u32 pointIndex) const
                 break;
             }
             dir = -glm::normalize(
-                    getPointOnBezierCurve(
+                    pointOnBezierCurve(
                         points[c.pointIndexA].position,
                         points[c.pointIndexA].position + c.handleOffsetA,
                         points[c.pointIndexB].position + c.handleOffsetB,
@@ -855,7 +861,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         glVertexArrayAttribBinding(c.vao, COLOR_BIND_INDEX, 0);
     }
 
-    f32 totalLength = c.getLength(points);
+    f32 totalLength = c.getLength();
 
     c.boundingBox = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
     c.vertices.clear();
@@ -866,7 +872,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
     for (u32 i=0; i<=totalSteps; ++i)
     {
         f32 t = (f32)i / (f32)totalSteps;
-        glm::vec3 p = getPointOnBezierCurve(
+        glm::vec3 p = pointOnBezierCurve(
                 points[c.pointIndexA].position,
                 points[c.pointIndexA].position + c.handleOffsetA,
                 points[c.pointIndexB].position + c.handleOffsetB,
@@ -982,14 +988,14 @@ void Track::buildTrackGraph(TrackGraph* trackGraph)
     u32 nodeIndex = points.size();
     for (BezierSegment& c : connections)
     {
-        f32 totalLength = c.getLength(points);
+        f32 totalLength = c.getLength();
         f32 stepSize = 30.f;
         u32 totalSteps = glm::max(2u, (u32)(totalLength / stepSize));
         u32 startNodeIndex = nodeIndex;
         // TODO: distribute points more evenly
         for (u32 i=1; i<totalSteps; ++i)
         {
-            glm::vec3 p = c.pointOnCurve(points, i / (f32)totalSteps);
+            glm::vec3 p = c.pointOnCurve(i / (f32)totalSteps);
             trackGraph->addNode(p);
             if (i > 1)
             {
@@ -1128,6 +1134,10 @@ void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orth
 void Track::Railing::updateMesh()
 {
     isDirty = false;
+    if (this->points.size() < 2)
+    {
+        return;
+    }
 
     if (!actor)
     {
@@ -1140,30 +1150,140 @@ void Track::Railing::updateMesh()
         track->scene->getPhysicsScene()->addActor(*actor);
     }
 
-    mesh.vertices.clear();
-    mesh.indices.clear();
-
-    std::vector<glm::vec3> polyLine;
-    u32 steps = 64;
-    polyLine.reserve(points.size() * steps);
-    for (size_t i=1; i<points.size(); ++i)
+    struct PolyLinePoint
+    {
+        glm::vec3 pos;
+        glm::vec3 dir;
+        f32 distance; // distance at next point
+    };
+    u32 steps = 32;
+    std::vector<PolyLinePoint> polyLine;
+    f32 pathLength = 0;
+    for (size_t i=0; i<points.size()-1; ++i)
     {
         RailingPoint const& point = points[i];
-        RailingPoint const& prevPoint = points[i-1];
-        for (u32 i=0; i<steps; ++i)
+        RailingPoint const& nextPoint = points[i+1];
+        for (u32 step=0; step<steps; ++step)
         {
-            glm::vec3 p = track->getPointOnBezierCurve(
-                    prevPoint.position,
-                    prevPoint.position + prevPoint.handleOffsetB,
-                    point.position + point.handleOffsetA,
-                    point.position, i / (f32)steps);
-            polyLine.push_back(p);
+            glm::vec3 pos = pointOnBezierCurve(
+                    point.position,
+                    point.position + point.handleOffsetB,
+                    nextPoint.position + nextPoint.handleOffsetA,
+                    nextPoint.position, step / (f32)steps);
+            glm::vec3 nextPos = pointOnBezierCurve(
+                    point.position,
+                    point.position + point.handleOffsetB,
+                    nextPoint.position + nextPoint.handleOffsetA,
+                    nextPoint.position, (step + 1) / (f32)steps);
+            glm::vec3 diff = nextPos - pos;
+            pathLength += glm::length(diff);
+            polyLine.push_back({
+                pos,
+                glm::normalize(diff),
+                pathLength,
+            });
         }
     }
 
     Mesh* railingMesh = g_resources.getMesh("world.Arrow");
-    for (u32 i=0; i<railingMesh->numVertices; ++i)
+    f32 railingMeshLength = railingMesh->aabb.max.x - railingMesh->aabb.min.x;
+    f32 fractionalRepeatCount = pathLength / railingMeshLength;
+    u32 totalRepeatCount = (u32)fractionalRepeatCount;
+    if (fractionalRepeatCount - (u32)fractionalRepeatCount < 0.5f)
     {
-        // warp the vertices onto the curve
+        ++totalRepeatCount;
     }
+    f32 lengthPerMesh = pathLength / totalRepeatCount;
+    f32 railingMeshScaleFactor = lengthPerMesh / railingMeshLength;
+
+    mesh.vertices.resize(railingMesh->numVertices
+            * railingMesh->formatStride / sizeof(f32) * totalRepeatCount);
+    mesh.indices.resize(railingMesh->numIndices * totalRepeatCount);
+    mesh.vertexFormat.clear();
+    for (auto item : railingMesh->vertexFormat)
+    {
+        mesh.vertexFormat.push_back(item);
+    }
+    mesh.stride = railingMesh->formatStride;
+
+    f32 distanceAlongPath = 0.f;
+    u32 lastPolyLinePointIndex = 0;
+    for (u32 repeatCount=0; repeatCount<totalRepeatCount; ++repeatCount)
+    {
+        for (u32 i=0; i<railingMesh->numVertices; ++i)
+        {
+            u32 j = i * railingMesh->stride / sizeof(f32);
+            glm::vec3 p(railingMesh->vertices[j+0], railingMesh->vertices[j+1], railingMesh->vertices[j+2]);
+            glm::vec3 n(railingMesh->vertices[j+3], railingMesh->vertices[j+4], railingMesh->vertices[j+5]);
+            p.x -= railingMesh->aabb.min.x;
+            p.x *= railingMeshScaleFactor;
+            n.x *= railingMeshScaleFactor;
+
+            u32 pointIndex = lastPolyLinePointIndex;
+            for (; pointIndex < polyLine.size(); ++pointIndex)
+            {
+                if (distanceAlongPath + p.x < polyLine[pointIndex].distance)
+                {
+                    break;
+                }
+            }
+            PolyLinePoint const& line = polyLine[lastPolyLinePointIndex];
+
+            glm::vec3 xDir = line.dir;
+            glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
+            glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
+
+            glm::mat3 m(1.f);
+            m[0] = xDir;
+            m[1] = yDir;
+            m[2] = zDir;
+
+            glm::vec3 dp = line.pos + line.dir * distanceAlongPath + m * p;
+
+            // TODO: there is a better way to bend the normal
+            glm::mat3 nm = glm::inverseTranspose(glm::mat3(m));
+            glm::vec3 dn = glm::normalize(nm * n);
+
+            // copy over the remaining vertex attributes
+            u32 nj = (repeatCount * railingMesh->formatStride / sizeof(f32) * railingMesh->numVertices)
+                + i * railingMesh->formatStride / sizeof(f32);
+            mesh.vertices[nj+0] = dp.x;
+            mesh.vertices[nj+1] = dp.y;
+            mesh.vertices[nj+2] = dp.z;
+            mesh.vertices[nj+3] = dn.x;
+            mesh.vertices[nj+4] = dn.y;
+            mesh.vertices[nj+5] = dn.z;
+            for (u32 attrIndex = 6; attrIndex < railingMesh->formatStride / sizeof(f32); ++attrIndex)
+            {
+                mesh.vertices[nj+attrIndex] = railingMesh->vertices[j+attrIndex];
+            }
+        }
+
+        distanceAlongPath += lengthPerMesh;
+        for (; lastPolyLinePointIndex < polyLine.size(); ++lastPolyLinePointIndex)
+        {
+            if (distanceAlongPath < polyLine[lastPolyLinePointIndex].distance)
+            {
+                break;
+            }
+        }
+
+        // copy over the indices
+        for (u32 i=0; i<railingMesh->numIndices; ++i)
+        {
+            mesh.indices[repeatCount * railingMesh->numIndices + i] =
+                railingMesh->indices[i] + (railingMesh->numIndices * repeatCount);
+        }
+    }
+    mesh.numVertices = (u32)mesh.vertices.size() / (mesh.stride / sizeof(f32));
+    mesh.numIndices = (u32)mesh.indices.size();
+    mesh.createVAO();
+
+    print("pathLength: ", pathLength, '\n');
+    print("railingMesh verts: ", railingMesh->numVertices, '\n');
+    print("new mesh verts: ", mesh.numVertices, '\n');
+    print("totalRepeatCount: ", totalRepeatCount, '\n');
+    print("railingMeshLength: ", railingMeshLength, '\n');
+    print("lengthPerMesh: ", lengthPerMesh, '\n');
+    print("scaleFactor: ", railingMeshScaleFactor, '\n');
 }

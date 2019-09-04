@@ -89,34 +89,29 @@ private:
             }
         }
 
-        glm::vec3 pointOnCurve(std::vector<Point> const& points, f32 t) const
+        glm::vec3 pointOnCurve(f32 t) const
         {
-            f32 u = 1.f - t;
-            f32 t2 = t * t;
-            f32 u2 = u * u;
-            f32 u3 = u2 * u;
-            f32 t3 = t2 * t;
-            glm::vec3 p0 = points[pointIndexA].position;
-            glm::vec3 p1 = points[pointIndexA].position + handleOffsetA;
-            glm::vec3 p2 = points[pointIndexB].position + handleOffsetB;
-            glm::vec3 p3 = points[pointIndexB].position;
-            return glm::vec3(u3 * p0 + (3.f * u2 * t) * p1 + (3.f * u * t2) * p2 + t3 * p3);
+            glm::vec3 p0 = track->points[pointIndexA].position;
+            glm::vec3 p1 = track->points[pointIndexA].position + handleOffsetA;
+            glm::vec3 p2 = track->points[pointIndexB].position + handleOffsetB;
+            glm::vec3 p3 = track->points[pointIndexB].position;
+            return pointOnBezierCurve(p0, p1, p2, p3, t);
         }
 
-        glm::vec3 directionOnCurve(std::vector<Point> const& points, f32 t) const
+        glm::vec3 directionOnCurve(f32 t) const
         {
-            glm::vec3 p0 = pointOnCurve(points, t);
-            glm::vec3 p1 = pointOnCurve(points, t - 0.01f);
+            glm::vec3 p0 = pointOnCurve(t);
+            glm::vec3 p1 = pointOnCurve(t - 0.01f);
             return glm::normalize(p0 - p1);
         }
 
-        f32 getLength(std::vector<Point> const& points) const
+        f32 getLength() const
         {
             f32 totalLength = 0.f;
-            glm::vec3 prevP = points[pointIndexA].position;
+            glm::vec3 prevP = track->points[pointIndexA].position;
             for (u32 i=1; i<=10; ++i)
             {
-                glm::vec3 p = pointOnCurve(points, i / 10.f);
+                glm::vec3 p = pointOnCurve(i / 10.f);
                 totalLength += glm::length(prevP - p);
                 prevP = p;
             }
@@ -184,16 +179,6 @@ private:
     PxRigidStatic* actor = nullptr;
     std::unique_ptr<struct ActorUserData> physicsUserData;
 
-    glm::vec3 getPointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, f32 t) const
-    {
-        f32 u = 1.f - t;
-        f32 t2 = t * t;
-        f32 u2 = u * u;
-        f32 u3 = u2 * u;
-        f32 t3 = t2 * t;
-        return glm::vec3(u3 * p0 + (3.f * u2 * t) * p1 + (3.f * u * t2) * p2 + t3 * p3);
-    }
-
     BezierSegment* getPointConnection(u32 pointIndex);
     void createSegmentMesh(BezierSegment& segment, Scene* scene);
     void computeBoundingBox();
@@ -217,16 +202,16 @@ public:
     glm::mat4 getStart()
     {
         BezierSegment* c = getPointConnection(0);
-        f32 length = c->getLength(points);
+        f32 length = c->getLength();
         f32 t = 20.f / length;
-        glm::vec3 xDir = glm::normalize(c->directionOnCurve(points, t));
+        glm::vec3 xDir = glm::normalize(c->directionOnCurve(t));
         glm::vec3 yDir = glm::cross(glm::vec3(0, 0, 1), xDir);
         glm::vec3 zDir = glm::cross(xDir, yDir);
         glm::mat4 m(1.f);
         m[0] = glm::vec4(xDir, m[0].w);
         m[1] = glm::vec4(yDir, m[1].w);
         m[2] = glm::vec4(zDir, m[2].w);
-        return glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 3) + c->pointOnCurve(points, t)) * m;
+        return glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 3) + c->pointOnCurve(t)) * m;
     }
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
     void placeRailing(glm::vec3 const& p);
