@@ -294,6 +294,9 @@ void Mesh::destroy()
         glDeleteBuffers(0, &vbo);
         glDeleteBuffers(0, &ebo);
         glDeleteVertexArrays(0, &vao);
+        vao = 0;
+        vbo = 0;
+        ebo = 0;
     }
     octree.reset();
     if (collisionMesh)

@@ -140,10 +140,11 @@ private:
         std::vector<RailingPoint> points;
         Mesh mesh;
         std::vector<Selection> selectedPoints;
-        bool isDirty = false;
+        bool isDirty = true;
         PxRigidStatic* actor = nullptr;
         Track* track = nullptr;
         std::unique_ptr<struct ActorUserData> physicsUserData;
+        PxShape* collisionShape = nullptr;
 
         Railing(Track* track) : track(track) {};
         Railing(Railing const& other) = delete;

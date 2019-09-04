@@ -60,6 +60,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
             railing.updateMesh();
         }
 
+        /*
         for (size_t i=1; i<railing.points.size(); ++i)
         {
             RailingPoint const& point = railing.points[i];
@@ -79,6 +80,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
                 prevP = p;
             }
         }
+        */
 
         if (railing.mesh.vao)
         {
@@ -396,6 +398,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 if (d != 0)
                 {
                     it->position.z += 2.f * d;
+                    rit->isDirty = true;
                 }
 
                 if (g_input.isKeyPressed(KEY_DELETE))
@@ -406,6 +409,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                                     return s.pointIndex == (i32)(it - rit->points.begin());
                                 }));
                     rit->points.erase(it);
+                    rit->isDirty = true;
                     continue;
                 }
             }
@@ -772,6 +776,7 @@ void Track::placeRailing(glm::vec3 const& p)
     Railing railing(this);
     railing.points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
     railings.push_back(std::move(railing));
+    railing.selectedPoints.push_back({ 0, {} });
 }
 
 Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
@@ -1136,6 +1141,10 @@ void Track::Railing::updateMesh()
     isDirty = false;
     if (this->points.size() < 2)
     {
+        if (this->mesh.vao)
+        {
+            this->mesh.destroy();
+        }
         return;
     }
 
@@ -1153,6 +1162,7 @@ void Track::Railing::updateMesh()
     struct PolyLinePoint
     {
         glm::vec3 pos;
+        f32 distanceToHere;
         glm::vec3 dir;
         f32 distance; // distance at next point
     };
@@ -1176,16 +1186,18 @@ void Track::Railing::updateMesh()
                     nextPoint.position + nextPoint.handleOffsetA,
                     nextPoint.position, (step + 1) / (f32)steps);
             glm::vec3 diff = nextPos - pos;
+            f32 thisPathLength = pathLength;
             pathLength += glm::length(diff);
             polyLine.push_back({
                 pos,
+                thisPathLength,
                 glm::normalize(diff),
                 pathLength,
             });
         }
     }
 
-    Mesh* railingMesh = g_resources.getMesh("world.Arrow");
+    Mesh* railingMesh = g_resources.getMesh("world.Rail");
     f32 railingMeshLength = railingMesh->aabb.max.x - railingMesh->aabb.min.x;
     f32 fractionalRepeatCount = pathLength / railingMeshLength;
     u32 totalRepeatCount = (u32)fractionalRepeatCount;
@@ -1205,6 +1217,8 @@ void Track::Railing::updateMesh()
         mesh.vertexFormat.push_back(item);
     }
     mesh.stride = railingMesh->formatStride;
+    mesh.elementSize = railingMesh->elementSize;
+    assert(mesh.elementSize == 3);
 
     f32 distanceAlongPath = 0.f;
     u32 lastPolyLinePointIndex = 0;
@@ -1220,25 +1234,25 @@ void Track::Railing::updateMesh()
             n.x *= railingMeshScaleFactor;
 
             u32 pointIndex = lastPolyLinePointIndex;
-            for (; pointIndex < polyLine.size(); ++pointIndex)
+
+            while (distanceAlongPath + p.x >= polyLine[pointIndex].distance
+                    && pointIndex < polyLine.size() - 1)
             {
-                if (distanceAlongPath + p.x < polyLine[pointIndex].distance)
-                {
-                    break;
-                }
+                ++pointIndex;
             }
-            PolyLinePoint const& line = polyLine[lastPolyLinePointIndex];
+            PolyLinePoint const& line = polyLine[pointIndex];
 
             glm::vec3 xDir = line.dir;
-            glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
-            glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
+            glm::vec3 yDir = glm::normalize(glm::cross(glm::vec3(0, 0, 1), xDir));
+            glm::vec3 zDir = glm::normalize(glm::cross(xDir, yDir));
 
             glm::mat3 m(1.f);
             m[0] = xDir;
             m[1] = yDir;
             m[2] = zDir;
 
-            glm::vec3 dp = line.pos + line.dir * distanceAlongPath + m * p;
+            glm::vec3 dp = line.pos + line.dir *
+                (distanceAlongPath - line.distanceToHere) + m * p;
 
             // TODO: there is a better way to bend the normal
             glm::mat3 nm = glm::inverseTranspose(glm::mat3(m));
@@ -1260,30 +1274,35 @@ void Track::Railing::updateMesh()
         }
 
         distanceAlongPath += lengthPerMesh;
-        for (; lastPolyLinePointIndex < polyLine.size(); ++lastPolyLinePointIndex)
+
+        while (distanceAlongPath >= polyLine[lastPolyLinePointIndex].distance
+                && lastPolyLinePointIndex < polyLine.size() - 1)
         {
-            if (distanceAlongPath < polyLine[lastPolyLinePointIndex].distance)
-            {
-                break;
-            }
+            ++lastPolyLinePointIndex;
         }
 
         // copy over the indices
         for (u32 i=0; i<railingMesh->numIndices; ++i)
         {
             mesh.indices[repeatCount * railingMesh->numIndices + i] =
-                railingMesh->indices[i] + (railingMesh->numIndices * repeatCount);
+                railingMesh->indices[i] + (railingMesh->numVertices * repeatCount);
         }
     }
     mesh.numVertices = (u32)mesh.vertices.size() / (mesh.stride / sizeof(f32));
     mesh.numIndices = (u32)mesh.indices.size();
     mesh.createVAO();
 
-    print("pathLength: ", pathLength, '\n');
-    print("railingMesh verts: ", railingMesh->numVertices, '\n');
-    print("new mesh verts: ", mesh.numVertices, '\n');
-    print("totalRepeatCount: ", totalRepeatCount, '\n');
-    print("railingMeshLength: ", railingMeshLength, '\n');
-    print("lengthPerMesh: ", lengthPerMesh, '\n');
-    print("scaleFactor: ", railingMeshScaleFactor, '\n');
+    if (!collisionShape)
+    {
+        collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
+                PxTriangleMeshGeometry(mesh.getCollisionMesh()), *track->scene->trackMaterial);
+        collisionShape->setQueryFilterData(PxFilterData(
+                    COLLISION_FLAG_TRACK, 0, 0, DRIVABLE_SURFACE));
+        collisionShape->setSimulationFilterData(PxFilterData(
+                    COLLISION_FLAG_TRACK, -1, 0, 0));
+    }
+    else
+    {
+        collisionShape->setGeometry(PxTriangleMeshGeometry(mesh.getCollisionMesh()));
+    }
 }
