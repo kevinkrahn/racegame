@@ -302,9 +302,11 @@ void Mesh::destroy()
     if (collisionMesh)
     {
         collisionMesh->release();
+        collisionMesh = nullptr;
     }
     if (convexCollisionMesh)
     {
         convexCollisionMesh->release();
+        convexCollisionMesh = nullptr;
     }
 }

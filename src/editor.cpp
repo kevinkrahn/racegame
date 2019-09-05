@@ -15,7 +15,7 @@ void Editor::onStart(Scene* scene)
 
 void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
-    scene->terrain->setBrushSettings(0.f, 0.f, 0.f, {});
+    scene->terrain->setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
 
     if (g_input.isKeyPressed(KEY_F9))
     {

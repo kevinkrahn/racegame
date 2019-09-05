@@ -398,7 +398,7 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
             f32 dl = sqrtf(dx * dx + dz * dz);
             if (dl <= FLT_EPSILON)
             {
-                f32 a = random(randomSeries, 0.f, M_PI_2);
+                f32 a = random(randomSeries, 0.f, M_PI * 2.f);
                 dx = cosf(a);
                 dz = sinf(a);
             }

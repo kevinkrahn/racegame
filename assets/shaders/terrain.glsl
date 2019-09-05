@@ -58,7 +58,7 @@ void main()
             20.0, 0.01, vec3(1.0), -0.15, 0.15, 2.2);
 
     float d = length(inWorldPosition - brushPosition);
-    float t = clamp(pow((1.f - (d / brushSettings.x)), brushSettings.y), 0.f, 1.f) * clamp(abs(brushSettings.z / 16.f), 0.2f, 1.f);
+    float t = pow(clamp((1.f - (d / brushSettings.x)), 0.f, 1.f), brushSettings.y) * clamp(abs(brushSettings.z / 16.f), 0.2f, 1.f);
 
     if (brushSettings.z >= 0.0) outColor += vec4(vec3(0.05, 0.2, 1.0) * t, 1.0);
     else outColor += vec4(vec3(0.8, 0.02, 0.02) * t, 1.0);
