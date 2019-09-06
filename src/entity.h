@@ -3,7 +3,8 @@
 #include "math.h"
 #include "datafile.h"
 
-class Entity {
+class Entity
+{
     bool isMarkedForDeletion = false;
 
 public:

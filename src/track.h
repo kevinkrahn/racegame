@@ -120,7 +120,7 @@ private:
     };
 
     std::vector<Point> points;
-    std::vector<BezierSegment> connections;
+    std::vector<std::unique_ptr<BezierSegment>> connections;
 
     struct Selection
     {
@@ -163,7 +163,7 @@ private:
         void updateMesh();
     };
 
-    std::vector<Railing> railings;
+    std::vector<std::unique_ptr<Railing>> railings;
 
     glm::vec2 selectMousePos;
     glm::vec3 dragStartPoint;
@@ -189,11 +189,11 @@ public:
     {
         points.push_back(Point{ glm::vec3(50, 0, 0.05f) });
         points.push_back(Point{ glm::vec3(-50, 0, 0.05f) });
-        BezierSegment segment(this);
-        segment.handleOffsetA = glm::vec3(-10, 0, 0);
-        segment.pointIndexA = 0;
-        segment.handleOffsetB = glm::vec3(10, 0, 0);
-        segment.pointIndexB = 1;
+        auto segment = std::make_unique<BezierSegment>(this);
+        segment->handleOffsetA = glm::vec3(-10, 0, 0);
+        segment->pointIndexA = 0;
+        segment->handleOffsetB = glm::vec3(10, 0, 0);
+        segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
     }
     ~Track()

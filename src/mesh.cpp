@@ -298,7 +298,6 @@ void Mesh::destroy()
         vbo = 0;
         ebo = 0;
     }
-    octree.reset();
     if (collisionMesh)
     {
         collisionMesh->release();
@@ -309,4 +308,5 @@ void Mesh::destroy()
         convexCollisionMesh->release();
         convexCollisionMesh = nullptr;
     }
+    octree.reset();
 }
