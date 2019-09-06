@@ -4,7 +4,7 @@
 #include "resources.h"
 #include "renderer.h"
 
-class LitRenderable : public Renderable
+struct LitSettings
 {
     glm::vec3 color = { 1, 1, 1 };
     f32 specularPower = 50.f;
@@ -19,25 +19,33 @@ class LitRenderable : public Renderable
     glm::mat4 worldTransform;
     bool culling = true;
     bool castShadow = true;
+};
+
+class LitRenderable : public Renderable
+{
+    LitSettings settings;
 
 public:
     LitRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Texture* texture = nullptr, glm::vec3 color = {1, 1, 1})
-        : mesh(mesh), worldTransform(worldTransform)
     {
+        settings.mesh = mesh;
+        settings.color = color;
         if (!texture)
         {
             texture = g_resources.getTexture("white");
         }
-        this->texture = texture;
+        settings.texture = texture;
+        settings.worldTransform = worldTransform;
     }
-
-    LitRenderable* shadow(bool shadow)
+    LitRenderable(LitSettings const& settings) : settings(settings)
     {
-        castShadow = shadow;
-        return this;
+        if (!this->settings.texture)
+        {
+            this->settings.texture = g_resources.getTexture("white");
+        }
     }
 
-    i32 getPriority() const override { return 0 + culling; }
+    i32 getPriority() const override { return 0 + settings.culling; }
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override
     {
@@ -47,9 +55,9 @@ public:
 
     void onDepthPrepass(Renderer* renderer) override
     {
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldTransform));
-        glBindVertexArray(mesh->vao);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
+        glBindVertexArray(settings.mesh->vao);
+        glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
 
     void onShadowPassPriorityTransition(Renderer* renderer) override
@@ -60,9 +68,9 @@ public:
 
     void onShadowPass(Renderer* renderer) override
     {
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldTransform));
-        glBindVertexArray(mesh->vao);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
+        glBindVertexArray(settings.mesh->vao);
+        glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
 
     void onLitPassPriorityTransition(Renderer* renderer) override
@@ -72,7 +80,7 @@ public:
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_EQUAL);
         glCullFace(GL_BACK);
-        if (culling)
+        if (settings.culling)
         {
             glEnable(GL_CULL_FACE);
         }
@@ -85,15 +93,16 @@ public:
 
     void onLitPass(Renderer* renderer) override
     {
-        glBindTextureUnit(0, texture->handle);
+        glBindTextureUnit(0, settings.texture->handle);
 
-        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(worldTransform));
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldTransform));
+        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(settings.worldTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-        glUniform3f(2, color.x, color.y, color.z);
+        glUniform3fv(2, 1, (GLfloat*)&settings.color);
+        glUniform3f(3, settings.fresnelBias, settings.fresnelScale, settings.fresnelPower);
 
-        glBindVertexArray(mesh->vao);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(settings.mesh->vao);
+        glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
 
     std::string getDebugString() const override { return "LitRenderable"; };

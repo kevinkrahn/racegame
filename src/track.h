@@ -143,7 +143,7 @@ private:
         bool isDirty = true;
         PxRigidStatic* actor = nullptr;
         Track* track = nullptr;
-        std::unique_ptr<struct ActorUserData> physicsUserData;
+        ActorUserData physicsUserData;
         PxShape* collisionShape = nullptr;
 
         Railing(Track* track) : track(track) {};
@@ -178,7 +178,7 @@ private:
     Scene* scene;
 
     PxRigidStatic* actor = nullptr;
-    std::unique_ptr<struct ActorUserData> physicsUserData;
+    ActorUserData physicsUserData;
 
     BezierSegment* getPointConnection(u32 pointIndex);
     void createSegmentMesh(BezierSegment& segment, Scene* scene);

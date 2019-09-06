@@ -2,6 +2,7 @@
 
 #include "misc.h"
 #include "math.h"
+#include "entity.h"
 
 struct GridSettings
 {
@@ -58,6 +59,8 @@ class Editor
         NEW_OFFROAD,
         MAX
     } placeMode = PlaceMode::NONE;
+
+    std::vector<PlaceableEntity*> selectedEntities;
 
 public:
     void onStart(class Scene* scene);

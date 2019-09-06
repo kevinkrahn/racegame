@@ -36,13 +36,15 @@ layout(location = 3) in vec3 inWorldPosition;
 layout(location = 4) in vec3 inShadowCoord;
 
 layout(location = 2) uniform vec3 color;
+layout(location = 3) uniform vec3 fresnel; // x: bias, y: scale, z: power
 
 layout(binding = 0) uniform sampler2D texSampler;
 
 void main()
 {
     outColor = lighting(texture(texSampler, inTexCoord) * vec4(inColor * color, 1.0),
-            normalize(inNormal), inShadowCoord, inWorldPosition, 50.0, 0.2, vec3(1.0), -0.1, 0.8, 3.0);
+            normalize(inNormal), inShadowCoord, inWorldPosition, 50.0, 0.2, vec3(1.0),
+            fresnel.x, fresnel.y, fresnel.z);
 }
 
 #elif defined GEOM

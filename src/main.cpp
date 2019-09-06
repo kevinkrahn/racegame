@@ -22,6 +22,7 @@
 #include "track.cpp"
 #include "dynamic_buffer.cpp"
 #include "entities/projectile.cpp"
+#include "entities/rock.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

@@ -7,6 +7,7 @@
 #include "terrain.h"
 #include "mesh_renderables.h"
 #include "track.h"
+#include "entities/rock.h"
 
 void Editor::onStart(Scene* scene)
 {
@@ -446,6 +447,25 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         if (placeMode == PlaceMode::NONE)
         {
             scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled, &gridSettings);
+        }
+    }
+    else if (editMode == EditMode::DECORATION)
+    {
+        if (!isMouseClickHandled)
+        {
+            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                isMouseClickHandled = true;
+                PxRaycastBuffer hit;
+                if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                {
+                    glm::vec3 hitPoint = convert(hit.block.position);
+                    PlaceableEntity* newEntity = new Rock();
+                    newEntity->position = hitPoint;
+                    newEntity->updateTransform();
+                    scene->addEntity(newEntity);
+                }
+            }
         }
     }
 

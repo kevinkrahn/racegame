@@ -8,9 +8,14 @@ void Projectile::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     glm::vec3 prevPosition = position;
     position += velocity * deltaTime;
+    glm::mat4 m(1.f);
+    m[0] = glm::vec4(glm::normalize(velocity), m[0].w);
+    m[1] = glm::vec4(glm::normalize(
+                glm::cross(upVector, glm::vec3(m[0]))), m[1].w);
+    m[2] = glm::vec4(glm::normalize(
+                glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
     renderer->push(LitRenderable(bulletMesh,
-            glm::translate(glm::mat4(1.f), position) *
-            glm::transpose(glm::lookAt(glm::vec3(0.f), velocity, upVector)), nullptr));
+            glm::translate(glm::mat4(1.f), position) * m, nullptr));
 
     f32 speed = glm::length(velocity);
     PxRaycastBuffer rayHit;

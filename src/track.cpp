@@ -18,11 +18,9 @@ glm::vec4 brightBlue = { 0.25f, 0.25f, 1.0f, 1.f };
 void Track::onCreate(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-    ActorUserData* userData = new ActorUserData;
-    userData->entityType = ActorUserData::TRACK;
-    userData->entity = this;
-    physicsUserData.reset(userData);
-    actor->userData = userData;
+    physicsUserData.entityType = ActorUserData::TRACK;
+    physicsUserData.entity = this;
+    actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
     this->scene = scene;
 }
@@ -1186,11 +1184,9 @@ void Track::Railing::updateMesh()
     if (!actor)
     {
         actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-        ActorUserData* userData = new ActorUserData;
-        userData->entityType = ActorUserData::TRACK;
-        userData->entity = nullptr;
-        physicsUserData.reset(userData);
-        actor->userData = userData;
+        physicsUserData.entityType = ActorUserData::TRACK;
+        physicsUserData.entity = nullptr;
+        actor->userData = &physicsUserData;
         track->scene->getPhysicsScene()->addActor(*actor);
     }
 

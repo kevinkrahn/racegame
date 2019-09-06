@@ -29,23 +29,6 @@ enum
     UNDRIVABLE_SURFACE = 0x0000ffff
 };
 
-struct ActorUserData
-{
-    enum
-    {
-        TRACK,
-        SCENERY,
-        VEHICLE,
-        ENTITY,
-    };
-    u32 entityType;
-    union
-    {
-        class Vehicle* vehicle;
-        Entity* entity;
-    };
-};
-
 class Scene : public PxSimulationEventCallback
 {
 private:
