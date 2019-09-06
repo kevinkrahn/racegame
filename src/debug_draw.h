@@ -88,6 +88,7 @@ public:
             glVertexArrayVertexBuffer(vao, 0, buffer.getBuffer(), 0, sizeof(Vertex));
 
             glUseProgram(renderer->getShaderProgram("debug"));
+            glUniform1i(3, 0);
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
 
             glBindVertexArray(vao);

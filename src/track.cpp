@@ -89,7 +89,8 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     }
 
     renderer->add(this);
-    renderer->push(LitRenderable(g_resources.getMesh("world.Cube.002"), getStart(), nullptr));
+    Mesh* startMesh = g_resources.getMesh("world.Cube.002");
+    renderer->push(LitRenderable(startMesh, getStart(), nullptr));
 }
 
 void Track::clearSelection()

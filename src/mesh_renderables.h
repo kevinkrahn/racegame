@@ -137,3 +137,39 @@ public:
 
     std::string getDebugString() const override { return "OverlayRenderable"; };
 };
+
+class WireframeRenderable : public Renderable
+{
+    glm::vec4 color = { 1, 1, 1, 1 };
+    Mesh* mesh = nullptr;
+    glm::mat4 worldTransform;
+
+public:
+    WireframeRenderable(Mesh* mesh, glm::mat4 const& worldTransform, glm::vec4 color = {0, 1, 0, 1})
+        : mesh(mesh), worldTransform(worldTransform), color(color) { }
+
+    i32 getPriority() const override { return 1000000; }
+
+    void onLitPass(Renderer* renderer) override
+    {
+        glDepthFunc(GL_LEQUAL);
+        glEnable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_CULL_FACE);
+
+        Camera const& camera = renderer->getCamera(0);
+        glUseProgram(renderer->getShaderProgram("debug"));
+        glUniform4f(2, color.x, color.y, color.z, color.w);
+        glUniform1i(3, 1);
+        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection * worldTransform));
+
+        glBindVertexArray(mesh->vao);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    std::string getDebugString() const override { return "WireframeRenderable"; };
+};
