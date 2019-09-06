@@ -171,6 +171,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
                 continue;
             }
+            gridSettings->z = point.z + 0.15f;
         }
 
         if (glm::length(pointScreen - mousePos) < radius && !isDragging)
@@ -275,7 +276,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             colorA = brightOrange;
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleA);
             glm::vec3 p = cam.position + rayDir * t + dragOffset;
-            c->handleOffsetA = p - points[c->pointIndexA].position;
+            if (gridSettings->snap)
+            {
+                c->handleOffsetA = snapXY(p, gridSettings->cellSize) - points[c->pointIndexA].position;
+            }
+            else
+            {
+                c->handleOffsetA = p - points[c->pointIndexA].position;
+            }
             handleA = points[c->pointIndexA].position + c->handleOffsetA;
             if (dragOppositeConnectionIndex != -1)
             {
@@ -348,7 +356,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             colorB = brightOrange;
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleB);
             glm::vec3 p = cam.position + rayDir * t + dragOffset;
-            c->handleOffsetB = p - points[c->pointIndexB].position;
+            if (gridSettings->snap)
+            {
+                c->handleOffsetB = snapXY(p, gridSettings->cellSize) - points[c->pointIndexB].position;
+            }
+            else
+            {
+                c->handleOffsetB = p - points[c->pointIndexB].position;
+            }
             handleB = points[c->pointIndexB].position + c->handleOffsetB;
             if (dragOppositeConnectionIndex != -1)
             {
@@ -412,6 +427,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     rit->get()->isDirty = true;
                     continue;
                 }
+
+                gridSettings->z = it->position.z + 0.15f;
             }
 
             glm::vec3 point = it->position;
@@ -483,7 +500,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 colorA = brightOrange;
                 f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleA);
                 glm::vec3 p = cam.position + rayDir * t + dragOffset;
-                it->handleOffsetA = p - it->position;
+                if (gridSettings->snap)
+                {
+                    it->handleOffsetA = snapXY(p, gridSettings->cellSize) - it->position;
+                }
+                else
+                {
+                    it->handleOffsetA = p - it->position;
+                }
                 handleA = it->position + it->handleOffsetA;
                 it->handleOffsetB = -it->handleOffsetA;
                 renderer->push(OverlayRenderable(sphere, 0,
@@ -518,7 +542,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 colorB = brightOrange;
                 f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleB);
                 glm::vec3 p = cam.position + rayDir * t + dragOffset;
-                it->handleOffsetB = p - it->position;
+                if (gridSettings->snap)
+                {
+                    it->handleOffsetB = snapXY(p, gridSettings->cellSize) - it->position;
+                }
+                else
+                {
+                    it->handleOffsetB = p - it->position;
+                }
                 handleB = it->position + it->handleOffsetB;
                 it->handleOffsetA = -it->handleOffsetB;
                 renderer->push(OverlayRenderable(sphere, 0,
@@ -598,7 +629,6 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         && g_input.isMouseButtonDown(MOUSE_LEFT)
         && glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
     {
-        glm::vec3 dragTranslation;
         f32 t;
         f32 startZ;
         if (selectedPoints.size() > 0)
@@ -623,17 +653,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         {
             dragStartPoint = hitPoint;
         }
-        if (gridSettings->snap)
-        {
-            dragTranslation = glm::vec3(snap(glm::vec2(hitPoint) +
-                        glm::vec2(0.f), gridSettings->cellSize)
-                    - snap(glm::vec2(dragStartPoint), gridSettings->cellSize), 0.f);
-        }
-        else
-        {
-            dragTranslation = hitPoint - dragStartPoint;
-        }
 
+        glm::vec3 dragTranslation = hitPoint - dragStartPoint;
         for (auto& s : selectedPoints)
         {
             if (!isDragging)
@@ -642,6 +663,11 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 s.dragStartPoint.z = startZ;
             }
             points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
+            if (gridSettings->snap)
+            {
+                glm::vec2 p = snapXY(points[s.pointIndex].position, gridSettings->cellSize);
+                points[s.pointIndex].position = glm::vec3(p, points[s.pointIndex].position.z);
+            }
         }
 
         for (auto& railing : railings)
@@ -655,6 +681,12 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
                 railing->points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
                 railing->isDirty = true;
+                if (gridSettings->snap)
+                {
+                    glm::vec2 p = snapXY(railing->points[s.pointIndex].position, gridSettings->cellSize);
+                    railing->points[s.pointIndex].position =
+                        glm::vec3(p, railing->points[s.pointIndex].position.z);
+                }
             }
         }
         isDragging = true;
@@ -1299,9 +1331,9 @@ void Track::Railing::updateMesh()
         collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(mesh.getCollisionMesh()), *track->scene->trackMaterial);
         collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_TRACK, 0, 0, DRIVABLE_SURFACE));
+                    COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
         collisionShape->setSimulationFilterData(PxFilterData(
-                    COLLISION_FLAG_TRACK, -1, 0, 0));
+                    COLLISION_FLAG_GROUND, -1, 0, 0));
     }
     else
     {

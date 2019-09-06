@@ -408,10 +408,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         {
             if (scene->track->canExtendTrack())
             {
-                i32 pointIndex = scene->track->getSelectedPointIndex();
-                Track::Point const& point = scene->track->getPoint(pointIndex);
-                gridSettings.z = point.position.z + 0.15f;
-
                 u32 itemSize = height * 0.08f;
                 u32 iconSize = height * 0.08f;
                 u32 gap = height * 0.015f;

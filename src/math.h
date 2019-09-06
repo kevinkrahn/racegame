@@ -184,6 +184,11 @@ inline glm::vec2 snap(glm::vec2 val, f32 multiple)
     return glm::floor(val / multiple) * multiple;
 }
 
+inline glm::vec3 snapXY(glm::vec3 const& val, f32 multiple)
+{
+    return glm::vec3(snap(glm::vec2(val) + glm::vec2(multiple * 0.5f), multiple), val.z);
+}
+
 inline glm::vec2 lengthdir(f32 angle, f32 len)
 {
     return glm::vec2(cosf(angle), sinf(angle)) * len;
