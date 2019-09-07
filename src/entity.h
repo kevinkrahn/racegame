@@ -7,6 +7,7 @@ enum struct SerializedEntityID
 {
     TERRAIN,
     TRACK,
+    ROCK,
 };
 
 struct ActorUserData

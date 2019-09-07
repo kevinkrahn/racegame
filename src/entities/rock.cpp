@@ -39,10 +39,19 @@ void Rock::renderSelected(Renderer* renderer, Scene* scene)
 
 DataFile::Value Rock::serialize()
 {
-    return {};
+    DataFile::Value dict = DataFile::makeDict();
+    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::ROCK);
+    dict["position"] = DataFile::makeVec3(position);
+    dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
+    dict["scale"] = DataFile::makeVec3(scale);
+    return dict;
 }
 
 void Rock::deserialize(DataFile::Value& data)
 {
-
+    position = data["position"].vec3();
+    glm::vec4 r = data["rotation"].vec4();
+    rotation = glm::quat(r.w, r.x, r.y, r.z);
+    scale = data["scale"].vec3();
+    updateTransform();
 }

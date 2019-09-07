@@ -6,6 +6,7 @@
 #include "input.h"
 #include "terrain.h"
 #include "track.h"
+#include "entities/rock.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -560,6 +561,11 @@ void Scene::deserialize(DataFile::Value& data)
                 this->track = new Track();
                 this->track->deserialize(val);
                 this->addEntity(this->track);
+                break;
+            case SerializedEntityID::ROCK:
+                Rock* rock = new Rock();
+                rock->deserialize(val);
+                this->addEntity(rock);
                 break;
         }
     }
