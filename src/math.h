@@ -69,11 +69,16 @@ inline glm::mat4 convert(PxMat44 const& m)
     return glm::make_mat4(m.front());
 }
 
-inline PxTransform convert(glm::mat4 m)
+inline PxTransform convert(glm::mat4 const& m)
 {
     glm::vec3 pos(m[3]);
     glm::quat rot = glm::quat_cast(glm::mat3(rotationOf(m)));
     return PxTransform(convert(pos), PxQuat(rot.x, rot.y, rot.z, rot.w));
+}
+
+inline PxQuat convert(glm::quat const& q)
+{
+    return PxQuat(q.x, q.y, q.z, q.w);
 }
 
 inline f32 square(f32 v)

@@ -139,6 +139,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 f32 t = (mousePos.x - pos.x) / buttonWidth;
                 val = min + (max - min) * t;
             }
+            // TODO: add support for mouse scrolling to change value
         }
         renderer->push(QuadRenderable(white,
                 pos, buttonWidth, buttonHeight, color, alpha));
@@ -566,44 +567,35 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             {
                 if (entityDragAxis & DragAxis::X)
                 {
-                    scene->debugDraw.line(
-                            p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
-                            glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
-                    xCol = xColHighlight;
                     for (PlaceableEntity* e : selectedEntities)
                     {
                         f32 diff = p.x - e->position.x;
                         e->position.x = hitPos.x + entityDragOffset.x - diff;
                     }
                     p.x = hitPos.x + entityDragOffset.x;
+                    xCol = xColHighlight;
                 }
 
                 if (entityDragAxis & DragAxis::Y)
                 {
-                    scene->debugDraw.line(
-                            p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
-                            glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
-                    yCol = yColHighlight;
                     for (PlaceableEntity* e : selectedEntities)
                     {
                         f32 diff = p.y - e->position.y;
                         e->position.y = hitPos.y + entityDragOffset.y - diff;
                     }
                     p.y = hitPos.y + entityDragOffset.y;
+                    yCol = yColHighlight;
                 }
 
                 if (entityDragAxis & DragAxis::Z)
                 {
-                    scene->debugDraw.line(
-                            p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
-                            glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
-                    zCol = zColHighlight;
                     for (PlaceableEntity* e : selectedEntities)
                     {
                         f32 diff = p.z - e->position.z;
                         e->position.z = hitPosZ.z + entityDragOffset.z - diff;
                     }
                     p.z = hitPosZ.z + entityDragOffset.z;
+                    zCol = zColHighlight;
                 }
 
                 for (PlaceableEntity* e : selectedEntities)
@@ -614,14 +606,35 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
             renderer->push(OverlayRenderable(sphereMesh, 0,
                     glm::translate(glm::mat4(1.f), p), centerCol, -1));
+
             renderer->push(OverlayRenderable(arrowMesh, 0,
                     glm::translate(glm::mat4(1.f), p), xCol));
+            if (entityDragAxis & DragAxis::X)
+            {
+                scene->debugDraw.line(
+                        p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
+                        glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+            }
+
             renderer->push(OverlayRenderable(arrowMesh, 0,
                     glm::translate(glm::mat4(1.f), p) *
                     glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
+            if (entityDragAxis & DragAxis::Y)
+            {
+                scene->debugDraw.line(
+                        p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
+                        glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+            }
+
             renderer->push(OverlayRenderable(arrowMesh, 0,
                     glm::translate(glm::mat4(1.f), p) *
                     glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
+            if (entityDragAxis & DragAxis::Z)
+            {
+                scene->debugDraw.line(
+                        p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
+                        glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
+            }
         }
 
         if (!isMouseClickHandled)
@@ -655,10 +668,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
                             if (userData->entityType == ActorUserData::SELECTABLE_ENTITY)
                             {
+                                auto it = std::find(selectedEntities.begin(),
+                                    selectedEntities.end(), (PlaceableEntity*)userData->entity);
                                 if (g_input.isKeyDown(KEY_LSHIFT))
                                 {
-                                    auto it = std::find(selectedEntities.begin(),
-                                            selectedEntities.end(), (PlaceableEntity*)userData->entity);
                                     if (it != selectedEntities.end())
                                     {
                                         selectedEntities.erase(it);
@@ -666,7 +679,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                                 }
                                 else
                                 {
-                                    selectedEntities.push_back((PlaceableEntity*)userData->entity);
+                                    if (it == selectedEntities.end())
+                                    {
+                                        selectedEntities.push_back((PlaceableEntity*)userData->entity);
+                                    }
                                 }
                             }
                         }

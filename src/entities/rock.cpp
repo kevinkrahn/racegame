@@ -7,7 +7,7 @@
 
 void Rock::onCreate(Scene* scene)
 {
-    actor = g_game.physx.physics->createRigidStatic(convert(transform));
+    actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;

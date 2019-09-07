@@ -47,7 +47,7 @@ class PlaceableEntity : public Entity
 {
 public:
     glm::vec3 position;
-    glm::quat rotation;
+    glm::quat rotation = { 0, 0, 0, 1 };
     glm::mat4 transform;
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
