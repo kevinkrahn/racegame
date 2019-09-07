@@ -115,11 +115,12 @@ class OverlayRenderable : public Renderable
     glm::mat4 worldTransform;
     u32 cameraIndex = 0;
     i32 priorityOffset = 0;
+    bool onlyDepth = false;
 
 public:
     OverlayRenderable(Mesh* mesh, u32 cameraIndex, glm::mat4 const& worldTransform,
-            glm::vec3 const& color, i32 priorityOffset = 0)
-        : mesh(mesh), cameraIndex(cameraIndex),
+            glm::vec3 const& color, i32 priorityOffset = 0, bool onlyDepth=false)
+        : mesh(mesh), cameraIndex(cameraIndex), onlyDepth(onlyDepth),
             worldTransform(worldTransform), color(color), priorityOffset(priorityOffset) {}
 
     i32 getPriority() const override { return 250000 + priorityOffset; }
@@ -128,20 +129,29 @@ public:
     {
         glUseProgram(renderer->getShaderProgram("overlay"));
         glEnable(GL_CULL_FACE);
-        glDepthMask(GL_FALSE);
-        glDisable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
         glCullFace(GL_BACK);
         glDisable(GL_BLEND);
+        glDepthFunc(GL_LEQUAL);
     }
 
     void onLitPass(Renderer* renderer) override
     {
+        if (onlyDepth)
+        {
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        }
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldTransform));
         glUniform3f(1, color.x, color.y, color.z);
         glUniform1i(2, cameraIndex);
         glBindVertexArray(mesh->vao);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(0.f, -1000000.f);
         glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        glDisable(GL_POLYGON_OFFSET_FILL);
+        if (onlyDepth)
+        {
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        }
     }
 
     std::string getDebugString() const override { return "OverlayRenderable"; };

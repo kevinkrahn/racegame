@@ -205,6 +205,15 @@ inline T clamp(T val, T min, T max)
     return val <= min ? min : (val >= max ? max : val);
 }
 
+inline f32 angleDifference(f32 angle0, f32 angle1)
+{
+    f32 m = glm::pi<f32>();
+    f32 a = angle1 - angle0;
+    if (a >  m) a -= m * 2.f;
+    if (a < -m) a += m * 2.f;
+    return a;
+}
+
 inline glm::vec3 screenToWorldRay(glm::vec2 screenPos, glm::vec2 screenSize, glm::mat4 const& view, glm::mat4 const& projection)
 {
     glm::vec3 pos(
@@ -241,6 +250,20 @@ inline f32 rayPlaneIntersection(glm::vec3 const& rayOrigin, glm::vec3 const& ray
 {
     f32 denom = glm::dot(planeNormal, rayDir);
     f32 t = glm::dot(planePoint - rayOrigin, planeNormal) / denom;
+    return t;
+}
+
+inline f32 raySphereIntersection(glm::vec3 const& rayOrigin, glm::vec3 const& rayDir,
+        glm::vec3 const& sphereCenter, f32 sphereRadius)
+{
+    glm::vec3 m = rayOrigin - sphereCenter;
+    f32 b = glm::dot(m, rayDir);
+    f32 c = glm::dot(m, m) - (sphereRadius * sphereRadius);
+    if (c > 0.0f && b > 0.0f) return 0;
+    f32 discr = b * b - c;
+    if (discr < 0.0f) return 0;
+    f32 t = -b - sqrtf(discr);
+    if (t < 0.0f) t = 0.0f;
     return t;
 }
 
