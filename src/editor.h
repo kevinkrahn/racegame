@@ -12,6 +12,18 @@ struct GridSettings
     f32 z = 2.f;
 };
 
+namespace DragAxis
+{
+    enum
+    {
+        NONE = 0,
+        X = 1 << 0,
+        Y = 1 << 1,
+        Z = 1 << 2,
+        ALL = X | Y,
+    };
+}
+
 class Editor
 {
     f32 cameraDistance = 90.f;
@@ -59,6 +71,9 @@ class Editor
         NEW_OFFROAD,
         MAX
     } placeMode = PlaceMode::NONE;
+
+    u32 entityDragAxis = DragAxis::NONE;
+    glm::vec3 entityDragOffset;
 
     std::vector<PlaceableEntity*> selectedEntities;
 

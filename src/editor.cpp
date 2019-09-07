@@ -41,6 +41,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->terrain->regenerateCollisionMesh(scene);
             scene->startRace(scene->track->getStart());
         }
+        entityDragAxis = DragAxis::NONE;
     }
     else if (g_input.isKeyPressed(KEY_ESCAPE))
     {
@@ -48,6 +49,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         {
             scene->stopRace();
         }
+        entityDragAxis = DragAxis::NONE;
     }
 
     if (scene->isRaceInProgress)
@@ -150,6 +152,18 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         return wasClicked;
     };
 
+    if (entityDragAxis)
+    {
+        if (g_input.isMouseButtonReleased(MOUSE_LEFT))
+        {
+            entityDragAxis = DragAxis::NONE;
+        }
+        else
+        {
+            isMouseClickHandled = true;
+        }
+    }
+
     if (clickHandledUntilRelease)
     {
         if (g_input.isMouseButtonReleased(MOUSE_LEFT))
@@ -184,6 +198,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     {
         editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
         scene->terrain->regenerateCollisionMesh(scene);
+        entityDragAxis = DragAxis::NONE;
     }
     glm::vec2 guiOffset(height * 0.012f);
     f32 modeSelectionMaxY = 0.f;
@@ -451,21 +466,218 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
+        if (!entityDragAxis && g_input.isKeyPressed(KEY_DELETE))
+        {
+            for (PlaceableEntity* e : selectedEntities)
+            {
+                e->destroy();
+            }
+            selectedEntities.clear();
+        }
+
+        glm::vec3 minP(FLT_MAX);
+        glm::vec3 maxP(-FLT_MAX);
+        for (PlaceableEntity* e : selectedEntities)
+        {
+            minP = glm::min(minP, e->position);
+            maxP = glm::max(maxP, e->position);
+        }
+
+        if (selectedEntities.size() > 0)
+        {
+            glm::vec3 p = minP + (maxP - minP) * 0.5f;
+            f32 rot = (f32)M_PI * 0.5f;
+            Mesh* arrowMesh = g_resources.getMesh("world.TransformArrow");
+            Mesh* sphereMesh = g_resources.getMesh("world.Sphere");
+
+            glm::vec3 xCol = glm::vec3(0.9f, 0, 0);
+            glm::vec3 xColHighlight = glm::vec3(1, 0.35f, 0.35f);
+            glm::vec3 yCol = glm::vec3(0, 0.8f, 0);
+            glm::vec3 yColHighlight = glm::vec3(0.4f, 1, 0.4f);
+            glm::vec3 zCol = glm::vec3(0, 0, 0.9f);
+            glm::vec3 zColHighlight = glm::vec3(0.35f, 0.35f, 1.f);
+            glm::vec3 centerCol = glm::vec3(0.8f, 0.8f, 0.8f);
+
+            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), p);
+            glm::vec3 hitPos = cam.position + rayDir * t;
+            t = rayPlaneIntersection(cam.position, rayDir,
+                    glm::normalize(glm::vec3(glm::vec2(-rayDir), 0.f)), p);
+            glm::vec3 hitPosZ = cam.position + rayDir * t;
+
+            if (!isMouseClickHandled)
+            {
+                glm::mat4 viewProj = renderer->getCamera(0).viewProjection;
+                f32 offset = 4.5f;
+                glm::vec2 size(g_game.windowWidth, g_game.windowHeight);
+                glm::vec2 xHandle = projectScale(p, glm::vec3(offset, 0, 0), viewProj) * size;
+                glm::vec2 yHandle = projectScale(p, glm::vec3(0, offset, 0), viewProj) * size;
+                glm::vec2 zHandle = projectScale(p, glm::vec3(0, 0, offset), viewProj) * size;
+                glm::vec2 center = project(p, viewProj) * size;
+
+                f32 radius = 18.f;
+                glm::vec2 mousePos = g_input.getMousePosition();
+
+                if (glm::length(xHandle - mousePos) < radius)
+                {
+                    xCol = xColHighlight;
+                    if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                    {
+                        entityDragAxis = DragAxis::X;
+                        isMouseClickHandled = true;
+                        entityDragOffset = p - hitPos;
+                    }
+                }
+
+                if (glm::length(yHandle - mousePos) < radius)
+                {
+                    yCol = yColHighlight;
+                    if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                    {
+                        entityDragAxis = DragAxis::Y;
+                        isMouseClickHandled = true;
+                        entityDragOffset = p - hitPos;
+                    }
+                }
+
+                if (glm::length(zHandle - mousePos) < radius)
+                {
+                    zCol = zColHighlight;
+                    if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                    {
+                        entityDragAxis = DragAxis::Z;
+                        isMouseClickHandled = true;
+                        entityDragOffset = p - hitPosZ;
+                    }
+                }
+
+                if (glm::length(center - mousePos) < radius)
+                {
+                    centerCol = glm::vec3(1.f);
+                    if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                    {
+                        entityDragAxis = DragAxis::ALL;
+                        isMouseClickHandled = true;
+                        entityDragOffset = p - hitPos;
+                    }
+                }
+            }
+
+            if (entityDragAxis)
+            {
+                if (entityDragAxis & DragAxis::X)
+                {
+                    scene->debugDraw.line(
+                            p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
+                            glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                    xCol = xColHighlight;
+                    for (PlaceableEntity* e : selectedEntities)
+                    {
+                        f32 diff = p.x - e->position.x;
+                        e->position.x = hitPos.x + entityDragOffset.x - diff;
+                    }
+                    p.x = hitPos.x + entityDragOffset.x;
+                }
+
+                if (entityDragAxis & DragAxis::Y)
+                {
+                    scene->debugDraw.line(
+                            p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
+                            glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                    yCol = yColHighlight;
+                    for (PlaceableEntity* e : selectedEntities)
+                    {
+                        f32 diff = p.y - e->position.y;
+                        e->position.y = hitPos.y + entityDragOffset.y - diff;
+                    }
+                    p.y = hitPos.y + entityDragOffset.y;
+                }
+
+                if (entityDragAxis & DragAxis::Z)
+                {
+                    scene->debugDraw.line(
+                            p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
+                            glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
+                    zCol = zColHighlight;
+                    for (PlaceableEntity* e : selectedEntities)
+                    {
+                        f32 diff = p.z - e->position.z;
+                        e->position.z = hitPosZ.z + entityDragOffset.z - diff;
+                    }
+                    p.z = hitPosZ.z + entityDragOffset.z;
+                }
+
+                for (PlaceableEntity* e : selectedEntities)
+                {
+                    e->updateTransform();
+                }
+            }
+
+            renderer->push(OverlayRenderable(sphereMesh, 0,
+                    glm::translate(glm::mat4(1.f), p), centerCol, -1));
+            renderer->push(OverlayRenderable(arrowMesh, 0,
+                    glm::translate(glm::mat4(1.f), p), xCol));
+            renderer->push(OverlayRenderable(arrowMesh, 0,
+                    glm::translate(glm::mat4(1.f), p) *
+                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
+            renderer->push(OverlayRenderable(arrowMesh, 0,
+                    glm::translate(glm::mat4(1.f), p) *
+                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
+        }
+
         if (!isMouseClickHandled)
         {
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 isMouseClickHandled = true;
-                PxRaycastBuffer hit;
-                if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                if (g_input.isKeyDown(KEY_LCTRL) && g_input.isKeyDown(KEY_LSHIFT))
                 {
-                    glm::vec3 hitPoint = convert(hit.block.position);
-                    PlaceableEntity* newEntity = new Rock();
-                    newEntity->position = hitPoint;
-                    newEntity->updateTransform();
-                    scene->addEntity(newEntity);
+                    PxRaycastBuffer hit;
+                    if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                    {
+                        glm::vec3 hitPoint = convert(hit.block.position);
+                        PlaceableEntity* newEntity = new Rock();
+                        newEntity->position = hitPoint;
+                        newEntity->updateTransform();
+                        scene->addEntity(newEntity);
+                    }
+                }
+                else
+                {
+                    if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+                    {
+                        selectedEntities.clear();
+                    }
+                    PxRaycastBuffer hit;
+                    if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                    {
+                        if (hit.block.actor)
+                        {
+                            ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
+                            if (userData->entityType == ActorUserData::SELECTABLE_ENTITY)
+                            {
+                                if (g_input.isKeyDown(KEY_LSHIFT))
+                                {
+                                    auto it = std::find(selectedEntities.begin(),
+                                            selectedEntities.end(), (PlaceableEntity*)userData->entity);
+                                    if (it != selectedEntities.end())
+                                    {
+                                        selectedEntities.erase(it);
+                                    }
+                                }
+                                else
+                                {
+                                    selectedEntities.push_back((PlaceableEntity*)userData->entity);
+                                }
+                            }
+                        }
+                    }
                 }
             }
+        }
+
+        for (PlaceableEntity* e : selectedEntities)
+        {
+            e->renderSelected(renderer, scene);
         }
     }
 

@@ -17,6 +17,7 @@ struct ActorUserData
         SCENERY,
         VEHICLE,
         ENTITY,
+        SELECTABLE_ENTITY,
     };
     u32 entityType;
     union
@@ -53,6 +54,10 @@ public:
     void updateTransform()
     {
         transform = glm::translate(glm::mat4(1.f), position) * glm::mat4_cast(rotation);
+        if (actor)
+        {
+            actor->setGlobalPose(convert(transform));
+        }
     }
 
     ~PlaceableEntity()

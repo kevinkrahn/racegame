@@ -8,7 +8,7 @@
 void Rock::onCreate(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(convert(transform));
-    physicsUserData.entityType = ActorUserData::SCENERY;
+    physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,

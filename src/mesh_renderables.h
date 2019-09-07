@@ -122,7 +122,7 @@ public:
         : mesh(mesh), cameraIndex(cameraIndex),
             worldTransform(worldTransform), color(color), priorityOffset(priorityOffset) {}
 
-    i32 getPriority() const override { return 20000 + priorityOffset; }
+    i32 getPriority() const override { return 250000 + priorityOffset; }
 
     void onLitPassPriorityTransition(Renderer* renderer) override
     {
@@ -154,10 +154,10 @@ class WireframeRenderable : public Renderable
     glm::mat4 worldTransform;
 
 public:
-    WireframeRenderable(Mesh* mesh, glm::mat4 const& worldTransform, glm::vec4 color = {0, 1, 0, 1})
+    WireframeRenderable(Mesh* mesh, glm::mat4 const& worldTransform, glm::vec4 color = {0.8f, 0.8f, 0.8f, 1})
         : mesh(mesh), worldTransform(worldTransform), color(color) { }
 
-    i32 getPriority() const override { return 1000000; }
+    i32 getPriority() const override { return 200000; }
 
     void onLitPass(Renderer* renderer) override
     {

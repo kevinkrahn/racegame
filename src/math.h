@@ -221,6 +221,16 @@ inline glm::vec2 project(glm::vec3 const& pos, glm::mat4 const& viewProj)
     return { x, y };
 }
 
+inline glm::vec2 projectScale(glm::vec3 const& pos, glm::vec3 const& offset, glm::mat4 const& viewProj, f32 scaleFactor = 0.01f)
+{
+    glm::mat4 mvp = viewProj * glm::translate(glm::mat4(1.f), pos);
+    f32 w = (mvp * glm::vec4(0, 0, 0, 1)).w * scaleFactor;
+    glm::vec4 p = mvp * glm::vec4(offset * w, 1.f);
+    f32 x = ((p.x / p.w) + 1.f) / 2.f;
+    f32 y = ((-p.y / p.w) + 1.f) / 2.f;
+    return { x, y };
+}
+
 inline f32 rayPlaneIntersection(glm::vec3 const& rayOrigin, glm::vec3 const& rayDir,
         glm::vec3 const& planeNormal, glm::vec3 const& planePoint)
 {
