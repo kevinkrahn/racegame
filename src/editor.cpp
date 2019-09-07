@@ -486,10 +486,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
         if (selectedEntities.size() > 0)
         {
+            if (g_input.isKeyPressed(KEY_SPACE))
+            {
+                transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
+                entityDragAxis = DragAxis::NONE;
+            }
+
             glm::vec3 p = minP + (maxP - minP) * 0.5f;
             f32 rot = (f32)M_PI * 0.5f;
-            Mesh* arrowMesh = g_resources.getMesh("world.TransformArrow");
-            Mesh* sphereMesh = g_resources.getMesh("world.Sphere");
 
             glm::vec3 xCol = glm::vec3(0.9f, 0, 0);
             glm::vec3 xColHighlight = glm::vec3(1, 0.35f, 0.35f);
@@ -551,10 +555,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     }
                 }
 
-                if (glm::length(center - mousePos) < radius)
+                bool shortcut = g_input.isKeyPressed(KEY_G);
+                if (glm::length(center - mousePos) < radius || shortcut)
                 {
                     centerCol = glm::vec3(1.f);
-                    if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                    if (g_input.isMouseButtonPressed(MOUSE_LEFT) || shortcut)
                     {
                         entityDragAxis = DragAxis::ALL;
                         isMouseClickHandled = true;
@@ -604,8 +609,28 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 }
             }
 
-            renderer->push(OverlayRenderable(sphereMesh, 0,
-                    glm::translate(glm::mat4(1.f), p), centerCol, -1));
+            Mesh* arrowMesh = nullptr;
+            Mesh* centerMesh = nullptr;
+            if (transformMode == TransformMode::TRANSLATE)
+            {
+                arrowMesh = g_resources.getMesh("world.TranslateArrow");
+                centerMesh = g_resources.getMesh("world.Sphere");
+            }
+            if (transformMode == TransformMode::ROTATE)
+            {
+                arrowMesh = g_resources.getMesh("world.RotateArrow");
+            }
+            else if (transformMode == TransformMode::SCALE)
+            {
+                arrowMesh = g_resources.getMesh("world.ScaleArrow");
+                centerMesh = g_resources.getMesh("world.UnitCube");
+            }
+
+            if (centerMesh)
+            {
+                renderer->push(OverlayRenderable(centerMesh, 0,
+                        glm::translate(glm::mat4(1.f), p), centerCol, -1));
+            }
 
             renderer->push(OverlayRenderable(arrowMesh, 0,
                     glm::translate(glm::mat4(1.f), p), xCol));

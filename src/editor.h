@@ -72,6 +72,14 @@ class Editor
         MAX
     } placeMode = PlaceMode::NONE;
 
+    enum struct TransformMode
+    {
+        TRANSLATE,
+        ROTATE,
+        SCALE,
+        MAX
+    } transformMode = TransformMode::TRANSLATE;
+
     u32 entityDragAxis = DragAxis::NONE;
     glm::vec3 entityDragOffset;
 

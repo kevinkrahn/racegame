@@ -48,12 +48,15 @@ class PlaceableEntity : public Entity
 public:
     glm::vec3 position;
     glm::quat rotation = { 0, 0, 0, 1 };
+    glm::vec3 scale = glm::vec3(1.f);
     glm::mat4 transform;
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
     void updateTransform()
     {
-        transform = glm::translate(glm::mat4(1.f), position) * glm::mat4_cast(rotation);
+        transform = glm::translate(glm::mat4(1.f), position)
+            * glm::mat4_cast(rotation)
+            * glm::scale(glm::mat4(1.f), scale);
         if (actor)
         {
             actor->setGlobalPose(convert(transform));

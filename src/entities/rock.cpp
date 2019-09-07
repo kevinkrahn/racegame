@@ -12,7 +12,7 @@ void Rock::onCreate(Scene* scene)
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxTriangleMeshGeometry(mesh->getCollisionMesh()), *scene->offroadMaterial);
+            PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->offroadMaterial);
     collisionShape->setQueryFilterData(PxFilterData(
                 COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
     collisionShape->setSimulationFilterData(PxFilterData(
