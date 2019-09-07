@@ -207,6 +207,7 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
                 PxTriangleMeshGeometry(triMesh), *scene->offroadMaterial);
         shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
         shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+        shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
     }
     triMesh->release();
 }

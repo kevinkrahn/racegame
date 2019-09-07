@@ -199,8 +199,8 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 2.0f);
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 2.0f);
+            //physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 2.0f);
+            //physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 2.0f);
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
         }
         else

@@ -511,6 +511,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 entityDragOffset.x = pointDirection(mousePos, project(rotatePivot, viewProj) * windowSize);
             }
 
+            if (g_input.isKeyPressed(KEY_F))
+            {
+                transformMode = TransformMode::SCALE;
+                entityDragAxis = DragAxis::ALL;
+            }
+
             glm::vec3 xCol = glm::vec3(0.9f, 0, 0);
             glm::vec3 xColHighlight = glm::vec3(1, 0.35f, 0.35f);
             glm::vec3 yCol = glm::vec3(0, 0.8f, 0);
@@ -721,8 +727,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     {
                         for (PlaceableEntity* e : selectedEntities)
                         {
+                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
+                                * glm::mat4_cast(e->rotation);
                             glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, glm::vec3(1, 0, 0)) *
-                                glm::translate(glm::mat4(1.f), -p) * e->transform;
+                                glm::translate(glm::mat4(1.f), -p) * t;
                             e->position = translationOf(transform) + p;
                             e->rotation = glm::quat_cast(transform);
                         }
@@ -731,8 +739,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     {
                         for (PlaceableEntity* e : selectedEntities)
                         {
+                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
+                                * glm::mat4_cast(e->rotation);
                             glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, glm::vec3(0, 1, 0)) *
-                                glm::translate(glm::mat4(1.f), -p) * e->transform;
+                                glm::translate(glm::mat4(1.f), -p) * t;
                             e->position = translationOf(transform) + p;
                             e->rotation = glm::quat_cast(transform);
                         }
@@ -741,8 +751,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     {
                         for (PlaceableEntity* e : selectedEntities)
                         {
+                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
+                                * glm::mat4_cast(e->rotation);
                             glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, glm::vec3(0, 0, 1)) *
-                                glm::translate(glm::mat4(1.f), -p) * e->transform;
+                                glm::translate(glm::mat4(1.f), -p) * t;
                             e->position = translationOf(transform) + p;
                             e->rotation = glm::quat_cast(transform);
                         }
@@ -794,6 +806,183 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             }
             if (transformMode == TransformMode::SCALE)
             {
+                f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), p);
+                glm::vec3 hitPos = cam.position + rayDir * t;
+                t = rayPlaneIntersection(cam.position, rayDir,
+                        glm::normalize(glm::vec3(glm::vec2(-rayDir), 0.f)), p);
+                glm::vec3 hitPosZ = cam.position + rayDir * t;
+
+                glm::mat4 orientation(1.f);
+                if (selectedEntities.size() == 1)
+                {
+                    orientation = glm::mat4_cast(selectedEntities[0]->rotation);
+                }
+                f32 offset = 4.5f;
+                glm::vec3 xAxis = xAxisOf(orientation) * offset;
+                glm::vec3 yAxis = yAxisOf(orientation) * offset;
+                glm::vec3 zAxis = zAxisOf(orientation) * offset;
+
+                if (!isMouseClickHandled)
+                {
+                    glm::vec2 size(g_game.windowWidth, g_game.windowHeight);
+                    glm::vec2 xHandle = projectScale(p, xAxis, viewProj) * size;
+                    glm::vec2 yHandle = projectScale(p, yAxis, viewProj) * size;
+                    glm::vec2 zHandle = projectScale(p, zAxis, viewProj) * size;
+                    glm::vec2 center = project(p, viewProj) * size;
+
+                    f32 radius = 18.f;
+                    glm::vec2 mousePos = g_input.getMousePosition();
+
+                    if (glm::length(xHandle - mousePos) < radius)
+                    {
+                        xCol = xColHighlight;
+                        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                        {
+                            entityDragAxis = DragAxis::X;
+                            isMouseClickHandled = true;
+                            entityDragOffset = p - hitPos;
+                        }
+                    }
+
+                    if (glm::length(yHandle - mousePos) < radius)
+                    {
+                        yCol = yColHighlight;
+                        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                        {
+                            entityDragAxis = DragAxis::Y;
+                            isMouseClickHandled = true;
+                            entityDragOffset = p - hitPos;
+                        }
+                    }
+
+                    if (glm::length(zHandle - mousePos) < radius)
+                    {
+                        zCol = zColHighlight;
+                        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                        {
+                            entityDragAxis = DragAxis::Z;
+                            isMouseClickHandled = true;
+                            entityDragOffset = p - hitPosZ;
+                        }
+                    }
+
+                    bool shortcut = g_input.isKeyPressed(KEY_F);
+                    if (glm::length(center - mousePos) < radius || shortcut)
+                    {
+                        centerCol = glm::vec3(1.f);
+                        if (g_input.isMouseButtonPressed(MOUSE_LEFT) || shortcut)
+                        {
+                            entityDragAxis = DragAxis::ALL;
+                            isMouseClickHandled = true;
+                            entityDragOffset = p - hitPos;
+                        }
+                    }
+                }
+
+                if (entityDragAxis)
+                {
+                    if (selectedEntities.size() > 1)
+                    {
+                        f32 startDistance = glm::length(entityDragOffset);
+                        f32 scaleFactor = glm::length(p - hitPos) / startDistance;
+                        for (PlaceableEntity* e : selectedEntities)
+                        {
+                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
+                                * glm::scale(glm::mat4(1.f), glm::vec3(e->scale));
+                            glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(scaleFactor))
+                                * glm::translate(glm::mat4(1.f), -p) * t;
+                            e->position = translationOf(transform) + p;
+                            e->scale *= scaleFactor;
+                        }
+                        entityDragOffset = p - hitPos;
+                        xCol = xColHighlight;
+                        yCol = yColHighlight;
+                        zCol = zColHighlight;
+                    }
+                    else if ((entityDragAxis & DragAxis::ALL) == DragAxis::ALL)
+                    {
+                        f32 startDistance = glm::length(entityDragOffset);
+                        for (PlaceableEntity* e : selectedEntities)
+                        {
+                            e->scale *= glm::vec3(glm::length(p - hitPos) / startDistance);
+                        }
+                        entityDragOffset = p - hitPos;
+                        xCol = xColHighlight;
+                        yCol = yColHighlight;
+                        zCol = zColHighlight;
+                    }
+                    else if (entityDragAxis & DragAxis::X)
+                    {
+                        f32 startDistance = glm::dot(entityDragOffset, xAxis);
+                        for (PlaceableEntity* e : selectedEntities)
+                        {
+                            e->scale.x *= glm::dot(p - hitPos, xAxis) / startDistance;
+                        }
+                        entityDragOffset = p - hitPos;
+                        xCol = xColHighlight;
+                    }
+                    else if (entityDragAxis & DragAxis::Y)
+                    {
+                        f32 startDistance = glm::dot(entityDragOffset, yAxis);
+                        for (PlaceableEntity* e : selectedEntities)
+                        {
+                            e->scale.y *= glm::dot(p - hitPos, yAxis) / startDistance;
+                        }
+                        entityDragOffset = p - hitPos;
+                        yCol = yColHighlight;
+                    }
+                    else if (entityDragAxis & DragAxis::Z)
+                    {
+                        f32 startDistance = glm::dot(entityDragOffset, zAxis);
+                        for (PlaceableEntity* e : selectedEntities)
+                        {
+                            e->scale.z *= glm::dot(p - hitPosZ, zAxis) / startDistance;
+                        }
+                        entityDragOffset = p - hitPosZ;
+                        zCol = zColHighlight;
+                    }
+
+                    for (PlaceableEntity* e : selectedEntities)
+                    {
+                        e->updateTransform();
+                    }
+                }
+
+                Mesh* arrowMesh = g_resources.getMesh("world.ScaleArrow");
+                Mesh* centerMesh = g_resources.getMesh("world.UnitCube");
+                renderer->push(OverlayRenderable(centerMesh, 0,
+                        glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
+
+                renderer->push(OverlayRenderable(arrowMesh, 0,
+                        glm::translate(glm::mat4(1.f), p) * orientation, xCol));
+                if (entityDragAxis & DragAxis::X)
+                {
+                    scene->debugDraw.line(
+                            p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
+                            glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                }
+
+                renderer->push(OverlayRenderable(arrowMesh, 0,
+                        glm::translate(glm::mat4(1.f), p) *
+                        orientation *
+                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
+                if (entityDragAxis & DragAxis::Y)
+                {
+                    scene->debugDraw.line(
+                            p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
+                            glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                }
+
+                renderer->push(OverlayRenderable(arrowMesh, 0,
+                        glm::translate(glm::mat4(1.f), p) *
+                        orientation *
+                        glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
+                if (entityDragAxis & DragAxis::Z)
+                {
+                    scene->debugDraw.line(
+                            p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
+                            glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
+                }
             }
         }
 

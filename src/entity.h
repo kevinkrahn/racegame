@@ -47,7 +47,7 @@ class PlaceableEntity : public Entity
 {
 public:
     glm::vec3 position;
-    glm::quat rotation = { 0, 0, 0, 1 };
+    glm::quat rotation = glm::identity<glm::quat>();
     glm::vec3 scale = glm::vec3(1.f);
     glm::mat4 transform;
     PxRigidActor* actor = nullptr;
@@ -59,7 +59,28 @@ public:
             * glm::scale(glm::mat4(1.f), scale);
         if (actor)
         {
-            actor->setGlobalPose(convert(transform));
+            actor->setGlobalPose(PxTransform(convert(position), convert(rotation)));
+            u32 numShapes = actor->getNbShapes();
+            if (numShapes > 0)
+            {
+                for (u32 i=0; i<numShapes; ++i)
+                {
+                    PxShape* shape = nullptr;
+                    actor->getShapes(&shape, 1, i);
+                    PxTriangleMeshGeometry geom;
+                    PxConvexMeshGeometry convexGeom;
+                    if (shape->getTriangleMeshGeometry(geom))
+                    {
+                        geom.scale = convert(scale);
+                        shape->setGeometry(geom);
+                    }
+                    else if (shape->getConvexMeshGeometry(convexGeom))
+                    {
+                        convexGeom.scale = convert(scale);
+                        shape->setGeometry(convexGeom);
+                    }
+                }
+            }
         }
     }
 
