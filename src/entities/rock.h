@@ -18,7 +18,7 @@ public:
 
     void onCreate(class Scene* scene) override;
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
-    void renderSelected(class Renderer* renderer, class Scene* scene) override;
+    void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
 };

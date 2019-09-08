@@ -16,7 +16,7 @@ class Decal : public Renderable
 
     glm::mat4 transform;
     glm::mat3 normalTransform;
-    glm::vec3 color;
+    glm::vec3 color = { 1, 1, 1 };
     Texture* tex = nullptr;
     std::vector<DecalVertex> vertices;
     u32 vertexCount = 0;
@@ -52,7 +52,7 @@ public:
     void addMesh(Mesh* mesh, glm::mat4 const& meshTransform);
     void addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform);
     void end();
-    i32 getPriority() const override { return 10000; }
+    i32 getPriority() const override { return 8000; }
     std::string getDebugString() const override { return "Decal"; };
     void onLitPassPriorityTransition(class Renderer* renderer) override;
     void onLitPass(class Renderer* renderer) override;

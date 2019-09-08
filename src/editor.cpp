@@ -8,6 +8,7 @@
 #include "mesh_renderables.h"
 #include "track.h"
 #include "entities/rock.h"
+#include "entities/static_decal.h"
 
 void Editor::onStart(Scene* scene)
 {
@@ -629,7 +630,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                     for (PlaceableEntity* e : selectedEntities)
                     {
-                        e->updateTransform();
+                        e->updateTransform(scene);
                     }
                 }
 
@@ -764,7 +765,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                     for (PlaceableEntity* e : selectedEntities)
                     {
-                        e->updateTransform();
+                        e->updateTransform(scene);
                     }
                 }
                 else
@@ -945,7 +946,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                     for (PlaceableEntity* e : selectedEntities)
                     {
-                        e->updateTransform();
+                        e->updateTransform(scene);
                     }
                 }
 
@@ -998,9 +999,13 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
                     {
                         glm::vec3 hitPoint = convert(hit.block.position);
+#if 0
                         PlaceableEntity* newEntity = new Rock();
+#else
+                        PlaceableEntity* newEntity = new StaticDecal();
+#endif
                         newEntity->position = hitPoint;
-                        newEntity->updateTransform();
+                        newEntity->updateTransform(scene);
                         scene->addEntity(newEntity);
                     }
                 }
@@ -1011,7 +1016,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         selectedEntities.clear();
                     }
                     PxRaycastBuffer hit;
-                    if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+                    if (scene->raycastStatic(cam.position, rayDir, 10000.f,
+                                &hit, COLLISION_FLAG_SELECTABLE))
                     {
                         if (hit.block.actor)
                         {
@@ -1041,9 +1047,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             }
         }
 
-        for (PlaceableEntity* e : selectedEntities)
+        for (auto& e : scene->getEntities())
         {
-            e->renderSelected(renderer, scene);
+            bool isSelected = std::find(selectedEntities.begin(),
+                    selectedEntities.end(), e.get()) != selectedEntities.end();
+            e->onEditModeRender(renderer, scene, isSelected);
         }
     }
 

@@ -8,6 +8,7 @@ enum struct SerializedEntityID
     TERRAIN,
     TRACK,
     ROCK,
+    STATIC_DECAL,
 };
 
 struct ActorUserData
@@ -41,7 +42,10 @@ public:
     virtual void deserialize(DataFile::Value& data) {}
 
     virtual void onCreate(class Scene* scene) {}
+    virtual void onCreateEnd(class Scene* scene) {}
     virtual void onUpdate(class Renderer* renderer, class Scene* scene, f32 deltaTime) {}
+
+    virtual void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) {}
 };
 
 class PlaceableEntity : public Entity
@@ -53,7 +57,7 @@ public:
     glm::mat4 transform;
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
-    void updateTransform()
+    virtual void updateTransform(class Scene* scene)
     {
         transform = glm::translate(glm::mat4(1.f), position)
             * glm::mat4_cast(rotation)
@@ -94,6 +98,5 @@ public:
     }
 
     virtual std::unique_ptr<PlaceableEntity> editorInstantiate(class Editor* editor) { return nullptr; }
-    virtual void renderSelected(class Renderer* renderer, class Scene* scene) {}
 };
 

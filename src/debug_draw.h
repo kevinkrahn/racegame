@@ -37,7 +37,7 @@ public:
         glDeleteVertexArrays(1, &vao);
     }
 
-    i32 getPriority() const override { return 1000000; }
+    i32 getPriority() const override { return 100000; }
 
     void line(glm::vec3 const& p1, glm::vec3 const& p2,
             glm::vec4 const& c1 = glm::vec4(1), glm::vec4 const& c2 = glm::vec4(1))

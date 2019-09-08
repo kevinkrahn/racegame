@@ -317,8 +317,6 @@ public:
             offset += chunk.count;
         }
 
-        glDisable(GL_POLYGON_OFFSET_FILL);
-
         chunks.clear();
     }
 

@@ -14,7 +14,7 @@ void Rock::onCreate(Scene* scene)
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
             PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->offroadMaterial);
     collisionShape->setQueryFilterData(PxFilterData(
-                COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+                COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, 0, 0, DRIVABLE_SURFACE));
     collisionShape->setSimulationFilterData(PxFilterData(
                 COLLISION_FLAG_GROUND, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
@@ -32,9 +32,12 @@ void Rock::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     renderer->push(LitRenderable(settings));
 }
 
-void Rock::renderSelected(Renderer* renderer, Scene* scene)
+void Rock::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
 {
-    renderer->push(WireframeRenderable(mesh, transform));
+    if (isSelected)
+    {
+        renderer->push(WireframeRenderable(mesh, transform));
+    }
 }
 
 DataFile::Value Rock::serialize()
@@ -53,5 +56,4 @@ void Rock::deserialize(DataFile::Value& data)
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
-    updateTransform();
 }

@@ -23,6 +23,20 @@ void Track::onCreate(Scene* scene)
     actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
     this->scene = scene;
+    for (auto& c : connections)
+    {
+        if (c->isDirty || c->vertices.empty())
+        {
+            createSegmentMesh(*c, scene);
+        }
+    }
+    for (auto& railing : railings)
+    {
+        if (railing->isDirty)
+        {
+            railing->updateMesh();
+        }
+    }
 }
 
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)

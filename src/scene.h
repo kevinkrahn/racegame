@@ -16,11 +16,12 @@
 
 enum
 {
-    COLLISION_FLAG_TRACK   = 1 << 0,
-    COLLISION_FLAG_GROUND  = 1 << 1,
-    COLLISION_FLAG_WHEEL   = 1 << 2,
-    COLLISION_FLAG_CHASSIS = 1 << 3,
-    COLLISION_FLAG_DEBRIS  = 1 << 4,
+    COLLISION_FLAG_TRACK      = 1 << 0,
+    COLLISION_FLAG_GROUND     = 1 << 1,
+    COLLISION_FLAG_WHEEL      = 1 << 2,
+    COLLISION_FLAG_CHASSIS    = 1 << 3,
+    COLLISION_FLAG_DEBRIS     = 1 << 4,
+    COLLISION_FLAG_SELECTABLE = 1 << 5,
 };
 
 enum
@@ -104,4 +105,5 @@ public:
     bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr) const;
 
     void addEntity(Entity* entity) { newEntities.push_back(std::unique_ptr<Entity>(entity)); }
+    std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
 };

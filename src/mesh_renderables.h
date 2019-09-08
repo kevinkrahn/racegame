@@ -132,6 +132,8 @@ public:
         glCullFace(GL_BACK);
         glDisable(GL_BLEND);
         glDepthFunc(GL_LEQUAL);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
     }
 
     void onLitPass(Renderer* renderer) override

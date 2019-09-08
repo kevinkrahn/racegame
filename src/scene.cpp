@@ -7,6 +7,7 @@
 #include "terrain.h"
 #include "track.h"
 #include "entities/rock.h"
+#include "entities/static_decal.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -148,6 +149,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
+    if (isEditing)
+    {
+        editor.onUpdate(this, renderer, deltaTime);
+    }
+
     // update vehicles
     i32 cameraIndex = 0;
     SmallVec<glm::vec3> listenerPositions;
@@ -161,11 +167,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
     g_audio.setListeners(listenerPositions);
-
-    if (isEditing)
-    {
-        editor.onUpdate(this, renderer, deltaTime);
-    }
 
     for (auto const& e : entities)
     {
@@ -355,13 +356,19 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
 void Scene::onEndUpdate(f32 deltaTime)
 {
-    for (auto& e : newEntities) {
+    for (auto& e : newEntities)
+    {
         e->onCreate(this);
+    }
+    for (auto& e : newEntities)
+    {
+        e->onCreateEnd(this);
         entities.push_back(std::move(e));
     }
     newEntities.clear();
 
-    for (auto it = entities.begin(); it != entities.end();) {
+    for (auto it = entities.begin(); it != entities.end();)
+    {
         if ((*it)->isDestroyed()) {
             entities.erase(it);
         } else {
@@ -553,20 +560,30 @@ void Scene::deserialize(DataFile::Value& data)
         switch (entityID)
         {
             case SerializedEntityID::TERRAIN:
+            {
                 this->terrain = new Terrain();
                 this->terrain->deserialize(val);
                 this->addEntity(this->terrain);
-                break;
+            } break;
             case SerializedEntityID::TRACK:
+            {
                 this->track = new Track();
                 this->track->deserialize(val);
                 this->addEntity(this->track);
-                break;
+            } break;
             case SerializedEntityID::ROCK:
+            {
                 Rock* rock = new Rock();
                 rock->deserialize(val);
+                rock->updateTransform(this);
                 this->addEntity(rock);
-                break;
+            } break;
+            case SerializedEntityID::STATIC_DECAL:
+            {
+                StaticDecal* decal = new StaticDecal();
+                decal->deserialize(val);
+                this->addEntity(decal);
+            } break;
         }
     }
 }

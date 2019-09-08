@@ -24,6 +24,7 @@
 #include "decal.cpp"
 #include "entities/projectile.cpp"
 #include "entities/rock.cpp"
+#include "entities/static_decal.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

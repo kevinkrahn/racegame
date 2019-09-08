@@ -42,8 +42,11 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
         v3 = vertTransform * glm::vec4(v3, 1.0);
 
         // skip triangles that are facing away
+        // TODO: fix this calculation, as it appears to remove triangles that is should not
+        /*
         glm::vec3 normal = glm::cross(v2 - v1, v3 - v1);
         if (normal.x > 0.f) continue;
+        */
 
         // transform normals
         n1 = normalTransform * n1;
@@ -159,19 +162,22 @@ void Decal::end()
 
 void Decal::onLitPassPriorityTransition(Renderer* renderer)
 {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.f, -1000.f);
+    glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
     glUseProgram(renderer->getShaderProgram("mesh_decal"));
-    glDisable(GL_CULL_FACE); // TODO: should be able to leave culling on
+    glEnable(GL_CULL_FACE);
 }
 
 void Decal::onLitPass(Renderer* renderer)
 {
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(0.f, -1000.f);
     glBindTextureUnit(0, tex->handle);
     glBindVertexArray(vao);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
     glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalTransform));
     glUniform3f(2, color.x, color.y, color.z);
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glDisable(GL_POLYGON_OFFSET_FILL);
 }
