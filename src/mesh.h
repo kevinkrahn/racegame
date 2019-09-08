@@ -25,7 +25,7 @@ struct Mesh
     u32 numColors;
     u32 numTexCoords;
     u32 elementSize;
-    u32 stride;
+    u32 stride = 0;
     BoundingBox aabb;
 
     SmallVec<VertexAttribute> vertexFormat;

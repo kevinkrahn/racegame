@@ -165,7 +165,6 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
 {
     if (aabb.intersects(bb))
     {
-        //g_game.renderer->drawBoundingBox(aabb, glm::translate(glm::mat4(1.f), { 0, 0, 0.2f }) * transform, glm::vec4(1, 0, 0, 1));
         for (u32 index : triangleIndices)
         {
             output.push_back(index);
@@ -182,7 +181,22 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
 bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const
 {
     bb = bb.transform(glm::inverse(transform));
-    return octree->intersect(*this, transform, bb, output);
+    if (octree)
+    {
+        return octree->intersect(*this, transform, bb, output);
+    }
+    else
+    {
+        if (aabb.intersects(bb))
+        {
+            for (auto index : indices)
+            {
+                output.push_back(index);
+            }
+            return true;
+        }
+        return false;
+    }
 }
 
 void Mesh::createVAO()
@@ -191,14 +205,14 @@ void Mesh::createVAO()
 
     destroy();
 
+    glCreateVertexArrays(1, &vao);
+
     glCreateBuffers(1, &vbo);
     glNamedBufferData(vbo, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STATIC_DRAW);
+    glVertexArrayVertexBuffer(vao, 0, vbo, 0, stride);
 
     glCreateBuffers(1, &ebo);
     glNamedBufferData(ebo, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
-
-    glCreateVertexArrays(1, &vao);
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, stride);
     glVertexArrayElementBuffer(vao, ebo);
 
     u32 offset = 0;

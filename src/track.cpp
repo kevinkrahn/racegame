@@ -51,6 +51,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         }
     }
 
+    Texture* concreteTex = g_resources.getTexture("concrete");
     for (auto& railing : railings)
     {
         if (railing->isDirty)
@@ -82,7 +83,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 
         if (railing->mesh.vao)
         {
-            renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f)));
+            renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f), concreteTex));
         }
     }
 

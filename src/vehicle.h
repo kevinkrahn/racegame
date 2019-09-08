@@ -38,6 +38,7 @@ public:
 	Driver* driver;
 	Scene* scene;
 	u32 vehicleIndex;
+	Decal testDecal;
 
     // physics data
     bool isInAir = true;

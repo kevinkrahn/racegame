@@ -21,6 +21,7 @@
 #include "terrain.cpp"
 #include "track.cpp"
 #include "dynamic_buffer.cpp"
+#include "decal.cpp"
 #include "entities/projectile.cpp"
 #include "entities/rock.cpp"
 

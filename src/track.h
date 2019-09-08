@@ -7,6 +7,7 @@
 #include "gl.h"
 #include "smallvec.h"
 #include "mesh.h"
+#include "decal.h"
 
 struct TrackItem
 {
@@ -247,6 +248,18 @@ public:
     void buildTrackGraph(class TrackGraph* trackGraph);
     void drawTrackPreview(class TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection);
     BoundingBox getBoundingBox() const { return boundingBox; }
+    void addTrackMeshesToDecal(Decal& decal) const
+    {
+        BoundingBox decalBoundingBox = decal.getBoundingBox();
+        for (auto& c : connections)
+        {
+            if (decalBoundingBox.intersects(c->boundingBox))
+            {
+                decal.addMesh((f32*)c->vertices.data(), sizeof(Vertex),
+                        c->indices.data(), c->indices.size(), glm::mat4(1.f));
+            }
+        }
+    }
 
     // entity
     void onCreate(Scene* scene) override;

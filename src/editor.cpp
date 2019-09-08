@@ -231,6 +231,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
                     editMode = EditMode(i);
+                    scene->terrain->regenerateCollisionMesh(scene);
                 }
             }
             renderer->push(QuadRenderable(white,

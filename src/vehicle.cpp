@@ -1163,19 +1163,16 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 //glm::translate(glm::mat4(1.f), getPosition()) *
                 glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 }) *
                 glm::scale(glm::mat4(1.f), glm::vec3(4, 15, 15));
-        auto verts1 = createDecal(decalTransform, g_resources.getMesh("world.TrackTarmac"), glm::scale(glm::mat4(1.f), glm::vec3(4.320f)));
-        renderer->drawDecal(verts1, decalTransform, g_resources.getTexture("thing"));
-        /*
-        Mesh* railings = g_resources.getMesh("world.Railings");
-        railings->buildOctree();
-        railings->octree->debugDraw(glm::mat4(1.f));
-        auto verts2 = createDecal(decalTransform, railings, glm::mat4(1.f));
-        renderer->drawDecal(verts2, decalTransform, g_resources.getTexture("thing"));
-        */
+
+        testDecal.setTexture(g_resources.getTexture("thing"));
+        testDecal.begin(decalTransform);
+        scene->track->addTrackMeshesToDecal(testDecal);
+        testDecal.end();
+        renderer->add(&testDecal);
 
         BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
-        renderer->drawBoundingBox(decalBoundingBox.transform(decalTransform), glm::mat4(1.f), glm::vec4(1.f));
-        renderer->drawBoundingBox(decalBoundingBox, decalTransform, glm::vec4(0, 1, 0, 1));
+        scene->debugDraw.boundingBox(decalBoundingBox.transform(decalTransform), glm::mat4(1.f), glm::vec4(1.f));
+        scene->debugDraw.boundingBox(decalBoundingBox, decalTransform, glm::vec4(0, 1, 0, 1));
     }
 #endif
 }
