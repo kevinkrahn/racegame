@@ -824,7 +824,60 @@ void Track::connectPoints()
 
 void Track::subdividePoints()
 {
-    // TODO: implement
+    // TODO: implement for track segments also
+    for (auto& railing : railings)
+    {
+        if (railing->selectedPoints.size() == 2 &&
+            (railing->selectedPoints[0].pointIndex - 1 == railing->selectedPoints[1].pointIndex
+                || railing->selectedPoints[0].pointIndex + 1 == railing->selectedPoints[1].pointIndex))
+        {
+            u32 pointIndexA = railing->selectedPoints[0].pointIndex;
+            u32 pointIndexB = railing->selectedPoints[1].pointIndex;
+            if (pointIndexB < pointIndexA)
+            {
+                std::swap(pointIndexA, pointIndexB);
+            }
+            RailingPoint& p1 = railing->points[pointIndexA];
+            RailingPoint& p2 = railing->points[pointIndexB];
+            glm::vec3 midPoint = pointOnBezierCurve(p1.position, p1.position + p1.handleOffsetB,
+                    p2.position + p2.handleOffsetA, p2.position, 0.5f);
+            glm::vec3 handleA = pointOnBezierCurve(p1.position, p1.position + p1.handleOffsetB,
+                    p2.position + p2.handleOffsetA, p2.position, 0.4f) - midPoint;
+            glm::vec3 handleB = pointOnBezierCurve(p1.position, p1.position + p1.handleOffsetB,
+                    p2.position + p2.handleOffsetA, p2.position, 0.6f) - midPoint;
+            railing->points.insert(railing->points.begin() + pointIndexB, {
+                midPoint,
+                handleA,
+                handleB
+            });
+            railing->isDirty = true;
+        }
+    }
+}
+
+void Track::split()
+{
+    for (auto& railing : railings)
+    {
+        if (railing->selectedPoints.size() == 1)
+        {
+            if (railing->selectedPoints.front().pointIndex == 0 ||
+                railing->selectedPoints.front().pointIndex == railing->points.size() - 1)
+            {
+                continue;
+            }
+            auto newRailing = std::make_unique<Railing>(this);
+            newRailing->points = std::vector<RailingPoint>(
+                    railing->points.begin() + railing->selectedPoints.front().pointIndex,
+                    railing->points.end());
+            railing->points.erase(
+                    railing->points.begin() + railing->selectedPoints.front().pointIndex + 1,
+                    railing->points.end());
+            railing->selectedPoints.clear();
+            railing->isDirty = true;
+            railings.push_back(std::move(newRailing));
+        }
+    }
 }
 
 glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir)

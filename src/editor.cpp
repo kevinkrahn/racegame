@@ -395,16 +395,22 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::TRACK)
     {
-        if (button(buttonOffset, buttonSpacing, "Connect Points [C]", scene->track->canConnect()) ||
+        if (button(buttonOffset, buttonSpacing, "Connect Points [c]", scene->track->canConnect()) ||
                 (g_input.isKeyPressed(KEY_C) && scene->track->canConnect()))
         {
             scene->track->connectPoints();
         }
 
-        if (button(buttonOffset, buttonSpacing, "Subdivide [V]", scene->track->canSubdivide()) ||
+        if (button(buttonOffset, buttonSpacing, "Subdivide [v]", scene->track->canSubdivide()) ||
                 (g_input.isKeyPressed(KEY_V) && scene->track->canSubdivide()))
         {
             scene->track->subdividePoints();
+        }
+
+        if (button(buttonOffset, buttonSpacing, "Split [t]", scene->track->canSplit()) ||
+                (g_input.isKeyPressed(KEY_V) && scene->track->canSubdivide()))
+        {
+            scene->track->split();
         }
 
         if (button(buttonOffset, buttonSpacing, "New Railing"))

@@ -204,7 +204,30 @@ public:
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
     void placeRailing(glm::vec3 const& p);
     bool canConnect() const { return selectedPoints.size() == 2; }
-    bool canSubdivide() const { return false; } // TODO: implement
+    bool canSubdivide() const
+    {
+        for (auto& railing : railings)
+        {
+            if (railing->selectedPoints.size() == 2 &&
+                (railing->selectedPoints[0].pointIndex - 1 == railing->selectedPoints[1].pointIndex
+                 || railing->selectedPoints[0].pointIndex + 1 == railing->selectedPoints[1].pointIndex))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool canSplit() const
+    {
+        for (auto& railing : railings)
+        {
+            if (railing->selectedPoints.size() == 1)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     bool canExtendTrack() const
     {
         if (!hasSelection())
@@ -218,6 +241,7 @@ public:
     void extendTrack(i32 prefabCurveIndex);
     void connectPoints();
     void subdividePoints();
+    void split();
     bool hasSelection() const { return selectedPoints.size() > 0; }
     i32 getSelectedPointIndex()
     {
