@@ -67,24 +67,10 @@ def save_mesh(obj, mesh_map):
     if(mesh_map.get(mesh_name, None) != None):
         return (False, mesh_name)
 
-    mesh = obj.data
-    mesh_copy = obj.to_mesh(bpy.context.scene, True, 'PREVIEW')
-    bm = bmesh.new()
-    bm.from_mesh(mesh_copy)
-    bmesh.ops.triangulate(bm, faces=bm.faces)
-    bm.to_mesh(mesh_copy)
-    bm.free()
-    del bm
-
-    def get_autosmooth_normal(mesh, fop, mesh_vi):
-        result = fop.normal
-        if fop.normal.length > 0.0:
-            for p in mesh.polygons:
-                if ( p != fop ) and ( mesh_vi in p.vertices ) and ( p.normal.length > 0.0):
-                    angle = int(round(math.degrees(fop.normal.angle(p.normal))))
-                    if angle <= mesh.auto_smooth_angle:
-                        result = mesh.vertices[mesh_vi].normal
-        return result
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    mesh_copy = obj.evaluated_get(depsgraph).to_mesh()
+    mesh_copy.calc_normals_split()
+    mesh_copy.calc_loop_triangles()
 
     vertices = []
     vertex_count = 0
@@ -94,59 +80,51 @@ def save_mesh(obj, mesh_map):
     index_buffer = bytearray()
     element_size = 0
 
-    if len(mesh.polygons) > 0:
+    if len(mesh_copy.loop_triangles) > 0:
+        if len(mesh_copy.uv_layers) == 0:
+            mesh_copy.uv_layers.new()
+        #mesh_copy.calc_tangents()
         element_size = 3
-        for tri in mesh_copy.polygons:
+        for tri in mesh_copy.loop_triangles:
+            tri_tex_coords = []
+            tri_colors = []
+            tri_tangents = []
             tri_positions = []
             tri_normals = []
-            for i in tri.vertices:
-                tri_positions.append(mesh_copy.vertices[i].co)
+            for loop_index in tri.loops:
+                if len(mesh_copy.uv_layers) > 0:
+                    uvs = []
+                    for uv_layer in mesh_copy.uv_layers:
+                        uvs.append(uv_layer.data[loop_index].uv)
+                    tri_tex_coords.append(uvs)
+                else:
+                    tri_tex_coords.append([[ 0, 0 ]])
 
-                normal = tri.normal
-                if tri.use_smooth:
-                    v = mesh_copy.vertices[i]
-                    if mesh_copy.use_auto_smooth:
-                        normal = get_autosmooth_normal(mesh_copy, tri, v)
-                    else:
-                        normal = v.normal
+                if len(mesh_copy.vertex_colors) > 0:
+                    colors = []
+                    for color in mesh_copy.vertex_colors:
+                        colors.append(color.data[loop_index].color)
+                    tri_colors.append(colors)
+                else:
+                    tri_colors.append([[ 1, 1, 1 ]])
 
-                tri_normals.append(normal)
-
-            tri_tex_coords = []
-            tri_colors     = []
-            for i in tri.loop_indices:
-                tex_coords = []
-                colors = []
-                for uv_layer in mesh_copy.uv_layers:
-                    uv = uv_layer.data[i].uv
-                    uv.y = 1.0 - uv.y
-                    tex_coords.append(uv)
-
-                for color_layer in mesh_copy.vertex_colors:
-                    colors.append(color_layer.data[i].color)
-
-                tri_tex_coords.append(tex_coords)
-                tri_colors.append(colors)
+                loop = mesh_copy.loops[loop_index]
+                #tri_tangents.append([ loop.tangent[0], loop.tangent[1], loop.tangent[2], loop.bitangent_sign ])
+                tri_normals.append(loop.normal)
+                tri_positions.append(mesh_copy.vertices[loop.vertex_index].co)
 
             for i in range(3):
                 position = tri_positions[i]
                 normal = tri_normals[i]
+                #tangent = tri_tangents[i]
                 colors = tri_colors[i]
                 tex_coords = tri_tex_coords[i]
 
-                if (len(colors) == 0):
-                    colors = [[1.0, 1.0, 1.0]]
-
-                if (len(tex_coords) == 0):
-                    tex_coords = [[0.0, 0.0]]
-
-                vertex = (position[0], position[1], position[2], normal[0], normal[1], normal[2]);
+                vertex = (position[0], position[1], position[2], normal[0], normal[1], normal[2])
                 for c in colors:
                     vertex = vertex + (c[0], c[1], c[2])
                 for u in tex_coords:
                     vertex = vertex + (u[0], u[1])
-                #vertex = tuple(map(lambda x: round(x, 4), vertex))
-                #vertex = str(vertex)
 
                 index = vertex_dict.get(vertex, None)
                 if index == None:
@@ -154,7 +132,9 @@ def save_mesh(obj, mesh_map):
                     vertex_count += 1
                     vertex_dict[vertex] = index
                     vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
-                                                        normal[0], normal[1], normal[2])
+                                                        normal[0], normal[1], normal[2]
+                                                        #tangent[0], tangent[1], tangent[2], tangent[3]
+                                                        )
                     for c in colors:
                         vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
                     for u in tex_coords:
@@ -163,7 +143,7 @@ def save_mesh(obj, mesh_map):
                 indices.append(index)
                 index_buffer += struct.pack('<I', index)
 
-    elif len(mesh.edges) > 0:
+    elif len(mesh_copy.edges) > 0:
         element_size = 2
         vertex_count = len(mesh_copy.vertices)
         for v in mesh_copy.vertices:
@@ -210,7 +190,7 @@ def save_path(obj, scene):
     obj.data.extrude = 0
     obj.data.bevel_depth = 0
     obj.data.offset = 0
-    path_mesh = obj.to_mesh(scene, False, 'PREVIEW')
+    path_mesh = obj.to_mesh(preserve_all_data_layers=True)
 
     buf = bytearray()
 
@@ -254,27 +234,27 @@ def save_blender_data():
                 result = save_mesh(obj, mesh_map)
                 save_object(obj, 'MESH', obj.matrix_world, result[1])
 
-            elif obj.type == 'EMPTY':
-                if obj.dupli_group:
-                    for child in obj.dupli_group.objects:
-                        offset = Matrix.Translation(obj.dupli_group.dupli_offset).inverted()
-                        matrix = obj.matrix_world * offset * child.matrix_world
+            #elif obj.type == 'EMPTY':
+                #if obj.dupli_group:
+                    #for child in obj.dupli_group.objects:
+                        #offset = Matrix.Translation(obj.dupli_group.dupli_offset).inverted()
+                        #matrix = obj.matrix_world * offset * child.matrix_world
                         # TODO: fix
                         #result = save_mesh(child, mesh_map)
                         #save_object(child, 0, matrix, result[1])
-                        data_name = namePrefix(
-                                bpy.data.filepath if child.library == None else child.library.filepath) + child.data.name
-                        save_object(child, 'MESH', matrix, data_name)
-                else:
-                    save_object(obj, 'EMPTY', obj.matrix_world)
+                        #data_name = namePrefix(
+                                #bpy.data.filepath if child.library == None else child.library.filepath) + child.data.name
+                        #save_object(child, 'MESH', matrix, data_name)
+                #else:
+                    #save_object(obj, 'EMPTY', obj.matrix_world)
 
-            elif obj.type == 'CURVE':
-                entities.append({
-                    'type': 'PATH',
-                    'name': obj.name,
-                    'properties': get_props(obj),
-                    'points': save_path(obj, scene)
-                })
+            #elif obj.type == 'CURVE':
+                #entities.append({
+                    #'type': 'PATH',
+                    #'name': obj.name,
+                    #'properties': get_props(obj),
+                    #'points': save_path(obj, scene)
+                #})
 
         scenes.append({
             'type': 'scene',
