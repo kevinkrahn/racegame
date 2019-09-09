@@ -86,8 +86,15 @@ Scene::~Scene()
     offroadMaterial->release();
 }
 
-void Scene::startRace(glm::mat4 const& start)
+void Scene::startRace()
 {
+    if (!this->start)
+    {
+        error("There is no starting point!");
+        return;
+    }
+    glm::mat4 const& start = this->start->transform;
+
     track->buildTrackGraph(&trackGraph);
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
@@ -135,7 +142,7 @@ void Scene::onStart()
     }
     else
     {
-        startRace(track->getStart());
+        startRace();
     }
 }
 
@@ -311,6 +318,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         trackPreview2D.beginUpdate(renderer, size, size);
 
+        Mesh* quadMesh = g_resources.getMesh("world.Quad");
+        trackPreview2D.drawItem(
+            quadMesh->vao, quadMesh->numIndices,
+            trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
+                * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.2f), true);
         track->drawTrackPreview(&trackPreview2D, trackOrtho);
 
         Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
@@ -583,6 +595,12 @@ void Scene::deserialize(DataFile::Value& data)
                 StaticDecal* decal = new StaticDecal();
                 decal->deserialize(val);
                 this->addEntity(decal);
+            } break;
+            case SerializedEntityID::START:
+            {
+                this->start = new Start();
+                this->start->deserialize(val);
+                this->addEntity(start);
             } break;
         }
     }

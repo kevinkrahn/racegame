@@ -176,9 +176,7 @@ private:
     bool isDragging = false;
     glm::vec3 dragOffset;
     std::vector<Selection> selectedPoints;
-    Scene* scene;
-    Decal finishLineDecal;
-    void updateFinishLineDecal();
+    Scene* scene = nullptr;
 
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
@@ -203,20 +201,6 @@ public:
     {
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
-    glm::mat4 getStart()
-    {
-        BezierSegment* c = getPointConnection(0);
-        f32 length = c->getLength();
-        f32 t = 20.f / length;
-        glm::vec3 xDir = glm::normalize(c->directionOnCurve(t));
-        glm::vec3 yDir = glm::cross(glm::vec3(0, 0, 1), xDir);
-        glm::vec3 zDir = glm::cross(xDir, yDir);
-        glm::mat4 m(1.f);
-        m[0] = glm::vec4(xDir, m[0].w);
-        m[1] = glm::vec4(yDir, m[1].w);
-        m[2] = glm::vec4(zDir, m[2].w);
-        return glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 3) + c->pointOnCurve(t)) * m;
-    }
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
     void placeRailing(glm::vec3 const& p);
     bool canConnect() const { return selectedPoints.size() == 2; }

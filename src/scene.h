@@ -12,6 +12,7 @@
 #include "terrain.h"
 #include "track.h"
 #include "datafile.h"
+#include "entities/start.h"
 #include <vector>
 
 enum
@@ -73,11 +74,12 @@ public:
     DebugDraw debugDraw;
     Terrain* terrain = nullptr;
     Track* track = nullptr;
+    Start* start = nullptr;
 
     Scene(const char* name);
     ~Scene();
 
-    void startRace(glm::mat4 const& start);
+    void startRace();
     void stopRace();
 
     DataFile::Value serialize();
@@ -92,7 +94,7 @@ public:
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
     void attackCredit(u32 instigator, u32 victim);
 
-    glm::mat4 getStart() const { return track->getStart(); }
+    glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
     u32 getTotalLaps() const { return totalLaps; }

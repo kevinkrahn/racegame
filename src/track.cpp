@@ -7,6 +7,7 @@
 #include "game.h"
 #include "track_graph.h"
 #include "2d.h"
+#include "entities/start.h"
 
 glm::vec4 red = { 1.f, 0.f, 0.f, 1.f };
 glm::vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
@@ -14,18 +15,6 @@ glm::vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
 glm::vec4 brightOrange = { 1.f, 0.65f, 0.1f, 1.f };
 glm::vec4 blue = { 0.f, 0.0f, 1.f, 1.f };
 glm::vec4 brightBlue = { 0.25f, 0.25f, 1.0f, 1.f };
-
-void Track::updateFinishLineDecal()
-{
-    finishLineDecal.setTexture(g_resources.getTexture("checkers"));
-    glm::mat4 start = getStart();
-    glm::mat4 decalTransform = start *
-        glm::scale(glm::mat4(1.f), { 22.f * 0.0625f, 22.f, 30.f }) *
-        glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 });
-    finishLineDecal.begin(decalTransform);
-    addTrackMeshesToDecal(finishLineDecal);
-    finishLineDecal.end();
-}
 
 void Track::onCreate(Scene* scene)
 {
@@ -49,7 +38,24 @@ void Track::onCreate(Scene* scene)
             railing->updateMesh();
         }
     }
-    updateFinishLineDecal();
+    if (!scene->start)
+    {
+        BezierSegment* c = getPointConnection(0);
+        f32 length = c->getLength();
+        f32 t = 20.f / length;
+        glm::vec3 xDir = glm::normalize(c->directionOnCurve(t));
+        glm::vec3 yDir = glm::cross(glm::vec3(0, 0, 1), xDir);
+        glm::vec3 zDir = glm::cross(xDir, yDir);
+        glm::mat4 m(1.f);
+        m[0] = glm::vec4(xDir, m[0].w);
+        m[1] = glm::vec4(yDir, m[1].w);
+        m[2] = glm::vec4(zDir, m[2].w);
+
+        scene->start = new Start();
+        scene->start->position = glm::vec3(0, 0, 3) + c->pointOnCurve(t);
+        scene->start->rotation = glm::quat_cast(m);
+        scene->addEntity(scene->start);
+    }
 }
 
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
@@ -82,9 +88,7 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 
     if (wasTrackUpdated)
     {
-        updateFinishLineDecal();
     }
-    renderer->add(&finishLineDecal);
 
     Texture* concreteTex = g_resources.getTexture("concrete");
     for (auto& railing : railings)
@@ -123,8 +127,6 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     }
 
     renderer->add(this);
-    Mesh* startMesh = g_resources.getMesh("world.Cube.002");
-    renderer->push(LitRenderable(startMesh, getStart(), nullptr));
 }
 
 void Track::clearSelection()
@@ -1080,7 +1082,7 @@ void Track::buildTrackGraph(TrackGraph* trackGraph)
         trackGraph->addConnection(c->pointIndexA, startNodeIndex);
         trackGraph->addConnection(nodeIndex - 1, c->pointIndexB);
     }
-    trackGraph->rebuild(getStart());
+    trackGraph->rebuild(scene->start->transform);
 }
 
 DataFile::Value Track::serialize()
@@ -1193,11 +1195,6 @@ void Track::computeBoundingBox()
 
 void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection)
 {
-    Mesh* quadMesh = g_resources.getMesh("world.Quad");
-    trackPreview->drawItem(
-        quadMesh->vao, quadMesh->numIndices,
-        orthoProjection * getStart()* glm::translate(glm::mat4(1.f), { 0, 0, -2 })
-            * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.2f), true);
     for (auto& c : connections)
     {
         trackPreview->drawItem(c->vao, c->indices.size(),

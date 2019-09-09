@@ -55,7 +55,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         else
         {
             scene->terrain->regenerateCollisionMesh(scene);
-            scene->startRace(scene->track->getStart());
+            scene->startRace();
         }
         entityDragAxis = DragAxis::NONE;
     }

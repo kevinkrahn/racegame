@@ -9,6 +9,7 @@ enum struct SerializedEntityID
     TRACK,
     ROCK,
     STATIC_DECAL,
+    START,
 };
 
 struct ActorUserData
