@@ -72,11 +72,9 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
 void Terrain::onCreate(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-    ActorUserData* userData = new ActorUserData;
-    userData->entityType = ActorUserData::SCENERY;
-    userData->entity = this;
-    physicsUserData.reset(userData);
-    actor->userData = userData;
+    physicsUserData.entityType = ActorUserData::ENTITY;
+    physicsUserData.entity = this;
+    actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
 
     regenerateMesh();
@@ -205,7 +203,7 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     {
         PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(triMesh), *scene->offroadMaterial);
-        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, DECAL_TERRAIN, 0, DRIVABLE_SURFACE));
         shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
         shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
     }
@@ -599,3 +597,46 @@ void Terrain::deserialize(DataFile::Value& data)
     heightBuffer.assign(dataBegin, dataEnd);
 }
 
+void Terrain::applyDecal(Decal& decal)
+{
+    i32 width = (x2 - x1) / tileSize;
+    i32 height = (y2 - y1) / tileSize;
+    std::vector<u32> collisionIndices;
+    collisionIndices.reserve(256);
+    BoundingBox bb = decal.getBoundingBox();
+    u32 startX = getCellX(bb.min.x);
+    u32 startY = getCellY(bb.min.y);
+    u32 endX = glm::min(getCellX(bb.max.x) + 1, width - 1);
+    u32 endY = glm::min(getCellY(bb.max.y) + 1, height - 1);
+    for (u32 x = startX; x < endX; ++x)
+    {
+        for (i32 y = startY; y < endY; ++y)
+        {
+            if (x < width - 1 && y < height - 1)
+            {
+                if ((x & 1) ? (y & 1) : !(y & 1))
+                {
+                    collisionIndices.push_back(y * width + x);
+                    collisionIndices.push_back(y * width + x + 1);
+                    collisionIndices.push_back((y + 1) * width + x);
+
+                    collisionIndices.push_back((y + 1) * width + x);
+                    collisionIndices.push_back(y * width + x + 1);
+                    collisionIndices.push_back((y + 1) * width + x + 1);
+                }
+                else
+                {
+                    collisionIndices.push_back(y * width + x);
+                    collisionIndices.push_back(y * width + x + 1);
+                    collisionIndices.push_back((y + 1) * width + x + 1);
+
+                    collisionIndices.push_back((y + 1) * width + x + 1);
+                    collisionIndices.push_back((y + 1) * width + x);
+                    collisionIndices.push_back(y * width + x);
+                }
+            }
+        }
+    }
+    decal.addMesh((f32*)vertices.data(), sizeof(Vertex),
+            collisionIndices.data(), (u32)collisionIndices.size(), glm::mat4(1.f));
+}

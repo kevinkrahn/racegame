@@ -1066,7 +1066,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             if (userData->entityType == ActorUserData::SELECTABLE_ENTITY)
                             {
                                 auto it = std::find(selectedEntities.begin(),
-                                    selectedEntities.end(), (PlaceableEntity*)userData->entity);
+                                    selectedEntities.end(), userData->placeableEntity);
                                 if (g_input.isKeyDown(KEY_LSHIFT))
                                 {
                                     if (it != selectedEntities.end())

@@ -13,23 +13,8 @@
 #include "track.h"
 #include "datafile.h"
 #include "entities/start.h"
+#include "collision_flags.h"
 #include <vector>
-
-enum
-{
-    COLLISION_FLAG_TRACK      = 1 << 0,
-    COLLISION_FLAG_GROUND     = 1 << 1,
-    COLLISION_FLAG_WHEEL      = 1 << 2,
-    COLLISION_FLAG_CHASSIS    = 1 << 3,
-    COLLISION_FLAG_DEBRIS     = 1 << 4,
-    COLLISION_FLAG_SELECTABLE = 1 << 5,
-};
-
-enum
-{
-    DRIVABLE_SURFACE = 0xffff0000,
-    UNDRIVABLE_SURFACE = 0x0000ffff
-};
 
 class Scene : public PxSimulationEventCallback
 {

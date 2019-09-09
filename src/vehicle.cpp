@@ -971,23 +971,20 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
     // destroy vehicle if off track or out of bounds
     bool onGround = false;
-    if (getPosition().z < -8.f)
+    if (getPosition().z < -16.f)
     {
         applyDamage(100.f, vehicleIndex);
     }
     else
     {
         PxRaycastBuffer hit;
-        if (scene->raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit))
+        if (scene->raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit, COLLISION_FLAG_TRACK))
         {
             onGround = true;
-            if (hit.block.actor->userData)
-            {
-                if (((ActorUserData*)hit.block.actor->userData)->entityType != ActorUserData::TRACK)
-                {
-                    applyDamage(100.f, vehicleIndex);
-                }
-            }
+        }
+        else
+        {
+            applyDamage(100.f, vehicleIndex);
         }
     }
 

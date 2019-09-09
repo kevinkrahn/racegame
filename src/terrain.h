@@ -31,7 +31,7 @@ class Terrain : public Renderable, public Entity
     bool isCollisionMeshDirty = true;
 
     PxRigidStatic* actor = nullptr;
-    std::unique_ptr<struct ActorUserData> physicsUserData;
+    ActorUserData physicsUserData;
     void setDirty()
     {
         isDirty = true;
@@ -82,6 +82,7 @@ public:
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
+    void applyDecal(class Decal& decal) override;
 
     // renderable
     //void onBeforeRender(f32 deltaTime) override {};

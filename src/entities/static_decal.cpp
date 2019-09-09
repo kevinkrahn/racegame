@@ -3,24 +3,26 @@
 #include "../scene.h"
 #include "../game.h"
 
-StaticDecal::StaticDecal(glm::vec3 const& pos)
+#include <typeinfo>
+
+StaticDecal::StaticDecal(glm::vec3 const& pos, u32 decalFilter)
 {
     position = pos;
     scale = glm::vec3(16.f);
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
     tex = g_resources.getTexture("thing");
+    this->decalFilter = decalFilter;
 }
 
 void StaticDecal::onCreateEnd(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
-    physicsUserData.entity = this;
+    physicsUserData.placeableEntity = this;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
             PxBoxGeometry(convert(scale * 0.5f)), *scene->offroadMaterial);
-    collisionShape->setQueryFilterData(PxFilterData(
-                COLLISION_FLAG_SELECTABLE, 0, 0, 0));
+    collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0));
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
 
@@ -29,17 +31,40 @@ void StaticDecal::onCreateEnd(Scene* scene)
 
 void StaticDecal::updateTransform(Scene* scene)
 {
-    PlaceableEntity::updateTransform(scene);
-    decal.begin(transform);
-    scene->track->addTrackMeshesToDecal(decal);
-    decal.end();
     if (actor)
     {
+        PlaceableEntity::updateTransform(scene);
+
         PxShape* shape = nullptr;
         actor->getShapes(&shape, 1);
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
     }
+
+    const u32 bufferSize = 32;
+    PxOverlapHit hitBuffer[bufferSize];
+    PxOverlapBuffer hit(hitBuffer, bufferSize);
+    PxQueryFilterData filter;
+    filter.flags |= PxQueryFlag::eSTATIC;
+    //filter.flags |= PxQueryFlag::eDYNAMIC;
+    filter.data = PxFilterData(0, decalFilter, 0, 0);
+    decal.begin(transform);
+    if (scene->getPhysicsScene()->overlap(PxBoxGeometry(convert(glm::abs(scale * 0.5f))),
+                PxTransform(convert(position), convert(rotation)), hit, filter))
+    {
+        for (u32 i=0; i<hit.getNbTouches(); ++i)
+        {
+            PxActor* actor = hit.getTouch(i).actor;
+            ActorUserData* userData = (ActorUserData*)actor->userData;
+            if (userData && (userData->entityType == ActorUserData::ENTITY
+                        || userData->entityType == ActorUserData::SELECTABLE_ENTITY))
+            {
+                Entity* entity = (Entity*)userData->entity;
+                entity->applyDecal(decal);
+            }
+        }
+    }
+    decal.end();
 }
 
 void StaticDecal::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)

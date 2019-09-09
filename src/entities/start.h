@@ -16,6 +16,7 @@ public:
         mesh = g_resources.getMesh("world.Cube.002");
     }
 
+    void applyDecal(class Decal& decal) override;
     void updateTransform(class Scene* scene) override;
     void onCreateEnd(class Scene* scene) override;
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;

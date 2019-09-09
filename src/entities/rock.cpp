@@ -14,9 +14,8 @@ void Rock::onCreate(Scene* scene)
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
             PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->offroadMaterial);
     collisionShape->setQueryFilterData(PxFilterData(
-                COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, 0, 0, DRIVABLE_SURFACE));
-    collisionShape->setSimulationFilterData(PxFilterData(
-                COLLISION_FLAG_GROUND, -1, 0, 0));
+                COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
+    collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
 }
 
@@ -56,4 +55,9 @@ void Rock::deserialize(DataFile::Value& data)
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
+}
+
+void Rock::applyDecal(Decal& decal)
+{
+    decal.addMesh(mesh, transform);
 }

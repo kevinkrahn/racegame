@@ -20,6 +20,7 @@ public:
         tex = g_resources.getTexture("rock");
     }
 
+    void applyDecal(class Decal& decal) override;
     void onCreate(class Scene* scene) override;
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) override;

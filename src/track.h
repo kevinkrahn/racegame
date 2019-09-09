@@ -258,7 +258,7 @@ public:
     void buildTrackGraph(class TrackGraph* trackGraph);
     void drawTrackPreview(class TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection);
     BoundingBox getBoundingBox() const { return boundingBox; }
-    void addTrackMeshesToDecal(Decal& decal) const
+    void applyDecal(Decal& decal) override
     {
         BoundingBox decalBoundingBox = decal.getBoundingBox();
         for (auto& c : connections)

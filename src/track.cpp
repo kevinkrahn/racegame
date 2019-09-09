@@ -19,7 +19,7 @@ glm::vec4 brightBlue = { 0.25f, 0.25f, 1.0f, 1.f };
 void Track::onCreate(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-    physicsUserData.entityType = ActorUserData::TRACK;
+    physicsUserData.entityType = ActorUserData::ENTITY;
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
@@ -1060,7 +1060,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         c.collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(triMesh), *scene->trackMaterial);
         c.collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_TRACK, 0, 0, DRIVABLE_SURFACE));
+                    COLLISION_FLAG_TRACK, DECAL_TRACK, 0, DRIVABLE_SURFACE));
         c.collisionShape->setSimulationFilterData(PxFilterData(
                     COLLISION_FLAG_TRACK, -1, 0, 0));
     }
@@ -1414,7 +1414,7 @@ void Track::Railing::updateMesh()
         collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(mesh.getCollisionMesh()), *track->scene->trackMaterial);
         collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_GROUND, 0, 0, DRIVABLE_SURFACE));
+                    COLLISION_FLAG_GROUND, DECAL_RAILING, 0, DRIVABLE_SURFACE));
         collisionShape->setSimulationFilterData(PxFilterData(
                     COLLISION_FLAG_GROUND, -1, 0, 0));
     }
