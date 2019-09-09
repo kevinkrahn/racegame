@@ -8,3 +8,4 @@
 - Add MSAA
 - Export mesh tangents and add normal maps
 - Add grass placement system (auto-stick to terrain, overlapping objects automatically destroy it)
+- Screen shake (when you blow up, or nearby cars blow up. Maybe also on hard impacts?)

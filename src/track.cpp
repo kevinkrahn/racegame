@@ -15,6 +15,18 @@ glm::vec4 brightOrange = { 1.f, 0.65f, 0.1f, 1.f };
 glm::vec4 blue = { 0.f, 0.0f, 1.f, 1.f };
 glm::vec4 brightBlue = { 0.25f, 0.25f, 1.0f, 1.f };
 
+void Track::updateFinishLineDecal()
+{
+    finishLineDecal.setTexture(g_resources.getTexture("checkers"));
+    glm::mat4 start = getStart();
+    glm::mat4 decalTransform = start *
+        glm::scale(glm::mat4(1.f), { 22.f * 0.0625f, 22.f, 30.f }) *
+        glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 });
+    finishLineDecal.begin(decalTransform);
+    addTrackMeshesToDecal(finishLineDecal);
+    finishLineDecal.end();
+}
+
 void Track::onCreate(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
@@ -37,10 +49,12 @@ void Track::onCreate(Scene* scene)
             railing->updateMesh();
         }
     }
+    updateFinishLineDecal();
 }
 
 void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
+    bool wasTrackUpdated = false;
     for (auto& c : connections)
     {
         /*
@@ -62,8 +76,15 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         if (c->isDirty || c->vertices.empty())
         {
             createSegmentMesh(*c, scene);
+            wasTrackUpdated = true;
         }
     }
+
+    if (wasTrackUpdated)
+    {
+        updateFinishLineDecal();
+    }
+    renderer->add(&finishLineDecal);
 
     Texture* concreteTex = g_resources.getTexture("concrete");
     for (auto& railing : railings)

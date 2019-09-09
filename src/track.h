@@ -177,6 +177,8 @@ private:
     glm::vec3 dragOffset;
     std::vector<Selection> selectedPoints;
     Scene* scene;
+    Decal finishLineDecal;
+    void updateFinishLineDecal();
 
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
