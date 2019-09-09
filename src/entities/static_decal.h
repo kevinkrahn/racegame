@@ -9,7 +9,7 @@ class StaticDecal : public PlaceableEntity
     Decal decal;
 
 public:
-    StaticDecal();
+    StaticDecal(glm::vec3 const& pos = {0, 0, 0});
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onUpdate(class Renderer* renderer, class Scene* scene, f32 deltaTime) override;

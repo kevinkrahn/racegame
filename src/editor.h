@@ -83,6 +83,7 @@ class Editor
     u32 entityDragAxis = DragAxis::NONE;
     glm::vec3 entityDragOffset;
     glm::vec3 rotatePivot;
+    u32 selectedEntityTypeIndex = 0;
 
     std::vector<PlaceableEntity*> selectedEntities;
 

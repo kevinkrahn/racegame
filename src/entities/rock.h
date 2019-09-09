@@ -10,8 +10,12 @@ class Rock : public PlaceableEntity
     Texture* tex;
 
 public:
-    Rock()
+    Rock(glm::vec3 const& position = {0, 0, 0}, glm::vec3 const& scale = {1, 1, 1},
+            f32 zRotation=0.f)
     {
+        this->position = position;
+        this->scale = scale;
+        this->rotation = glm::rotate(this->rotation, zRotation, glm::vec3(0, 0, 1));
         mesh = g_resources.getMesh("world.Rock");
         tex = g_resources.getTexture("rock");
     }

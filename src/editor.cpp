@@ -10,6 +10,21 @@
 #include "entities/rock.h"
 #include "entities/static_decal.h"
 
+struct EntityType
+{
+    std::string name;
+    std::function<PlaceableEntity*(glm::vec3 const& p, RandomSeries& s)> make;
+};
+
+#define fn [](glm::vec3 const& p, RandomSeries& s) -> PlaceableEntity*
+
+std::vector<EntityType> entityTypes = {
+    { "Rock", fn { return new Rock(p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, M_PI * 2)); } },
+    { "Decal", fn { return new StaticDecal(p); } },
+};
+
+#undef fn
+
 void Editor::onStart(Scene* scene)
 {
 
@@ -259,7 +274,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     glm::vec2 buttonOffset = guiOffset + glm::vec2(0, modeSelectionMaxY);
     glm::vec2 buttonSpacing(0.f, height * 0.045f);
 
-    if (editMode != EditMode::TERRAIN)
+    //if (editMode != EditMode::TERRAIN)
+    if (editMode == EditMode::TRACK)
     {
         if (button(buttonOffset, buttonSpacing, gridSettings.show ? "Show Grid: ON" : "Show Grid: OFF"))
         {
@@ -469,6 +485,15 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
+        for (u32 i=0; i<(u32)entityTypes.size(); ++i)
+        {
+            auto& entityType = entityTypes[i];
+            if (button(buttonOffset, buttonSpacing, entityType.name.c_str()))
+            {
+                selectedEntityTypeIndex = i;
+            }
+        }
+
         if (!entityDragAxis && g_input.isKeyPressed(KEY_DELETE))
         {
             for (PlaceableEntity* e : selectedEntities)
@@ -729,36 +754,33 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     {
                         for (PlaceableEntity* e : selectedEntities)
                         {
-                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
-                                * glm::mat4_cast(e->rotation);
                             glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, glm::vec3(1, 0, 0)) *
-                                glm::translate(glm::mat4(1.f), -p) * t;
-                            e->position = translationOf(transform) + p;
-                            e->rotation = glm::quat_cast(transform);
+                                glm::translate(glm::mat4(1.f), -rotatePivot);
+                            e->position = glm::vec3(transform * glm::vec4(e->position, 1.f)) + rotatePivot;
+                            e->rotation = glm::rotate(glm::identity<glm::quat>(),
+                                    angleDiff, glm::vec3(1, 0, 0)) * e->rotation;
                         }
                     }
                     else if (entityDragAxis & DragAxis::Y)
                     {
                         for (PlaceableEntity* e : selectedEntities)
                         {
-                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
-                                * glm::mat4_cast(e->rotation);
                             glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, glm::vec3(0, 1, 0)) *
-                                glm::translate(glm::mat4(1.f), -p) * t;
-                            e->position = translationOf(transform) + p;
-                            e->rotation = glm::quat_cast(transform);
+                                glm::translate(glm::mat4(1.f), -rotatePivot);
+                            e->position = glm::vec3(transform * glm::vec4(e->position, 1.f)) + rotatePivot;
+                            e->rotation = glm::rotate(glm::identity<glm::quat>(),
+                                    angleDiff, glm::vec3(0, 1, 0)) * e->rotation;
                         }
                     }
                     else if (entityDragAxis & DragAxis::Z)
                     {
                         for (PlaceableEntity* e : selectedEntities)
                         {
-                            glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
-                                * glm::mat4_cast(e->rotation);
                             glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, glm::vec3(0, 0, 1)) *
-                                glm::translate(glm::mat4(1.f), -p) * t;
-                            e->position = translationOf(transform) + p;
-                            e->rotation = glm::quat_cast(transform);
+                                glm::translate(glm::mat4(1.f), -rotatePivot);
+                            e->position = glm::vec3(transform * glm::vec4(e->position, 1.f)) + rotatePivot;
+                            e->rotation = glm::rotate(glm::identity<glm::quat>(),
+                                    angleDiff, glm::vec3(0, 0, 1)) * e->rotation;
                         }
                     }
                     entityDragOffset.x = angle;
@@ -999,12 +1021,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
                     {
                         glm::vec3 hitPoint = convert(hit.block.position);
-#if 0
-                        PlaceableEntity* newEntity = new Rock();
-#else
-                        PlaceableEntity* newEntity = new StaticDecal();
-#endif
-                        newEntity->position = hitPoint;
+                        PlaceableEntity* newEntity =
+                            entityTypes[selectedEntityTypeIndex].make(hitPoint, scene->randomSeries);
                         newEntity->updateTransform(scene);
                         scene->addEntity(newEntity);
                     }

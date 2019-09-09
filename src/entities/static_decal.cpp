@@ -3,8 +3,9 @@
 #include "../scene.h"
 #include "../game.h"
 
-StaticDecal::StaticDecal()
+StaticDecal::StaticDecal(glm::vec3 const& pos)
 {
+    position = pos;
     scale = glm::vec3(16.f);
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
     tex = g_resources.getTexture("thing");
