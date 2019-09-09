@@ -485,6 +485,29 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
+        const char* transformModeNames[] = { "Translate [g]", "Rotate [r]", "Scale [f]" };
+        if (button(buttonOffset, buttonSpacing, transformModeNames[(u32)transformMode]) > 0 ||
+            g_input.isKeyPressed(KEY_SPACE))
+        {
+            transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
+            entityDragAxis = DragAxis::NONE;
+        }
+        if (button(buttonOffset, buttonSpacing, "Duplicate [b]", selectedEntities.size() > 0)
+                || (selectedEntities.size() > 0 && g_input.isKeyPressed(KEY_B)))
+        {
+            std::vector<PlaceableEntity*> newEntities;
+            for (auto e : selectedEntities)
+            {
+                auto data = e->serialize();
+                newEntities.push_back((PlaceableEntity*)scene->deserializeEntity(data));
+            }
+            selectedEntities.clear();
+            for (auto e : newEntities)
+            {
+                selectedEntities.push_back(e);
+            }
+        }
+
         for (u32 i=0; i<(u32)entityTypes.size(); ++i)
         {
             auto& entityType = entityTypes[i];
@@ -517,12 +540,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             f32 rot = (f32)M_PI * 0.5f;
             glm::vec2 windowSize(g_game.windowWidth, g_game.windowHeight);
             glm::mat4 viewProj = renderer->getCamera(0).viewProjection;
-
-            if (g_input.isKeyPressed(KEY_SPACE))
-            {
-                transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
-                entityDragAxis = DragAxis::NONE;
-            }
 
             if (g_input.isKeyPressed(KEY_G))
             {

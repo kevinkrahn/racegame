@@ -84,6 +84,7 @@ public:
 
     DataFile::Value serialize();
     void deserialize(DataFile::Value& data);
+    Entity* deserializeEntity(DataFile::Value& data);
 
     void onStart();
     void onEnd();

@@ -563,46 +563,52 @@ DataFile::Value Scene::serialize()
     return dict;
 }
 
+Entity* Scene::deserializeEntity(DataFile::Value& val)
+{
+    SerializedEntityID entityID = (SerializedEntityID)val["entityID"].integer();
+    switch (entityID)
+    {
+        case SerializedEntityID::TERRAIN:
+        {
+            this->terrain = new Terrain();
+            this->terrain->deserialize(val);
+            this->addEntity(this->terrain);
+        } break;
+        case SerializedEntityID::TRACK:
+        {
+            this->track = new Track();
+            this->track->deserialize(val);
+            this->addEntity(this->track);
+        } break;
+        case SerializedEntityID::ROCK:
+        {
+            Rock* rock = new Rock();
+            rock->deserialize(val);
+            rock->updateTransform(this);
+            this->addEntity(rock);
+        } break;
+        case SerializedEntityID::STATIC_DECAL:
+        {
+            StaticDecal* decal = new StaticDecal();
+            decal->deserialize(val);
+            this->addEntity(decal);
+        } break;
+        case SerializedEntityID::START:
+        {
+            this->start = new Start();
+            this->start->deserialize(val);
+            this->addEntity(start);
+        } break;
+    }
+    return newEntities.back().get();
+}
+
 void Scene::deserialize(DataFile::Value& data)
 {
     auto& entityArray = data["entities"].array();
     for (auto& val : entityArray)
     {
-        SerializedEntityID entityID = (SerializedEntityID)val["entityID"].integer();
-        switch (entityID)
-        {
-            case SerializedEntityID::TERRAIN:
-            {
-                this->terrain = new Terrain();
-                this->terrain->deserialize(val);
-                this->addEntity(this->terrain);
-            } break;
-            case SerializedEntityID::TRACK:
-            {
-                this->track = new Track();
-                this->track->deserialize(val);
-                this->addEntity(this->track);
-            } break;
-            case SerializedEntityID::ROCK:
-            {
-                Rock* rock = new Rock();
-                rock->deserialize(val);
-                rock->updateTransform(this);
-                this->addEntity(rock);
-            } break;
-            case SerializedEntityID::STATIC_DECAL:
-            {
-                StaticDecal* decal = new StaticDecal();
-                decal->deserialize(val);
-                this->addEntity(decal);
-            } break;
-            case SerializedEntityID::START:
-            {
-                this->start = new Start();
-                this->start->deserialize(val);
-                this->addEntity(start);
-            } break;
-        }
+        deserializeEntity(val);
     }
 }
 

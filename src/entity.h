@@ -97,7 +97,5 @@ public:
             actor->release();
         }
     }
-
-    virtual std::unique_ptr<PlaceableEntity> editorInstantiate(class Editor* editor) { return nullptr; }
 };
 
