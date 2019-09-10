@@ -7,7 +7,7 @@ enum struct SerializedEntityID
 {
     TERRAIN,
     TRACK,
-    ROCK,
+    STATIC_MESH,
     STATIC_DECAL,
     START,
 };
@@ -92,6 +92,8 @@ public:
             }
         }
     }
+    virtual const char* getName() const { return "Unknown Entity"; };
+    virtual void showDetails() {}
 
     ~PlaceableEntity()
     {

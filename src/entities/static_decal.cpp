@@ -5,12 +5,18 @@
 
 #include <typeinfo>
 
-StaticDecal::StaticDecal(glm::vec3 const& pos, u32 decalFilter)
+const char* textures[] = {
+    "arrow",
+    "arrow_left",
+    "arrow_right"
+};
+
+StaticDecal::StaticDecal(u32 texIndex, glm::vec3 const& pos, u32 decalFilter)
 {
     position = pos;
     scale = glm::vec3(16.f);
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
-    tex = g_resources.getTexture("thing");
+    this->texIndex = texIndex;
     this->decalFilter = decalFilter;
 }
 
@@ -40,6 +46,8 @@ void StaticDecal::updateTransform(Scene* scene)
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
     }
+
+    tex = g_resources.getTexture(textures[texIndex]);
 
     const u32 bufferSize = 32;
     PxOverlapHit hitBuffer[bufferSize];
@@ -93,6 +101,7 @@ DataFile::Value StaticDecal::serialize()
     dict["position"] = DataFile::makeVec3(position);
     dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
     dict["scale"] = DataFile::makeVec3(scale);
+    dict["texIndex"] = DataFile::makeInteger(texIndex);
     return dict;
 }
 
@@ -102,4 +111,9 @@ void StaticDecal::deserialize(DataFile::Value& data)
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
+    texIndex = data["texIndex"].integer(0);
+}
+
+void StaticDecal::showDetails()
+{
 }

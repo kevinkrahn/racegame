@@ -23,7 +23,7 @@
 #include "dynamic_buffer.cpp"
 #include "decal.cpp"
 #include "entities/projectile.cpp"
-#include "entities/rock.cpp"
+#include "entities/static_mesh.cpp"
 #include "entities/static_decal.cpp"
 #include "entities/start.cpp"
 

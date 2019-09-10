@@ -6,7 +6,7 @@
 #include "input.h"
 #include "terrain.h"
 #include "track.h"
-#include "entities/rock.h"
+#include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 #include <algorithm>
 
@@ -151,15 +151,15 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
 
-    u32 viewportCount = (isEditing && !isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
-            [](auto& d) { return d.hasCamera; });
-    renderer->setViewportCount(viewportCount);
-    renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
-
     if (isEditing)
     {
         editor.onUpdate(this, renderer, deltaTime);
     }
+
+    u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
+            [](auto& d) { return d.hasCamera; });
+    renderer->setViewportCount(viewportCount);
+    renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
     // update vehicles
     i32 cameraIndex = 0;
@@ -580,16 +580,16 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
             this->track->deserialize(val);
             this->addEntity(this->track);
         } break;
-        case SerializedEntityID::ROCK:
+        case SerializedEntityID::STATIC_MESH:
         {
-            Rock* rock = new Rock();
-            rock->deserialize(val);
-            rock->updateTransform(this);
-            this->addEntity(rock);
+            StaticMesh* e = new StaticMesh();
+            e->deserialize(val);
+            e->updateTransform(this);
+            this->addEntity(e);
         } break;
         case SerializedEntityID::STATIC_DECAL:
         {
-            StaticDecal* decal = new StaticDecal();
+            StaticDecal* decal = new StaticDecal(0);
             decal->deserialize(val);
             this->addEntity(decal);
         } break;

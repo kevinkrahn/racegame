@@ -147,7 +147,7 @@ public:
         glUniform1i(2, cameraIndex);
         glBindVertexArray(mesh->vao);
         glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(0.f, -1000000.f);
+        glPolygonOffset(0.f, -2000000.f);
         glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
         glDisable(GL_POLYGON_OFFSET_FILL);
         if (onlyDepth)

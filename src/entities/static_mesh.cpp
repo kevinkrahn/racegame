@@ -1,11 +1,31 @@
-#include "rock.h"
+#include "static_mesh.h"
 #include "../scene.h"
 #include "../renderer.h"
 #include "../vehicle.h"
 #include "../mesh_renderables.h"
 #include "../game.h"
 
-void Rock::onCreate(Scene* scene)
+const char* meshNames[] = {
+    "world.Rock",
+    "world.Tunnel",
+};
+
+const char* texNames[] = {
+    "rock",
+    "concrete"
+};
+
+StaticMesh::StaticMesh(u32 meshIndex, glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)
+{
+    this->position = position;
+    this->scale = scale;
+    this->rotation = glm::rotate(this->rotation, zRotation, glm::vec3(0, 0, 1));
+    this->meshIndex = meshIndex;
+    mesh = g_resources.getMesh(meshNames[meshIndex]);
+    tex = g_resources.getTexture(texNames[meshIndex]);
+}
+
+void StaticMesh::onCreate(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
@@ -19,7 +39,7 @@ void Rock::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
-void Rock::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void StaticMesh::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = mesh;
@@ -31,7 +51,7 @@ void Rock::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     renderer->push(LitRenderable(settings));
 }
 
-void Rock::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
+void StaticMesh::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
 {
     if (isSelected)
     {
@@ -39,25 +59,30 @@ void Rock::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
     }
 }
 
-DataFile::Value Rock::serialize()
+DataFile::Value StaticMesh::serialize()
 {
     DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::ROCK);
+    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::STATIC_MESH);
     dict["position"] = DataFile::makeVec3(position);
     dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
     dict["scale"] = DataFile::makeVec3(scale);
+    dict["meshIndex"] = DataFile::makeInteger(meshIndex);
     return dict;
 }
 
-void Rock::deserialize(DataFile::Value& data)
+void StaticMesh::deserialize(DataFile::Value& data)
 {
     position = data["position"].vec3();
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
+    meshIndex = data["meshIndex"].integer(0);
+
+    mesh = g_resources.getMesh(meshNames[meshIndex]);
+    tex = g_resources.getTexture(texNames[meshIndex]);
 }
 
-void Rock::applyDecal(Decal& decal)
+void StaticMesh::applyDecal(Decal& decal)
 {
     decal.addMesh(mesh, transform);
 }

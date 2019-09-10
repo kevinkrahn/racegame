@@ -982,7 +982,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         {
             onGround = true;
         }
-        else
+        else if (scene->raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit, COLLISION_FLAG_GROUND))
         {
             applyDamage(100.f, vehicleIndex);
         }

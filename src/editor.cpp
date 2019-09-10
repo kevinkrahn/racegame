@@ -7,7 +7,7 @@
 #include "terrain.h"
 #include "mesh_renderables.h"
 #include "track.h"
-#include "entities/rock.h"
+#include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 
 struct EntityType
@@ -19,8 +19,11 @@ struct EntityType
 #define fn [](glm::vec3 const& p, RandomSeries& s) -> PlaceableEntity*
 
 std::vector<EntityType> entityTypes = {
-    { "Rock", fn { return new Rock(p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, M_PI * 2)); } },
-    { "Decal", fn { return new StaticDecal(p); } },
+    { "Rock", fn { return new StaticMesh(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, M_PI * 2)); } },
+    { "Tunnel", fn { return new StaticMesh(1, p, glm::vec3(1.f), 0.f); } },
+    { "Straight Arrow", fn { return new StaticDecal(0, p); } },
+    { "Left Arrow", fn { return new StaticDecal(1, p); } },
+    { "Right Arrow", fn { return new StaticDecal(2, p); } },
 };
 
 #undef fn
