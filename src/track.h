@@ -136,7 +136,7 @@ private:
         glm::vec3 handleOffsetB;
     };
 
-    struct Railing
+    struct Railing : public Renderable
     {
         std::vector<RailingPoint> points;
         Mesh mesh;
@@ -146,6 +146,8 @@ private:
         Track* track = nullptr;
         ActorUserData physicsUserData;
         PxShape* collisionShape = nullptr;
+        bool flat = false;
+        f32 scale = 1.f;
 
         Railing(Track* track) : track(track) {};
         Railing(Railing const& other) = delete;
@@ -162,6 +164,11 @@ private:
         }
 
         void updateMesh();
+
+        i32 getPriority() const override { return 7000; }
+        std::string getDebugString() const override { return "Track Marking"; };
+        void onLitPassPriorityTransition(class Renderer* renderer) override;
+        void onLitPass(class Renderer* renderer) override;
     };
 
     std::vector<std::unique_ptr<Railing>> railings;
@@ -203,6 +210,7 @@ public:
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
     void placeRailing(glm::vec3 const& p);
+    void placeMarking(glm::vec3 const& p);
     bool canConnect() const { return selectedPoints.size() == 2; }
     bool canSubdivide() const
     {

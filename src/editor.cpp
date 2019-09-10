@@ -436,7 +436,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             glm::vec3 p = scene->track->previewRailingPlacement(scene, renderer, cam.position, rayDir);
             if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
-                scene->track->placeRailing(p);
+                if (placeMode == PlaceMode::NEW_RAILING)
+                {
+                    scene->track->placeRailing(p);
+                }
+                else
+                {
+                    scene->track->placeMarking(p);
+                }
                 isMouseClickHandled = true;
                 clickHandledUntilRelease = true;
                 placeMode = PlaceMode::NONE;

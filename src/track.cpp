@@ -122,7 +122,14 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 
         if (railing->mesh.vao)
         {
-            renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f), concreteTex));
+            if (railing->flat)
+            {
+                renderer->add(railing.get());
+            }
+            else
+            {
+                renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f), concreteTex));
+            }
         }
     }
 
@@ -903,6 +910,16 @@ void Track::placeRailing(glm::vec3 const& p)
     railings.push_back(std::move(railing));
 }
 
+void Track::placeMarking(glm::vec3 const& p)
+{
+    auto railing = std::make_unique<Railing>(this);
+    railing->scale = 0.5f;
+    railing->flat = true;
+    railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
+    railing->selectedPoints.push_back({ 0, {} });
+    railings.push_back(std::move(railing));
+}
+
 Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
 {
     for (auto& c : connections)
@@ -1267,7 +1284,7 @@ void Track::Railing::updateMesh()
         return;
     }
 
-    if (!actor)
+    if (!actor && !flat)
     {
         actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
         physicsUserData.entityType = ActorUserData::TRACK;
@@ -1285,7 +1302,7 @@ void Track::Railing::updateMesh()
     };
     u32 steps = 32;
     std::vector<PolyLinePoint> polyLine;
-    f32 pathLength = 0;
+    f32 zGroundOffset = flat ? 0.01f : 0.f;
     for (size_t i=0; i<points.size()-1; ++i)
     {
         RailingPoint const& point = points[i];
@@ -1297,25 +1314,41 @@ void Track::Railing::updateMesh()
                     point.position + point.handleOffsetB,
                     nextPoint.position + nextPoint.handleOffsetA,
                     nextPoint.position, step / (f32)steps);
-            glm::vec3 nextPos = pointOnBezierCurve(
-                    point.position,
-                    point.position + point.handleOffsetB,
-                    nextPoint.position + nextPoint.handleOffsetA,
-                    nextPoint.position, (step + 1) / (f32)steps);
-            glm::vec3 diff = nextPos - pos;
-            f32 thisPathLength = pathLength;
-            pathLength += glm::length(diff);
-            polyLine.push_back({
-                pos,
-                thisPathLength,
-                glm::normalize(diff),
-                pathLength,
-            });
+
+            PxRaycastBuffer hit;
+            if (track->scene->raycastStatic(pos + glm::vec3(0, 0, 3),
+                        glm::vec3(0, 0, -1), 6.f, &hit, COLLISION_FLAG_TRACK))
+            {
+                pos.z = hit.block.position.z + zGroundOffset;
+            }
+
+            polyLine.push_back({ pos });
         }
     }
 
-    Mesh* railingMesh = g_resources.getMesh("world.Rail");
-    f32 railingMeshLength = railingMesh->aabb.max.x - railingMesh->aabb.min.x;
+    glm::vec3 lastPos = points.back().position;
+    PxRaycastBuffer hit;
+    if (track->scene->raycastStatic(lastPos + glm::vec3(0, 0, 3),
+                glm::vec3(0, 0, -1), 6.f, &hit, COLLISION_FLAG_TRACK))
+    {
+        lastPos.z = hit.block.position.z;
+    }
+    polyLine.push_back({ lastPos });
+
+    f32 pathLength = 0;
+    for (size_t i=0; i<polyLine.size()-1; ++i)
+    {
+        glm::vec3 diff = polyLine[i+1].pos - polyLine[i].pos;
+        f32 thisPathLength = pathLength;
+        pathLength += glm::length(diff);
+        polyLine[i].distanceToHere = thisPathLength;
+        polyLine[i].distance = pathLength;
+        polyLine[i].dir = glm::normalize(diff);
+    }
+    polyLine.pop_back();
+
+    Mesh* railingMesh = g_resources.getMesh(flat ? "world.RumbleStrip" : "world.Rail");
+    f32 railingMeshLength = (railingMesh->aabb.max.x - railingMesh->aabb.min.x) * scale;
     f32 fractionalRepeatCount = pathLength / railingMeshLength;
     u32 totalRepeatCount = (u32)fractionalRepeatCount;
     if (fractionalRepeatCount - (u32)fractionalRepeatCount < 0.5f)
@@ -1337,6 +1370,7 @@ void Track::Railing::updateMesh()
     mesh.elementSize = railingMesh->elementSize;
     assert(mesh.elementSize == 3);
 
+    //f32 invMeshWidth = 1.f / ((railingMesh->aabb.max.y - railingMesh->aabb.min.y) * 8);
     f32 distanceAlongPath = 0.f;
     u32 lastPolyLinePointIndex = 0;
     for (u32 repeatCount=0; repeatCount<totalRepeatCount; ++repeatCount)
@@ -1346,7 +1380,9 @@ void Track::Railing::updateMesh()
             u32 j = i * railingMesh->stride / sizeof(f32);
             glm::vec3 p(railingMesh->vertices[j+0], railingMesh->vertices[j+1], railingMesh->vertices[j+2]);
             glm::vec3 n(railingMesh->vertices[j+3], railingMesh->vertices[j+4], railingMesh->vertices[j+5]);
+            glm::vec2 uv(railingMesh->vertices[j+9], railingMesh->vertices[j+10]);
             p.x -= railingMesh->aabb.min.x;
+            p *= scale;
             p.x *= railingMeshScaleFactor;
             n.x *= railingMeshScaleFactor;
 
@@ -1375,6 +1411,11 @@ void Track::Railing::updateMesh()
             glm::mat3 nm = glm::inverseTranspose(glm::mat3(m));
             glm::vec3 dn = glm::normalize(nm * n);
 
+            if (flat)
+            {
+                //uv.x = (distanceAlongPath + p.x) * invMeshWidth;
+            }
+
             // copy over the remaining vertex attributes
             u32 nj = (repeatCount * railingMesh->formatStride / sizeof(f32) * railingMesh->numVertices)
                 + i * railingMesh->formatStride / sizeof(f32);
@@ -1387,6 +1428,11 @@ void Track::Railing::updateMesh()
             for (u32 attrIndex = 6; attrIndex < railingMesh->formatStride / sizeof(f32); ++attrIndex)
             {
                 mesh.vertices[nj+attrIndex] = railingMesh->vertices[j+attrIndex];
+            }
+            if (flat)
+            {
+                mesh.vertices[nj+6] = uv.x;
+                mesh.vertices[nj+7] = uv.y;
             }
         }
 
@@ -1409,17 +1455,47 @@ void Track::Railing::updateMesh()
     mesh.numIndices = (u32)mesh.indices.size();
     mesh.createVAO();
 
-    if (!collisionShape)
+    if (!flat)
     {
-        collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(mesh.getCollisionMesh()), *track->scene->trackMaterial);
-        collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_GROUND, DECAL_RAILING, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(
-                    COLLISION_FLAG_GROUND, -1, 0, 0));
+        if (!collisionShape)
+        {
+            collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
+                    PxTriangleMeshGeometry(mesh.getCollisionMesh()), *track->scene->trackMaterial);
+            collisionShape->setQueryFilterData(PxFilterData(
+                        COLLISION_FLAG_GROUND, DECAL_RAILING, 0, DRIVABLE_SURFACE));
+            collisionShape->setSimulationFilterData(PxFilterData(
+                        COLLISION_FLAG_GROUND, -1, 0, 0));
+        }
+        else
+        {
+            collisionShape->setGeometry(PxTriangleMeshGeometry(mesh.getCollisionMesh()));
+        }
     }
-    else
-    {
-        collisionShape->setGeometry(PxTriangleMeshGeometry(mesh.getCollisionMesh()));
-    }
+}
+
+void Track::Railing::onLitPassPriorityTransition(Renderer* renderer)
+{
+    glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
+    glUseProgram(renderer->getShaderProgram("mesh_decal"));
+    glEnable(GL_CULL_FACE);
+}
+
+void Track::Railing::onLitPass(Renderer* renderer)
+{
+    Texture* tex = g_resources.getTexture("rumble");
+    glm::vec3 color(1, 1, 1);
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(0.f, -6000.f);
+    glBindTextureUnit(0, tex->handle);
+    glBindVertexArray(mesh.vao);
+    glm::mat4 transform(1.f);
+    glm::mat3 normalTransform(1.f);
+    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
+    glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalTransform));
+    glUniform3f(2, color.x, color.y, color.z);
+    glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
+    glDisable(GL_POLYGON_OFFSET_FILL);
 }
