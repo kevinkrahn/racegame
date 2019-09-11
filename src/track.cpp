@@ -90,7 +90,6 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     {
     }
 
-    Texture* concreteTex = g_resources.getTexture("concrete");
     for (auto& railing : railings)
     {
         if (railing->isDirty)
@@ -122,13 +121,13 @@ void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 
         if (railing->mesh.vao)
         {
-            if (railing->flat)
+            if (railingMeshTypes[railing->meshTypeIndex].flat)
             {
                 renderer->add(railing.get());
             }
             else
             {
-                renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f), concreteTex));
+                renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f), railing->tex));
             }
         }
     }
@@ -913,8 +912,7 @@ void Track::placeRailing(glm::vec3 const& p)
 void Track::placeMarking(glm::vec3 const& p)
 {
     auto railing = std::make_unique<Railing>(this);
-    railing->scale = 0.5f;
-    railing->flat = true;
+    railing->meshTypeIndex = 1;
     railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
     railing->selectedPoints.push_back({ 0, {} });
     railings.push_back(std::move(railing));
@@ -1189,6 +1187,8 @@ DataFile::Value Track::serialize()
     {
         auto railingData = DataFile::makeDict();
         railingData["points"] = DataFile::makeArray();
+        railingData["meshTypeIndex"] = DataFile::makeInteger(railing->meshTypeIndex);
+        railingData["scale"] = DataFile::makeReal(railing->scale);
         auto& railingPointsArray = railingData["points"].array();
         for (auto& point : railing->points)
         {
@@ -1237,6 +1237,8 @@ void Track::deserialize(DataFile::Value& data)
     {
         auto& pointsArray = r["points"].array();
         auto railing = std::make_unique<Railing>(this);
+        railing->meshTypeIndex = r["meshTypeIndex"].integer(0);
+        railing->scale = r["scale"].real(1.f);
         for (auto& point : pointsArray)
         {
             railing->points.push_back({
@@ -1283,6 +1285,11 @@ void Track::Railing::updateMesh()
         }
         return;
     }
+
+    Mesh* railingMesh = g_resources.getMesh(railingMeshTypes[meshTypeIndex].meshName);
+    f32 scale = this->scale * railingMeshTypes[meshTypeIndex].scale;
+    bool flat = railingMeshTypes[meshTypeIndex].flat;
+    tex = g_resources.getTexture(railingMeshTypes[meshTypeIndex].texName);
 
     if (!actor && !flat)
     {
@@ -1347,7 +1354,6 @@ void Track::Railing::updateMesh()
     }
     polyLine.pop_back();
 
-    Mesh* railingMesh = g_resources.getMesh(flat ? "world.RumbleStrip" : "world.Rail");
     f32 railingMeshLength = (railingMesh->aabb.max.x - railingMesh->aabb.min.x) * scale;
     f32 fractionalRepeatCount = pathLength / railingMeshLength;
     u32 totalRepeatCount = (u32)fractionalRepeatCount;
@@ -1484,7 +1490,6 @@ void Track::Railing::onLitPassPriorityTransition(Renderer* renderer)
 
 void Track::Railing::onLitPass(Renderer* renderer)
 {
-    Texture* tex = g_resources.getTexture("rumble");
     glm::vec3 color(1, 1, 1);
 
     glEnable(GL_POLYGON_OFFSET_FILL);

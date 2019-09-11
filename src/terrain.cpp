@@ -124,6 +124,7 @@ glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
 
 void Terrain::regenerateMesh()
 {
+    // TODO: Update just the section of the mesh that has changed (buffer subdata)
     if (!isDirty) { return; }
     isDirty = false;
     u32 width = (x2 - x1) / tileSize;

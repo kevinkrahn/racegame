@@ -35,6 +35,18 @@ TrackItem prefabTrackItems[] = {
     }},
 };
 
+struct RailingMeshType
+{
+    bool flat;
+    const char* meshName;
+    f32 scale;
+    const char* texName;
+};
+RailingMeshType railingMeshTypes[] = {
+    { false, "world.Rail", 1.f, "concrete" },
+    { true, "world.RumbleStrip", 0.5f, "rumble" },
+};
+
 class Track : public Renderable, public Entity
 {
 public:
@@ -146,8 +158,9 @@ private:
         Track* track = nullptr;
         ActorUserData physicsUserData;
         PxShape* collisionShape = nullptr;
-        bool flat = false;
         f32 scale = 1.f;
+        u32 meshTypeIndex = 0;
+        Texture* tex;
 
         Railing(Track* track) : track(track) {};
         Railing(Railing const& other) = delete;
