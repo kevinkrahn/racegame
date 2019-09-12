@@ -27,6 +27,7 @@ public:
         bool shadowsEnabled = true;
         bool ssaoEnabled = true;
         bool ssaoHighQuality = false; // TODO: Implement
+        u32 msaaLevel = 2;
     } config;
 
     struct

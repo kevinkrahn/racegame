@@ -11,9 +11,9 @@ struct LitSettings
     glm::vec3 emit = { 0, 0, 0 };
     f32 specularStrength = 0.2f;
     glm::vec3 specularColor = { 1, 1, 1 };
-    f32 fresnelScale = 0.5f;
-    f32 fresnelPower = 3.f;
-    f32 fresnelBias = -0.15f;
+    f32 fresnelScale = 0.f;
+    f32 fresnelPower = 2.5f;
+    f32 fresnelBias = -0.2f;
     Texture* texture = nullptr;
     Mesh* mesh = nullptr;
     glm::mat4 worldTransform;

@@ -577,12 +577,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 entityDragAxis = DragAxis::ALL;
             }
 
-            glm::vec3 xCol = glm::vec3(0.9f, 0, 0);
-            glm::vec3 xColHighlight = glm::vec3(1, 0.35f, 0.35f);
-            glm::vec3 yCol = glm::vec3(0, 0.8f, 0);
-            glm::vec3 yColHighlight = glm::vec3(0.4f, 1, 0.4f);
-            glm::vec3 zCol = glm::vec3(0, 0, 0.9f);
-            glm::vec3 zColHighlight = glm::vec3(0.35f, 0.35f, 1.f);
+            glm::vec3 xCol = glm::vec3(0.95f, 0, 0);
+            glm::vec3 xColHighlight = glm::vec3(1, 0.1f, 0.1f);
+            glm::vec3 yCol = glm::vec3(0, 0.85f, 0);
+            glm::vec3 yColHighlight = glm::vec3(0.2f, 1, 0.2f);
+            glm::vec3 zCol = glm::vec3(0, 0, 0.95f);
+            glm::vec3 zColHighlight = glm::vec3(0.1f, 0.1f, 1.f);
             glm::vec3 centerCol = glm::vec3(0.8f, 0.8f, 0.8f);
 
             if (transformMode == TransformMode::TRANSLATE)

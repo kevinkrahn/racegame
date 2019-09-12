@@ -174,54 +174,107 @@ GLuint Renderer::getShaderProgram(const char* name) const
     return loadedShaders[it->second].program;
 }
 
-void Renderer::init(u32 width, u32 height)
+void Renderer::createFramebuffers()
 {
-    this->width = width;
-    this->height = height;
+    if (fb.mainFramebuffer)
+    {
+        glDeleteTextures(1, &fb.mainColorTexture);
+        glDeleteTextures(1, &fb.mainDepthTexture);
+        glDeleteFramebuffers(1, &fb.mainFramebuffer);
+    }
+    if (fb.msaaResolveFramebuffersCount > 0)
+    {
+        glDeleteTextures(1, &fb.msaaResolveColorTexture);
+        glDeleteTextures(1, &fb.msaaResolveDepthTexture);
+        glDeleteFramebuffers(fb.msaaResolveFramebuffersCount, fb.msaaResolveFramebuffers);
+    }
+    if (fb.shadowFramebuffer)
+    {
+        glDeleteTextures(1, &fb.shadowDepthTexture);
+        glDeleteFramebuffers(1, &fb.shadowFramebuffer);
+    }
+    if (fb.cszFramebuffers[0])
+    {
+        glDeleteTextures(1, &fb.cszTexture);
+        glDeleteFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
+    }
+    if (fb.saoFramebuffer)
+    {
+        glDeleteTextures(1, &fb.saoTexture);
+        glDeleteTextures(1, &fb.saoBlurTexture);
+        glDeleteFramebuffers(1, &fb.saoFramebuffer);
+    }
 
-    loadShader("lit");
-    loadShader("debug");
-    loadShader("quad2D", { "COLOR" }, "tex2D");
-    loadShader("quad2D", {}, "text2D");
-    loadShader("post");
-    loadShader("mesh2D");
-    loadShader("billboard");
-    loadShader("ribbon");
-    loadShader("csz");
-    loadShader("csz_minify");
-    loadShader("sao");
-    loadShader("sao_blur");
-    loadShader("overlay");
-    loadShader("mesh_decal");
-    loadShader("terrain");
-    loadShader("track");
+    fb = { 0 };
 
-    // create empty vao
-    glCreateVertexArrays(1, &emptyVAO);
-
-    // main framebuffer
-    const u32 layers = cameras.size();
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
     fb.renderWidth = (u32)(width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
     fb.renderHeight = (u32)(height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
+    u32 layers = cameras.size();
 
     glEnable(GL_FRAMEBUFFER_SRGB);
     glGenTextures(1, &fb.mainColorTexture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
-            layers, 0, GL_RGB, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     glGenTextures(1, &fb.mainDepthTexture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainDepthTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    if (g_game.config.msaaLevel > 0)
+    {
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainColorTexture);
+        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.msaaLevel,
+                GL_RGB32F, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, 0);
+
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainDepthTexture);
+        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.msaaLevel,
+                GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
+
+        glGenTextures(1, &fb.msaaResolveColorTexture);
+        glGenTextures(1, &fb.msaaResolveDepthTexture);
+
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.msaaResolveColorTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+                layers, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.msaaResolveDepthTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
+                layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        fb.msaaResolveFramebuffersCount = layers;
+        glGenFramebuffers(layers, fb.msaaResolveFramebuffers);
+        for (u32 i=0; i<layers; ++i)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                    fb.msaaResolveDepthTexture, 0, i);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                    fb.msaaResolveColorTexture, 0, i);
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        }
+    }
+    else
+    {
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+                layers, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainDepthTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
+                layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
 
     glGenFramebuffers(1, &fb.mainFramebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
@@ -310,8 +363,33 @@ void Renderer::init(u32 width, u32 height)
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //glLineWidth(3);
-    //glEnable(GL_LINE_SMOOTH);
+}
+
+void Renderer::init(u32 width, u32 height)
+{
+    this->width = width;
+    this->height = height;
+
+    loadShader("lit");
+    loadShader("debug");
+    loadShader("quad2D", { "COLOR" }, "tex2D");
+    loadShader("quad2D", {}, "text2D");
+    loadShader("post");
+    loadShader("mesh2D");
+    loadShader("billboard");
+    loadShader("ribbon");
+    loadShader("csz");
+    loadShader("csz_minify");
+    loadShader("sao");
+    loadShader("sao_blur");
+    loadShader("overlay");
+    loadShader("mesh_decal");
+    loadShader("terrain");
+    loadShader("track");
+
+    glCreateVertexArrays(1, &emptyVAO);
+
+    createFramebuffers();
 }
 
 void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
@@ -483,8 +561,26 @@ void Renderer::render(f32 deltaTime)
         r.renderable->onDepthPrepass(this);
         prevPriority = r.priority;
     }
-    glBindTextureUnit(1, fb.mainDepthTexture);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    // resolve multi-sample depth buffer so it can be sampled by sao shader
+    if (g_game.config.msaaLevel > 0)
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.mainFramebuffer);
+        for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
+        {
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
+            glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
+                            0, 0, fb.renderWidth, fb.renderHeight,
+                            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        }
+        glBindTextureUnit(1, fb.msaaResolveDepthTexture);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+    }
+    else
+    {
+        glBindTextureUnit(1, fb.mainDepthTexture);
+    }
 
     // generate csz texture
     if (g_game.config.ssaoEnabled)
@@ -562,6 +658,24 @@ void Renderer::render(f32 deltaTime)
         }
     }
 
+    // resolve multi-sample color buffer
+    if (g_game.config.msaaLevel > 0)
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.mainFramebuffer);
+        for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
+        {
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
+            glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
+                            0, 0, fb.renderWidth, fb.renderHeight,
+                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        }
+        glBindTextureUnit(0, fb.msaaResolveColorTexture);
+    }
+    else
+    {
+        glBindTextureUnit(0, fb.mainColorTexture);
+    }
+
     // render to back buffer
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
@@ -573,7 +687,6 @@ void Renderer::render(f32 deltaTime)
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(getShaderProgram("post"));
-    glBindTextureUnit(0, fb.mainColorTexture);
     glm::vec2 res(g_game.windowWidth, g_game.windowHeight);
     glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[cameras.size() - 1];
@@ -630,34 +743,7 @@ void Renderer::setViewportCount(u32 viewports)
                 compileShader(shader.filename, shader.defines, shader);
             }
         }
-
-        ViewportLayout& layout = viewportLayout[cameras.size() - 1];
-        fb.renderWidth = width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0);
-        fb.renderHeight = height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0);
-        u32 layers = cameras.size();
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainDepthTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-                g_game.config.shadowMapResolution, g_game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
-        for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
-        {
-            i32 w = i32(fb.renderWidth >> (i - 1));
-            i32 h = i32(fb.renderHeight >> (i - 1));
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, i - 1, GL_R32F, w, h, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-        }
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoBlurTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        createFramebuffers();
     }
 }
 

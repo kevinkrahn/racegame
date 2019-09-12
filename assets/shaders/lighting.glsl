@@ -57,11 +57,12 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     float shadow = 1.f;
 #endif
 
-    float directLight = max(dot(normal, sunDirection) * 0.7 * shadow, 0.0)
+    float sunPower = 0.7;
+    float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)
         + max(dot(normal, ambientDirection) * 0.12, 0.0);
     vec3 camDir = normalize(cameraPosition[gl_Layer] - worldPosition);
     vec3 halfDir = normalize(sunDirection + camDir);
-    vec3 specularLight = specularColor * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * 0.0;
+    vec3 specularLight = specularColor * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * sunPower;
 
     color.rgb *= max(directLight, 0.1);
     color.rgb += specularLight * shadow;

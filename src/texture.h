@@ -35,8 +35,8 @@ struct Texture
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
                 break;
             case Texture::Format::R8:
-                //internalFormat = GL_R8;
-                internalFormat = GL_SR8_EXT;
+                internalFormat = GL_R8;
+                //internalFormat = GL_SR8_EXT;
                 baseFormat = GL_RED;
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
                 break;

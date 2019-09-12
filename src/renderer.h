@@ -55,6 +55,11 @@ struct Framebuffers
     GLuint mainColorTexture;
     GLuint mainDepthTexture;
 
+    u32 msaaResolveFramebuffersCount;
+    GLuint msaaResolveFramebuffers[MAX_VIEWPORTS];
+    GLuint msaaResolveColorTexture;
+    GLuint msaaResolveDepthTexture;
+
     GLuint shadowFramebuffer;
     GLuint shadowDepthTexture;
 
@@ -88,7 +93,7 @@ struct WorldInfo
 class Renderer
 {
 private:
-    Framebuffers fb;
+    Framebuffers fb = { 0 };
     WorldInfo worldInfo;
     DynamicBuffer worldInfoUBO = DynamicBuffer(sizeof(WorldInfo));
     DynamicBuffer worldInfoUBOShadow = DynamicBuffer(sizeof(WorldInfo));
@@ -120,6 +125,7 @@ private:
     void setShadowMatrices(struct WorldInfo& worldInfo, struct WorldInfo& worldInfoShadow);
     void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines);
     void compileShader(std::string const& filename, SmallVec<std::string> defines, struct GLShader& shader);
+    void createFramebuffers();
 
     Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
 
