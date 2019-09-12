@@ -109,7 +109,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     Font* fontSmall = &g_resources.getFont("font", height * 0.02f);
     glm::vec2 mousePos = g_input.getMousePosition();
     auto button = [&](glm::vec2& pos, glm::vec2 spacing, const char* text, bool enabled=true) {
-        f32 alpha = 0.75f;
+        f32 alpha = 0.9f;
         f32 textAlpha = 1.f;
         glm::vec3 color(0.f);
         bool wasClicked = false;
@@ -117,13 +117,13 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         u32 buttonHeight = height * 0.04f;
         if (!enabled)
         {
-            alpha = 0.5f;
+            alpha = 0.7f;
             textAlpha = 0.75f;
         }
         if (enabled && pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
         {
-            alpha = 0.9f;
-            color = glm::vec3(0.3f);
+            alpha = 0.92f;
+            color = glm::vec3(0.1f);
             isMouseClickHandled = true;
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
@@ -140,7 +140,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         return wasClicked;
     };
     auto slider = [&](glm::vec2& pos, glm::vec2 spacing, std::string&& text, f32 min, f32 max, f32& val) {
-        f32 alpha = 0.75f;
+        f32 alpha = 0.9f;
         f32 textAlpha = 1.f;
         glm::vec3 color(0.f);
         bool wasClicked = false;
@@ -148,8 +148,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         u32 buttonHeight = height * 0.04f;
         if (pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
         {
-            alpha = 0.9f;
-            color = glm::vec3(0.3f);
+            alpha = 0.92f;
+            color = glm::vec3(0.1f);
             isMouseClickHandled = true;
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
             {
@@ -232,20 +232,20 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         for (u32 i=0; i<(u32)EditMode::MAX; ++i)
         {
             u32 buttonWidth = height * 0.16f;
-            f32 alpha = 0.75f;
+            f32 alpha = 0.9f;
             glm::vec3 color(0.f);
             if (i == (u32)editMode)
             {
                 buttonWidth = height * 0.20f;
                 alpha = 0.9f;
-                color = glm::vec3(0.3f);
+                color = glm::vec3(0.1f);
             }
             if (pointInRectangle(g_input.getMousePosition(),
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2))
             {
-                alpha = 0.9f;
-                color = glm::vec3(0.3f);
+                alpha = 0.92f;
+                color = glm::vec3(0.1f);
                 isMouseClickHandled = true;
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
@@ -315,20 +315,20 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         for (u32 i=0; i<(u32)TerrainTool::MAX; ++i)
         {
             u32 buttonWidth = height * 0.12f;
-            f32 alpha = 0.75f;
+            f32 alpha = 0.9f;
             glm::vec3 color(0.f);
             if (i == (u32)terrainTool)
             {
                 buttonWidth = height * 0.15f;
-                alpha = 0.9f;
-                color = glm::vec3(0.3f);
+                alpha = 0.92f;
+                color = glm::vec3(0.1f);
             }
             if (pointInRectangle(g_input.getMousePosition(),
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2))
             {
-                alpha = 0.9f;
-                color = glm::vec3(0.3f);
+                alpha = 0.92f;
+                color = glm::vec3(0.1f);
                 isMouseClickHandled = true;
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
@@ -468,14 +468,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                 for (u32 i=0; i<ARRAY_SIZE(prefabTrackItems); ++i)
                 {
-                    f32 alpha = 0.3f;
+                    f32 alpha = 0.6f;
                     glm::vec3 color(0.f);
                     if (pointInRectangle(g_input.getMousePosition(),
                         { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
                         itemSize, itemSize))
                     {
-                        alpha = 0.75f;
-                        color = glm::vec3(0.3f);
+                        alpha = 0.9f;
+                        color = glm::vec3(0.1f);
                         isMouseClickHandled = true;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                         {

@@ -125,18 +125,7 @@ void Resources::load()
                     continue;
                 }
                 size_t size = width * height * 4;
-#if 0
-                // premultied alpha
-                for (u32 i=0; i<size; i+=4)
-                {
-                    //f32 a = f32(data[i+3]) / 255.f;
-                    f32 a = powf(f32(data[i+3]) / 255.f, 1.f / 2.2f);
-                    data[i]   = (u8)(data[i] / 255.f * a * 255.f);
-                    data[i+1] = (u8)(data[i+1] / 255.f * a * 255.f);
-                    data[i+2] = (u8)(data[i+2] / 255.f * a * 255.f);
-                }
-#endif
-                textures[p.path().stem().string()] = Texture(width, height, Texture::Format::RGBA8, data, size);
+                textures[p.path().stem().string()] = Texture(width, height, Texture::Format::SRGBA8, data, size);
 
                 stbi_image_free(data);
             }

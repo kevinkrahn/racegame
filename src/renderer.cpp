@@ -205,9 +205,11 @@ void Renderer::init(u32 width, u32 height)
     fb.renderWidth = (u32)(width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
     fb.renderHeight = (u32)(height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
 
+    glEnable(GL_FRAMEBUFFER_SRGB);
     glGenTextures(1, &fb.mainColorTexture);
     glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+            layers, 0, GL_RGB, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -541,7 +543,7 @@ void Renderer::render(f32 deltaTime)
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 #if 1
-    glClearColor(0.3f, 0.5f, 0.9f, 1.f);
+    glClearColor(0.15f, 0.35f, 0.9f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 #endif
     glDepthFunc(GL_EQUAL);

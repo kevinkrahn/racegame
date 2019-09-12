@@ -43,8 +43,8 @@ void StaticMesh::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = mesh;
-    settings.fresnelScale = 0.3f;
-    settings.fresnelPower = 1.5f;
+    settings.fresnelScale = 0.2f;
+    settings.fresnelPower = 1.7f;
     settings.fresnelBias = -0.2f;
     settings.texture = tex;
     settings.worldTransform = transform;
