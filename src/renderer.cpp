@@ -187,6 +187,7 @@ void Renderer::createFramebuffers()
         glDeleteTextures(1, &fb.msaaResolveColorTexture);
         glDeleteTextures(1, &fb.msaaResolveDepthTexture);
         glDeleteFramebuffers(fb.msaaResolveFramebuffersCount, fb.msaaResolveFramebuffers);
+        glDeleteFramebuffers(fb.msaaResolveFramebuffersCount, fb.msaaResolveFromFramebuffers);
     }
     if (fb.shadowFramebuffer)
     {
@@ -247,6 +248,7 @@ void Renderer::createFramebuffers()
 
         fb.msaaResolveFramebuffersCount = layers;
         glGenFramebuffers(layers, fb.msaaResolveFramebuffers);
+        glGenFramebuffers(layers, fb.msaaResolveFromFramebuffers);
         for (u32 i=0; i<layers; ++i)
         {
             glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
@@ -254,6 +256,11 @@ void Renderer::createFramebuffers()
                     fb.msaaResolveDepthTexture, 0, i);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                     fb.msaaResolveColorTexture, 0, i);
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                    fb.mainColorTexture, 0, i);
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
     }
@@ -566,9 +573,9 @@ void Renderer::render(f32 deltaTime)
     // resolve multi-sample depth buffer so it can be sampled by sao shader
     if (g_game.config.msaaLevel > 0)
     {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.mainFramebuffer);
         for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
         {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
             glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
                             0, 0, fb.renderWidth, fb.renderHeight,
@@ -661,9 +668,9 @@ void Renderer::render(f32 deltaTime)
     // resolve multi-sample color buffer
     if (g_game.config.msaaLevel > 0)
     {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.mainFramebuffer);
         for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
         {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
             glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
                             0, 0, fb.renderWidth, fb.renderHeight,

@@ -208,7 +208,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
     glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(lengthdir(cameraAngle, 1.f), 1.25f)) * cameraDistance;
-    renderer->setViewportCamera(0, cameraFrom, cameraTarget, 10, 400.f);
+    renderer->setViewportCamera(0, cameraFrom, cameraTarget, 5.f, 400.f);
 
     Camera const& cam = renderer->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,

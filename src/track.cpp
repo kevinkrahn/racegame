@@ -1463,6 +1463,7 @@ void Track::Railing::updateMesh()
 
     if (!flat)
     {
+        // TODO: don't use rendering geometry for collision mesh, but instead generate a simpler one
         if (!collisionShape)
         {
             collisionShape = PxRigidActorExt::createExclusiveShape(*actor,

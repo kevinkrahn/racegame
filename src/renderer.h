@@ -56,6 +56,7 @@ struct Framebuffers
     GLuint mainDepthTexture;
 
     u32 msaaResolveFramebuffersCount;
+    GLuint msaaResolveFromFramebuffers[MAX_VIEWPORTS];
     GLuint msaaResolveFramebuffers[MAX_VIEWPORTS];
     GLuint msaaResolveColorTexture;
     GLuint msaaResolveDepthTexture;
