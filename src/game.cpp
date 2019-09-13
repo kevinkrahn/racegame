@@ -26,7 +26,19 @@ void Game::initPhysX()
     physx.pvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
     physx.physics = PxCreatePhysics(PX_PHYSICS_VERSION, *physx.foundation, PxTolerancesScale(), true, physx.pvd);
-    physx.cooking = PxCreateCooking(PX_PHYSICS_VERSION, *physx.foundation, PxCookingParams(PxTolerancesScale()));
+
+    PxCookingParams cookingParams = PxCookingParams(PxTolerancesScale());
+    // TODO: investigate the ideal cooking params (load time vs runtime performance)
+    /*
+    cookingParams.buildGPUData = false;
+    cookingParams.buildTriangleAdjacencies = false;
+    cookingParams.meshPreprocessParams = PxMeshPreprocessingFlags(
+        PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH |
+        PxMeshPreprocessingFlag::eFORCE_32BIT_INDICES |
+        PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE);
+    cookingParams.suppressTriangleMeshRemapTable = true;
+    */
+    physx.cooking = PxCreateCooking(PX_PHYSICS_VERSION, *physx.foundation, cookingParams);
 
     const u32 PHYSICS_THREADS = 0;
     physx.dispatcher = PxDefaultCpuDispatcherCreate(PHYSICS_THREADS);

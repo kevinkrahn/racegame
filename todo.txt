@@ -1,4 +1,5 @@
 - Add cloud shadows over the environment
+- Add smoke when vehicle is critically damaged
 - Screen shake (when you blow up, or nearby cars blow up. Maybe also on hard impacts?)
 - Add fog effect
 - Add explosion effect when vehicle is destroyed
@@ -6,4 +7,5 @@
 - Add grass placement system (auto-stick to terrain, overlapping objects automatically destroy it)
 - Add support for importing a heightmap into the editor
 - Change cursor when hovering over something interactable
+- Multi-thread certain parts (e.g. physics and particles can be simulated at the same time)
 - Render with pre-multiplied alpha

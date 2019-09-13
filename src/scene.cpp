@@ -62,6 +62,7 @@ Scene::Scene(const char* name)
     vehicleMaterial = g_game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
     trackMaterial   = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
     offroadMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
+    genericMaterial = g_game.physx.physics->createMaterial(0.5f, 0.5f, 0.05f);
 
     if (!name)
     {
@@ -322,7 +323,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         trackPreview2D.drawItem(
             quadMesh->vao, quadMesh->numIndices,
             trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
-                * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.2f), true);
+                * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
         track->drawTrackPreview(&trackPreview2D, trackOrtho);
 
         Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
@@ -504,7 +505,7 @@ bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 d
 
 void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
-    PxContactPairPoint contactPoints[32];
+    PxContactPairPoint contactPoints[64];
 
     for(u32 i=0; i<nbPairs; ++i)
     {

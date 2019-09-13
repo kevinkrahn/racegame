@@ -54,6 +54,7 @@ public:
     PxMaterial* vehicleMaterial = nullptr;
     PxMaterial* trackMaterial = nullptr;
     PxMaterial* offroadMaterial = nullptr;
+    PxMaterial* genericMaterial = nullptr;
     SmokeParticles smoke;
     RibbonRenderable ribbons;
     DebugDraw debugDraw;

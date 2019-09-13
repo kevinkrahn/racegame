@@ -15,7 +15,7 @@ void Terrain::createBuffers()
     {
         POSITION_BIND_INDEX = 0,
         NORMAL_BIND_INDEX = 1,
-        COLOR_BIND_INDEX = 2
+        BLEND_BIND_INDEX = 2,
     };
 
     glCreateVertexArrays(1, &vao);
@@ -28,9 +28,9 @@ void Terrain::createBuffers()
     glVertexArrayAttribFormat(vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
     glVertexArrayAttribBinding(vao, NORMAL_BIND_INDEX, 0);
 
-    glEnableVertexArrayAttrib(vao, COLOR_BIND_INDEX);
-    glVertexArrayAttribFormat(vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
-    glVertexArrayAttribBinding(vao, COLOR_BIND_INDEX, 0);
+    glEnableVertexArrayAttrib(vao, BLEND_BIND_INDEX);
+    glVertexArrayAttribFormat(vao, BLEND_BIND_INDEX, 4, GL_UNSIGNED_BYTE, GL_TRUE, 12 + 12);
+    glVertexArrayAttribBinding(vao, BLEND_BIND_INDEX, 0);
 }
 
 void Terrain::generate(f32 heightScale, f32 scale)
@@ -59,6 +59,8 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
     u32 height = (this->y2 - this->y1) / tileSize;
     heightBuffer.resize(width * height);
     vertices.resize(width * height);
+    blend.resize(width * height);
+    blend.assign(blend.size(), 0x000000FF);
     for (u32 x=0; x<width; ++x)
     {
         for (u32 y=0; y<height; ++y)
@@ -76,6 +78,14 @@ void Terrain::onCreate(Scene* scene)
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
+
+    textures[0] = g_resources.getTexture("grass")->handle;
+    textures[1] = g_resources.getTexture("rock")->handle;
+    textures[2] = g_resources.getTexture("sand")->handle;
+    textures[3] = g_resources.getTexture("green")->handle;
+
+    materials[0] = scene->genericMaterial;
+    materials[1] = scene->offroadMaterial;
 
     regenerateMesh();
     regenerateCollisionMesh(scene);
@@ -141,7 +151,7 @@ void Terrain::regenerateMesh()
             vertices[i] = {
                 pos,
                 normal,
-                { 1, 1, 1 }
+                blend[i]
             };
             if (x < width - 1 && y < height - 1)
             {
@@ -186,6 +196,23 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     desc.triangles.stride = 3 * sizeof(indices[0]);
     desc.triangles.data = indices.data();
 
+    materialIndices.resize(indices.size() / 3);
+    for (u32 i=0; i<materialIndices.size(); ++i)
+    {
+        u32 threshold = 127;
+        u32 vertexIndex1 = indices[i * 3 + 0];
+        u32 vertexIndex2 = indices[i * 3 + 1];
+        u32 vertexIndex3 = indices[i * 3 + 2];
+        materialIndices[i] = ((blend[vertexIndex1] & 0x00FF0000) > threshold ||
+                              (blend[vertexIndex2] & 0x00FF0000) > threshold ||
+                              (blend[vertexIndex3] & 0x00FF0000) > threshold) ? 1 : 0;
+    }
+
+    PxTypedStridedData<PxMaterialTableIndex> materialIndexData;
+    materialIndexData.data = materialIndices.data();
+    materialIndexData.stride = sizeof(PxMaterialTableIndex);
+    desc.materialIndices = materialIndexData;
+
     PxDefaultMemoryOutputStream writeBuffer;
     if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer))
     {
@@ -203,7 +230,7 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     else
     {
         PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(triMesh), *scene->offroadMaterial);
+                PxTriangleMeshGeometry(triMesh), materials, ARRAY_SIZE(materials));
         shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, DECAL_TERRAIN, 0, DRIVABLE_SURFACE));
         shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
         shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
@@ -539,6 +566,32 @@ void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Sce
     setDirty();
 }
 
+void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 materialIndex)
+{
+    i32 minX = getCellX(pos.x - radius);
+    i32 minY = getCellY(pos.y - radius);
+    i32 maxX = getCellX(pos.x + radius);
+    i32 maxY = getCellY(pos.y + radius);
+    i32 width = (x2 - x1) / tileSize;
+    for (i32 x=minX; x<=maxX; ++x)
+    {
+        for (i32 y=minY; y<=maxY; ++y)
+        {
+            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            u8* b = reinterpret_cast<u8*>(&blend[y * width + x]);
+            glm::vec4 bl = glm::vec4(b[0], b[1], b[2], b[3]) / 255.f;
+            bl[materialIndex] += t * amount;
+            bl /= bl.x + bl.y + bl.z + bl.w;
+            b[0] = u8(bl[0] * 255.f);
+            b[1] = u8(bl[1] * 255.f);
+            b[2] = u8(bl[2] * 255.f);
+            b[3] = u8(bl[3] * 255.f);
+        }
+    }
+    setDirty();
+}
+
 void Terrain::onShadowPass(class Renderer* renderer)
 {
     glUseProgram(renderer->getShaderProgram("terrain"));
@@ -560,8 +613,10 @@ void Terrain::onLitPass(class Renderer* renderer)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_EQUAL);
     glEnable(GL_CULL_FACE);
-    glBindTextureUnit(0, g_resources.getTexture("grass")->handle);
-    glBindTextureUnit(1, g_resources.getTexture("rock")->handle);
+    glBindTextureUnit(6, textures[0]);
+    glBindTextureUnit(7, textures[1]);
+    glBindTextureUnit(8, textures[2]);
+    glBindTextureUnit(9, textures[3]);
     glUseProgram(renderer->getShaderProgram("terrain"));
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
@@ -582,6 +637,10 @@ DataFile::Value Terrain::serialize()
                 DataFile::Value::ByteArray(
                     (u8*)heightBuffer.data(),
                     (u8*)(heightBuffer.data() + heightBuffer.size()))));
+    dict["blendBuffer"] = DataFile::makeBytearray(std::move(
+                DataFile::Value::ByteArray(
+                    (u8*)blend.data(),
+                    (u8*)(blend.data() + blend.size()))));
     return dict;
 }
 
@@ -596,6 +655,13 @@ void Terrain::deserialize(DataFile::Value& data)
     f32* dataBegin = (f32*)heightBufferBytes.data();
     f32* dataEnd = dataBegin + heightBufferBytes.size() / sizeof(f32);
     heightBuffer.assign(dataBegin, dataEnd);
+    if (data.hasKey("blendBuffer"))
+    {
+        auto& blendBytes = data["blendBuffer"].bytearray();
+        u32* dataBegin = (u32*)blendBytes.data();
+        u32* dataEnd = dataBegin + blendBytes.size() / sizeof(u32);
+        blend.assign(dataBegin, dataEnd);
+    }
 }
 
 void Terrain::applyDecal(Decal& decal)

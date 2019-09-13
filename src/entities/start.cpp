@@ -12,7 +12,7 @@ void Start::onCreateEnd(Scene* scene)
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->offroadMaterial);
+            PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->genericMaterial);
     collisionShape->setQueryFilterData(PxFilterData(
                 COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
     collisionShape->setSimulationFilterData(PxFilterData(

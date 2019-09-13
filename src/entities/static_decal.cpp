@@ -27,7 +27,7 @@ void StaticDecal::onCreateEnd(Scene* scene)
     physicsUserData.placeableEntity = this;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxBoxGeometry(convert(scale * 0.5f)), *scene->offroadMaterial);
+            PxBoxGeometry(convert(scale * 0.5f)), *scene->genericMaterial);
     collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0));
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);

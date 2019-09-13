@@ -305,9 +305,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
         }
 
-        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track" };
+        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track", "Paint" };
         // TODO: icons
-        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
+        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
         glm::vec2 offset = buttonOffset;
         u32 padding = height * 0.01f;
         u32 buttonHeight = height * 0.02f;
@@ -355,6 +355,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         slider(buttonOffset, buttonSpacing, str("Brush Radius: ", std::fixed, std::setprecision(1), brushRadius), 2.f, 40.f, brushRadius);
         slider(buttonOffset, buttonSpacing, str("Brush Falloff: ", std::fixed, std::setprecision(1), brushFalloff), 0.2f, 10.f, brushFalloff);
         slider(buttonOffset, buttonSpacing, str("Brush Strength: ", std::fixed, std::setprecision(1), brushStrength), -30.f, 30.f, brushStrength);
+        if (terrainTool == TerrainTool::PAINT)
+        {
+            const char* paintNames[] = { "Paint: Main", "Paint: Rock", "Paint: Offroad", "Paint: Garbage" };
+            if (button(buttonOffset, buttonSpacing, paintNames[paintMaterialIndex]))
+            {
+                paintMaterialIndex = (paintMaterialIndex + 1) % 4;
+            }
+        }
 
         if (!isMouseClickHandled)
         {
@@ -389,6 +397,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     break;
                 case TerrainTool::MATCH_TRACK:
                     scene->terrain->matchTrack(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime, scene);
+                    break;
+                case TerrainTool::PAINT:
+                    scene->terrain->paint(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength * 1.f) * deltaTime, paintMaterialIndex);
                     break;
                 default:
                     break;

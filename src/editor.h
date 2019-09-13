@@ -52,8 +52,10 @@ class Editor
         SMOOTH,
         ERODE,
         MATCH_TRACK,
+        PAINT,
         MAX
     } terrainTool = TerrainTool::RAISE;
+    u32 paintMaterialIndex = 2;
 
     enum struct EditMode
     {

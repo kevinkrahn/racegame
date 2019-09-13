@@ -12,7 +12,7 @@ class Terrain : public Renderable, public Entity
     {
         glm::vec3 position;
         glm::vec3 normal;
-        glm::vec3 color;
+        u32 blend;
     };
 
     f32 tileSize = 2.0f;
@@ -20,6 +20,8 @@ class Terrain : public Renderable, public Entity
     std::vector<f32> heightBuffer;
     std::vector<Vertex> vertices;
     std::vector<u32> indices;
+    std::vector<u32> blend;
+    GLuint textures[4];
 
     GLuint vao = 0, vbo = 0, ebo = 0;
     glm::vec3 brushSettings;
@@ -30,6 +32,8 @@ class Terrain : public Renderable, public Entity
     bool isDirty = true;
     bool isCollisionMeshDirty = true;
 
+    PxMaterial* materials[2];
+    std::vector<PxMaterialTableIndex> materialIndices;
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
     void setDirty()
@@ -63,6 +67,7 @@ public:
     void smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
     void erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
     void matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, class Scene* scene);
+    void paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 materialIndex);
 
     void generate(f32 heightScale=4.f, f32 scale=0.05f);
     void createBuffers();
