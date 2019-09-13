@@ -208,6 +208,7 @@ def save_blender_data():
     scenes = []
 
     for scene in bpy.data.scenes:
+        bpy.context.window.scene = scene
         entities = []
 
         def save_object(obj, entityType, matrix, data_name='NONE'):
