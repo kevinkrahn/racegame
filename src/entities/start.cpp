@@ -25,8 +25,9 @@ void Start::onCreateEnd(Scene* scene)
 void Start::updateTransform(Scene* scene)
 {
     PlaceableEntity::updateTransform(scene);
+    f32 size = 21.f;
     glm::mat4 decalTransform = transform *
-        glm::scale(glm::mat4(1.f), { 22.f * 0.0625f, 22.f, 30.f }) *
+        glm::scale(glm::mat4(1.f), { size * 0.0625f, size, 30.f }) *
         glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 });
     finishLineDecal.begin(decalTransform);
     scene->track->applyDecal(finishLineDecal);
@@ -42,6 +43,8 @@ void Start::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.fresnelBias = -0.2f;
     settings.texture = g_resources.getTexture("white");
     settings.worldTransform = transform;
+    renderer->push(LitRenderable(settings));
+    settings.mesh = meshLights;
     renderer->push(LitRenderable(settings));
     renderer->add(&finishLineDecal);
 }

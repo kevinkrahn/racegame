@@ -8,12 +8,14 @@
 class Start : public PlaceableEntity
 {
     Mesh* mesh;
+    Mesh* meshLights;
     Decal finishLineDecal;
 
 public:
     Start()
     {
-        mesh = g_resources.getMesh("world.Cube.002");
+        mesh = g_resources.getMesh("world.Start");
+        meshLights = g_resources.getMesh("world.StartLights");
     }
 
     void applyDecal(class Decal& decal) override;
