@@ -4,17 +4,17 @@
 
 layout(location = 0) in vec3 attrPosition;
 layout(location = 1) in vec3 attrNormal;
-layout(location = 2) in vec3 attrColor;
+layout(location = 2) in vec4 attrBlend;
 
-layout(location = 0) out vec3 outColor;
+layout(location = 0) out vec3 outWorldPosition;
 layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec3 outWorldPosition;
+layout(location = 2) out vec4 outBlend;
 
 void main()
 {
-    outColor = attrColor;
-    outNormal = attrNormal;
     outWorldPosition = attrPosition;
+    outNormal = attrNormal;
+    outBlend = attrBlend;
 }
 
 #elif defined FRAG
@@ -23,17 +23,18 @@ void main()
 
 layout(location = 0) out vec4 outColor;
 
-layout(location = 0) in vec3 inColor;
+layout(location = 0) in vec3 inWorldPosition;
 layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec3 inWorldPosition;
-layout(location = 3) in vec3 inShadowCoord;
+layout(location = 2) in vec3 inShadowCoord;
+layout(location = 3) in vec4 inBlend;
 
-layout(location = 2) uniform vec3 color;
 layout(location = 3) uniform vec3 brushSettings;
 layout(location = 4) uniform vec3 brushPosition;
 
-layout(binding = 0) uniform sampler2D texSampler;
-layout(binding = 1) uniform sampler2D texSampler2;
+layout(binding = 6) uniform sampler2D texSampler1;
+layout(binding = 7) uniform sampler2D texSampler2;
+layout(binding = 8) uniform sampler2D texSampler3;
+layout(binding = 9) uniform sampler2D texSampler4;
 
 void main()
 {
@@ -49,11 +50,24 @@ void main()
 
     vec3 xColor = texture(texSampler2, inWorldPosition.yz * texScale).rgb;
     vec3 yColor = texture(texSampler2, inWorldPosition.xz * texScale).rgb;
-    vec3 zColor = texture(texSampler, inWorldPosition.xy * texScale).rgb;
+    vec3 zColor = texture(texSampler1, inWorldPosition.xy * texScale).rgb;
+    vec4 tex1 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
 
-    vec4 tex = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
+    zColor = texture(texSampler2, inWorldPosition.xy * texScale).rgb;
+    vec4 tex2 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
 
-    vec4 baseColor = tex * vec4(inColor, 1.0);
+    xColor = texture(texSampler3, inWorldPosition.yz * texScale).rgb;
+    yColor = texture(texSampler3, inWorldPosition.xz * texScale).rgb;
+    zColor = texture(texSampler3, inWorldPosition.xy * texScale).rgb;
+    vec4 tex3 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
+
+    xColor = texture(texSampler4, inWorldPosition.yz * texScale).rgb;
+    yColor = texture(texSampler4, inWorldPosition.xz * texScale).rgb;
+    zColor = texture(texSampler4, inWorldPosition.xy * texScale).rgb;
+    vec4 tex4 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
+
+    vec4 baseColor = inBlend.x*tex1 + inBlend.y*tex2 + inBlend.z*tex3 + inBlend.w*tex4;
+
     outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
             20.0, 0.01, vec3(1.0), -0.1, 0.08, 2.5);
 
@@ -69,14 +83,14 @@ void main()
 layout(triangles, invocations = VIEWPORT_COUNT) in;
 layout(triangle_strip, max_vertices = 3) out;
 
-layout(location = 0) in vec3 inColor[];
+layout(location = 0) in vec3 inWorldPosition[];
 layout(location = 1) in vec3 inNormal[];
-layout(location = 2) in vec3 inWorldPosition[];
+layout(location = 2) in vec4 inBlend[];
 
-layout(location = 0) out vec3 outColor;
+layout(location = 0) out vec3 outWorldPosition;
 layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec3 outWorldPosition;
-layout(location = 3) out vec3 outShadowCoord;
+layout(location = 2) out vec3 outShadowCoord;
+layout(location = 3) out vec4 outBlend;
 
 void main()
 {
@@ -84,10 +98,10 @@ void main()
     {
         gl_Layer = gl_InvocationID;
         gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
-        outColor = inColor[i];
         outNormal = inNormal[i];
         outWorldPosition = inWorldPosition[i];
         outShadowCoord = (shadowViewProjectionBias[gl_InvocationID] * vec4(inWorldPosition[i], 1.0)).xyz;
+        outBlend = inBlend[i];
         EmitVertex();
     }
 

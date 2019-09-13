@@ -876,6 +876,8 @@ void Track::split()
             newRailing->points = std::vector<RailingPoint>(
                     railing->points.begin() + railing->selectedPoints.front().pointIndex,
                     railing->points.end());
+            newRailing->scale = railing->scale;
+            newRailing->meshTypeIndex = railing->meshTypeIndex;
             railing->points.erase(
                     railing->points.begin() + railing->selectedPoints.front().pointIndex + 1,
                     railing->points.end());

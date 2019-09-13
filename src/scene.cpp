@@ -8,6 +8,7 @@
 #include "track.h"
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
+#include "entities/tree.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -599,6 +600,13 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
             this->start = new Start();
             this->start->deserialize(val);
             this->addEntity(start);
+        } break;
+        case SerializedEntityID::TREE:
+        {
+            Tree* tree = new Tree();
+            tree->deserialize(val);
+            tree->updateTransform(this);
+            this->addEntity(tree);
         } break;
     }
     return newEntities.back().get();

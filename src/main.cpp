@@ -24,6 +24,7 @@
 #include "decal.cpp"
 #include "entities/projectile.cpp"
 #include "entities/static_mesh.cpp"
+#include "entities/tree.cpp"
 #include "entities/static_decal.cpp"
 #include "entities/start.cpp"
 

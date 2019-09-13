@@ -55,6 +55,7 @@ public:
 
     void onDepthPrepass(Renderer* renderer) override
     {
+        glBindTextureUnit(0, settings.texture->handle);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);
@@ -68,6 +69,7 @@ public:
 
     void onShadowPass(Renderer* renderer) override
     {
+        glBindTextureUnit(0, settings.texture->handle);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);
@@ -100,6 +102,7 @@ public:
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
         glUniform3fv(2, 1, (GLfloat*)&settings.color);
         glUniform3f(3, settings.fresnelBias, settings.fresnelScale, settings.fresnelPower);
+        glUniform3f(4, settings.specularPower, settings.specularStrength, 0.f);
 
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);

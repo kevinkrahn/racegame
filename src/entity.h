@@ -10,6 +10,7 @@ enum struct SerializedEntityID
     STATIC_MESH,
     STATIC_DECAL,
     START,
+    TREE,
 };
 
 struct ActorUserData
