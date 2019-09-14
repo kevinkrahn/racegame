@@ -99,11 +99,17 @@ void Scene::startRace()
 
     track->buildTrackGraph(&trackGraph);
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
+    u32 driversPerRow = 5;
+    f32 width = 16 * scaleOf(this->start->transform).y;
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
 
-        glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
+        //glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
+        glm::vec3 offset = -glm::vec3(
+                6 + i / driversPerRow * 8,
+                -(width/2) + (i % driversPerRow) * (width / (driversPerRow - 1)),
+                0.f);
         glm::vec3 zdir = glm::normalize(zAxisOf(start));
 
         PxRaycastBuffer hit;

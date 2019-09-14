@@ -627,12 +627,16 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         renderer->push(TextRenderable(&font1, str('/', scene->getTotalLaps()),
                     offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p.c_str()).x, d.y*o20), glm::vec3(1.f)));
 
-        const char* placementSuffix[] = { "st", "nd", "rd", "th", "th", "th", "th", "th" };
+        const char* placementSuffix = "th";
+        if (placement == 0) placementSuffix = "st";
+        else if (placement == 1) placementSuffix = "nd";
+        else if (placement == 2) placementSuffix = "rd";
+
         glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
 
         p = str(placement + 1);
         renderer->push(TextRenderable(&font2, p, offset + glm::vec2(o200, d.y*o20), col));
-        renderer->push(TextRenderable(&font1, str(placementSuffix[placement]),
+        renderer->push(TextRenderable(&font1, placementSuffix,
                     offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col));
 
         // healthbar
@@ -717,6 +721,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         return;
     }
 
+    glm::vec3 currentPosition = getPosition();
     glm::mat4 transform = getTransform();
     bool canGo = true;
     if (!finishedRace)
@@ -778,8 +783,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             glm::vec3 targetP = nextP -
                 glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
-            glm::vec3 position = getPosition();
-            glm::vec2 dirToTargetP = glm::normalize(glm::vec2(position - targetP));
+            glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
             f32 steerAngle = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
 
             f32 forwardTestDist = 14.f;
@@ -787,8 +791,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             f32 testAngle = 0.65f;
             glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
             glm::vec3 testDir2(glm::rotate(glm::mat4(1.f), -testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
-            //renderer->drawLine(position, position + testDir1 * sideTestDist);
-            //renderer->drawLine(position, position + testDir2 * sideTestDist);
+            //renderer->drawLine(currentPosition, currentPosition + testDir1 * sideTestDist);
+            //renderer->drawLine(currentPosition, currentPosition + testDir2 * sideTestDist);
 
             f32 accel = 0.85f;
             f32 brake = 0.f;
@@ -801,7 +805,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 bool right = isBlocking(0.5f, testDir2, sideTestDist);
                 if (!left && !right)
                 {
-                    glm::vec3 d = glm::normalize(targetP - position);
+                    glm::vec3 d = glm::normalize(targetP - currentPosition);
                     f32 diff1 = glm::dot(d, testDir1);
                     f32 diff2 = glm::dot(d, testDir2);
                     steerAngle = diff1 < diff2 ?
@@ -818,7 +822,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 else
                 {
                     targetP = nextP;
-                    steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(position - targetP)));
+                    steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(currentPosition - targetP)));
                     if (getForwardSpeed() > 18.f)
                     {
                         brake = 0.8f;
@@ -851,7 +855,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                         -steerAngle, false, canGo, false);
             }
 
-            if (glm::length2(nextP - position) < square(30.f))
+            if (glm::length2(nextP - currentPosition) < square(30.f))
             {
                 ++targetPointIndex;
                 if (targetPointIndex >= paths[followPathIndex].size())
@@ -887,21 +891,21 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
             controlledBrakingTimer = glm::max(controlledBrakingTimer - deltaTime, 0.f);
         }
     }
-    lastValidPosition = getPosition();
+    lastValidPosition = currentPosition;
 
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
-        scene->getTrackGraph().findLapDistance(getPosition(), graphResult, maxSkippableDistance);
+        scene->getTrackGraph().findLapDistance(currentPosition, graphResult, maxSkippableDistance);
     }
 
     // check if crossed finish line
     if (!finishedRace && graphResult.lapDistanceLowMark < maxSkippableDistance)
     {
         glm::vec3 finishLinePosition = translationOf(scene->getStart());
-        glm::vec3 dir = glm::normalize(getPosition() - finishLinePosition);
+        glm::vec3 dir = glm::normalize(currentPosition - finishLinePosition);
         if (glm::dot(xAxisOf(scene->getStart()), dir) > 0.f
-                && glm::length2(getPosition() - finishLinePosition) < square(40.f))
+                && glm::length2(currentPosition - finishLinePosition) < square(40.f))
         {
             if (!finishedRace && currentLap >= scene->getTotalLaps())
             {
@@ -926,7 +930,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
     if (cameraIndex >= 0)
     {
-        glm::vec3 pos = getPosition();
+        glm::vec3 pos = currentPosition;
 #if 0
         cameraTarget = pos + glm::vec3(0, 0, 2.f);
         cameraFrom = smoothMove(cameraFrom,
@@ -942,7 +946,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 #endif
 
         // draw arrow if vehicle is hidden behind something
-        glm::vec3 rayStart = getPosition();
+        glm::vec3 rayStart = currentPosition;
         glm::vec3 diff = cameraFrom - rayStart;
         glm::vec3 rayDir = glm::normalize(diff);
         f32 dist = glm::length(diff);
@@ -971,14 +975,14 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
 
     // destroy vehicle if off track or out of bounds
     bool onGround = false;
-    if (getPosition().z < -16.f)
+    if (currentPosition.z < -16.f)
     {
         applyDamage(100.f, vehicleIndex);
     }
     else
     {
         PxRaycastBuffer hit;
-        if (scene->raycastStatic(getPosition(), { 0, 0, -1 }, 3.0f, &hit))
+        if (scene->raycastStatic(currentPosition, { 0, 0, -1 }, 3.0f, &hit))
         {
             onGround = true;
             PxMaterial* hitMaterial = hit.block.shape->getMaterialFromInternalFaceIndex(hit.block.faceIndex);
@@ -1041,7 +1045,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 scene->smoke.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
-                    glm::min(1.f, slip * 0.5f));
+                    glm::min(1.f, slip * 0.4f));
                 smoked = true;
             }
         }
@@ -1135,6 +1139,29 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         scene->attackCredit(lastDamagedBy, vehicleIndex);
     }
 
+    // spawn smoke when critically damaged
+    smokeTimerDamage = glm::max(0.f, smokeTimerDamage - deltaTime);
+    f32 damagePercent = hitPoints / maxHitPoints;
+    if (smokeTimerDamage <= 0.f && damagePercent < 0.3f)
+    {
+        // TODO: make the effect more intense the more critical the damage (fire and sparks?)
+        glm::vec3 vehicleVel = convert(getRigidBody()->getLinearVelocity())
+            + getForwardVector();
+        glm::vec3 vel = glm::vec3(glm::normalize(glm::vec3(
+                random(scene->randomSeries, -1.f, 1.f),
+                random(scene->randomSeries, -1.f, 1.f),
+                random(scene->randomSeries, -1.f, 1.f))))
+            + glm::vec3(0, 0, 1)
+            + vehicleVel * 0.5f;
+        scene->smoke.spawn(currentPosition + glm::vec3(0, 0, 0.5f),
+            vel, 1.f - damagePercent, glm::vec4(glm::vec3(0.5f), 1.f), 0.5f);
+        smokeTimerDamage = 0.015f;
+    }
+    if (g_input.isKeyPressed(KEY_R) && isPlayerControlled)
+    {
+        applyDamage(15, vehicleIndex);
+    }
+
     // draw chassis
     for (auto& m : driver->vehicleData->chassisMeshes)
     {
@@ -1158,7 +1185,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     {
         glm::mat4 decalTransform =
                 transform *
-                //glm::translate(glm::mat4(1.f), getPosition()) *
+                //glm::translate(glm::mat4(1.f), currentPosition) *
                 glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 }) *
                 glm::scale(glm::mat4(1.f), glm::vec3(4, 15, 15));
 
@@ -1184,8 +1211,9 @@ void Vehicle::fireWeapon()
     {
         vel = glm::normalize(vel) * minSpeed;
     }
-    scene->addEntity(new Projectile(getPosition() + getForwardVector() * 3.f + getRightVector() * 0.8f,
+    glm::vec3 pos = getPosition();
+    scene->addEntity(new Projectile(pos + getForwardVector() * 3.f + getRightVector() * 0.8f,
             vel, zAxisOf(transform), vehicleIndex));
-    scene->addEntity(new Projectile(getPosition() + getForwardVector() * 3.f - getRightVector() * 0.8f,
+    scene->addEntity(new Projectile(pos + getForwardVector() * 3.f - getRightVector() * 0.8f,
             vel, zAxisOf(transform), vehicleIndex));
 }

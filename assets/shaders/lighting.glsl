@@ -1,4 +1,5 @@
 layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
+layout(binding = 3) uniform sampler2D cloudShadowTexture;
 layout(binding = 4) uniform sampler2DArray ssaoTexture;
 
 float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
@@ -56,6 +57,9 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 #else
     float shadow = 1.f;
 #endif
+    float cloudShadow = texture(cloudShadowTexture,
+            vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r;
+    shadow *= cloudShadow;
 
     float sunPower = 0.7;
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)

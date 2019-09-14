@@ -21,6 +21,7 @@ struct EntityType
 
 std::vector<EntityType> entityTypes = {
     { "Rock", fn { return new StaticMesh(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, M_PI * 2)); } },
+    { "Sign", fn { return new StaticMesh(2, p, glm::vec3(1.f), 0.f); } },
     { "Tree", fn { return new Tree(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, M_PI * 2)); } },
     { "Tunnel", fn { return new StaticMesh(1, p, glm::vec3(1.f), 0.f); } },
     { "Straight Arrow", fn { return new StaticDecal(0, p); } },

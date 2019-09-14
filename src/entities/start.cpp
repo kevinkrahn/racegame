@@ -40,7 +40,9 @@ void Start::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.mesh = mesh;
     settings.fresnelScale = 0.3f;
     settings.fresnelPower = 1.5f;
-    settings.fresnelBias = -0.2f;
+    settings.fresnelBias = -0.15f;
+    settings.specularPower = 60.f;
+    settings.specularStrength = 0.3f;
     settings.texture = g_resources.getTexture("white");
     settings.worldTransform = transform;
     renderer->push(LitRenderable(settings));

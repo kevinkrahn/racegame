@@ -8,11 +8,13 @@
 const char* meshNames[] = {
     "world.Rock",
     "world.Tunnel",
+    "world.Sign",
 };
 
 const char* texNames[] = {
     "rock",
-    "concrete"
+    "concrete",
+    "white"
 };
 
 StaticMesh::StaticMesh(u32 meshIndex, glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)

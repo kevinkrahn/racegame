@@ -645,6 +645,7 @@ void Renderer::render(f32 deltaTime)
 
     // color pass
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+    glBindTextureUnit(3, g_resources.getTexture("cloud_shadow")->handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 #if 1
     glClearColor(0.15f, 0.35f, 0.9f, 1.f);

@@ -44,13 +44,13 @@ public:
     };
 
     void spawn(glm::vec3 const& position, glm::vec3 const& velocity, f32 alpha,
-            glm::vec4 const& color = glm::vec4(1.f))
+            glm::vec4 const& color = glm::vec4(1.f), f32 scale = 1.f)
     {
         particles.push_back({
             position,
             velocity,
-            random(series, minScale, maxScale),
-            random(series, minAngle, maxAngle),
+            random(series, minScale, maxScale) * scale,
+            random(series, minAngle, maxAngle) * scale,
             0.f,
             random(series, minLife, maxLife),
             color,

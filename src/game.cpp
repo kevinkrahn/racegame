@@ -127,10 +127,10 @@ void Game::run()
         Driver(false, false, false, &g_resources.getVehicleData()[2], 6),
         Driver(false, false, false, &g_resources.getVehicleData()[3], 7),
         Driver(false, false, false, &g_resources.getVehicleData()[3], 8),
-
-        /*
         Driver(false, false, false, &g_resources.getVehicleData()[0], 1),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 2),
+
+        /*
         Driver(false, false, false, &g_resources.getVehicleData()[0], 3),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 5),

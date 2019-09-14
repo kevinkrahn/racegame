@@ -69,6 +69,7 @@ public:
 	f32 controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
 	f32 smokeTimer = 0.f;
+	f32 smokeTimerDamage = 0.f;
 	f32 offsetChangeTimer = 0.f;
 	f32 offsetChangeInterval = 5.f;
     u32 engineSound = 0;

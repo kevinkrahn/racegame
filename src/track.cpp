@@ -42,7 +42,7 @@ void Track::onCreate(Scene* scene)
     {
         BezierSegment* c = getPointConnection(0);
         f32 length = c->getLength();
-        f32 t = 20.f / length;
+        f32 t = 30.f / length;
         glm::vec3 xDir = glm::normalize(c->directionOnCurve(t));
         glm::vec3 yDir = glm::cross(glm::vec3(0, 0, 1), xDir);
         glm::vec3 zDir = glm::cross(xDir, yDir);
@@ -831,8 +831,16 @@ void Track::connectPoints()
     auto segment = std::make_unique<BezierSegment>(this);
     segment->handleOffsetA = -handle1;
     segment->pointIndexA = index1;
+    if (BezierSegment* s = getPointConnection(index1))
+    {
+        segment->widthA = s->pointIndexA == index1 ? s->widthA : s->widthB;
+    }
     segment->handleOffsetB = -handle2;
     segment->pointIndexB = index2;
+    if (BezierSegment* s = getPointConnection(index2))
+    {
+        segment->widthB = s->pointIndexA == index2 ? s->widthA : s->widthB;
+    }
     connections.push_back(std::move(segment));
 }
 
