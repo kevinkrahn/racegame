@@ -70,7 +70,6 @@ class Editor
         NONE,
         NEW_RAILING,
         NEW_MARKING,
-        NEW_OFFROAD,
         MAX
     } placeMode = PlaceMode::NONE;
 

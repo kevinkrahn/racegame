@@ -225,6 +225,18 @@ public:
     void placeRailing(glm::vec3 const& p);
     void placeMarking(glm::vec3 const& p);
     bool canConnect() const { return selectedPoints.size() == 2; }
+    bool canConnectRailings() const
+    {
+        u32 count = 0;
+        for (auto& railing : railings)
+        {
+            if (railing->selectedPoints.size() == 1)
+            {
+                ++count;
+            }
+        }
+        return count == 2;
+    }
     bool canSubdivide() const
     {
         for (auto& railing : railings)
@@ -261,6 +273,7 @@ public:
     }
     void extendTrack(i32 prefabCurveIndex);
     void connectPoints();
+    void connectRailings();
     void subdividePoints();
     void split();
     bool hasSelection() const { return selectedPoints.size() > 0; }

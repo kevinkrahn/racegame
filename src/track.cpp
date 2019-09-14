@@ -267,6 +267,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
         }
 
+        f32 widthDiff = ((i32)g_input.isKeyPressed(KEY_Q) - (i32)g_input.isKeyPressed(KEY_E)) * 1.f;
+
         glm::vec3 colorA = orange;
         glm::vec3 handleA = points[c->pointIndexA].position + c->handleOffsetA;
         glm::vec2 handleAScreen = project(handleA, renderer->getCamera(0).viewProjection)
@@ -315,6 +317,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         }
         if (dragRailingIndex == -1 && dragConnectionIndex == i && dragConnectionHandle == 0)
         {
+            c->widthA += widthDiff;
             c->isDirty = true;
             colorA = brightOrange;
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleA);
@@ -395,6 +398,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         }
         if (dragRailingIndex == -1 && dragConnectionIndex == i && dragConnectionHandle == 1)
         {
+            c->widthB += widthDiff;
             c->isDirty = true;
             colorB = brightOrange;
             f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleB);
@@ -752,6 +756,8 @@ void Track::extendTrack(i32 prefabCurveIndex)
     BezierSegment* bezierConnection = getPointConnection(pointIndex);
     glm::vec3 fromHandleOffset = (bezierConnection->pointIndexA == pointIndex)
         ? bezierConnection->handleOffsetA : bezierConnection->handleOffsetB;
+    f32 fromWidth = (bezierConnection->pointIndexA == pointIndex)
+        ? bezierConnection->widthA : bezierConnection->widthB;
     glm::vec3 xDir = getPointDir(pointIndex);
     glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
     glm::vec3 zDir = glm::cross(yDir, xDir);
@@ -773,6 +779,8 @@ void Track::extendTrack(i32 prefabCurveIndex)
         segment->pointIndexA = pIndex;
         segment->handleOffsetB = h;
         segment->pointIndexB = (i32)points.size() - 1;
+        segment->widthA = fromWidth;
+        segment->widthB = fromWidth;
         connections.push_back(std::move(segment));
 
         pIndex = (i32)points.size() - 1;
@@ -826,6 +834,76 @@ void Track::connectPoints()
     segment->handleOffsetB = -handle2;
     segment->pointIndexB = index2;
     connections.push_back(std::move(segment));
+}
+
+void Track::connectRailings()
+{
+    Railing* railingA = nullptr;
+    Railing* railingB = nullptr;
+    for (auto& railing : railings)
+    {
+        if (railing->selectedPoints.size() == 1)
+        {
+            if (!railingA)
+            {
+                railingA = railing.get();
+            }
+            else
+            {
+                railingB = railing.get();
+                break;
+            }
+        }
+    }
+    if (!railingA && !railingB)
+    {
+        return;
+    }
+
+    if (railingA->selectedPoints[0].pointIndex == railingA->points.size() - 1 &&
+        railingB->selectedPoints[0].pointIndex == railingB->points.size() - 1)
+    {
+        for (auto it = railingB->points.rbegin(); it != railingB->points.rend(); ++it)
+        {
+            RailingPoint point = *it;
+            std::swap(point.handleOffsetA, point.handleOffsetB);
+            railingA->points.push_back(point);
+        }
+    }
+    else if (railingA->selectedPoints[0].pointIndex == railingA->points.size() - 1 &&
+        railingB->selectedPoints[0].pointIndex == 0)
+    {
+        for (auto it = railingB->points.begin(); it!=railingB->points.end(); ++it)
+        {
+            railingA->points.push_back(*it);
+        }
+    }
+    else if (railingA->selectedPoints[0].pointIndex == 0 &&
+        railingB->selectedPoints[0].pointIndex == railingB->points.size() - 1)
+    {
+        for (auto it = railingB->points.rbegin(); it != railingB->points.rend(); ++it)
+        {
+            railingA->points.insert(railingA->points.begin(), *it);
+        }
+    }
+    else if (railingA->selectedPoints[0].pointIndex == 0 &&
+        railingB->selectedPoints[0].pointIndex == 0)
+    {
+        for (auto it = railingB->points.begin(); it!=railingB->points.end(); ++it)
+        {
+            RailingPoint point = *it;
+            std::swap(point.handleOffsetA, point.handleOffsetB);
+            railingA->points.insert(railingA->points.begin(), point);
+        }
+    }
+    else
+    {
+        return;
+    }
+    railingA->selectedPoints.clear();
+    railingA->isDirty = true;
+    railings.erase(std::find_if(railings.begin(), railings.end(),
+                [&railingB](std::unique_ptr<Railing>& r) { return r.get() == railingB; }));
 }
 
 void Track::subdividePoints()
@@ -905,6 +983,10 @@ glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::
 
 void Track::placeRailing(glm::vec3 const& p)
 {
+    for (auto& r : railings)
+    {
+        r->selectedPoints.clear();
+    }
     auto railing = std::make_unique<Railing>(this);
     railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
     railing->selectedPoints.push_back({ 0, {} });
@@ -913,6 +995,10 @@ void Track::placeRailing(glm::vec3 const& p)
 
 void Track::placeMarking(glm::vec3 const& p)
 {
+    for (auto& r : railings)
+    {
+        r->selectedPoints.clear();
+    }
     auto railing = std::make_unique<Railing>(this);
     railing->meshTypeIndex = 1;
     railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });

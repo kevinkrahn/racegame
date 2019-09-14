@@ -30,6 +30,11 @@ std::vector<EntityType> entityTypes = {
 
 #undef fn
 
+glm::vec4 baseButtonColor = glm::vec4(0.f, 0.f, 0.f, 0.9f);
+glm::vec4 hoverButtonColor = glm::vec4(0.06f, 0.06f, 0.06f, 0.92f);
+glm::vec4 selectedButtonColor = glm::vec4(0.06f, 0.06f, 0.06f, 0.92f);
+glm::vec4 disabledButtonColor = glm::vec4(0.f, 0.f, 0.f, 0.75f);
+
 void Editor::onStart(Scene* scene)
 {
 
@@ -111,21 +116,19 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     Font* fontSmall = &g_resources.getFont("font", height * 0.02f);
     glm::vec2 mousePos = g_input.getMousePosition();
     auto button = [&](glm::vec2& pos, glm::vec2 spacing, const char* text, bool enabled=true) {
-        f32 alpha = 0.9f;
-        f32 textAlpha = 1.f;
-        glm::vec3 color(0.f);
+        glm::vec4 color = baseButtonColor;
+        f32 textAlpha = color.a;
         bool wasClicked = false;
         u32 buttonWidth = height * 0.15f;
         u32 buttonHeight = height * 0.04f;
         if (!enabled)
         {
-            alpha = 0.7f;
-            textAlpha = 0.75f;
+            color = disabledButtonColor;
+            textAlpha = color.a;
         }
         if (enabled && pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
         {
-            alpha = 0.92f;
-            color = glm::vec3(0.1f);
+            color = hoverButtonColor;
             isMouseClickHandled = true;
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
@@ -134,7 +137,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             }
         }
         renderer->push(QuadRenderable(white,
-                pos, buttonWidth, buttonHeight, color, alpha));
+                pos, buttonWidth, buttonHeight, color, color.a));
         renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
                     glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
         pos += spacing;
@@ -142,16 +145,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         return wasClicked;
     };
     auto slider = [&](glm::vec2& pos, glm::vec2 spacing, std::string&& text, f32 min, f32 max, f32& val) {
-        f32 alpha = 0.9f;
         f32 textAlpha = 1.f;
-        glm::vec3 color(0.f);
+        glm::vec4 color = baseButtonColor;
         bool wasClicked = false;
         u32 buttonWidth = height * 0.15f;
         u32 buttonHeight = height * 0.04f;
         if (pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
         {
-            alpha = 0.92f;
-            color = glm::vec3(0.1f);
+            color = hoverButtonColor;
             isMouseClickHandled = true;
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
             {
@@ -163,10 +164,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             // TODO: add support for mouse scrolling to change value
         }
         renderer->push(QuadRenderable(white,
-                pos, buttonWidth, buttonHeight, color, alpha));
+                pos, buttonWidth, buttonHeight, color, color.a));
         renderer->push(QuadRenderable(white,
                 pos, buttonWidth * ((val - min) / (max - min)), buttonHeight * 0.1f,
-                val >= 0.f ? glm::vec3(0.0f, 0.f, 0.9f) : glm::vec3(0.9f, 0.f, 0.f), alpha));
+                val >= 0.f ? glm::vec3(0.0f, 0.f, 0.9f) : glm::vec3(0.9f, 0.f, 0.f), color.a));
         renderer->push(TextRenderable(fontSmall, std::move(text), pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
                     glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
         pos += spacing;
@@ -234,20 +235,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         for (u32 i=0; i<(u32)EditMode::MAX; ++i)
         {
             u32 buttonWidth = height * 0.16f;
-            f32 alpha = 0.9f;
-            glm::vec3 color(0.f);
-            if (i == (u32)editMode)
-            {
-                buttonWidth = height * 0.20f;
-                alpha = 0.9f;
-                color = glm::vec3(0.1f);
-            }
+            glm::vec4 color = baseButtonColor;
             if (pointInRectangle(g_input.getMousePosition(),
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2))
             {
-                alpha = 0.92f;
-                color = glm::vec3(0.1f);
+                color = hoverButtonColor;
                 isMouseClickHandled = true;
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
@@ -255,10 +248,15 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     scene->terrain->regenerateCollisionMesh(scene);
                 }
             }
+            if (i == (u32)editMode)
+            {
+                buttonWidth = height * 0.20f;
+                color = selectedButtonColor;
+            }
             renderer->push(QuadRenderable(white,
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2,
-                        color, alpha));
+                        color, color.a));
             u32 iconSize = buttonHeight;
             renderer->push(TextRenderable(font, modeNames[i],
                 offset + glm::vec2(padding * 2 + iconSize,
@@ -317,30 +315,27 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         for (u32 i=0; i<(u32)TerrainTool::MAX; ++i)
         {
             u32 buttonWidth = height * 0.12f;
-            f32 alpha = 0.9f;
-            glm::vec3 color(0.f);
-            if (i == (u32)terrainTool)
-            {
-                buttonWidth = height * 0.15f;
-                alpha = 0.92f;
-                color = glm::vec3(0.1f);
-            }
+            glm::vec4 color = baseButtonColor;
             if (pointInRectangle(g_input.getMousePosition(),
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2))
             {
-                alpha = 0.92f;
-                color = glm::vec3(0.1f);
+                color = hoverButtonColor;
                 isMouseClickHandled = true;
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
                     terrainTool = TerrainTool(i);
                 }
             }
+            if (i == (u32)terrainTool)
+            {
+                buttonWidth = height * 0.15f;
+                color = selectedButtonColor;
+            }
             renderer->push(QuadRenderable(white,
                         offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
                         buttonWidth + padding * 2, buttonHeight + padding * 2,
-                        color, alpha));
+                        color, color.a));
             u32 iconSize = buttonHeight;
             renderer->push(TextRenderable(fontSmall, toolNames[i],
                 offset + glm::vec2(padding * 2 + iconSize,
@@ -417,14 +412,20 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->track->connectPoints();
         }
 
-        if (button(buttonOffset, buttonSpacing, "Subdivide [v]", scene->track->canSubdivide()) ||
-                (g_input.isKeyPressed(KEY_V) && scene->track->canSubdivide()))
+        if (button(buttonOffset, buttonSpacing, "Connect Railings [c]", scene->track->canConnectRailings()) ||
+                (g_input.isKeyPressed(KEY_C) && scene->track->canConnectRailings()))
+        {
+            scene->track->connectRailings();
+        }
+
+        if (button(buttonOffset, buttonSpacing, "Subdivide [n]", scene->track->canSubdivide()) ||
+                (g_input.isKeyPressed(KEY_N) && scene->track->canSubdivide()))
         {
             scene->track->subdividePoints();
         }
 
         if (button(buttonOffset, buttonSpacing, "Split [t]", scene->track->canSplit()) ||
-                (g_input.isKeyPressed(KEY_V) && scene->track->canSubdivide()))
+                (g_input.isKeyPressed(KEY_T) && scene->track->canSubdivide()))
         {
             scene->track->split();
         }
@@ -432,11 +433,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         if (button(buttonOffset, buttonSpacing, "New Railing"))
         {
             placeMode = PlaceMode::NEW_RAILING;
-        }
-
-        if (button(buttonOffset, buttonSpacing, "New Offroad Area"))
-        {
-            placeMode = PlaceMode::NEW_OFFROAD;
         }
 
         if (button(buttonOffset, buttonSpacing, "New Track Marking"))
@@ -481,14 +477,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                 for (u32 i=0; i<ARRAY_SIZE(prefabTrackItems); ++i)
                 {
-                    f32 alpha = 0.6f;
+                    f32 alpha = 0.8f;
                     glm::vec3 color(0.f);
                     if (pointInRectangle(g_input.getMousePosition(),
                         { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
                         itemSize, itemSize))
                     {
                         alpha = 0.9f;
-                        color = glm::vec3(0.1f);
+                        color = glm::vec3(0.08f);
                         isMouseClickHandled = true;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                         {
