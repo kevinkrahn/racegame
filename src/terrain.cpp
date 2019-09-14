@@ -594,6 +594,7 @@ void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 mate
 
 void Terrain::onShadowPass(class Renderer* renderer)
 {
+    // TODO: should the terrain cast shadow?
     glUseProgram(renderer->getShaderProgram("terrain"));
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

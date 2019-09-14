@@ -77,7 +77,6 @@ def save_mesh(obj, mesh_map):
     vertex_buffer = bytearray()
     vertex_dict = {}
     indices = []
-    index_buffer = bytearray()
     element_size = 0
 
     if len(mesh_copy.loop_triangles) > 0:
@@ -128,6 +127,7 @@ def save_mesh(obj, mesh_map):
 
                 index = vertex_dict.get(vertex, None)
                 if index == None:
+                    vertices.append(vertex)
                     index = vertex_count
                     vertex_count += 1
                     vertex_dict[vertex] = index
@@ -141,7 +141,6 @@ def save_mesh(obj, mesh_map):
                         vertex_buffer += struct.pack("<2f", u[0], u[1])
 
                 indices.append(index)
-                index_buffer += struct.pack('<I', index)
 
     elif len(mesh_copy.edges) > 0:
         element_size = 2
@@ -169,6 +168,31 @@ def save_mesh(obj, mesh_map):
         if v.co[0] > maxP[0]: maxP[0] = v.co[0];
         if v.co[1] > maxP[1]: maxP[1] = v.co[1];
         if v.co[2] > maxP[2]: maxP[2] = v.co[2];
+
+    if "sortz" in obj.data:
+        triangles = []
+        for i in range(0, len(indices) // 3):
+            z1 = vertices[indices[i*3+0]][2]
+            z2 = vertices[indices[i*3+1]][2]
+            z3 = vertices[indices[i*3+2]][2]
+            triangles.append({
+                "z": max(z1, z2, z3),
+                "indices": [ indices[i*3], indices[i*3+1], indices[i*3+2] ]
+            })
+
+        def takeZ(elem):
+            return elem["z"]
+        triangles.sort(key=takeZ)
+
+        indices = []
+        for tri in triangles:
+            indices.append(tri["indices"][0])
+            indices.append(tri["indices"][1])
+            indices.append(tri["indices"][2])
+
+    index_buffer = bytearray()
+    for index in indices:
+        index_buffer += struct.pack('<I', index)
 
     mesh_map[mesh_name] = {
         'name': mesh_name,

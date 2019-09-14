@@ -34,10 +34,10 @@ void Tree::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = meshTrunk;
+    settings.texture = texTrunk;
     settings.fresnelScale = 0.2f;
     settings.fresnelPower = 1.7f;
     settings.fresnelBias = -0.2f;
-    settings.texture = texTrunk;
     settings.worldTransform = transform;
     renderer->push(LitRenderable(settings));
 
@@ -46,6 +46,8 @@ void Tree::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.fresnelScale = 0.f;
     settings.specularPower = 0.f;
     settings.specularStrength = 0.f;
+    settings.minAlpha = 0.5f;
+    //settings.transparent = true;
     renderer->push(LitRenderable(settings));
 }
 

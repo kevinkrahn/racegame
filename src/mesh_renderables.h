@@ -19,6 +19,8 @@ struct LitSettings
     glm::mat4 worldTransform;
     bool culling = true;
     bool castShadow = true;
+    bool transparent = false;
+    f32 minAlpha = 0.f;
 };
 
 class LitRenderable : public Renderable
@@ -45,16 +47,24 @@ public:
         }
     }
 
-    i32 getPriority() const override { return 0 + settings.culling; }
+    i32 getPriority() const override
+    {
+        return 0 + settings.culling + (settings.transparent ? 11000 : 0) + (settings.minAlpha > 0.f);
+    }
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override
     {
-        // TODO: create simpler shader for depth pass
-        glUseProgram(renderer->getShaderProgram("lit"));
+        glUseProgram(renderer->getShaderProgram(
+            (settings.minAlpha > 0.f || settings.transparent) ? "lit_discard" : "lit"));
     }
 
     void onDepthPrepass(Renderer* renderer) override
     {
+        if (settings.transparent)
+        {
+            return;
+        }
+        glUniform1f(5, settings.minAlpha);
         glBindTextureUnit(0, settings.texture->handle);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glBindVertexArray(settings.mesh->vao);
@@ -63,12 +73,12 @@ public:
 
     void onShadowPassPriorityTransition(Renderer* renderer) override
     {
-        // TODO: create simpler shader for depth pass
-        glUseProgram(renderer->getShaderProgram("lit"));
+        onDepthPrepassPriorityTransition(renderer);
     }
 
     void onShadowPass(Renderer* renderer) override
     {
+        glUniform1f(5, settings.transparent ? 0.5f : settings.minAlpha);
         glBindTextureUnit(0, settings.texture->handle);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glBindVertexArray(settings.mesh->vao);
@@ -82,15 +92,33 @@ public:
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_EQUAL);
         glCullFace(GL_BACK);
+        glUseProgram(renderer->getShaderProgram("lit"));
+
+        /*
         if (settings.culling)
         {
             glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
         }
         else
         {
             glDisable(GL_CULL_FACE);
         }
-        glUseProgram(renderer->getShaderProgram("lit"));
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        if (settings.transparent)
+        {
+            glEnable(GL_BLEND);
+            glDepthFunc(GL_LEQUAL);
+        }
+        else
+        {
+            glDisable(GL_BLEND);
+            glDepthFunc(GL_EQUAL);
+        }
+        glUseProgram(renderer->getShaderProgram(
+                    settings.minAlpha > 0.f ? "lit_discard" : "lit"));
+                    */
     }
 
     void onLitPass(Renderer* renderer) override
@@ -103,12 +131,16 @@ public:
         glUniform3fv(2, 1, (GLfloat*)&settings.color);
         glUniform3f(3, settings.fresnelBias, settings.fresnelScale, settings.fresnelPower);
         glUniform3f(4, settings.specularPower, settings.specularStrength, 0.f);
+        glUniform1f(5, settings.minAlpha);
 
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);
     }
 
-    std::string getDebugString() const override { return "LitRenderable"; };
+    std::string getDebugString() const override
+    {
+        return settings.transparent ? "LitRenderable(t)" : "LitRenderable";
+    };
 };
 
 class OverlayRenderable : public Renderable

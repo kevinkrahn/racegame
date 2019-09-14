@@ -378,6 +378,7 @@ void Renderer::init(u32 width, u32 height)
     this->height = height;
 
     loadShader("lit");
+    loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
     loadShader("quad2D", {}, "text2D");
