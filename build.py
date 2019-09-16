@@ -69,10 +69,18 @@ def fetch_dependencies():
             subprocess.run(['cmake', '--build', os.path.abspath(os.path.join(physxdir, 'compiler', 'vc15win64')),
                 '--parallel', str(os.cpu_count()), '--config', 'release'], cwd=physxdir)
         else:
-            subprocess.run([os.path.join(physxdir, 'generate_projects.sh'), 'linux'], cwd=physxdir)
-            subprocess.run(['cmake', '--build', os.path.join(physxdir, 'compiler', 'linux-checked'),
+            xmlFile = os.path.join(physxdir, 'buildtools', 'presets', 'public', 'linux.xml')
+
+            tree = ET.parse(xmlFile)
+            for cmakeSwitch in tree.getroot().iter('cmakeSwitch'):
+                if cmakeSwitch.get('name') in ['PX_BUILDSNIPPETS', 'PX_BUILDPUBLICSAMPLES']:
+                    cmakeSwitch.set('value', 'False')
+            tree.write(xmlFile)
+
+            subprocess.run([os.path.join(physxdir, 'generate_projects.sh'), 'linux'])
+            subprocess.run(['cmake', '--build', os.path.join('compiler', 'linux-checked'),
                 '--parallel', str(os.cpu_count())], cwd=physxdir)
-            subprocess.run(['cmake', '--build', os.path.join(physxdir, 'compiler', 'linux-release'),
+            subprocess.run(['cmake', '--build', os.path.join('compiler', 'linux-release'),
                 '--parallel', str(os.cpu_count())], cwd=physxdir)
 
     # SDL2
@@ -160,7 +168,11 @@ def build(build_type):
                 return False
         if subprocess.run(['cmake', '--build', build_dir, '--parallel', job_count]).returncode != 0:
             return False
-        shutil.copy2(os.path.join(build_dir, 'compile_commands.json'), os.path.join(repoPath, 'compile_commands.json'));
+        try:
+            shutil.copy2(os.path.join(build_dir, 'compile_commands.json'), os.path.join(repoPath, 'compile_commands.json'));
+        except:
+            print('Failed to copy compile_commands.json')
+            pass
     return True
 
 def cleanBuild():
