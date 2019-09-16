@@ -2,6 +2,7 @@
 
 #include "misc.h"
 #include "driver.h"
+#include "menu.h"
 #include <memory>
 
 class Game
@@ -45,12 +46,13 @@ public:
     f32 realDeltaTime;
     f32 deltaTime;
     f64 currentTime = 0.0;
-    f64 timeDilation = 1.0;
+    f64 timeDilation = 1.0; // TODO: use this somewhere
     u32 frameIndex = 0;
 
     SDL_Window* window = nullptr;
     std::unique_ptr<class Scene> currentScene;
     std::unique_ptr<class Scene> nextScene;
+    Menu menu;
 
     void run();
     void changeScene(const char* sceneName);

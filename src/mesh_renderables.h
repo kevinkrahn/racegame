@@ -49,7 +49,7 @@ public:
 
     i32 getPriority() const override
     {
-        return 0 + settings.culling + (settings.transparent ? 11000 : 0) + (settings.minAlpha > 0.f);
+        return 20 + settings.culling + (settings.transparent ? 11000 : 0) + (settings.minAlpha > 0.f);
     }
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override

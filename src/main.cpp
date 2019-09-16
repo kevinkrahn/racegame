@@ -22,6 +22,7 @@
 #include "track.cpp"
 #include "dynamic_buffer.cpp"
 #include "decal.cpp"
+#include "menu.cpp"
 #include "entities/projectile.cpp"
 #include "entities/static_mesh.cpp"
 #include "entities/tree.cpp"

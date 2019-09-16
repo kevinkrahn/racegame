@@ -140,7 +140,8 @@ void Game::run()
         */
     };
 
-    changeScene(nullptr);
+    changeScene("saved_scene.dat");
+    //changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;
@@ -191,6 +192,7 @@ void Game::run()
         currentScene->onUpdate(renderer.get(), deltaTime);
         renderer->render(deltaTime);
         currentScene->onEndUpdate(deltaTime);
+        menu.onUpdate(renderer.get(), deltaTime);
         g_input.onFrameEnd();
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;
@@ -220,5 +222,9 @@ void Game::run()
 
 void Game::changeScene(const char* sceneName)
 {
+    if (sceneName)
+    {
+        print("Loading scene: ", sceneName, '\n');
+    }
     nextScene.reset(new Scene(sceneName));
 }

@@ -24,8 +24,8 @@ class Terrain : public Renderable, public Entity
     GLuint textures[4];
 
     GLuint vao = 0, vbo = 0, ebo = 0;
-    glm::vec3 brushSettings;
-    glm::vec3 brushPosition;
+    glm::vec3 brushSettings = { 1.f, 1.f, 1.f };
+    glm::vec3 brushPosition = { 0, 0, 1000000 };
 
     RandomSeries randomSeries;
 
@@ -80,7 +80,7 @@ public:
     void regenerateMesh();
     void regenerateCollisionMesh(class Scene* scene);
 
-    i32 getPriority() const override { return 100; }
+    i32 getPriority() const override { return 5; }
 
     // entity
     void onCreate(class Scene* scene) override;

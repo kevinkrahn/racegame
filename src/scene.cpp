@@ -72,7 +72,6 @@ Scene::Scene(const char* name)
         addEntity(terrain);
         track = new Track();
         addEntity(track);
-        //isEditing = true;
         return;
     }
 
@@ -144,13 +143,10 @@ void Scene::stopRace()
 
 void Scene::onStart()
 {
-    if (isEditing)
+    if (!isEditing)
     {
-        editor.onStart(this);
-    }
-    else
-    {
-        startRace();
+        track->buildTrackGraph(&trackGraph);
+        trackPreviewPosition = start->position;
     }
 }
 
@@ -159,15 +155,44 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
 
+    if (g_input.isKeyPressed(KEY_F6))
+    {
+        isEditing = !isEditing;
+    }
+
     if (isEditing)
     {
         editor.onUpdate(this, renderer, deltaTime);
     }
-
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+
+    if (!isEditing && !isRaceInProgress && trackGraph.getPaths().size() > 0)
+    {
+        // move the camera around the track
+        auto path = trackGraph.getPaths()[0];
+        glm::vec3 targetP = path[currentTrackPreviewPoint];
+        glm::vec3 diff = targetP - trackPreviewPosition;
+        if (glm::length2(diff) < square(30.f))
+        {
+            currentTrackPreviewPoint = (currentTrackPreviewPoint + 1) % (u32)path.size();
+        }
+        f32 accel = 8.0f;
+        trackPreviewVelocity += glm::normalize(diff) * deltaTime * accel;
+        f32 maxSpeed = 15.f;
+        if (glm::length(trackPreviewVelocity) > maxSpeed)
+        {
+            trackPreviewVelocity = glm::normalize(trackPreviewVelocity) * maxSpeed;
+        }
+        trackPreviewPosition += trackPreviewVelocity * deltaTime;
+
+        f32 camDistance = 80.f;
+        glm::vec3 cameraTarget = trackPreviewPosition;
+        glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+        renderer->setViewportCamera(0, cameraFrom, cameraTarget);
+    }
 
     // update vehicles
     i32 cameraIndex = 0;
@@ -625,5 +650,15 @@ void Scene::deserialize(DataFile::Value& data)
     {
         deserializeEntity(val);
     }
+    for (auto& e : newEntities)
+    {
+        e->onCreate(this);
+    }
+    for (auto& e : newEntities)
+    {
+        e->onCreateEnd(this);
+        entities.push_back(std::move(e));
+    }
+    newEntities.clear();
 }
 

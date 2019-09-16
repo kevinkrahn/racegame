@@ -178,7 +178,7 @@ private:
 
         void updateMesh();
 
-        i32 getPriority() const override { return 7000; }
+        i32 getPriority() const override { return 15; }
         std::string getDebugString() const override { return "Track Marking"; };
         void onLitPassPriorityTransition(class Renderer* renderer) override;
         void onLitPass(class Renderer* renderer) override;
@@ -313,7 +313,7 @@ public:
 
     // renderable
     std::string getDebugString() const override { return "Track"; }
-    i32 getPriority() const override { return 50; }
+    i32 getPriority() const override { return 0; }
     void onShadowPass(class Renderer* renderer) override;
     void onDepthPrepass(class Renderer* renderer) override;
     void onLitPass(class Renderer* renderer) override;

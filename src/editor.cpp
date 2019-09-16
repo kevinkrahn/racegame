@@ -36,11 +36,6 @@ glm::vec4 hoverButtonColor = glm::vec4(0.06f, 0.06f, 0.06f, 0.92f);
 glm::vec4 selectedButtonColor = glm::vec4(0.06f, 0.06f, 0.06f, 0.92f);
 glm::vec4 disabledButtonColor = glm::vec4(0.f, 0.f, 0.f, 0.75f);
 
-void Editor::onStart(Scene* scene)
-{
-
-}
-
 void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
     scene->terrain->setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });

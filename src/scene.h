@@ -19,7 +19,6 @@
 class Scene : public PxSimulationEventCallback
 {
 private:
-    bool isEditing = true;
     Editor editor;
 
     std::vector<std::unique_ptr<Entity>> entities;
@@ -35,6 +34,9 @@ private:
     TrackPreview2D trackPreview2D;
     TrackGraph trackGraph;
     u32 totalLaps = 4;
+    glm::vec3 trackPreviewPosition = { 0, 0, 0 };
+    glm::vec3 trackPreviewVelocity = { 0, 0, 0 };
+    u32 currentTrackPreviewPoint = 0;
 
     // physx callbacks
     void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)  { PX_UNUSED(constraints); PX_UNUSED(count); }
@@ -49,6 +51,7 @@ public:
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isRaceInProgress = false;
+    bool isEditing = false;
 
     RandomSeries randomSeries;
     PxMaterial* vehicleMaterial = nullptr;

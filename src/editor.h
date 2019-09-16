@@ -89,6 +89,5 @@ class Editor
     std::vector<PlaceableEntity*> selectedEntities;
 
 public:
-    void onStart(class Scene* scene);
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
 };

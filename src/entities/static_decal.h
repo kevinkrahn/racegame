@@ -12,7 +12,7 @@ class StaticDecal : public PlaceableEntity
     u32 texIndex;
 
 public:
-    StaticDecal(u32 texIndex, glm::vec3 const& pos = {0, 0, 0}, u32 decalFilter=DECAL_TRACK | DECAL_GROUND | DECAL_TERRAIN);
+    StaticDecal(u32 texIndex, glm::vec3 const& pos = {0, 0, 0}, u32 decalFilter=DECAL_TRACK);
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onUpdate(class Renderer* renderer, class Scene* scene, f32 deltaTime) override;
