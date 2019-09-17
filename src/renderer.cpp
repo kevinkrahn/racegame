@@ -14,6 +14,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     str << "#define VIEWPORT_COUNT " << cameras.size() << '\n';
     str << "#define SHADOWS_ENABLED " << u32(g_game.config.shadowsEnabled) << '\n';
     str << "#define SSAO_ENABLED " << u32(g_game.config.ssaoEnabled) << '\n';
+    str << "#define BLOOM_ENABLED " << u32(g_game.config.bloomEnabled) << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -182,6 +183,11 @@ void Renderer::createFramebuffers()
         glDeleteTextures(1, &fb.mainDepthTexture);
         glDeleteFramebuffers(1, &fb.mainFramebuffer);
     }
+    if (fb.finalFramebuffer)
+    {
+        glDeleteTextures(1, &fb.finalColorTexture);
+        glDeleteFramebuffers(1, &fb.finalFramebuffer);
+    }
     if (fb.msaaResolveFramebuffersCount > 0)
     {
         glDeleteTextures(1, &fb.msaaResolveColorTexture);
@@ -204,6 +210,11 @@ void Renderer::createFramebuffers()
         glDeleteTextures(1, &fb.saoTexture);
         glDeleteTextures(1, &fb.saoBlurTexture);
         glDeleteFramebuffers(1, &fb.saoFramebuffer);
+    }
+    if (fb.bloomFramebuffers.size() > 0)
+    {
+        glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
+        glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
     }
 
     fb = { 0 };
@@ -368,6 +379,54 @@ void Renderer::createFramebuffers()
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
     }
 
+    // bloom framebuffers
+    if (g_game.config.bloomEnabled)
+    {
+        for (u32 i=firstBloomDivisor; i<lastBloomDivisor; i *= 2)
+        {
+            GLuint tex[2];
+            glGenTextures(2, tex);
+            for (u32 n=0; n<2; ++n)
+            {
+                glBindTexture(GL_TEXTURE_2D_ARRAY, tex[n]);
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB16F, fb.renderWidth/i, fb.renderHeight/i,
+                        layers, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                fb.bloomColorTextures.push_back(tex[n]);
+            }
+
+            GLuint framebuffer;
+            glGenFramebuffers(1, &framebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex[0], 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tex[1], 0);
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+            fb.bloomFramebuffers.push_back(framebuffer);
+            fb.bloomBufferSize.push_back({ fb.renderWidth/i, fb.renderHeight/i });
+        }
+
+        glGenTextures(1, &fb.finalColorTexture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.finalColorTexture);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+                layers, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glGenFramebuffers(1, &fb.finalFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.finalColorTexture, 0);
+
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
+
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -377,6 +436,11 @@ void Renderer::init(u32 width, u32 height)
     this->width = width;
     this->height = height;
 
+    loadShader("bloom_filter");
+    loadShader("blit");
+    loadShader("post_process");
+    loadShader("blur", { "HBLUR" }, "hblur");
+    loadShader("blur", { "VBLUR" }, "vblur");
     loadShader("lit");
     loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
     loadShader("debug");
@@ -685,11 +749,71 @@ void Renderer::render(f32 deltaTime)
         glBindTextureUnit(0, fb.mainColorTexture);
     }
 
-    // render to back buffer
+    // bloom
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
+    if (g_game.config.bloomEnabled)
+    {
+        // filter the bright parts of the color buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.bloomFramebuffers[0]);
+        glViewport(0, 0, fb.bloomBufferSize[0].x, fb.bloomBufferSize[0].y);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glUseProgram(getShaderProgram("bloom_filter"));
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        GLuint blit = getShaderProgram("blit");
+        GLuint hblur = getShaderProgram("hblur");
+        GLuint vblur = getShaderProgram("vblur");
+
+        // downscale (skip first downscale because that one is done by bloom filter)
+        glUseProgram(blit);
+        for (u32 i=1; i<fb.bloomFramebuffers.size(); ++i)
+        {
+            glViewport(0, 0, fb.bloomBufferSize[i].x, fb.bloomBufferSize[i].y);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.bloomFramebuffers[i]);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            glBindTextureUnit(1, fb.bloomColorTextures[(i-1)*2]);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
+
+        // blur the bright parts
+        for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
+        {
+            glViewport(0, 0, fb.bloomBufferSize[i].x, fb.bloomBufferSize[i].y);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.bloomFramebuffers[i]);
+            glm::vec2 invResolution = 1.f / (glm::vec2(fb.bloomBufferSize[i].x, fb.bloomBufferSize[i].y));
+
+            // horizontal blur
+            glDrawBuffer(GL_COLOR_ATTACHMENT1);
+            glUseProgram(hblur);
+            glUniform2f(2, invResolution.x, invResolution.y);
+            glBindTextureUnit(1, fb.bloomColorTextures[i*2]);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+
+            // vertical blur
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            glUseProgram(vblur);
+            glUniform2f(2, invResolution.x, invResolution.y);
+            glBindTextureUnit(1, fb.bloomColorTextures[i*2 + 1]);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
+
+        // draw to final color texture
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
+        glViewport(0, 0, fb.renderWidth, fb.renderHeight);
+        glUseProgram(getShaderProgram("post_process"));
+        for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
+        {
+            glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);
+        }
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glBindTextureUnit(0, fb.finalColorTexture);
+    }
+
+    // render to back buffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
     glClearColor(0, 0, 0, 1);

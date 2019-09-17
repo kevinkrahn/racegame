@@ -7,6 +7,5 @@
 - Add support for importing a heightmap into the editor
 - Multi-thread certain parts (e.g. physics and particles can be simulated at the same time)
 - Add force-feedback for collisions, offroad, etc.
-- Add bloom effect
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha

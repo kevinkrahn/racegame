@@ -55,11 +55,18 @@ struct Framebuffers
     GLuint mainColorTexture;
     GLuint mainDepthTexture;
 
+    GLuint finalColorTexture;
+    GLuint finalFramebuffer;
+
     u32 msaaResolveFramebuffersCount;
     GLuint msaaResolveFromFramebuffers[MAX_VIEWPORTS];
     GLuint msaaResolveFramebuffers[MAX_VIEWPORTS];
     GLuint msaaResolveColorTexture;
     GLuint msaaResolveDepthTexture;
+
+    SmallVec<GLuint> bloomFramebuffers;
+    SmallVec<GLuint> bloomColorTextures;
+    SmallVec<glm::ivec2> bloomBufferSize;
 
     GLuint shadowFramebuffer;
     GLuint shadowDepthTexture;
@@ -101,6 +108,10 @@ private:
 
     u32 width;
     u32 height;
+
+    // TODO: calculate these based on render resolution
+    u32 firstBloomDivisor = 2;
+    u32 lastBloomDivisor = 16;
 
     std::map<std::string, u32> shaderHandleMap;
     std::vector<GLShader> loadedShaders;

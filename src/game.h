@@ -28,6 +28,7 @@ public:
         bool shadowsEnabled = true;
         bool ssaoEnabled = true;
         bool ssaoHighQuality = false; // TODO: Implement
+        bool bloomEnabled = true;
         u32 msaaLevel = 0;
     } config;
 

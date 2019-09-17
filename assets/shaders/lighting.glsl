@@ -61,7 +61,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
             vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r;
     shadow *= cloudShadow;
 
-    float sunPower = 0.7;
+    float sunPower = 1.0;
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)
         + max(dot(normal, ambientDirection) * 0.12, 0.0);
     vec3 camDir = normalize(cameraPosition[gl_Layer] - worldPosition);
