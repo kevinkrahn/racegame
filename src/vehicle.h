@@ -39,6 +39,7 @@ public:
 	Scene* scene;
 	u32 vehicleIndex;
 	Decal testDecal;
+	i32 cameraIndex = -1;
 
     // physics data
     bool isInAir = true;
@@ -75,6 +76,7 @@ public:
     u32 engineSound = 0;
     u32 tireSound = 0;
     glm::vec3 lastValidPosition;
+    bool isHidden = false;
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
@@ -110,7 +112,7 @@ public:
 public:
 	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	        Driver* driver, PxMaterial* material, const PxMaterial** surfaceMaterials,
-	        u32 vehicleIndex);
+	        u32 vehicleIndex, i32 cameraIndex);
 	~Vehicle();
 
     f32 getEngineRPM() const { return vehicle4W->mDriveDynData.getEngineRotationSpeed() * 9.5493f + 900.f; }
@@ -134,5 +136,7 @@ public:
         if (notifications.size() < notifications.capacity()) notifications.push_back({ str, 2.f });
     }
 
-    void onUpdate(class Renderer* renderer, f32 deltaTime, i32 cameraIndex);
+    void onUpdate(class Renderer* renderer, f32 deltaTime);
+    void onRender(class Renderer* renderer, f32 deltaTime);
+    void drawHUD(class Renderer* renderer, f32 deltaTime);
 };

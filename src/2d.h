@@ -3,7 +3,8 @@
 #include "renderable.h"
 #include "renderer.h"
 
-class QuadRenderable : public Renderable2D {
+class QuadRenderable : public Renderable2D
+{
     struct Vertex
     {
         glm::vec2 xy;
@@ -13,6 +14,7 @@ class QuadRenderable : public Renderable2D {
     Texture* tex;
     Vertex points[4];
     glm::vec4 color;
+    bool blurBackground = false;
 
 public:
     QuadRenderable(Texture* texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1=glm::vec2(0), glm::vec2 t2=glm::vec2(1),
@@ -25,7 +27,8 @@ public:
     }
 
     QuadRenderable(Texture* texture, glm::vec2 p1, f32 width, f32 height,
-            glm::vec3 color=glm::vec3(1.0), f32 alpha=1.f) : tex(texture), color(glm::vec4(color, alpha))
+            glm::vec3 color=glm::vec3(1.0), f32 alpha=1.f, bool blurBackground=false)
+        : tex(texture), color(glm::vec4(color, alpha)), blurBackground(blurBackground)
     {
         glm::vec2 t1(0, 0);
         glm::vec2 t2(1, 1);
@@ -38,15 +41,16 @@ public:
 
     void on2DPass(Renderer* renderer) override
     {
-        glUseProgram(renderer->getShaderProgram("tex2D"));
-        glBindTextureUnit(0, tex->handle);
+        glUseProgram(renderer->getShaderProgram(blurBackground ? "texBlur2D" : "tex2D"));
+        glBindTextureUnit(1, tex->handle);
         glUniform4fv(0, 4, (GLfloat*)&points);
         glUniform4fv(4, 1, (GLfloat*)&color);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 };
 
-class TrackPreview2D : public Renderable2D {
+class TrackPreview2D : public Renderable2D
+{
     bool isInitialized = false;
     GLuint multisampleFramebuffer, multisampleTex, multisampleDepthBuffer;
     GLuint destFramebuffer, destTex;
@@ -182,7 +186,7 @@ public:
 
         glm::vec4 color(1.0);
         glUseProgram(renderer->getShaderProgram("tex2D"));
-        glBindTextureUnit(0, destTex);
+        glBindTextureUnit(1, destTex);
         glUniform4fv(0, 4, (GLfloat*)&points);
         glUniform4fv(4, 1, (GLfloat*)&color);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

@@ -48,6 +48,8 @@ public:
     f64 currentTime = 0.0;
     f64 timeDilation = 1.0; // TODO: use this somewhere
     u32 frameIndex = 0;
+    bool shouldExit = false;
+    bool isEditing = false;
 
     SDL_Window* window = nullptr;
     std::unique_ptr<class Scene> currentScene;
@@ -55,5 +57,5 @@ public:
     Menu menu;
 
     void run();
-    void changeScene(const char* sceneName);
+    Scene* changeScene(const char* sceneName);
 } g_game;

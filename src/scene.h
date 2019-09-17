@@ -37,6 +37,7 @@ private:
     glm::vec3 trackPreviewPosition = { 0, 0, 0 };
     glm::vec3 trackPreviewVelocity = { 0, 0, 0 };
     u32 currentTrackPreviewPoint = 0;
+    f64 worldTime = 0.0;
 
     // physx callbacks
     void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)  { PX_UNUSED(constraints); PX_UNUSED(count); }
@@ -51,7 +52,7 @@ public:
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isRaceInProgress = false;
-    bool isEditing = false;
+    bool isPaused = false;
 
     RandomSeries randomSeries;
     PxMaterial* vehicleMaterial = nullptr;

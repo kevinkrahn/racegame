@@ -157,7 +157,7 @@ void TextRenderable::on2DPass(Renderer* renderer)
     }
 
     glUseProgram(renderer->getShaderProgram("text2D"));
-    glBindTextureUnit(0, font->textureAtlas.handle);
+    glBindTextureUnit(1, font->textureAtlas.handle);
 
     while (*str)
     {

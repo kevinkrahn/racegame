@@ -22,4 +22,5 @@ public:
     }
 
     void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
 };

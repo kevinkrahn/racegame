@@ -75,7 +75,7 @@ void StaticDecal::updateTransform(Scene* scene)
     decal.end();
 }
 
-void StaticDecal::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void StaticDecal::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     decal.setTexture(tex);
     renderer->add(&decal);

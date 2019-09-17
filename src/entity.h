@@ -47,6 +47,7 @@ public:
     virtual void onCreate(class Scene* scene) {}
     virtual void onCreateEnd(class Scene* scene) {}
     virtual void onUpdate(class Renderer* renderer, class Scene* scene, f32 deltaTime) {}
+    virtual void onRender(class Renderer* renderer, class Scene* scene, f32 deltaTime) {}
 
     virtual void applyDecal(class Decal& decal) {}
 

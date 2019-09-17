@@ -148,6 +148,7 @@ public:
     u32 getShader(const char* name) const;
     GLuint getShaderProgram(const char* name) const;
     void render(f32 deltaTime);
+    void updateWorldTime(f64 time);
 
     //void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
     //void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);

@@ -34,7 +34,7 @@ void Start::updateTransform(Scene* scene)
     finishLineDecal.end();
 }
 
-void Start::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Start::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = mesh;

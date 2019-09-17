@@ -100,6 +100,7 @@ void Scene::startRace()
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
+    i32 cameraIndex = 0;
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
@@ -122,7 +123,12 @@ void Scene::startRace()
                 convert(hit.block.position + hit.block.normal * driver->vehicleData->getRestOffset())) * rotationOf(start);
 
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
-            driver, vehicleMaterial, surfaceMaterials, i));
+            driver, vehicleMaterial, surfaceMaterials, i, driver->hasCamera ? cameraIndex : -1));
+
+        if (driver->hasCamera)
+        {
+            ++cameraIndex;
+        }
     }
 
     for (u32 i=0; i<vehicles.size(); ++i)
@@ -143,7 +149,7 @@ void Scene::stopRace()
 
 void Scene::onStart()
 {
-    if (!isEditing)
+    if (!g_game.isEditing)
     {
         track->buildTrackGraph(&trackGraph);
         trackPreviewPosition = start->position;
@@ -152,15 +158,17 @@ void Scene::onStart()
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    physicsScene->simulate(deltaTime);
-    physicsScene->fetchResults(true);
-
     if (g_input.isKeyPressed(KEY_F6))
     {
-        isEditing = !isEditing;
+        g_game.isEditing = !g_game.isEditing;
     }
 
-    if (isEditing)
+    if (isRaceInProgress && g_input.isKeyPressed(KEY_ESCAPE))
+    {
+        isPaused = !isPaused;
+    }
+
+    if (g_game.isEditing)
     {
         editor.onUpdate(this, renderer, deltaTime);
     }
@@ -169,68 +177,102 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->setViewportCount(viewportCount);
     renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
-    if (!isEditing && !isRaceInProgress && trackGraph.getPaths().size() > 0)
+    if (!isPaused)
     {
-        // move the camera around the track
-        auto path = trackGraph.getPaths()[0];
-        glm::vec3 targetP = path[currentTrackPreviewPoint];
-        glm::vec3 diff = targetP - trackPreviewPosition;
-        if (glm::length2(diff) < square(30.f))
-        {
-            currentTrackPreviewPoint = (currentTrackPreviewPoint + 1) % (u32)path.size();
-        }
-        f32 accel = 8.0f;
-        trackPreviewVelocity += glm::normalize(diff) * deltaTime * accel;
-        f32 maxSpeed = 15.f;
-        if (glm::length(trackPreviewVelocity) > maxSpeed)
-        {
-            trackPreviewVelocity = glm::normalize(trackPreviewVelocity) * maxSpeed;
-        }
-        trackPreviewPosition += trackPreviewVelocity * deltaTime;
+        worldTime += deltaTime;
+        renderer->updateWorldTime(worldTime);
 
-        f32 camDistance = 80.f;
-        glm::vec3 cameraTarget = trackPreviewPosition;
-        glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        renderer->setViewportCamera(0, cameraFrom, cameraTarget);
+        SmallVec<glm::vec3> listenerPositions;
+        if (!g_game.isEditing && !isRaceInProgress && trackGraph.getPaths().size() > 0)
+        {
+            // move the camera around the track
+            auto path = trackGraph.getPaths()[0];
+            glm::vec3 targetP = path[currentTrackPreviewPoint];
+            glm::vec3 diff = targetP - trackPreviewPosition;
+            if (glm::length2(diff) < square(30.f))
+            {
+                currentTrackPreviewPoint = (currentTrackPreviewPoint + 1) % (u32)path.size();
+            }
+            f32 accel = 8.0f;
+            trackPreviewVelocity += glm::normalize(diff) * deltaTime * accel;
+            f32 maxSpeed = 15.f;
+            if (glm::length(trackPreviewVelocity) > maxSpeed)
+            {
+                trackPreviewVelocity = glm::normalize(trackPreviewVelocity) * maxSpeed;
+            }
+            trackPreviewPosition += trackPreviewVelocity * deltaTime;
+
+            f32 camDistance = 80.f;
+            glm::vec3 cameraTarget = trackPreviewPosition;
+            glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+            renderer->setViewportCamera(0, cameraFrom, cameraTarget);
+
+            listenerPositions.push_back(cameraTarget);
+        }
+
+        physicsScene->simulate(deltaTime);
+        physicsScene->fetchResults(true);
+
+        // update vehicles
+        for (u32 i=0; i<vehicles.size(); ++i)
+        {
+            vehicles[i]->onUpdate(renderer, deltaTime);
+            if (vehicles[i]->cameraIndex >= 0)
+            {
+                listenerPositions.push_back(vehicles[i]->lastValidPosition);
+            }
+        }
+
+        // update entities
+        for (auto const& e : entities)
+        {
+            e->onUpdate(renderer, this, deltaTime);
+        }
+
+        // determine vehicle placement
+        if (vehicles.size() > 0)
+        {
+            f32 maxT = trackGraph.getStartNode()->t;
+            std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
+                return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
+                    maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
+            });
+            for (u32 i=0; i<placements.size(); ++i)
+            {
+                vehicles[placements[i]]->placement = i;
+            }
+
+            // override placement with finish order for vehicles that have finished the race
+            for (u32 i=0; i<finishOrder.size(); ++i)
+            {
+                vehicles[finishOrder[i]]->placement = i;
+            }
+        }
+
+        smoke.update(deltaTime);
+        ribbons.update(deltaTime);
+
+        g_audio.setListeners(listenerPositions);
+    }
+    else
+    {
+        // pause menu
+        Font* font = &g_resources.getFont("font", g_game.windowHeight * 0.04f);
+        renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 },
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
     }
 
-    // update vehicles
-    i32 cameraIndex = 0;
-    SmallVec<glm::vec3> listenerPositions;
+    // render vehicles
     for (u32 i=0; i<vehicles.size(); ++i)
     {
-        vehicles[i]->onUpdate(renderer, deltaTime, vehicles[i]->getDriver()->hasCamera ? cameraIndex : -1);
-        if (vehicles[i]->getDriver()->hasCamera)
-        {
-            ++cameraIndex;
-            listenerPositions.push_back(vehicles[i]->lastValidPosition);
-        }
+        vehicles[i]->onRender(renderer, deltaTime);
+        vehicles[i]->drawHUD(renderer, deltaTime);
     }
-    g_audio.setListeners(listenerPositions);
 
+    // render entities
     for (auto const& e : entities)
     {
-        e->onUpdate(renderer, this, deltaTime);
-    }
-
-    // determine vehicle placement
-    if (vehicles.size() > 0)
-    {
-        f32 maxT = trackGraph.getStartNode()->t;
-        std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
-            return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
-                maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
-        });
-        for (u32 i=0; i<placements.size(); ++i)
-        {
-            vehicles[placements[i]]->placement = i;
-        }
-
-        // override placement with finish order for vehicles that have finished the race
-        for (u32 i=0; i<finishOrder.size(); ++i)
-        {
-            vehicles[finishOrder[i]]->placement = i;
-        }
+        e->onRender(renderer, this, deltaTime);
     }
 
     if (g_input.isKeyPressed(KEY_F2))

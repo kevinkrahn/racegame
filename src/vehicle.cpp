@@ -439,7 +439,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
 
 Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	    Driver* driver, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
-	    u32 vehicleIndex)
+	    u32 vehicleIndex, i32 cameraIndex)
 {
     this->cameraTarget = translationOf(transform);
     this->cameraFrom = cameraTarget;
@@ -455,6 +455,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
     this->hitPoints = this->maxHitPoints;
+    this->cameraIndex = cameraIndex;
 
     engineSound = g_audio.playSound3D(g_resources.getSound("engine2"), translationOf(transform), true);
     tireSound = g_audio.playSound3D(g_resources.getSound("tires"), translationOf(transform), true, 1.f, 0.f);
@@ -586,10 +587,8 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
-void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
+void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 {
-    bool isPlayerControlled = driver->playerProfile != nullptr;
-
     // HUD
     if (cameraIndex >= 0)
     {
@@ -686,6 +685,11 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
                 { 220 + 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
         }
     }
+}
+
+void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
+{
+    glm::mat4 transform = getTransform();
 
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
@@ -697,6 +701,35 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     {
         renderer->push(LitRenderable(d.mesh, convert(d.rigidBody->getGlobalPose()), nullptr));
     }
+
+    if (cameraIndex >= 0 && isHidden)
+    {
+        renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
+                cameraIndex, transform, glm::vec3(1.f)));
+    }
+
+    // draw chassis
+    for (auto& m : driver->vehicleData->chassisMeshes)
+    {
+        renderer->push(LitRenderable(m.mesh, transform * m.transform, nullptr));
+    }
+
+    // draw wheels
+    for (u32 i=0; i<NUM_WHEELS; ++i)
+    {
+        glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
+        if ((i & 1) == 0)
+        {
+            wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
+        }
+        auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
+        renderer->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
+    }
+}
+
+void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
+{
+    bool isPlayerControlled = driver->playerProfile != nullptr;
 
     if (deadTimer > 0.f)
     {
@@ -955,21 +988,15 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
         filter.flags |= PxQueryFlag::eANY_HIT;
         filter.flags |= PxQueryFlag::eSTATIC;
         filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
-        bool visible = false;
+        isHidden = true;
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
             glm::vec3 wheelPosition = transform * glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
             if (!scene->raycastStatic(wheelPosition, rayDir, dist))
             {
-                visible = true;
+                isHidden = false;
                 break;
             }
-        }
-        if (!visible)
-        {
-            renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
-                    //cameraIndex, transform, glm::vec3(driver->vehicleColor)));
-                    cameraIndex, transform, glm::vec3(1.f)));
         }
     }
 
@@ -1161,45 +1188,6 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime, i32 cameraIndex)
     {
         applyDamage(15, vehicleIndex);
     }
-
-    // draw chassis
-    for (auto& m : driver->vehicleData->chassisMeshes)
-    {
-        renderer->push(LitRenderable(m.mesh, transform * m.transform, nullptr));
-    }
-
-    // draw wheels
-    for (u32 i=0; i<NUM_WHEELS; ++i)
-    {
-        glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
-        if ((i & 1) == 0)
-        {
-            wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
-        }
-        auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
-        renderer->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
-    }
-
-#if 0
-    if (isPlayerControlled)
-    {
-        glm::mat4 decalTransform =
-                transform *
-                //glm::translate(glm::mat4(1.f), currentPosition) *
-                glm::rotate(glm::mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 }) *
-                glm::scale(glm::mat4(1.f), glm::vec3(4, 15, 15));
-
-        testDecal.setTexture(g_resources.getTexture("thing"));
-        testDecal.begin(decalTransform);
-        scene->track->addTrackMeshesToDecal(testDecal);
-        testDecal.end();
-        renderer->add(&testDecal);
-
-        BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
-        scene->debugDraw.boundingBox(decalBoundingBox.transform(decalTransform), glm::mat4(1.f), glm::vec4(1.f));
-        scene->debugDraw.boundingBox(decalBoundingBox, decalTransform, glm::vec4(0, 1, 0, 1));
-    }
-#endif
 }
 
 void Vehicle::fireWeapon()

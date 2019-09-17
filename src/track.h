@@ -307,7 +307,7 @@ public:
 
     // entity
     void onCreate(Scene* scene) override;
-    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
 

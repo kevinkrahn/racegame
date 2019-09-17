@@ -41,7 +41,7 @@ void StaticMesh::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
-void StaticMesh::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void StaticMesh::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = mesh;

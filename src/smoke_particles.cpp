@@ -2,7 +2,7 @@
 #include "game.h"
 #include "renderer.h"
 
-void SmokeParticles::onBeforeRender(f32 deltaTime)
+void SmokeParticles::update(f32 deltaTime)
 {
     for (auto p = particles.begin(); p != particles.end();)
     {

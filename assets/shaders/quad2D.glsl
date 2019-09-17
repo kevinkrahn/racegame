@@ -17,7 +17,10 @@ void main()
 
 #elif defined FRAG
 
-layout(binding = 0) uniform sampler2D tex;
+#ifdef BLUR
+layout(binding = 0) uniform sampler2D texRenderColor;
+#endif
+layout(binding = 1) uniform sampler2D tex;
 
 layout(location = 0) out vec4 outColor;
 
@@ -27,6 +30,8 @@ layout(location = 1) in vec2 inTexCoord;
 void main()
 {
 #ifdef COLOR
+    outColor = inColor * texture(tex, inTexCoord);
+#elif defined BLUR
     outColor = inColor * texture(tex, inTexCoord);
 #else
     outColor = inColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);

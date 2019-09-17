@@ -30,7 +30,7 @@ void Tree::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
-void Tree::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Tree::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = meshTrunk;

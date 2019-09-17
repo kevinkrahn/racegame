@@ -399,6 +399,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 }
             }
         }
+        scene->terrain->regenerateMesh();
     }
     else if (editMode == EditMode::TRACK)
     {

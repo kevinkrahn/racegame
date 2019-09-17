@@ -21,7 +21,7 @@ public:
     void applyDecal(class Decal& decal) override;
     void updateTransform(class Scene* scene) override;
     void onCreateEnd(class Scene* scene) override;
-    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;

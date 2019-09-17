@@ -195,6 +195,7 @@ private:
     bool keyDown[KEY_COUNT];
     bool keyPressed[KEY_COUNT];
     bool keyReleased[KEY_COUNT];
+    bool keyRepeat[KEY_COUNT];
 
     SDL_Window* window;
 
@@ -251,16 +252,22 @@ public:
         return keyDown[key] || keyPressed[key];
     }
 
-    bool isKeyPressed(u32 key)
+    bool isKeyPressed(u32 key, bool allowRepeat=false)
     {
         assert(key < KEY_COUNT);
-        return keyPressed[key];
+        return keyPressed[key] || (allowRepeat && keyRepeat[key]);
     }
 
     bool isKeyReleased(u32 key)
     {
         assert(key < KEY_COUNT);
         return keyReleased[key];
+    }
+
+    bool isKeyRepeated(u32 key)
+    {
+        assert(key < KEY_COUNT);
+        return keyRepeat[key];
     }
 
     glm::vec2 getMousePosition()
@@ -288,6 +295,7 @@ public:
     {
         memset(keyPressed, 0, sizeof(keyPressed));
         memset(keyReleased, 0, sizeof(keyReleased));
+        memset(keyRepeat, 0, sizeof(keyRepeat));
         memset(mouseButtonPressed, 0, sizeof(mouseButtonPressed));
         memset(mouseButtonReleased, 0, sizeof(mouseButtonReleased));
         for (auto& controller : controllers)
@@ -306,11 +314,15 @@ public:
         {
             case SDL_KEYDOWN:
             {
+                u32 key = e.key.keysym.scancode;
                 if (e.key.repeat == 0)
                 {
-                    u32 key = e.key.keysym.scancode;
                     keyDown[key] = true;
                     keyPressed[key] = true;
+                }
+                else
+                {
+                    keyRepeat[key] = true;
                 }
             } break;
             case SDL_KEYUP:

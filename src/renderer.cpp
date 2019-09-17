@@ -381,6 +381,7 @@ void Renderer::init(u32 width, u32 height)
     loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
+    loadShader("quad2D", { "BLUR" }, "texBlur2D");
     loadShader("quad2D", {}, "text2D");
     loadShader("post");
     loadShader("mesh2D");
@@ -467,6 +468,11 @@ void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShado
     }
 }
 
+void Renderer::updateWorldTime(f64 time)
+{
+    worldInfo.time = (f32)time;
+}
+
 void Renderer::render(f32 deltaTime)
 {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -475,13 +481,7 @@ void Renderer::render(f32 deltaTime)
         return a.priority < b.priority;
     });
 
-    for (auto const& r : renderables)
-    {
-        r.renderable->onBeforeRender(deltaTime);
-    }
-
     // update worldinfo uniform buffer
-    worldInfo.time = (f32)g_game.currentTime;
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     u32 viewportCount = cameras.size();
     for (u32 i=0; i<viewportCount; ++i)

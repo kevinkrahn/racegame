@@ -58,7 +58,7 @@ void Track::onCreate(Scene* scene)
     }
 }
 
-void Track::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Track::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     bool wasTrackUpdated = false;
     for (auto& c : connections)

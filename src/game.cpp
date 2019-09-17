@@ -145,7 +145,6 @@ void Game::run()
 
     deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;
-    bool shouldExit = false;
     while (true)
     {
         auto frameStartTime = std::chrono::high_resolution_clock::now();
@@ -220,11 +219,13 @@ void Game::run()
     SDL_Quit();
 }
 
-void Game::changeScene(const char* sceneName)
+Scene* Game::changeScene(const char* sceneName)
 {
     if (sceneName)
     {
         print("Loading scene: ", sceneName, '\n');
     }
-    nextScene.reset(new Scene(sceneName));
+    Scene* scene = new Scene(sceneName);
+    nextScene.reset(scene);
+    return scene;
 }

@@ -91,7 +91,7 @@ void Terrain::onCreate(Scene* scene)
     regenerateCollisionMesh(scene);
 }
 
-void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Terrain::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
     /*
     u32 width = (x2 - x1) / tileSize;
@@ -115,8 +115,6 @@ void Terrain::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         }
     }
     */
-
-    regenerateMesh();
     renderer->add(this);
 }
 
