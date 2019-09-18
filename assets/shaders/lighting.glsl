@@ -61,10 +61,12 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
             vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r;
     shadow *= cloudShadow;
 
+    vec3 toCamera = cameraPosition[gl_Layer] - worldPosition;
+
     float sunPower = 1.0;
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)
         + max(dot(normal, ambientDirection) * 0.12, 0.0);
-    vec3 camDir = normalize(cameraPosition[gl_Layer] - worldPosition);
+    vec3 camDir = normalize(toCamera);
     vec3 halfDir = normalize(sunDirection + camDir);
     vec3 specularLight = specularColor * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * sunPower;
 
@@ -76,6 +78,23 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     float ssaoAmount = texelFetch(ssaoTexture, ivec3(gl_FragCoord.xy, gl_Layer), 0).r;
     color.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
 #endif
+
+    const vec3 fogColor = vec3(0.5, 0.6, 1);
+    float dist = length(toCamera);
+#if 0
+    const float fogStart = 90.0;
+    const float fogEnd = 1200.0;
+    float fogIntensity = max(dist - fogStart, 0.0) / (fogEnd - fogStart);
+#else
+    const float density = 0.0015;
+    const float LOG2 = -1.442695;
+    //float fogIntensity = 1.0 - clamp(exp(-density * (dist - 90)), 0.0, 1.0);
+    //float fogIntensity = 1.0 - clamp(exp(-density * dist), 0.0, 1.0);
+    float d = density * dist;
+    float fogIntensity = 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
+#endif
+
+    color.rgb = mix(color.rgb, fogColor, fogIntensity);
 
     return color;
 }
