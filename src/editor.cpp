@@ -10,6 +10,7 @@
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 #include "entities/tree.h"
+#include <functional>
 
 struct EntityType
 {

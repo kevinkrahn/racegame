@@ -202,10 +202,10 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             }
             trackPreviewPosition += trackPreviewVelocity * deltaTime;
 
-            f32 camDistance = 80.f;
+            f32 camDistance = 100.f;
             glm::vec3 cameraTarget = trackPreviewPosition;
             glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-            renderer->setViewportCamera(0, cameraFrom, cameraTarget);
+            renderer->setViewportCamera(0, cameraFrom, cameraTarget, 25.f, 200.f);
 
             listenerPositions.push_back(cameraTarget);
         }

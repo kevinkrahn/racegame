@@ -975,7 +975,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
                 5.f, deltaTime);
         f32 camDistance = 80.f;
         cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 28.f, 200.f);
+        renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
 #endif
 
         // draw arrow if vehicle is hidden behind something
