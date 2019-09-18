@@ -199,6 +199,7 @@ private:
 
     SDL_Window* window;
 
+    bool mouseMoved = false;
     i32 mouseScrollX;
     i32 mouseScrollY;
     std::map<u32, Controller> controllers;
@@ -282,6 +283,11 @@ public:
         SDL_WarpMouseInWindow(window, x, y);
     }
 
+    bool didMouseMove() const
+    {
+        return mouseMoved;
+    }
+
     f32 getMouseScroll()
     {
         return mouseScrollY;
@@ -303,6 +309,7 @@ public:
             memset(controller.second.buttonPressed, 0, sizeof(controller.second.buttonPressed));
             memset(controller.second.buttonReleased, 0, sizeof(controller.second.buttonReleased));
         }
+        mouseMoved = false;
 
         mouseScrollX = 0;
         mouseScrollY = 0;
@@ -348,6 +355,10 @@ public:
                 i32 flip = e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
                 mouseScrollX += e.wheel.x * flip;
                 mouseScrollY += e.wheel.y * flip;
+            } break;
+            case SDL_MOUSEMOTION:
+            {
+                mouseMoved = true;
             } break;
             case SDL_CONTROLLERDEVICEADDED:
             {

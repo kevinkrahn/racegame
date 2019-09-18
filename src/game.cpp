@@ -140,8 +140,8 @@ void Game::run()
         */
     };
 
-    changeScene("saved_scene.dat");
-    //changeScene(nullptr);
+    //changeScene("saved_scene.dat");
+    changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.maxFPS;
     SDL_Event event;

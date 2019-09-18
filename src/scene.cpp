@@ -96,7 +96,7 @@ void Scene::startRace()
     }
     glm::mat4 const& start = this->start->transform;
 
-    track->buildTrackGraph(&trackGraph);
+    track->buildTrackGraph(&trackGraph, start);
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
@@ -149,11 +149,6 @@ void Scene::stopRace()
 
 void Scene::onStart()
 {
-    if (!g_game.isEditing)
-    {
-        track->buildTrackGraph(&trackGraph);
-        trackPreviewPosition = start->position;
-    }
 }
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
@@ -163,7 +158,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         g_game.isEditing = !g_game.isEditing;
     }
 
-    if (isRaceInProgress && g_input.isKeyPressed(KEY_ESCAPE))
+    if (!g_game.isEditing && isRaceInProgress && g_input.isKeyPressed(KEY_ESCAPE))
     {
         isPaused = !isPaused;
     }
@@ -692,15 +687,22 @@ void Scene::deserialize(DataFile::Value& data)
     {
         deserializeEntity(val);
     }
-    for (auto& e : newEntities)
+    while (newEntities.size() > 0)
     {
-        e->onCreate(this);
+        for (auto& e : newEntities)
+        {
+            e->onCreate(this);
+        }
+        for (auto& e : newEntities)
+        {
+            e->onCreateEnd(this);
+            entities.push_back(std::move(e));
+        }
+        newEntities.clear();
     }
-    for (auto& e : newEntities)
-    {
-        e->onCreateEnd(this);
-        entities.push_back(std::move(e));
-    }
-    newEntities.clear();
+    assert(track != nullptr);
+    assert(start != nullptr);
+    track->buildTrackGraph(&trackGraph, start->transform);
+    trackPreviewPosition = start->position;
 }
 

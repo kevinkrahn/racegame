@@ -289,7 +289,7 @@ public:
     }
     glm::vec3 getPointDir(u32 pointIndex) const;
     void clearSelection();
-    void buildTrackGraph(class TrackGraph* trackGraph);
+    void buildTrackGraph(class TrackGraph* trackGraph, glm::mat4 const& startTransform);
     void drawTrackPreview(class TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection);
     BoundingBox getBoundingBox() const { return boundingBox; }
     void applyDecal(Decal& decal) override

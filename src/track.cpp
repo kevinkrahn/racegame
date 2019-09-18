@@ -1218,7 +1218,7 @@ void Track::onLitPass(class Renderer* renderer)
     }
 }
 
-void Track::buildTrackGraph(TrackGraph* trackGraph)
+void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransform)
 {
     trackGraph->clear();
     for (Point& p : points)
@@ -1246,7 +1246,7 @@ void Track::buildTrackGraph(TrackGraph* trackGraph)
         trackGraph->addConnection(c->pointIndexA, startNodeIndex);
         trackGraph->addConnection(nodeIndex - 1, c->pointIndexB);
     }
-    trackGraph->rebuild(scene->start->transform);
+    trackGraph->rebuild(startTransform);
 }
 
 DataFile::Value Track::serialize()
