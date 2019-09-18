@@ -17,10 +17,12 @@ class Terrain : public Renderable, public Entity
 
     f32 tileSize = 2.0f;
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-    std::vector<f32> heightBuffer;
-    std::vector<Vertex> vertices;
-    std::vector<u32> indices;
-    std::vector<u32> blend;
+    std::unique_ptr<f32[]> heightBuffer;
+	u32 heightBufferSize = 0;
+    std::unique_ptr<Vertex[]> vertices;
+    std::unique_ptr<u32[]> indices;
+	u32 indexCount = 0;
+    std::unique_ptr<u32[]> blend;
     GLuint textures[4];
 
     GLuint vao = 0, vbo = 0, ebo = 0;
@@ -33,7 +35,7 @@ class Terrain : public Renderable, public Entity
     bool isCollisionMeshDirty = true;
 
     PxMaterial* materials[2];
-    std::vector<PxMaterialTableIndex> materialIndices;
+    std::unique_ptr<PxMaterialTableIndex[]> materialIndices;
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
     void setDirty()

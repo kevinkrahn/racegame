@@ -249,13 +249,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         g_audio.setListeners(listenerPositions);
     }
-    else
-    {
-        // pause menu
-        Font* font = &g_resources.getFont("font", g_game.windowHeight * 0.04f);
-        renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 },
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
-    }
 
     // render vehicles
     for (u32 i=0; i<vehicles.size(); ++i)
@@ -408,6 +401,14 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         trackPreview2D.endUpdate(hudTrackPos);
         renderer->add(&trackPreview2D);
+    }
+
+    if (isPaused)
+    {
+        // pause menu
+        Font* font = &g_resources.getFont("font", g_game.windowHeight * 0.04f);
+        renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 },
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
     }
 
     if (isDebugOverlayEnabled)

@@ -75,7 +75,7 @@ void TrackGraph::addConnection(u32 fromIndex, u32 toIndex)
 
 void TrackGraph::rebuild(glm::mat4 const& startTransform)
 {
-    u32 startIndex;
+    u32 startIndex = 0;
     f32 minDist = FLT_MAX;
     for (u32 i=0; i<nodes.size(); ++i)
     {
@@ -93,15 +93,15 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
         error("There is no track graph vertex close enough to the finish line.\n");
     }
 
-    Node& start = nodes[startIndex];
-    start.position = glm::vec3(glm::vec2(translationOf(startTransform)), start.position.z) + xAxisOf(startTransform) * 2.f;
+    nodes[startIndex].position = glm::vec3(glm::vec2(translationOf(startTransform)), nodes[startIndex].position.z) + xAxisOf(startTransform) * 2.f;
     u32 endIndex = nodes.size();
 
     // copy the start node to make the end node
-    nodes.push_back(start);
+    nodes.push_back(nodes[startIndex]);
     Node& end = nodes.back();
     end.connections.clear();
 
+	Node& start = nodes[startIndex];
     for (auto c = start.connections.begin(); c != start.connections.end();)
     {
         Node& connection = nodes[*c];
@@ -147,7 +147,7 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
         // filter out paths that didn't reach the end
         if (it->back() != endIndex)
         {
-            nodeIndexPaths.erase(it);
+            it = nodeIndexPaths.erase(it);
             continue;
         }
 

@@ -548,6 +548,7 @@ void Renderer::render(f32 deltaTime)
     // update worldinfo uniform buffer
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     u32 viewportCount = cameras.size();
+	// TODO: adjust znear and zfar for better shadow quality
     for (u32 i=0; i<viewportCount; ++i)
     {
         worldInfo.cameraViewProjection[i] = cameras[i].viewProjection;
@@ -568,15 +569,16 @@ void Renderer::render(f32 deltaTime)
         worldInfo.projScale[i] = fb.renderHeight / scale;
     }
 
-    WorldInfo worldInfoShadow = worldInfo;
-    setShadowMatrices(worldInfo, worldInfoShadow);
-    worldInfoUBO.updateData(&worldInfo);
-
     i32 prevPriority = INT32_MIN;
 
     // shadow map
     if (g_game.config.shadowsEnabled)
     {
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Shadow Depth Pass");
+
+		WorldInfo worldInfoShadow = worldInfo;
+		setShadowMatrices(worldInfo, worldInfoShadow);
+
         worldInfoUBOShadow.updateData(&worldInfoShadow);
 
         // bind worldinfo with shadow matrices
@@ -610,16 +612,24 @@ void Renderer::render(f32 deltaTime)
         }
         glCullFace(GL_BACK);
         glDisable(GL_DEPTH_CLAMP);
-        glDisable(GL_POLYGON_OFFSET_FILL);
+		glPopDebugGroup();
     }
 
     // bind real worldinfo
+    worldInfoUBO.updateData(&worldInfo);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
 
     // depth prepass
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Depth PrePass");
     glViewport(0, 0, fb.renderWidth, fb.renderHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
 
+	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glDisable(GL_POLYGON_OFFSET_FILL);
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
@@ -634,10 +644,12 @@ void Renderer::render(f32 deltaTime)
         prevPriority = r.priority;
     }
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glPopDebugGroup();
 
     // resolve multi-sample depth buffer so it can be sampled by sao shader
     if (g_game.config.msaaLevel > 0)
     {
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Depth Resolve");
         for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
@@ -648,6 +660,7 @@ void Renderer::render(f32 deltaTime)
         }
         glBindTextureUnit(1, fb.msaaResolveDepthTexture);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+		glPopDebugGroup();
     }
     else
     {
@@ -657,6 +670,8 @@ void Renderer::render(f32 deltaTime)
     // generate csz texture
     if (g_game.config.ssaoEnabled)
     {
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO");
+
         glBindVertexArray(emptyVAO);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -672,6 +687,7 @@ void Renderer::render(f32 deltaTime)
         glBindTextureUnit(3, fb.cszTexture);
 
         // minify csz texture
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO CSZ Minify");
         glUseProgram(getShaderProgram("csz_minify"));
         for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
         {
@@ -681,16 +697,20 @@ void Renderer::render(f32 deltaTime)
             glUniform1i(0, i-1);
             glDrawArrays(GL_TRIANGLES, 0, 3);
         }
+		glPopDebugGroup();
 
         // scaleable ambient obscurance
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Texture");
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
         glUseProgram(getShaderProgram("sao"));
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindTextureUnit(4, fb.saoTexture);
+		glPopDebugGroup();
 
     #if 1
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Blur");
         glUseProgram(getShaderProgram("sao_blur"));
 
         // sao hblur
@@ -703,11 +723,15 @@ void Renderer::render(f32 deltaTime)
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
         glUniform2i(0, 0, 1);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+		glPopDebugGroup();
     #endif
         glBindTextureUnit(4, fb.saoTexture);
+
+		glPopDebugGroup();
     }
 
     // color pass
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Main Color Pass");
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
     glBindTextureUnit(3, g_resources.getTexture("cloud_shadow")->handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -730,10 +754,12 @@ void Renderer::render(f32 deltaTime)
             r.renderable->~Renderable();
         }
     }
+	glPopDebugGroup();
 
     // resolve multi-sample color buffer
     if (g_game.config.msaaLevel > 0)
     {
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
         for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
@@ -743,6 +769,7 @@ void Renderer::render(f32 deltaTime)
                             GL_COLOR_BUFFER_BIT, GL_NEAREST);
         }
         glBindTextureUnit(0, fb.msaaResolveColorTexture);
+		glPopDebugGroup();
     }
     else
     {
@@ -756,18 +783,23 @@ void Renderer::render(f32 deltaTime)
     glDisable(GL_CULL_FACE);
     if (g_game.config.bloomEnabled)
     {
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Bloom");
+
         // filter the bright parts of the color buffer
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Filter Bright Parts");
         glBindFramebuffer(GL_FRAMEBUFFER, fb.bloomFramebuffers[0]);
         glViewport(0, 0, fb.bloomBufferSize[0].x, fb.bloomBufferSize[0].y);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
         glUseProgram(getShaderProgram("bloom_filter"));
         glDrawArrays(GL_TRIANGLES, 0, 3);
+		glPopDebugGroup();
 
         GLuint blit = getShaderProgram("blit");
         GLuint hblur = getShaderProgram("hblur");
         GLuint vblur = getShaderProgram("vblur");
 
         // downscale (skip first downscale because that one is done by bloom filter)
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Downscale Bloom Textures");
         glUseProgram(blit);
         for (u32 i=1; i<fb.bloomFramebuffers.size(); ++i)
         {
@@ -777,8 +809,10 @@ void Renderer::render(f32 deltaTime)
             glBindTextureUnit(1, fb.bloomColorTextures[(i-1)*2]);
             glDrawArrays(GL_TRIANGLES, 0, 3);
         }
+		glPopDebugGroup();
 
         // blur the bright parts
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Blur Bloom Textures");
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {
             glViewport(0, 0, fb.bloomBufferSize[i].x, fb.bloomBufferSize[i].y);
@@ -799,8 +833,10 @@ void Renderer::render(f32 deltaTime)
             glBindTextureUnit(1, fb.bloomColorTextures[i*2 + 1]);
             glDrawArrays(GL_TRIANGLES, 0, 3);
         }
+		glPopDebugGroup();
 
         // draw to final color texture
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Post Process");
         glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
         glUseProgram(getShaderProgram("post_process"));
@@ -809,11 +845,14 @@ void Renderer::render(f32 deltaTime)
             glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);
         }
         glDrawArrays(GL_TRIANGLES, 0, 3);
+		glPopDebugGroup();
 
         glBindTextureUnit(0, fb.finalColorTexture);
+		glPopDebugGroup();
     }
 
     // render to back buffer
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw Render Textures to Backbuffer");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
     glClearColor(0, 0, 0, 1);
@@ -838,8 +877,10 @@ void Renderer::render(f32 deltaTime)
         glUniform1ui(1, i);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
+	glPopDebugGroup();
 
     // 2D
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "2D Pass");
     glEnable(GL_BLEND);
 
     //std::sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
@@ -854,6 +895,7 @@ void Renderer::render(f32 deltaTime)
             r.renderable->~Renderable2D();
         }
     }
+	glPopDebugGroup();
 
     SDL_GL_SwapWindow(g_game.window);
 

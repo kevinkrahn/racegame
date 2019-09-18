@@ -57,17 +57,19 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
     this->y2 = snap(y2, tileSize);
     u32 width = (this->x2 - this->x1) / tileSize;
     u32 height = (this->y2 - this->y1) / tileSize;
-    heightBuffer.resize(width * height);
-    vertices.resize(width * height);
-    blend.resize(width * height);
-    blend.assign(blend.size(), 0x000000FF);
-    for (u32 x=0; x<width; ++x)
+	heightBufferSize = width * height;
+    heightBuffer.reset(new f32[heightBufferSize]);
+    for (u32 i = 0; i < heightBufferSize; ++i)
     {
-        for (u32 y=0; y<height; ++y)
-        {
-            heightBuffer[y * width + x] = 0.f;
-        }
+		heightBuffer[i] = 0.f;
     }
+    vertices.reset(new Vertex[heightBufferSize]);
+	indices.reset(new u32[heightBufferSize * 6]);
+    blend.reset(new u32[heightBufferSize]);
+	for (u32 i = 0; i < heightBufferSize; ++i)
+	{
+		blend[i] = 0x000000FF;
+	}
     setDirty();
 }
 
@@ -137,7 +139,7 @@ void Terrain::regenerateMesh()
     isDirty = false;
     u32 width = (x2 - x1) / tileSize;
     u32 height = (y2 - y1) / tileSize;
-    indices.clear();
+	u32 indexIndex = 0;
     for (u32 x = 0; x < width; ++x)
     {
         for (i32 y = 0; y < height; ++y)
@@ -155,29 +157,31 @@ void Terrain::regenerateMesh()
             {
                 if ((x & 1) ? (y & 1) : !(y & 1))
                 {
-                    indices.push_back(y * width + x);
-                    indices.push_back(y * width + x + 1);
-                    indices.push_back((y + 1) * width + x);
+					indices[indexIndex + 0] = y * width + x;
+                    indices[indexIndex + 1] = y * width + x + 1;
+                    indices[indexIndex + 2] = (y + 1) * width + x;
 
-                    indices.push_back((y + 1) * width + x);
-                    indices.push_back(y * width + x + 1);
-                    indices.push_back((y + 1) * width + x + 1);
+                    indices[indexIndex + 3] = (y + 1) * width + x;
+                    indices[indexIndex + 4] = y * width + x + 1;
+                    indices[indexIndex + 5] = (y + 1) * width + x + 1;
                 }
                 else
                 {
-                    indices.push_back(y * width + x);
-                    indices.push_back(y * width + x + 1);
-                    indices.push_back((y + 1) * width + x + 1);
+                    indices[indexIndex + 0] = y * width + x;
+                    indices[indexIndex + 1] = y * width + x + 1;
+                    indices[indexIndex + 2] = (y + 1) * width + x + 1;
 
-                    indices.push_back((y + 1) * width + x + 1);
-                    indices.push_back((y + 1) * width + x);
-                    indices.push_back(y * width + x);
+                    indices[indexIndex + 3] = (y + 1) * width + x + 1;
+                    indices[indexIndex + 4] = (y + 1) * width + x;
+                    indices[indexIndex + 5] = y * width + x;
                 }
+				indexIndex += 6;
             }
         }
     }
-    glNamedBufferData(vbo, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
-    glNamedBufferData(ebo, indices.size() * sizeof(u32), indices.data(), GL_DYNAMIC_DRAW);
+	indexCount = indexIndex;
+    glNamedBufferData(vbo, heightBufferSize * sizeof(Vertex), vertices.get(), GL_DYNAMIC_DRAW);
+    glNamedBufferData(ebo, indexCount * sizeof(u32), indices.get(), GL_DYNAMIC_DRAW);
     glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(Vertex));
     glVertexArrayElementBuffer(vao, ebo);
 }
@@ -187,15 +191,16 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     if (!isCollisionMeshDirty) { return; }
     isCollisionMeshDirty = false;
     PxTriangleMeshDesc desc;
-    desc.points.count = vertices.size();
+    desc.points.count = heightBufferSize;
     desc.points.stride = sizeof(Vertex);
-    desc.points.data = vertices.data();
-    desc.triangles.count = indices.size() / 3;
+    desc.points.data = vertices.get();
+    desc.triangles.count = indexCount / 3;
     desc.triangles.stride = 3 * sizeof(indices[0]);
-    desc.triangles.data = indices.data();
+    desc.triangles.data = indices.get();
 
-    materialIndices.resize(indices.size() / 3);
-    for (u32 i=0; i<materialIndices.size(); ++i)
+	u32 materialIndexCount = indexCount / 3;
+    materialIndices.reset(new PxMaterialTableIndex[materialIndexCount]);
+    for (u32 i=0; i<materialIndexCount; ++i)
     {
         u32 threshold = 127;
         u32 vertexIndex1 = indices[i * 3 + 0];
@@ -207,7 +212,7 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     }
 
     PxTypedStridedData<PxMaterialTableIndex> materialIndexData;
-    materialIndexData.data = materialIndices.data();
+    materialIndexData.data = materialIndices.get();
     materialIndexData.stride = sizeof(PxMaterialTableIndex);
     desc.materialIndices = materialIndexData;
 
@@ -386,8 +391,8 @@ void Terrain::erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
 #define DEPOSIT_AT(X, Z, W) \
 { \
 f32 delta = ds * (W) * amount; \
-erosion[clamp((Z) * width + (X), 0, (i32)heightBuffer.size())].y += delta; \
-heightBuffer[clamp((Z) * width + (X), 0, (i32)heightBuffer.size())] += delta * scale; \
+erosion[clamp((Z) * width + (X), 0, (i32)heightBufferSize)].y += delta; \
+heightBuffer[clamp((Z) * width + (X), 0, (i32)heightBufferSize)] += delta * scale; \
 }
 
 #define DEPOSIT(H) \
@@ -480,8 +485,8 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
 #define ERODE(X, Z, W) \
 { \
 f32 delta = ds * (W) * amount; \
-heightBuffer          [clamp((Z) * width + (X), 0, (i32)heightBuffer.size())] -= delta * scale; \
-glm::vec2 &e = erosion[clamp((Z) * width + (X), 0, (i32)heightBuffer.size())]; \
+heightBuffer          [clamp((Z) * width + (X), 0, (i32)heightBufferSize)] -= delta * scale; \
+glm::vec2 &e = erosion[clamp((Z) * width + (X), 0, (i32)heightBufferSize)]; \
 f32 r=e.x, d=e.y; \
 if (delta<=d) d-=delta; \
 else { r+=delta-d; d=0; } \
@@ -595,14 +600,14 @@ void Terrain::onShadowPass(class Renderer* renderer)
     // TODO: should the terrain cast shadow?
     glUseProgram(renderer->getShaderProgram("terrain"));
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
 
 void Terrain::onDepthPrepass(class Renderer* renderer)
 {
     glUseProgram(renderer->getShaderProgram("terrain"));
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
 
 void Terrain::onLitPass(class Renderer* renderer)
@@ -620,7 +625,7 @@ void Terrain::onLitPass(class Renderer* renderer)
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
 
 DataFile::Value Terrain::serialize()
@@ -634,12 +639,12 @@ DataFile::Value Terrain::serialize()
     dict["y2"] = DataFile::makeReal(y2);
     dict["heightBuffer"] = DataFile::makeBytearray(std::move(
                 DataFile::Value::ByteArray(
-                    (u8*)heightBuffer.data(),
-                    (u8*)(heightBuffer.data() + heightBuffer.size()))));
+                    (u8*)heightBuffer.get(),
+                    (u8*)(heightBuffer.get() + heightBufferSize))));
     dict["blendBuffer"] = DataFile::makeBytearray(std::move(
                 DataFile::Value::ByteArray(
-                    (u8*)blend.data(),
-                    (u8*)(blend.data() + blend.size()))));
+                    (u8*)blend.get(),
+                    (u8*)(blend.get() + heightBufferSize))));
     return dict;
 }
 
@@ -650,16 +655,13 @@ void Terrain::deserialize(DataFile::Value& data)
     y1 = (f32)data["y1"].real();
     x2 = (f32)data["x2"].real();
     y2 = (f32)data["y2"].real();
+	resize(x1, y1, x2, y2);
     auto& heightBufferBytes = data["heightBuffer"].bytearray();
-    f32* dataBegin = (f32*)heightBufferBytes.data();
-    f32* dataEnd = dataBegin + heightBufferBytes.size() / sizeof(f32);
-    heightBuffer.assign(dataBegin, dataEnd);
+	memcpy(heightBuffer.get(), heightBufferBytes.data(), heightBufferBytes.size());
     if (data.hasKey("blendBuffer"))
     {
         auto& blendBytes = data["blendBuffer"].bytearray();
-        u32* dataBegin = (u32*)blendBytes.data();
-        u32* dataEnd = dataBegin + blendBytes.size() / sizeof(u32);
-        blend.assign(dataBegin, dataEnd);
+		memcpy(blend.get(), blendBytes.data(), blendBytes.size());
     }
 }
 
@@ -703,6 +705,6 @@ void Terrain::applyDecal(Decal& decal)
             }
         }
     }
-    decal.addMesh((f32*)vertices.data(), sizeof(Vertex),
+    decal.addMesh((f32*)vertices.get(), sizeof(Vertex),
             collisionIndices.data(), (u32)collisionIndices.size(), glm::mat4(1.f));
 }

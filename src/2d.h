@@ -133,6 +133,7 @@ public:
             isInitialized = true;
         }
 
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "2D Track HUD");
         glViewport(0, 0, width, height);
         glBindFramebuffer(GL_FRAMEBUFFER, this->multisampleFramebuffer);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -165,6 +166,8 @@ public:
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glPopDebugGroup();
 
         glm::vec2 size(width, height);
         glm::vec2 p1 = pos - size * 0.5f;
