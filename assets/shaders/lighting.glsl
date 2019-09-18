@@ -47,7 +47,7 @@ float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float
 
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float specularPower, float specularStrength, vec3 specularColor,
-        float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit = vec3(0,0,0))
+        float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit)
 {
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
