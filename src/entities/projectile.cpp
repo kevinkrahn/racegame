@@ -37,7 +37,8 @@ void Projectile::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
         this->destroy();
     }
 
-    if (glm::length2(startPos - position) > 1000.f)
+    life -= deltaTime;
+    if (life <= 0.f)
     {
         this->destroy();
     }
@@ -51,6 +52,13 @@ void Projectile::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
                 glm::cross(upVector, glm::vec3(m[0]))), m[1].w);
     m[2] = glm::vec4(glm::normalize(
                 glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
-    renderer->push(LitRenderable(bulletMesh,
-            glm::translate(glm::mat4(1.f), position) * m, nullptr));
+    LitSettings settings;
+    settings.mesh = bulletMesh;
+    settings.fresnelScale = 0.3f;
+    settings.fresnelPower = 2.0f;
+    settings.fresnelBias = 0.1f;
+    settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
+    settings.color = glm::vec3(0.2, 0.9, 0.2);
+    settings.emit = glm::vec3(0.01, 1, 0.01);
+    renderer->push(LitRenderable(settings));
 }

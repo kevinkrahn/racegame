@@ -731,6 +731,11 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     bool isPlayerControlled = driver->playerProfile != nullptr;
 
+    for (u32 i=0; i<NUM_WHEELS; ++i)
+    {
+        tireMarkRibbons[i].update(deltaTime);
+    }
+
     if (deadTimer > 0.f)
     {
         deadTimer -= deltaTime;

@@ -132,6 +132,7 @@ public:
         glUniform3f(3, settings.fresnelBias, settings.fresnelScale, settings.fresnelPower);
         glUniform3f(4, settings.specularPower, settings.specularStrength, 0.f);
         glUniform1f(5, settings.minAlpha);
+        glUniform3fv(6, 1, (GLfloat*)&settings.emit);
 
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);

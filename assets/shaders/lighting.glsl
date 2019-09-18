@@ -47,7 +47,7 @@ float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float
 
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float specularPower, float specularStrength, vec3 specularColor,
-        float fresnelBias, float fresnelScale, float fresnelPower)
+        float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit = vec3(0,0,0))
 {
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
@@ -93,8 +93,9 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     float d = density * dist;
     float fogIntensity = 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
 #endif
-
     color.rgb = mix(color.rgb, fogColor, fogIntensity);
+
+    color.rgb += emit;
 
     return color;
 }

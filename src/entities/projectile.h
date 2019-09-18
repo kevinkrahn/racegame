@@ -12,6 +12,7 @@ class Projectile : public Entity
     u32 instigator;
     Mesh* bulletMesh;
     glm::vec3 startPos;
+    f32 life = 3.f;
 
 public:
     Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
