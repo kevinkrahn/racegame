@@ -56,7 +56,7 @@ void Game::initPhysX()
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
                             GLsizei length, const GLchar* message, const void* userParam)
 {
-    if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+    if (id == 1 || id == 131169 || id == 131185 || id == 131218 || id == 131204)
     {
         return;
     }
@@ -119,14 +119,14 @@ void Game::run()
     g_resources.load();
 
     state.drivers = {
-        Driver(true,  true,  true,  &g_resources.getVehicleData()[3], 1, 0),
+        Driver(true,  true,  true,  &g_resources.getVehicleData()[1], 1, 0),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
         Driver(false, false, false, &g_resources.getVehicleData()[2], 3),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
         Driver(false, false, false, &g_resources.getVehicleData()[2], 6),
-        Driver(false, false, false, &g_resources.getVehicleData()[3], 7),
-        Driver(false, false, false, &g_resources.getVehicleData()[3], 8),
+        Driver(false, false, false, &g_resources.getVehicleData()[1], 7),
+        Driver(false, false, false, &g_resources.getVehicleData()[1], 8),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 1),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 2),
 

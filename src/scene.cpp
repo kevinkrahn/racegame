@@ -44,7 +44,7 @@ Scene::Scene(const char* name)
 {
     // create PhysX scene
     PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
-    sceneDesc.gravity = PxVec3(0.f, 0.f, -12.1f);
+    sceneDesc.gravity = PxVec3(0.f, 0.f, -13.f);
     sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
     sceneDesc.filterShader  = vehicleFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
@@ -116,7 +116,9 @@ void Scene::startRace()
         if (!raycastStatic(translationOf(glm::translate(start, offset + zdir * 10.f)),
                 -zdir, 200.f, &hit))
         {
-            FATAL_ERROR("The starting point is too high in the air!");
+            error("The starting point is too high in the air!");
+            stopRace();
+            return;
         }
 
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
@@ -158,15 +160,12 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         g_game.isEditing = !g_game.isEditing;
     }
 
-    if (!g_game.isEditing && isRaceInProgress && g_input.isKeyPressed(KEY_ESCAPE))
+    if (((g_game.isEditing && !isRaceInProgress)
+        || (!g_game.isEditing && isRaceInProgress)) && g_input.isKeyPressed(KEY_ESCAPE))
     {
         isPaused = !isPaused;
     }
 
-    if (g_game.isEditing)
-    {
-        editor.onUpdate(this, renderer, deltaTime);
-    }
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     renderer->setViewportCount(viewportCount);
@@ -174,6 +173,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (!isPaused)
     {
+        if (g_game.isEditing)
+        {
+            editor.onUpdate(this, renderer, deltaTime);
+        }
+
         worldTime += deltaTime;
         renderer->updateWorldTime(worldTime);
 
@@ -407,6 +411,8 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         // pause menu
         Font* font = &g_resources.getFont("font", g_game.windowHeight * 0.04f);
+        renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 + g_game.windowHeight*0.002f},
+                    glm::vec3(0.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
         renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 },
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
     }
