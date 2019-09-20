@@ -2,6 +2,7 @@
 #include "../renderer.h"
 #include "../scene.h"
 #include "../game.h"
+#include "../gui.h"
 
 #include <typeinfo>
 
@@ -116,4 +117,5 @@ void StaticDecal::deserialize(DataFile::Value& data)
 
 void StaticDecal::showDetails()
 {
+    g_gui.button("Test");
 }

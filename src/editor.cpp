@@ -7,6 +7,7 @@
 #include "terrain.h"
 #include "mesh_renderables.h"
 #include "track.h"
+#include "gui.h"
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 #include "entities/tree.h"
@@ -41,32 +42,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
     scene->terrain->setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
 
-    if (g_input.isKeyPressed(KEY_F9))
-    {
-        const char* filename = "saved_scene.dat";
-        print("Saving scene to file: ", filename, '\n');
-        DataFile::save(scene->serialize(), filename);
-    }
-
-    if (g_input.isKeyPressed(KEY_F10))
-    {
-        g_game.changeScene("saved_scene.dat");
-    }
-
-    if (g_input.isKeyPressed(KEY_F5))
-    {
-        if (scene->isRaceInProgress)
-        {
-            scene->stopRace();
-        }
-        else
-        {
-            scene->terrain->regenerateCollisionMesh(scene);
-            scene->startRace();
-        }
-        entityDragAxis = DragAxis::NONE;
-    }
-    else if (g_input.isKeyPressed(KEY_ESCAPE))
+    if (g_input.isKeyPressed(KEY_ESCAPE))
     {
         if (scene->isRaceInProgress)
         {
@@ -105,72 +81,195 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     cameraAngle += cameraRotateSpeed * deltaTime;
     cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
 
-    bool isMouseClickHandled = false;
-    //bool isMouseWheelHandled = g_input.getMouseScroll() != 0;
-
     f32 height = g_game.windowHeight;
-    Font* font = &g_resources.getFont("font", height * 0.03f);
-    Font* fontSmall = &g_resources.getFont("font", height * 0.02f);
     glm::vec2 mousePos = g_input.getMousePosition();
-    auto button = [&](glm::vec2& pos, glm::vec2 spacing, const char* text, bool enabled=true) {
-        glm::vec4 color = baseButtonColor;
-        f32 textAlpha = color.a;
-        bool wasClicked = false;
-        u32 buttonWidth = height * 0.15f;
-        u32 buttonHeight = height * 0.04f;
-        if (!enabled)
+
+    EditMode previousEditMode = editMode;
+
+    if (g_input.isKeyPressed(KEY_TAB))
+    {
+        editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
+    }
+
+    g_gui.beginPanel("Track Editor", { 0.f, 0.f },
+            g_game.windowHeight, 0.f, false, -1, false, 28, 4, 180);
+
+    g_gui.beginSelect("Edit Mode", (i32*)&editMode, false);
+    g_gui.option("Terrain", (i32)EditMode::TERRAIN, "terrain_icon");
+    g_gui.option("Track", (i32)EditMode::TRACK, "track_icon");
+    g_gui.option("Decoration", (i32)EditMode::DECORATION, "decoration_icon");
+    g_gui.end();
+
+    if (editMode == EditMode::TERRAIN)
+    {
+        if (g_input.isKeyPressed(KEY_SPACE))
         {
-            color = disabledButtonColor;
-            textAlpha = color.a;
+            terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
         }
-        if (enabled && pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
+
+        g_gui.beginSelect("Terrain Tool", (i32*)&terrainTool);
+        g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, "terrain_icon");
+        g_gui.option("Perturb", (i32)TerrainTool::PERTURB, "terrain_icon");
+        g_gui.option("Flatten", (i32)TerrainTool::FLATTEN, "terrain_icon");
+        g_gui.option("Erode", (i32)TerrainTool::ERODE, "terrain_icon");
+        g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, "terrain_icon");
+        g_gui.option("Paint", (i32)TerrainTool::PAINT, "terrain_icon");
+        g_gui.end();
+
+        g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
+        g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
+        g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
+
+        if (terrainTool == TerrainTool::PAINT)
         {
-            color = hoverButtonColor;
-            isMouseClickHandled = true;
-            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            g_gui.beginSelect("Paint Material", &paintMaterialIndex);
+            g_gui.option("Main", 0);
+            g_gui.option("Rock", 1);
+            g_gui.option("Offroad", 2);
+            g_gui.option("Garbage", 3);
+            g_gui.end();
+        }
+    }
+    else if (editMode == EditMode::TRACK)
+    {
+        g_gui.toggle("Show Grid", gridSettings.show);
+        g_gui.toggle("Snap to Grid", gridSettings.snap);
+
+        if (g_gui.button("Connect Points [c]", scene->track->canConnect()) ||
+                (g_input.isKeyPressed(KEY_C) && scene->track->canConnect()))
+        {
+            scene->track->connectPoints();
+        }
+
+        if (g_gui.button("Connect Railings [c]", scene->track->canConnectRailings()) ||
+                (g_input.isKeyPressed(KEY_C) && scene->track->canConnectRailings()))
+        {
+            scene->track->connectRailings();
+        }
+
+        if (g_gui.button("Subdivide [n]", scene->track->canSubdivide()) ||
+                (g_input.isKeyPressed(KEY_N) && scene->track->canSubdivide()))
+        {
+            scene->track->subdividePoints();
+        }
+
+        if (g_gui.button("Split [t]", scene->track->canSplit()) ||
+                (g_input.isKeyPressed(KEY_T) && scene->track->canSubdivide()))
+        {
+            scene->track->split();
+        }
+
+        if (g_gui.button("New Railing"))
+        {
+            placeMode = PlaceMode::NEW_RAILING;
+        }
+
+        if (g_gui.button("New Track Marking"))
+        {
+            placeMode = PlaceMode::NEW_MARKING;
+        }
+    }
+    else if (editMode == EditMode::DECORATION)
+    {
+        TransformMode previousTransformMode = transformMode;
+
+        if (g_input.isKeyPressed(KEY_SPACE))
+        {
+            transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
+        }
+
+        g_gui.beginSelect("Transform Mode", (i32*)&transformMode);
+        g_gui.option("Translate [g]", (i32)TransformMode::TRANSLATE);
+        g_gui.option("Rotate [r]", (i32)TransformMode::ROTATE);
+        g_gui.option("Scale [f]", (i32)TransformMode::SCALE);
+        g_gui.end();
+
+        if (transformMode != previousTransformMode)
+        {
+            entityDragAxis = DragAxis::NONE;
+        }
+
+        if (g_gui.button("Duplicate [b]", selectedEntities.size() > 0)
+                || (selectedEntities.size() > 0 && g_input.isKeyPressed(KEY_B)))
+        {
+            std::vector<PlaceableEntity*> newEntities;
+            for (auto e : selectedEntities)
             {
-                clickHandledUntilRelease = true;
-                wasClicked = true;
+                auto data = e->serialize();
+                newEntities.push_back((PlaceableEntity*)scene->deserializeEntity(data));
+            }
+            selectedEntities.clear();
+            for (auto e : newEntities)
+            {
+                selectedEntities.push_back(e);
             }
         }
-        renderer->push(QuadRenderable(white,
-                pos, buttonWidth, buttonHeight, color, color.a));
-        renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
-                    glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
-        pos += spacing;
 
-        return wasClicked;
-    };
-    auto slider = [&](glm::vec2& pos, glm::vec2 spacing, std::string&& text, f32 min, f32 max, f32& val) {
-        f32 textAlpha = 1.f;
-        glm::vec4 color = baseButtonColor;
-        bool wasClicked = false;
-        u32 buttonWidth = height * 0.15f;
-        u32 buttonHeight = height * 0.04f;
-        if (pointInRectangle(mousePos, pos, buttonWidth, buttonHeight))
+        if (g_gui.button("Delete [DELETE]", !entityDragAxis && selectedEntities.size() > 0) ||
+                (!entityDragAxis && g_input.isKeyPressed(KEY_DELETE)))
         {
-            color = hoverButtonColor;
-            isMouseClickHandled = true;
-            if (g_input.isMouseButtonDown(MOUSE_LEFT))
+            for (PlaceableEntity* e : selectedEntities)
             {
-                clickHandledUntilRelease = true;
-                wasClicked = true;
-                f32 t = (mousePos.x - pos.x) / buttonWidth;
-                val = min + (max - min) * t;
+                e->destroy();
             }
-            // TODO: add support for mouse scrolling to change value
+            selectedEntities.clear();
         }
-        renderer->push(QuadRenderable(white,
-                pos, buttonWidth, buttonHeight, color, color.a));
-        renderer->push(QuadRenderable(white,
-                pos, buttonWidth * ((val - min) / (max - min)), buttonHeight * 0.1f,
-                val >= 0.f ? glm::vec3(0.0f, 0.f, 0.9f) : glm::vec3(0.9f, 0.f, 0.f), color.a));
-        renderer->push(TextRenderable(fontSmall, std::move(text), pos + glm::vec2(buttonWidth / 2, buttonHeight / 2),
-                    glm::vec3(1.f), textAlpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
-        pos += spacing;
 
-        return wasClicked;
-    };
+        g_gui.beginSelect("Entity", &selectedEntityTypeIndex);
+        for (i32 i=0; i<(i32)entityTypes.size(); ++i)
+        {
+            auto& entityType = entityTypes[i];
+            g_gui.option(entityType.name, i);
+        }
+        g_gui.end();
+    }
+
+    // TODO: make this better by not having 3 panels for 3 buttons
+    g_gui.beginPanel("Task1", { g_gui.convertSize(200), 0.f },
+                g_game.windowHeight, 0.f, false, -1, false, 28, 0, 100);
+    if (g_gui.button("Save Track [F9]") || g_input.isKeyPressed(KEY_F9))
+    {
+        const char* filename = "saved_scene.dat";
+        print("Saving scene to file: ", filename, '\n');
+        DataFile::save(scene->serialize(), filename);
+    }
+    g_gui.end();
+
+    g_gui.beginPanel("Task2", { g_gui.convertSize(300), 0.f },
+                g_game.windowHeight, 0.f, false, -1, false, 28, 0, 100);
+    if (g_gui.button("Load Track [F10]") || g_input.isKeyPressed(KEY_F10))
+    {
+        g_game.changeScene("saved_scene.dat");
+    }
+    g_gui.end();
+
+    g_gui.beginPanel("Task3", { g_gui.convertSize(400), 0.f },
+                g_game.windowHeight, 0.f, false, -1, false, 28, 0, 100);
+    if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
+    {
+        scene->terrain->regenerateCollisionMesh(scene);
+        scene->startRace();
+        entityDragAxis = DragAxis::NONE;
+    }
+    g_gui.end();
+
+    if (selectedEntities.size() > 0)
+    {
+        g_gui.beginPanel("Entity Properties", { g_game.windowWidth, 0.f },
+                g_game.windowHeight, 1.f, false, -1, false, 30, 4);
+        g_gui.label(str(selectedEntities.front()->getName(), " Properties"));
+        selectedEntities.front()->showDetails();
+        g_gui.end();
+    }
+
+    bool isMouseClickHandled = g_gui.isMouseOverUI || g_gui.isMouseCaptured;
+    g_gui.end();
+
+    if (editMode != previousEditMode)
+    {
+        scene->terrain->regenerateCollisionMesh(scene);
+        entityDragAxis = DragAxis::NONE;
+    }
 
     if (entityDragAxis)
     {
@@ -214,80 +313,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
 
-    if (g_input.isKeyPressed(KEY_TAB))
-    {
-        editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
-        scene->terrain->regenerateCollisionMesh(scene);
-        entityDragAxis = DragAxis::NONE;
-    }
-    glm::vec2 guiOffset(height * 0.012f);
-    f32 modeSelectionMaxY = 0.f;
-    {
-        const char* modeNames[] = { "Terrain", "Track", "Decoration" };
-        const char* icons[] = { "terrain_icon", "track_icon", "decoration_icon" };
-        glm::vec2 offset = guiOffset;
-        u32 padding = height * 0.015f;
-        u32 buttonHeight = height * 0.03f;
-        f32 textHeight = font->getHeight();
-        for (u32 i=0; i<(u32)EditMode::MAX; ++i)
-        {
-            u32 buttonWidth = height * 0.16f;
-            glm::vec4 color = baseButtonColor;
-            if (pointInRectangle(g_input.getMousePosition(),
-                        offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
-                        buttonWidth + padding * 2, buttonHeight + padding * 2))
-            {
-                color = hoverButtonColor;
-                isMouseClickHandled = true;
-                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-                {
-                    editMode = EditMode(i);
-                    scene->terrain->regenerateCollisionMesh(scene);
-                }
-            }
-            if (i == (u32)editMode)
-            {
-                buttonWidth = height * 0.20f;
-                color = selectedButtonColor;
-            }
-            renderer->push(QuadRenderable(white,
-                        offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
-                        buttonWidth + padding * 2, buttonHeight + padding * 2,
-                        color, color.a));
-            u32 iconSize = buttonHeight;
-            renderer->push(TextRenderable(font, modeNames[i],
-                offset + glm::vec2(padding * 2 + iconSize,
-                    ((padding * 2 + buttonHeight) - textHeight) / 2 + (buttonHeight + padding * 2) * i),
-                glm::vec3(1), 1.f, 1.f));
-            renderer->push(QuadRenderable(g_resources.getTexture(icons[i]),
-                        offset + glm::vec2(padding, padding + (buttonHeight + padding * 2) * i),
-                        iconSize, iconSize));
-        }
-        modeSelectionMaxY = offset.y + (buttonHeight + padding * 2) * (f32)EditMode::MAX;
-        /*
-        renderer->push(TextRenderable(fontSmall, "[TAB]",
-                    offset + glm::vec2(height * 0.09f, modeSelectionMaxY),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER));
-        */
-    }
-
-    glm::vec2 buttonOffset = guiOffset + glm::vec2(0, modeSelectionMaxY);
-    glm::vec2 buttonSpacing(0.f, height * 0.045f);
-
-    //if (editMode != EditMode::TERRAIN)
-    if (editMode == EditMode::TRACK)
-    {
-        if (button(buttonOffset, buttonSpacing, gridSettings.show ? "Show Grid: ON" : "Show Grid: OFF"))
-        {
-            gridSettings.show = !gridSettings.show;
-        }
-
-        if (button(buttonOffset, buttonSpacing, gridSettings.snap ? "Snap to Grid: ON" : "Snap to Grid: OFF"))
-        {
-            gridSettings.snap = !gridSettings.snap;
-        }
-    }
-
     if (editMode == EditMode::TERRAIN)
     {
         const f32 step = 0.01f;
@@ -295,67 +320,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         while (p.z > scene->terrain->getZ(glm::vec2(p)))
         {
             p += rayDir * step;
-        }
-
-        if (g_input.isKeyPressed(KEY_SPACE))
-        {
-            terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
-        }
-
-        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track", "Paint" };
-        // TODO: icons
-        const char* icons[] = { "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon", "terrain_icon" };
-        glm::vec2 offset = buttonOffset;
-        u32 padding = height * 0.01f;
-        u32 buttonHeight = height * 0.02f;
-        f32 textHeight = fontSmall->getHeight();
-        for (u32 i=0; i<(u32)TerrainTool::MAX; ++i)
-        {
-            u32 buttonWidth = height * 0.12f;
-            glm::vec4 color = baseButtonColor;
-            if (pointInRectangle(g_input.getMousePosition(),
-                        offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
-                        buttonWidth + padding * 2, buttonHeight + padding * 2))
-            {
-                color = hoverButtonColor;
-                isMouseClickHandled = true;
-                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-                {
-                    terrainTool = TerrainTool(i);
-                }
-            }
-            if (i == (u32)terrainTool)
-            {
-                buttonWidth = height * 0.15f;
-                color = selectedButtonColor;
-            }
-            renderer->push(QuadRenderable(white,
-                        offset + glm::vec2(0, (buttonHeight + padding * 2) * i),
-                        buttonWidth + padding * 2, buttonHeight + padding * 2,
-                        color, color.a));
-            u32 iconSize = buttonHeight;
-            renderer->push(TextRenderable(fontSmall, toolNames[i],
-                offset + glm::vec2(padding * 2 + iconSize,
-                    ((padding * 2 + buttonHeight) - textHeight) / 2 + (buttonHeight + padding * 2) * i),
-                glm::vec3(1), 1.f, 1.f));
-            renderer->push(QuadRenderable(g_resources.getTexture(icons[i]),
-                        offset + glm::vec2(padding, padding + (buttonHeight + padding * 2) * i),
-                        iconSize, iconSize));
-
-            buttonOffset.y += buttonHeight + padding * 2 ;
-        }
-
-        buttonOffset.y += height * 0.01f;
-        slider(buttonOffset, buttonSpacing, str("Brush Radius: ", std::fixed, std::setprecision(1), brushRadius), 2.f, 40.f, brushRadius);
-        slider(buttonOffset, buttonSpacing, str("Brush Falloff: ", std::fixed, std::setprecision(1), brushFalloff), 0.2f, 10.f, brushFalloff);
-        slider(buttonOffset, buttonSpacing, str("Brush Strength: ", std::fixed, std::setprecision(1), brushStrength), -30.f, 30.f, brushStrength);
-        if (terrainTool == TerrainTool::PAINT)
-        {
-            const char* paintNames[] = { "Paint: Main", "Paint: Rock", "Paint: Offroad", "Paint: Garbage" };
-            if (button(buttonOffset, buttonSpacing, paintNames[paintMaterialIndex]))
-            {
-                paintMaterialIndex = (paintMaterialIndex + 1) % 4;
-            }
         }
 
         if (!isMouseClickHandled)
@@ -404,40 +368,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::TRACK)
     {
-        if (button(buttonOffset, buttonSpacing, "Connect Points [c]", scene->track->canConnect()) ||
-                (g_input.isKeyPressed(KEY_C) && scene->track->canConnect()))
-        {
-            scene->track->connectPoints();
-        }
-
-        if (button(buttonOffset, buttonSpacing, "Connect Railings [c]", scene->track->canConnectRailings()) ||
-                (g_input.isKeyPressed(KEY_C) && scene->track->canConnectRailings()))
-        {
-            scene->track->connectRailings();
-        }
-
-        if (button(buttonOffset, buttonSpacing, "Subdivide [n]", scene->track->canSubdivide()) ||
-                (g_input.isKeyPressed(KEY_N) && scene->track->canSubdivide()))
-        {
-            scene->track->subdividePoints();
-        }
-
-        if (button(buttonOffset, buttonSpacing, "Split [t]", scene->track->canSplit()) ||
-                (g_input.isKeyPressed(KEY_T) && scene->track->canSubdivide()))
-        {
-            scene->track->split();
-        }
-
-        if (button(buttonOffset, buttonSpacing, "New Railing"))
-        {
-            placeMode = PlaceMode::NEW_RAILING;
-        }
-
-        if (button(buttonOffset, buttonSpacing, "New Track Marking"))
-        {
-            placeMode = PlaceMode::NEW_MARKING;
-        }
-
         if (placeMode != PlaceMode::NONE)
         {
             glm::vec3 p = scene->track->previewRailingPlacement(scene, renderer, cam.position, rayDir);
@@ -508,46 +438,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
-        const char* transformModeNames[] = { "Translate [g]", "Rotate [r]", "Scale [f]" };
-        if (button(buttonOffset, buttonSpacing, transformModeNames[(u32)transformMode]) > 0 ||
-            g_input.isKeyPressed(KEY_SPACE))
-        {
-            transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
-            entityDragAxis = DragAxis::NONE;
-        }
-        if (button(buttonOffset, buttonSpacing, "Duplicate [b]", selectedEntities.size() > 0)
-                || (selectedEntities.size() > 0 && g_input.isKeyPressed(KEY_B)))
-        {
-            std::vector<PlaceableEntity*> newEntities;
-            for (auto e : selectedEntities)
-            {
-                auto data = e->serialize();
-                newEntities.push_back((PlaceableEntity*)scene->deserializeEntity(data));
-            }
-            selectedEntities.clear();
-            for (auto e : newEntities)
-            {
-                selectedEntities.push_back(e);
-            }
-        }
-
-        for (u32 i=0; i<(u32)entityTypes.size(); ++i)
-        {
-            auto& entityType = entityTypes[i];
-            if (button(buttonOffset, buttonSpacing, entityType.name.c_str()))
-            {
-                selectedEntityTypeIndex = i;
-            }
-        }
-
-        if (!entityDragAxis && g_input.isKeyPressed(KEY_DELETE))
-        {
-            for (PlaceableEntity* e : selectedEntities)
-            {
-                e->destroy();
-            }
-            selectedEntities.clear();
-        }
 
         glm::vec3 minP(FLT_MAX);
         glm::vec3 maxP(-FLT_MAX);

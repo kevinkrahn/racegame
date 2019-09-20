@@ -6,13 +6,17 @@
 
 void Gui::beginFrame()
 {
-    fontSmall = &g_resources.getFont("font", convertSize(20));
-    fontBig = &g_resources.getFont("font", convertSize(30));
+    fontSmall = &g_resources.getFont("font", convertSize(18));
+    fontBig = &g_resources.getFont("font", convertSize(28));
     white = g_resources.getTexture("white");
     renderer = g_game.renderer.get();
     isMouseOverUI = false;
     isMouseClickHandled = false;
     isKeyboardInputHandled = false;
+    if (g_input.isMouseButtonReleased(MOUSE_LEFT))
+    {
+        isMouseCaptured = false;
+    }
 }
 
 void Gui::endFrame()
@@ -53,7 +57,8 @@ WidgetState* Gui::getWidgetState(WidgetState* parent, std::string const& identif
 }
 
 void Gui::beginPanel(std::string const& text, glm::vec2 position, f32 height,
-            f32 halign, bool solidBackground, i32 buttonCount)
+            f32 halign, bool solidBackground, i32 buttonCount, bool showTitle,
+            f32 itemHeight, f32 itemSpacing, f32 panelWidth)
 {
     f32 width = convertSize(panelWidth);
     height = convertSize(height);
@@ -64,7 +69,7 @@ void Gui::beginPanel(std::string const& text, glm::vec2 position, f32 height,
                     position, width, height,
                     glm::vec3(0.02f), 0.8f, true));
     }
-    if (text.size() > 0)
+    if (showTitle)
     {
         renderer->push(TextRenderable(fontBig, text,
                     position + glm::vec2(width/2, convertSize(10.f)),
@@ -98,9 +103,12 @@ void Gui::beginPanel(std::string const& text, glm::vec2 position, f32 height,
         0,
         position,
         { width, height },
-        position + glm::vec2(0, convertSize(40.f)),
+        showTitle ? position + glm::vec2(0, convertSize(40.f)) : position,
         buttonCount > 0,
-        panelState
+        panelState,
+        nullptr,
+        glm::floor(convertSize(itemHeight)),
+        glm::floor(convertSize(itemSpacing)),
     });
 }
 
@@ -108,15 +116,20 @@ void Gui::end()
 {
     assert(widgetStack.size() > 0);
 
-    switch(widgetStack.back().widgetType)
+    WidgetStackItem w = std::move(widgetStack.back());
+    widgetStack.pop_back();
+    switch(w.widgetType)
     {
         case WidgetType::PANEL:
+            break;
+        case WidgetType::SELECT:
+            assert(widgetStack.back().widgetType == WidgetType::PANEL);
+            widgetStack.back().nextWidgetPosition =
+                w.nextWidgetPosition + glm::vec2(0, w.itemSpacing * 2.f);
             break;
         default:
             break;
     }
-
-    widgetStack.pop_back();
 }
 
 bool Gui::button(std::string const& text, bool active)
@@ -125,26 +138,105 @@ bool Gui::button(std::string const& text, bool active)
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
 
     WidgetStackItem& parent = widgetStack.back();
-    glm::vec2& pos = parent.nextWidgetPosition;
     WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
 
-    f32 bh = convertSize(buttonHeight);
+    glm::vec2& pos = parent.nextWidgetPosition;
+    f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
 
     renderer->push(QuadRenderable(white,
-                pos, bw, bh, glm::vec3(0.f), 0.8f, true));
+                pos, bw, bh, glm::vec3(0.f), active ? 0.85f : 0.65f, true));
 
     bool selected = false;
     bool clicked = false;
     glm::vec2 mousePos = g_input.getMousePosition();
-    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || g_input.didMouseMove())
+    bool canHover = g_input.didMouseMove() || !widgetStack.back().hasKeyboardSelect;
+    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
+        isMouseOverUI = true;
+        if (active)
+        {
+            parent.widgetState->selectIndex = parent.selectableChildCount;
+            selected = true;
+            if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                isMouseClickHandled = true;
+                clicked = true;
+            }
+        }
+    }
+    if (active && widgetStack.back().hasKeyboardSelect)
+    {
+        selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
+        if (!isKeyboardInputHandled && selected && g_input.isKeyPressed(KEY_RETURN))
+        {
+            clicked = true;
+            isKeyboardInputHandled = true;
+        }
+    }
+
+    ++parent.selectableChildCount;
+
+    if (selected && active)
+    {
+        widgetState->hoverIntensity =
+            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
+    }
+    else
+    {
+        widgetState->hoverIntensity =
+            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
+    }
+
+    if (widgetState->hoverIntensity > 0.f)
+    {
+        f32 selectLineHeight = glm::floor(bh * 0.05f);
+        renderer->push(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
+                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
+        renderer->push(QuadRenderable(white,
+                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
+                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
+                    widgetState->hoverIntensity * 0.8f));
+    }
+
+    renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
+                glm::vec3(1.f), active ? 1.f : 0.75f, 1.f,
+                HorizontalAlign::CENTER, VerticalAlign::CENTER));
+
+    pos.y += bh + parent.itemSpacing;
+
+    return clicked;
+}
+
+bool Gui::toggle(std::string const& text, bool& enabled)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+    glm::vec2& pos = parent.nextWidgetPosition;
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+
+    renderer->push(QuadRenderable(white,
+                pos, bw, bh, glm::vec3(0.f), 0.85f, true));
+
+    bool selected = false;
+    bool clicked = false;
+    glm::vec2 mousePos = g_input.getMousePosition();
+    bool canHover = g_input.didMouseMove() || !widgetStack.back().hasKeyboardSelect;
+    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
+            && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
+    {
+        isMouseOverUI = true;
         parent.widgetState->selectIndex = parent.selectableChildCount;
         selected = true;
-        isMouseOverUI = true;
         if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
+            enabled = !enabled;
             isMouseClickHandled = true;
             clicked = true;
         }
@@ -154,6 +246,7 @@ bool Gui::button(std::string const& text, bool active)
         selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
         if (!isKeyboardInputHandled && selected && g_input.isKeyPressed(KEY_RETURN))
         {
+            enabled = !enabled;
             clicked = true;
             isKeyboardInputHandled = true;
         }
@@ -174,18 +267,218 @@ bool Gui::button(std::string const& text, bool active)
 
     if (widgetState->hoverIntensity > 0.f)
     {
+        f32 selectLineHeight = glm::floor(bh * 0.05f);
         renderer->push(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
-                    bh * 0.05f, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
+                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
         renderer->push(QuadRenderable(white,
-                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - bh * 0.05f),
-                    bw*widgetState->hoverIntensity, bh * 0.05f, glm::vec3(1.f),
+                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
+                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
                     widgetState->hoverIntensity * 0.8f));
     }
 
-    renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
-                glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    renderer->push(TextRenderable(fontSmall, str(text, ": ", enabled ? "ON" : "OFF"),
+                pos + glm::vec2(bw/2, bh/2), glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::CENTER, VerticalAlign::CENTER));
 
-    pos.y += bh + convertSize(buttonSpacing);
+    pos.y += bh + parent.itemSpacing;
 
     return clicked;
+}
+
+bool Gui::slider(std::string const& text, f32 minValue, f32 maxValue, f32& value)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+    glm::vec2& pos = parent.nextWidgetPosition;
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+
+    renderer->push(QuadRenderable(white,
+                pos, bw, bh, glm::vec3(0.f),  0.85f, true));
+
+    bool selected = false;
+    bool clicked = false;
+    glm::vec2 mousePos = g_input.getMousePosition();
+    bool canHover = g_input.didMouseMove() || !widgetStack.back().hasKeyboardSelect;
+    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
+            && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
+    {
+        isMouseOverUI = true;
+        parent.widgetState->selectIndex = parent.selectableChildCount;
+        selected = true;
+        // TODO: should the mouse scroll wheel change the value?
+        if (!isMouseClickHandled && g_input.isMouseButtonDown(MOUSE_LEFT))
+        {
+            isMouseCaptured = true;
+            isMouseClickHandled = true;
+            f32 t = (mousePos.x - pos.x) / bw;
+            value = minValue + (maxValue - minValue) * t;
+            clicked = true;
+        }
+    }
+    if (widgetStack.back().hasKeyboardSelect)
+    {
+        selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
+        f32 valChange = (g_input.isKeyPressed(KEY_RIGHT, true)
+                - g_input.isKeyPressed(KEY_LEFT, true)) * ((maxValue - minValue) / 20.f);
+        if (!isKeyboardInputHandled && selected && valChange != 0.f)
+        {
+            clicked = true;
+            isKeyboardInputHandled = true;
+            value = clamp(value + valChange, minValue, maxValue);
+        }
+    }
+
+    ++parent.selectableChildCount;
+
+    if (selected)
+    {
+        widgetState->hoverIntensity =
+            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
+    }
+    else
+    {
+        widgetState->hoverIntensity =
+            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
+    }
+
+    if (widgetState->hoverIntensity > 0.f)
+    {
+        f32 selectLineHeight = glm::floor(bh * 0.05f);
+        renderer->push(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
+                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
+        renderer->push(QuadRenderable(white,
+                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
+                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
+                    widgetState->hoverIntensity * 0.8f));
+    }
+    f32 valueHeight = glm::floor(bh * 0.1f);
+    renderer->push(QuadRenderable(white, pos + glm::vec2(0, valueHeight),
+                bw * ((value - minValue) / (maxValue - minValue)), bh - valueHeight * 2.f,
+            value >= 0.f ? glm::vec3(0.0f, 0.f, 0.9f) : glm::vec3(0.9f, 0.f, 0.f), 0.4f));
+
+    renderer->push(TextRenderable(fontSmall, str(text, ": ", std::fixed, std::setprecision(2), value),
+                pos + glm::vec2(bw/2, bh/2),
+                glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::CENTER, VerticalAlign::CENTER));
+
+    pos.y += bh + parent.itemSpacing;
+
+    return clicked;
+}
+
+void Gui::beginSelect(std::string const& text, i32* selectedIndex, bool showTitle)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+
+    if (showTitle)
+    {
+        renderer->push(TextRenderable(fontSmall, text,
+                    parent.nextWidgetPosition + glm::vec2(parent.size.x / 2, convertSize(5.f)),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+    }
+
+    WidgetState* selectState = getWidgetState(parent.widgetState, text, WidgetType::SELECT);
+    widgetStack.push_back({
+        WidgetType::SELECT,
+        0,
+        parent.nextWidgetPosition,
+        parent.size,
+        showTitle ? parent.nextWidgetPosition
+            + glm::vec2(0, convertSize(20.f)) : parent.nextWidgetPosition,
+        false,
+        selectState,
+        selectedIndex,
+        parent.itemHeight,
+        parent.itemSpacing,
+    });
+}
+
+bool Gui::option(std::string const& text, i32 value, const char* icon)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::SELECT);
+
+    WidgetStackItem& parent = widgetStack.back();
+    glm::vec2& pos = parent.nextWidgetPosition;
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+
+    bool selected = false;
+    bool clicked = false;
+    glm::vec2 mousePos = g_input.getMousePosition();
+    if (pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
+    {
+        isMouseOverUI = true;
+        selected = true;
+        if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
+        {
+            *parent.outputValueI32 = value;
+            isMouseClickHandled = true;
+            clicked = true;
+        }
+    }
+
+    glm::vec3 col = glm::vec3(*parent.outputValueI32 == value ? 0.06f : 0.f);
+    renderer->push(QuadRenderable(white, pos, bw, bh, col, 0.85f, true));
+
+    if (selected)
+    {
+        widgetState->hoverIntensity =
+            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
+    }
+    else
+    {
+        widgetState->hoverIntensity =
+            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
+    }
+
+    if (widgetState->hoverIntensity > 0.f)
+    {
+        f32 selectLineHeight = glm::floor(bh * 0.05f);
+        renderer->push(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
+                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
+        renderer->push(QuadRenderable(white,
+                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
+                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
+                    widgetState->hoverIntensity * 0.8f));
+    }
+
+    if (icon)
+    {
+        Texture* iconTexture = g_resources.getTexture(icon);
+        u32 iconSize = bh * 0.5f;
+        renderer->push(QuadRenderable(iconTexture,
+                    pos + glm::vec2(bh * 0.25), iconSize, iconSize));
+    }
+
+    renderer->push(TextRenderable(fontSmall, text,
+                pos + glm::vec2(icon ? bh : convertSize(4.f), bh/2),
+                glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::LEFT, VerticalAlign::CENTER));
+
+    pos.y += bh;
+
+    return clicked;
+}
+
+void Gui::label(std::string const& text)
+{
+    WidgetStackItem& parent = widgetStack.back();
+    glm::vec2& pos = parent.nextWidgetPosition;
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+    renderer->push(QuadRenderable(white, pos, bw, bh, glm::vec3(0.f), 0.85f, true));
+    renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
+                glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    pos.y += bh;
 }

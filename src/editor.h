@@ -44,7 +44,7 @@ class Editor
 
     f32 brushStartZ = 0.f;
 
-    enum struct TerrainTool
+    enum struct TerrainTool : i32
     {
         RAISE,
         PERTURB,
@@ -55,9 +55,9 @@ class Editor
         PAINT,
         MAX
     } terrainTool = TerrainTool::RAISE;
-    u32 paintMaterialIndex = 2;
+    i32 paintMaterialIndex = 2;
 
-    enum struct EditMode
+    enum struct EditMode : i32
     {
         TERRAIN,
         TRACK,
@@ -73,7 +73,7 @@ class Editor
         MAX
     } placeMode = PlaceMode::NONE;
 
-    enum struct TransformMode
+    enum struct TransformMode : i32
     {
         TRANSLATE,
         ROTATE,
@@ -81,10 +81,10 @@ class Editor
         MAX
     } transformMode = TransformMode::TRANSLATE;
 
-    u32 entityDragAxis = DragAxis::NONE;
+    i32 entityDragAxis = DragAxis::NONE;
     glm::vec3 entityDragOffset;
     glm::vec3 rotatePivot;
-    u32 selectedEntityTypeIndex = 0;
+    i32 selectedEntityTypeIndex = 0;
 
     std::vector<PlaceableEntity*> selectedEntities;
 
