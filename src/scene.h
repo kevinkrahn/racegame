@@ -34,6 +34,8 @@ private:
     TrackPreview2D trackPreview2D;
     TrackGraph trackGraph;
     u32 totalLaps = 4;
+    glm::vec3 trackPreviewCameraFrom = { 0, 0, 0 };
+    glm::vec3 trackPreviewCameraTarget = { 0, 0, 0 };
     glm::vec3 trackPreviewPosition = { 0, 0, 0 };
     glm::vec3 trackPreviewVelocity = { 0, 0, 0 };
     u32 currentTrackPreviewPoint = 0;
@@ -79,7 +81,6 @@ public:
     void onStart();
     void onEnd();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
-    void onEndUpdate(f32 deltaTime);
 
     void vehicleFinish(u32 n) { finishOrder.push_back(n); }
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }

@@ -89,5 +89,6 @@ class Editor
     std::vector<PlaceableEntity*> selectedEntities;
 
 public:
+    glm::vec3 getCameraTarget() const { return cameraTarget; }
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
 };

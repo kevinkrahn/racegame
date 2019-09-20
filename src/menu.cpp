@@ -5,18 +5,7 @@
 #include "2d.h"
 #include "input.h"
 #include "scene.h"
-
-const char* menuItems[] = {
-    "Championship",
-    "Load Game",
-    "Quick Play",
-    "Options",
-    "Track Editor",
-    //"About",
-    "Quit"
-};
-
-f32 menuItemHover[ARRAY_SIZE(menuItems)] = { 0 };
+#include "gui.h"
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
@@ -25,100 +14,40 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         return;
     }
 
-    Texture* white = g_resources.getTexture("white");
-    f32 height = g_game.windowHeight;
-    f32 menuWidth = height * 0.42f;
-    f32 menuStartY = height * 0.1f;
-    f32 menuHeight = height - menuStartY * 2;
+    g_gui.beginPanel("Main Menu", { g_game.windowWidth/2, g_game.windowHeight*0.3f }, 300,
+            0.5f, true, 6);
 
-    Font* font = &g_resources.getFont("font", height * 0.04f);
-
-    renderer->push(QuadRenderable(white,
-                { 0, menuStartY }, menuWidth, menuHeight, glm::vec3(0, 0, 0), 0.9f, true));
-
-    if (g_input.isKeyPressed(KEY_UP, true))
+    if (g_gui.button("Championship"))
     {
-        --selectIndex;
-        if (selectIndex < 0)
-        {
-            selectIndex = ARRAY_SIZE(menuItems) - 1;
-        }
+        g_game.isEditing = false;
+        Scene* scene = g_game.changeScene("saved_scene.dat");
+        scene->startRace();
+        menuMode = HIDDEN;
     }
 
-    if (g_input.isKeyPressed(KEY_DOWN, true))
+    if (g_gui.button("Load Game"))
     {
-        ++selectIndex;
-        if (selectIndex >= ARRAY_SIZE(menuItems))
-        {
-            selectIndex = 0;
-        }
     }
 
-    f32 buttonHeight = height * 0.07f;
-    f32 buttonSpacing = height * 0.01f;
-    i32 clickIndex = -1;
-    for (u32 i=0; i<ARRAY_SIZE(menuItems); ++i)
+    if (g_gui.button("Quick Play"))
     {
-        f32 x = height * 0.05f;
-        f32 y = menuStartY + buttonHeight + i * buttonHeight + i * buttonSpacing;
-        glm::vec2 v1 = { 0, y - buttonHeight/2 };
-        glm::vec2 v2 = v1 + glm::vec2(menuWidth, buttonHeight);
-        glm::vec2 mousePos = g_input.getMousePosition();
-        if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || g_input.didMouseMove())
-                && pointInRectangle(mousePos, v1, v2))
-        {
-            selectIndex = i;
-            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-            {
-                clickIndex = i;
-            }
-        }
-        if (selectIndex == i)
-        {
-            menuItemHover[i] = glm::min(menuItemHover[i] + deltaTime * 5.f, 1.f);
-        }
-        else
-        {
-            menuItemHover[i] = glm::max(menuItemHover[i] - deltaTime * 5.f, 0.f);
-        }
-        renderer->push(QuadRenderable(white,
-                    v1, menuWidth * menuItemHover[i], buttonHeight,
-                    glm::vec3(1.0f), menuItemHover[i] * 0.04f));
-        renderer->push(TextRenderable(font, menuItems[i], { x, y },
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
     }
 
-    if (g_input.isKeyPressed(KEY_RETURN) || g_input.isKeyPressed(KEY_SPACE) || clickIndex >= 0)
+    if (g_gui.button("Options"))
     {
-        switch (selectIndex)
-        {
-            case 0:
-            {
-                g_game.isEditing = false;
-                Scene* scene = g_game.changeScene("saved_scene.dat");
-                scene->startRace();
-                menuMode = HIDDEN;
-            } break;
-            case 1:
-            {
-            } break;
-            case 2:
-            {
-            } break;
-            case 3:
-            {
-            } break;
-            case 4:
-            {
-                g_game.isEditing = true;
-                g_game.changeScene(nullptr);
-                menuMode = HIDDEN;
-                break;
-            } break;
-            case 5:
-            {
-                g_game.shouldExit = true;
-            } break;
-        }
     }
+
+    if (g_gui.button("Track Editor"))
+    {
+        g_game.isEditing = true;
+        g_game.changeScene(nullptr);
+        menuMode = HIDDEN;
+    }
+
+    if (g_gui.button("Quit"))
+    {
+        g_game.shouldExit = true;
+    }
+
+    g_gui.end();
 }

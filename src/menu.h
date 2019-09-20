@@ -4,7 +4,6 @@
 
 class Menu
 {
-    i32 selectIndex = 0;
     enum MenuMode
     {
         HIDDEN,
@@ -12,5 +11,6 @@ class Menu
     } menuMode = MAIN_MENU;
 
 public:
+    void showMainMenu() { menuMode = MenuMode::MAIN_MENU; }
     void onUpdate(class Renderer* renderer, f32 deltaTime);
 };

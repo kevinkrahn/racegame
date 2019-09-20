@@ -6,6 +6,7 @@
 #include "input.h"
 #include "resources.h"
 #include "audio.h"
+#include "gui.h"
 #include <chrono>
 #include <iostream>
 
@@ -188,13 +189,15 @@ void Game::run()
             currentScene->onStart();
         }
 
+        g_gui.beginFrame();
         currentScene->onUpdate(renderer.get(), deltaTime);
-        renderer->render(deltaTime);
-        currentScene->onEndUpdate(deltaTime);
         menu.onUpdate(renderer.get(), deltaTime);
+        g_gui.endFrame();
+        renderer->render(deltaTime);
         g_input.onFrameEnd();
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;
+        ++frameCount;
 
         using seconds = std::chrono::duration<f64, std::ratio<1>>;
         if (!config.vsync)

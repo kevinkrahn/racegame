@@ -48,6 +48,7 @@ public:
     f32 deltaTime;
     f64 currentTime = 0.0;
     f64 timeDilation = 1.0; // TODO: use this somewhere
+    u64 frameCount = 0;
     u32 frameIndex = 0;
     bool shouldExit = false;
     bool isEditing = false;

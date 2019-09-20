@@ -9,6 +9,7 @@
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 #include "entities/tree.h"
+#include "gui.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -204,7 +205,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             f32 camDistance = 100.f;
             glm::vec3 cameraTarget = trackPreviewPosition;
             glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-            renderer->setViewportCamera(0, cameraFrom, cameraTarget, 25.f, 200.f);
+
+            trackPreviewCameraTarget = smoothMove(trackPreviewCameraTarget, cameraTarget, 5.f, deltaTime);
+            trackPreviewCameraFrom = smoothMove(trackPreviewCameraFrom, cameraFrom, 5.f, deltaTime);
+
+            renderer->setViewportCamera(0, trackPreviewCameraFrom, trackPreviewCameraTarget, 25.f, 200.f);
 
             listenerPositions.push_back(cameraTarget);
         }
@@ -282,6 +287,27 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         else
         {
             physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
+        }
+    }
+
+    // handle created and destroyed entities
+    for (auto& e : newEntities)
+    {
+        e->onCreate(this);
+    }
+    for (auto& e : newEntities)
+    {
+        e->onCreateEnd(this);
+        entities.push_back(std::move(e));
+    }
+    newEntities.clear();
+
+    for (auto it = entities.begin(); it != entities.end();)
+    {
+        if ((*it)->isDestroyed()) {
+            entities.erase(it);
+        } else {
+            ++it;
         }
     }
 
@@ -410,11 +436,43 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     if (isPaused)
     {
         // pause menu
-        Font* font = &g_resources.getFont("font", g_game.windowHeight * 0.04f);
-        renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 + g_game.windowHeight*0.002f},
-                    glm::vec3(0.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
-        renderer->push(TextRenderable(font, "PAUSED", { g_game.windowWidth/2, g_game.windowHeight/2 },
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        g_gui.beginPanel("PAUSED",
+                glm::vec2(g_game.windowWidth * 0.5f, g_game.windowHeight * 0.35f),
+                172, 0.5f, true, 3);
+        if (g_gui.button("Resume"))
+        {
+            isPaused = false;
+        }
+        if (isRaceInProgress)
+        {
+            if (g_gui.button("Forfeit Race"))
+            {
+                isPaused = false;
+                trackPreviewCameraFrom = renderer->getCamera(0).position;
+                trackPreviewCameraTarget = (*std::find_if(vehicles.begin(), vehicles.end(),
+                        [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
+                stopRace();
+                g_game.isEditing = false;
+                g_game.menu.showMainMenu();
+            }
+        }
+        else
+        {
+            if (g_gui.button("Main Menu"))
+            {
+                trackPreviewCameraTarget = editor.getCameraTarget();
+                trackPreviewCameraFrom = renderer->getCamera(0).position;
+                stopRace();
+                isPaused = false;
+                g_game.isEditing = false;
+                g_game.menu.showMainMenu();
+            }
+        }
+        if (g_gui.button("Quit to Desktop"))
+        {
+            g_game.shouldExit = true;
+        }
+        g_gui.end();
     }
 
     if (isDebugOverlayEnabled)
@@ -440,29 +498,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6));
         renderer->push(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
-    }
-}
-
-void Scene::onEndUpdate(f32 deltaTime)
-{
-    for (auto& e : newEntities)
-    {
-        e->onCreate(this);
-    }
-    for (auto& e : newEntities)
-    {
-        e->onCreateEnd(this);
-        entities.push_back(std::move(e));
-    }
-    newEntities.clear();
-
-    for (auto it = entities.begin(); it != entities.end();)
-    {
-        if ((*it)->isDestroyed()) {
-            entities.erase(it);
-        } else {
-            ++it;
-        }
     }
 }
 
@@ -711,5 +746,7 @@ void Scene::deserialize(DataFile::Value& data)
     assert(start != nullptr);
     track->buildTrackGraph(&trackGraph, start->transform);
     trackPreviewPosition = start->position;
+    trackPreviewCameraTarget = trackPreviewPosition;
+    trackPreviewCameraFrom = trackPreviewPosition + glm::vec3(0, 0, 5);
 }
 
