@@ -3,6 +3,7 @@
 #include "../renderer.h"
 #include "../vehicle.h"
 #include "../mesh_renderables.h"
+#include "../billboard.h"
 
 void Projectile::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
@@ -58,7 +59,10 @@ void Projectile::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.fresnelPower = 2.0f;
     settings.fresnelBias = 0.1f;
     settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
-    settings.color = glm::vec3(0.2, 0.9, 0.2);
-    settings.emit = glm::vec3(0.01, 1, 0.01);
+    settings.color = glm::vec3(0.2f, 0.9f, 0.2f);
+    settings.emit = glm::vec3(0.01f, 1.5f, 0.01f);
     renderer->push(LitRenderable(settings));
+
+    renderer->push(BillboardRenderable(g_resources.getTexture("flare"),
+                position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.75f));
 }

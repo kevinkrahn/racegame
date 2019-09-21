@@ -7,6 +7,7 @@
 #include "input.h"
 #include "mesh_renderables.h"
 #include "entities/projectile.h"
+#include "billboard.h"
 
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>

@@ -20,14 +20,9 @@ void main()
 {
     vec4 color = texture(tex, vec3(inTexCoord, gl_Layer));
     float brightness = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 0.99)
-    {
-        outColor = color;
-    }
-    else
-    {
-        outColor = vec4(color.rgb * 0.125, 1);
-    }
+    const float cutoff = 0.8;
+    const float minBrightness = 0.125;
+    outColor = vec4(color.rgb * max(brightness - cutoff, minBrightness), 1.0);
 }
 
 #elif defined GEOM
