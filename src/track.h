@@ -148,6 +148,7 @@ private:
         glm::vec3 handleOffsetB;
     };
 
+    // TODO: allow decals to affect railings
     struct Railing : public Renderable
     {
         std::vector<RailingPoint> points;

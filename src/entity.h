@@ -95,7 +95,7 @@ public:
         }
     }
     virtual const char* getName() const { return "Unknown Entity"; };
-    virtual void showDetails() {}
+    virtual void showDetails(Scene* scene) {}
 
     ~PlaceableEntity()
     {

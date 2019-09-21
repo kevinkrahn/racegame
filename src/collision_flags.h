@@ -12,13 +12,14 @@ enum
 
 enum
 {
-    DECAL_NONE       = 0,
-    DECAL_TRACK      = 1 << 0,
-    DECAL_RAILING    = 1 << 1,
-    DECAL_TERRAIN    = 1 << 2,
-    DECAL_GROUND     = 1 << 3,
-    DECAL_VEGETATION = 1 << 4,
-    DECAL_SIGN       = 1 << 5,
+    DECAL_NONE        = 0,
+    DECAL_TRACK       = 1 << 0,
+    DECAL_RAILING     = 1 << 1,
+    DECAL_TERRAIN     = 1 << 2,
+    DECAL_GROUND      = 1 << 3,
+    DECAL_VEGETATION  = 1 << 4,
+    DECAL_SIGN        = 1 << 5,
+    DECAL_PLACEHOLDER = 1 << 6,
 };
 
 enum

@@ -258,7 +258,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.beginPanel("Entity Properties", { g_game.windowWidth, 0.f },
                 g_game.windowHeight, 1.f, false, -1, false, 30, 4);
         g_gui.label(str(selectedEntities.front()->getName(), " Properties"));
-        selectedEntities.front()->showDetails();
+        selectedEntities.front()->showDetails(scene);
         g_gui.end();
     }
 

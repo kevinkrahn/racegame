@@ -172,7 +172,7 @@ void Decal::onLitPassPriorityTransition(Renderer* renderer)
 void Decal::onLitPass(Renderer* renderer)
 {
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.f, -1000.f);
+    glPolygonOffset(0.f, -500.f);
     glBindTextureUnit(0, tex->handle);
     glBindVertexArray(vao);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));

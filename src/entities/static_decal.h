@@ -20,5 +20,5 @@ public:
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
     const char* getName() const override { return "Decal"; };
-    void showDetails() override;
+    void showDetails(Scene* scene) override;
 };

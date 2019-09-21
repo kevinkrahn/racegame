@@ -480,5 +480,5 @@ void Gui::label(std::string const& text)
     renderer->push(QuadRenderable(white, pos, bw, bh, glm::vec3(0.f), 0.85f, true));
     renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
                 glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
-    pos.y += bh;
+    pos.y += bh + parent.itemSpacing;
 }
