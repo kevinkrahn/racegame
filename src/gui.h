@@ -19,6 +19,7 @@ struct WidgetState
     f32 hoverIntensity = 0.f;
     i32 selectIndex = 0;
     std::map<std::string, std::unique_ptr<WidgetState>> childState;
+    f32 repeatTimer = 0.f;
 };
 
 struct WidgetStackItem
@@ -53,6 +54,8 @@ public:
     bool isMouseCaptured = false;
     bool isKeyboardInputCaptured = false;
     bool isKeyboardInputHandled = true;
+
+    bool didSelect();
 
     f32 convertSize(f32 size);
 

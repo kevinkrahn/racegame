@@ -160,25 +160,25 @@ public:
 
     SDL_GameController* getController() const { return controller; }
 
-    bool isButtonDown(u32 button)
+    bool isButtonDown(u32 button) const
     {
         assert(button < BUTTON_COUNT);
         return buttonDown[button];
     }
 
-    bool isButtonPressed(u32 button)
+    bool isButtonPressed(u32 button) const
     {
         assert(button < BUTTON_COUNT);
         return buttonPressed[button];
     }
 
-    bool isButtonReleased(u32 button)
+    bool isButtonReleased(u32 button) const
     {
         assert(button < BUTTON_COUNT);
         return buttonReleased[button];
     }
 
-    f32 getAxis(u32 index)
+    f32 getAxis(u32 index) const
     {
         assert(index < AXIS_COUNT);
         return axis[index];
@@ -220,6 +220,8 @@ public:
 
         this->window = window;
     }
+
+    std::map<u32, Controller> const& getControllers() const { return controllers; }
 
     Controller* getController(u32 id)
     {

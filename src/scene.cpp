@@ -161,8 +161,17 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         g_game.isEditing = !g_game.isEditing;
     }
 
+    bool showPauseMenu = g_input.isKeyPressed(KEY_ESCAPE);
+    for (auto& pair : g_input.getControllers())
+    {
+        if (pair.second.isButtonPressed(BUTTON_START))
+        {
+            showPauseMenu = true;
+            break;
+        }
+    }
     if (((g_game.isEditing && !isRaceInProgress)
-        || (!g_game.isEditing && isRaceInProgress)) && g_input.isKeyPressed(KEY_ESCAPE))
+        || (!g_game.isEditing && isRaceInProgress)) && showPauseMenu)
     {
         isPaused = !isPaused;
     }

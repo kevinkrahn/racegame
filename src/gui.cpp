@@ -56,6 +56,24 @@ WidgetState* Gui::getWidgetState(WidgetState* parent, std::string const& identif
     return it->second.get();
 }
 
+bool Gui::didSelect()
+{
+    if (isKeyboardInputHandled)
+    {
+        return false;
+    }
+    bool result = g_input.isKeyPressed(KEY_RETURN);
+    for (auto& pair : g_input.getControllers())
+    {
+        if (pair.second.isButtonPressed(BUTTON_A))
+        {
+            result = true;
+            break;
+        }
+    }
+    return result;
+}
+
 void Gui::beginPanel(std::string const& text, glm::vec2 position, f32 height,
             f32 halign, bool solidBackground, i32 buttonCount, bool showTitle,
             f32 itemHeight, f32 itemSpacing, f32 panelWidth)
@@ -79,23 +97,37 @@ void Gui::beginPanel(std::string const& text, glm::vec2 position, f32 height,
     WidgetState* panelState = getWidgetState(nullptr, text, WidgetType::PANEL);
     if (buttonCount >= 0)
     {
-        if (g_input.isKeyPressed(KEY_UP, true))
+        panelState->repeatTimer = glm::max(panelState->repeatTimer - g_game.deltaTime, 0.f);
+        i32 move = (i32)g_input.isKeyPressed(KEY_DOWN, true)
+                 - (i32)g_input.isKeyPressed(KEY_UP, true);
+        for (auto& pair : g_input.getControllers())
         {
-            --panelState->selectIndex;
-            if (panelState->selectIndex < 0)
+            if (panelState->repeatTimer == 0.f)
             {
-                panelState->selectIndex = buttonCount - 1;
+                f32 yaxis = pair.second.getAxis(AXIS_LEFT_Y);
+                if (pair.second.isButtonDown(BUTTON_DPAD_UP) || yaxis < -0.2f)
+                {
+                    move = -1;
+                    panelState->repeatTimer = 0.2f;
+                }
+                else if (pair.second.isButtonDown(BUTTON_DPAD_DOWN) || yaxis > 0.2f)
+                {
+                    move = 1;
+                    panelState->repeatTimer = 0.2f;
+                }
             }
         }
 
-        if (g_input.isKeyPressed(KEY_DOWN, true))
+        panelState->selectIndex += move;
+        if (panelState->selectIndex < 0)
         {
-            ++panelState->selectIndex;
-            if (panelState->selectIndex >= buttonCount)
-            {
-                panelState->selectIndex = 0;
-            }
+            panelState->selectIndex = buttonCount - 1;
         }
+        if (panelState->selectIndex >= buttonCount)
+        {
+            panelState->selectIndex = 0;
+        }
+
         selectIndex = panelState->selectIndex;
     }
     widgetStack.push_back({
@@ -169,7 +201,7 @@ bool Gui::button(std::string const& text, bool active)
     if (active && widgetStack.back().hasKeyboardSelect)
     {
         selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected && g_input.isKeyPressed(KEY_RETURN))
+        if (!isKeyboardInputHandled && selected && didSelect())
         {
             clicked = true;
             isKeyboardInputHandled = true;
@@ -244,7 +276,7 @@ bool Gui::toggle(std::string const& text, bool& enabled)
     if (widgetStack.back().hasKeyboardSelect)
     {
         selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected && g_input.isKeyPressed(KEY_RETURN))
+        if (!isKeyboardInputHandled && selected && didSelect())
         {
             enabled = !enabled;
             clicked = true;
