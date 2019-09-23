@@ -41,14 +41,6 @@ ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
     { 26, { 0.5f, 0.5f }, { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.0f, 0.5f }, { 0.5f, 0.5f } } },
 };
 
-struct GLShader
-{
-    std::string filename;
-    GLuint program;
-    bool hasGeometryShader;
-    SmallVec<std::string> defines;
-};
-
 struct Framebuffers
 {
     GLuint mainFramebuffer;
@@ -114,7 +106,7 @@ private:
     u32 lastBloomDivisor = 16;
 
     std::map<std::string, u32> shaderHandleMap;
-    std::vector<GLShader> loadedShaders;
+    std::vector<GLuint> loadedShaders[MAX_VIEWPORTS];
 
     struct QueuedRenderable
     {
@@ -135,8 +127,8 @@ private:
     SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
 
     void setShadowMatrices(struct WorldInfo& worldInfo, struct WorldInfo& worldInfoShadow);
-    void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines);
-    void compileShader(std::string const& filename, SmallVec<std::string> defines, struct GLShader& shader);
+    void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount);
+    GLuint compileShader(std::string const& filename, SmallVec<std::string> defines, u32 viewportCount);
     void createFramebuffers();
 
     Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
@@ -156,8 +148,8 @@ public:
 
     void init(u32 width, u32 height);
     u32 loadShader(std::string const& filename, SmallVec<std::string> defines={}, std::string name="");
-    u32 getShader(const char* name) const;
-    GLuint getShaderProgram(const char* name) const;
+    u32 getShader(const char* name, i32 viewportCount=0) const;
+    GLuint getShaderProgram(const char* name, i32 viewportCount=0) const;
     void render(f32 deltaTime);
     void updateWorldTime(f64 time);
 

@@ -6,12 +6,12 @@
 
 constexpr u32 viewportGapPixels = 1;
 
-void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
+void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount)
 {
     std::ostringstream str;
     str << "#version 450\n";
     str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
-    str << "#define VIEWPORT_COUNT " << cameras.size() << '\n';
+    str << "#define VIEWPORT_COUNT " << viewportCount << '\n';
     str << "#define SHADOWS_ENABLED " << u32(g_game.config.shadowsEnabled) << '\n';
     str << "#define SSAO_ENABLED " << u32(g_game.config.ssaoEnabled) << '\n';
     str << "#define BLOOM_ENABLED " << u32(g_game.config.bloomEnabled) << '\n';
@@ -24,7 +24,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     glShaderSource(shader, 2, sources, 0);
 }
 
-void Renderer::compileShader(std::string const& filename, SmallVec<std::string> defines, GLShader& shader)
+GLuint Renderer::compileShader(std::string const& filename, SmallVec<std::string> defines, u32 viewportCount)
 {
     std::ifstream file(filename);
     if (!file)
@@ -77,7 +77,7 @@ void Renderer::compileShader(std::string const& filename, SmallVec<std::string> 
     GLuint program = glCreateProgram();
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }));
+    glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }), viewportCount);
     glCompileShader(vertexShader);
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -90,7 +90,7 @@ void Renderer::compileShader(std::string const& filename, SmallVec<std::string> 
     glAttachShader(program, vertexShader);
 
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }));
+    glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }), viewportCount);
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -106,7 +106,7 @@ void Renderer::compileShader(std::string const& filename, SmallVec<std::string> 
     bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
     if (hasGeometryShader)
     {
-        glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }));
+        glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }), viewportCount);
         glCompileShader(geometryShader);
         glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
         if (!success)
@@ -133,10 +133,7 @@ void Renderer::compileShader(std::string const& filename, SmallVec<std::string> 
     glDeleteShader(fragmentShader);
     glDeleteShader(geometryShader);
 
-    shader.filename = filename;
-    shader.program = program;
-    shader.defines = std::move(defines);
-    shader.hasGeometryShader = hasGeometryShader;
+    return program;
 }
 
 u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defines, std::string name)
@@ -146,33 +143,38 @@ u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defi
         name = filename;
     }
 
-    if (shaderHandleMap.count(name) != 0)
-    {
-        return shaderHandleMap[name];
-    }
-
     std::string fullfilename = "shaders/" + filename + ".glsl";
 
-    GLShader shader = {};
-    compileShader(fullfilename, defines, shader);
-    loadedShaders.push_back(shader);
-    u32 handle = loadedShaders.size() - 1;
+    for (u32 i=0; i<MAX_VIEWPORTS; ++i)
+    {
+        GLuint program = compileShader(fullfilename, defines, i+1);
+        loadedShaders[i].push_back(program);
+    }
+    u32 handle = loadedShaders[0].size() - 1;
     shaderHandleMap[name] = handle;
     return handle;
 }
 
-u32 Renderer::getShader(const char* name) const
+u32 Renderer::getShader(const char* name, i32 viewportCount) const
 {
+    if (!viewportCount)
+    {
+        viewportCount = cameras.size() - 1;
+    }
     auto it = shaderHandleMap.find(name);
     assert(it != shaderHandleMap.end());
     return it->second;
 }
 
-GLuint Renderer::getShaderProgram(const char* name) const
+GLuint Renderer::getShaderProgram(const char* name, i32 viewportCount) const
 {
+    if (!viewportCount)
+    {
+        viewportCount = cameras.size() - 1;
+    }
     auto it = shaderHandleMap.find(name);
     assert(it != shaderHandleMap.end());
-    return loadedShaders[it->second].program;
+    return loadedShaders[viewportCount][it->second];
 }
 
 void Renderer::createFramebuffers()
@@ -910,14 +912,6 @@ void Renderer::setViewportCount(u32 viewports)
     {
         print("Viewport count changed.\n");
         cameras.resize(viewports);
-        for (auto& shader : loadedShaders)
-        {
-            if (shader.hasGeometryShader)
-            {
-                glDeleteProgram(shader.program);
-                compileShader(shader.filename, shader.defines, shader);
-            }
-        }
         createFramebuffers();
     }
 }

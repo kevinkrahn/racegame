@@ -1,15 +1,14 @@
 #pragma once
 
 #include "math.h"
-#include "smallvec.h"
 #include "datafile.h"
 #include "mesh.h"
 
-const u32 WHEEL_FRONT_LEFT  = PxVehicleDrive4WWheelOrder::eFRONT_LEFT;
-const u32 WHEEL_FRONT_RIGHT = PxVehicleDrive4WWheelOrder::eFRONT_RIGHT;
-const u32 WHEEL_REAR_LEFT   = PxVehicleDrive4WWheelOrder::eREAR_LEFT;
-const u32 WHEEL_REAR_RIGHT  = PxVehicleDrive4WWheelOrder::eREAR_RIGHT;
-const u32 NUM_WHEELS = 4;
+#define WHEEL_FRONT_LEFT  PxVehicleDrive4WWheelOrder::eFRONT_LEFT
+#define WHEEL_FRONT_RIGHT PxVehicleDrive4WWheelOrder::eFRONT_RIGHT
+#define WHEEL_REAR_LEFT   PxVehicleDrive4WWheelOrder::eREAR_LEFT
+#define WHEEL_REAR_RIGHT  PxVehicleDrive4WWheelOrder::eREAR_RIGHT
+#define NUM_WHEELS 4
 
 struct PhysicsVehicleSettings
 {
@@ -18,7 +17,7 @@ struct PhysicsVehicleSettings
         PxConvexMesh* convexMesh;
         glm::mat4 transform;
     };
-    SmallVec<CollisionsMesh> collisionMeshes;
+    std::vector<CollisionsMesh> collisionMeshes;
 
     f32 chassisDensity = 120.f;
     glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
@@ -82,6 +81,8 @@ struct VehicleData
     {
         Mesh* mesh;
         glm::mat4 transform;
+        PxShape* collisionShape;
+        u32 materialIndex;
     };
     SmallVec<VehicleMesh> chassisMeshes;
     VehicleMesh wheelMeshFront;
@@ -109,13 +110,7 @@ struct VehicleData
         return wheelZ + physics.wheelRadiusFront;
     }
 
-    struct DebrisChunk
-    {
-        Mesh* mesh;
-        glm::mat4 transform;
-        PxShape* collisionShape;
-    };
-    SmallVec<DebrisChunk, 32> debrisChunks;
+    std::vector<VehicleMesh> debrisChunks;
 };
 
 void loadVehicleData(DataFile::Value& data, VehicleData& vehicleData);
