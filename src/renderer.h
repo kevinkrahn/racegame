@@ -147,6 +147,8 @@ public:
     }
 
     void init(u32 width, u32 height);
+    void initShaders();
+    void updateFramebuffers();
     u32 loadShader(std::string const& filename, SmallVec<std::string> defines={}, std::string name="");
     u32 getShader(const char* name, i32 viewportCount=0) const;
     GLuint getShaderProgram(const char* name, i32 viewportCount=0) const;

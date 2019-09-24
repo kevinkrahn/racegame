@@ -12,9 +12,9 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     str << "#version 450\n";
     str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
     str << "#define VIEWPORT_COUNT " << viewportCount << '\n';
-    str << "#define SHADOWS_ENABLED " << u32(g_game.config.shadowsEnabled) << '\n';
-    str << "#define SSAO_ENABLED " << u32(g_game.config.ssaoEnabled) << '\n';
-    str << "#define BLOOM_ENABLED " << u32(g_game.config.bloomEnabled) << '\n';
+    str << "#define SHADOWS_ENABLED " << u32(g_game.config.graphics.shadowsEnabled) << '\n';
+    str << "#define SSAO_ENABLED " << u32(g_game.config.graphics.ssaoEnabled) << '\n';
+    str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -177,6 +177,13 @@ GLuint Renderer::getShaderProgram(const char* name, i32 viewportCount) const
     return loadedShaders[viewportCount][it->second];
 }
 
+void Renderer::updateFramebuffers()
+{
+    this->width = g_game.config.graphics.resolutionX;
+    this->height = g_game.config.graphics.resolutionY;
+    createFramebuffers();
+}
+
 void Renderer::createFramebuffers()
 {
     if (fb.mainFramebuffer)
@@ -229,15 +236,15 @@ void Renderer::createFramebuffers()
     glEnable(GL_FRAMEBUFFER_SRGB);
     glGenTextures(1, &fb.mainColorTexture);
     glGenTextures(1, &fb.mainDepthTexture);
-    if (g_game.config.msaaLevel > 0)
+    if (g_game.config.graphics.msaaLevel > 0)
     {
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainColorTexture);
-        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.msaaLevel,
+        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.graphics.msaaLevel,
                 GL_RGB32F, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, 0);
 
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainDepthTexture);
-        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.msaaLevel,
+        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.graphics.msaaLevel,
                 GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
 
         glGenTextures(1, &fb.msaaResolveColorTexture);
@@ -303,7 +310,7 @@ void Renderer::createFramebuffers()
 
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
-    if (g_game.config.ssaoEnabled)
+    if (g_game.config.graphics.ssaoEnabled)
     {
         // csv framebuffers
         glGenTextures(1, &fb.cszTexture);
@@ -361,12 +368,12 @@ void Renderer::createFramebuffers()
     }
 
     // shadow framebuffer
-    if (g_game.config.shadowsEnabled)
+    if (g_game.config.graphics.shadowsEnabled)
     {
         glGenTextures(1, &fb.shadowDepthTexture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-                g_game.config.shadowMapResolution, g_game.config.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+                g_game.config.graphics.shadowMapResolution, g_game.config.graphics.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -382,7 +389,7 @@ void Renderer::createFramebuffers()
     }
 
     // bloom framebuffers
-    if (g_game.config.bloomEnabled)
+    if (g_game.config.graphics.bloomEnabled)
     {
         for (u32 i=firstBloomDivisor; i<lastBloomDivisor; i *= 2)
         {
@@ -433,10 +440,17 @@ void Renderer::createFramebuffers()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Renderer::init(u32 width, u32 height)
+void Renderer::initShaders()
 {
-    this->width = width;
-    this->height = height;
+    shaderHandleMap.clear();
+    for (u32 i=0; i<MAX_VIEWPORTS; ++i)
+    {
+        for (GLuint program : loadedShaders[i])
+        {
+            glDeleteProgram(program);
+        }
+        loadedShaders[i].clear();
+    }
 
     loadShader("bloom_filter");
     loadShader("blit");
@@ -461,6 +475,14 @@ void Renderer::init(u32 width, u32 height)
     loadShader("mesh_decal");
     loadShader("terrain");
     loadShader("track");
+}
+
+void Renderer::init(u32 width, u32 height)
+{
+    this->width = width;
+    this->height = height;
+
+    initShaders();
 
     glCreateVertexArrays(1, &emptyVAO);
 
@@ -473,7 +495,7 @@ void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShado
     glm::mat4 depthView = glm::lookAt(inverseLightDir, glm::vec3(0), glm::vec3(0, 0, 1));
     for (u32 i=0; i<cameras.size(); ++i)
     {
-        if (!g_game.config.shadowsEnabled)
+        if (!g_game.config.graphics.shadowsEnabled)
         {
             worldInfo.shadowViewProjectionBias[i] = glm::mat4(0.f);
             continue;
@@ -515,7 +537,7 @@ void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShado
 
         glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
         f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
-        f32 snapMultiple = 2.f * extent / g_game.config.shadowMapResolution;
+        f32 snapMultiple = 2.f * extent / g_game.config.graphics.shadowMapResolution;
         center.x = snap(center.x, snapMultiple);
         center.y = snap(center.y, snapMultiple);
         center.z = snap(center.z, snapMultiple);
@@ -574,7 +596,7 @@ void Renderer::render(f32 deltaTime)
     i32 prevPriority = INT32_MIN;
 
     // shadow map
-    if (g_game.config.shadowsEnabled)
+    if (g_game.config.graphics.shadowsEnabled)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Shadow Depth Pass");
 
@@ -588,7 +610,7 @@ void Renderer::render(f32 deltaTime)
 
         glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
-        glViewport(0, 0, g_game.config.shadowMapResolution, g_game.config.shadowMapResolution);
+        glViewport(0, 0, g_game.config.graphics.shadowMapResolution, g_game.config.graphics.shadowMapResolution);
         glDepthMask(GL_TRUE);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthFunc(GL_LESS);
@@ -649,7 +671,7 @@ void Renderer::render(f32 deltaTime)
 	glPopDebugGroup();
 
     // resolve multi-sample depth buffer so it can be sampled by sao shader
-    if (g_game.config.msaaLevel > 0)
+    if (g_game.config.graphics.msaaLevel > 0)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Depth Resolve");
         for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
@@ -670,7 +692,7 @@ void Renderer::render(f32 deltaTime)
     }
 
     // generate csz texture
-    if (g_game.config.ssaoEnabled)
+    if (g_game.config.graphics.ssaoEnabled)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO");
 
@@ -759,7 +781,7 @@ void Renderer::render(f32 deltaTime)
 	glPopDebugGroup();
 
     // resolve multi-sample color buffer
-    if (g_game.config.msaaLevel > 0)
+    if (g_game.config.graphics.msaaLevel > 0)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
         for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
@@ -783,7 +805,7 @@ void Renderer::render(f32 deltaTime)
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    if (g_game.config.bloomEnabled)
+    if (g_game.config.graphics.bloomEnabled)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Bloom");
 

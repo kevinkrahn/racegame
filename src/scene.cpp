@@ -418,6 +418,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             size = (u32)(g_game.windowHeight * 0.36f);
         }
         else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        size *= g_game.config.gameplay.hudTrackScale;
         trackPreview2D.beginUpdate(renderer, size, size);
 
         Mesh* quadMesh = g_resources.getMesh("world.Quad");
@@ -492,7 +493,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             "FPS: ", 1.f / g_game.realDeltaTime,
             "\nDelta: ", g_game.realDeltaTime,
             "\nDilation: ", g_game.timeDilation,
-            "\nResolution: ", g_game.config.resolutionX, "x", g_game.config.resolutionY,
+            "\nResolution: ", g_game.config.graphics.resolutionX, "x", g_game.config.graphics.resolutionY,
             "\nTmpRenderMem: ", std::fixed, std::setprecision(2), renderer->getTempRenderBufferSize() / 1024.f, "kb");
 
         renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },

@@ -88,7 +88,7 @@ void Game::run()
 #endif
 
     window = SDL_CreateWindow("The Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-            config.resolutionX, config.resolutionY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            config.graphics.resolutionX, config.graphics.resolutionY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     if (!window)
     {
         FATAL_ERROR("Failed to create SDL window: ", SDL_GetError())
@@ -108,10 +108,10 @@ void Game::run()
     glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 #endif
 
-    SDL_GL_SetSwapInterval(g_game.config.vsync ? 1 : 0);
+    SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
 
     renderer.reset(new Renderer());
-    renderer->init(config.resolutionX, config.resolutionY);
+    renderer->init(config.graphics.resolutionX, config.graphics.resolutionY);
 
     g_input.init(window);
     g_audio.init();
@@ -144,7 +144,7 @@ void Game::run()
     //changeScene("saved_scene.dat");
     changeScene(nullptr);
 
-    deltaTime = 1.f / (f32)config.maxFPS;
+    deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;
     while (true)
     {
@@ -162,8 +162,8 @@ void Game::run()
 
         if (g_input.isKeyPressed(KEY_F4))
         {
-            config.fullscreen = !config.fullscreen;
-            SDL_SetWindowFullscreen(window, config.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+            config.graphics.fullscreen = !config.graphics.fullscreen;
+            SDL_SetWindowFullscreen(window, config.graphics.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         }
 
         if (shouldExit)
@@ -200,9 +200,9 @@ void Game::run()
         ++frameCount;
 
         using seconds = std::chrono::duration<f64, std::ratio<1>>;
-        if (!config.vsync)
+        if (!config.graphics.vsync)
         {
-            f64 minFrameTime = 1.0 / (f64)config.maxFPS;
+            f64 minFrameTime = 1.0 / (f64)config.graphics.maxFPS;
             auto frameEndTime = frameStartTime + seconds(minFrameTime);
             while (std::chrono::high_resolution_clock::now() < frameEndTime)
             {

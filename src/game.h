@@ -3,6 +3,7 @@
 #include "misc.h"
 #include "driver.h"
 #include "menu.h"
+#include "config.h"
 #include <memory>
 
 class Game
@@ -19,21 +20,6 @@ public:
 
     struct
     {
-        u32 resolutionX = 1280;
-        u32 resolutionY = 720;
-        bool fullscreen = false;
-        u32 maxFPS = 200;
-        bool vsync = true;
-        u32 shadowMapResolution = 2048;
-        bool shadowsEnabled = true;
-        bool ssaoEnabled = true;
-        bool ssaoHighQuality = false; // TODO: Implement
-        bool bloomEnabled = true;
-        u32 msaaLevel = 0;
-    } config;
-
-    struct
-    {
         PxDefaultAllocator allocator;
         PxFoundation* foundation;
         PxPhysics* physics;
@@ -41,6 +27,8 @@ public:
         PxPvd* pvd;
         PxCooking* cooking;
     } physx;
+
+    Config config;
 
     u32 windowWidth;
     u32 windowHeight;

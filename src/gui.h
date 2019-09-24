@@ -56,6 +56,7 @@ public:
     bool isKeyboardInputHandled = true;
 
     bool didSelect();
+    i32 didChangeSelection();
 
     f32 convertSize(f32 size);
 
@@ -69,6 +70,8 @@ public:
     bool toggle(std::string const& text, bool& enabled);
     bool slider(std::string const& text, f32 minValue, f32 maxValue, f32& value);
     bool textEdit(std::string const& text, std::string& value);
+    i32 select(std::string const& text, std::string* firstValue,
+            i32 count, i32& currentIndex);
     void beginSelect(std::string const& text, i32* selectedIndex, bool showTitle=true);
     bool option(std::string const& text, i32 value, const char* icon=nullptr);
     void label(std::string const& text);

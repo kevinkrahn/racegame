@@ -74,6 +74,25 @@ bool Gui::didSelect()
     return result;
 }
 
+i32 Gui::didChangeSelection()
+{
+    i32 result = (i32)(g_input.isKeyPressed(KEY_RIGHT, true) || didSelect())
+                - (i32)g_input.isKeyPressed(KEY_LEFT, true);
+
+    for (auto& pair : g_input.getControllers())
+    {
+        i32 tmpResult = pair.second.isButtonPressed(BUTTON_DPAD_RIGHT) -
+                        pair.second.isButtonPressed(BUTTON_DPAD_LEFT);
+        if (tmpResult)
+        {
+            result = tmpResult;
+            break;
+        }
+    }
+
+    return result;
+}
+
 void Gui::beginPanel(std::string const& text, glm::vec2 position, f32 height,
             f32 halign, bool solidBackground, i32 buttonCount, bool showTitle,
             f32 itemHeight, f32 itemSpacing, f32 panelWidth)
@@ -276,7 +295,7 @@ bool Gui::toggle(std::string const& text, bool& enabled)
     if (widgetStack.back().hasKeyboardSelect)
     {
         selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected && didSelect())
+        if (!isKeyboardInputHandled && selected && (didSelect() || didChangeSelection()))
         {
             enabled = !enabled;
             clicked = true;
@@ -355,8 +374,7 @@ bool Gui::slider(std::string const& text, f32 minValue, f32 maxValue, f32& value
     if (widgetStack.back().hasKeyboardSelect)
     {
         selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
-        f32 valChange = (g_input.isKeyPressed(KEY_RIGHT, true)
-                - g_input.isKeyPressed(KEY_LEFT, true)) * ((maxValue - minValue) / 20.f);
+        f32 valChange = didChangeSelection() * ((maxValue - minValue) / 20.f);
         if (!isKeyboardInputHandled && selected && valChange != 0.f)
         {
             clicked = true;
@@ -428,7 +446,7 @@ void Gui::beginSelect(std::string const& text, i32* selectedIndex, bool showTitl
         false,
         selectState,
         selectedIndex,
-        parent.itemHeight,
+        glm::floor(parent.itemHeight * 0.75f),
         parent.itemSpacing,
     });
 }
@@ -513,4 +531,112 @@ void Gui::label(std::string const& text)
     renderer->push(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
                 glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
     pos.y += bh + parent.itemSpacing;
+}
+
+i32 Gui::select(std::string const& text, std::string* firstValue,
+        i32 count, i32& currentIndex)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+    glm::vec2& pos = parent.nextWidgetPosition;
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+
+    bool selected = false;
+    bool clicked = false;
+    glm::vec2 mousePos = g_input.getMousePosition();
+    bool canHover = g_input.didMouseMove() || !widgetStack.back().hasKeyboardSelect;
+    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
+            && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
+    {
+        isMouseOverUI = true;
+        parent.widgetState->selectIndex = parent.selectableChildCount;
+        selected = true;
+        if (!isMouseClickHandled && g_input.isMouseButtonDown(MOUSE_LEFT))
+        {
+            isMouseCaptured = true;
+            isMouseClickHandled = true;
+            clicked = true;
+            if (mousePos.x > pos.x + bw / 2)
+            {
+                ++currentIndex;
+            }
+            else
+            {
+                --currentIndex;
+            }
+        }
+    }
+    if (widgetStack.back().hasKeyboardSelect)
+    {
+        selected = (parent.selectableChildCount == parent.widgetState->selectIndex);
+        i32 valChange = didChangeSelection();
+        if (!isKeyboardInputHandled && selected && valChange != 0.f)
+        {
+            clicked = true;
+            isKeyboardInputHandled = true;
+            currentIndex += valChange;
+        }
+    }
+    if (currentIndex < 0)
+    {
+        currentIndex = count - 1;
+    }
+    else if (currentIndex >= count)
+    {
+        currentIndex = 0;
+    }
+
+    ++parent.selectableChildCount;
+
+    if (selected)
+    {
+        widgetState->hoverIntensity =
+            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
+    }
+    else
+    {
+        widgetState->hoverIntensity =
+            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
+    }
+
+    renderer->push(QuadRenderable(white,
+                pos, bw, bh, glm::vec3(0.f),  0.85f, true));
+
+    if (widgetState->hoverIntensity > 0.f)
+    {
+        f32 selectLineHeight = glm::floor(bh * 0.05f);
+        renderer->push(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
+                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
+        renderer->push(QuadRenderable(white,
+                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
+                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
+                    widgetState->hoverIntensity * 0.8f));
+
+        Texture* cheveron = g_resources.getTexture("cheveron");
+        if (currentIndex > 0)
+        {
+            renderer->push(QuadRenderable(cheveron, pos + glm::vec2(bh*0.25f), bh*0.5f, bh*0.5f,
+                        glm::vec3(1.f), widgetState->hoverIntensity, false, false));
+        }
+        if (currentIndex < count - 1)
+        {
+            renderer->push(QuadRenderable(cheveron, pos + glm::vec2(bw-bh*0.75f , bh*0.25f),
+                        bh*0.5f, bh*0.5f, glm::vec3(1.f), widgetState->hoverIntensity,
+                        false, true));
+        }
+    }
+
+    renderer->push(TextRenderable(fontSmall, str(text, ": ", *(firstValue + currentIndex)),
+                pos + glm::vec2(bw/2, bh/2),
+                glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::CENTER, VerticalAlign::CENTER));
+
+    pos.y += bh + parent.itemSpacing;
+
+    return clicked ? currentIndex : -1;
 }

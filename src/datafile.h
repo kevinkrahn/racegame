@@ -509,6 +509,13 @@ namespace DataFile
         return v;
     }
 
+    Value makeBool(bool val)
+    {
+        Value v;
+        v.setBoolean(val);
+        return v;
+    }
+
     Value load(const char* filename);
     void save(Value const& val, const char* filename);
 
