@@ -279,6 +279,8 @@ void Renderer::createFramebuffers()
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
             glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                    fb.mainDepthTexture, 0, i);
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                     fb.mainColorTexture, 0, i);
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
@@ -682,8 +684,8 @@ void Renderer::render(f32 deltaTime)
                             0, 0, fb.renderWidth, fb.renderHeight,
                             GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         }
-        glBindTextureUnit(1, fb.msaaResolveDepthTexture);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+        glBindTextureUnit(1, fb.msaaResolveDepthTexture);
 		glPopDebugGroup();
     }
     else

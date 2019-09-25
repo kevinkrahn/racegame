@@ -9,4 +9,3 @@
 - Add force-feedback for collisions, offroad, etc.
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
-- Fix depth pre-pass with MSAA enabled
