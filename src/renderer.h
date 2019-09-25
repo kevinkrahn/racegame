@@ -112,7 +112,6 @@ private:
     {
         i32 priority;
         Renderable* renderable;
-        bool isTemporary;
     };
     std::vector<QueuedRenderable> renderables;
 
@@ -120,7 +119,6 @@ private:
     {
         i32 priority;
         Renderable2D* renderable;
-        bool isTemporary;
     };
     std::vector<QueuedRenderable2D> renderables2D;
 
@@ -134,8 +132,14 @@ private:
     Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
 
 public:
-    void add(Renderable* renderable, bool isTemporary=false) { renderables.push_back({ renderable->getPriority(), renderable, isTemporary }); }
-    void add(Renderable2D* renderable, bool isTemporary=false) { renderables2D.push_back({ renderable->getPriority(), renderable, isTemporary }); }
+    void add(Renderable* renderable)
+    {
+        renderables.push_back({ renderable->getPriority(), renderable });
+    }
+    void add2D(Renderable2D* renderable, i32 priority=0)
+    {
+        renderables2D.push_back({ priority, renderable });
+    }
     template <typename T>
     T* push(T&& renderable)
     {
@@ -143,6 +147,15 @@ public:
         new (mem) T(std::move(renderable));
         T* ptr = reinterpret_cast<T*>(mem);
         add(ptr);
+        return ptr;
+    }
+    template <typename T>
+    T* push2D(T&& renderable, i32 priority=0)
+    {
+        u8* mem = tempRenderBuffer.bump(sizeof(T));
+        new (mem) T(std::move(renderable));
+        T* ptr = reinterpret_cast<T*>(mem);
+        add2D(ptr, priority);
         return ptr;
     }
 

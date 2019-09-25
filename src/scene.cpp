@@ -440,7 +440,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
 
         trackPreview2D.endUpdate(hudTrackPos);
-        renderer->add(&trackPreview2D);
+        renderer->add2D(&trackPreview2D);
     }
 
     if (isPaused)
@@ -448,7 +448,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         // pause menu
         g_gui.beginPanel("PAUSED",
                 glm::vec2(g_game.windowWidth * 0.5f, g_game.windowHeight * 0.35f),
-                172, 0.5f, true, 3);
+                0.5f, true, true);
         if (g_gui.button("Resume"))
         {
             isPaused = false;
@@ -489,24 +489,24 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         Font* font1 = &g_resources.getFont("font", 20);
         Font* font2 = &g_resources.getFont("font", 18);
-        std::string debugText = str(
+        char* debugText = tstr(
             "FPS: ", 1.f / g_game.realDeltaTime,
             "\nDelta: ", g_game.realDeltaTime,
             "\nDilation: ", g_game.timeDilation,
             "\nResolution: ", g_game.config.graphics.resolutionX, "x", g_game.config.graphics.resolutionY,
             "\nTmpRenderMem: ", std::fixed, std::setprecision(2), renderer->getTempRenderBufferSize() / 1024.f, "kb");
 
-        renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
-                    { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText.c_str()).y) },
+        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
+                    { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText).y) },
                     {}, {}, { 0, 0, 0 }, 0.6));
-        renderer->push(TextRenderable(font1, debugText,
+        renderer->push2D(TextRenderable(font1, debugText,
             { 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
 
-        std::string debugRenderListText = renderer->getDebugRenderList();
-        auto dim = font2->stringDimensions(debugRenderListText.c_str());
-        renderer->push(QuadRenderable(g_resources.getTexture("white"), { 10, 10 },
+        char* debugRenderListText = tstr(renderer->getDebugRenderList());
+        auto dim = font2->stringDimensions(debugRenderListText);
+        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, 10 },
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6));
-        renderer->push(TextRenderable(font2, debugRenderListText,
+        renderer->push2D(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
     }
 }

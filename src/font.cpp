@@ -125,7 +125,7 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
 
 void TextRenderable::on2DPass(Renderer* renderer)
 {
-    char* str = (char*)text.c_str();
+    char* str = (char*)text;
     glm::vec2 p = glm::vec2(glm::floor(pos.x), glm::floor(pos.y));
     f32 startX = p.x;
 

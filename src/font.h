@@ -52,7 +52,7 @@ class TextRenderable : public Renderable2D
 {
 public:
     Font* font;
-    std::string text;
+    const char* text;
     glm::vec2 pos;
     glm::vec3 color;
     f32 alpha = 1.f;
@@ -60,7 +60,7 @@ public:
     HorizontalAlign halign;
     VerticalAlign valign;
 
-    TextRenderable(Font* font, std::string const& text, glm::vec2 pos, glm::vec3 color, f32 alpha=1.f,
+    TextRenderable(Font* font, const char* text, glm::vec2 pos, glm::vec3 color, f32 alpha=1.f,
             f32 scale=1.f, HorizontalAlign halign=HorizontalAlign::LEFT,
             VerticalAlign valign=VerticalAlign::TOP) : font(font), text(text), pos(pos), color(color),
             alpha(alpha), scale(scale), halign(halign), valign(valign) {}

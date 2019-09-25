@@ -21,8 +21,6 @@ class Renderable2D {
 public:
     virtual ~Renderable2D() {}
 
-    virtual i32 getPriority() const { return 0; }
-
     virtual void on2DPass(class Renderer* renderer) {};
 };
 

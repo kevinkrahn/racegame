@@ -15,7 +15,7 @@
 
 struct EntityType
 {
-    std::string name;
+    const char* name;
     std::function<PlaceableEntity*(glm::vec3 const& p, RandomSeries& s)> make;
 };
 
@@ -92,7 +92,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
 
     g_gui.beginPanel("Track Editor", { 0.f, 0.f },
-            g_game.windowHeight, 0.f, false, -1, false, 28, 4, 180);
+            0.f, false, false, false, 28, 4, 180);
 
     g_gui.beginSelect("Edit Mode", (i32*)&editMode, false);
     g_gui.option("Terrain", (i32)EditMode::TERRAIN, "terrain_icon");
@@ -226,7 +226,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     // TODO: make this better by not having 3 panels for 3 buttons
     g_gui.beginPanel("Task1", { g_gui.convertSize(200), 0.f },
-                g_game.windowHeight, 0.f, false, -1, false, 28, 0, 100);
+                0.f, false, false, false, 28, 0, 100);
     if (g_gui.button("Save Track [F9]") || g_input.isKeyPressed(KEY_F9))
     {
         const char* filename = "saved_scene.dat";
@@ -236,7 +236,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.end();
 
     g_gui.beginPanel("Task2", { g_gui.convertSize(300), 0.f },
-                g_game.windowHeight, 0.f, false, -1, false, 28, 0, 100);
+                0.f, false, false, false, 28, 0, 100);
     if (g_gui.button("Load Track [F10]") || g_input.isKeyPressed(KEY_F10))
     {
         g_game.changeScene("saved_scene.dat");
@@ -244,7 +244,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.end();
 
     g_gui.beginPanel("Task3", { g_gui.convertSize(400), 0.f },
-                g_game.windowHeight, 0.f, false, -1, false, 28, 0, 100);
+                0.f, false, false, false, 28, 0, 100);
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
         scene->terrain->regenerateCollisionMesh(scene);
@@ -256,8 +256,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (selectedEntities.size() > 0)
     {
         g_gui.beginPanel("Entity Properties", { g_game.windowWidth, 0.f },
-                g_game.windowHeight, 1.f, false, -1, false, 30, 4);
-        g_gui.label(str(selectedEntities.front()->getName(), " Properties"));
+                1.f, false, false, false, 30, 4);
+        g_gui.label(tstr(selectedEntities.front()->getName(), " Properties"));
         selectedEntities.front()->showDetails(scene);
         g_gui.end();
     }
@@ -423,9 +423,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                     glm::vec2 bp( cx - totalWidth * 0.5f + ((itemSize + gap) * i),
                             g_game.windowHeight - itemSize - yoffset);
-                    renderer->push(QuadRenderable(white,
+                    renderer->push2D(QuadRenderable(white,
                         bp, itemSize, itemSize, color, alpha));
-                    renderer->push(QuadRenderable(g_resources.getTexture(prefabTrackItems[i].icon),
+                    renderer->push2D(QuadRenderable(g_resources.getTexture(prefabTrackItems[i].icon),
                         bp + glm::vec2((itemSize - iconSize)) * 0.5f, iconSize, iconSize));
                 }
             }

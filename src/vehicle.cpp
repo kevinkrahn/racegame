@@ -617,15 +617,15 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         f32 o25 = g_game.windowHeight * 0.03f;
         f32 o200 = g_game.windowHeight * 0.20f;
 
-        std::string p = str(glm::min(currentLap, scene->getTotalLaps()));
-        std::string lapStr = "LAP";
-        f32 lapWidth = font1.stringDimensions(lapStr.c_str()).x;
-        renderer->push(TextRenderable(&font1, lapStr,
+        char* p = tstr(glm::min(currentLap, scene->getTotalLaps()));
+        const char* lapStr = "LAP";
+        f32 lapWidth = font1.stringDimensions(lapStr).x;
+        renderer->push2D(TextRenderable(&font1, lapStr,
                     offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f)));
-        renderer->push(TextRenderable(&font2, p,
+        renderer->push2D(TextRenderable(&font2, p,
                     offset + glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f)));
-        renderer->push(TextRenderable(&font1, str('/', scene->getTotalLaps()),
-                    offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p.c_str()).x, d.y*o20), glm::vec3(1.f)));
+        renderer->push2D(TextRenderable(&font1, tstr('/', scene->getTotalLaps()),
+                    offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20), glm::vec3(1.f)));
 
         const char* placementSuffix = "th";
         if (placement == 0) placementSuffix = "st";
@@ -634,10 +634,10 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
 
-        p = str(placement + 1);
-        renderer->push(TextRenderable(&font2, p, offset + glm::vec2(o200, d.y*o20), col));
-        renderer->push(TextRenderable(&font1, placementSuffix,
-                    offset + glm::vec2(o200 + font2.stringDimensions(p.c_str()).x, d.y*o20), col));
+        p = tstr(placement + 1);
+        renderer->push2D(TextRenderable(&font2, p, offset + glm::vec2(o200, d.y*o20), col));
+        renderer->push2D(TextRenderable(&font1, placementSuffix,
+                    offset + glm::vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col));
 
         // healthbar
         const f32 healthPercentage = glm::clamp(hitPoints / maxHitPoints, 0.f, 1.f);
@@ -645,16 +645,16 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
         const f32 healthbarHeight = g_game.windowHeight * 0.008f;
         glm::vec2 pos = voffset + glm::vec2(vdim.x - o20, d.y*o20);
-        renderer->push(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
+        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
                 pos, {}, {}, glm::vec3(0)));
-        renderer->push(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
+        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
                 pos, {}, {}, glm::mix(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), healthPercentage)));
 
         // display notifications
         u32 count = 0;
         for (auto it = notifications.begin(); it != notifications.end();)
         {
-            renderer->push(TextRenderable(&font3, it->str,
+            renderer->push2D(TextRenderable(&font3, it->str,
                 layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
                     glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.04),
                 { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
@@ -673,16 +673,16 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             Font* f = &g_resources.getFont("font", 20);
             const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
-            std::string debugText = str(
+            char* debugText = tstr(
                 "Engine RPM: ", getEngineRPM(),
                 "\nSpeed: ", getForwardSpeed() * 3.6f,
                 "\nGear: ", gearNames[vehicle4W->mDriveDynData.mCurrentGear],
                 "\nProgress: ", graphResult.currentLapDistance,
                 "\nLow Mark: ", graphResult.lapDistanceLowMark);
-            renderer->push(QuadRenderable(g_resources.getTexture("white"), { 220 + 10, g_game.windowHeight - 10 },
-                        { 220 + 220, g_game.windowHeight - (30 + f->stringDimensions(debugText.c_str()).y) },
+            renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 220 + 10, g_game.windowHeight - 10 },
+                        { 220 + 220, g_game.windowHeight - (30 + f->stringDimensions(debugText).y) },
                         {}, {}, { 0, 0, 0 }, 0.6));
-            renderer->push(TextRenderable(f, debugText,
+            renderer->push2D(TextRenderable(f, debugText,
                 { 220 + 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
         }
     }

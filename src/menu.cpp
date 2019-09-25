@@ -9,8 +9,8 @@
 
 void Menu::mainMenu()
 {
-    g_gui.beginPanel("Main Menu", { g_game.windowWidth/2, g_game.windowHeight*0.1f }, 300,
-            0.5f, false, 6);
+    g_gui.beginPanel("Main Menu", { g_game.windowWidth/2, g_game.windowHeight*0.1f },
+            0.5f, false, true);
 
     if (g_gui.button("Championship"))
     {
@@ -56,8 +56,8 @@ void Menu::showOptionsMenu()
 
 void Menu::mainOptions()
 {
-    g_gui.beginPanel("Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f }, 240,
-            0.5f, false, 4);
+    g_gui.beginPanel("Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f },
+            0.5f, false, true);
 
     if (g_gui.button("Graphics Options"))
     {
@@ -84,8 +84,8 @@ void Menu::mainOptions()
 
 void Menu::audioOptions()
 {
-    g_gui.beginPanel("Audio Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f }, 330,
-            0.5f, false, 7);
+    g_gui.beginPanel("Audio Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f },
+            0.5f, false, true);
 
     g_gui.slider("Master Volume", 0.f, 1.f, tmpConfig.audio.masterVolume);
     g_gui.slider("Engine Volume", 0.f, 1.f, tmpConfig.audio.engineVolume);
@@ -102,7 +102,6 @@ void Menu::audioOptions()
     {
         Config defaultConfig;
         tmpConfig.audio = defaultConfig.audio;
-        g_game.config.audio = defaultConfig.audio;
     }
 
     if (g_gui.button("Cancel"))
@@ -115,8 +114,8 @@ void Menu::audioOptions()
 
 void Menu::gameplayOptions()
 {
-    g_gui.beginPanel("Gameplay Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f }, 280,
-            0.5f, false, 5);
+    g_gui.beginPanel("Gameplay Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f },
+            0.5f, false, true);
 
     g_gui.slider("HUD Track Scale", 0.5f, 2.f, tmpConfig.gameplay.hudTrackScale);
     g_gui.slider("HUD Text Scale", 0.5f, 2.f, tmpConfig.gameplay.hudTextScale);
@@ -131,7 +130,6 @@ void Menu::gameplayOptions()
     {
         Config defaultConfig;
         tmpConfig.gameplay = defaultConfig.gameplay;
-        g_game.config.gameplay = defaultConfig.gameplay;
     }
 
     if (g_gui.button("Cancel"))
@@ -144,8 +142,8 @@ void Menu::gameplayOptions()
 
 void Menu::graphicsOptions()
 {
-    g_gui.beginPanel("Graphics Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f }, 470,
-            0.5f, false, 10);
+    g_gui.beginPanel("Graphics Options", { g_game.windowWidth/2, g_game.windowHeight*0.1f },
+            0.5f, false, true);
 
     i32 resolutionIndex = 0;
     glm::ivec2 resolutions[] = {
@@ -241,10 +239,6 @@ void Menu::graphicsOptions()
     {
         Config defaultConfig;
         tmpConfig.graphics = defaultConfig.graphics;
-        g_game.config.graphics = defaultConfig.graphics;
-        g_game.renderer->initShaders();
-        g_game.renderer->updateFramebuffers();
-        SDL_SetWindowFullscreen(g_game.window, g_game.config.graphics.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
     }
 
     if (g_gui.button("Cancel"))
@@ -260,7 +254,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     if (menuMode != MenuMode::HIDDEN)
     {
         f32 w = g_gui.convertSize(280);
-        renderer->push(QuadRenderable(g_resources.getTexture("white"),
+        renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
                     glm::vec2(g_game.windowWidth/2 - w/2, 0),
                     w, g_game.windowHeight,
                     glm::vec3(0.02f), 0.8f, true));

@@ -210,6 +210,8 @@ void Game::run()
             }
         }
 
+        tempMem.clear();
+
         const f64 maxDeltaTime = 1.f / 30.f;
         f64 delta = glm::min(seconds(std::chrono::high_resolution_clock::now() -
                     frameStartTime).count(), maxDeltaTime);

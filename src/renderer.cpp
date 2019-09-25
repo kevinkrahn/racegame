@@ -565,7 +565,7 @@ void Renderer::render(f32 deltaTime)
 {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    std::sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
+    std::stable_sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
         return a.priority < b.priority;
     });
 
@@ -773,10 +773,6 @@ void Renderer::render(f32 deltaTime)
         }
         r.renderable->onLitPass(this);
         prevPriority = r.priority;
-        if (r.isTemporary)
-        {
-            r.renderable->~Renderable();
-        }
     }
 	glPopDebugGroup();
 
@@ -907,17 +903,13 @@ void Renderer::render(f32 deltaTime)
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "2D Pass");
     glEnable(GL_BLEND);
 
-    //std::sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
-        //return a.priority < b.priority;
-    //});
+    std::stable_sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
+        return a.priority < b.priority;
+    });
 
     for (auto const& r : renderables2D)
     {
         r.renderable->on2DPass(this);
-        if (r.isTemporary)
-        {
-            r.renderable->~Renderable2D();
-        }
     }
 	glPopDebugGroup();
 

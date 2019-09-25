@@ -12,40 +12,49 @@ enum struct WidgetType
     SELECT,
 };
 
+struct CompareKey
+{
+    bool operator()(const char* a, const char* b) const
+    {
+        return strcmp(a, b) < 0;
+    }
+};
+
 struct WidgetState
 {
     WidgetType widgetType;
     u64 frameCount = 0;
     f32 hoverIntensity = 0.f;
     i32 selectIndex = 0;
-    std::map<std::string, std::unique_ptr<WidgetState>> childState;
+    std::map<const char*, std::unique_ptr<WidgetState>, CompareKey> childState;
     f32 repeatTimer = 0.f;
+    i32 selectableChildCount = 0;
 };
 
 struct WidgetStackItem
 {
     WidgetType widgetType;
-    i32 selectableChildCount = 0;
     glm::vec2 position = { 0, 0 };
     glm::vec2 size = { 0, 0 };
     glm::vec2 nextWidgetPosition = { 0, 0 };
-    bool hasKeyboardSelect = false;
+    bool useKeyboardControl = false;
     WidgetState* widgetState = nullptr;
     i32* outputValueI32 = nullptr;
     f32 itemHeight = 0.f;
     f32 itemSpacing = 0.f;
+    bool solidBackground = false;
 };
 
 class Gui
 {
-    std::map<std::string, std::unique_ptr<WidgetState>> childState;
+    std::map<const char*, std::unique_ptr<WidgetState>, CompareKey> childState;
     std::vector<WidgetStackItem> widgetStack;
     class Font* fontSmall = nullptr;
     class Font* fontBig = nullptr;
     class Texture* white = nullptr;
     class Renderer* renderer = nullptr;
 
-    WidgetState* getWidgetState(WidgetState* parent, std::string const& identifier,
+    WidgetState* getWidgetState(WidgetState* parent, const char* identifier,
             WidgetType widgetType);
 
 public:
@@ -63,17 +72,17 @@ public:
     void beginFrame();
     void endFrame();
     void end();
-    void beginPanel(std::string const& text, glm::vec2 position, f32 height,
-            f32 halign, bool solidBackground=false, i32 buttonCount=-1,
+    void beginPanel(const char* text, glm::vec2 position, f32 halign,
+            bool solidBackground=false, bool useKeyboardControl=false,
             bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220);
-    bool button(std::string const& text, bool active=true);
-    bool toggle(std::string const& text, bool& enabled);
-    bool slider(std::string const& text, f32 minValue, f32 maxValue, f32& value);
-    bool textEdit(std::string const& text, std::string& value);
-    i32 select(std::string const& text, std::string* firstValue,
+    bool button(const char* text, bool active=true);
+    bool toggle(const char* text, bool& enabled);
+    bool slider(const char* text, f32 minValue, f32 maxValue, f32& value);
+    bool textEdit(const char* text, std::string& value);
+    i32 select(const char* text, std::string* firstValue,
             i32 count, i32& currentIndex);
-    void beginSelect(std::string const& text, i32* selectedIndex, bool showTitle=true);
-    bool option(std::string const& text, i32 value, const char* icon=nullptr);
-    void label(std::string const& text);
+    void beginSelect(const char* text, i32* selectedIndex, bool showTitle=true);
+    bool option(const char* text, i32 value, const char* icon=nullptr);
+    void label(const char* text);
 } g_gui;
 
