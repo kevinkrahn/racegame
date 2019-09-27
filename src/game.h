@@ -56,6 +56,6 @@ template <typename... Args>
 char* tstr(Args const&... args)
 {
     std::string s = str(args...);
-    u8* mem = g_game.tempMem.writeBytes(s.data(), s.size() + 1);
+    u8* mem = g_game.tempMem.writeBytes((void*)s.data(), s.size() + 1);
     return reinterpret_cast<char*>(mem);
 }
