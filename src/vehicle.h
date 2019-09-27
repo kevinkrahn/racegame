@@ -77,16 +77,16 @@ public:
     u32 tireSound = 0;
     glm::vec3 lastValidPosition;
     bool isHidden = false;
+    glm::vec3 previousVelocity;
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 
     struct VehicleDebris
     {
+        VehicleData::VehicleMesh* meshInfo;
         PxRigidDynamic* rigidBody;
-        Mesh* mesh;
         f32 life = 0.f;
-        glm::vec3 color;
     };
 
     std::vector<VehicleDebris> vehicleDebris;
@@ -125,6 +125,7 @@ public:
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
     Driver* getDriver() const { return driver; }
 
+    void blowUp();
     void reset(glm::mat4 const& transform) const;
     void applyDamage(f32 amount, u32 instigator)
     {

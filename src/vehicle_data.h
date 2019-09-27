@@ -82,7 +82,7 @@ struct VehicleData
         Mesh* mesh;
         glm::mat4 transform;
         PxShape* collisionShape;
-        u32 materialIndex;
+        bool isBody;
     };
     SmallVec<VehicleMesh> chassisMeshes;
     VehicleMesh wheelMeshFront;

@@ -1,6 +1,18 @@
 #include "driver.h"
 #include "resources.h"
 
+glm::vec3 vehicleColors[] = {
+    { 0.7f, 0.01f, 0.01f },
+    { 0.02f, 0.02f, 0.02f },
+    { 0.01f, 0.8f, 0.01f },
+    { 0.01f, 0.01f, 0.8f },
+    { 0.8f, 0.01f, 0.8f },
+    { 0.01f, 0.8f, 0.8f },
+    { 0.5f, 0.2f, 0.8f },
+    { 0.9f, 0.01f, 0.5f },
+    { 0.02f, 0.7f, 0.1f },
+};
+
 Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard, VehicleData* vehicleData,
         u32 colorIndex, u32 controllerID)
 {
@@ -12,4 +24,5 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard, VehicleData* veh
     {
         this->playerProfile = new PlayerProfile{ "Test" };
     }
+    this->vehicleColor = vehicleColors[colorIndex];
 }

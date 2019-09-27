@@ -1,7 +1,7 @@
 {
     vehicles: [{
         name: "Mini",
-        scene: "mini.Vehicle",
+        scene: "mini.Scene",
         description: "Really cool vehicle",
         price: 5000,
 

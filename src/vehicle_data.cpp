@@ -78,11 +78,31 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
     {
         std::string name = e["name"].string();
         glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
-        if (name.find("Chassis") != std::string::npos)
+        if (name.find("debris") != std::string::npos)
+        {
+            std::string const& meshName = e["data_name"].string();
+            Mesh* mesh = g_resources.getMesh(meshName.c_str());
+            PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
+            PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
+            PxShape* shape = g_game.physx.physics->createShape(
+                    PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
+            shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
+                        COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0));
+            material->release();
+            vehicle.debrisChunks.push_back({
+                mesh,
+                transform,
+                shape,
+                name.find("Body") != std::string::npos
+            });
+        }
+        else if (name.find("Chassis") != std::string::npos)
         {
             vehicle.chassisMeshes.push_back({
                 g_resources.getMesh(e["data_name"].string().c_str()),
                 transform,
+                nullptr,
+                name.find("Body") != std::string::npos
             });
         }
         else if (name.find("FL") != std::string::npos)
@@ -112,23 +132,6 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
         else if (name.find("RR") != std::string::npos)
         {
             vehicle.physics.wheelPositions[WHEEL_REAR_LEFT] = transform[3];
-        }
-        else if (name.find("debris") != std::string::npos)
-        {
-            std::string const& meshName = e["data_name"].string();
-            Mesh* mesh = g_resources.getMesh(meshName.c_str());
-            PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
-            PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
-            PxShape* shape = g_game.physx.physics->createShape(
-                    PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
-            shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
-                        COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0));
-            material->release();
-            vehicle.debrisChunks.push_back({
-                mesh,
-                transform,
-                shape,
-            });
         }
         else if (name.find("Collision") != std::string::npos)
         {

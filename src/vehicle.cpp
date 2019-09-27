@@ -700,19 +700,33 @@ void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
     // draw vehicle debris
     for (auto const& d : vehicleDebris)
     {
-        renderer->push(LitRenderable(d.mesh, convert(d.rigidBody->getGlobalPose()), nullptr));
+        LitSettings s;
+        s.mesh = d.meshInfo->mesh;
+        s.worldTransform = convert(d.rigidBody->getGlobalPose());
+        s.texture = nullptr;
+        s.color = d.meshInfo->isBody ? driver->vehicleColor : glm::vec3(1.f);
+        s.specularStrength = d.meshInfo->isBody ? 0.15f : 0.3f;
+        s.specularPower = d.meshInfo->isBody ? 20.f : 200.f;
+        renderer->push(LitRenderable(s));
     }
 
     if (cameraIndex >= 0 && isHidden)
     {
         renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
-                cameraIndex, transform, glm::vec3(1.f)));
+                cameraIndex, transform, driver->vehicleColor));
     }
 
     // draw chassis
     for (auto& m : driver->vehicleData->chassisMeshes)
     {
-        renderer->push(LitRenderable(m.mesh, transform * m.transform, nullptr));
+        LitSettings s;
+        s.mesh = m.mesh;
+        s.worldTransform = transform * m.transform;
+        s.texture = nullptr;
+        s.color = m.isBody ? driver->vehicleColor : glm::vec3(1.f);
+        s.specularStrength = m.isBody ? 0.15f : 0.3f;
+        s.specularPower = m.isBody ? 20.f : 200.f;
+        renderer->push(LitRenderable(s));
     }
 
     // draw wheels
@@ -984,7 +998,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
 #endif
 
-        // draw arrow if vehicle is hidden behind something
+        // detect if vehicle is hidden behind something
         glm::vec3 rayStart = currentPosition;
         glm::vec3 diff = cameraFrom - rayStart;
         glm::vec3 rayDir = glm::normalize(diff);
@@ -997,7 +1011,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         isHidden = true;
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
-            glm::vec3 wheelPosition = transform * glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
+            glm::vec3 wheelPosition = transform *
+                glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
             if (!scene->raycastStatic(wheelPosition, rayDir, dist))
             {
                 isHidden = false;
@@ -1144,32 +1159,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     // explode
     if (hitPoints <= 0.f)
     {
-        for(auto& d : driver->vehicleData->debrisChunks)
-        {
-			PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
-			        PxTransform(convert(transform * d.transform)));
-			body->attachShape(*d.collisionShape);
-			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-			scene->getPhysicsScene()->addActor(*body);
-	        body->setLinearVelocity(
-	                getRigidBody()->getLinearVelocity() +
-	                convert(glm::vec3(glm::normalize(rotationOf(transform) * glm::vec4(translationOf(d.transform), 1.0)))
-	                    * random(scene->randomSeries, 5.f, 22.f) + glm::vec3(0, 0, 5.f)));
-	        body->setAngularVelocity(PxVec3(
-	                    random(scene->randomSeries, 0.f, 8.f),
-	                    random(scene->randomSeries, 0.f, 8.f),
-	                    random(scene->randomSeries, 0.f, 8.f)));
-
-            createVehicleDebris(VehicleDebris{
-                body,
-                d.mesh,
-                0.f,
-                driver->vehicleColor,
-            });
-        }
-        deadTimer = 1.f;
-        reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
-        scene->attackCredit(lastDamagedBy, vehicleIndex);
+        blowUp();
     }
 
     // spawn smoke when critically damaged
@@ -1194,6 +1184,39 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         applyDamage(15, vehicleIndex);
     }
+
+    previousVelocity = convert(getRigidBody()->getLinearVelocity());
+}
+
+void Vehicle::blowUp()
+{
+    glm::mat4 transform = getTransform();
+    for(auto& d : driver->vehicleData->debrisChunks)
+    {
+		PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
+			    PxTransform(convert(transform * d.transform)));
+		body->attachShape(*d.collisionShape);
+		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+		scene->getPhysicsScene()->addActor(*body);
+	    body->setLinearVelocity(
+	            convert(previousVelocity) +
+	            convert(glm::vec3(glm::normalize(rotationOf(transform)
+	                        * glm::vec4(translationOf(d.transform), 1.0)))
+	                * random(scene->randomSeries, 3.f, 14.f) + glm::vec3(0, 0, 9.f)));
+	    body->setAngularVelocity(PxVec3(
+	                random(scene->randomSeries, 0.f, 9.f),
+	                random(scene->randomSeries, 0.f, 9.f),
+	                random(scene->randomSeries, 0.f, 9.f)));
+
+        createVehicleDebris(VehicleDebris{
+            &d,
+            body,
+            0.f
+        });
+    }
+    deadTimer = 1.f;
+    reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
+    scene->attackCredit(lastDamagedBy, vehicleIndex);
 }
 
 void Vehicle::fireWeapon()
