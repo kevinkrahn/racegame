@@ -1,4 +1,3 @@
-- Screen shake (when you blow up, or nearby cars blow up. Maybe also on hard impacts?)
 - Add explosion effect when vehicle is destroyed
 - Export mesh tangents and add normal maps
 - Automatically place decals on track (e.g. patch work, dirt, grunge, tire marks)

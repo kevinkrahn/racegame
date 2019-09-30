@@ -85,6 +85,7 @@ public:
     void vehicleFinish(u32 n) { finishOrder.push_back(n); }
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
     void attackCredit(u32 instigator, u32 victim);
+    void applyAreaForce(glm::vec3 const& position, f32 strength) const;
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }

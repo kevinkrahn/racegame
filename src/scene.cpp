@@ -530,6 +530,20 @@ void Scene::attackCredit(u32 instigator, u32 victim)
     }
 }
 
+void Scene::applyAreaForce(glm::vec3 const& position, f32 strength) const
+{
+    for (auto& v : vehicles)
+    {
+        f32 dist = glm::distance(v->getPosition(), position);
+        f32 radius = strength;
+        if (dist < radius)
+        {
+            v->shakeScreen(glm::pow(
+                        glm::clamp(1.f - dist / radius, 0.f, 1.f), 0.5f) * radius);
+        }
+    }
+}
+
 bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit, u32 flags) const
 {
     PxQueryFilterData filter;
@@ -651,11 +665,19 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                     {
                         u32 instigator = (b && b->entityType == ActorUserData::VEHICLE) ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
                         a->vehicle->applyDamage(damage, instigator);
+                        if (damage > 10.f)
+                        {
+                            a->vehicle->shakeScreen(damage * 0.3f);
+                        }
                     }
                     if (b && b->entityType == ActorUserData::VEHICLE)
                     {
                         u32 instigator = (a && a->entityType == ActorUserData::VEHICLE) ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
                         b->vehicle->applyDamage(damage, instigator);
+                        if (damage > 10.f)
+                        {
+                            a->vehicle->shakeScreen(damage * 0.3f);
+                        }
                     }
 
                     g_audio.playSound3D(g_resources.getSound("impact"), convert(contactPoints[j].position));

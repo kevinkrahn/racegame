@@ -742,6 +742,25 @@ void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
     }
 }
 
+void Vehicle::updateCamera(Renderer* renderer, f32 deltaTime)
+{
+    glm::vec3 pos = lastValidPosition;
+#if 0
+    cameraTarget = pos + glm::vec3(0, 0, 2.f);
+    cameraFrom = smoothMove(cameraFrom,
+            cameraTarget - getForwardVector() * 10.f + glm::vec3(0, 0, 3.f), 8.f, deltaTime);
+    renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
+#else
+    cameraTarget = smoothMove(cameraTarget,
+            pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
+            5.f, deltaTime);
+    f32 camDistance = 80.f;
+    cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
+    cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+    renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
+#endif
+}
+
 void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     bool isPlayerControlled = driver->playerProfile != nullptr;
@@ -749,6 +768,23 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         tireMarkRibbons[i].update(deltaTime);
+    }
+
+    if (screenShakeTimer > 0.f)
+    {
+        screenShakeTimer = glm::max(screenShakeTimer - deltaTime, 0.f);
+        screenShakeDirChangeTimer -= screenShakeDirChangeTimer;
+        if (screenShakeDirChangeTimer <= 0.f)
+        {
+            screenShakeDirChangeTimer = random(scene->randomSeries, 0.01f, 0.025f);
+            glm::vec3 targetOffset = glm::normalize(glm::vec3(
+                random(scene->randomSeries, -1.f, 1.f),
+                random(scene->randomSeries, -1.f, 1.f),
+                random(scene->randomSeries, -1.f, 1.f))) * random(scene->randomSeries, 0.75f, 1.5f);
+            screenShakeVelocity = glm::normalize(targetOffset - screenShakeOffset) *
+                random(scene->randomSeries, 20.f, 30.f);
+        }
+        screenShakeOffset += screenShakeVelocity * deltaTime;
     }
 
     if (deadTimer > 0.f)
@@ -771,6 +807,11 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
         }
+        if (cameraIndex >= 0)
+        {
+            updateCamera(renderer, deltaTime);
+        }
+
         return;
     }
 
@@ -781,6 +822,11 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         if (isPlayerControlled)
         {
+            if (g_input.isKeyPressed(KEY_U))
+            {
+                shakeScreen(9.f);
+            }
+
             f32 accel = 0.f;
             f32 brake = 0.f;
             f32 steer = 0.f;
@@ -983,20 +1029,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (cameraIndex >= 0)
     {
-        glm::vec3 pos = currentPosition;
-#if 0
-        cameraTarget = pos + glm::vec3(0, 0, 2.f);
-        cameraFrom = smoothMove(cameraFrom,
-                cameraTarget - getForwardVector() * 10.f + glm::vec3(0, 0, 3.f), 8.f, deltaTime);
-        renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
-#else
-        cameraTarget = smoothMove(cameraTarget,
-                pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
-                5.f, deltaTime);
-        f32 camDistance = 80.f;
-        cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
-#endif
+        updateCamera(renderer, deltaTime);
 
         // detect if vehicle is hidden behind something
         glm::vec3 rayStart = currentPosition;
@@ -1188,6 +1221,16 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     previousVelocity = convert(getRigidBody()->getLinearVelocity());
 }
 
+
+void Vehicle::shakeScreen(f32 intensity)
+{
+    if (intensity * 0.08f > screenShakeTimer)
+    {
+        screenShakeTimer = intensity * 0.08f;
+        screenShakeOffset = glm::vec3(0.f);
+    }
+}
+
 void Vehicle::blowUp()
 {
     glm::mat4 transform = getTransform();
@@ -1217,6 +1260,7 @@ void Vehicle::blowUp()
     deadTimer = 1.f;
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
     scene->attackCredit(lastDamagedBy, vehicleIndex);
+    scene->applyAreaForce(translationOf(transform), 10.f);
 }
 
 void Vehicle::fireWeapon()

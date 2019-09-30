@@ -79,6 +79,11 @@ public:
     bool isHidden = false;
     glm::vec3 previousVelocity;
 
+    glm::vec3 screenShakeVelocity = glm::vec3(0);
+    glm::vec3 screenShakeOffset = glm::vec3(0);
+    f32 screenShakeTimer = 0.f;
+    f32 screenShakeDirChangeTimer = 0.f;
+
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 
@@ -140,4 +145,6 @@ public:
     void onUpdate(class Renderer* renderer, f32 deltaTime);
     void onRender(class Renderer* renderer, f32 deltaTime);
     void drawHUD(class Renderer* renderer, f32 deltaTime);
+    void shakeScreen(f32 intensity);
+    void updateCamera(class Renderer* renderer, f32 deltaTime);
 };
