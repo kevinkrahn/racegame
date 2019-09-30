@@ -822,9 +822,9 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         if (isPlayerControlled)
         {
-            if (g_input.isKeyPressed(KEY_U))
+            if (g_input.isKeyPressed(KEY_U) && driver->useKeyboard)
             {
-                shakeScreen(9.f);
+                scene->createExplosion(currentPosition, previousVelocity, 10.f);
             }
 
             f32 accel = 0.f;
@@ -1201,8 +1201,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     if (smokeTimerDamage <= 0.f && damagePercent < 0.3f)
     {
         // TODO: make the effect more intense the more critical the damage (fire and sparks?)
-        glm::vec3 vehicleVel = convert(getRigidBody()->getLinearVelocity())
-            + getForwardVector();
+        glm::vec3 vehicleVel = previousVelocity + getForwardVector();
         glm::vec3 vel = glm::vec3(glm::normalize(glm::vec3(
                 random(scene->randomSeries, -1.f, 1.f),
                 random(scene->randomSeries, -1.f, 1.f),
@@ -1258,9 +1257,9 @@ void Vehicle::blowUp()
         });
     }
     deadTimer = 1.f;
-    reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
+    scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
     scene->attackCredit(lastDamagedBy, vehicleIndex);
-    scene->applyAreaForce(translationOf(transform), 10.f);
+    reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
 }
 
 void Vehicle::fireWeapon()

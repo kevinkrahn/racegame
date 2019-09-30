@@ -25,6 +25,7 @@
 #include "menu.cpp"
 #include "gui.cpp"
 #include "entities/projectile.cpp"
+#include "entities/flash.cpp"
 #include "entities/static_mesh.cpp"
 #include "entities/tree.cpp"
 #include "entities/static_decal.cpp"

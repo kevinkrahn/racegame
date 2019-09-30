@@ -9,6 +9,7 @@
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 #include "entities/tree.h"
+#include "entities/flash.h"
 #include "gui.h"
 #include <algorithm>
 
@@ -275,6 +276,19 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         vehicles[i]->drawHUD(renderer, deltaTime);
     }
 
+    // delete destroyed entities
+    for (auto it = entities.begin(); it != entities.end();)
+    {
+        if ((*it)->isDestroyed())
+        {
+            entities.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
     // render entities
     for (auto const& e : entities)
     {
@@ -299,7 +313,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
-    // handle created and destroyed entities
+    // handle newly created entities
     for (auto& e : newEntities)
     {
         e->onCreate(this);
@@ -310,15 +324,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         entities.push_back(std::move(e));
     }
     newEntities.clear();
-
-    for (auto it = entities.begin(); it != entities.end();)
-    {
-        if ((*it)->isDestroyed()) {
-            entities.erase(it);
-        } else {
-            ++it;
-        }
-    }
 
     if (isPhysicsDebugVisualizationEnabled)
     {
@@ -535,13 +540,35 @@ void Scene::applyAreaForce(glm::vec3 const& position, f32 strength) const
     for (auto& v : vehicles)
     {
         f32 dist = glm::distance(v->getPosition(), position);
-        f32 radius = strength;
+        f32 radius = strength * 1.5f;
         if (dist < radius)
         {
             v->shakeScreen(glm::pow(
                         glm::clamp(1.f - dist / radius, 0.f, 1.f), 0.5f) * radius);
         }
     }
+    // TODO: apply force to nearby physics bodies
+}
+
+void Scene::createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength)
+{
+    applyAreaForce(position, strength);
+    for (u32 i=0; i<8; ++i)
+    {
+        f32 s = random(randomSeries, 0.3f, 0.9f);
+        f32 size = strength * 0.1f;
+        glm::vec3 offset = glm::vec3(
+            random(randomSeries, -1.f, 1.f),
+            random(randomSeries, -1.f, 1.f),
+            random(randomSeries, -1.f, 1.f)) * size;
+        glm::vec3 vel = glm::normalize(glm::vec3(
+            random(randomSeries, -1.f, 1.f),
+            random(randomSeries, -1.f, 1.f),
+            random(randomSeries, -1.f, 1.f))) * random(randomSeries, 0.75f, 1.5f)
+            + glm::vec3(0, 0, random(randomSeries, 2.f, 3.f)) + velocity * 0.9f;
+        smoke.spawn(position + offset, vel, 1.f, glm::vec4(s, s, s, 1.f), random(randomSeries, 3.f, 5.f));
+    }
+    addEntity(new Flash(position + glm::vec3(0, 0, 1.f), velocity * 0.8f, strength * 0.5f));
 }
 
 bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit, u32 flags) const
@@ -665,7 +692,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                     {
                         u32 instigator = (b && b->entityType == ActorUserData::VEHICLE) ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
                         a->vehicle->applyDamage(damage, instigator);
-                        if (damage > 10.f)
+                        if (damage > 5.f)
                         {
                             a->vehicle->shakeScreen(damage * 0.3f);
                         }
@@ -674,7 +701,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                     {
                         u32 instigator = (a && a->entityType == ActorUserData::VEHICLE) ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
                         b->vehicle->applyDamage(damage, instigator);
-                        if (damage > 10.f)
+                        if (damage > 5.f)
                         {
                             a->vehicle->shakeScreen(damage * 0.3f);
                         }

@@ -136,6 +136,10 @@ public:
     {
         hitPoints -= amount;
         lastDamagedBy = instigator;
+        if (smokeTimerDamage <= 0.f)
+        {
+            smokeTimerDamage = 0.015f;
+        }
     }
     void addNotification(const char* str)
     {
