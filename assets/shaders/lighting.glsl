@@ -75,10 +75,13 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     color.rgb += fresnel * max(shadow, 0.5);
 
 #if SSAO_ENABLED
+#ifndef NO_SSAO
     float ssaoAmount = texelFetch(ssaoTexture, ivec3(gl_FragCoord.xy, gl_Layer), 0).r;
     color.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
 #endif
+#endif
 
+#ifndef NO_FOG
     const vec3 fogColor = vec3(0.5, 0.6, 1);
     float dist = length(toCamera);
 #if 0
@@ -94,6 +97,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     float fogIntensity = 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
 #endif
     color.rgb = mix(color.rgb, fogColor, fogIntensity);
+#endif
 
     color.rgb += emit;
 

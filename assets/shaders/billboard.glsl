@@ -33,7 +33,16 @@ void main()
 
 #elif defined FRAG
 
+#if defined LIT
+#define NO_SSAO
+#include "lighting.glsl"
+#endif
+
 layout(location = 0) in vec2 inTexCoord;
+#if defined LIT
+layout(location = 1) in vec3 inWorldPosition;
+layout(location = 2) in vec3 inShadowCoord;
+#endif
 
 layout(location = 0) out vec4 outColor;
 
@@ -45,6 +54,11 @@ layout(location = 0) uniform vec4 color;
 void main()
 {
     outColor = texture(texSampler, inTexCoord) * color;
+#if defined LIT
+    outColor = lighting(outColor,
+            vec3(0, 0, 1), inShadowCoord, inWorldPosition, 0.f, 0.f, vec3(1.0),
+            0.f, 0.f, 0.f, vec3(0.f));
+#endif
 
     float depth = texture(depthSampler, vec3(gl_FragCoord.xy / textureSize(depthSampler, 0).xy, gl_Layer)).r;
     float d = depth - gl_FragCoord.z;
@@ -60,6 +74,10 @@ layout(location = 0) in vec3 inPosition[];
 layout(location = 1) in vec2 inTexCoord[];
 
 layout(location = 0) out vec2 outTexCoord;
+#if defined LIT
+layout(location = 1) out vec3 outWorldPos;
+layout(location = 2) out vec3 outShadowCoord;
+#endif
 
 layout(location = 1) uniform mat4 translation;
 layout(location = 2) uniform vec3 scale;
@@ -84,6 +102,11 @@ void main()
         gl_Layer = gl_InvocationID;
         gl_Position = matrix * vec4(inPosition[i], 1.0);
         outTexCoord = inTexCoord[i];
+#if defined LIT
+        outWorldPos = (translation * rotation * vec4(inPosition[i], 1.0)).xyz;
+        outShadowCoord = (shadowViewProjectionBias[gl_InvocationID]
+                * (translation * rotation * vec4(inPosition[i], 1.0))).xyz;
+#endif
         EmitVertex();
     }
 

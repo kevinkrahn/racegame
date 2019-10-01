@@ -467,7 +467,7 @@ void Renderer::initShaders()
     loadShader("quad2D", {}, "text2D");
     loadShader("post");
     loadShader("mesh2D");
-    loadShader("billboard");
+    loadShader("billboard", { "LIT" });
     loadShader("ribbon");
     loadShader("csz");
     loadShader("csz_minify");

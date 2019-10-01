@@ -262,8 +262,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.end();
     }
 
-    bool isMouseClickHandled = g_gui.isMouseOverUI || g_gui.isMouseCaptured;
     g_gui.end();
+
+    bool isMouseClickHandled = g_gui.isMouseOverUI || g_gui.isMouseCaptured;
 
     if (editMode != previousEditMode)
     {

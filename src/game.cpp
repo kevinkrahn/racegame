@@ -120,7 +120,7 @@ void Game::run()
     g_resources.load();
 
     state.drivers = {
-        Driver(true,  true,  true,  &g_resources.getVehicleData()[0], 1, 0),
+        Driver(true,  true,  true,  &g_resources.getVehicleData()[2], 1, 0),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
         Driver(false, false, false, &g_resources.getVehicleData()[2], 3),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
