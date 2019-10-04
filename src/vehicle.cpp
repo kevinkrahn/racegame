@@ -486,8 +486,10 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->hitPoints = this->maxHitPoints;
     this->cameraIndex = cameraIndex;
 
-    engineSound = g_audio.playSound3D(g_resources.getSound("engine2"), translationOf(transform), true);
-    tireSound = g_audio.playSound3D(g_resources.getSound("tires"), translationOf(transform), true, 1.f, 0.f);
+    engineSound = g_audio.playSound3D(g_resources.getSound("engine2"),
+            SoundType::VEHICLE, translationOf(transform), true);
+    tireSound = g_audio.playSound3D(g_resources.getSound("tires"),
+            SoundType::VEHICLE, translationOf(transform), true, 1.f, 0.f);
 
     setupPhysics(scene->getPhysicsScene(), driver->vehicleData->physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;

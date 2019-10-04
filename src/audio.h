@@ -13,6 +13,14 @@ struct Sound
     u32 numChannels;
 };
 
+enum struct SoundType
+{
+    VEHICLE,
+    GAME_SFX,
+    MENU_SFX,
+    MUSIC
+};
+
 using SoundHandle = u32;
 class Audio
 {
@@ -34,6 +42,7 @@ class Audio
         bool is3D = false;
         SoundHandle handle = 0;
         glm::vec3 position = {};
+        SoundType soundType;
     };
 
     struct PlaybackModification
@@ -47,8 +56,7 @@ class Audio
             PLAY,
             STOP,
             SET_PAUSED,
-            MASTER_VOLUME,
-            MASTER_PITCH,
+            STOP_GAMEPLAY_SOUNDS
         } type;
 
         SoundHandle handle;
@@ -66,9 +74,7 @@ class Audio
     };
 
     SoundHandle nextSoundHandle = 0;
-
-    f32 masterVolume = 1.f;
-    f32 masterPitch = 1.f;
+    bool pauseGameplaySounds = false;
 
     std::vector<PlayingSound> playingSounds; // modified only by audio thread
     std::vector<PlaybackModification> playbackModifications;
@@ -82,10 +88,10 @@ public:
     void init();
     void close();
 
-    void setMasterVolume(f32 volume);
-    void setMasterPitch(f32 pitch);
-    SoundHandle playSound(Sound* sound, bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
-    SoundHandle playSound3D(Sound* sound, glm::vec3 const& position, bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
+    SoundHandle playSound(Sound* sound, SoundType soundType,
+            bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
+    SoundHandle playSound3D(Sound* sound, SoundType soundType,
+            glm::vec3 const& position, bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
     void stopSound(SoundHandle handle);
     void setSoundPitch(SoundHandle handle, f32 pitch);
     void setSoundVolume(SoundHandle handle, f32 volume);
@@ -93,6 +99,8 @@ public:
     void setSoundPosition(SoundHandle handle, glm::vec3 const& position);
     void setSoundPaused(SoundHandle handle, bool paused);
     void setListeners(SmallVec<glm::vec3>const& listeners);
+    void setPaused(bool paused);
+    void stopAllGameplaySounds();
 } g_audio;
 
 void SDLAudioCallback(void* userdata, u8* buf, i32 len);

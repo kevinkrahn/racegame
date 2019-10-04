@@ -149,6 +149,8 @@ void Scene::stopRace()
     placements.clear();
     vehicles.clear();
     isRaceInProgress = false;
+    g_audio.setPaused(false);
+    g_audio.stopAllGameplaySounds();
 }
 
 void Scene::onStart()
@@ -175,6 +177,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         || (!g_game.isEditing && isRaceInProgress)) && showPauseMenu)
     {
         isPaused = !isPaused;
+        g_audio.setPaused(isPaused);
     }
 
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
@@ -457,6 +460,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (g_gui.button("Resume"))
         {
             isPaused = false;
+            g_audio.setPaused(false);
         }
         if (isRaceInProgress)
         {
@@ -707,7 +711,8 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         }
                     }
 
-                    g_audio.playSound3D(g_resources.getSound("impact"), convert(contactPoints[j].position));
+                    g_audio.playSound3D(g_resources.getSound("impact"),
+                            SoundType::GAME_SFX, convert(contactPoints[j].position));
                     // TODO: create sparks at contactPoints[j].position
                 }
             }
@@ -808,4 +813,3 @@ void Scene::deserialize(DataFile::Value& data)
     trackPreviewCameraTarget = trackPreviewPosition;
     trackPreviewCameraFrom = trackPreviewPosition + glm::vec3(0, 0, 5);
 }
-

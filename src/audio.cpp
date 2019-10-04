@@ -37,8 +37,11 @@ void Audio::audioCallback(u8* buf, i32 len)
 {
     SmallVec<glm::vec3> listeners;
 
+    bool pauseGameplaySounds;
     {
         std::lock_guard<std::mutex> lock(audioMutex);
+
+        pauseGameplaySounds = this->pauseGameplaySounds;
 
         // process playback modifications
         for (auto &m : playbackModifications)
@@ -47,13 +50,19 @@ void Audio::audioCallback(u8* buf, i32 len)
             {
                 playingSounds.push_back(m.newSound);
             }
-            else if (m.type == PlaybackModification::MASTER_VOLUME)
+            else if (m.type == PlaybackModification::STOP_GAMEPLAY_SOUNDS)
             {
-                masterVolume = m.volume;
-            }
-            else if (m.type == PlaybackModification::MASTER_PITCH)
-            {
-                masterPitch = m.pitch;
+                for (auto it = playingSounds.begin(); it != playingSounds.end();)
+                {
+
+                    if (it->soundType == SoundType::VEHICLE ||
+                        it->soundType == SoundType::GAME_SFX)
+                    {
+                        it = playingSounds.erase(it);
+                        continue;
+                    }
+                    ++it;
+                }
             }
             else
             {
@@ -82,8 +91,7 @@ void Audio::audioCallback(u8* buf, i32 len)
                                 it->isPaused = m.paused;
                                 break;
                             case PlaybackModification::PLAY:
-                            case PlaybackModification::MASTER_VOLUME:
-                            case PlaybackModification::MASTER_PITCH:
+                            case PlaybackModification::STOP_GAMEPLAY_SOUNDS:
                                 // not handled here
                                 break;
                         }
@@ -103,6 +111,7 @@ void Audio::audioCallback(u8* buf, i32 len)
     f32* buffer = (f32*)buf;
     u32 numSamples = len / (sizeof(f32) * 2);
 
+    f32 masterVolume = g_game.config.audio.masterVolume;
     for (u32 i=0; i<numSamples; ++i)
     {
         f32 left = 0.0f;
@@ -114,6 +123,16 @@ void Audio::audioCallback(u8* buf, i32 len)
             if (s->isPaused)
             {
                 continue;
+            }
+
+            if (pauseGameplaySounds)
+            {
+                if (s->soundType == SoundType::VEHICLE ||
+                    s->soundType == SoundType::GAME_SFX)
+                {
+                    ++s;
+                    continue;
+                }
             }
 
             if (s->playPosition >= s->sound->numSamples)
@@ -159,11 +178,28 @@ void Audio::audioCallback(u8* buf, i32 len)
                 attenuation *= attenuation;
             }
 
-            left  = glm::clamp(left  + sampleLeft  * (s->volume * masterVolume * attenuation) * panLeft, -1.0f, 1.0f);
-            right = glm::clamp(right + sampleRight * (s->volume * masterVolume * attenuation) * panRight, -1.0f, 1.0f);
+            f32 soundTypeVolume = 1.f;
+            switch (s->soundType)
+            {
+                case SoundType::VEHICLE:
+                    soundTypeVolume = g_game.config.audio.vehicleVolume;
+                    break;
+                case SoundType::GAME_SFX:
+                case SoundType::MENU_SFX:
+                    soundTypeVolume = g_game.config.audio.sfxVolume;
+                    break;
+                case SoundType::MUSIC:
+                    soundTypeVolume = g_game.config.audio.musicVolume;
+                    break;
+            }
+
+            left  = glm::clamp(left  + sampleLeft  *
+                    ((s->volume * masterVolume) * (soundTypeVolume * attenuation)) * panLeft, -1.0f, 1.0f);
+            right = glm::clamp(right + sampleRight *
+                    ((s->volume * masterVolume) * (soundTypeVolume * attenuation)) * panRight, -1.0f, 1.0f);
 
             f32 pitch = glm::lerp(s->pitch, s->targetPitch, bufferPercent);
-            s->playPosition += pitch * masterPitch * (f32)g_game.timeDilation;
+            s->playPosition += pitch  * (f32)g_game.timeDilation;
             s++;
         }
 
@@ -201,25 +237,8 @@ void Audio::close()
     SDL_CloseAudioDevice(audioDevice);
 }
 
-void Audio::setMasterVolume(f32 volume)
-{
-    std::lock_guard<std::mutex> lock(audioMutex);
-    PlaybackModification pm;
-    pm.type = PlaybackModification::MASTER_VOLUME;
-    pm.volume = volume;
-    playbackModifications.push_back(pm);
-}
-
-void Audio::setMasterPitch(f32 pitch)
-{
-    std::lock_guard<std::mutex> lock(audioMutex);
-    PlaybackModification pm;
-    pm.type = PlaybackModification::MASTER_PITCH;
-    pm.volume = pitch;
-    playbackModifications.push_back(pm);
-}
-
-SoundHandle Audio::playSound(Sound* sound, bool loop, f32 pitch, f32 volume, f32 pan)
+SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
+        bool loop, f32 pitch, f32 volume, f32 pan)
 {
     PlayingSound ps;
     ps.sound = sound;
@@ -228,6 +247,7 @@ SoundHandle Audio::playSound(Sound* sound, bool loop, f32 pitch, f32 volume, f32
     ps.volume = volume;
     ps.pan = pan;
     ps.handle = ++nextSoundHandle;
+    ps.soundType = soundType;
 
     std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
@@ -238,7 +258,8 @@ SoundHandle Audio::playSound(Sound* sound, bool loop, f32 pitch, f32 volume, f32
     return ps.handle;
 }
 
-SoundHandle Audio::playSound3D(Sound* sound, glm::vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
+SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
+        glm::vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
 {
     PlayingSound ps;
     ps.sound = sound;
@@ -249,6 +270,7 @@ SoundHandle Audio::playSound3D(Sound* sound, glm::vec3 const& position, bool loo
     ps.is3D = true;
     ps.position = position;
     ps.handle = ++nextSoundHandle;
+    ps.soundType = soundType;
 
     if (loop)
     {
@@ -331,4 +353,19 @@ void Audio::setListeners(SmallVec<glm::vec3>const& listeners)
     {
         listenerPositions.push_back(p);
     }
+}
+
+void Audio::stopAllGameplaySounds()
+{
+    std::lock_guard<std::mutex> lock(audioMutex);
+
+    PlaybackModification pm;
+    pm.type = PlaybackModification::STOP_GAMEPLAY_SOUNDS;
+    playbackModifications.push_back(pm);
+}
+
+void Audio::setPaused(bool paused)
+{
+    std::lock_guard<std::mutex> lock(audioMutex);
+    pauseGameplaySounds = paused;
 }

@@ -9,3 +9,4 @@
 - Add force-feedback for collisions, offroad, etc.
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
+- Use time dilation for some effect (maybe when last person crosses finish line?)

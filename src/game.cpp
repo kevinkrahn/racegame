@@ -115,7 +115,6 @@ void Game::run()
 
     g_input.init(window);
     g_audio.init();
-    //g_audio.setMasterVolume(0.f);
     initPhysX();
     g_resources.load();
 

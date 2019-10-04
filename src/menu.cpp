@@ -88,7 +88,7 @@ void Menu::audioOptions()
             0.5f, false, true);
 
     g_gui.slider("Master Volume", 0.f, 1.f, tmpConfig.audio.masterVolume);
-    g_gui.slider("Engine Volume", 0.f, 1.f, tmpConfig.audio.engineVolume);
+    g_gui.slider("Vehicle Volume", 0.f, 1.f, tmpConfig.audio.vehicleVolume);
     g_gui.slider("SFX Volume", 0.f, 1.f, tmpConfig.audio.sfxVolume);
     g_gui.slider("Music Volume", 0.f, 1.f, tmpConfig.audio.musicVolume);
 

@@ -24,7 +24,7 @@ struct Config
     {
         f32 masterVolume = 1.f;
         f32 sfxVolume = 1.f;
-        f32 engineVolume = 1.f;
+        f32 vehicleVolume = 1.f;
         f32 musicVolume = 1.f;
     } audio;
 
@@ -51,7 +51,7 @@ struct Config
 
         data["masterVolume"] = DataFile::makeReal(audio.masterVolume);
         data["sfxVolume"] = DataFile::makeReal(audio.sfxVolume);
-        data["engineVolume"] = DataFile::makeReal(audio.engineVolume);
+        data["vehicleVolume"] = DataFile::makeReal(audio.vehicleVolume);
         data["musicVolume"] = DataFile::makeReal(audio.musicVolume);
 
         data["hudTrackScale"] = DataFile::makeReal(gameplay.hudTrackScale);
@@ -77,7 +77,7 @@ struct Config
 
         audio.masterVolume = data["masterVolume"].real(d.audio.masterVolume);
         audio.sfxVolume = data["sfxVolume"].real(d.audio.sfxVolume);
-        audio.engineVolume = data["engineVolume"].real(d.audio.engineVolume);
+        audio.vehicleVolume = data["vehicleVolume"].real(d.audio.vehicleVolume);
         audio.musicVolume = data["musicVolume"].real(d.audio.musicVolume);
 
         gameplay.hudTrackScale = data["hudTrackScale"].real(d.gameplay.hudTrackScale);
