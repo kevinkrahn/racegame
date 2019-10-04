@@ -502,21 +502,22 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         }
         else
         {
+            f32 forwardSpeed = getForwardSpeed();
+            f32 topSpeed = driver->vehicleData->physics.topSpeed;
+            if (forwardSpeed > topSpeed)
+            {
+                accel = 0.f;
+            }
             if (accel > 0.f)
             {
-                f32 forwardSpeed = getForwardSpeed();
                 if (vehicle4W->mDriveDynData.mCurrentGear == PxVehicleGearsData::eREVERSE
                         || forwardSpeed < 7.f)
                 {
                     //vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
                     vehicle4W->mDriveDynData.setTargetGear(PxVehicleGearsData::eFIRST);
                 }
-                f32 topSpeed = driver->vehicleData->physics.topSpeed;
-                if (forwardSpeed < topSpeed)
-                {
-                    if (digital) inputs.setDigitalAccel(true);
-                    else inputs.setAnalogAccel(accel);
-                }
+                if (digital) inputs.setDigitalAccel(true);
+                else inputs.setAnalogAccel(accel);
             }
             if (brake > 0.f)
             {
@@ -575,6 +576,21 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
             driver->vehicleData->physics.forwardDownforce * glm::abs(getForwardSpeed()) +
             driver->vehicleData->physics.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
         getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
+
+        f32 maxSlip = 0.f;
+        for (u32 i=0; i<NUM_WHEELS; ++i)
+        {
+            auto info = wheelQueryResults[i];
+            if (!info.isInAir)
+            {
+                f32 lateralSlip = glm::abs(info.lateralSlip) - 0.3f;
+                maxSlip = glm::max(maxSlip, lateralSlip);
+            }
+        }
+        f32 driftBoost = glm::min(maxSlip, 1.f) * accel
+            * driver->vehicleData->physics.driftBoost * 20.f;
+        PxVec3 boostDir = getRigidBody()->getLinearVelocity().getNormalized();
+        getRigidBody()->addForce(boostDir * driftBoost, PxForceMode::eACCELERATION);
     }
 }
 
@@ -690,7 +706,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
             const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
             char* debugText = tstr(
                 "Engine RPM: ", getEngineRPM(),
-                "\nSpeed: ", getForwardSpeed() * 3.6f,
+                "\nSpeed: ", getSidewaysSpeed() * 3.6f,
                 "\nGear: ", gearNames[vehicle4W->mDriveDynData.mCurrentGear],
                 "\nProgress: ", graphResult.currentLapDistance,
                 "\nLow Mark: ", graphResult.lapDistanceLowMark);
@@ -750,7 +766,7 @@ void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
         glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
         if ((i & 1) == 0)
         {
-            wheelTransform = glm::rotate(wheelTransform, f32(M_PI), glm::vec3(0, 0, 1));
+            wheelTransform = glm::rotate(wheelTransform, PI, glm::vec3(0, 0, 1));
         }
         auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
         renderer->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));

@@ -39,6 +39,9 @@ struct PhysicsVehicleSettings
     f32 topSpeed = 100.f;
     f32 constantDownforce = 0.005f;
     f32 forwardDownforce = 0.005f;
+    //f32 driftBoost = 1.f;
+    f32 driftBoost = 0.f;
+
     f32 maxEngineOmega = 600.f;
     f32 peekEngineTorque = 800.f;
     f32 engineDampingFullThrottle = 0.15f;
@@ -46,7 +49,7 @@ struct PhysicsVehicleSettings
     f32 engineDampingZeroThrottleClutchDisengaged = 0.35f;
     f32 maxHandbrakeTorque = 10000.f;
     f32 maxBrakeTorque = 10000.f;
-    f32 maxSteerAngle = f32(M_PI) * 0.33f;
+    f32 maxSteerAngle = PI * 0.33f;
     f32 clutchStrength = 10.f;
     f32 gearSwitchTime = 0.2f;
     f32 autoBoxSwitchTime = 0.25f;
