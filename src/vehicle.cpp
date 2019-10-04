@@ -782,6 +782,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         it->life -= deltaTime;
         if (it->life <= 0.f)
         {
+		    scene->getPhysicsScene()->removeActor(*it->rigidBody);
+            it->rigidBody->release();
             //std::swap(*it, vehicleDebris.back());
             *it = vehicleDebris.back();
             vehicleDebris.pop_back();
