@@ -278,7 +278,7 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
     {
         for (u32 i=1; i<paths[pathIndex].size(); ++i)
         {
-            if (i > pathPointDrawCount)
+            if (i > (u32)pathPointDrawCount)
             {
                 break;
             }

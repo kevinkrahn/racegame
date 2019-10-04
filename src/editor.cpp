@@ -22,9 +22,9 @@ struct EntityType
 #define fn [](glm::vec3 const& p, RandomSeries& s) -> PlaceableEntity*
 
 std::vector<EntityType> entityTypes = {
-    { "Rock", fn { return new StaticMesh(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, M_PI * 2)); } },
+    { "Rock", fn { return new StaticMesh(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, PI * 2.f)); } },
     { "Sign", fn { return new StaticMesh(2, p, glm::vec3(1.f), 0.f); } },
-    { "Tree", fn { return new Tree(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, M_PI * 2)); } },
+    { "Tree", fn { return new Tree(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
     { "Tunnel", fn { return new StaticMesh(1, p, glm::vec3(1.f), 0.f); } },
     { "Straight Arrow", fn { return new StaticDecal(0, p); } },
     { "Left Arrow", fn { return new StaticDecal(1, p); } },
@@ -62,7 +62,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
     glm::vec3 moveDir = (right != 0.f || up != 0.f) ? glm::normalize(glm::vec3(right, up, 0.f)) : glm::vec3(0, 0, 0);
     glm::vec3 forward(lengthdir(cameraAngle, 1.f), 0.f);
-    glm::vec3 sideways(lengthdir(cameraAngle + M_PI / 2.f, 1.f), 0.f);
+    glm::vec3 sideways(lengthdir(cameraAngle + PI / 2.f, 1.f), 0.f);
 
     cameraVelocity += (((forward * moveDir.y) + (sideways * moveDir.x)) * (deltaTime * (120.f + cameraDistance * 1.5f)));
     cameraTarget += cameraVelocity * deltaTime;
@@ -397,9 +397,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         {
             if (scene->track->canExtendTrack())
             {
-                u32 itemSize = height * 0.08f;
-                u32 iconSize = height * 0.08f;
-                u32 gap = height * 0.015f;
+                u32 itemSize = (u32)(height * 0.08f);
+                u32 iconSize = (u32)(height * 0.08f);
+                u32 gap = (u32)(height * 0.015f);
                 f32 totalWidth = itemSize * ARRAY_SIZE(prefabTrackItems) + gap * (ARRAY_SIZE(prefabTrackItems) - 2);
                 f32 cx = g_game.windowWidth * 0.5f;
                 f32 yoffset = height * 0.02f;

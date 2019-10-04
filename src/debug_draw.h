@@ -97,5 +97,5 @@ public:
         }
     }
 
-    std::string getDebugString() const override { return "DebugDraw"; };
+    std::string getDebugString() const override { return "DebugDraw"; }
 };

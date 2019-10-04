@@ -160,7 +160,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     }
 
     // track points
-    for (i32 i=0; i<points.size();)
+    for (i32 i=0; i<(i32)points.size();)
     {
         glm::vec3 point = points[i].position;
         glm::vec2 pointScreen = project(point, renderer->getCamera(0).viewProjection)
@@ -253,7 +253,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     }
 
     // track connections
-    for (i32 i=0; i<connections.size(); ++i)
+    for (i32 i=0; i<(i32)connections.size(); ++i)
     {
         auto& c = connections[i];
         if (isDragging)
@@ -286,7 +286,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 dragOffset = handleA - p;
                 isDragging = true;
                 // TODO: don't move the other handle if a certain key is pressed (ALT?)
-                for (i32 connectionIndex = 0; connectionIndex < connections.size(); ++connectionIndex)
+                for (i32 connectionIndex = 0; connectionIndex < (i32)connections.size(); ++connectionIndex)
                 {
                     auto const& c2 = connections[connectionIndex];
                     if (&c2 != &c)
@@ -366,7 +366,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 dragOffset = handleB - p;
                 isDragging = true;
                 // TODO: don't move the other handle if a certain key is pressed (ALT?)
-                for (i32 connectionIndex = 0; connectionIndex < connections.size(); ++connectionIndex)
+                for (i32 connectionIndex = 0; connectionIndex < (i32)connections.size(); ++connectionIndex)
                 {
                     auto const& c2 = connections[connectionIndex];
                     if (c2 == c)
@@ -676,8 +676,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         && g_input.isMouseButtonDown(MOUSE_LEFT)
         && glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
     {
-        f32 t;
-        f32 startZ;
+        f32 t = 0.f;
+        f32 startZ = 0.f;
         if (selectedPoints.size() > 0)
         {
             t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1),
@@ -868,8 +868,8 @@ void Track::connectRailings()
         return;
     }
 
-    if (railingA->selectedPoints[0].pointIndex == railingA->points.size() - 1 &&
-        railingB->selectedPoints[0].pointIndex == railingB->points.size() - 1)
+    if (railingA->selectedPoints[0].pointIndex == (i32)railingA->points.size() - 1 &&
+        railingB->selectedPoints[0].pointIndex == (i32)railingB->points.size() - 1)
     {
         for (auto it = railingB->points.rbegin(); it != railingB->points.rend(); ++it)
         {
@@ -878,7 +878,7 @@ void Track::connectRailings()
             railingA->points.push_back(point);
         }
     }
-    else if (railingA->selectedPoints[0].pointIndex == railingA->points.size() - 1 &&
+    else if (railingA->selectedPoints[0].pointIndex == (i32)railingA->points.size() - 1 &&
         railingB->selectedPoints[0].pointIndex == 0)
     {
         for (auto it = railingB->points.begin(); it!=railingB->points.end(); ++it)
@@ -887,7 +887,7 @@ void Track::connectRailings()
         }
     }
     else if (railingA->selectedPoints[0].pointIndex == 0 &&
-        railingB->selectedPoints[0].pointIndex == railingB->points.size() - 1)
+        railingB->selectedPoints[0].pointIndex == (i32)railingB->points.size() - 1)
     {
         for (auto it = railingB->points.rbegin(); it != railingB->points.rend(); ++it)
         {
@@ -954,7 +954,7 @@ void Track::split()
         if (railing->selectedPoints.size() == 1)
         {
             if (railing->selectedPoints.front().pointIndex == 0 ||
-                railing->selectedPoints.front().pointIndex == railing->points.size() - 1)
+                railing->selectedPoints.front().pointIndex == (i32)railing->points.size() - 1)
             {
                 continue;
             }
@@ -1014,7 +1014,7 @@ void Track::placeMarking(glm::vec3 const& p)
     railings.push_back(std::move(railing));
 }
 
-Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
+Track::BezierSegment* Track::getPointConnection(i32 pointIndex)
 {
     for (auto& c : connections)
     {
@@ -1026,7 +1026,7 @@ Track::BezierSegment* Track::getPointConnection(u32 pointIndex)
     return nullptr;
 }
 
-glm::vec3 Track::getPointDir(u32 pointIndex) const
+glm::vec3 Track::getPointDir(i32 pointIndex) const
 {
     glm::vec3 dir;
     u32 count = 0;
@@ -1107,7 +1107,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
     c.vertices.clear();
     c.indices.clear();
     f32 stepSize = 1.f;
-    u32 totalSteps = totalLength / stepSize;
+    u32 totalSteps = (u32)(totalLength / stepSize);
     glm::vec3 prevP = points[c.pointIndexA].position;
     for (u32 i=0; i<=totalSteps; ++i)
     {

@@ -19,7 +19,7 @@ struct Texture
 
     Texture() {}
     Texture(u32 width, u32 height, Format format, u8* data, size_t size)
-        : width(width), height(height), format(format)
+        : format(format), width(width), height(height)
     {
         GLuint internalFormat, baseFormat;
         switch (format)
@@ -42,7 +42,7 @@ struct Texture
                 break;
         }
 
-        u32 mipLevels = 1 + glm::floor(glm::log2((f32)glm::max(width, height)));
+        u32 mipLevels = 1 + (u32)(glm::log2((f32)glm::max(width, height)));
 
         glCreateTextures(GL_TEXTURE_2D, 1, &handle);
         glTextureStorage2D(handle, mipLevels, internalFormat, width, height);

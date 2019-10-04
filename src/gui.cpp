@@ -6,8 +6,8 @@
 
 void Gui::beginFrame()
 {
-    fontSmall = &g_resources.getFont("font", convertSize(18));
-    fontBig = &g_resources.getFont("font", convertSize(28));
+    fontSmall = &g_resources.getFont("font", (u32)convertSize(18));
+    fontBig = &g_resources.getFont("font", (u32)convertSize(28));
     white = g_resources.getTexture("white");
     renderer = g_game.renderer.get();
     isMouseOverUI = false;
@@ -518,9 +518,9 @@ bool Gui::option(const char* text, i32 value, const char* icon)
     if (icon)
     {
         Texture* iconTexture = g_resources.getTexture(icon);
-        u32 iconSize = bh * 0.5f;
+        u32 iconSize = (u32)(bh * 0.5f);
         renderer->push2D(QuadRenderable(iconTexture,
-                    pos + glm::vec2(bh * 0.25), iconSize, iconSize));
+                    pos + glm::vec2(bh * 0.25f), iconSize, iconSize));
     }
 
     renderer->push2D(TextRenderable(fontSmall, text,

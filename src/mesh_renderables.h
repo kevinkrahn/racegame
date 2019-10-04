@@ -142,7 +142,7 @@ public:
     std::string getDebugString() const override
     {
         return settings.transparent ? "LitRenderable(t)" : "LitRenderable";
-    };
+    }
 };
 
 class OverlayRenderable : public Renderable
@@ -157,8 +157,8 @@ class OverlayRenderable : public Renderable
 public:
     OverlayRenderable(Mesh* mesh, u32 cameraIndex, glm::mat4 const& worldTransform,
             glm::vec3 const& color, i32 priorityOffset = 0, bool onlyDepth=false)
-        : mesh(mesh), cameraIndex(cameraIndex), onlyDepth(onlyDepth),
-            worldTransform(worldTransform), color(color), priorityOffset(priorityOffset) {}
+        : color(color), mesh(mesh), worldTransform(worldTransform),
+          cameraIndex(cameraIndex), priorityOffset(priorityOffset), onlyDepth(onlyDepth) {}
 
     i32 getPriority() const override { return 250000 + priorityOffset; }
 
@@ -193,7 +193,7 @@ public:
         }
     }
 
-    std::string getDebugString() const override { return "OverlayRenderable"; };
+    std::string getDebugString() const override { return "OverlayRenderable"; }
 };
 
 class WireframeRenderable : public Renderable
@@ -204,7 +204,7 @@ class WireframeRenderable : public Renderable
 
 public:
     WireframeRenderable(Mesh* mesh, glm::mat4 const& worldTransform, glm::vec4 color = {0.8f, 0.8f, 0.8f, 1})
-        : mesh(mesh), worldTransform(worldTransform), color(color) { }
+        : color(color), mesh(mesh), worldTransform(worldTransform) { }
 
     i32 getPriority() const override { return 200000; }
 
@@ -229,5 +229,5 @@ public:
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    std::string getDebugString() const override { return "WireframeRenderable"; };
+    std::string getDebugString() const override { return "WireframeRenderable"; }
 };

@@ -502,7 +502,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         }
         else
         {
-            if (accel)
+            if (accel > 0.f)
             {
                 f32 forwardSpeed = getForwardSpeed();
                 if (vehicle4W->mDriveDynData.mCurrentGear == PxVehicleGearsData::eREVERSE
@@ -518,9 +518,9 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                     else inputs.setAnalogAccel(accel);
                 }
             }
-            if (brake)
+            if (brake > 0.f)
             {
-                if (vehicle4W->computeForwardSpeed() < 1.5f && !accel)
+                if (vehicle4W->computeForwardSpeed() < 1.5f && accel < 0.001f)
                 {
                     //vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
                     vehicle4W->mDriveDynData.setTargetGear(PxVehicleGearsData::eREVERSE);
@@ -599,9 +599,9 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
     // HUD
     if (cameraIndex >= 0)
     {
-        Font& font1 = g_resources.getFont("font", g_game.windowHeight * 0.04);
-        Font& font2 = g_resources.getFont("font", g_game.windowHeight * 0.08);
-        Font& font3 = g_resources.getFont("font", g_game.windowHeight * 0.05);
+        Font& font1 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.04f));
+        Font& font2 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.08f));
+        Font& font3 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.05f));
 
         ViewportLayout const& layout = viewportLayout[renderer->getViewportCount() - 1];
         glm::vec2 dim(g_game.windowWidth, g_game.windowHeight);
@@ -687,7 +687,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
                 "\nLow Mark: ", graphResult.lapDistanceLowMark);
             renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 220 + 10, g_game.windowHeight - 10 },
                         { 220 + 220, g_game.windowHeight - (30 + f->stringDimensions(debugText).y) },
-                        {}, {}, { 0, 0, 0 }, 0.6));
+                        {}, {}, { 0, 0, 0 }, 0.6f));
             renderer->push2D(TextRenderable(f, debugText,
                 { 220 + 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
         }

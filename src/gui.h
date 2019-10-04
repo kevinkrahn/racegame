@@ -51,7 +51,7 @@ class Gui
     std::vector<WidgetStackItem> widgetStack;
     class Font* fontSmall = nullptr;
     class Font* fontBig = nullptr;
-    class Texture* white = nullptr;
+    struct Texture* white = nullptr;
     class Renderer* renderer = nullptr;
 
     WidgetState* getWidgetState(WidgetState* parent, const char* identifier,

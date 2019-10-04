@@ -24,7 +24,7 @@ class Decal : public Renderable
 
 public:
     Decal() {}
-    Decal(Texture* tex, glm::vec3 const& color = { 1, 1, 1 }) : tex(tex), color(color) {}
+    Decal(Texture* tex, glm::vec3 const& color = { 1, 1, 1 }) : color(color), tex(tex) {}
     ~Decal()
     {
         if (vao)
@@ -53,7 +53,7 @@ public:
     void addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform);
     void end();
     i32 getPriority() const override { return 8000; }
-    std::string getDebugString() const override { return "Decal"; };
+    std::string getDebugString() const override { return "Decal"; }
     void onLitPassPriorityTransition(class Renderer* renderer) override;
     void onLitPass(class Renderer* renderer) override;
 };

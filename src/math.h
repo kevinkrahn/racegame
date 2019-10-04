@@ -17,6 +17,8 @@
 #include <PxPhysicsAPI.h>
 using namespace physx;
 
+#define PI PxPi
+
 inline glm::vec3 xAxisOf(glm::mat4 const& m)
 {
     return m[0];
@@ -267,7 +269,7 @@ inline f32 raySphereIntersection(glm::vec3 const& rayOrigin, glm::vec3 const& ra
     return t;
 }
 
-bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, glm::vec2& out)
+inline bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, glm::vec2& out)
 {
     f32 x1 = p1.x, x2 = p2.x, x3 = p3.x, x4 = p4.x;
     f32 y1 = p1.y, y2 = p2.y, y3 = p3.y, y4 = p4.y;
@@ -295,7 +297,7 @@ bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, gl
     return true;
 }
 
-glm::vec3 pointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, f32 t)
+inline glm::vec3 pointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, f32 t)
 {
     f32 u = 1.f - t;
     f32 t2 = t * t;

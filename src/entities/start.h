@@ -25,5 +25,5 @@ public:
     void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
-    const char* getName() const override { return "Track Start"; };
+    const char* getName() const override { return "Track Start"; }
 };

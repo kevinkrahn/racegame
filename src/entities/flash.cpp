@@ -5,7 +5,7 @@
 
 void Flash::onCreate(Scene* scene)
 {
-    angle = random(scene->randomSeries, 0.f, 2 * M_PI);
+    angle = random(scene->randomSeries, 0.f, 2 * PI);
 }
 
 void Flash::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)

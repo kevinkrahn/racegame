@@ -402,7 +402,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         glm::vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
 
-        f32 rot = M_PI * 0.25f;
+        f32 rot = PI * 0.25f;
         glm::mat4 transform = glm::rotate(glm::mat4(1.f), f32(rot), { 0, 0, 1 })
                 * glm::translate(glm::mat4(1.f), offset);
         bb = bb.transform(transform);
@@ -423,7 +423,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             size = (u32)(g_game.windowHeight * 0.36f);
         }
         else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        size *= g_game.config.gameplay.hudTrackScale;
+        size = (u32)(size * g_game.config.gameplay.hudTrackScale);
         trackPreview2D.beginUpdate(renderer, size, size);
 
         Mesh* quadMesh = g_resources.getMesh("world.Quad");
@@ -503,14 +503,14 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
                     { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText).y) },
-                    {}, {}, { 0, 0, 0 }, 0.6));
+                    {}, {}, { 0, 0, 0 }, 0.6f));
         renderer->push2D(TextRenderable(font1, debugText,
             { 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
 
         char* debugRenderListText = tstr(renderer->getDebugRenderList());
         auto dim = font2->stringDimensions(debugRenderListText);
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, 10 },
-                    { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6));
+                    { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f));
         renderer->push2D(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
     }

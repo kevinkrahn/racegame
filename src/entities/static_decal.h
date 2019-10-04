@@ -6,7 +6,7 @@
 
 class StaticDecal : public PlaceableEntity
 {
-    class Texture* tex;
+    struct Texture* tex;
     Decal decal;
     u32 decalFilter;
     u32 texIndex;
@@ -19,6 +19,6 @@ public:
     void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
-    const char* getName() const override { return "Decal"; };
+    const char* getName() const override { return "Decal"; }
     void showDetails(Scene* scene) override;
 };

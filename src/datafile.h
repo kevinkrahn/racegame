@@ -251,7 +251,7 @@ namespace DataFile
             return real();
         }
 
-        void setReal(f64 val)
+        void setReal(f32 val)
         {
             this->~Value();
             dataType = DataType::F32;

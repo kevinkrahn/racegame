@@ -11,13 +11,12 @@ class Projectile : public Entity
     glm::vec3 upVector;
     u32 instigator;
     Mesh* bulletMesh;
-    glm::vec3 startPos;
     f32 life = 3.f;
 
 public:
     Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             glm::vec3 const& upVector, u32 instigator)
-        : position(position), velocity(velocity), upVector(upVector), instigator(instigator), startPos(position)
+        : position(position), velocity(velocity), upVector(upVector), instigator(instigator)
     {
         bulletMesh = g_resources.getMesh("world.Bullet");
     }

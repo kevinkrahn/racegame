@@ -157,10 +157,10 @@ void Menu::graphicsOptions()
         { 3840, 2160 },
     };
     SmallVec<std::string> resolutionNames;
-    for (i32 i=0; i<ARRAY_SIZE(resolutions); ++i)
+    for (i32 i=0; i<(i32)ARRAY_SIZE(resolutions); ++i)
     {
-        if (resolutions[i].x == tmpConfig.graphics.resolutionX &&
-            resolutions[i].y == tmpConfig.graphics.resolutionY)
+        if (resolutions[i].x == (i32)tmpConfig.graphics.resolutionX &&
+            resolutions[i].y == (i32)tmpConfig.graphics.resolutionY)
         {
             resolutionIndex = i;
         }
@@ -182,7 +182,7 @@ void Menu::graphicsOptions()
     u32 shadowMapResolutions[] = { 0, 1024, 2048, 4096 };
     std::string shadowQualityNames[] = { "Off", "Low", "Medium", "High" };
     i32 shadowQualityIndex = 0;
-    for (i32 i=0; i<ARRAY_SIZE(shadowMapResolutions); ++i)
+    for (i32 i=0; i<(i32)ARRAY_SIZE(shadowMapResolutions); ++i)
     {
         if (shadowMapResolutions[i] == tmpConfig.graphics.shadowMapResolution)
         {
@@ -215,7 +215,7 @@ void Menu::graphicsOptions()
     i32 aaIndex = 0;
     u32 aaLevels[] = { 0, 2, 4, 8 };
     std::string aaLevelNames[] = { "Off", "2x MSAA", "4x MSAA", "8x MSAA" };
-    for (i32 i=0; i<ARRAY_SIZE(aaLevels); ++i)
+    for (i32 i=0; i<(i32)ARRAY_SIZE(aaLevels); ++i)
     {
         if (aaLevels[i] == tmpConfig.graphics.msaaLevel)
         {

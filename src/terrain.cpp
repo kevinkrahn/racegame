@@ -35,9 +35,9 @@ void Terrain::createBuffers()
 
 void Terrain::generate(f32 heightScale, f32 scale)
 {
-    u32 width = (x2 - x1) / tileSize;
-    u32 height = (y2 - y1) / tileSize;
-    for (u32 x = 0; x < width; ++x)
+    i32 width = (i32)((x2 - x1) / tileSize);
+    i32 height = (i32)((y2 - y1) / tileSize);
+    for (i32 x = 0; x < width; ++x)
     {
         for (i32 y = 0; y < height; ++y)
         {
@@ -55,8 +55,8 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
     this->y1 = snap(y1, tileSize);
     this->x2 = snap(x2, tileSize);
     this->y2 = snap(y2, tileSize);
-    u32 width = (this->x2 - this->x1) / tileSize;
-    u32 height = (this->y2 - this->y1) / tileSize;
+    i32 width = (i32)((this->x2 - this->x1) / tileSize);
+    i32 height = (i32)((this->y2 - this->y1) / tileSize);
 	heightBufferSize = width * height;
     heightBuffer.reset(new f32[heightBufferSize]);
     for (u32 i = 0; i < heightBufferSize; ++i)
@@ -137,10 +137,10 @@ void Terrain::regenerateMesh()
     // TODO: Update just the section of the mesh that has changed (buffer subdata)
     if (!isDirty) { return; }
     isDirty = false;
-    u32 width = (x2 - x1) / tileSize;
-    u32 height = (y2 - y1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
+    i32 height = (i32)((y2 - y1) / tileSize);
 	u32 indexIndex = 0;
-    for (u32 x = 0; x < width; ++x)
+    for (i32 x = 0; x < width; ++x)
     {
         for (i32 y = 0; y < height; ++y)
         {
@@ -264,13 +264,13 @@ f32 Terrain::getZ(glm::vec2 pos) const
 
 i32 Terrain::getCellX(f32 x) const
 {
-    i32 width = (x2 - x1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
     return clamp((i32)((x - x1) / tileSize), 0, width - 1);
 }
 
 i32 Terrain::getCellY(f32 y) const
 {
-    i32 height = (y2 - y1) / tileSize;
+    i32 height = (i32)((y2 - y1) / tileSize);
     return clamp((i32)((y - y1) / tileSize), 0, height - 1);
 }
 
@@ -280,7 +280,7 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
     for (i32 x=minX; x<=maxX; ++x)
     {
         for (i32 y=minY; y<=maxY; ++y)
@@ -299,7 +299,7 @@ void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
     for (i32 x=minX; x<=maxX; ++x)
     {
         for (i32 y=minY; y<=maxY; ++y)
@@ -320,7 +320,7 @@ void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
     for (i32 x=minX; x<=maxX; ++x)
     {
         for (i32 y=minY; y<=maxY; ++y)
@@ -340,8 +340,8 @@ void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
-    i32 height = (y2 - y1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
+    i32 height = (i32)((y2 - y1) / tileSize);
     for (i32 x=minX; x<=maxX; ++x)
     {
         for (i32 y=minY; y<=maxY; ++y)
@@ -369,8 +369,8 @@ void Terrain::erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
-    i32 height = (y2 - y1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
+    i32 height = (i32)((y2 - y1) / tileSize);
 
     f32 Kq = 5; // soil carrying capacity
     f32 Kw = 0.006f; // evaporation speed
@@ -402,7 +402,7 @@ DEPOSIT_AT(xi  , zi+1, (1-xf)*   zf ) \
 DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
 (H)+=ds;
 
-    const u32 iterations = radius * radius;
+    const u32 iterations = (u32)(radius * radius);
     for (u32 i =0; i < iterations; ++i)
     {
         //i32 xi = irandom(randomSeries, 0, width - 1);
@@ -428,7 +428,7 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
             f32 dl = sqrtf(dx * dx + dz * dz);
             if (dl <= FLT_EPSILON)
             {
-                f32 a = random(randomSeries, 0.f, M_PI * 2.f);
+                f32 a = random(randomSeries, 0.f, PI * 2.f);
                 dx = cosf(a);
                 dz = sinf(a);
             }
@@ -539,7 +539,7 @@ void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Sce
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
     for (i32 x=minX; x<=maxX; ++x)
     {
         for (i32 y=minY; y<=maxY; ++y)
@@ -575,7 +575,7 @@ void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 mate
     i32 minY = getCellY(pos.y - radius);
     i32 maxX = getCellX(pos.x + radius);
     i32 maxY = getCellY(pos.y + radius);
-    i32 width = (x2 - x1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
     for (i32 x=minX; x<=maxX; ++x)
     {
         for (i32 y=minY; y<=maxY; ++y)
@@ -637,14 +637,12 @@ DataFile::Value Terrain::serialize()
     dict["y1"] = DataFile::makeReal(y1);
     dict["x2"] = DataFile::makeReal(x2);
     dict["y2"] = DataFile::makeReal(y2);
-    dict["heightBuffer"] = DataFile::makeBytearray(std::move(
-                DataFile::Value::ByteArray(
-                    (u8*)heightBuffer.get(),
-                    (u8*)(heightBuffer.get() + heightBufferSize))));
-    dict["blendBuffer"] = DataFile::makeBytearray(std::move(
-                DataFile::Value::ByteArray(
-                    (u8*)blend.get(),
-                    (u8*)(blend.get() + heightBufferSize))));
+    dict["heightBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
+                        (u8*)heightBuffer.get(),
+                        (u8*)(heightBuffer.get() + heightBufferSize)));
+    dict["blendBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
+                        (u8*)blend.get(),
+                        (u8*)(blend.get() + heightBufferSize)));
     return dict;
 }
 
@@ -667,16 +665,16 @@ void Terrain::deserialize(DataFile::Value& data)
 
 void Terrain::applyDecal(Decal& decal)
 {
-    i32 width = (x2 - x1) / tileSize;
-    i32 height = (y2 - y1) / tileSize;
+    i32 width = (i32)((x2 - x1) / tileSize);
+    i32 height = (i32)((y2 - y1) / tileSize);
     std::vector<u32> collisionIndices;
     collisionIndices.reserve(256);
     BoundingBox bb = decal.getBoundingBox();
-    u32 startX = getCellX(bb.min.x);
-    u32 startY = getCellY(bb.min.y);
-    u32 endX = glm::min(getCellX(bb.max.x) + 1, width - 1);
-    u32 endY = glm::min(getCellY(bb.max.y) + 1, height - 1);
-    for (u32 x = startX; x < endX; ++x)
+    i32 startX = getCellX(bb.min.x);
+    i32 startY = getCellY(bb.min.y);
+    i32 endX = glm::min(getCellX(bb.max.x) + 1, width - 1);
+    i32 endY = glm::min(getCellY(bb.max.y) + 1, height - 1);
+    for (i32 x = startX; x < endX; ++x)
     {
         for (i32 y = startY; y < endY; ++y)
         {

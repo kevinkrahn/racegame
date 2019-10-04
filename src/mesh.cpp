@@ -233,9 +233,10 @@ void Mesh::createVAO()
             case VertexAttribute::FLOAT4:
                 numElements = 4;
                 break;
-            default:
-                FATAL_ERROR("Invalid vertex format");
-                break;
+        }
+        if (numElements == 0)
+        {
+            FATAL_ERROR("Invalid vertex format");
         }
         u32 bindIndex = i;
         glEnableVertexArrayAttrib(vao, bindIndex);

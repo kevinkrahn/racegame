@@ -40,7 +40,7 @@ public:
     void destroy() { isMarkedForDeletion = true; }
     bool isDestroyed() { return isMarkedForDeletion; }
 
-    virtual ~Entity() {};
+    virtual ~Entity() {}
     virtual DataFile::Value serialize() { return {}; }
     virtual void deserialize(DataFile::Value& data) {}
 
@@ -94,7 +94,7 @@ public:
             }
         }
     }
-    virtual const char* getName() const { return "Unknown Entity"; };
+    virtual const char* getName() const { return "Unknown Entity"; }
     virtual void showDetails(Scene* scene) {}
 
     ~PlaceableEntity()

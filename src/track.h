@@ -163,12 +163,12 @@ private:
         u32 meshTypeIndex = 0;
         Texture* tex;
 
-        Railing(Track* track) : track(track) {};
+        Railing(Track* track) : track(track) {}
         Railing(Railing const& other) = delete;
         Railing(Railing&& other) = default;
         Railing& operator = (Railing const& other) = delete;
         Railing& operator = (Railing && other) = default;
-        ~Railing()
+        ~Railing() override
         {
             if (actor)
             {
@@ -180,7 +180,7 @@ private:
         void updateMesh();
 
         i32 getPriority() const override { return 15; }
-        std::string getDebugString() const override { return "Track Marking"; };
+        std::string getDebugString() const override { return "Track Marking"; }
         void onLitPassPriorityTransition(class Renderer* renderer) override;
         void onLitPass(class Renderer* renderer) override;
     };
@@ -202,7 +202,7 @@ private:
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
 
-    BezierSegment* getPointConnection(u32 pointIndex);
+    BezierSegment* getPointConnection(i32 pointIndex);
     void createSegmentMesh(BezierSegment& segment, Scene* scene);
     void computeBoundingBox();
 
@@ -217,9 +217,6 @@ public:
         segment->handleOffsetB = glm::vec3(10, 0, 0);
         segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
-    }
-    ~Track()
-    {
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
@@ -285,10 +282,10 @@ public:
     }
     Point const& getPoint(i32 index)
     {
-        assert(points.size() > index);
+        assert((i32)points.size() > index);
         return points[index];
     }
-    glm::vec3 getPointDir(u32 pointIndex) const;
+    glm::vec3 getPointDir(i32 pointIndex) const;
     void clearSelection();
     void buildTrackGraph(class TrackGraph* trackGraph, glm::mat4 const& startTransform);
     void drawTrackPreview(class TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection);

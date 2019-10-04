@@ -39,7 +39,7 @@ class Font
     friend class TextRenderable;
 
 public:
-    Font() {};
+    Font() {}
     Font(std::string const& filename, f32 height, u32 startingChar=32, u32 numGlyphs=95);
 
     glm::vec2 stringDimensions(const char* str, bool onlyFirstLine=false) const;
