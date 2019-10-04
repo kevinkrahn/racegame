@@ -36,10 +36,10 @@ struct PhysicsVehicleSettings
     f32 frontToeAngle = 0.f;
     f32 rearToeAngle = 0.f;
 
-    f32 topSpeed = 100.f;
+    f32 rearTireGripPercent = 1.f;
+    f32 topSpeed = 33.f;
     f32 constantDownforce = 0.005f;
     f32 forwardDownforce = 0.005f;
-    //f32 driftBoost = 1.f;
     f32 driftBoost = 0.f;
 
     f32 maxEngineOmega = 600.f;

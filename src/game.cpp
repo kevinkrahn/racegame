@@ -115,17 +115,17 @@ void Game::run()
 
     g_input.init(window);
     g_audio.init();
-    g_audio.setMasterVolume(0.f);
+    //g_audio.setMasterVolume(0.f);
     initPhysX();
     g_resources.load();
 
     state.drivers = {
-        Driver(true,  true,  true,  &g_resources.getVehicleData()[2], 1, 0),
+        Driver(true,  true,  true,  &g_resources.getVehicleData()[1], 1, 0),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
-        Driver(false, false, false, &g_resources.getVehicleData()[2], 3),
+        Driver(false, false, false, &g_resources.getVehicleData()[1], 3),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
-        Driver(false, false, false, &g_resources.getVehicleData()[2], 6),
+        Driver(false, false, false, &g_resources.getVehicleData()[1], 6),
         Driver(false, false, false, &g_resources.getVehicleData()[1], 7),
         Driver(false, false, false, &g_resources.getVehicleData()[1], 8),
         Driver(false, false, false, &g_resources.getVehicleData()[0], 1),

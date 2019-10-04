@@ -103,7 +103,7 @@ void Scene::startRace()
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
     i32 cameraIndex = 0;
-    for (u32 i=0; i<g_game.state.drivers.size(); ++i)
+    for (u32 i=0; i<2; ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
 

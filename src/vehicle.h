@@ -78,6 +78,7 @@ public:
     glm::vec3 lastValidPosition;
     bool isHidden = false;
     glm::vec3 previousVelocity;
+    f32 engineRPM = 0.f;
 
     glm::vec3 screenShakeVelocity = glm::vec3(0);
     glm::vec3 screenShakeOffset = glm::vec3(0);

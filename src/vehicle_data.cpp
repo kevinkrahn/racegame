@@ -14,9 +14,11 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
     vehicle.physics.offroadDampingRate = data["wheel-offroad-damping"].real();
     vehicle.physics.trackTireFriction = data["track-tire-friction"].real();
     vehicle.physics.offroadTireFriction = data["offroad-tire-friction"].real();
-    //vehicle.physics.topSpeed = data["top-speed"].real();
-    //vehicle.physics.constantDownforce = data["constant-downforce"].real();
-    //vehicle.physics.forwardDownforce = data["forward-downforce"].real();
+    vehicle.physics.topSpeed = data["top-speed"].real();
+    vehicle.physics.constantDownforce = data["constant-downforce"].real();
+    vehicle.physics.forwardDownforce = data["forward-downforce"].real();
+    vehicle.physics.driftBoost = data["drift-boost"].real();
+    vehicle.physics.rearTireGripPercent = data["rear-tire-grip-percent"].real();
     vehicle.physics.maxEngineOmega = data["max-engine-omega"].real();
     vehicle.physics.peekEngineTorque = data["peek-engine-torque"].real();
     vehicle.physics.engineDampingFullThrottle = data["engine-damping-full-throttle"].real();

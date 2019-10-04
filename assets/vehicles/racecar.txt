@@ -20,8 +20,14 @@
         wheel-offroad-damping: 90,
         wheel-front-toe-angle-degrees: 0,
         wheel-rear-toe-angle-degrees: 0.01,
-        track-tire-friction: 4.4,
+        track-tire-friction: 4.3,
         offroad-tire-friction: 1.4,
+
+        rear-tire-grip-percent: 1.0,
+        constant-downforce: 0.01,
+        forward-downforce: 0.005,
+        top-speed: 100.0,
+        drift-boost: 0.0,
 
         max-engine-omega: 900,
         peek-engine-torque: 910,
@@ -31,8 +37,8 @@
         max-brake-torque: 15000,
         max-steer-angle-degrees: 52,
         clutch-strength: 12,
-        gear-switch-time: 0.05,
-        auto-box-switch-time: 0.08,
+        gear-switch-time: 0.04,
+        auto-box-switch-time: 0.3,
         gear-ratios: [ -4, 0, 5, 2.7, 2.0, 1.6, 1.2, 1.0, 0.9 ],
         final-gear-ratio: 4.0,
 
@@ -45,8 +51,8 @@
         camber-angle-at-max-droop: 0.02,
         camber-angle-at-max-compression: -0.02,
 
-        front-anti-rollbar-stiffness: 12000.0,
-        rear-anti-rollbar-stiffness: 12000.0,
+        front-anti-rollbar-stiffness: 12500.0,
+        rear-anti-rollbar-stiffness: 12500.0,
 
         ackermann-accuracy: 1.0,
 

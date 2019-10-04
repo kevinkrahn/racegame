@@ -151,8 +151,8 @@ PxBatchQuery* VehicleSceneQueryData::setUpBatchedSceneQuery(const PxU32 batchId,
 	return scene->createBatchQuery(sqDesc);
 }
 
-static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(PhysicsVehicleSettings const& settings,
-        const PxMaterial** materials)
+static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(
+        PhysicsVehicleSettings const& settings, const PxMaterial** materials)
 {
     constexpr u32 NUM_SURFACE_TYPES = 2;
     f32 frictionTable[NUM_SURFACE_TYPES] = {
@@ -162,17 +162,22 @@ static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(PhysicsV
 
     PxVehicleDrivableSurfaceType surfaceTypes[NUM_SURFACE_TYPES] = { { 0 }, { 1 } };
 
-    const u32 numTireTypes = 1;
+    const u32 numTireTypes = 2;
     PxVehicleDrivableSurfaceToTireFrictionPairs* surfaceTirePairs =
         PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(numTireTypes, NUM_SURFACE_TYPES);
 
     surfaceTirePairs->setup(numTireTypes, NUM_SURFACE_TYPES, materials, surfaceTypes);
 
+    f32 tireFriction[numTireTypes] = {
+        1.f,
+        settings.rearTireGripPercent,
+    };
+
     for(u32 i = 0; i < NUM_SURFACE_TYPES; i++)
     {
         for(u32 j = 0; j < numTireTypes; j++)
         {
-            surfaceTirePairs->setTypePairFriction(i, j, frictionTable[i]);
+            surfaceTirePairs->setTypePairFriction(i, j, frictionTable[i] * tireFriction[j]);
         }
     }
 
@@ -305,11 +310,16 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     wheels[WHEEL_FRONT_LEFT].mMaxSteer = settings.maxSteerAngle;
     wheels[WHEEL_FRONT_RIGHT].mMaxSteer = settings.maxSteerAngle;
 
-    PxVehicleTireData tires[NUM_WHEELS];
+    PxVehicleTireData tires[NUM_WHEELS] = { };
+    tires[WHEEL_FRONT_LEFT].mType = 0;
+    tires[WHEEL_FRONT_RIGHT].mType = 0;
+    tires[WHEEL_REAR_LEFT].mType = 1;
+    tires[WHEEL_REAR_RIGHT].mType = 1;
+
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
-        tires[i].mType = 0;
         // TODO: investigate other tire parameters
+        //tires[i].mType = 0;
     }
 
     PxVec3 wheelCenterOffsets[NUM_WHEELS];
@@ -410,6 +420,24 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     clutch.mStrength = settings.clutchStrength;
     driveSimData.setClutchData(clutch);
 
+    PxVehicleAutoBoxData autobox;
+    autobox.setDownRatios(PxVehicleGearsData::eFIRST,   0.4f);
+    autobox.setDownRatios(PxVehicleGearsData::eSECOND,  0.4f);
+    autobox.setDownRatios(PxVehicleGearsData::eTHIRD,   0.4f);
+    autobox.setDownRatios(PxVehicleGearsData::eFOURTH,  0.4f);
+    autobox.setDownRatios(PxVehicleGearsData::eFIFTH,   0.5f);
+    autobox.setDownRatios(PxVehicleGearsData::eSIXTH,   0.6f);
+    autobox.setDownRatios(PxVehicleGearsData::eSEVENTH, 0.6f);
+    autobox.setUpRatios(PxVehicleGearsData::eFIRST,   0.90f);
+    autobox.setUpRatios(PxVehicleGearsData::eSECOND,  0.88f);
+    autobox.setUpRatios(PxVehicleGearsData::eTHIRD,   0.88f);
+    autobox.setUpRatios(PxVehicleGearsData::eFOURTH,  0.88f);
+    autobox.setUpRatios(PxVehicleGearsData::eFIFTH,   0.88f);
+    autobox.setUpRatios(PxVehicleGearsData::eSIXTH,   0.88f);
+    autobox.setUpRatios(PxVehicleGearsData::eSEVENTH, 0.88f);
+    autobox.setLatency(settings.autoBoxSwitchTime);
+    driveSimData.setAutoBoxData(autobox);
+
     // ackermann steer accuracy
     PxVehicleAckermannGeometryData ackermann;
     ackermann.mAccuracy = settings.ackermannAccuracy;
@@ -435,7 +463,7 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
     vehicle4W->mDriveDynData.setUseAutoGears(true);
-    vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
+    //vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
 }
 
 Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
@@ -468,6 +496,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 
 Vehicle::~Vehicle()
 {
+    if (engineSound) g_audio.stopSound(engineSound);
+    if (tireSound) g_audio.stopSound(tireSound);
     for (auto& d : vehicleDebris)
     {
         d.rigidBody->release();
@@ -503,11 +533,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         else
         {
             f32 forwardSpeed = getForwardSpeed();
-            f32 topSpeed = driver->vehicleData->physics.topSpeed;
-            if (forwardSpeed > topSpeed)
-            {
-                accel = 0.f;
-            }
+
             if (accel > 0.f)
             {
                 if (vehicle4W->mDriveDynData.mCurrentGear == PxVehicleGearsData::eREVERSE
@@ -552,6 +578,12 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                 PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs(
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
+            }
+            f32 topSpeed = driver->vehicleData->physics.topSpeed;
+            if (forwardSpeed > topSpeed)
+            {
+                vehicle4W->mDriveDynData.setAnalogInput(
+                        PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL, accel * 0.49f);
             }
         }
     }
@@ -706,7 +738,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
             const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
             char* debugText = tstr(
                 "Engine RPM: ", getEngineRPM(),
-                "\nSpeed: ", getSidewaysSpeed() * 3.6f,
+                "\nSpeed: ", getForwardSpeed(),// * 3.6f,
                 "\nGear: ", gearNames[vehicle4W->mDriveDynData.mCurrentGear],
                 "\nProgress: ", graphResult.currentLapDistance,
                 "\nLow Mark: ", graphResult.lapDistanceLowMark);
@@ -942,7 +974,8 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             //renderer->drawLine(currentPosition, currentPosition + testDir1 * sideTestDist);
             //renderer->drawLine(currentPosition, currentPosition + testDir2 * sideTestDist);
 
-            f32 accel = 0.85f;
+            //f32 accel = 0.85f;
+            f32 accel = 1.f;
             f32 brake = 0.f;
             bool isSomethingBlockingMe = isBlocking(driver->vehicleData->collisionWidth / 2 + 0.05f,
                     getForwardVector(), forwardTestDist);
@@ -1068,7 +1101,18 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (engineSound)
     {
-        g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
+        f32 rotationSpeed = 0.f;
+        for (u32 i=0; i<NUM_WHEELS; ++i)
+        {
+            rotationSpeed += glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
+        }
+        rotationSpeed /= NUM_WHEELS;
+        f32 gearRatio = glm::abs(driver->vehicleData->physics.gearRatios[
+            vehicle4W->mDriveDynData.mCurrentGear]);
+        engineRPM = smoothMove(engineRPM, rotationSpeed * gearRatio, 1.9f, deltaTime);
+
+        //g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
+        g_audio.setSoundPitch(engineSound, 1.f + engineRPM * 0.04f);
         g_audio.setSoundPosition(engineSound, lastValidPosition);
     }
     if (tireSound)
@@ -1138,21 +1182,21 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             ++numWheelsOnGround;
 
+            PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
+
             // increase damping when offroad
             if (info.tireSurfaceMaterial == scene->offroadMaterial)
             {
-                PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
                 d.mDampingRate = driver->vehicleData->physics.offroadDampingRate;
-                vehicle4W->mWheelsSimData.setWheelData(i, d);
                 isWheelOffroad = true;
             }
             else
             {
-                PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
                 d.mDampingRate = driver->vehicleData->physics.wheelDampingRate;
-                vehicle4W->mWheelsSimData.setWheelData(i, d);
                 anyWheelOnRoad = true;
             }
+
+            vehicle4W->mWheelsSimData.setWheelData(i, d);
         }
 
         f32 lateralSlip = glm::abs(info.lateralSlip) - 0.4f;
@@ -1307,6 +1351,7 @@ void Vehicle::blowUp()
         });
     }
     deadTimer = 1.f;
+    engineRPM = 0.f;
     scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
     scene->attackCredit(lastDamagedBy, vehicleIndex);
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
