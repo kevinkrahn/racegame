@@ -37,6 +37,8 @@ struct PhysicsVehicleSettings
     f32 rearToeAngle = 0.f;
 
     f32 topSpeed = 100.f;
+    f32 constantDownforce = 0.005f;
+    f32 forwardDownforce = 0.005f;
     f32 maxEngineOmega = 600.f;
     f32 peekEngineTorque = 800.f;
     f32 engineDampingFullThrottle = 0.15f;

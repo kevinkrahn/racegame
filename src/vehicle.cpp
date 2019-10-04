@@ -567,6 +567,15 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
 	PxVehicleUpdates(timestep, grav, *frictionPairs, 1, vehicles, vehicleQueryResults);
 
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
+
+    if (!isInAir)
+    {
+        PxVec3 down = getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
+        f32 downforce =
+            driver->vehicleData->physics.forwardDownforce * glm::abs(getForwardSpeed()) +
+            driver->vehicleData->physics.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
+        getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
+    }
 }
 
 bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
@@ -1200,10 +1209,11 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     if (smoked) smokeTimer = smokeInterval;
 
     // destroy vehicle if it is flipped and unable to move
-    if (onGround && numWheelsOnGround <= 1 && getRigidBody()->getLinearVelocity().magnitude() < 2.f)
+    if (onGround && numWheelsOnGround <= 1
+            && getRigidBody()->getLinearVelocity().magnitude() < 5.f)
     {
         flipTimer += deltaTime;
-        if (flipTimer > 2.5f)
+        if (flipTimer > 1.8f)
         {
             applyDamage(100.f, vehicleIndex);
         }
