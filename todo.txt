@@ -1,4 +1,4 @@
-- Add explosion effect when vehicle is destroyed
+- Allow keyboard or controller to be used when there is only one player
 - Export mesh tangents and add normal maps
 - Automatically place decals on track (e.g. patch work, dirt, grunge, tire marks)
 - Moving parts on vehicles (e.g. bouncing/swaying antenna)

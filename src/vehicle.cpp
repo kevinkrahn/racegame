@@ -504,13 +504,19 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         {
             if (accel)
             {
-                if (vehicle4W->mDriveDynData.mCurrentGear == PxVehicleGearsData::eREVERSE || getForwardSpeed() < 7.f)
+                f32 forwardSpeed = getForwardSpeed();
+                if (vehicle4W->mDriveDynData.mCurrentGear == PxVehicleGearsData::eREVERSE
+                        || forwardSpeed < 7.f)
                 {
                     //vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
                     vehicle4W->mDriveDynData.setTargetGear(PxVehicleGearsData::eFIRST);
                 }
-                if (digital) inputs.setDigitalAccel(true);
-                else inputs.setAnalogAccel(accel);
+                f32 topSpeed = driver->vehicleData->physics.topSpeed;
+                if (forwardSpeed < topSpeed)
+                {
+                    if (digital) inputs.setDigitalAccel(true);
+                    else inputs.setAnalogAccel(accel);
+                }
             }
             if (brake)
             {
@@ -768,6 +774,22 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         tireMarkRibbons[i].update(deltaTime);
+    }
+
+    // update debris chunks
+    for (auto it = vehicleDebris.begin(); it != vehicleDebris.end();)
+    {
+        it->life -= deltaTime;
+        if (it->life <= 0.f)
+        {
+            //std::swap(*it, vehicleDebris.back());
+            *it = vehicleDebris.back();
+            vehicleDebris.pop_back();
+        }
+        else
+        {
+            ++it;
+        }
     }
 
     if (screenShakeTimer > 0.f)
@@ -1253,7 +1275,7 @@ void Vehicle::blowUp()
         createVehicleDebris(VehicleDebris{
             &d,
             body,
-            0.f
+            random(scene->randomSeries, 5.f, 6.f)
         });
     }
     deadTimer = 1.f;
