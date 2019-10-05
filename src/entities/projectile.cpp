@@ -58,11 +58,12 @@ void Projectile::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.fresnelScale = 0.3f;
     settings.fresnelPower = 2.0f;
     settings.fresnelBias = 0.1f;
-    settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
+    settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+        * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
     settings.color = glm::vec3(0.2f, 0.9f, 0.2f);
     settings.emit = glm::vec3(0.01f, 1.5f, 0.01f);
     renderer->push(LitRenderable(settings));
 
     renderer->push(BillboardRenderable(g_resources.getTexture("flare"),
-                position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.75f));
+                position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f));
 }
