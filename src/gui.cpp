@@ -3,6 +3,7 @@
 #include "game.h"
 #include "input.h"
 #include "2d.h"
+#include "audio.h"
 
 void Gui::beginFrame()
 {
@@ -133,6 +134,10 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
 
         if (panelState->selectableChildCount > 0)
         {
+            if (move != 0)
+            {
+                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            }
             panelState->selectIndex += move;
             if (panelState->selectIndex < 0)
             {
@@ -217,10 +222,15 @@ bool Gui::button(const char* text, bool active)
         isMouseOverUI = true;
         if (active)
         {
+            if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+            {
+                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            }
             parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
             selected = true;
             if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
+                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
                 isMouseClickHandled = true;
                 clicked = true;
             }
@@ -234,6 +244,8 @@ bool Gui::button(const char* text, bool active)
         {
             clicked = true;
             isKeyboardInputHandled = true;
+            // TODO: need different sound for this
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
         }
     }
 
@@ -293,10 +305,15 @@ bool Gui::toggle(const char* text, bool& enabled)
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
         isMouseOverUI = true;
+        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+        {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+        }
         parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
         selected = true;
         if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
             enabled = !enabled;
             isMouseClickHandled = true;
             clicked = true;
@@ -306,8 +323,9 @@ bool Gui::toggle(const char* text, bool& enabled)
     {
         selected =
             (parent.widgetState->selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected && (didSelect() || didChangeSelection()))
+        if (!isKeyboardInputHandled && selected && didChangeSelection())
         {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
             enabled = !enabled;
             clicked = true;
             isKeyboardInputHandled = true;
@@ -369,6 +387,10 @@ bool Gui::slider(const char* text, f32 minValue, f32 maxValue, f32& value)
     if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
+        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+        {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+        }
         isMouseOverUI = true;
         parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
         selected = true;
@@ -389,6 +411,7 @@ bool Gui::slider(const char* text, f32 minValue, f32 maxValue, f32& value)
         f32 valChange = didChangeSelection() * ((maxValue - minValue) / 20.f);
         if (!isKeyboardInputHandled && selected && valChange != 0.f)
         {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
             clicked = true;
             isKeyboardInputHandled = true;
             value = clamp(value + valChange, minValue, maxValue);
@@ -480,10 +503,15 @@ bool Gui::option(const char* text, i32 value, const char* icon)
     glm::vec2 mousePos = g_input.getMousePosition();
     if (pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
+        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+        {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+        }
         isMouseOverUI = true;
         selected = true;
         if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
             *parent.outputValueI32 = value;
             isMouseClickHandled = true;
             clicked = true;
@@ -566,6 +594,10 @@ i32 Gui::select(const char* text, std::string* firstValue,
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
         isMouseOverUI = true;
+        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+        {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+        }
         parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
         selected = true;
         if (!isMouseClickHandled && g_input.isMouseButtonDown(MOUSE_LEFT))
@@ -573,6 +605,7 @@ i32 Gui::select(const char* text, std::string* firstValue,
             isMouseCaptured = true;
             isMouseClickHandled = true;
             clicked = true;
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
             if (mousePos.x > pos.x + bw / 2)
             {
                 ++currentIndex;
@@ -590,6 +623,7 @@ i32 Gui::select(const char* text, std::string* firstValue,
         i32 valChange = didChangeSelection();
         if (!isKeyboardInputHandled && selected && valChange != 0.f)
         {
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
             clicked = true;
             isKeyboardInputHandled = true;
             currentIndex += valChange;
