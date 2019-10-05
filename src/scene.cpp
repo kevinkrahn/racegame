@@ -157,6 +157,12 @@ void Scene::onStart()
 {
 }
 
+u32 Scene::numHumanDrivers() const
+{
+    return (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
+            [](auto& d) { return d.playerProfile != nullptr; });
+}
+
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     if (g_input.isKeyPressed(KEY_F6))

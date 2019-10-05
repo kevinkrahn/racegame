@@ -927,16 +927,16 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
                 shoot = g_input.isKeyPressed(KEY_C);
                 shootSpecial = g_input.isKeyPressed(KEY_V);
             }
-            else
+            if (!driver->useKeyboard || (scene->numHumanDrivers() == 1))
             {
                 Controller* controller = g_input.getController(driver->controllerID);
                 if (controller)
                 {
-                    accel = controller->getAxis(AXIS_TRIGGER_RIGHT);
-                    brake = controller->getAxis(AXIS_TRIGGER_LEFT);
-                    steer = -controller->getAxis(AXIS_LEFT_X);
-                    shoot = controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
-                    shootSpecial = controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+                    accel = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_RIGHT), accel);
+                    brake = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_LEFT), brake);
+                    steer = nonZeroOrDefault(-controller->getAxis(AXIS_LEFT_X), steer);
+                    shoot = shoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+                    shootSpecial = shootSpecial || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
                 }
             }
 

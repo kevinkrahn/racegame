@@ -307,3 +307,7 @@ inline glm::vec3 pointOnBezierCurve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, gl
     return glm::vec3(u3 * p0 + (3.f * u2 * t) * p1 + (3.f * u * t2) * p2 + t3 * p3);
 }
 
+inline f32 nonZeroOrDefault(f32 val, f32 defaultVal)
+{
+    return val != 0.f ? val : defaultVal;
+}

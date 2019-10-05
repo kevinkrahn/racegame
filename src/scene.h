@@ -89,6 +89,7 @@ public:
     void attackCredit(u32 instigator, u32 victim);
     void applyAreaForce(glm::vec3 const& position, f32 strength) const;
     void createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength);
+    u32 numHumanDrivers() const;
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
