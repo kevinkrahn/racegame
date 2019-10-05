@@ -71,6 +71,8 @@ public:
     Scene(const char* name);
     ~Scene();
 
+    f64 getWorldTime() const { return worldTime; }
+
     void startRace();
     void stopRace();
 

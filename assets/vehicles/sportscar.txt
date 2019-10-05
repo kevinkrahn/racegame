@@ -13,24 +13,26 @@
             handling: 0.5,
         },
 
+        hit-points: 100,
+
         chassis-density: 89,
         wheel-mass-front: 20,
         wheel-mass-rear: 20,
         wheel-damping: 0.1,
         wheel-offroad-damping: 30,
-        wheel-front-toe-angle-degrees: -0.75, // more responsive to inputs
-        wheel-rear-toe-angle-degrees: 4.0, // recover faster from slide
-        track-tire-friction: 2.33,
-        offroad-tire-friction: 1.3,
+        wheel-front-toe-angle-degrees: -0.5, // more responsive to inputs
+        wheel-rear-toe-angle-degrees: 4.5, // recover faster from slide
+        track-tire-friction: 3.14,
+        offroad-tire-friction: 1.5,
 
-        rear-tire-grip-percent: 0.928,
+        rear-tire-grip-percent: 0.835,
         constant-downforce: 0.0,
-        forward-downforce: 0.0,
-        top-speed: 35.0,
+        forward-downforce: 0.001,
+        top-speed: 33.0,
         drift-boost: 0.0,
 
         max-engine-omega: 650,
-        peek-engine-torque: 900,
+        peek-engine-torque: 930,
         engine-damping-full-throttle: 0.3,
         engine-damping-zero-throttle-clutch-engaged: 1.5,
         engine-damping-zero-throttle-clutch-disengaged: 0.6,

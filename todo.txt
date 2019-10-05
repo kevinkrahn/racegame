@@ -10,3 +10,8 @@
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line?)
+
+- Ideas:
+    - Weapon that drops bouncing explosive balls from the back of the vehicle
+    - Missle rack on back of truck
+    - Weapon that shoots projectiles that bounce off walls and continue on

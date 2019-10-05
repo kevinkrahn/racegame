@@ -7,6 +7,7 @@
 #include "input.h"
 #include "mesh_renderables.h"
 #include "entities/projectile.h"
+#include "entities/mine.h"
 #include "billboard.h"
 
 #include <vehicle/PxVehicleUtil.h>
@@ -483,6 +484,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
+    this->maxHitPoints = driver->vehicleData->maxHitPoints;
     this->hitPoints = this->maxHitPoints;
     this->cameraIndex = cameraIndex;
 
@@ -915,6 +917,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             f32 steer = 0.f;
             bool digital = false;
             bool shoot = false;
+            bool shootSpecial = false;
             if (driver->useKeyboard)
             {
                 digital = true;
@@ -922,6 +925,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
                 brake = g_input.isKeyDown(KEY_DOWN);
                 steer = (f32)g_input.isKeyDown(KEY_LEFT) - (f32)g_input.isKeyDown(KEY_RIGHT);
                 shoot = g_input.isKeyPressed(KEY_C);
+                shootSpecial = g_input.isKeyPressed(KEY_V);
             }
             else
             {
@@ -932,6 +936,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
                     brake = controller->getAxis(AXIS_TRIGGER_LEFT);
                     steer = -controller->getAxis(AXIS_LEFT_X);
                     shoot = controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+                    shootSpecial = controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
                 }
             }
 
@@ -949,6 +954,11 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             if (shoot)
             {
                 fireWeapon();
+            }
+
+            if (shootSpecial)
+            {
+                layMine();
             }
         }
         else if (scene->getTrackGraph().getPaths().size() > 0)
@@ -1373,4 +1383,30 @@ void Vehicle::fireWeapon()
             vel, zAxisOf(transform), vehicleIndex));
     scene->addEntity(new Projectile(pos + getForwardVector() * 3.f - getRightVector() * 0.8f,
             vel, zAxisOf(transform), vehicleIndex));
+    // TODO: play sound
+}
+
+void Vehicle::layMine()
+{
+    PxRaycastBuffer hit;
+    glm::vec3 down = convert(getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
+    if (scene->raycastStatic(getPosition(), down, 2.f, &hit,
+                COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK))
+    {
+        glm::vec3 pos = convert(hit.block.position);
+        glm::vec3 up = convert(hit.block.normal);
+        glm::mat4 m(1.f);
+        m[0] = glm::vec4(getForwardVector(), m[0].w);
+        m[1] = glm::vec4(glm::normalize(
+                    glm::cross(up, glm::vec3(m[0]))), m[1].w);
+        m[2] = glm::vec4(glm::normalize(
+                glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
+        scene->addEntity(new Mine(glm::translate(glm::mat4(1.f), pos) * m, vehicleIndex));
+
+        // TODO: play sound
+    }
+    else
+    {
+        // TODO: play "cannot do that now" sound
+    }
 }

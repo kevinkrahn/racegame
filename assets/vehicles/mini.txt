@@ -13,7 +13,9 @@
             handling: 0.5,
         },
 
-        chassis-density: 90,
+        hit-points: 100,
+
+        chassis-density: 92,
         wheel-mass-front: 20,
         wheel-mass-rear: 20,
         wheel-damping: 0.5,
@@ -26,11 +28,11 @@
         rear-tire-grip-percent: 1.0,
         constant-downforce: 0.0,
         forward-downforce: 0.0,
-        top-speed: 30.0,
+        top-speed: 29.0,
         drift-boost: 0.0,
 
         max-engine-omega: 800,
-        peek-engine-torque: 950,
+        peek-engine-torque: 960,
         engine-damping-full-throttle: 0.15,
         engine-damping-zero-throttle-clutch-engaged: 1.5,
         engine-damping-zero-throttle-clutch-disengaged: 0.6,

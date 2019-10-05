@@ -70,6 +70,7 @@ void loadVehicleData(DataFile::Value& data, VehicleData& vehicle)
 
     vehicle.name = data["name"].string();
     vehicle.description = data["description"].string();
+    vehicle.maxHitPoints = data["hit-points"].real(100.f);
     vehicle.price = data["price"].integer();
     auto& specs = data["specs"];
     vehicle.specs.acceleration = specs["acceleration"].real();

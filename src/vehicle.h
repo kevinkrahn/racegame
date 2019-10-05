@@ -114,6 +114,7 @@ public:
     bool isBlocking(f32 radius, glm::vec3 const& dir, f32 dist);
 
     void fireWeapon();
+    void layMine();
 
 public:
 	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,

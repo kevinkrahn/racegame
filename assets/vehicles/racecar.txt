@@ -13,6 +13,8 @@
             handling: 1.0,
         },
 
+        hit-points: 150,
+
         chassis-density: 80,
         wheel-mass-front: 22,
         wheel-mass-rear: 22,

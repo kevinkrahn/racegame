@@ -106,6 +106,7 @@ struct VehicleData
 
     std::string name;
     std::string description;
+    f32 maxHitPoints;
 
     u32 price;
     f32 collisionWidth = 0.f;
