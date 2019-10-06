@@ -6,9 +6,8 @@
 #include "2d.h"
 #include "input.h"
 #include "mesh_renderables.h"
-#include "entities/projectile.h"
-#include "entities/mine.h"
 #include "billboard.h"
+#include "weapon.h"
 
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>
@@ -514,6 +513,17 @@ Vehicle::~Vehicle()
 	frictionPairs->release();
 }
 
+void Vehicle::resetAmmo()
+{
+    auto& primaryWeapon = g_weapons[driver->vehicleConfig.primaryWeaponIndex];
+    primaryWeaponAmmo = primaryWeapon->getAmmoCountForUpgradeLevel(
+            driver->vehicleConfig.primaryWeaponUpgradeLevel);
+
+    auto& specialWeapon = g_weapons[driver->vehicleConfig.specialWeaponIndex];
+    specialWeaponAmmo = specialWeapon->getAmmoCountForUpgradeLevel(
+            driver->vehicleConfig.specialWeaponUpgradeLevel);
+}
+
 void Vehicle::reset(glm::mat4 const& transform) const
 {
     vehicle4W->setToRestState();
@@ -655,9 +665,34 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
+void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo)
+{
+    u32 iconSize = (u32)(g_game.windowHeight * 0.05f);
+    Texture* iconbg = g_resources.getTexture("iconbg");
+    renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0),
+                iconSize, iconSize, glm::vec3(0.35f)));
+    renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
+    const char* weaponIcon = g_weapons[weaponIndex]->icon;
+    renderer->push2D(QuadRenderable(g_resources.getTexture(weaponIcon),
+                pos, iconSize, iconSize));
+    u32 ammoUnitCount = g_weapons[weaponIndex]->ammoUnitCount;
+    u32 maxAmmo = g_weapons[weaponIndex]
+        ->getAmmoCountForUpgradeLevel(driver->vehicleConfig.primaryWeaponUpgradeLevel);
+    u32 ammoTickCount = maxAmmo / ammoUnitCount;
+    f32 ammoTickMargin = iconSize * 0.025f;
+    f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCount;
+    Texture* ammoTickTex = g_resources.getTexture("ammotick");
+    for (u32 i=0; i<ammo; ++i)
+    {
+        renderer->push2D(QuadRenderable(ammoTickTex,
+                    pos + glm::vec2(iconSize + ammoTickMargin * 2.f,
+                        ammoTickHeight * i + (iconSize * 0.1f) + ammoTickMargin * 0.5f),
+                    iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
+    }
+}
+
 void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 {
-    // HUD
     if (cameraIndex >= 0)
     {
         Font& font1 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.04f));
@@ -706,15 +741,24 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         renderer->push2D(TextRenderable(&font1, placementSuffix,
                     offset + glm::vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col));
 
+        // weapons
+        f32 weaponIconX = g_game.windowHeight * 0.35f;
+        drawWeaponAmmo(renderer, offset + glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                driver->vehicleConfig.primaryWeaponIndex, primaryWeaponAmmo);
+        drawWeaponAmmo(renderer, offset +
+                glm::vec2(weaponIconX + g_game.windowHeight * 0.1f, d.y * g_game.windowHeight * 0.018f),
+                driver->vehicleConfig.specialWeaponIndex, specialWeaponAmmo);
+
         // healthbar
+        Texture* white = g_resources.getTexture("white");
         const f32 healthPercentage = glm::clamp(hitPoints / maxHitPoints, 0.f, 1.f);
-        const f32 maxHealthbarWidth = g_game.windowHeight * 0.12f;
+        const f32 maxHealthbarWidth = g_game.windowHeight * 0.14f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
-        const f32 healthbarHeight = g_game.windowHeight * 0.008f;
+        const f32 healthbarHeight = g_game.windowHeight * 0.009f;
         glm::vec2 pos = voffset + glm::vec2(vdim.x - o20, d.y*o20);
-        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
+        renderer->push2D(QuadRenderable(white, pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
                 pos, {}, {}, glm::vec3(0)));
-        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
+        renderer->push2D(QuadRenderable(white, pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
                 pos, {}, {}, glm::mix(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), healthPercentage)));
 
         // display notifications
@@ -746,7 +790,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
                 "\nGear: ", gearNames[vehicle4W->mDriveDynData.mCurrentGear],
                 "\nProgress: ", graphResult.currentLapDistance,
                 "\nLow Mark: ", graphResult.lapDistanceLowMark);
-            renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 220 + 10, g_game.windowHeight - 10 },
+            renderer->push2D(QuadRenderable(white, { 220 + 10, g_game.windowHeight - 10 },
                         { 220 + 220, g_game.windowHeight - (30 + f->stringDimensions(debugText).y) },
                         {}, {}, { 0, 0, 0 }, 0.6f));
             renderer->push2D(TextRenderable(f, debugText,
@@ -953,12 +997,12 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 
             if (shoot)
             {
-                fireWeapon();
+                firePrimaryWeapon();
             }
 
             if (shootSpecial)
             {
-                layMine();
+                fireSpecialWeapon();
             }
         }
         else if (scene->getTrackGraph().getPaths().size() > 0)
@@ -1108,6 +1152,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             ++currentLap;
             graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
+            resetAmmo();
         }
     }
 
@@ -1369,44 +1414,24 @@ void Vehicle::blowUp()
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
 }
 
-void Vehicle::fireWeapon()
+void Vehicle::firePrimaryWeapon()
 {
-    glm::mat4 transform = getTransform();
-    f32 minSpeed = 40.f;
-    glm::vec3 vel = convert(getRigidBody()->getLinearVelocity()) + getForwardVector() * minSpeed;
-    if (glm::length2(vel) < square(minSpeed))
+    if (primaryWeaponAmmo == 0)
     {
-        vel = glm::normalize(vel) * minSpeed;
+        // TODO: play no-no sound
+        return;
     }
-    glm::vec3 pos = getPosition();
-    scene->addEntity(new Projectile(pos + getForwardVector() * 3.f + getRightVector() * 0.8f,
-            vel, zAxisOf(transform), vehicleIndex));
-    scene->addEntity(new Projectile(pos + getForwardVector() * 3.f - getRightVector() * 0.8f,
-            vel, zAxisOf(transform), vehicleIndex));
-    // TODO: play sound
+    auto& primaryWeapon = g_weapons[driver->vehicleConfig.primaryWeaponIndex];
+    primaryWeaponAmmo -= primaryWeapon->fire(scene, this);
 }
 
-void Vehicle::layMine()
+void Vehicle::fireSpecialWeapon()
 {
-    PxRaycastBuffer hit;
-    glm::vec3 down = convert(getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
-    if (scene->raycastStatic(getPosition(), down, 2.f, &hit,
-                COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK))
+    if (specialWeaponAmmo == 0)
     {
-        glm::vec3 pos = convert(hit.block.position);
-        glm::vec3 up = convert(hit.block.normal);
-        glm::mat4 m(1.f);
-        m[0] = glm::vec4(getForwardVector(), m[0].w);
-        m[1] = glm::vec4(glm::normalize(
-                    glm::cross(up, glm::vec3(m[0]))), m[1].w);
-        m[2] = glm::vec4(glm::normalize(
-                glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
-        scene->addEntity(new Mine(glm::translate(glm::mat4(1.f), pos) * m, vehicleIndex));
-
-        // TODO: play sound
+        // TODO: play no-no sound
+        return;
     }
-    else
-    {
-        // TODO: play "cannot do that now" sound
-    }
+    auto& specialWeapon = g_weapons[driver->vehicleConfig.specialWeaponIndex];
+    specialWeaponAmmo -= specialWeapon->fire(scene, this);
 }

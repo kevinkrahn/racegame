@@ -1,5 +1,3 @@
-- Pause certain sounds when game is paused
-- Allow keyboard or controller to be used when there is only one player
 - Export mesh tangents and add normal maps
 - Automatically place decals on track (e.g. patch work, dirt, grunge, tire marks)
 - Moving parts on vehicles (e.g. bouncing/swaying antenna)
@@ -10,6 +8,7 @@
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line?)
+- Add unlit mode for bright billboards
 
 - Ideas:
     - Weapon that drops bouncing explosive balls from the back of the vehicle

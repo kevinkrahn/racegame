@@ -80,6 +80,9 @@ public:
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
 
+    u32 primaryWeaponAmmo = 0;
+    u32 specialWeaponAmmo = 0;
+
     glm::vec3 screenShakeVelocity = glm::vec3(0);
     glm::vec3 screenShakeOffset = glm::vec3(0);
     f32 screenShakeTimer = 0.f;
@@ -112,9 +115,6 @@ public:
             f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
 
     bool isBlocking(f32 radius, glm::vec3 const& dir, f32 dist);
-
-    void fireWeapon();
-    void layMine();
 
 public:
 	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
@@ -150,7 +150,12 @@ public:
 
     void onUpdate(class Renderer* renderer, f32 deltaTime);
     void onRender(class Renderer* renderer, f32 deltaTime);
+    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo);
     void drawHUD(class Renderer* renderer, f32 deltaTime);
     void shakeScreen(f32 intensity);
     void updateCamera(class Renderer* renderer, f32 deltaTime);
+    void resetAmmo();
+
+    void firePrimaryWeapon();
+    void fireSpecialWeapon();
 };

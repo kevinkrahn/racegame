@@ -7,6 +7,7 @@
 #include "resources.h"
 #include "audio.h"
 #include "gui.h"
+#include "weapon.h"
 #include <chrono>
 #include <iostream>
 
@@ -117,6 +118,7 @@ void Game::run()
     g_audio.init();
     initPhysX();
     g_resources.load();
+    initializeWeapons();
 
     state.drivers = {
         Driver(true,  true,  true,  &g_resources.getVehicleData()[1], 1, 0),

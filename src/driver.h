@@ -17,6 +17,19 @@ struct ComputerDriverData
     f32 fear;         // [0,1] how much the AI tries to evade other drivers
 };
 
+struct VehicleConfiguration
+{
+    u32 armorUpgradeLevel = 0;
+    u32 engineUpgradeLevel = 0;
+    u32 tireUpgradeLevel = 0;
+
+    u32 primaryWeaponIndex = 0;
+    u32 primaryWeaponUpgradeLevel = 5;
+
+    u32 specialWeaponIndex = 1;
+    u32 specialWeaponUpgradeLevel = 5;
+};
+
 struct Driver
 {
     u32 leaguePoints = 0;
@@ -26,6 +39,8 @@ struct Driver
     ComputerDriverData aiDriverData;
     bool useKeyboard = false;
     u32 controllerID = 0;
+
+    VehicleConfiguration vehicleConfig;
 
     VehicleData* vehicleData = nullptr;
     glm::vec3 vehicleColor = { 1.f, 1.f, 1.f };

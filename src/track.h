@@ -308,6 +308,7 @@ public:
     void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
+    bool isPersistent() const override { return true; }
 
     // renderable
     std::string getDebugString() const override { return "Track"; }

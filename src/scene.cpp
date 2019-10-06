@@ -151,6 +151,14 @@ void Scene::stopRace()
     isRaceInProgress = false;
     g_audio.setPaused(false);
     g_audio.stopAllGameplaySounds();
+
+    for (auto& e : entities)
+    {
+        if (!e->isPersistent())
+        {
+            e->destroy();
+        }
+    }
 }
 
 void Scene::onStart()

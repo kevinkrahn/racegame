@@ -90,6 +90,7 @@ public:
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
     void applyDecal(class Decal& decal) override;
+    bool isPersistent() const override { return true; }
 
     // renderable
     //void onBeforeRender(f32 deltaTime) override {};

@@ -43,6 +43,7 @@ public:
     virtual ~Entity() {}
     virtual DataFile::Value serialize() { return {}; }
     virtual void deserialize(DataFile::Value& data) {}
+    virtual bool isPersistent() const { return false; }
 
     virtual void onCreate(class Scene* scene) {}
     virtual void onCreateEnd(class Scene* scene) {}
@@ -63,6 +64,7 @@ public:
     glm::mat4 transform;
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
+
     virtual void updateTransform(class Scene* scene)
     {
         transform = glm::translate(glm::mat4(1.f), position)
@@ -104,5 +106,7 @@ public:
             actor->release();
         }
     }
+
+    bool isPersistent() const override { return true; }
 };
 
