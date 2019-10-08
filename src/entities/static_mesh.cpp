@@ -78,7 +78,7 @@ void StaticMesh::deserialize(DataFile::Value& data)
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
-    meshIndex = data["meshIndex"].integer(0);
+    meshIndex = (u32)data["meshIndex"].integer(0);
 
     mesh = g_resources.getMesh(meshNames[meshIndex]);
     tex = g_resources.getTexture(texNames[meshIndex]);

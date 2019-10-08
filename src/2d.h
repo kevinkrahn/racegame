@@ -31,8 +31,8 @@ public:
             bool mirror=false)
         : tex(texture), color(glm::vec4(color, alpha)), blurBackground(blurBackground)
     {
-        glm::vec2 t1(mirror ? 1 : 0);
-        glm::vec2 t2(mirror ? 0 : 1);
+        glm::vec2 t1(mirror ? 1.f : 0.f);
+        glm::vec2 t2(mirror ? 0.f : 1.f);
         glm::vec2 p2 = p1 + glm::vec2(width, height);
         points[0] = { p1, t1 };
         points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };

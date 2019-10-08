@@ -113,8 +113,8 @@ void StaticDecal::deserialize(DataFile::Value& data)
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
-    texIndex = data["texIndex"].integer(0);
-    decalFilter = data["decalFilter"].integer(DECAL_TRACK);
+    texIndex = (u32)data["texIndex"].integer(0);
+    decalFilter = (u32)data["decalFilter"].integer(DECAL_TRACK);
 }
 
 void StaticDecal::showDetails(Scene* scene)

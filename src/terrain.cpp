@@ -409,7 +409,7 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
         //i32 zi = irandom(randomSeries, 0, height - 1);
         i32 xi = irandom(randomSeries, minX, maxX);
         i32 zi = irandom(randomSeries, minY, maxY);
-        f32 xp = xi, zp = zi;
+        f32 xp = (f32)xi, zp = (f32)zi;
         f32 xf = 0, zf = 0;
         f32 h = HMAP(xi, zi);
         f32 s = 0, v = 0, w = 1;

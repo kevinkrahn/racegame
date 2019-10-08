@@ -256,7 +256,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         f32 w = g_gui.convertSize(280);
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
                     glm::vec2(g_game.windowWidth/2 - w/2, 0),
-                    w, g_game.windowHeight,
+                    w, (f32)g_game.windowHeight,
                     glm::vec3(0.02f), 0.8f, true));
     }
 

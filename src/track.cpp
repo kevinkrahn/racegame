@@ -1150,10 +1150,10 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
 
     // collision mesh
     PxTriangleMeshDesc desc;
-    desc.points.count = c.vertices.size();
+    desc.points.count = (u32)c.vertices.size();
     desc.points.stride = sizeof(Vertex);
     desc.points.data = c.vertices.data();
-    desc.triangles.count = c.indices.size() / 3;
+    desc.triangles.count = (u32)c.indices.size() / 3;
     desc.triangles.stride = 3 * sizeof(c.indices[0]);
     desc.triangles.data = c.indices.data();
 
@@ -1188,7 +1188,7 @@ void Track::onShadowPass(class Renderer* renderer)
     for (auto& c : connections)
     {
         glBindVertexArray(c->vao);
-        glDrawElements(GL_TRIANGLES, c->indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
     }
 }
 
@@ -1198,7 +1198,7 @@ void Track::onDepthPrepass(class Renderer* renderer)
     for (auto& c : connections)
     {
         glBindVertexArray(c->vao);
-        glDrawElements(GL_TRIANGLES, c->indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
     }
 }
 
@@ -1214,7 +1214,7 @@ void Track::onLitPass(class Renderer* renderer)
     for (auto& c : connections)
     {
         glBindVertexArray(c->vao);
-        glDrawElements(GL_TRIANGLES, c->indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
     }
 }
 
@@ -1225,7 +1225,7 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
     {
         trackGraph->addNode(p.position);
     }
-    u32 nodeIndex = points.size();
+    u32 nodeIndex = (u32)points.size();
     for (auto& c : connections)
     {
         f32 totalLength = c->getLength();
@@ -1333,7 +1333,7 @@ void Track::deserialize(DataFile::Value& data)
     {
         auto& pointsArray = r["points"].array();
         auto railing = std::make_unique<Railing>(this);
-        railing->meshTypeIndex = r["meshTypeIndex"].integer(0);
+        railing->meshTypeIndex = (u32)r["meshTypeIndex"].integer(0);
         railing->scale = r["scale"].real(1.f);
         for (auto& point : pointsArray)
         {
@@ -1365,8 +1365,8 @@ void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orth
 {
     for (auto& c : connections)
     {
-        trackPreview->drawItem(c->vao, c->indices.size(),
-                orthoProjection, glm::vec3(1.0), true);
+        trackPreview->drawItem(c->vao, (u32)c->indices.size(),
+                orthoProjection, glm::vec3(1.f), true);
     }
 }
 

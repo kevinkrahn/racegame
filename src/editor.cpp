@@ -81,7 +81,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     cameraAngle += cameraRotateSpeed * deltaTime;
     cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
 
-    f32 height = g_game.windowHeight;
+    f32 height = (f32)g_game.windowHeight;
     glm::vec2 mousePos = g_input.getMousePosition();
 
     EditMode previousEditMode = editMode;
@@ -400,7 +400,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 u32 itemSize = (u32)(height * 0.08f);
                 u32 iconSize = (u32)(height * 0.08f);
                 u32 gap = (u32)(height * 0.015f);
-                f32 totalWidth = itemSize * ARRAY_SIZE(prefabTrackItems) + gap * (ARRAY_SIZE(prefabTrackItems) - 2);
+                f32 totalWidth = (f32)(itemSize * ARRAY_SIZE(prefabTrackItems) + gap * (ARRAY_SIZE(prefabTrackItems) - 2));
                 f32 cx = g_game.windowWidth * 0.5f;
                 f32 yoffset = height * 0.02f;
 
@@ -410,7 +410,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     glm::vec3 color(0.f);
                     if (pointInRectangle(g_input.getMousePosition(),
                         { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
-                        itemSize, itemSize))
+                        (f32)itemSize, (f32)itemSize))
                     {
                         alpha = 0.9f;
                         color = glm::vec3(0.08f);
@@ -425,9 +425,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     glm::vec2 bp( cx - totalWidth * 0.5f + ((itemSize + gap) * i),
                             g_game.windowHeight - itemSize - yoffset);
                     renderer->push2D(QuadRenderable(white,
-                        bp, itemSize, itemSize, color, alpha));
+                        bp, (f32)itemSize, (f32)itemSize, color, alpha));
                     renderer->push2D(QuadRenderable(g_resources.getTexture(prefabTrackItems[i].icon),
-                        bp + glm::vec2((itemSize - iconSize)) * 0.5f, iconSize, iconSize));
+                        bp + glm::vec2((f32)(itemSize - iconSize)) * 0.5f, (f32)iconSize, (f32)iconSize));
                 }
             }
         }

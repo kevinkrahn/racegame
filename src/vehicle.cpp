@@ -479,7 +479,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
     this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
-        irandom(scene->randomSeries, 0, scene->getTrackGraph().getPaths().size()) : 0;
+        irandom(scene->randomSeries, 0, (u32)scene->getTrackGraph().getPaths().size()) : 0;
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
@@ -667,9 +667,9 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
 
 void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo)
 {
-    u32 iconSize = (u32)(g_game.windowHeight * 0.05f);
+    f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
     Texture* iconbg = g_resources.getTexture("iconbg");
-    renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0),
+    renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0.f),
                 iconSize, iconSize, glm::vec3(0.35f)));
     renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
     const char* weaponIcon = g_weapons[weaponIndex]->icon;
@@ -712,12 +712,12 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         glm::vec2 voffset = layout.offsets[cameraIndex] * dim;
         if (voffset.y > 0.f)
         {
-            voffset.y = g_game.windowHeight;
+            voffset.y = (f32)g_game.windowHeight;
         }
 
-        f32 o20 = g_game.windowHeight * 0.02f;
-        f32 o25 = g_game.windowHeight * 0.03f;
-        f32 o200 = g_game.windowHeight * 0.20f;
+        f32 o20 = (f32)g_game.windowHeight * 0.02f;
+        f32 o25 = (f32)g_game.windowHeight * 0.03f;
+        f32 o200 = (f32)g_game.windowHeight * 0.20f;
 
         char* p = tstr(glm::min(currentLap, scene->getTotalLaps()));
         const char* lapStr = "LAP";
@@ -1010,7 +1010,10 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             auto const& paths = scene->getTrackGraph().getPaths();
 
             i32 previousIndex = targetPointIndex - 1;
-            if (previousIndex < 0) previousIndex = paths[followPathIndex].size() - 1;
+            if (previousIndex < 0)
+	    {
+                previousIndex = (i32)paths[followPathIndex].size() - 1;
+	    }
 
             glm::vec3 nextP = paths[followPathIndex][targetPointIndex];
             glm::vec3 previousP = paths[followPathIndex][previousIndex];

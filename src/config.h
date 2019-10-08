@@ -63,17 +63,17 @@ struct Config
     void deserialize(DataFile::Value& data)
     {
         Config d;
-        graphics.resolutionX = data["resolutionX"].integer(d.graphics.resolutionX);
-        graphics.resolutionY = data["resolutionY"].integer(d.graphics.resolutionY);
+        graphics.resolutionX = (u32)data["resolutionX"].integer(d.graphics.resolutionX);
+        graphics.resolutionY = (u32)data["resolutionY"].integer(d.graphics.resolutionY);
         graphics.fullscreen = data["fullscreen"].boolean(d.graphics.fullscreen);
-        graphics.maxFPS = data["maxFPS"].integer(d.graphics.maxFPS);
+        graphics.maxFPS = (u32)data["maxFPS"].integer(d.graphics.maxFPS);
         graphics.vsync = data["vsync"].boolean(d.graphics.vsync);
-        graphics.shadowMapResolution = data["shadowMapResolution"].integer(d.graphics.shadowMapResolution);
+        graphics.shadowMapResolution = (u32)data["shadowMapResolution"].integer(d.graphics.shadowMapResolution);
         graphics.shadowsEnabled = data["shadowsEnabled"].boolean(d.graphics.shadowsEnabled);
         graphics.ssaoEnabled = data["ssaoEnabled"].boolean(d.graphics.ssaoEnabled);
         graphics.ssaoHighQuality = data["ssaoHighQuality"].boolean(d.graphics.ssaoHighQuality);
         graphics.bloomEnabled = data["bloomEnabled"].boolean(d.graphics.bloomEnabled);
-        graphics.msaaLevel = data["msaaLevel"].integer(d.graphics.msaaLevel);
+        graphics.msaaLevel = (u32)data["msaaLevel"].integer(d.graphics.msaaLevel);
 
         audio.masterVolume = data["masterVolume"].real(d.audio.masterVolume);
         audio.sfxVolume = data["sfxVolume"].real(d.audio.sfxVolume);

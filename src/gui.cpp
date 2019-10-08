@@ -546,7 +546,7 @@ bool Gui::option(const char* text, i32 value, const char* icon)
     if (icon)
     {
         Texture* iconTexture = g_resources.getTexture(icon);
-        u32 iconSize = (u32)(bh * 0.5f);
+        f32 iconSize = glm::floor(bh * 0.5f);
         renderer->push2D(QuadRenderable(iconTexture,
                     pos + glm::vec2(bh * 0.25f), iconSize, iconSize));
     }

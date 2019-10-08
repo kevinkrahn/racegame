@@ -53,7 +53,7 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
         {
             if (branchCount > 0)
             {
-                pathIndex = nodeIndexPaths.size();
+                pathIndex = (u32)nodeIndexPaths.size();
                 nodeIndexPaths.push_back(pathToHere);
             }
             computePath(c, toIndex, pathIndex, nodeIndexPaths);
@@ -94,7 +94,7 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     }
 
     nodes[startIndex].position = glm::vec3(glm::vec2(translationOf(startTransform)), nodes[startIndex].position.z) + xAxisOf(startTransform) * 2.f;
-    u32 endIndex = nodes.size();
+    u32 endIndex = (u32)nodes.size();
 
     // copy the start node to make the end node
     nodes.push_back(nodes[startIndex]);

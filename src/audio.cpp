@@ -274,7 +274,7 @@ SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
 
     if (loop)
     {
-        ps.playPosition = random(randomSeries, 0.f, sound->numSamples);
+        ps.playPosition = random(randomSeries, 0.f, (f32)sound->numSamples);
     }
 
     std::lock_guard<std::mutex> lock(audioMutex);

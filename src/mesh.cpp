@@ -59,7 +59,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
 
     const f32 MIN_SIZE = 3.f;
 
-    u32 triCount = triangleIndices.size() / 3;
+    u32 triCount = (u32)triangleIndices.size() / 3;
     for (u32 i=0; i<3; ++i)
     {
         // don't subdivide if the number of triangles that straddle this axis division exceeds the threshold

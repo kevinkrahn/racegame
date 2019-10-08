@@ -292,7 +292,7 @@ public:
 
     f32 getMouseScroll()
     {
-        return mouseScrollY;
+        return (f32)mouseScrollY;
     }
 
     void onFrameBegin()

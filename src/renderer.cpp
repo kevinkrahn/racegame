@@ -150,7 +150,7 @@ u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defi
         GLuint program = compileShader(fullfilename, defines, i+1);
         loadedShaders[i].push_back(program);
     }
-    u32 handle = loadedShaders[0].size() - 1;
+    u32 handle = (u32)loadedShaders[0].size() - 1;
     shaderHandleMap[name] = handle;
     return handle;
 }

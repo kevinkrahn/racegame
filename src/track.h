@@ -298,7 +298,7 @@ public:
             if (decalBoundingBox.intersects(c->boundingBox))
             {
                 decal.addMesh((f32*)c->vertices.data(), sizeof(Vertex),
-                        c->indices.data(), c->indices.size(), glm::mat4(1.f));
+                        c->indices.data(), (u32)c->indices.size(), glm::mat4(1.f));
             }
         }
     }

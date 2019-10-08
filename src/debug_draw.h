@@ -92,7 +92,7 @@ public:
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
 
             glBindVertexArray(vao);
-            glDrawArrays(GL_LINES, 0, verts.size());
+            glDrawArrays(GL_LINES, 0, (GLsizei)verts.size());
             verts.clear();
         }
     }

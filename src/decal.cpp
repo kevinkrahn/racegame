@@ -154,8 +154,7 @@ void Decal::end()
     glVertexArrayAttribFormat(vao, 2, 2, GL_FLOAT, GL_FALSE, 12 + 12);
     glVertexArrayAttribBinding(vao, 2, 0);
 
-    vertexCount = vertices.size();
-    //print("Vertex Count: ", vertexCount, '\n');
+    vertexCount = (u32)vertices.size();
     vertices.clear();
     vertices.shrink_to_fit();
 }
