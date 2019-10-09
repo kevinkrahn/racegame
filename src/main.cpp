@@ -32,6 +32,7 @@
 #include "entities/tree.cpp"
 #include "entities/static_decal.cpp"
 #include "entities/start.cpp"
+#include "entities/booster.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>

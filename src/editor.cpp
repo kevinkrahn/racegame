@@ -11,6 +11,7 @@
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
 #include "entities/tree.h"
+#include "entities/booster.h"
 #include <functional>
 
 struct EntityType
@@ -29,6 +30,7 @@ std::vector<EntityType> entityTypes = {
     { "Straight Arrow", fn { return new StaticDecal(0, p); } },
     { "Left Arrow", fn { return new StaticDecal(1, p); } },
     { "Right Arrow", fn { return new StaticDecal(2, p); } },
+    { "Booster", fn { return new Booster(p); } },
 };
 
 #undef fn

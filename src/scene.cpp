@@ -10,6 +10,7 @@
 #include "entities/static_decal.h"
 #include "entities/tree.h"
 #include "entities/flash.h"
+#include "entities/booster.h"
 #include "gui.h"
 #include <algorithm>
 
@@ -782,6 +783,12 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
             StaticDecal* decal = new StaticDecal(0);
             decal->deserialize(val);
             this->addEntity(decal);
+        } break;
+        case SerializedEntityID::BOOSTER:
+        {
+            Booster* booster = new Booster();
+            booster->deserialize(val);
+            this->addEntity(booster);
         } break;
         case SerializedEntityID::START:
         {

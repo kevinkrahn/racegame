@@ -4,8 +4,6 @@
 #include "../game.h"
 #include "../gui.h"
 
-#include <typeinfo>
-
 const char* textures[] = {
     "arrow",
     "arrow_left",

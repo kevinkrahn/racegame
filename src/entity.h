@@ -11,6 +11,7 @@ enum struct SerializedEntityID
     STATIC_DECAL,
     START,
     TREE,
+    BOOSTER,
 };
 
 struct ActorUserData
