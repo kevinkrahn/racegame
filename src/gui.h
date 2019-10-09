@@ -52,6 +52,7 @@ class Gui
 {
     std::map<const char*, std::unique_ptr<WidgetState>, CompareKey> childState;
     std::vector<WidgetStackItem> widgetStack;
+    class Font* fontTiny = nullptr;
     class Font* fontSmall = nullptr;
     class Font* fontBig = nullptr;
     struct Texture* white = nullptr;
@@ -90,6 +91,6 @@ public:
             i32 count, i32& currentIndex);
     void beginSelect(const char* text, i32* selectedIndex, bool showTitle=true);
     bool option(const char* text, i32 value, const char* icon=nullptr);
-    void label(const char* text);
+    void label(const char* text, bool showBackground=false);
 } g_gui;
 

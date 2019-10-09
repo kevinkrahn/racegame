@@ -50,6 +50,8 @@ private:
     void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
 
 public:
+    std::string name;
+
     bool isDebugOverlayEnabled = false;
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;

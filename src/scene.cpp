@@ -75,11 +75,14 @@ Scene::Scene(const char* name)
         addEntity(terrain);
         track = new Track();
         addEntity(track);
+        this->name = "Untitled";
         return;
     }
 
     auto data = DataFile::load(name);
     deserialize(data);
+
+    this->name = name;
 }
 
 Scene::~Scene()

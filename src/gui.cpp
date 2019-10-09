@@ -7,6 +7,7 @@
 
 void Gui::beginFrame()
 {
+    fontTiny = &g_resources.getFont("font", (u32)convertSize(14));
     fontSmall = &g_resources.getFont("font", (u32)convertSize(18));
     fontBig = &g_resources.getFont("font", (u32)convertSize(28));
     white = g_resources.getTexture("white");
@@ -14,6 +15,7 @@ void Gui::beginFrame()
     isMouseOverUI = false;
     isMouseClickHandled = false;
     isKeyboardInputHandled = false;
+    isKeyboardInputCaptured = false;
 }
 
 void Gui::endFrame()
@@ -403,7 +405,7 @@ void Gui::beginSelect(const char* text, i32* selectedIndex, bool showTitle)
 
     if (showTitle)
     {
-        renderer->push2D(TextRenderable(fontSmall, text,
+        renderer->push2D(TextRenderable(fontTiny, text,
                     parent.nextWidgetPosition + glm::vec2(parent.size.x / 2, convertSize(5.f)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
     }
@@ -470,16 +472,20 @@ bool Gui::option(const char* text, i32 value, const char* icon)
     return clicked;
 }
 
-void Gui::label(const char* text)
+void Gui::label(const char* text, bool showBackground)
 {
     WidgetStackItem& parent = widgetStack.back();
     glm::vec2& pos = parent.nextWidgetPosition;
     f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
-    renderer->push2D(QuadRenderable(white, pos, bw, bh, glm::vec3(0.f), 0.85f, true));
-    renderer->push2D(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
+    if (showBackground)
+    {
+        renderer->push2D(QuadRenderable(white, pos, bw, bh, glm::vec3(0.f), 0.85f, true));
+    }
+    renderer->push2D(TextRenderable(fontTiny, text, pos + glm::vec2(bw/2, bh/2),
                 glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
-    pos.y += bh + parent.itemSpacing;
+    //pos.y += bh + parent.itemSpacing;
+    pos.y += bh;
 }
 
 i32 Gui::select(const char* text, std::string* firstValue,
@@ -600,6 +606,9 @@ bool Gui::textEdit(const char* text, std::string& value)
                         fontSmall->stringDimensions(value.c_str()).x + convertSize(1),
                         bh/2 - blinkHeight / 2),
                 convertSize(1), blinkHeight, glm::vec3(0.9f), 0.5f));
+
+        isKeyboardInputCaptured = true;
+        isKeyboardInputHandled = true;
     }
 
     renderer->push2D(TextRenderable(fontSmall, value.c_str(), pos

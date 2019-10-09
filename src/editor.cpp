@@ -60,32 +60,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     Texture* white = g_resources.getTexture("white");
 
-    f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);
-    f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
-    glm::vec3 moveDir = (right != 0.f || up != 0.f) ? glm::normalize(glm::vec3(right, up, 0.f)) : glm::vec3(0, 0, 0);
-    glm::vec3 forward(lengthdir(cameraAngle, 1.f), 0.f);
-    glm::vec3 sideways(lengthdir(cameraAngle + PI / 2.f, 1.f), 0.f);
-
-    cameraVelocity += (((forward * moveDir.y) + (sideways * moveDir.x)) * (deltaTime * (120.f + cameraDistance * 1.5f)));
-    cameraTarget += cameraVelocity * deltaTime;
-    cameraVelocity = smoothMove(cameraVelocity, glm::vec3(0, 0, 0), 7.f, deltaTime);
-
-    if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
-    {
-        lastMousePosition = g_input.getMousePosition();
-    }
-    else if (g_input.isMouseButtonDown(MOUSE_RIGHT))
-    {
-        cameraRotateSpeed = (((lastMousePosition.x) - g_input.getMousePosition().x) / g_game.windowWidth * 2.f) * (1.f / deltaTime);
-        lastMousePosition = g_input.getMousePosition();
-    }
-
-    cameraAngle += cameraRotateSpeed * deltaTime;
-    cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
-
-    f32 height = (f32)g_game.windowHeight;
-    glm::vec2 mousePos = g_input.getMousePosition();
-
     EditMode previousEditMode = editMode;
 
     if (g_input.isKeyPressed(KEY_TAB))
@@ -96,7 +70,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.beginPanel("Track Editor", { 0.f, 0.f },
             0.f, false, false, false, 28, 4, 180);
 
-    g_gui.beginSelect("Edit Mode", (i32*)&editMode, false);
+    g_gui.label("Track Name", false);
+    g_gui.textEdit("Name", scene->name);
+
+    g_gui.beginSelect("Edit Mode", (i32*)&editMode, true);
     g_gui.option("Terrain", (i32)EditMode::TERRAIN, "terrain_icon");
     g_gui.option("Track", (i32)EditMode::TRACK, "track_icon");
     g_gui.option("Decoration", (i32)EditMode::DECORATION, "decoration_icon");
@@ -104,11 +81,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     if (editMode == EditMode::TERRAIN)
     {
-        if (g_input.isKeyPressed(KEY_SPACE))
-        {
-            terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
-        }
-
         g_gui.beginSelect("Terrain Tool", (i32*)&terrainTool);
         g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, "terrain_icon");
         g_gui.option("Perturb", (i32)TerrainTool::PERTURB, "terrain_icon");
@@ -118,6 +90,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.option("Paint", (i32)TerrainTool::PAINT, "terrain_icon");
         g_gui.end();
 
+        g_gui.label("Brush Settings", false);
         g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
         g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
         g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
@@ -134,9 +107,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::TRACK)
     {
+        g_gui.label("Grid Settings", false);
         g_gui.toggle("Show Grid", gridSettings.show);
         g_gui.toggle("Snap to Grid", gridSettings.snap);
 
+        g_gui.label("Operations", false);
         if (g_gui.button("Connect Points [c]", scene->track->canConnect()) ||
                 (g_input.isKeyPressed(KEY_C) && scene->track->canConnect()))
         {
@@ -191,6 +166,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             entityDragAxis = DragAxis::NONE;
         }
 
+        g_gui.label("Operations", false);
         if (g_gui.button("Duplicate [b]", selectedEntities.size() > 0)
                 || (selectedEntities.size() > 0 && g_input.isKeyPressed(KEY_B)))
         {
@@ -217,7 +193,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             selectedEntities.clear();
         }
 
-        g_gui.beginSelect("Entity", &selectedEntityTypeIndex);
+        g_gui.beginSelect("Select Entity", &selectedEntityTypeIndex);
         for (i32 i=0; i<(i32)entityTypes.size(); ++i)
         {
             auto& entityType = entityTypes[i];
@@ -229,11 +205,13 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     // TODO: make this better by not having 3 panels for 3 buttons
     g_gui.beginPanel("Task1", { g_gui.convertSize(200), 0.f },
                 0.f, false, false, false, 28, 0, 100);
-    if (g_gui.button("Save Track [F9]") || g_input.isKeyPressed(KEY_F9))
+    bool canSave = scene->name != "Untitled";
+    if ((g_gui.button("Save Track [F9]", canSave) || g_input.isKeyPressed(KEY_F9))
+            && canSave)
     {
-        const char* filename = "saved_scene.dat";
+        std::string filename = scene->name + ".dat";
         print("Saving scene to file: ", filename, '\n');
-        DataFile::save(scene->serialize(), filename);
+        DataFile::save(scene->serialize(), filename.c_str());
     }
     g_gui.end();
 
@@ -267,6 +245,41 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.end();
 
     bool isMouseClickHandled = g_gui.isMouseOverUI || g_gui.isMouseCaptured;
+
+    bool keyboardHandled = g_gui.isKeyboardInputCaptured || g_gui.isKeyboardInputHandled;
+    if (!keyboardHandled)
+    {
+        f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);
+        f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
+        glm::vec3 moveDir = (right != 0.f || up != 0.f) ? glm::normalize(glm::vec3(right, up, 0.f)) : glm::vec3(0, 0, 0);
+        glm::vec3 forward(lengthdir(cameraAngle, 1.f), 0.f);
+        glm::vec3 sideways(lengthdir(cameraAngle + PI / 2.f, 1.f), 0.f);
+
+        cameraVelocity += (((forward * moveDir.y) + (sideways * moveDir.x)) * (deltaTime * (120.f + cameraDistance * 1.5f)));
+    }
+    cameraTarget += cameraVelocity * deltaTime;
+    cameraVelocity = smoothMove(cameraVelocity, glm::vec3(0, 0, 0), 7.f, deltaTime);
+
+    if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
+    {
+        lastMousePosition = g_input.getMousePosition();
+    }
+    else if (g_input.isMouseButtonDown(MOUSE_RIGHT))
+    {
+        cameraRotateSpeed = (((lastMousePosition.x) - g_input.getMousePosition().x) / g_game.windowWidth * 2.f) * (1.f / deltaTime);
+        lastMousePosition = g_input.getMousePosition();
+    }
+
+    cameraAngle += cameraRotateSpeed * deltaTime;
+    cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
+
+    f32 height = (f32)g_game.windowHeight;
+    glm::vec2 mousePos = g_input.getMousePosition();
+
+    if (!keyboardHandled && g_input.isKeyPressed(KEY_SPACE))
+    {
+        terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
+    }
 
     if (editMode != previousEditMode)
     {
@@ -441,7 +454,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
-
         glm::vec3 minP(FLT_MAX);
         glm::vec3 maxP(-FLT_MAX);
         for (PlaceableEntity* e : selectedEntities)
