@@ -3,6 +3,7 @@
 #include "math.h"
 #include <map>
 #include <vector>
+#include <functional>
 
 enum struct WidgetType
 {
@@ -29,6 +30,8 @@ struct WidgetState
     std::map<const char*, std::unique_ptr<WidgetState>, CompareKey> childState;
     f32 repeatTimer = 0.f;
     i32 selectableChildCount = 0;
+    bool mouseCaptured = false;
+    bool isMouseOver = false;
 };
 
 struct WidgetStackItem
@@ -56,6 +59,10 @@ class Gui
 
     WidgetState* getWidgetState(WidgetState* parent, const char* identifier,
             WidgetType widgetType);
+
+    bool buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec2 pos,
+            f32 bw, f32 bh, std::function<bool()> onHover, std::function<bool()> onSelected,
+            bool active=true);
 
 public:
     bool isMouseOverUI = false;

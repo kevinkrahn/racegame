@@ -14,15 +14,15 @@ void Gui::beginFrame()
     isMouseOverUI = false;
     isMouseClickHandled = false;
     isKeyboardInputHandled = false;
-    if (g_input.isMouseButtonReleased(MOUSE_LEFT))
-    {
-        isMouseCaptured = false;
-    }
 }
 
 void Gui::endFrame()
 {
     assert(widgetStack.empty());
+    if (g_input.isMouseButtonReleased(MOUSE_LEFT))
+    {
+        isMouseCaptured = false;
+    }
 }
 
 f32 Gui::convertSize(f32 size)
@@ -197,55 +197,61 @@ void Gui::end()
     }
 }
 
-bool Gui::button(const char* text, bool active)
+bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec2 pos,
+        f32 bw, f32 bh, std::function<bool()> onHover, std::function<bool()> onSelected,
+        bool active)
 {
-    assert(widgetStack.size() > 0);
-    assert(widgetStack.back().widgetType == WidgetType::PANEL);
-
-    WidgetStackItem& parent = widgetStack.back();
-    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
-
-    glm::vec2& pos = parent.nextWidgetPosition;
-    f32 bh = parent.itemHeight;
-    f32 bw = parent.size.x;
-
     renderer->push2D(QuadRenderable(white,
                 pos, bw, bh, glm::vec3(0.f), active ? 0.85f : 0.65f, true));
 
     bool selected = false;
     bool clicked = false;
     glm::vec2 mousePos = g_input.getMousePosition();
-    bool canHover = g_input.didMouseMove() || !widgetStack.back().useKeyboardControl;
+    bool canHover = (g_input.didMouseMove() || !widgetStack.back().useKeyboardControl)
+        && !isMouseCaptured;
     if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
         isMouseOverUI = true;
         if (active)
         {
-            if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+            if (!widgetState->isMouseOver)
             {
                 g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+                widgetState->isMouseOver = true;
             }
             parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
             selected = true;
-            if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
+            if (!isMouseClickHandled)
             {
-                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-                isMouseClickHandled = true;
-                clicked = true;
+                if (onHover())
+                {
+                    isMouseClickHandled = true;
+                    isMouseCaptured = true;
+                    clicked = true;
+                    // TODO: need different sound for this
+                    g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+                }
             }
         }
+    }
+    if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+    {
+        widgetState->isMouseOver = false;
     }
     if (active && widgetStack.back().useKeyboardControl)
     {
         selected =
             (parent.widgetState->selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected && didSelect())
+        if (!isKeyboardInputHandled && selected)
         {
-            clicked = true;
-            isKeyboardInputHandled = true;
-            // TODO: need different sound for this
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            if (onSelected())
+            {
+                clicked = true;
+                isKeyboardInputHandled = true;
+                // TODO: need different sound for this
+                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            }
         }
     }
 
@@ -264,7 +270,7 @@ bool Gui::button(const char* text, bool active)
 
     if (widgetState->hoverIntensity > 0.f)
     {
-        f32 selectLineHeight = glm::floor(bh * 0.05f);
+        f32 selectLineHeight = glm::floor(convertSize(2));
         renderer->push2D(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
                     selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
         renderer->push2D(QuadRenderable(white,
@@ -272,6 +278,26 @@ bool Gui::button(const char* text, bool active)
                     bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
                     widgetState->hoverIntensity * 0.8f));
     }
+
+    return clicked;
+}
+
+bool Gui::button(const char* text, bool active)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    glm::vec2& pos = parent.nextWidgetPosition;
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
+        return g_input.isMouseButtonPressed(MOUSE_LEFT);
+    }, [this] {
+        return didSelect();
+    }, active);
 
     renderer->push2D(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
                 glm::vec3(1.f), active ? 1.f : 0.75f, 1.f,
@@ -288,72 +314,19 @@ bool Gui::toggle(const char* text, bool& enabled)
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
 
     WidgetStackItem& parent = widgetStack.back();
-    glm::vec2& pos = parent.nextWidgetPosition;
     WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
 
+    glm::vec2& pos = parent.nextWidgetPosition;
     f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
-
-    renderer->push2D(QuadRenderable(white,
-                pos, bw, bh, glm::vec3(0.f), 0.85f, true));
-
-    bool selected = false;
-    bool clicked = false;
-    glm::vec2 mousePos = g_input.getMousePosition();
-    bool canHover = g_input.didMouseMove() || !widgetStack.back().useKeyboardControl;
-    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
-            && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
+        return g_input.isMouseButtonPressed(MOUSE_LEFT);
+    }, [this] {
+        return didSelect();
+    });
+    if (clicked)
     {
-        isMouseOverUI = true;
-        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
-        {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-        }
-        parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
-        selected = true;
-        if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
-        {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-            enabled = !enabled;
-            isMouseClickHandled = true;
-            clicked = true;
-        }
-    }
-    if (widgetStack.back().useKeyboardControl)
-    {
-        selected =
-            (parent.widgetState->selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected && didChangeSelection())
-        {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-            enabled = !enabled;
-            clicked = true;
-            isKeyboardInputHandled = true;
-        }
-    }
-
-    ++parent.widgetState->selectableChildCount;
-
-    if (selected)
-    {
-        widgetState->hoverIntensity =
-            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
-    }
-    else
-    {
-        widgetState->hoverIntensity =
-            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
-    }
-
-    if (widgetState->hoverIntensity > 0.f)
-    {
-        f32 selectLineHeight = glm::floor(bh * 0.05f);
-        renderer->push2D(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
-                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
-        renderer->push2D(QuadRenderable(white,
-                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
-                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
-                    widgetState->hoverIntensity * 0.8f));
+        enabled = !enabled;
     }
 
     renderer->push2D(TextRenderable(fontSmall, tstr(text, ": ", enabled ? "ON" : "OFF"),
@@ -377,70 +350,35 @@ bool Gui::slider(const char* text, f32 minValue, f32 maxValue, f32& value)
     f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
 
-    renderer->push2D(QuadRenderable(white,
-                pos, bw, bh, glm::vec3(0.f),  0.85f, true));
-
-    bool selected = false;
-    bool clicked = false;
-    glm::vec2 mousePos = g_input.getMousePosition();
-    bool canHover = g_input.didMouseMove() || !widgetStack.back().useKeyboardControl;
-    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
-            && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
-    {
-        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [&] {
+        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            widgetState->mouseCaptured = true;
+            return true;
         }
-        isMouseOverUI = true;
-        parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
-        selected = true;
-        // TODO: should the mouse scroll wheel change the value?
-        if (!isMouseClickHandled && g_input.isMouseButtonDown(MOUSE_LEFT))
-        {
-            isMouseCaptured = true;
-            isMouseClickHandled = true;
-            f32 t = (mousePos.x - pos.x) / bw;
-            value = minValue + (maxValue - minValue) * t;
-            clicked = true;
-        }
-    }
-    if (widgetStack.back().useKeyboardControl)
-    {
-        selected =
-            (parent.widgetState->selectableChildCount == parent.widgetState->selectIndex);
+        return false;
+    }, [&] {
         f32 valChange = didChangeSelection() * ((maxValue - minValue) / 20.f);
-        if (!isKeyboardInputHandled && selected && valChange != 0.f)
+        if (valChange != 0.f)
         {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-            clicked = true;
-            isKeyboardInputHandled = true;
             value = clamp(value + valChange, minValue, maxValue);
+            return true;
+        }
+        return false;
+    });
+
+    if (widgetState->mouseCaptured)
+    {
+        glm::vec2 mousePos = g_input.getMousePosition();
+        f32 t = clamp((mousePos.x - pos.x) / bw, 0.f, 1.f);
+        value = minValue + (maxValue - minValue) * t;
+
+        if (g_input.isMouseButtonReleased(MOUSE_LEFT))
+        {
+            widgetState->mouseCaptured = false;
         }
     }
 
-    ++parent.widgetState->selectableChildCount;
-
-    if (selected)
-    {
-        widgetState->hoverIntensity =
-            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
-    }
-    else
-    {
-        widgetState->hoverIntensity =
-            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
-    }
-
-    if (widgetState->hoverIntensity > 0.f)
-    {
-        f32 selectLineHeight = glm::floor(bh * 0.05f);
-        renderer->push2D(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
-                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
-        renderer->push2D(QuadRenderable(white,
-                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
-                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
-                    widgetState->hoverIntensity * 0.8f));
-    }
     f32 valueHeight = glm::floor(bh * 0.1f);
     renderer->push2D(QuadRenderable(white, pos + glm::vec2(0, valueHeight),
                 bw * ((value - minValue) / (maxValue - minValue)), bh - valueHeight * 2.f,
@@ -498,49 +436,20 @@ bool Gui::option(const char* text, i32 value, const char* icon)
     f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
 
-    bool selected = false;
-    bool clicked = false;
-    glm::vec2 mousePos = g_input.getMousePosition();
-    if (pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
+        return g_input.isMouseButtonPressed(MOUSE_LEFT);
+    }, [] {
+        return false;
+    });
+
+    if (clicked)
     {
-        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
-        {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-        }
-        isMouseOverUI = true;
-        selected = true;
-        if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
-        {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-            *parent.outputValueI32 = value;
-            isMouseClickHandled = true;
-            clicked = true;
-        }
+        *parent.outputValueI32 = value;
     }
 
-    glm::vec3 col = glm::vec3(*parent.outputValueI32 == value ? 0.06f : 0.f);
-    renderer->push2D(QuadRenderable(white, pos, bw, bh, col, 0.85f, true));
-
-    if (selected)
+    if (*parent.outputValueI32 == value)
     {
-        widgetState->hoverIntensity =
-            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
-    }
-    else
-    {
-        widgetState->hoverIntensity =
-            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
-    }
-
-    if (widgetState->hoverIntensity > 0.f)
-    {
-        f32 selectLineHeight = glm::floor(bh * 0.05f);
-        renderer->push2D(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
-                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
-        renderer->push2D(QuadRenderable(white,
-                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
-                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
-                    widgetState->hoverIntensity * 0.8f));
+        renderer->push2D(QuadRenderable(white, pos, bw, bh, glm::vec3(0.2f), 0.3f, true));
     }
 
     if (icon)
@@ -586,26 +495,10 @@ i32 Gui::select(const char* text, std::string* firstValue,
     f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
 
-    bool selected = false;
-    bool clicked = false;
-    glm::vec2 mousePos = g_input.getMousePosition();
-    bool canHover = g_input.didMouseMove() || !widgetStack.back().useKeyboardControl;
-    if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
-            && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
-    {
-        isMouseOverUI = true;
-        if (parent.widgetState->selectIndex != parent.widgetState->selectableChildCount)
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [&] {
+        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-        }
-        parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
-        selected = true;
-        if (!isMouseClickHandled && g_input.isMouseButtonDown(MOUSE_LEFT))
-        {
-            isMouseCaptured = true;
-            isMouseClickHandled = true;
-            clicked = true;
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            glm::vec2 mousePos = g_input.getMousePosition();
             if (mousePos.x > pos.x + bw / 2)
             {
                 ++currentIndex;
@@ -614,21 +507,18 @@ i32 Gui::select(const char* text, std::string* firstValue,
             {
                 --currentIndex;
             }
+            return true;
         }
-    }
-    if (widgetStack.back().useKeyboardControl)
-    {
-        selected =
-            (parent.widgetState->selectableChildCount == parent.widgetState->selectIndex);
+        return false;
+    }, [&] {
         i32 valChange = didChangeSelection();
-        if (!isKeyboardInputHandled && selected && valChange != 0.f)
+        if (valChange != 0)
         {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-            clicked = true;
-            isKeyboardInputHandled = true;
             currentIndex += valChange;
+            return true;
         }
-    }
+        return false;
+    });
     if (currentIndex < 0)
     {
         currentIndex = count - 1;
@@ -640,30 +530,9 @@ i32 Gui::select(const char* text, std::string* firstValue,
 
     ++parent.widgetState->selectableChildCount;
 
-    if (selected)
-    {
-        widgetState->hoverIntensity =
-            glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
-    }
-    else
-    {
-        widgetState->hoverIntensity =
-            glm::max(widgetState->hoverIntensity - g_game.deltaTime * 4.f, 0.f);
-    }
-
-    renderer->push2D(QuadRenderable(white,
-                pos, bw, bh, glm::vec3(0.f),  0.85f, true));
 
     if (widgetState->hoverIntensity > 0.f)
     {
-        f32 selectLineHeight = glm::floor(bh * 0.05f);
-        renderer->push2D(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
-                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
-        renderer->push2D(QuadRenderable(white,
-                    pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
-                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
-                    widgetState->hoverIntensity * 0.8f));
-
         Texture* cheveron = g_resources.getTexture("cheveron");
         if (currentIndex > 0)
         {
