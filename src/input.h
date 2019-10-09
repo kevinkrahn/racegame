@@ -204,6 +204,8 @@ private:
     i32 mouseScrollY;
     std::map<u32, Controller> controllers;
 
+    std::string inputText;
+
 public:
     void init(SDL_Window* window)
     {
@@ -217,7 +219,7 @@ public:
                 controllers.emplace(id, controller);
             }
         }
-
+        SDL_StartTextInput();
         this->window = window;
     }
 
@@ -297,6 +299,7 @@ public:
 
     void onFrameBegin()
     {
+        inputText.clear();
     }
 
     void onFrameEnd()
@@ -316,6 +319,8 @@ public:
         mouseScrollX = 0;
         mouseScrollY = 0;
     }
+
+    std::string const& getInputText() const { return inputText; }
 
     void handleEvent(SDL_Event const& e)
     {
@@ -398,6 +403,10 @@ public:
                 u8 button = e.cbutton.button;
                 controllers[which].buttonDown[button] = false;
                 controllers[which].buttonReleased[button] = true;
+            } break;
+            case SDL_TEXTINPUT:
+            {
+                inputText += e.text.text;
             } break;
         }
     }

@@ -528,9 +528,6 @@ i32 Gui::select(const char* text, std::string* firstValue,
         currentIndex = 0;
     }
 
-    ++parent.widgetState->selectableChildCount;
-
-
     if (widgetState->hoverIntensity > 0.f)
     {
         Texture* cheveron = g_resources.getTexture("cheveron");
@@ -555,4 +552,61 @@ i32 Gui::select(const char* text, std::string* firstValue,
     pos.y += bh + parent.itemSpacing;
 
     return clicked ? currentIndex : -1;
+}
+
+bool Gui::textEdit(const char* text, std::string& value)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    glm::vec2& pos = parent.nextWidgetPosition;
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+    buttonBase(parent, widgetState, pos, bw, bh, [] {
+        return g_input.isMouseButtonPressed(MOUSE_LEFT);
+    }, [this] {
+        return didSelect();
+    });
+
+    f32 textBgStart = glm::floor(convertSize(6));
+    f32 valueHeight = glm::floor(bh * 0.2f);
+    renderer->push2D(QuadRenderable(white, pos + glm::vec2(textBgStart, valueHeight),
+            bw - (textBgStart * 2), bh - valueHeight * 2.f, glm::vec3(0.1f), 0.1f));
+
+    f32 textStart = glm::floor(convertSize(8));
+    //f32 maxWidth = bw - textStart * 2;
+    bool selected =
+        (parent.widgetState->selectableChildCount - 1 == parent.widgetState->selectIndex);
+
+    bool wasChanged = false;
+    if (selected)
+    {
+        if (!g_input.getInputText().empty())
+        {
+            value += g_input.getInputText();
+            wasChanged = true;
+        }
+        if (g_input.isKeyPressed(KEY_BACKSPACE, true) && !value.empty())
+        {
+            value.pop_back();
+            wasChanged = true;
+        }
+
+        f32 blinkHeight = fontSmall->getHeight() * 1.25f;
+        renderer->push2D(QuadRenderable(white, pos + glm::vec2(textStart +
+                        fontSmall->stringDimensions(value.c_str()).x + convertSize(1),
+                        bh/2 - blinkHeight / 2),
+                convertSize(1), blinkHeight, glm::vec3(0.9f), 0.5f));
+    }
+
+    renderer->push2D(TextRenderable(fontSmall, value.c_str(), pos
+                + glm::vec2(textStart, glm::floor(bh/2)), glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::LEFT, VerticalAlign::CENTER));
+
+    pos.y += bh + parent.itemSpacing;
+
+    return wasChanged;
 }
