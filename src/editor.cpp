@@ -117,6 +117,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, "terrain_icon");
         g_gui.option("Perturb", (i32)TerrainTool::PERTURB, "terrain_icon");
         g_gui.option("Flatten", (i32)TerrainTool::FLATTEN, "terrain_icon");
+        g_gui.option("Smooth", (i32)TerrainTool::SMOOTH, "terrain_icon");
         g_gui.option("Erode", (i32)TerrainTool::ERODE, "terrain_icon");
         g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, "terrain_icon");
         g_gui.option("Paint", (i32)TerrainTool::PAINT, "terrain_icon");
