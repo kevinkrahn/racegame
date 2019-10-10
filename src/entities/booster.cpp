@@ -47,6 +47,8 @@ void Booster::updateTransform(Scene* scene)
 
 void Booster::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
+    active = false;
+
     PxOverlapHit hitBuffer[8];
     PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
     PxQueryFilterData filter;
@@ -65,14 +67,17 @@ void Booster::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
                 Vehicle* vehicle = (Vehicle*)userData->vehicle;
                 vehicle->getRigidBody()->addForce(convert(yAxisOf(transform)) * 15.f,
                         PxForceMode::eACCELERATION);
+                active = true;
             }
         }
     }
+
+    intensity = smoothMove(intensity, active ? 3.5f : 1.25f, 6.f, deltaTime);
 }
 
 void Booster::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
 {
-    decal.setColor(backwards ? glm::vec3(2.f, 0.f, 0.f) : glm::vec3(0.f, 2.f, 0.f));
+    decal.setColor(backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f));
     renderer->add(&decal);
 }
 

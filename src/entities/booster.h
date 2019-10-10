@@ -8,6 +8,8 @@ class Booster : public PlaceableEntity
     struct Texture* tex;
     Decal decal;
     bool backwards = false;
+    bool active = false;
+    f32 intensity = 1.25f;
 
 public:
     Booster(glm::vec3 const& pos={0,0,0});
