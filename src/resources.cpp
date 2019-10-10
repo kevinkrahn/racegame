@@ -2,7 +2,6 @@
 #include "renderer.h"
 #include "game.h"
 #include "driver.h"
-#include <filesystem>
 #include <stb_image.h>
 
 void Resources::load()

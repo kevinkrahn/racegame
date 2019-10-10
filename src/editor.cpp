@@ -60,6 +60,38 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     Texture* white = g_resources.getTexture("white");
 
+    if (isChoosingFile)
+    {
+        g_gui.beginPanel("Load Track", { g_game.windowWidth / 2, g_gui.convertSize(100) },
+                0.5f, true, false, false, 28, 4, 180);
+
+        g_gui.beginSelect("Choose File", &selectedFile, true);
+        for (i32 i=0; i<(i32)directoryContents.size(); ++i)
+        {
+            std::string const& filename = directoryContents[i];
+            g_gui.option(tstr(filename), i, nullptr);
+        }
+        g_gui.end();
+
+        if (g_gui.button("Open", selectedFile != -1))
+        {
+            g_game.changeScene(tstr(directoryContents[selectedFile]));
+            isChoosingFile = false;
+            directoryContents.clear();
+            selectedFile = -1;
+        }
+
+        if (g_gui.button("Cancel"))
+        {
+            isChoosingFile = false;
+            directoryContents.clear();
+            selectedFile = -1;
+        }
+
+        g_gui.end();
+        return;
+    }
+
     EditMode previousEditMode = editMode;
 
     if (g_input.isKeyPressed(KEY_TAB))
@@ -209,7 +241,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if ((g_gui.button("Save Track [F9]", canSave) || g_input.isKeyPressed(KEY_F9))
             && canSave)
     {
-        std::string filename = scene->name + ".dat";
+        std::string filename = "tracks/" + scene->name + ".dat";
         print("Saving scene to file: ", filename, '\n');
         DataFile::save(scene->serialize(), filename.c_str());
     }
@@ -219,7 +251,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 0.f, false, false, false, 28, 0, 100);
     if (g_gui.button("Load Track [F10]") || g_input.isKeyPressed(KEY_F10))
     {
-        g_game.changeScene("saved_scene.dat");
+        isChoosingFile = true;
+        scanFolder();
     }
     g_gui.end();
 
@@ -1035,6 +1068,17 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 { snap(cameraTarget.x - gridSize, gridSettings.cellSize), snap(cameraTarget.y + y, gridSettings.cellSize), gridSettings.z },
                 { snap(cameraTarget.x + gridSize, gridSettings.cellSize), snap(cameraTarget.y + y, gridSettings.cellSize), gridSettings.z },
                 color, color);
+        }
+    }
+}
+
+void Editor::scanFolder()
+{
+    for (auto& p : fs::directory_iterator("tracks"))
+    {
+        if (fs::is_regular_file(p))
+        {
+            directoryContents.push_back(p.path().string());
         }
     }
 }

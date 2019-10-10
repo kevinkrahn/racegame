@@ -82,7 +82,7 @@ Scene::Scene(const char* name)
     auto data = DataFile::load(name);
     deserialize(data);
 
-    this->name = name;
+    this->name = fs::path(name).stem().string();
 }
 
 Scene::~Scene()
