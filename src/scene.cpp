@@ -198,6 +198,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         g_audio.setPaused(isPaused);
     }
 
+    if (g_game.isEditing && !isPaused)
+    {
+        editor.onUpdate(this, renderer, deltaTime);
+    }
+
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     renderer->setViewportCount(viewportCount);
@@ -205,11 +210,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (!isPaused)
     {
-        if (g_game.isEditing)
-        {
-            editor.onUpdate(this, renderer, deltaTime);
-        }
-
         worldTime += deltaTime;
         renderer->updateWorldTime(worldTime);
 
