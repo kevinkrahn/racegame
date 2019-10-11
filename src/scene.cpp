@@ -600,12 +600,14 @@ bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
     filter.data = PxFilterData(flags, 0, 0, 0);
     if (hit)
     {
-        return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+        return physicsScene->raycast(convert(from), convert(dir), dist, *hit,
+                PxHitFlags(PxHitFlag::eDEFAULT), filter);
     }
     else
     {
         PxRaycastBuffer tmpHit;
-        return physicsScene->raycast(convert(from), convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter);
+        return physicsScene->raycast(convert(from), convert(dir), dist, tmpHit,
+                PxHitFlags(PxHitFlag::eDEFAULT), filter);
     }
 }
 

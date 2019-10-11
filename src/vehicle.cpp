@@ -1193,13 +1193,15 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         PxQueryFilterData filter;
         filter.flags |= PxQueryFlag::eANY_HIT;
         filter.flags |= PxQueryFlag::eSTATIC;
-        filter.data = PxFilterData(COLLISION_FLAG_GROUND, 0, 0, 0);
+        filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK, 0, 0, 0);
+        PxHitFlags hitFlags(PxHitFlag::eMESH_BOTH_SIDES | PxHitFlag::eMESH_ANY);
         isHidden = true;
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
             glm::vec3 wheelPosition = transform *
                 glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
-            if (!scene->raycastStatic(wheelPosition, rayDir, dist))
+            if (!scene->getPhysicsScene()->raycast(convert(wheelPosition),
+                        convert(rayDir), dist, hit, hitFlags, filter))
             {
                 isHidden = false;
                 break;
