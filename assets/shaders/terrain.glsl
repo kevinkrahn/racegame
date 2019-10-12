@@ -48,6 +48,20 @@ void main()
     blending = normalize(max(blending, 0.00001));
     blending /= vec3(blending.x + blending.y + blending.z);
 
+    // TODO: make this better
+    if (isnan(blending.x))
+    {
+        blending.x = 0.00001;
+    }
+    if (isnan(blending.y))
+    {
+        blending.y = 0.00001;
+    }
+    if (isnan(blending.z))
+    {
+        blending.z = 0.00001;
+    }
+
     vec3 xColor = texture(texSampler2, inWorldPosition.yz * texScale).rgb;
     vec3 yColor = texture(texSampler2, inWorldPosition.xz * texScale).rgb;
     vec3 zColor = texture(texSampler1, inWorldPosition.xy * texScale).rgb;
