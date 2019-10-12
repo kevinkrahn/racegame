@@ -181,7 +181,7 @@ void Gui::end()
             {
                 renderer->push2D(QuadRenderable(white, w.position, w.size.x,
                             w.nextWidgetPosition.y - w.position.y,
-                            glm::vec3(0.02f), 0.8f, true), -1);
+                            glm::vec3(0.f), 0.8f, true), -1);
             }
             if (pointInRectangle(g_input.getMousePosition(), w.position,
                         w.position + glm::vec2(w.size.x, w.nextWidgetPosition.y - w.position.y)))
@@ -203,8 +203,10 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
         f32 bw, f32 bh, std::function<bool()> onHover, std::function<bool()> onSelected,
         bool active)
 {
+    /*
     renderer->push2D(QuadRenderable(white,
-                pos, bw, bh, glm::vec3(0.f), active ? 0.85f : 0.65f, true));
+                pos, bw, bh, glm::vec3(0.f), active ? 0.9f : 0.7f, true));
+                */
 
     bool selected = false;
     bool clicked = false;

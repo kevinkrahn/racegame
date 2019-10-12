@@ -100,7 +100,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
 
     g_gui.beginPanel("Track Editor", { 0.f, 0.f },
-            0.f, false, false, false, 28, 4, 180);
+            0.f, true, false, false, 28, 4, 180);
 
     g_gui.label("Track Name", false);
     g_gui.textEdit("Name", scene->name);
@@ -237,7 +237,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     // TODO: make this better by not having 3 panels for 3 buttons
     g_gui.beginPanel("Task1", { g_gui.convertSize(200), 0.f },
-                0.f, false, false, false, 28, 0, 100);
+                0.f, true, false, false, 28, 0, 100);
     bool canSave = scene->name != "Untitled";
     if ((g_gui.button("Save Track [F9]", canSave) || g_input.isKeyPressed(KEY_F9))
             && canSave)
@@ -249,7 +249,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.end();
 
     g_gui.beginPanel("Task2", { g_gui.convertSize(300), 0.f },
-                0.f, false, false, false, 28, 0, 100);
+                0.f, true, false, false, 28, 0, 100);
     if (g_gui.button("Load Track [F10]") || g_input.isKeyPressed(KEY_F10))
     {
         isChoosingFile = true;
@@ -258,7 +258,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.end();
 
     g_gui.beginPanel("Task3", { g_gui.convertSize(400), 0.f },
-                0.f, false, false, false, 28, 0, 100);
+                0.f, true, false, false, 28, 0, 100);
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
         scene->terrain->regenerateCollisionMesh(scene);
@@ -270,7 +270,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (selectedEntities.size() > 0)
     {
         g_gui.beginPanel("Entity Properties", { g_game.windowWidth, 0.f },
-                1.f, false, false, false, 30, 4);
+                1.f, true, false, false, 30, 4);
         g_gui.label(tstr(selectedEntities.front()->getName(), " Properties"));
         selectedEntities.front()->showDetails(scene);
         g_gui.end();

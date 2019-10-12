@@ -74,6 +74,14 @@ struct Framebuffers
     u32 renderHeight;
 };
 
+struct FullscreenFramebuffers
+{
+    GLuint fullscreenTexture;
+    GLuint fullscreenFramebuffer;
+    GLuint fullscreenBlurTextures[2];
+    GLuint fullscreenBlurFramebuffer;
+};
+
 struct WorldInfo
 {
     glm::mat4 orthoProjection;
@@ -94,6 +102,7 @@ class Renderer
 {
 private:
     Framebuffers fb = { 0 };
+    FullscreenFramebuffers fsfb = { 0 };
     WorldInfo worldInfo;
     DynamicBuffer worldInfoUBO = DynamicBuffer(sizeof(WorldInfo));
     DynamicBuffer worldInfoUBOShadow = DynamicBuffer(sizeof(WorldInfo));
@@ -128,6 +137,7 @@ private:
     void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount);
     GLuint compileShader(std::string const& filename, SmallVec<std::string> defines, u32 viewportCount);
     void createFramebuffers();
+    void createFullscreenFramebuffers();
 
     Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
 
@@ -162,6 +172,7 @@ public:
     void init(u32 width, u32 height);
     void initShaders();
     void updateFramebuffers();
+    void updateFullscreenFramebuffers();
     u32 loadShader(std::string const& filename, SmallVec<std::string> defines={}, std::string name="");
     u32 getShader(const char* name, i32 viewportCount=0) const;
     GLuint getShaderProgram(const char* name, i32 viewportCount=0) const;

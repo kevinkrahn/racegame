@@ -345,7 +345,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
                     glm::vec2(g_game.windowWidth/2 - w/2, 0),
                     w, (f32)g_game.windowHeight,
-                    glm::vec3(0.02f), 0.8f, true));
+                    glm::vec3(0.f), 0.8f, true));
     }
 
     switch (menuMode)

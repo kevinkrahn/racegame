@@ -184,6 +184,11 @@ void Renderer::updateFramebuffers()
     createFramebuffers();
 }
 
+void Renderer::updateFullscreenFramebuffers()
+{
+    createFullscreenFramebuffers();
+}
+
 void Renderer::createFramebuffers()
 {
     if (fb.mainFramebuffer)
@@ -442,6 +447,58 @@ void Renderer::createFramebuffers()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void Renderer::createFullscreenFramebuffers()
+{
+    if (fsfb.fullscreenTexture)
+    {
+        glDeleteTextures(1, &fsfb.fullscreenTexture);
+    }
+    if (fsfb.fullscreenFramebuffer)
+    {
+        glDeleteFramebuffers(1, &fsfb.fullscreenFramebuffer);
+    }
+    if (fsfb.fullscreenBlurFramebuffer)
+    {
+        glDeleteTextures(2, fsfb.fullscreenBlurTextures);
+        glDeleteFramebuffers(1, &fsfb.fullscreenBlurFramebuffer);
+    }
+
+    fsfb = { 0 };
+
+    // fullscreen framebuffer
+    glGenTextures(1, &fsfb.fullscreenTexture);
+    glBindTexture(GL_TEXTURE_2D, fsfb.fullscreenTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, g_game.windowWidth, g_game.windowHeight,
+             0, GL_RGB, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glGenFramebuffers(1, &fsfb.fullscreenFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenFramebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fsfb.fullscreenTexture, 0);
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    // fullscreen blur framebuffers
+    glGenTextures(2, fsfb.fullscreenBlurTextures);
+    for (u32 n=0; n<2; ++n)
+    {
+        glBindTexture(GL_TEXTURE_2D, fsfb.fullscreenBlurTextures[n]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, g_game.windowWidth/4, g_game.windowHeight/4,
+                0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    glGenFramebuffers(1, &fsfb.fullscreenBlurFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenBlurFramebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fsfb.fullscreenBlurTextures[0], 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fsfb.fullscreenBlurTextures[1], 0);
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+}
+
 void Renderer::initShaders()
 {
     shaderHandleMap.clear();
@@ -456,9 +513,12 @@ void Renderer::initShaders()
 
     loadShader("bloom_filter");
     loadShader("blit");
+    loadShader("blit2");
     loadShader("post_process");
     loadShader("blur", { "HBLUR" }, "hblur");
     loadShader("blur", { "VBLUR" }, "vblur");
+    loadShader("blur2", { "HBLUR" }, "hblur2");
+    loadShader("blur2", { "VBLUR" }, "vblur2");
     loadShader("lit");
     loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
     loadShader("debug");
@@ -489,6 +549,7 @@ void Renderer::init(u32 width, u32 height)
     glCreateVertexArrays(1, &emptyVAO);
 
     createFramebuffers();
+    createFullscreenFramebuffers();
 }
 
 void Renderer::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
@@ -873,9 +934,9 @@ void Renderer::render(f32 deltaTime)
 		glPopDebugGroup();
     }
 
-    // render to back buffer
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw Render Textures to Backbuffer");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // render to fullscreen texture
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw to Fullscreen Framebuffer");
+    glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenFramebuffer);
     glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -901,7 +962,45 @@ void Renderer::render(f32 deltaTime)
     }
 	glPopDebugGroup();
 
+	// blur the fullscreen framebuffer
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Blur Fullscreen Texture");
+    glViewport(0, 0, g_game.windowWidth/4, g_game.windowHeight/4);
+
+    glUseProgram(getShaderProgram("blit2"));
+    glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenBlurFramebuffer);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glBindTextureUnit(1, fsfb.fullscreenTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glm::vec2 invResolution = 1.f /
+        (glm::vec2(g_game.windowWidth/4, g_game.windowHeight/4));
+
+    glUseProgram(getShaderProgram("hblur2"));
+    glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    glUniform2f(2, invResolution.x, invResolution.y);
+    glBindTextureUnit(1, fsfb.fullscreenBlurTextures[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glUseProgram(getShaderProgram("vblur2"));
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glUniform2f(2, invResolution.x, invResolution.y);
+    glBindTextureUnit(1, fsfb.fullscreenBlurTextures[1]);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    // sampled by gui for blurred background
+    glBindTextureUnit(0, fsfb.fullscreenBlurTextures[0]);
+
+	glPopDebugGroup();
+
     // 2D
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw to Backbuffer");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
+
+    glUseProgram(getShaderProgram("blit2"));
+    glBindTextureUnit(1, fsfb.fullscreenTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "2D Pass");
     glEnable(GL_BLEND);
 
@@ -913,6 +1012,7 @@ void Renderer::render(f32 deltaTime)
     {
         r.renderable->on2DPass(this);
     }
+	glPopDebugGroup();
 	glPopDebugGroup();
 
     SDL_GL_SwapWindow(g_game.window);

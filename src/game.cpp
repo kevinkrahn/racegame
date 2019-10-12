@@ -111,6 +111,11 @@ void Game::run()
 
     SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
 
+    i32 w, h;
+    SDL_GL_GetDrawableSize(window, &w, &h);
+    windowWidth = w;
+    windowHeight = h;
+
     renderer.reset(new Renderer());
     renderer->init(config.graphics.resolutionX, config.graphics.resolutionY);
 
@@ -156,6 +161,7 @@ void Game::run()
         {
             windowWidth = w;
             windowHeight = h;
+            renderer->updateFullscreenFramebuffers();
         }
 
         if (nextScene)
