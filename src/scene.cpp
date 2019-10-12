@@ -107,7 +107,7 @@ void Scene::startRace()
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
     i32 cameraIndex = 0;
-    for (u32 i=0; i<2; ++i)
+    for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
 
@@ -172,7 +172,7 @@ void Scene::onStart()
 u32 Scene::numHumanDrivers() const
 {
     return (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
-            [](auto& d) { return d.playerProfile != nullptr; });
+            [](auto& d) { return d.isPlayer; });
 }
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)

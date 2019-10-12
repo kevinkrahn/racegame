@@ -215,25 +215,22 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
         isMouseOverUI = true;
-        if (active)
+        if (!widgetState->isMouseOver)
         {
-            if (!widgetState->isMouseOver)
+            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            widgetState->isMouseOver = true;
+        }
+        parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
+        selected = true;
+        if (!isMouseClickHandled && active)
+        {
+            if (onHover())
             {
+                isMouseClickHandled = true;
+                isMouseCaptured = true;
+                clicked = true;
+                // TODO: need different sound for this
                 g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-                widgetState->isMouseOver = true;
-            }
-            parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
-            selected = true;
-            if (!isMouseClickHandled)
-            {
-                if (onHover())
-                {
-                    isMouseClickHandled = true;
-                    isMouseCaptured = true;
-                    clicked = true;
-                    // TODO: need different sound for this
-                    g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
-                }
             }
         }
     }
@@ -241,11 +238,11 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
     {
         widgetState->isMouseOver = false;
     }
-    if (active && widgetStack.back().useKeyboardControl)
+    if (widgetStack.back().useKeyboardControl)
     {
         selected =
             (parent.widgetState->selectableChildCount == parent.widgetState->selectIndex);
-        if (!isKeyboardInputHandled && selected)
+        if (!isKeyboardInputHandled && selected && active)
         {
             if (onSelected())
             {
@@ -259,7 +256,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
 
     ++parent.widgetState->selectableChildCount;
 
-    if (selected && active)
+    if (selected)
     {
         widgetState->hoverIntensity =
             glm::min(widgetState->hoverIntensity + g_game.deltaTime * 4.f, 1.f);
@@ -272,13 +269,18 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
 
     if (widgetState->hoverIntensity > 0.f)
     {
+        f32 lineAlpha = 0.8f;
+        if (!active)
+        {
+            lineAlpha = 0.1f;
+        }
+        lineAlpha *= widgetState->hoverIntensity;
         f32 selectLineHeight = glm::floor(convertSize(2));
         renderer->push2D(QuadRenderable(white, pos, bw*widgetState->hoverIntensity,
-                    selectLineHeight, glm::vec3(1.f), widgetState->hoverIntensity * 0.8f));
+                    selectLineHeight, glm::vec3(1.f), lineAlpha));
         renderer->push2D(QuadRenderable(white,
                     pos + glm::vec2(bw * (1.f - widgetState->hoverIntensity), bh - selectLineHeight),
-                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f),
-                    widgetState->hoverIntensity * 0.8f));
+                    bw*widgetState->hoverIntensity, selectLineHeight, glm::vec3(1.f), lineAlpha));
     }
 
     return clicked;

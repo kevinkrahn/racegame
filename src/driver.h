@@ -3,11 +3,6 @@
 #include "math.h"
 #include "vehicle_data.h"
 
-struct PlayerProfile
-{
-    std::string name;
-};
-
 struct ComputerDriverData
 {
     std::string name;
@@ -34,8 +29,9 @@ struct Driver
 {
     u32 leaguePoints = 0;
 
+    bool isPlayer = false;
     bool hasCamera = false;
-    PlayerProfile* playerProfile = nullptr;
+    std::string playerName = "no-name";
     ComputerDriverData aiDriverData;
     bool useKeyboard = false;
     u32 controllerID = 0;

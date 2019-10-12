@@ -9,6 +9,7 @@ class Menu
     {
         HIDDEN,
         MAIN_MENU,
+        NEW_CHAMPIONSHIP,
         OPTIONS_MAIN,
         OPTIONS_GAMEPLAY,
         OPTIONS_GRAPHICS,
@@ -18,6 +19,7 @@ class Menu
     Config tmpConfig;
 
     void mainMenu();
+    void newChampionship();
     void mainOptions();
     void graphicsOptions();
     void audioOptions();

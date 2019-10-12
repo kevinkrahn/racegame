@@ -14,10 +14,8 @@ void Menu::mainMenu()
 
     if (g_gui.button("Championship"))
     {
-        g_game.isEditing = false;
-        Scene* scene = g_game.changeScene("saved_scene.dat");
-        scene->startRace();
-        menuMode = HIDDEN;
+        menuMode = NEW_CHAMPIONSHIP;
+        g_game.state.drivers.clear();
     }
 
     if (g_gui.button("Load Game"))
@@ -26,6 +24,23 @@ void Menu::mainMenu()
 
     if (g_gui.button("Quick Play"))
     {
+        g_game.state.drivers = {
+            Driver(true,  true,  true,  &g_resources.getVehicleData()[1], 1, 0),
+            Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
+            Driver(false, false, false, &g_resources.getVehicleData()[1], 3),
+            Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
+            Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
+            Driver(false, false, false, &g_resources.getVehicleData()[1], 6),
+            Driver(false, false, false, &g_resources.getVehicleData()[1], 7),
+            Driver(false, false, false, &g_resources.getVehicleData()[1], 8),
+            Driver(false, false, false, &g_resources.getVehicleData()[0], 1),
+            Driver(false, false, false, &g_resources.getVehicleData()[0], 2),
+        };
+
+        g_game.isEditing = false;
+        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        scene->startRace();
+        menuMode = HIDDEN;
     }
 
     if (g_gui.button("Options"))
@@ -44,6 +59,78 @@ void Menu::mainMenu()
     {
         g_game.shouldExit = true;
     }
+
+    g_gui.end();
+}
+
+void Menu::newChampionship()
+{
+    g_gui.beginPanel("Begin Championship ", { g_game.windowWidth/2, g_game.windowHeight*0.1f },
+            0.5f, false, true);
+
+    for (size_t i=0; i<g_game.state.drivers.size(); ++i)
+    {
+        g_gui.label(tstr("Player ", i + 1,
+            g_game.state.drivers[i].useKeyboard ? " (Using Keyboard)" :
+            tstr(" (Using Controller ", g_game.state.drivers[i].controllerID, ')')));
+        g_gui.textEdit(tstr("Player ", i), g_game.state.drivers[i].playerName);
+    }
+
+    if (g_gui.button("Begin", g_game.state.drivers.size() > 0))
+    {
+        g_game.isEditing = false;
+        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        scene->startRace();
+        menuMode = HIDDEN;
+    }
+
+    if (g_gui.button("Back"))
+    {
+        menuMode = MAIN_MENU;
+    }
+
+    g_gui.label("Press keyboard or controller to join");
+
+    if (g_input.isKeyPressed(KEY_SPACE) || g_input.isKeyPressed(KEY_RETURN))
+    {
+        bool keyboardPlayerExists = false;
+        for (auto& driver : g_game.state.drivers)
+        {
+            if (driver.useKeyboard)
+            {
+                keyboardPlayerExists = true;
+                break;
+            }
+        }
+        if (!keyboardPlayerExists)
+        {
+            g_game.state.drivers.push_back(Driver(true, true, true,
+                        &g_resources.getVehicleData()[1], 0, 0));
+        }
+    }
+
+    for (auto& controller : g_input.getControllers())
+    {
+        if (controller.second.isAnyButtonPressed())
+        {
+            bool controllerPlayerExists = false;
+            for (auto& driver : g_game.state.drivers)
+            {
+                if (!driver.useKeyboard && driver.controllerID == controller.first)
+                {
+                    controllerPlayerExists = true;
+                    break;
+                }
+            }
+
+            if (!controllerPlayerExists)
+            {
+                g_game.state.drivers.push_back(Driver(true, true, false,
+                            &g_resources.getVehicleData()[0], 0, controller.first));
+            }
+        }
+    }
+
 
     g_gui.end();
 }
@@ -267,6 +354,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             break;
         case MenuMode::MAIN_MENU:
             mainMenu();
+            break;
+        case MenuMode::NEW_CHAMPIONSHIP:
+            newChampionship();
             break;
         case MenuMode::OPTIONS_MAIN:
             mainOptions();

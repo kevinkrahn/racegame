@@ -874,7 +874,7 @@ void Vehicle::updateCamera(Renderer* renderer, f32 deltaTime)
 
 void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    bool isPlayerControlled = driver->playerProfile != nullptr;
+    bool isPlayerControlled = driver->isPlayer;
 
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {

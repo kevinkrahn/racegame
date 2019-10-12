@@ -153,6 +153,7 @@ private:
     bool buttonPressed[BUTTON_COUNT] = {};
     bool buttonReleased[BUTTON_COUNT] = {};
     f32 axis[AXIS_COUNT] = {};
+    bool anyButtonPressed = false;
 
 public:
     Controller() {}
@@ -177,6 +178,8 @@ public:
         assert(button < BUTTON_COUNT);
         return buttonReleased[button];
     }
+
+    bool isAnyButtonPressed() const { return anyButtonPressed; }
 
     f32 getAxis(u32 index) const
     {
@@ -313,6 +316,7 @@ public:
         {
             memset(controller.second.buttonPressed, 0, sizeof(controller.second.buttonPressed));
             memset(controller.second.buttonReleased, 0, sizeof(controller.second.buttonReleased));
+            controller.second.anyButtonPressed = false;
         }
         mouseMoved = false;
 
@@ -396,6 +400,7 @@ public:
                 u8 button = e.cbutton.button;
                 controllers[which].buttonPressed[button] = true;
                 controllers[which].buttonDown[button] = true;
+                controllers[which].anyButtonPressed = true;
             } break;
             case SDL_CONTROLLERBUTTONUP:
             {

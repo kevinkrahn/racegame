@@ -20,9 +20,6 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard, VehicleData* veh
     this->vehicleData = vehicleData;
     this->useKeyboard = useKeyboard;
     this->controllerID = controllerID;
-    if (isPlayer)
-    {
-        this->playerProfile = new PlayerProfile{ "Test" };
-    }
     this->vehicleColor = vehicleColors[colorIndex];
+    this->isPlayer = isPlayer;
 }

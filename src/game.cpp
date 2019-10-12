@@ -120,30 +120,8 @@ void Game::run()
     g_resources.load();
     initializeWeapons();
 
-    state.drivers = {
-        Driver(true,  true,  true,  &g_resources.getVehicleData()[1], 1, 0),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
-        Driver(false, false, false, &g_resources.getVehicleData()[1], 3),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
-        Driver(false, false, false, &g_resources.getVehicleData()[1], 6),
-        Driver(false, false, false, &g_resources.getVehicleData()[1], 7),
-        Driver(false, false, false, &g_resources.getVehicleData()[1], 8),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 1),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 2),
-
-        /*
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 3),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 6),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 7),
-        Driver(false, false, false, &g_resources.getVehicleData()[0], 8),
-        */
-    };
-
-    //changeScene("saved_scene.dat");
-    changeScene(nullptr);
+    changeScene("tracks/saved_scene.dat");
+    //changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;
