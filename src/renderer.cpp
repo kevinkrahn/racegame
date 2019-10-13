@@ -5,6 +5,7 @@
 #include <map>
 
 constexpr u32 viewportGapPixels = 1;
+constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
 
 void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount)
 {
@@ -245,7 +246,7 @@ void Renderer::createFramebuffers()
     {
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainColorTexture);
         glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.graphics.msaaLevel,
-                GL_RGB32F, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
+                colorFormat, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, 0);
 
         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainDepthTexture);
@@ -256,7 +257,7 @@ void Renderer::createFramebuffers()
         glGenTextures(1, &fb.msaaResolveDepthTexture);
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.msaaResolveColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth, fb.renderHeight,
                 layers, 0, GL_RGB, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -294,7 +295,7 @@ void Renderer::createFramebuffers()
     else
     {
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth, fb.renderHeight,
                 layers, 0, GL_RGB, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -405,7 +406,7 @@ void Renderer::createFramebuffers()
             for (u32 n=0; n<2; ++n)
             {
                 glBindTexture(GL_TEXTURE_2D_ARRAY, tex[n]);
-                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB16F, fb.renderWidth/i, fb.renderHeight/i,
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth/i, fb.renderHeight/i,
                         layers, 0, GL_RGB, GL_FLOAT, nullptr);
                 glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -429,7 +430,7 @@ void Renderer::createFramebuffers()
 
         glGenTextures(1, &fb.finalColorTexture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.finalColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, fb.renderWidth, fb.renderHeight,
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth, fb.renderHeight,
                 layers, 0, GL_RGB, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -468,7 +469,7 @@ void Renderer::createFullscreenFramebuffers()
     // fullscreen framebuffer
     glGenTextures(1, &fsfb.fullscreenTexture);
     glBindTexture(GL_TEXTURE_2D, fsfb.fullscreenTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, g_game.windowWidth, g_game.windowHeight,
+    glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, g_game.windowWidth, g_game.windowHeight,
              0, GL_RGB, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -485,8 +486,8 @@ void Renderer::createFullscreenFramebuffers()
     for (u32 n=0; n<2; ++n)
     {
         glBindTexture(GL_TEXTURE_2D, fsfb.fullscreenBlurTextures[n]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, g_game.windowWidth/4, g_game.windowHeight/4,
-                0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, g_game.windowWidth/4, g_game.windowHeight/4,
+                0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

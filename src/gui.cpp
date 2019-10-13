@@ -274,7 +274,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
         f32 lineAlpha = 0.8f;
         if (!active)
         {
-            lineAlpha = 0.1f;
+            lineAlpha = 0.08f;
         }
         lineAlpha *= widgetState->hoverIntensity;
         f32 selectLineHeight = glm::floor(convertSize(2));
@@ -306,7 +306,7 @@ bool Gui::button(const char* text, bool active)
     }, active);
 
     renderer->push2D(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
-                glm::vec3(1.f), active ? 1.f : 0.75f, 1.f,
+                glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
                 HorizontalAlign::CENTER, VerticalAlign::CENTER));
 
     pos.y += bh + parent.itemSpacing;
@@ -609,7 +609,7 @@ bool Gui::textEdit(const char* text, std::string& value)
         renderer->push2D(QuadRenderable(white, pos + glm::vec2(textStart +
                         fontSmall->stringDimensions(value.c_str()).x + convertSize(1),
                         bh/2 - blinkHeight / 2),
-                convertSize(1), blinkHeight, glm::vec3(0.9f), 0.5f));
+                convertSize(1), blinkHeight, glm::vec3(1.f), 0.5f));
 
         isKeyboardInputCaptured = true;
         isKeyboardInputHandled = true;

@@ -520,7 +520,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         Font* font2 = &g_resources.getFont("font", 18);
         char* debugText = tstr(
             "FPS: ", 1.f / g_game.realDeltaTime,
-            "\nDelta: ", g_game.realDeltaTime,
+            "\nDelta: ", g_game.realDeltaTime * 1000.f, "ms",
             "\nDilation: ", g_game.timeDilation,
             "\nResolution: ", g_game.config.graphics.resolutionX, "x", g_game.config.graphics.resolutionY,
             "\nTmpRenderMem: ", std::fixed, std::setprecision(2), renderer->getTempRenderBufferSize() / 1024.f, "kb");
