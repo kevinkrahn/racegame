@@ -4,7 +4,6 @@
 #include "math.h"
 #include "font.h"
 #include "audio.h"
-#include "vehicle_data.h"
 #include "mesh.h"
 #include "texture.h"
 #include <vector>
@@ -19,8 +18,6 @@ private:
     std::map<std::string, DataFile::Value::Dict> scenes;
     std::map<std::string, std::map<u32, Font>> fonts;
     std::map<std::string, std::unique_ptr<Sound>> sounds;
-
-    std::vector<VehicleData> vehicleData;
 
 public:
     void load();
@@ -81,7 +78,5 @@ public:
         }
         return iter->second.get();
     }
-
-    std::vector<VehicleData>& getVehicleData() { return vehicleData; }
 } g_resources;
 

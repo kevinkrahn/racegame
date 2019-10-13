@@ -319,7 +319,6 @@ void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& setting
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
         // TODO: investigate other tire parameters
-        //tires[i].mType = 0;
     }
 
     PxVec3 wheelCenterOffsets[NUM_WHEELS];
@@ -483,7 +482,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
-    this->maxHitPoints = driver->vehicleData->maxHitPoints;
+    this->maxHitPoints = driver->vehicleTuning.maxHitPoints;
     this->hitPoints = this->maxHitPoints;
     this->cameraIndex = cameraIndex;
 
@@ -492,7 +491,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     tireSound = g_audio.playSound3D(g_resources.getSound("tires"),
             SoundType::VEHICLE, translationOf(transform), true, 1.f, 0.f);
 
-    setupPhysics(scene->getPhysicsScene(), driver->vehicleData->physics, vehicleMaterial, surfaceMaterials, transform);
+    setupPhysics(scene->getPhysicsScene(), driver->vehicleTuning.physics, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
     actorUserData.vehicle = this;
 }
@@ -593,7 +592,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
             }
-            f32 topSpeed = driver->vehicleData->physics.topSpeed;
+            f32 topSpeed = driver->vehicleTuning.physics.topSpeed;
             if (forwardSpeed > topSpeed)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(
@@ -619,8 +618,8 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     {
         PxVec3 down = getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
         f32 downforce =
-            driver->vehicleData->physics.forwardDownforce * glm::abs(getForwardSpeed()) +
-            driver->vehicleData->physics.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
+            driver->vehicleTuning.physics.forwardDownforce * glm::abs(getForwardSpeed()) +
+            driver->vehicleTuning.physics.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
         getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
 
         f32 maxSlip = 0.f;
@@ -634,7 +633,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
             }
         }
         f32 driftBoost = glm::min(maxSlip, 1.f) * accel
-            * driver->vehicleData->physics.driftBoost * 20.f;
+            * driver->vehicleTuning.physics.driftBoost * 20.f;
         PxVec3 boostDir = getRigidBody()->getLinearVelocity().getNormalized();
         getRigidBody()->addForce(boostDir * driftBoost, PxForceMode::eACCELERATION);
     }
@@ -808,49 +807,19 @@ void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
         scene->ribbons.addChunk(&tireMarkRibbons[i]);
     }
 
-    // draw vehicle debris
-    for (auto const& d : vehicleDebris)
-    {
-        LitSettings s;
-        s.mesh = d.meshInfo->mesh;
-        s.worldTransform = convert(d.rigidBody->getGlobalPose());
-        s.texture = nullptr;
-        s.color = d.meshInfo->isBody ? driver->vehicleColor : glm::vec3(1.f);
-        s.specularStrength = d.meshInfo->isBody ? 0.15f : 0.3f;
-        s.specularPower = d.meshInfo->isBody ? 20.f : 200.f;
-        renderer->push(LitRenderable(s));
-    }
-
     if (cameraIndex >= 0 && isHidden)
     {
         renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
                 cameraIndex, transform, driver->vehicleColor));
     }
 
-    // draw chassis
-    for (auto& m : driver->vehicleData->chassisMeshes)
-    {
-        LitSettings s;
-        s.mesh = m.mesh;
-        s.worldTransform = transform * m.transform;
-        s.texture = nullptr;
-        s.color = m.isBody ? driver->vehicleColor : glm::vec3(1.f);
-        s.specularStrength = m.isBody ? 0.15f : 0.3f;
-        s.specularPower = m.isBody ? 20.f : 200.f;
-        renderer->push(LitRenderable(s));
-    }
-
-    // draw wheels
+    glm::mat4 wheelTransforms[NUM_WHEELS];
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
-        glm::mat4 wheelTransform = transform * convert(wheelQueryResults[i].localPose);
-        if ((i & 1) == 0)
-        {
-            wheelTransform = glm::rotate(wheelTransform, PI, glm::vec3(0, 0, 1));
-        }
-        auto& mesh = i < 2 ? driver->vehicleData->wheelMeshFront : driver->vehicleData->wheelMeshRear;
-        renderer->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
+        wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
+    g_vehicles[driver->vehicleIndex]->render(renderer, transform, wheelTransforms, driver);
+    g_vehicles[driver->vehicleIndex]->renderDebris(renderer, vehicleDebris, driver);
 }
 
 void Vehicle::updateCamera(Renderer* renderer, f32 deltaTime)
@@ -1036,7 +1005,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             //f32 accel = 0.85f;
             f32 accel = 1.f;
             f32 brake = 0.f;
-            bool isSomethingBlockingMe = isBlocking(driver->vehicleData->collisionWidth / 2 + 0.05f,
+            bool isSomethingBlockingMe = isBlocking(driver->vehicleTuning.collisionWidth / 2 + 0.05f,
                     getForwardVector(), forwardTestDist);
             if (isSomethingBlockingMe && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
             {
@@ -1167,7 +1136,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             rotationSpeed += glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
         }
         rotationSpeed /= NUM_WHEELS;
-        f32 gearRatio = glm::abs(driver->vehicleData->physics.gearRatios[
+        f32 gearRatio = glm::abs(driver->vehicleTuning.physics.gearRatios[
             vehicle4W->mDriveDynData.mCurrentGear]);
         engineRPM = smoothMove(engineRPM, rotationSpeed * gearRatio, 1.9f, deltaTime);
 
@@ -1249,12 +1218,12 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
             // increase damping when offroad
             if (info.tireSurfaceMaterial == scene->offroadMaterial)
             {
-                d.mDampingRate = driver->vehicleData->physics.offroadDampingRate;
+                d.mDampingRate = driver->vehicleTuning.physics.wheelOffroadDampingRate;
                 isWheelOffroad = true;
             }
             else
             {
-                d.mDampingRate = driver->vehicleData->physics.wheelDampingRate;
+                d.mDampingRate = driver->vehicleTuning.physics.wheelDampingRate;
                 anyWheelOnRoad = true;
             }
 
@@ -1308,8 +1277,10 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         // add tire marks
         if (isWheelSlipping[i] && !isWheelOffroad)
         {
-            f32 wheelRadius = i < 2 ? driver->vehicleData->physics.wheelRadiusFront : driver->vehicleData->physics.wheelRadiusRear;
-            f32 wheelWidth = i < 2 ? driver->vehicleData->physics.wheelWidthFront : driver->vehicleData->physics.wheelWidthRear;
+            f32 wheelRadius = i < 2 ? driver->vehicleTuning.physics.wheelRadiusFront
+                : driver->vehicleTuning.physics.wheelRadiusRear;
+            f32 wheelWidth = i < 2 ? driver->vehicleTuning.physics.wheelWidthFront
+                : driver->vehicleTuning.physics.wheelWidthRear;
             glm::vec3 tn = convert(info.tireContactNormal);
             PxTransform contactPose = info.localPose;
             glm::vec3 markPosition = tn * -wheelRadius
@@ -1389,7 +1360,7 @@ void Vehicle::shakeScreen(f32 intensity)
 void Vehicle::blowUp()
 {
     glm::mat4 transform = getTransform();
-    for(auto& d : driver->vehicleData->debrisChunks)
+    for (auto& d : g_vehicles[driver->vehicleIndex]->debrisChunks)
     {
 		PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
 			    PxTransform(convert(transform * d.transform)));

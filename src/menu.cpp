@@ -24,18 +24,17 @@ void Menu::mainMenu()
 
     if (g_gui.button("Quick Play"))
     {
-        g_game.state.drivers = {
-            Driver(true,  true,  true,  &g_resources.getVehicleData()[1], 1, 0),
-            Driver(false, false, false, &g_resources.getVehicleData()[0], 2, 0),
-            Driver(false, false, false, &g_resources.getVehicleData()[1], 3),
-            Driver(false, false, false, &g_resources.getVehicleData()[0], 4),
-            Driver(false, false, false, &g_resources.getVehicleData()[0], 5),
-            Driver(false, false, false, &g_resources.getVehicleData()[1], 6),
-            Driver(false, false, false, &g_resources.getVehicleData()[1], 7),
-            Driver(false, false, false, &g_resources.getVehicleData()[1], 8),
-            Driver(false, false, false, &g_resources.getVehicleData()[0], 1),
-            Driver(false, false, false, &g_resources.getVehicleData()[0], 2),
-        };
+        g_game.state.drivers.clear();
+        g_game.state.drivers.push_back(Driver(true,  true,  true,  1, 1, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 1, 3));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 4));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 5));
+        g_game.state.drivers.push_back(Driver(false, false, false, 1, 6));
+        g_game.state.drivers.push_back(Driver(false, false, false, 1, 7));
+        g_game.state.drivers.push_back(Driver(false, false, false, 1, 8));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2));
 
         g_game.isEditing = false;
         Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
@@ -104,8 +103,7 @@ void Menu::newChampionship()
         }
         if (!keyboardPlayerExists)
         {
-            g_game.state.drivers.push_back(Driver(true, true, true,
-                        &g_resources.getVehicleData()[1], 0, 0));
+            g_game.state.drivers.push_back(Driver(true, true, true, 1, 0, 0));
         }
     }
 
@@ -126,7 +124,7 @@ void Menu::newChampionship()
             if (!controllerPlayerExists)
             {
                 g_game.state.drivers.push_back(Driver(true, true, false,
-                            &g_resources.getVehicleData()[0], 0, controller.first));
+                            0, 0, controller.first));
             }
         }
     }

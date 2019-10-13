@@ -20,5 +20,3 @@ public:
     virtual u32 getAmmoCountForUpgradeLevel(u32 upgradeLevel) const { return upgradeLevel; }
 };
 
-std::vector<std::unique_ptr<Weapon>> g_weapons;
-void initializeWeapons();

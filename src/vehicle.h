@@ -91,13 +91,6 @@ public:
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 
-    struct VehicleDebris
-    {
-        VehicleData::VehicleMesh* meshInfo;
-        PxRigidDynamic* rigidBody;
-        f32 life = 0.f;
-    };
-
     std::vector<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
 

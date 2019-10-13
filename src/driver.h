@@ -12,19 +12,6 @@ struct ComputerDriverData
     f32 fear;         // [0,1] how much the AI tries to evade other drivers
 };
 
-struct VehicleConfiguration
-{
-    u32 armorUpgradeLevel = 0;
-    u32 engineUpgradeLevel = 0;
-    u32 tireUpgradeLevel = 0;
-
-    u32 primaryWeaponIndex = 0;
-    u32 primaryWeaponUpgradeLevel = 5;
-
-    u32 specialWeaponIndex = 1;
-    u32 specialWeaponUpgradeLevel = 5;
-};
-
 struct Driver
 {
     u32 leaguePoints = 0;
@@ -32,15 +19,27 @@ struct Driver
     bool isPlayer = false;
     bool hasCamera = false;
     std::string playerName = "no-name";
-    ComputerDriverData aiDriverData;
+    //ComputerDriverData aiDriverData;
     bool useKeyboard = false;
     u32 controllerID = 0;
 
     VehicleConfiguration vehicleConfig;
+    VehicleTuning vehicleTuning;
 
-    VehicleData* vehicleData = nullptr;
+    u32 vehicleIndex = 0;
     glm::vec3 vehicleColor = { 1.f, 1.f, 1.f };
 
-    Driver(bool hasCamera, bool isPlayer, bool useKeyboard, VehicleData* vehicleData,
+    void updateTuning()
+    {
+        VehicleTuning t;
+        vehicleTuning = std::move(t);
+        g_vehicles[vehicleIndex]->initTuning(vehicleConfig, vehicleTuning);
+    }
+
+    Driver(bool hasCamera, bool isPlayer, bool useKeyboard, u32 vehicleIndex,
             u32 colorIndex, u32 controllerID=0);
+
+    Driver() = default;
+    Driver(Driver&& other) = default;
+    Driver& operator = (Driver&& other) = default;
 };

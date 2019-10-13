@@ -10,8 +10,6 @@ void Resources::load()
     u8 white[] = { 255, 255, 255, 255 };
     textures["white"] = Texture(1, 1, Texture::Format::RGBA8, white, sizeof(white));
 
-    std::vector<DataFile::Value> vehicleDataValues;
-
     for (auto& p : fs::recursive_directory_iterator("."))
     {
         if (fs::is_regular_file(p))
@@ -104,15 +102,6 @@ void Resources::load()
                         scenes[val["name"].string()] = std::move(val.dict());
                     }
                 }
-
-                // vehicles
-                if (val.hasKey("vehicles"))
-                {
-                    for (auto& val : val["vehicles"].array())
-                    {
-                        vehicleDataValues.push_back(std::move(val));
-                    }
-                }
             }
             else if (ext == ".bmp" || ext == ".png" || ext == ".jpg")
             {
@@ -167,13 +156,6 @@ void Resources::load()
                 sounds[p.path().stem().string()] = std::move(sound);
             }
         }
-    }
-
-    // finish loading vehicle data now that all the scenes have been loaded
-    for (auto& val : vehicleDataValues)
-    {
-        vehicleData.push_back({});
-        loadVehicleData(val, vehicleData.back());
     }
 }
 

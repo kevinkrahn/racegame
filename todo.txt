@@ -14,3 +14,4 @@
     - Weapon that drops bouncing explosive balls from the back of the vehicle
     - Missle rack on back of truck
     - Weapon that shoots projectiles that bounce off walls and continue on
+    - Vehicle upgrade with visual properties, like a spoiler for downforce, or visual armour

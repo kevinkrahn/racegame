@@ -110,6 +110,7 @@ void Scene::startRace()
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
+        driver->updateTuning();
 
         //glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
         glm::vec3 offset = -glm::vec3(
@@ -128,7 +129,8 @@ void Scene::startRace()
         }
 
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
-                convert(hit.block.position + hit.block.normal * driver->vehicleData->getRestOffset())) * rotationOf(start);
+                convert(hit.block.position + hit.block.normal *
+                    driver->vehicleTuning.getRestOffset())) * rotationOf(start);
 
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
             driver, vehicleMaterial, surfaceMaterials, i, driver->hasCamera ? cameraIndex : -1));

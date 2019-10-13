@@ -30,7 +30,7 @@ struct PhysicsVehicleSettings
     f32 wheelRadiusRear = 0.6f;
 
     f32 wheelDampingRate = 0.25f;
-    f32 offroadDampingRate = 15.f;
+    f32 wheelOffroadDampingRate = 15.f;
     f32 trackTireFriction = 3.f;
     f32 offroadTireFriction = 2.f;
     f32 frontToeAngle = 0.f;
@@ -75,24 +75,26 @@ struct PhysicsVehicleSettings
     PxVehicleDifferential4WData::Enum differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
 
     glm::vec3 wheelPositions[4];
-
-    // TODO: add downforce property
-    // TODO: add drift speed property
 };
 
-struct VehicleData
+struct VehicleMesh
+{
+    Mesh* mesh;
+    glm::mat4 transform;
+    PxShape* collisionShape;
+    bool isBody;
+};
+
+struct VehicleDebris
+{
+    VehicleMesh* meshInfo;
+    PxRigidDynamic* rigidBody;
+    f32 life = 0.f;
+};
+
+struct VehicleTuning
 {
     PhysicsVehicleSettings physics;
-    struct VehicleMesh
-    {
-        Mesh* mesh;
-        glm::mat4 transform;
-        PxShape* collisionShape;
-        bool isBody;
-    };
-    SmallVec<VehicleMesh> chassisMeshes;
-    VehicleMesh wheelMeshFront;
-    VehicleMesh wheelMeshRear;
 
     // all [0,1]
     struct
@@ -104,20 +106,54 @@ struct VehicleData
         f32 handling;
     } specs;
 
-    std::string name;
-    std::string description;
-    f32 maxHitPoints;
-
-    u32 price;
     f32 collisionWidth = 0.f;
+    f32 maxHitPoints;
 
     f32 getRestOffset() const
     {
         f32 wheelZ = -physics.wheelPositions[0].z;
         return wheelZ + physics.wheelRadiusFront;
     }
-
-    std::vector<VehicleMesh> debrisChunks;
 };
 
-void loadVehicleData(DataFile::Value& data, VehicleData& vehicleData);
+struct VehicleConfiguration
+{
+    u32 armorUpgradeLevel = 0;
+    u32 engineUpgradeLevel = 0;
+    u32 tireUpgradeLevel = 0;
+
+    u32 primaryWeaponIndex = 0;
+    u32 primaryWeaponUpgradeLevel = 5;
+
+    u32 specialWeaponIndex = 1;
+    u32 specialWeaponUpgradeLevel = 5;
+
+    std::vector<u32> vehicleUpgrades;
+};
+
+struct VehicleData
+{
+    SmallVec<VehicleMesh> chassisMeshes;
+    VehicleMesh wheelMeshFront;
+    VehicleMesh wheelMeshRear;
+
+    std::string name;
+    std::string description;
+    u32 price;
+
+    std::vector<VehicleMesh> debrisChunks;
+
+    virtual ~VehicleData() {}
+    virtual void render(class Renderer* renderer, glm::mat4 const& transform,
+            glm::mat4* wheelTransforms, struct Driver* driver);
+    virtual void renderDebris(class Renderer* renderer,
+            std::vector<VehicleDebris> const& debris, struct Driver* driver);
+
+    virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
+    void loadSceneData(const char* sceneName, VehicleTuning& tuning);
+};
+
+std::vector<std::unique_ptr<VehicleData>> g_vehicles;
+std::vector<std::unique_ptr<class Weapon>> g_weapons;
+
+void initializeVehicleData();

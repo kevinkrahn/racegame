@@ -123,7 +123,7 @@ void Game::run()
     g_audio.init();
     initPhysX();
     g_resources.load();
-    initializeWeapons();
+    initializeVehicleData();
 
     changeScene("tracks/saved_scene.dat");
     //changeScene(nullptr);
