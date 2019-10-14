@@ -14,7 +14,7 @@ class QuadRenderable : public Renderable2D
     Texture* tex;
     Vertex points[4];
     glm::vec4 color;
-    bool blurBackground = false;
+    const char* shaderName;
 
 public:
     QuadRenderable(Texture* texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1=glm::vec2(0), glm::vec2 t2=glm::vec2(1),
@@ -24,12 +24,13 @@ public:
         points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
         points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };
         points[3] = { p2, t2 };
+        shaderName = "tex2D";
     }
 
     QuadRenderable(Texture* texture, glm::vec2 p1, f32 width, f32 height,
             glm::vec3 color=glm::vec3(1.0), f32 alpha=1.f, bool blurBackground=false,
-            bool mirror=false)
-        : tex(texture), color(glm::vec4(color, alpha)), blurBackground(blurBackground)
+            bool mirror=false, const char* shaderName=nullptr)
+        : tex(texture), color(glm::vec4(color, alpha))
     {
         glm::vec2 t1(mirror ? 1.f : 0.f);
         glm::vec2 t2(mirror ? 0.f : 1.f);
@@ -38,11 +39,13 @@ public:
         points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
         points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };
         points[3] = { p2, t2 };
+        this->shaderName = shaderName ? shaderName :
+            (blurBackground ? "texBlur2D" : "tex2D");
     }
 
     void on2DPass(Renderer* renderer) override
     {
-        glUseProgram(renderer->getShaderProgram(blurBackground ? "texBlur2D" : "tex2D"));
+        glUseProgram(renderer->getShaderProgram(shaderName));
         glBindTextureUnit(1, tex->handle);
         glUniform4fv(0, 4, (GLfloat*)&points);
         glUniform4fv(4, 1, (GLfloat*)&color);

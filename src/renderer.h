@@ -103,6 +103,7 @@ class RenderWorld
     friend class Renderer;
 
     u32 width, height;
+    u32 settingsVersion = 0;
 
     const char* name = "";
     WorldInfo worldInfo;
@@ -124,9 +125,20 @@ class RenderWorld
 
     Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
 
+    Texture tex;
+
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow);
 
 public:
+    RenderWorld() {}
+    RenderWorld(u32 width, u32 height, const char* name)
+        : width(width), height(height), name(name)
+    {
+        tex.width = width;
+        tex.height = height;
+        createFramebuffers();
+    }
+
     void add(Renderable* renderable)
     {
         renderables.push_back({ renderable->getPriority(), renderable });
@@ -141,6 +153,8 @@ public:
         return ptr;
     }
 
+    Texture* getTexture() { return &tex; }
+
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const { return cameras.size(); }
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
@@ -151,7 +165,7 @@ public:
     void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
 
     void updateWorldTime(f64 time);
-    void createFramebuffers(u32 width, u32 height);
+    void createFramebuffers();
     void render(Renderer* renderer, f32 deltaTime);
     void clear();
 };
@@ -162,6 +176,8 @@ private:
     FullscreenFramebuffers fsfb = { 0 };
     RenderWorld renderWorld;
 
+    u32 settingsVersion = 0;
+
     std::map<std::string, u32> shaderHandleMap;
     std::vector<GLuint> loadedShaders[MAX_VIEWPORTS];
 
@@ -171,6 +187,7 @@ private:
         Renderable2D* renderable;
     };
     std::vector<QueuedRenderable2D> renderables2D;
+    std::vector<RenderWorld*> renderWorlds;
 
     void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount);
     GLuint compileShader(std::string const& filename, SmallVec<std::string> defines, u32 viewportCount);
@@ -201,6 +218,14 @@ public:
     GLuint getShaderProgram(const char* name, i32 viewportCount=0) const;
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
+    void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }
+    void updateSettingsVersion()
+    {
+        ++settingsVersion;
+        initShaders();
+        updateFramebuffers();
+        renderWorld.settingsVersion = settingsVersion;
+    }
 
     size_t getTempRenderBufferSize() const { return renderWorld.tempRenderBuffer.pos; }
     std::string getDebugRenderList()

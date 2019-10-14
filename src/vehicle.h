@@ -101,7 +101,7 @@ public:
 	};
 	SmallVec<Notification> notifications;
 
-	void setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
+	void setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
 
     void updatePhysics(PxScene* scene, f32 timestep, bool digital,

@@ -152,7 +152,7 @@ PxBatchQuery* VehicleSceneQueryData::setUpBatchedSceneQuery(const PxU32 batchId,
 }
 
 static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(
-        PhysicsVehicleSettings const& settings, const PxMaterial** materials)
+        VehicleTuning const& settings, const PxMaterial** materials)
 {
     constexpr u32 NUM_SURFACE_TYPES = 2;
     f32 frictionTable[NUM_SURFACE_TYPES] = {
@@ -219,7 +219,7 @@ static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
     return createConvexMesh(points, 32);
 }
 
-void Vehicle::setupPhysics(PxScene* scene, PhysicsVehicleSettings const& settings, PxMaterial* vehicleMaterial,
+void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMaterial* vehicleMaterial,
 	    const PxMaterial** surfaceMaterials, glm::mat4 const& transform)
 {
     sceneQueryData = VehicleSceneQueryData::allocate(1, NUM_WHEELS, QUERY_HITS_PER_WHEEL, 1,
@@ -491,7 +491,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     tireSound = g_audio.playSound3D(g_resources.getSound("tires"),
             SoundType::VEHICLE, translationOf(transform), true, 1.f, 0.f);
 
-    setupPhysics(scene->getPhysicsScene(), driver->vehicleTuning.physics, vehicleMaterial, surfaceMaterials, transform);
+    setupPhysics(scene->getPhysicsScene(), driver->vehicleTuning, vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
     actorUserData.vehicle = this;
 }
@@ -592,7 +592,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
             }
-            f32 topSpeed = driver->vehicleTuning.physics.topSpeed;
+            f32 topSpeed = driver->vehicleTuning.topSpeed;
             if (forwardSpeed > topSpeed)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(
@@ -618,8 +618,8 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     {
         PxVec3 down = getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
         f32 downforce =
-            driver->vehicleTuning.physics.forwardDownforce * glm::abs(getForwardSpeed()) +
-            driver->vehicleTuning.physics.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
+            driver->vehicleTuning.forwardDownforce * glm::abs(getForwardSpeed()) +
+            driver->vehicleTuning.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
         getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
 
         f32 maxSlip = 0.f;
@@ -633,7 +633,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
             }
         }
         f32 driftBoost = glm::min(maxSlip, 1.f) * accel
-            * driver->vehicleTuning.physics.driftBoost * 20.f;
+            * driver->vehicleTuning.driftBoost * 20.f;
         PxVec3 boostDir = getRigidBody()->getLinearVelocity().getNormalized();
         getRigidBody()->addForce(boostDir * driftBoost, PxForceMode::eACCELERATION);
     }
@@ -1137,7 +1137,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             rotationSpeed += glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
         }
         rotationSpeed /= NUM_WHEELS;
-        f32 gearRatio = glm::abs(driver->vehicleTuning.physics.gearRatios[
+        f32 gearRatio = glm::abs(driver->vehicleTuning.gearRatios[
             vehicle4W->mDriveDynData.mCurrentGear]);
         engineRPM = smoothMove(engineRPM, rotationSpeed * gearRatio, 1.9f, deltaTime);
 
@@ -1219,12 +1219,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             // increase damping when offroad
             if (info.tireSurfaceMaterial == scene->offroadMaterial)
             {
-                d.mDampingRate = driver->vehicleTuning.physics.wheelOffroadDampingRate;
+                d.mDampingRate = driver->vehicleTuning.wheelOffroadDampingRate;
                 isWheelOffroad = true;
             }
             else
             {
-                d.mDampingRate = driver->vehicleTuning.physics.wheelDampingRate;
+                d.mDampingRate = driver->vehicleTuning.wheelDampingRate;
                 anyWheelOnRoad = true;
             }
 
@@ -1278,10 +1278,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         // add tire marks
         if (isWheelSlipping[i] && !isWheelOffroad)
         {
-            f32 wheelRadius = i < 2 ? driver->vehicleTuning.physics.wheelRadiusFront
-                : driver->vehicleTuning.physics.wheelRadiusRear;
-            f32 wheelWidth = i < 2 ? driver->vehicleTuning.physics.wheelWidthFront
-                : driver->vehicleTuning.physics.wheelWidthRear;
+            f32 wheelRadius = i < 2 ? driver->vehicleTuning.wheelRadiusFront
+                : driver->vehicleTuning.wheelRadiusRear;
+            f32 wheelWidth = i < 2 ? driver->vehicleTuning.wheelWidthFront
+                : driver->vehicleTuning.wheelWidthRear;
             glm::vec3 tn = convert(info.tireContactNormal);
             PxTransform contactPose = info.localPose;
             glm::vec3 markPosition = tn * -wheelRadius

@@ -179,6 +179,24 @@ u32 Scene::numHumanDrivers() const
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    static RenderWorld renderWorld(256, 256, "test");
+    renderWorld.push(LitRenderable(g_resources.getMesh("world.Quad"),
+                glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
+    static Driver fakeDriver(false, false, false, 0, 0, 0);
+    fakeDriver.updateTuning();
+    g_vehicles[0]->render(&renderWorld,
+            glm::translate(glm::mat4(1.f),
+                glm::vec3(0, 0, fakeDriver.vehicleTuning.getRestOffset())) *
+            glm::rotate(glm::mat4(1.f), (f32)worldTime, glm::vec3(0, 0, 1)),
+            nullptr, &fakeDriver);
+    renderWorld.setViewportCount(1);
+    renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    renderWorld.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
+            glm::vec3(0), 1.f, 50.f, 35.f);
+    renderer->addRenderWorld(&renderWorld);
+    renderer->push2D(QuadRenderable(renderWorld.getTexture(), glm::vec2(200.f),
+                256, 256, glm::vec3(1.f), 1.f, false, true, "texArray2D"));
+
     RenderWorld* rw = renderer->getRenderWorld();
 
     if (g_input.isKeyPressed(KEY_F6))

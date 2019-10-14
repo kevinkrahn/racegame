@@ -10,14 +10,30 @@
 #define WHEEL_REAR_RIGHT  PxVehicleDrive4WWheelOrder::eREAR_RIGHT
 #define NUM_WHEELS 4
 
-struct PhysicsVehicleSettings
+struct VehicleMesh
 {
-    struct CollisionsMesh
-    {
-        PxConvexMesh* convexMesh;
-        glm::mat4 transform;
-    };
-    std::vector<CollisionsMesh> collisionMeshes;
+    Mesh* mesh;
+    glm::mat4 transform;
+    PxShape* collisionShape;
+    bool isBody;
+};
+
+struct VehicleDebris
+{
+    VehicleMesh* meshInfo;
+    PxRigidDynamic* rigidBody;
+    f32 life = 0.f;
+};
+
+struct VehicleCollisionsMesh
+{
+    PxConvexMesh* convexMesh;
+    glm::mat4 transform;
+};
+
+struct VehicleTuning
+{
+    std::vector<VehicleCollisionsMesh> collisionMeshes;
 
     f32 chassisDensity = 120.f;
     glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
@@ -74,27 +90,7 @@ struct PhysicsVehicleSettings
 
     PxVehicleDifferential4WData::Enum differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
 
-    glm::vec3 wheelPositions[4];
-};
-
-struct VehicleMesh
-{
-    Mesh* mesh;
-    glm::mat4 transform;
-    PxShape* collisionShape;
-    bool isBody;
-};
-
-struct VehicleDebris
-{
-    VehicleMesh* meshInfo;
-    PxRigidDynamic* rigidBody;
-    f32 life = 0.f;
-};
-
-struct VehicleTuning
-{
-    PhysicsVehicleSettings physics;
+    glm::vec3 wheelPositions[NUM_WHEELS];
 
     // all [0,1]
     struct
@@ -111,8 +107,8 @@ struct VehicleTuning
 
     f32 getRestOffset() const
     {
-        f32 wheelZ = -physics.wheelPositions[0].z;
-        return wheelZ + physics.wheelRadiusFront;
+        f32 wheelZ = -wheelPositions[0].z;
+        return wheelZ + wheelRadiusFront;
     }
 };
 
@@ -137,6 +133,16 @@ struct VehicleData
     VehicleMesh wheelMeshFront;
     VehicleMesh wheelMeshRear;
 
+    glm::vec3 wheelPositions[NUM_WHEELS] = {};
+    f32 frontWheelMeshRadius = 0.f;
+    f32 frontWheelMeshWidth = 0.f;
+    f32 rearWheelMeshRadius = 0.f;
+    f32 rearWheelMeshWidth = 0.f;
+    f32 collisionWidth = 0.f;
+    glm::vec3 sceneCenterOfMass = glm::vec3(0.f);
+
+    std::vector<VehicleCollisionsMesh> collisionMeshes;
+
     std::string name;
     std::string description;
     u32 price;
@@ -150,7 +156,8 @@ struct VehicleData
             std::vector<VehicleDebris> const& debris, struct Driver* driver);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
-    void loadSceneData(const char* sceneName, VehicleTuning& tuning);
+    void loadSceneData(const char* sceneName);
+    void copySceneDataToTuning(VehicleTuning& tuning);
 };
 
 std::vector<std::unique_ptr<VehicleData>> g_vehicles;

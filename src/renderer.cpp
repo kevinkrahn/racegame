@@ -182,7 +182,7 @@ void Renderer::updateFramebuffers()
 {
     renderWorld.width = g_game.config.graphics.resolutionX;
     renderWorld.height = g_game.config.graphics.resolutionY;
-    renderWorld.createFramebuffers(renderWorld.width, renderWorld.height);
+    renderWorld.createFramebuffers();
 }
 
 void Renderer::updateFullscreenFramebuffers()
@@ -267,6 +267,7 @@ void Renderer::initShaders()
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
     loadShader("quad2D", { "BLUR" }, "texBlur2D");
+    loadShader("quad2D", { "TEXARRAY" }, "texArray2D");
     loadShader("quad2D", {}, "text2D");
     loadShader("post");
     loadShader("mesh2D");
@@ -296,7 +297,19 @@ void Renderer::init()
 
 void Renderer::render(f32 deltaTime)
 {
+    for (RenderWorld* rw : renderWorlds)
+    {
+        if (rw->settingsVersion != settingsVersion)
+        {
+            rw->settingsVersion = settingsVersion;
+            rw->createFramebuffers();
+        }
+        rw->render(this, deltaTime);
+        rw->clear();
+    }
+
     renderWorld.render(this, deltaTime);
+    renderWorld.clear();
 
     // render to fullscreen texture
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw to Fullscreen Framebuffer");
@@ -381,8 +394,8 @@ void Renderer::render(f32 deltaTime)
 
     SDL_GL_SwapWindow(g_game.window);
 
-    renderWorld.clear();
     renderables2D.clear();
+    renderWorlds.clear();
 }
 
 void RenderWorld::setViewportCount(u32 viewports)
@@ -391,7 +404,7 @@ void RenderWorld::setViewportCount(u32 viewports)
     {
         print("Viewport count changed.\n");
         cameras.resize(viewports);
-        createFramebuffers(width, height);
+        createFramebuffers();
     }
 }
 
@@ -424,7 +437,7 @@ void RenderWorld::updateWorldTime(f64 time)
     worldInfo.time = (f32)time;
 }
 
-void RenderWorld::createFramebuffers(u32 width, u32 height)
+void RenderWorld::createFramebuffers()
 {
     if (fb.mainFramebuffer)
     {
@@ -757,7 +770,7 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World", name));
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World ", name));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     std::stable_sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
@@ -794,6 +807,9 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     if (g_game.config.graphics.shadowsEnabled)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Shadow Depth Pass");
+
+		// NOTE: this is here to silence a warning (nvidia warning 131222)
+        glUseProgram(renderer->getShaderProgram("blit2", 1));
 
 		WorldInfo worldInfoShadow = worldInfo;
 		setShadowMatrices(worldInfo, worldInfoShadow);
@@ -986,10 +1002,12 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
         }
         glBindTextureUnit(0, fb.msaaResolveColorTexture);
 		glPopDebugGroup();
+        this->tex.handle = fb.msaaResolveColorTexture;
     }
     else
     {
         glBindTextureUnit(0, fb.mainColorTexture);
+        this->tex.handle = fb.mainColorTexture;
     }
 
     // bloom
@@ -1065,6 +1083,8 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 
         glBindTextureUnit(0, fb.finalColorTexture);
 		glPopDebugGroup();
+
+		this->tex.handle = fb.finalColorTexture;
     }
 
 	glPopDebugGroup();

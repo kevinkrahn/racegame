@@ -4,12 +4,8 @@
 #include "scene.h"
 #include "mesh_renderables.h"
 
-void VehicleData::loadSceneData(const char* sceneName, VehicleTuning& tuning)
+void VehicleData::loadSceneData(const char* sceneName)
 {
-    // TODO: should these be stored here?
-    chassisMeshes.clear();
-    debrisChunks.clear();
-
     DataFile::Value::Dict& scene = g_resources.getScene(sceneName);
     for (auto& e : scene["entities"].array())
     {
@@ -48,9 +44,9 @@ void VehicleData::loadSceneData(const char* sceneName, VehicleTuning& tuning)
                 g_resources.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
-            tuning.physics.wheelRadiusFront = e["bound_z"].real() * 0.5f;
-            tuning.physics.wheelWidthFront = e["bound_y"].real();
-            tuning.physics.wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
+            frontWheelMeshRadius = e["bound_z"].real() * 0.5f;
+            frontWheelMeshWidth = e["bound_y"].real();
+            wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name.find("RL") != std::string::npos)
         {
@@ -58,32 +54,47 @@ void VehicleData::loadSceneData(const char* sceneName, VehicleTuning& tuning)
                 g_resources.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
-            tuning.physics.wheelRadiusRear = e["bound_z"].real() * 0.5f;
-            tuning.physics.wheelWidthRear = e["bound_y"].real();
-            tuning.physics.wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
+            rearWheelMeshRadius = e["bound_z"].real() * 0.5f;
+            rearWheelMeshWidth = e["bound_y"].real();
+            wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name.find("FR") != std::string::npos)
         {
-            tuning.physics.wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
+            wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
         }
         else if (name.find("RR") != std::string::npos)
         {
-            tuning.physics.wheelPositions[WHEEL_REAR_LEFT] = transform[3];
+            wheelPositions[WHEEL_REAR_LEFT] = transform[3];
         }
         else if (name.find("Collision") != std::string::npos)
         {
-            tuning.physics.collisionMeshes.push_back({
+            collisionMeshes.push_back({
                 g_resources.getMesh(e["data_name"].string().c_str())->getConvexCollisionMesh(),
                 transform
             });
-            tuning.collisionWidth =
-                glm::max(tuning.collisionWidth, (f32)e["bound_y"].real());
+            collisionWidth =
+                glm::max(collisionWidth, (f32)e["bound_y"].real());
         }
         else if (name.find("COM") != std::string::npos)
         {
-            tuning.physics.centerOfMass = transform[3];
+            sceneCenterOfMass = transform[3];
         }
     }
+}
+
+void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
+{
+    for (u32 i=0; i<ARRAY_SIZE(wheelPositions); ++i)
+    {
+        tuning.wheelPositions[i] = wheelPositions[i];
+    }
+    tuning.collisionWidth = collisionWidth;
+    tuning.wheelWidthFront = frontWheelMeshWidth;
+    tuning.wheelWidthRear = rearWheelMeshWidth;
+    tuning.wheelRadiusFront = frontWheelMeshRadius;
+    tuning.wheelRadiusRear = rearWheelMeshRadius;
+    tuning.centerOfMass = sceneCenterOfMass;
+    tuning.collisionMeshes = collisionMeshes;
 }
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
@@ -107,7 +118,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
             defaultWheelTransforms[i] = glm::translate(glm::mat4(1.f),
-                    driver->vehicleTuning.physics.wheelPositions[i]);
+                    this->wheelPositions[i]);
         }
     }
 
