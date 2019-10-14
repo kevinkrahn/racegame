@@ -10,6 +10,8 @@ class Menu
         HIDDEN,
         MAIN_MENU,
         NEW_CHAMPIONSHIP,
+        CHAMPIONSHIP_MENU,
+        CHAMPIONSHIP_GARAGE,
         OPTIONS_MAIN,
         OPTIONS_GAMEPLAY,
         OPTIONS_GRAPHICS,
@@ -20,6 +22,8 @@ class Menu
 
     void mainMenu();
     void newChampionship();
+    void championshipMenu();
+    void championshipGarage();
     void mainOptions();
     void graphicsOptions();
     void audioOptions();

@@ -17,6 +17,7 @@ public:
     struct
     {
         std::vector<Driver> drivers;
+        u32 currentLeague;
     } state;
 
     struct

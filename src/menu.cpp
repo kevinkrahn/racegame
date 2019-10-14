@@ -6,6 +6,7 @@
 #include "input.h"
 #include "scene.h"
 #include "gui.h"
+#include "mesh_renderables.h"
 
 void Menu::mainMenu()
 {
@@ -16,6 +17,7 @@ void Menu::mainMenu()
     {
         menuMode = NEW_CHAMPIONSHIP;
         g_game.state.drivers.clear();
+        g_game.state.currentLeague = 0;
     }
 
     if (g_gui.button("Load Game"))
@@ -78,9 +80,9 @@ void Menu::newChampionship()
     if (g_gui.button("Begin", g_game.state.drivers.size() > 0))
     {
         g_game.isEditing = false;
-        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
-        scene->startRace();
-        menuMode = HIDDEN;
+        g_game.changeScene("tracks/saved_scene.dat");
+        //scene->startRace();
+        menuMode = CHAMPIONSHIP_MENU;
     }
 
     if (g_gui.button("Back"))
@@ -131,6 +133,76 @@ void Menu::newChampionship()
 
 
     g_gui.end();
+}
+
+void Menu::championshipMenu()
+{
+    f32 w = g_gui.convertSize(280);
+    g_game.renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
+                glm::vec2(0, 0),
+                w, (f32)g_game.windowHeight,
+                glm::vec3(0.f), 0.8f, true));
+
+    static RenderWorld renderWorlds[MAX_VIEWPORTS];
+
+    g_gui.beginPanel("Championship Menu",
+            { (w - g_gui.convertSize(220)) / 2, g_game.windowHeight*0.1f },
+            0.f, false, true, false);
+
+    bool allPlayersHaveVehicle = true;
+    u32 playerIndex = 0;
+    u32 vehicleIconSize = (u32)g_gui.convertSize(64);
+    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    for (auto& driver : g_game.state.drivers)
+    {
+        if (driver.isPlayer)
+        {
+            renderWorlds[playerIndex].setSize(vehicleIconSize, vehicleIconSize);
+            renderWorlds[playerIndex].push(LitRenderable(quadMesh,
+                        glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
+            driver.updateTuning();
+            g_vehicles[driver.vehicleIndex]->render(&renderWorlds[playerIndex],
+                glm::translate(glm::mat4(1.f),
+                    glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
+                glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+                nullptr, &driver);
+            renderWorlds[playerIndex].setViewportCount(1);
+            renderWorlds[playerIndex].addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+            renderWorlds[playerIndex].setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
+                    glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+            renderWorlds[playerIndex].render(g_game.renderer.get(), g_game.deltaTime);
+            g_game.renderer->addRenderWorld(&renderWorlds[playerIndex]);
+
+            if (g_gui.vehicleButton(tstr(driver.playerName, "'s Garage"),
+                    renderWorlds[playerIndex].getTexture()))
+            {
+                menuMode = MenuMode::CHAMPIONSHIP_GARAGE;
+            }
+            ++playerIndex;
+        }
+    }
+
+    g_gui.label("");
+
+    g_gui.button("View Standings");
+    g_gui.button("Begin Race", allPlayersHaveVehicle);
+
+    g_gui.label("");
+    if (g_gui.button("Quit"))
+    {
+        menuMode = MenuMode::MAIN_MENU;
+    }
+
+    g_gui.end();
+
+    Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(64));
+    g_game.renderer->push2D(TextRenderable(bigfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
+                glm::vec2(glm::floor(w + g_gui.convertSize(32)),
+                    glm::floor(g_gui.convertSize(32))), glm::vec3(1.f)));
+}
+
+void Menu::championshipGarage()
+{
 }
 
 void Menu::showOptionsMenu()
@@ -336,7 +408,9 @@ void Menu::graphicsOptions()
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    if (menuMode != MenuMode::HIDDEN)
+    if (menuMode != MenuMode::HIDDEN &&
+        menuMode != MenuMode::CHAMPIONSHIP_MENU &&
+        menuMode != MenuMode::CHAMPIONSHIP_GARAGE)
     {
         f32 w = g_gui.convertSize(280);
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
@@ -354,6 +428,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             break;
         case MenuMode::NEW_CHAMPIONSHIP:
             newChampionship();
+            break;
+        case MenuMode::CHAMPIONSHIP_MENU:
+            championshipMenu();
+            break;
+        case MenuMode::CHAMPIONSHIP_GARAGE:
+            championshipGarage();
             break;
         case MenuMode::OPTIONS_MAIN:
             mainOptions();

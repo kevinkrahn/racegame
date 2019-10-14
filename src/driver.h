@@ -26,7 +26,7 @@ struct Driver
     VehicleConfiguration vehicleConfig;
     VehicleTuning vehicleTuning;
 
-    u32 vehicleIndex = 0;
+    i32 vehicleIndex = -1;
     glm::vec3 vehicleColor = { 1.f, 1.f, 1.f };
 
     void updateTuning()
@@ -36,7 +36,7 @@ struct Driver
         g_vehicles[vehicleIndex]->initTuning(vehicleConfig, vehicleTuning);
     }
 
-    Driver(bool hasCamera, bool isPlayer, bool useKeyboard, u32 vehicleIndex,
+    Driver(bool hasCamera, bool isPlayer, bool useKeyboard, i32 vehicleIndex,
             u32 colorIndex, u32 controllerID=0);
 
     Driver() = default;

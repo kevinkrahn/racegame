@@ -179,6 +179,7 @@ u32 Scene::numHumanDrivers() const
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    /*
     static RenderWorld renderWorld(256, 256, "test");
     renderWorld.push(LitRenderable(g_resources.getMesh("world.Quad"),
                 glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
@@ -196,6 +197,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     renderer->addRenderWorld(&renderWorld);
     renderer->push2D(QuadRenderable(renderWorld.getTexture(), glm::vec2(200.f),
                 256, 256, glm::vec3(1.f), 1.f, false, true, "texArray2D"));
+    */
 
     RenderWorld* rw = renderer->getRenderWorld();
 

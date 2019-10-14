@@ -84,6 +84,7 @@ public:
             bool solidBackground=false, bool useKeyboardControl=false,
             bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220);
     bool button(const char* text, bool active=true);
+    bool vehicleButton(const char* text, Texture* icon);
     bool toggle(const char* text, bool& enabled);
     bool slider(const char* text, f32 minValue, f32 maxValue, f32& value);
     bool textEdit(const char* text, std::string& value);

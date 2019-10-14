@@ -13,7 +13,7 @@ glm::vec3 vehicleColors[] = {
     { 0.02f, 0.7f, 0.1f },
 };
 
-Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard, u32 vehicleIndex,
+Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard, i32 vehicleIndex,
         u32 colorIndex, u32 controllerID)
 {
     this->hasCamera = hasCamera;

@@ -102,7 +102,7 @@ class RenderWorld
 {
     friend class Renderer;
 
-    u32 width, height;
+    u32 width = 0, height = 0;
     u32 settingsVersion = 0;
 
     const char* name = "";
@@ -159,6 +159,17 @@ public:
     u32 getViewportCount() const { return cameras.size(); }
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
     Camera& getCamera(u32 index) { return cameras[index]; }
+    u32 getWidth() const { return width; }
+    u32 getHeight() const { return height; }
+    void setSize(u32 width, u32 height)
+    {
+        if (this->width != width || this->height != height)
+        {
+            this->width = width;
+            this->height = height;
+            createFramebuffers();
+        }
+    }
 
     //void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
     //void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);

@@ -314,6 +314,38 @@ bool Gui::button(const char* text, bool active)
     return clicked;
 }
 
+bool Gui::vehicleButton(const char* text, Texture* icon)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    WidgetStackItem& parent = widgetStack.back();
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    glm::vec2& pos = parent.nextWidgetPosition;
+    f32 bh = convertSize(68);
+    f32 bw = parent.size.x;
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
+        return g_input.isMouseButtonPressed(MOUSE_LEFT);
+    }, [this] {
+        return didSelect();
+    });
+
+    f32 iconSize = convertSize(64);
+    renderer->push2D(TextRenderable(fontSmall, text, pos +
+                glm::vec2(iconSize + convertSize(8.f), bh/2),
+                glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::LEFT, VerticalAlign::CENTER));
+
+    renderer->push2D(QuadRenderable(icon,
+                pos + glm::vec2(convertSize(2)), iconSize, iconSize, glm::vec3(1.f),
+                1.f, false, true, "texArray2D"));
+
+    pos.y += bh + parent.itemSpacing;
+
+    return clicked;
+}
+
 bool Gui::toggle(const char* text, bool& enabled)
 {
     assert(widgetStack.size() > 0);
