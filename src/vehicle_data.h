@@ -144,9 +144,9 @@ struct VehicleData
     std::vector<VehicleMesh> debrisChunks;
 
     virtual ~VehicleData() {}
-    virtual void render(class Renderer* renderer, glm::mat4 const& transform,
+    virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
             glm::mat4* wheelTransforms, struct Driver* driver);
-    virtual void renderDebris(class Renderer* renderer,
+    virtual void renderDebris(class RenderWorld* rw,
             std::vector<VehicleDebris> const& debris, struct Driver* driver);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;

@@ -86,7 +86,7 @@ public:
 
     // entity
     void onCreate(class Scene* scene) override;
-    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
     void applyDecal(class Decal& decal) override;

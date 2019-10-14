@@ -74,13 +74,13 @@ void StaticDecal::updateTransform(Scene* scene)
     decal.end();
 }
 
-void StaticDecal::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void StaticDecal::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     decal.setTexture(tex);
-    renderer->add(&decal);
+    rw->add(&decal);
 }
 
-void StaticDecal::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
+void StaticDecal::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
     if (isSelected)

@@ -5,7 +5,7 @@
 #include "../billboard.h"
 #include "../vehicle.h"
 
-void Mine::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     bool activated = false;
     aliveTime += deltaTime;
@@ -69,10 +69,10 @@ void Mine::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     }
 }
 
-void Mine::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Mine::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    renderer->push(LitRenderable(mesh, transform, nullptr));
-    renderer->push(BillboardRenderable(g_resources.getTexture("flare"),
+    rw->push(LitRenderable(mesh, transform, nullptr));
+    rw->push(BillboardRenderable(g_resources.getTexture("flare"),
                 translationOf(transform) + glm::vec3(0,0,0.7f), {2.f,0.02f,0.02f,0.3f},
                 (glm::sin(aliveTime * 2.f) + 2.f) * 0.3f));
 }

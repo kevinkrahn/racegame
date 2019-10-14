@@ -41,7 +41,7 @@ void StaticMesh::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
-void StaticMesh::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = mesh;
@@ -50,14 +50,14 @@ void StaticMesh::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.fresnelBias = -0.2f;
     settings.texture = tex;
     settings.worldTransform = transform;
-    renderer->push(LitRenderable(settings));
+    rw->push(LitRenderable(settings));
 }
 
-void StaticMesh::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
+void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     if (isSelected)
     {
-        renderer->push(WireframeRenderable(mesh, transform));
+        rw->push(WireframeRenderable(mesh, transform));
     }
 }
 

@@ -17,6 +17,6 @@ public:
         : position(position), velocity(velocity), scale(scale) {}
 
     void onCreate(Scene* scene) override;
-    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
-    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
 };

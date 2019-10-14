@@ -216,7 +216,9 @@ public:
         glDepthMask(GL_TRUE);
         glDisable(GL_CULL_FACE);
 
-        Camera const& camera = renderer->getCamera(0);
+        // TODO: This should be changed because this camera matrix will be wrong
+        // in any RenderWorld that is not the main RenderWorld
+        Camera const& camera = renderer->getRenderWorld()->getCamera(0);
         glUseProgram(renderer->getShaderProgram("debug"));
         glUniform4f(2, color.x, color.y, color.z, color.w);
         glUniform1i(3, 1);

@@ -179,6 +179,8 @@ u32 Scene::numHumanDrivers() const
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    RenderWorld* rw = renderer->getRenderWorld();
+
     if (g_input.isKeyPressed(KEY_F6))
     {
         g_game.isEditing = !g_game.isEditing;
@@ -207,13 +209,13 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
-    renderer->setViewportCount(viewportCount);
-    renderer->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    rw->setViewportCount(viewportCount);
+    rw->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
 
     if (!isPaused)
     {
         worldTime += deltaTime;
-        renderer->updateWorldTime(worldTime);
+        rw->updateWorldTime(worldTime);
 
         SmallVec<glm::vec3> listenerPositions;
         if (!g_game.isEditing && !isRaceInProgress && trackGraph.getPaths().size() > 0)
@@ -242,7 +244,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             trackPreviewCameraTarget = smoothMove(trackPreviewCameraTarget, cameraTarget, 5.f, deltaTime);
             trackPreviewCameraFrom = smoothMove(trackPreviewCameraFrom, cameraFrom, 5.f, deltaTime);
 
-            renderer->setViewportCamera(0, trackPreviewCameraFrom, trackPreviewCameraTarget, 25.f, 200.f);
+            rw->setViewportCamera(0, trackPreviewCameraFrom, trackPreviewCameraTarget, 25.f, 200.f);
 
             listenerPositions.push_back(cameraTarget);
         }
@@ -253,7 +255,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         // update vehicles
         for (u32 i=0; i<vehicles.size(); ++i)
         {
-            vehicles[i]->onUpdate(renderer, deltaTime);
+            vehicles[i]->onUpdate(rw, deltaTime);
             if (vehicles[i]->cameraIndex >= 0)
             {
                 listenerPositions.push_back(vehicles[i]->lastValidPosition);
@@ -263,7 +265,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         // update entities
         for (auto const& e : entities)
         {
-            e->onUpdate(renderer, this, deltaTime);
+            e->onUpdate(rw, this, deltaTime);
         }
 
         // determine vehicle placement
@@ -295,7 +297,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     // render vehicles
     for (u32 i=0; i<vehicles.size(); ++i)
     {
-        vehicles[i]->onRender(renderer, deltaTime);
+        vehicles[i]->onRender(rw, deltaTime);
         vehicles[i]->drawHUD(renderer, deltaTime);
     }
 
@@ -315,7 +317,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     // render entities
     for (auto const& e : entities)
     {
-        e->onRender(renderer, this, deltaTime);
+        e->onRender(rw, this, deltaTime);
     }
 
     if (g_input.isKeyPressed(KEY_F2))
@@ -350,7 +352,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (isPhysicsDebugVisualizationEnabled)
     {
-        Camera const& cam = renderer->getCamera(0);
+        Camera const& cam = rw->getCamera(0);
         BoundingBox bb = computeCameraFrustumBoundingBox(cam.viewProjection);
         debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
 
@@ -369,7 +371,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         debugCamera = !debugCamera;
         if (debugCamera)
         {
-            debugCameraPosition = renderer->getCamera(0).position;
+            debugCameraPosition = rw->getCamera(0).position;
         }
     }
     if (debugCamera)
@@ -390,7 +392,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         f32 camDistance = 20.f;
         glm::vec3 cameraFrom = debugCameraPosition + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
         glm::vec3 cameraTarget = debugCameraPosition;
-        renderer->setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 900.f);
+        rw->setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 900.f);
     }
 
     if (g_input.isKeyPressed(KEY_F3))
@@ -408,9 +410,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         isDebugOverlayEnabled = !isDebugOverlayEnabled;
     }
 
-    renderer->add(&ribbons);
-    renderer->add(&smoke);
-    renderer->add(&debugDraw);
+    rw->add(&ribbons);
+    rw->add(&smoke);
+    rw->add(&debugDraw);
 
     // draw HUD track
     if (isRaceInProgress)
@@ -487,7 +489,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             if (g_gui.button("Forfeit Race"))
             {
                 isPaused = false;
-                trackPreviewCameraFrom = renderer->getCamera(0).position;
+                trackPreviewCameraFrom = rw->getCamera(0).position;
                 trackPreviewCameraTarget = (*std::find_if(vehicles.begin(), vehicles.end(),
                         [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
                 stopRace();
@@ -500,7 +502,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             if (g_gui.button("Main Menu"))
             {
                 trackPreviewCameraTarget = editor.getCameraTarget();
-                trackPreviewCameraFrom = renderer->getCamera(0).position;
+                trackPreviewCameraFrom = rw->getCamera(0).position;
                 stopRace();
                 isPaused = false;
                 g_game.isEditing = false;

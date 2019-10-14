@@ -117,7 +117,7 @@ void Game::run()
     windowHeight = h;
 
     renderer.reset(new Renderer());
-    renderer->init(config.graphics.resolutionX, config.graphics.resolutionY);
+    renderer->init();
 
     g_input.init(window);
     g_audio.init();

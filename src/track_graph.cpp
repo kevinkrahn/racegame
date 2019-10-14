@@ -244,7 +244,7 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
     {
         Node const& c = nodes[i];
 
-        renderer->push(LitRenderable(arrowMesh,
+        renderer->getRenderWorld()->push(LitRenderable(arrowMesh,
                 glm::translate(glm::mat4(1.f), c.position) *
                     glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.25f)), nullptr));
@@ -255,12 +255,12 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
                     glm::vec4(1.f, 0.6f, 0.f, 1.f), glm::vec4(1.f, 0.6f, 0.f, 1.f));
         }
 
-        glm::vec4 p = g_game.renderer->getCamera(0).viewProjection *
+        glm::vec4 p = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
             glm::vec4(c.position + glm::vec3(0, 0, 1) * f32(i % 2) * 2.f, 1.f);
         p.x = (((p.x / p.w) + 1.f) / 2.f) * g_game.windowWidth;
         p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * g_game.windowHeight;
 #if 0
-        renderer->push(TextRenderable(
+        renderer->push2D(TextRenderable(
                     &g_resources.getFont("font", 23),
                     str(std::fixed, std::setw(1), c.t), { p.x, p.y },
                     glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));

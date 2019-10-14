@@ -15,8 +15,8 @@ public:
 
     void applyDecal(class Decal& decal) override;
     void onCreate(class Scene* scene) override;
-    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
-    void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) override;
+    void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
     DataFile::Value serialize() override;
     void deserialize(DataFile::Value& data) override;
     const char* getName() const override { return "StaticMesh"; }

@@ -261,6 +261,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 0.f, true, false, false, 28, 0, 100);
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
+        g_game.state.drivers.clear();
+        g_game.state.drivers.push_back(Driver(true,  true,  true,  1, 1, 0));
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();
         entityDragAxis = DragAxis::NONE;
@@ -356,10 +358,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     cameraDistance = clamp(cameraDistance - zoomSpeed, 10.f, 180.f);
     zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
+    RenderWorld* rw = renderer->getRenderWorld();
     glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(lengthdir(cameraAngle, 1.f), 1.25f)) * cameraDistance;
-    renderer->setViewportCamera(0, cameraFrom, cameraTarget, 5.f, 400.f);
+    rw->setViewportCamera(0, cameraFrom, cameraTarget, 5.f, 400.f);
 
-    Camera const& cam = renderer->getCamera(0);
+    Camera const& cam = rw->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
 
@@ -501,7 +504,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             glm::vec3 p = minP + (maxP - minP) * 0.5f;
             f32 rot = (f32)M_PI * 0.5f;
             glm::vec2 windowSize(g_game.windowWidth, g_game.windowHeight);
-            glm::mat4 viewProj = renderer->getCamera(0).viewProjection;
+            glm::mat4 viewProj = rw->getCamera(0).viewProjection;
 
             if (g_input.isKeyPressed(KEY_G))
             {
@@ -640,10 +643,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                 Mesh* arrowMesh = g_resources.getMesh("world.TranslateArrow");
                 Mesh* centerMesh = g_resources.getMesh("world.Sphere");
-                renderer->push(OverlayRenderable(centerMesh, 0,
+                rw->push(OverlayRenderable(centerMesh, 0,
                         glm::translate(glm::mat4(1.f), p), centerCol, -1));
 
-                renderer->push(OverlayRenderable(arrowMesh, 0,
+                rw->push(OverlayRenderable(arrowMesh, 0,
                         glm::translate(glm::mat4(1.f), p), xCol));
                 if (entityDragAxis & DragAxis::X)
                 {
@@ -652,7 +655,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
                 }
 
-                renderer->push(OverlayRenderable(arrowMesh, 0,
+                rw->push(OverlayRenderable(arrowMesh, 0,
                         glm::translate(glm::mat4(1.f), p) *
                         glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
                 if (entityDragAxis & DragAxis::Y)
@@ -662,7 +665,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
                 }
 
-                renderer->push(OverlayRenderable(arrowMesh, 0,
+                rw->push(OverlayRenderable(arrowMesh, 0,
                         glm::translate(glm::mat4(1.f), p) *
                         glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
                 if (entityDragAxis & DragAxis::Z)
@@ -773,11 +776,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 {
                     Mesh* arrowMesh = g_resources.getMesh("world.RotateArrow");
                     Mesh* sphereMesh = g_resources.getMesh("world.Sphere");
-                    renderer->push(OverlayRenderable(sphereMesh, 0,
+                    rw->push(OverlayRenderable(sphereMesh, 0,
                             glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f))
                             , {0,0,0}, -1, true));
 
-                    renderer->push(OverlayRenderable(arrowMesh, 0,
+                    rw->push(OverlayRenderable(arrowMesh, 0,
                             glm::translate(glm::mat4(1.f), p) *
                             glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 1, 0)), xCol));
                     if (entityDragAxis & DragAxis::X)
@@ -787,7 +790,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                                 glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
                     }
 
-                    renderer->push(OverlayRenderable(arrowMesh, 0,
+                    rw->push(OverlayRenderable(arrowMesh, 0,
                             glm::translate(glm::mat4(1.f), p) *
                             glm::rotate(glm::mat4(1.f), rot, glm::vec3(1, 0, 0)), yCol));
                     if (entityDragAxis & DragAxis::Y)
@@ -797,7 +800,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                                 glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
                     }
 
-                    renderer->push(OverlayRenderable(arrowMesh, 0,
+                    rw->push(OverlayRenderable(arrowMesh, 0,
                             glm::translate(glm::mat4(1.f), p), zCol));
                     if (entityDragAxis & DragAxis::Z)
                     {
@@ -953,10 +956,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
                 Mesh* arrowMesh = g_resources.getMesh("world.ScaleArrow");
                 Mesh* centerMesh = g_resources.getMesh("world.UnitCube");
-                renderer->push(OverlayRenderable(centerMesh, 0,
+                rw->push(OverlayRenderable(centerMesh, 0,
                         glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
 
-                renderer->push(OverlayRenderable(arrowMesh, 0,
+                rw->push(OverlayRenderable(arrowMesh, 0,
                         glm::translate(glm::mat4(1.f), p) * orientation, xCol));
                 if (entityDragAxis & DragAxis::X)
                 {
@@ -965,7 +968,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
                 }
 
-                renderer->push(OverlayRenderable(arrowMesh, 0,
+                rw->push(OverlayRenderable(arrowMesh, 0,
                         glm::translate(glm::mat4(1.f), p) *
                         orientation *
                         glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
@@ -976,7 +979,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
                 }
 
-                renderer->push(OverlayRenderable(arrowMesh, 0,
+                rw->push(OverlayRenderable(arrowMesh, 0,
                         glm::translate(glm::mat4(1.f), p) *
                         orientation *
                         glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
@@ -1048,7 +1051,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         {
             bool isSelected = std::find(selectedEntities.begin(),
                     selectedEntities.end(), e.get()) != selectedEntities.end();
-            e->onEditModeRender(renderer, scene, isSelected);
+            e->onEditModeRender(rw, scene, isSelected);
         }
     }
 

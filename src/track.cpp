@@ -58,7 +58,7 @@ void Track::onCreate(Scene* scene)
     }
 }
 
-void Track::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     bool wasTrackUpdated = false;
     for (auto& c : connections)
@@ -123,16 +123,16 @@ void Track::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
         {
             if (railingMeshTypes[railing->meshTypeIndex].flat)
             {
-                renderer->add(railing.get());
+                rw->add(railing.get());
             }
             else
             {
-                renderer->push(LitRenderable(&railing->mesh, glm::mat4(1.f), railing->tex));
+                rw->push(LitRenderable(&railing->mesh, glm::mat4(1.f), railing->tex));
             }
         }
     }
 
-    renderer->add(this);
+    rw->add(this);
 }
 
 void Track::clearSelection()
@@ -148,7 +148,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 {
     Mesh* sphere = g_resources.getMesh("world.Sphere");
     glm::vec2 mousePos = g_input.getMousePosition();
-    Camera const& cam = renderer->getCamera(0);
+    Camera const& cam = renderer->getRenderWorld()->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
     f32 radius = 18;
@@ -163,7 +163,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     for (i32 i=0; i<(i32)points.size();)
     {
         glm::vec3 point = points[i].position;
-        glm::vec2 pointScreen = project(point, renderer->getCamera(0).viewProjection)
+        glm::vec2 pointScreen = project(point, renderer->getRenderWorld()->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
 
         auto it = std::find_if(selectedPoints.begin(), selectedPoints.end(), [&i](Selection& s) -> bool {
@@ -241,12 +241,12 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         }
         if (isSelected)
         {
-            renderer->push(OverlayRenderable(sphere, 0,
+            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), points[i].position) *
                         glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
         }
         glm::vec3 color = isSelected ? brightRed : red;
-        renderer->push(OverlayRenderable(sphere, 0,
+        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), points[i].position) *
                     glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color));
         ++i;
@@ -271,7 +271,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 
         glm::vec3 colorA = orange;
         glm::vec3 handleA = points[c->pointIndexA].position + c->handleOffsetA;
-        glm::vec2 handleAScreen = project(handleA, renderer->getCamera(0).viewProjection)
+        glm::vec2 handleAScreen = project(handleA, renderer->getRenderWorld()->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
         if (!isDragging && glm::length(handleAScreen - mousePos) < radius)
         {
@@ -344,14 +344,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     c2->handleOffsetB = -c->handleOffsetA;
                 }
             }
-            renderer->push(OverlayRenderable(sphere, 0,
+            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), handleA) *
                         glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
         }
 
         glm::vec3 colorB = orange;
         glm::vec3 handleB = points[c->pointIndexB].position + c->handleOffsetB;
-        glm::vec2 handleBScreen = project(handleB, renderer->getCamera(0).viewProjection)
+        glm::vec2 handleBScreen = project(handleB, renderer->getRenderWorld()->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
         if (!isDragging && glm::length(handleBScreen - mousePos) < radius)
         {
@@ -425,14 +425,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     c2->handleOffsetB = -c->handleOffsetB;
                 }
             }
-            renderer->push(OverlayRenderable(sphere, 0,
+            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), handleB) *
                         glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
         }
-        renderer->push(OverlayRenderable(sphere, 0,
+        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), handleA) *
                     glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorA));
-        renderer->push(OverlayRenderable(sphere, 0,
+        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), handleB) *
                     glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorB));
 
@@ -479,7 +479,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
 
             glm::vec3 point = it->position;
-            glm::vec2 pointScreen = project(point, renderer->getCamera(0).viewProjection)
+            glm::vec2 pointScreen = project(point, renderer->getRenderWorld()->getCamera(0).viewProjection)
                 * glm::vec2(g_game.windowWidth, g_game.windowHeight);
 
             if (glm::length(pointScreen - mousePos) < radius && !isDragging)
@@ -508,12 +508,12 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
             if (isSelected)
             {
-                renderer->push(OverlayRenderable(sphere, 0,
+                renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                             glm::translate(glm::mat4(1.f), it->position) *
                             glm::scale(glm::mat4(0.78f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
             }
             glm::vec3 color = isSelected ? brightBlue : blue;
-            renderer->push(OverlayRenderable(sphere, 0,
+            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), it->position) *
                         glm::scale(glm::mat4(0.7f), glm::vec3(1.f)), color));
 
@@ -522,7 +522,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 
             glm::vec3 colorA = orange;
             glm::vec3 handleA = it->position + it->handleOffsetA;
-            glm::vec2 handleAScreen = project(handleA, renderer->getCamera(0).viewProjection)
+            glm::vec2 handleAScreen = project(handleA, renderer->getRenderWorld()->getCamera(0).viewProjection)
                 * glm::vec2(g_game.windowWidth, g_game.windowHeight);
             if (!isDragging && glm::length(handleAScreen - mousePos) < radius)
             {
@@ -557,14 +557,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
                 handleA = it->position + it->handleOffsetA;
                 it->handleOffsetB = -it->handleOffsetA;
-                renderer->push(OverlayRenderable(sphere, 0,
+                renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                             glm::translate(glm::mat4(1.f), handleA) *
                             glm::scale(glm::mat4(0.7f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
             }
 
             glm::vec3 colorB = orange;
             glm::vec3 handleB = it->position + it->handleOffsetB;
-            glm::vec2 handleBScreen = project(handleB, renderer->getCamera(0).viewProjection)
+            glm::vec2 handleBScreen = project(handleB, renderer->getRenderWorld()->getCamera(0).viewProjection)
                 * glm::vec2(g_game.windowWidth, g_game.windowHeight);
             if (!isDragging && glm::length(handleBScreen - mousePos) < radius)
             {
@@ -599,15 +599,15 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
                 handleB = it->position + it->handleOffsetB;
                 it->handleOffsetA = -it->handleOffsetB;
-                renderer->push(OverlayRenderable(sphere, 0,
+                renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                             glm::translate(glm::mat4(1.f), handleB) *
                             glm::scale(glm::mat4(0.7f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
             }
 
-            renderer->push(OverlayRenderable(sphere, 0,
+            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), handleA) *
                         glm::scale(glm::mat4(0.6f), glm::vec3(1.f)), colorA));
-            renderer->push(OverlayRenderable(sphere, 0,
+            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                         glm::translate(glm::mat4(1.f), handleB) *
                         glm::scale(glm::mat4(0.6f), glm::vec3(1.f)), colorB));
 
@@ -982,7 +982,7 @@ glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::
     {
         p = convert(hit.block.position);
         Mesh* sphere = g_resources.getMesh("world.Sphere");
-        renderer->push(OverlayRenderable(sphere, 0,
+        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), p) *
                     glm::scale(glm::mat4(0.6f), glm::vec3(1.f)), blue));
     }

@@ -86,7 +86,7 @@ void VehicleData::loadSceneData(const char* sceneName, VehicleTuning& tuning)
     }
 }
 
-void VehicleData::render(Renderer* renderer, glm::mat4 const& transform,
+void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, Driver* driver)
 {
     for (auto& m : chassisMeshes)
@@ -98,7 +98,7 @@ void VehicleData::render(Renderer* renderer, glm::mat4 const& transform,
         s.color = m.isBody ? driver->vehicleColor : glm::vec3(1.f);
         s.specularStrength = m.isBody ? 0.15f : 0.3f;
         s.specularPower = m.isBody ? 20.f : 200.f;
-        renderer->push(LitRenderable(s));
+        rw->push(LitRenderable(s));
     }
 
     glm::mat4 defaultWheelTransforms[NUM_WHEELS];
@@ -120,11 +120,11 @@ void VehicleData::render(Renderer* renderer, glm::mat4 const& transform,
             wheelTransform = glm::rotate(wheelTransform, PI, glm::vec3(0, 0, 1));
         }
         auto& mesh = i < 2 ? wheelMeshFront : wheelMeshRear;
-        renderer->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
+        rw->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
     }
 }
 
-void VehicleData::renderDebris(Renderer* renderer,
+void VehicleData::renderDebris(RenderWorld* rw,
         std::vector<VehicleDebris> const& debris, Driver* driver)
 {
     for (auto const& d : debris)
@@ -136,7 +136,7 @@ void VehicleData::renderDebris(Renderer* renderer,
         s.color = d.meshInfo->isBody ? driver->vehicleColor : glm::vec3(1.f);
         s.specularStrength = d.meshInfo->isBody ? 0.15f : 0.3f;
         s.specularPower = d.meshInfo->isBody ? 20.f : 200.f;
-        renderer->push(LitRenderable(s));
+        rw->push(LitRenderable(s));
     }
 }
 

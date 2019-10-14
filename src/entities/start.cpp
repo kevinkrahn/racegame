@@ -34,7 +34,7 @@ void Start::updateTransform(Scene* scene)
     finishLineDecal.end();
 }
 
-void Start::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = mesh;
@@ -45,18 +45,18 @@ void Start::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.specularStrength = 0.3f;
     settings.texture = g_resources.getTexture("white");
     settings.worldTransform = transform;
-    renderer->push(LitRenderable(settings));
+    rw->push(LitRenderable(settings));
     settings.mesh = meshLights;
-    renderer->push(LitRenderable(settings));
-    renderer->add(&finishLineDecal);
+    rw->push(LitRenderable(settings));
+    rw->add(&finishLineDecal);
 }
 
-void Start::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
+void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     if (isSelected)
     {
-        renderer->push(WireframeRenderable(mesh, transform));
-        renderer->push(LitRenderable(g_resources.getMesh("world.Arrow"),
+        rw->push(WireframeRenderable(mesh, transform));
+        rw->push(LitRenderable(g_resources.getMesh("world.Arrow"),
                 transform *
                 glm::translate(glm::mat4(1.f), {10, 0, -2}) *
                 glm::scale(glm::mat4(1.f), glm::vec3(3.f))));

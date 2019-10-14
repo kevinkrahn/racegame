@@ -21,6 +21,6 @@ public:
         bulletMesh = g_resources.getMesh("world.Bullet");
     }
 
-    void onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime) override;
-    void onRender(Renderer* renderer, Scene* scene, f32 deltaTime) override;
+    void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
 };

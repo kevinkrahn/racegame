@@ -48,12 +48,12 @@ public:
 
     virtual void onCreate(class Scene* scene) {}
     virtual void onCreateEnd(class Scene* scene) {}
-    virtual void onUpdate(class Renderer* renderer, class Scene* scene, f32 deltaTime) {}
-    virtual void onRender(class Renderer* renderer, class Scene* scene, f32 deltaTime) {}
+    virtual void onUpdate(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
+    virtual void onRender(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
 
     virtual void applyDecal(class Decal& decal) {}
 
-    virtual void onEditModeRender(class Renderer* renderer, class Scene* scene, bool isSelected) {}
+    virtual void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected) {}
 };
 
 class PlaceableEntity : public Entity

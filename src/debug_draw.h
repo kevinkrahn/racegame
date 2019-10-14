@@ -83,7 +83,9 @@ public:
 
         if (verts.size() > 0)
         {
-            Camera const& camera = renderer->getCamera(0);
+            // TODO: This should be changed because this camera matrix will be wrong
+            // in any RenderWorld that is not the main RenderWorld
+            Camera const& camera = renderer->getRenderWorld()->getCamera(0);
             buffer.updateData(verts.data(), verts.size() * sizeof(Vertex));
             glVertexArrayVertexBuffer(vao, 0, buffer.getBuffer(), 0, sizeof(Vertex));
 

@@ -5,7 +5,7 @@
 #include "../mesh_renderables.h"
 #include "../billboard.h"
 
-void Projectile::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     glm::vec3 prevPosition = position;
     position += velocity * deltaTime;
@@ -45,7 +45,7 @@ void Projectile::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     }
 }
 
-void Projectile::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     glm::mat4 m(1.f);
     m[0] = glm::vec4(glm::normalize(velocity), m[0].w);
@@ -62,8 +62,8 @@ void Projectile::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
         * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
     settings.color = glm::vec3(0.2f, 0.9f, 0.2f);
     settings.emit = glm::vec3(0.01f, 1.5f, 0.01f);
-    renderer->push(LitRenderable(settings));
+    rw->push(LitRenderable(settings));
 
-    renderer->push(BillboardRenderable(g_resources.getTexture("flare"),
+    rw->push(BillboardRenderable(g_resources.getTexture("flare"),
                 position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f));
 }

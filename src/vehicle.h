@@ -141,12 +141,12 @@ public:
         if (notifications.size() < notifications.capacity()) notifications.push_back({ str, 2.f });
     }
 
-    void onUpdate(class Renderer* renderer, f32 deltaTime);
-    void onRender(class Renderer* renderer, f32 deltaTime);
+    void onUpdate(RenderWorld* rw, f32 deltaTime);
+    void onRender(RenderWorld* rw, f32 deltaTime);
     void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo);
-    void drawHUD(class Renderer* renderer, f32 deltaTime);
+    void drawHUD(class Renderer* rw, f32 deltaTime);
     void shakeScreen(f32 intensity);
-    void updateCamera(class Renderer* renderer, f32 deltaTime);
+    void updateCamera(RenderWorld* rw, f32 deltaTime);
     void resetAmmo();
 
     void firePrimaryWeapon();

@@ -93,7 +93,7 @@ void Terrain::onCreate(Scene* scene)
     regenerateCollisionMesh(scene);
 }
 
-void Terrain::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     /*
     u32 width = (x2 - x1) / tileSize;
@@ -117,7 +117,7 @@ void Terrain::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
         }
     }
     */
-    renderer->add(this);
+    rw->add(this);
 }
 
 glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)

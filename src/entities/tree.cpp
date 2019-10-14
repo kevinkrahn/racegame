@@ -30,7 +30,7 @@ void Tree::onCreate(Scene* scene)
     scene->getPhysicsScene()->addActor(*actor);
 }
 
-void Tree::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Tree::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     LitSettings settings;
     settings.mesh = meshTrunk;
@@ -39,7 +39,7 @@ void Tree::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.fresnelPower = 1.7f;
     settings.fresnelBias = -0.2f;
     settings.worldTransform = transform;
-    renderer->push(LitRenderable(settings));
+    rw->push(LitRenderable(settings));
 
     settings.mesh = meshLeaves;
     settings.texture = texLeaves;
@@ -48,15 +48,15 @@ void Tree::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
     settings.specularStrength = 0.f;
     settings.minAlpha = 0.5f;
     //settings.transparent = true;
-    renderer->push(LitRenderable(settings));
+    rw->push(LitRenderable(settings));
 }
 
-void Tree::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
+void Tree::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     if (isSelected)
     {
-        renderer->push(WireframeRenderable(meshTrunk, transform));
-        renderer->push(WireframeRenderable(meshLeaves, transform));
+        rw->push(WireframeRenderable(meshTrunk, transform));
+        rw->push(WireframeRenderable(meshLeaves, transform));
     }
 }
 

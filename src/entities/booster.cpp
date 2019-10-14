@@ -45,7 +45,7 @@ void Booster::updateTransform(Scene* scene)
     decal.end();
 }
 
-void Booster::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Booster::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     active = false;
 
@@ -75,13 +75,13 @@ void Booster::onUpdate(Renderer* renderer, Scene* scene, f32 deltaTime)
     intensity = smoothMove(intensity, active ? 3.5f : 1.25f, 6.f, deltaTime);
 }
 
-void Booster::onRender(Renderer* renderer, Scene* scene, f32 deltaTime)
+void Booster::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     decal.setColor(backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f));
-    renderer->add(&decal);
+    rw->add(&decal);
 }
 
-void Booster::onEditModeRender(Renderer* renderer, Scene* scene, bool isSelected)
+void Booster::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
     if (isSelected)

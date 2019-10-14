@@ -698,7 +698,8 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         Font& font2 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.08f));
         Font& font3 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.05f));
 
-        ViewportLayout const& layout = viewportLayout[renderer->getViewportCount() - 1];
+        ViewportLayout const& layout =
+            viewportLayout[renderer->getRenderWorld()->getViewportCount() - 1];
         glm::vec2 dim(g_game.windowWidth, g_game.windowHeight);
         glm::vec2 offset = layout.offsets[cameraIndex] * dim;
         glm::vec2 d(1.f, 1.f);
@@ -798,7 +799,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
     }
 }
 
-void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
+void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 {
     glm::mat4 transform = getTransform();
 
@@ -809,7 +810,7 @@ void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
 
     if (cameraIndex >= 0 && isHidden)
     {
-        renderer->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
+        rw->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
                 cameraIndex, transform, driver->vehicleColor));
     }
 
@@ -818,11 +819,11 @@ void Vehicle::onRender(Renderer* renderer, f32 deltaTime)
     {
         wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
-    g_vehicles[driver->vehicleIndex]->render(renderer, transform, wheelTransforms, driver);
-    g_vehicles[driver->vehicleIndex]->renderDebris(renderer, vehicleDebris, driver);
+    g_vehicles[driver->vehicleIndex]->render(rw, transform, wheelTransforms, driver);
+    g_vehicles[driver->vehicleIndex]->renderDebris(rw, vehicleDebris, driver);
 }
 
-void Vehicle::updateCamera(Renderer* renderer, f32 deltaTime)
+void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
 {
     glm::vec3 pos = lastValidPosition;
 #if 0
@@ -837,11 +838,11 @@ void Vehicle::updateCamera(Renderer* renderer, f32 deltaTime)
     f32 camDistance = 80.f;
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
     cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-    renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
+    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
 #endif
 }
 
-void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
+void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 {
     bool isPlayerControlled = driver->isPlayer;
 
@@ -907,7 +908,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
         }
         if (cameraIndex >= 0)
         {
-            updateCamera(renderer, deltaTime);
+            updateCamera(rw, deltaTime);
         }
 
         return;
@@ -1151,7 +1152,7 @@ void Vehicle::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (cameraIndex >= 0)
     {
-        updateCamera(renderer, deltaTime);
+        updateCamera(rw, deltaTime);
 
         // detect if vehicle is hidden behind something
         glm::vec3 rayStart = currentPosition;
