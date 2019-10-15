@@ -96,9 +96,6 @@ struct VehicleTuning
     struct
     {
         f32 acceleration;
-        f32 speed;
-        f32 armor;
-        f32 weight;
         f32 handling;
     } specs;
 

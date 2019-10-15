@@ -298,6 +298,52 @@ void Menu::championshipGarage()
                 glm::vec2(glm::floor(g_game.windowWidth/2 - w/2 + g_gui.convertSize(32)), glm::floor(g_gui.convertSize(32))),
                 vehicleIconSize, vehicleIconSize, glm::vec3(1.f), 1.f, false,
                 true, "texArray2D"));
+
+    struct Stat
+    {
+        const char* name;
+        f32 value = 0.f;
+    };
+    VehicleTuning& tuning = driver.vehicleTuning;
+    static Stat stats[] = {
+        { "Acceleration" },
+        { "Top Speed" },
+        { "Armor" },
+        { "Mass" },
+        { "Handling" },
+    };
+    f32 targetStats[] = {
+        tuning.specs.acceleration,
+        tuning.topSpeed / 100.f,
+        tuning.maxHitPoints / 300.f,
+        tuning.chassisDensity / 150.f, // TODO: calculate the actual mass
+        tuning.specs.handling,
+    };
+
+    Texture* white = g_resources.getTexture("white");
+    const f32 maxBarWidth = glm::floor(g_gui.convertSize(256.f));
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    glm::vec2 statsPos = glm::vec2(
+            glm::floor(g_game.windowWidth/2 + g_gui.convertSize(16)),
+            glm::floor(g_gui.convertSize(32)));
+    f32 barHeight = glm::floor(g_gui.convertSize(6));
+    for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
+    {
+        stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
+
+        g_game.renderer->push2D(TextRenderable(smallfont, stats[i].name,
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 34))),
+                    glm::vec3(1.f)));
+
+        g_game.renderer->push2D(QuadRenderable(white,
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 34 + 16))),
+                    maxBarWidth, barHeight, glm::vec3(0.f), 0.9f, true));
+
+        f32 barWidth = maxBarWidth * stats[i].value;
+        g_game.renderer->push2D(QuadRenderable(white,
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 34 + 16))),
+                    barWidth, barHeight, glm::vec3(1.f)));
+    }
 }
 
 void Menu::showOptionsMenu()

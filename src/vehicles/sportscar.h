@@ -19,11 +19,8 @@ public:
 
         tuning.maxHitPoints = 100;
 
-        tuning.specs.acceleration = 0.5f;
-        tuning.specs.speed = 0.6f;
-        tuning.specs.armor = 0.5f;
-        tuning.specs.weight = 0.5f;
-        tuning.specs.handling = 0.5f;
+        tuning.specs.acceleration = 0.25f;
+        tuning.specs.handling = 0.3f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
         tuning.chassisDensity = 89;
