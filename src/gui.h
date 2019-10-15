@@ -93,5 +93,6 @@ public:
     void beginSelect(const char* text, i32* selectedIndex, bool showTitle=true);
     bool option(const char* text, i32 value, const char* icon=nullptr);
     void label(const char* text, bool showBackground=false);
+    void gap(f32 size);
 } g_gui;
 

@@ -535,6 +535,13 @@ void Gui::label(const char* text, bool showBackground)
     pos.y += bh;
 }
 
+void Gui::gap(f32 size)
+{
+    WidgetStackItem& parent = widgetStack.back();
+    glm::vec2& pos = parent.nextWidgetPosition;
+    pos.y += convertSize(size);
+}
+
 i32 Gui::select(const char* text, std::string* firstValue,
         i32 count, i32& currentIndex)
 {

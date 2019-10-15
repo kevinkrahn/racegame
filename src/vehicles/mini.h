@@ -8,7 +8,7 @@ public:
     VMini()
     {
         name = "Mini";
-        description = "Cool car";
+        description = "Small and nimble. Quick acceleration, \nbut low top-speed.";
         price = 5000;
         loadSceneData("mini.Scene");
     }

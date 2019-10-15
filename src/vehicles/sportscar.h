@@ -8,7 +8,7 @@ public:
     VSportscar()
     {
         name = "Sportscar";
-        description = "Cool car";
+        description = "Small and quick, but has poor traction.";
         price = 8000;
         loadSceneData("sportscar.Vehicle");
     }

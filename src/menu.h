@@ -29,6 +29,8 @@ class Menu
     void audioOptions();
     void gameplayOptions();
 
+    void drawBox(glm::vec2 pos, glm::vec2 size);
+
 public:
     void showMainMenu() { menuMode = MenuMode::MAIN_MENU; }
     void showOptionsMenu();

@@ -140,8 +140,8 @@ struct VehicleData
 
     std::vector<VehicleCollisionsMesh> collisionMeshes;
 
-    std::string name;
-    std::string description;
+    const char* name;
+    const char* description;
     u32 price;
 
     std::vector<VehicleMesh> debrisChunks;

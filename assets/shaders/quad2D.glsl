@@ -47,8 +47,9 @@ void main()
 #elif defined TEXARRAY
     outColor = inColor * texture(tex, vec3(inTexCoord, 0));
 #elif defined BLUR
-    vec4 color = inColor * texture(tex, inTexCoord);
-    outColor = vec4(mix(texture(texBlurBg, inScreenTexCoord).rgb, color.rgb, color.a), 1.0);
+    vec4 texColor = texture(tex, inTexCoord);
+    vec4 color = inColor * texColor;
+    outColor = vec4(mix(texture(texBlurBg, inScreenTexCoord).rgb, color.rgb, color.a), texColor.a);
 #else
     outColor = inColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
 #endif
