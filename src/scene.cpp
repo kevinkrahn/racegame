@@ -179,32 +179,7 @@ u32 Scene::numHumanDrivers() const
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    /*
-    static RenderWorld renderWorld(256, 256, "test");
-    renderWorld.push(LitRenderable(g_resources.getMesh("world.Quad"),
-                glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-    static Driver fakeDriver(false, false, false, 0, 0, 0);
-    fakeDriver.updateTuning();
-    g_vehicles[0]->render(&renderWorld,
-            glm::translate(glm::mat4(1.f),
-                glm::vec3(0, 0, fakeDriver.vehicleTuning.getRestOffset())) *
-            glm::rotate(glm::mat4(1.f), (f32)worldTime, glm::vec3(0, 0, 1)),
-            nullptr, &fakeDriver);
-    renderWorld.setViewportCount(1);
-    renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
-    renderWorld.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
-            glm::vec3(0), 1.f, 50.f, 35.f);
-    renderer->addRenderWorld(&renderWorld);
-    renderer->push2D(QuadRenderable(renderWorld.getTexture(), glm::vec2(200.f),
-                256, 256, glm::vec3(1.f), 1.f, false, true, "texArray2D"));
-    */
-
     RenderWorld* rw = renderer->getRenderWorld();
-
-    if (g_input.isKeyPressed(KEY_F6))
-    {
-        g_game.isEditing = !g_game.isEditing;
-    }
 
     bool showPauseMenu = g_input.isKeyPressed(KEY_ESCAPE);
     for (auto& pair : g_input.getControllers())
@@ -437,59 +412,28 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     // draw HUD track
     if (isRaceInProgress)
     {
-        BoundingBox bb = track->getBoundingBox();
-
-        f32 pad = 20.f;
-        bb.min.x -= pad;
-        bb.min.y -= pad;
-        bb.max.x += pad;
-        bb.max.y += pad;
-
-        glm::vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
-
-        f32 rot = PI * 0.25f;
-        glm::mat4 transform = glm::rotate(glm::mat4(1.f), f32(rot), { 0, 0, 1 })
-                * glm::translate(glm::mat4(1.f), offset);
-        bb = bb.transform(transform);
-        f32 radius = glm::max(bb.max.x, glm::max(bb.max.y, bb.max.z));
-        bb.min = glm::vec3(-radius);
-        bb.max = glm::vec3(radius);
-
-        glm::mat4 trackOrtho = glm::ortho(bb.max.x, bb.min.x, bb.min.y,
-                    bb.max.y, -bb.max.z - 10.f, -bb.min.z + 10.f) * transform;
-
         u32 size = (u32)(g_game.windowHeight * 0.27f);
         glm::vec2 hudTrackPos;
-        if (viewportCount == 1) hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
-        else if (viewportCount == 2) hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
+        if (viewportCount == 1)
+        {
+            hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
+        }
+        else if (viewportCount == 2)
+        {
+            hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
+        }
         else if (viewportCount == 3)
         {
             hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
             size = (u32)(g_game.windowHeight * 0.36f);
         }
-        else if (viewportCount == 4) hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        size = (u32)(size * g_game.config.gameplay.hudTrackScale);
-        trackPreview2D.beginUpdate(renderer, size, size);
-
-        Mesh* quadMesh = g_resources.getMesh("world.Quad");
-        trackPreview2D.drawItem(
-            quadMesh->vao, quadMesh->numIndices,
-            trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
-                * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
-        track->drawTrackPreview(&trackPreview2D, trackOrtho);
-
-        Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
-        for (auto const& v : vehicles)
+        else if (viewportCount == 4)
         {
-            glm::vec3 pos = v->getPosition();
-            trackPreview2D.drawItem(arrowMesh->vao, arrowMesh->numIndices,
-                trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
-                    * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
-                    * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
-                v->getDriver()->vehicleColor, false);
+            hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         }
+        size = (u32)(size * g_game.config.gameplay.hudTrackScale);
 
-        trackPreview2D.endUpdate(hudTrackPos);
+        drawTrackPreview(renderer, size, hudTrackPos);
         renderer->add2D(&trackPreview2D);
     }
 
@@ -549,17 +493,64 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
                     { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText).y) },
-                    {}, {}, { 0, 0, 0 }, 0.6f));
+                    {}, {}, { 0, 0, 0 }, 0.6f), 10);
         renderer->push2D(TextRenderable(font1, debugText,
-            { 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
+            { 20, g_game.windowHeight - 20 }, glm::vec3(1),
+            1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM), 10);
 
         char* debugRenderListText = tstr(renderer->getDebugRenderList());
         auto dim = font2->stringDimensions(debugRenderListText);
         renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, 10 },
-                    { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f));
+                    { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f), 10);
         renderer->push2D(TextRenderable(font2, debugRenderListText,
-            { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f));
+            { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f), 10);
     }
+}
+
+void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos)
+{
+    BoundingBox bb = track->getBoundingBox();
+
+    f32 pad = 20.f;
+    bb.min.x -= pad;
+    bb.min.y -= pad;
+    bb.max.x += pad;
+    bb.max.y += pad;
+
+    glm::vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
+
+    f32 rot = PI * 0.25f;
+    glm::mat4 transform = glm::rotate(glm::mat4(1.f), f32(rot), { 0, 0, 1 })
+            * glm::translate(glm::mat4(1.f), offset);
+    bb = bb.transform(transform);
+    f32 radius = glm::max(bb.max.x, glm::max(bb.max.y, bb.max.z));
+    bb.min = glm::vec3(-radius);
+    bb.max = glm::vec3(radius);
+
+    glm::mat4 trackOrtho = glm::ortho(bb.max.x, bb.min.x, bb.min.y,
+                bb.max.y, -bb.max.z - 10.f, -bb.min.z + 10.f) * transform;
+
+    trackPreview2D.beginUpdate(renderer, size, size);
+
+    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    trackPreview2D.drawItem(
+        quadMesh->vao, quadMesh->numIndices,
+        trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
+            * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
+    track->drawTrackPreview(&trackPreview2D, trackOrtho);
+
+    Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
+    for (auto const& v : vehicles)
+    {
+        glm::vec3 pos = v->getPosition();
+        trackPreview2D.drawItem(arrowMesh->vao, arrowMesh->numIndices,
+            trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
+                * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
+                * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
+            v->getDriver()->vehicleColor, false);
+    }
+
+    trackPreview2D.endUpdate(hudTrackPos);
 }
 
 void Scene::onEnd()

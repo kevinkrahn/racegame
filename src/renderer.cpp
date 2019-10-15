@@ -228,7 +228,8 @@ void Renderer::createFullscreenFramebuffers()
     for (u32 n=0; n<2; ++n)
     {
         glBindTexture(GL_TEXTURE_2D, fsfb.fullscreenBlurTextures[n]);
-        glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, g_game.windowWidth/4, g_game.windowHeight/4,
+        glTexImage2D(GL_TEXTURE_2D, 0, colorFormat,
+                g_game.windowWidth/fullscreenBlurDivisor, g_game.windowHeight/fullscreenBlurDivisor,
                 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -341,7 +342,9 @@ void Renderer::render(f32 deltaTime)
 
 	// blur the fullscreen framebuffer
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Blur Fullscreen Texture");
-    glViewport(0, 0, g_game.windowWidth/4, g_game.windowHeight/4);
+    glViewport(0, 0,
+            g_game.windowWidth/fullscreenBlurDivisor,
+            g_game.windowHeight/fullscreenBlurDivisor);
 
     glUseProgram(getShaderProgram("blit2", 1));
     glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenBlurFramebuffer);
@@ -350,7 +353,8 @@ void Renderer::render(f32 deltaTime)
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glm::vec2 invResolution = 1.f /
-        (glm::vec2(g_game.windowWidth/4, g_game.windowHeight/4));
+        (glm::vec2(g_game.windowWidth/fullscreenBlurDivisor,
+                   g_game.windowHeight/fullscreenBlurDivisor));
 
     glUseProgram(getShaderProgram("hblur2", 1));
     glDrawBuffer(GL_COLOR_ATTACHMENT1);

@@ -4,6 +4,7 @@
 #include "input.h"
 #include "2d.h"
 #include "audio.h"
+#include "driver.h"
 
 void Gui::beginFrame()
 {
@@ -203,10 +204,8 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
         f32 bw, f32 bh, std::function<bool()> onHover, std::function<bool()> onSelected,
         bool active)
 {
-    /*
     renderer->push2D(QuadRenderable(white,
                 pos, bw, bh, glm::vec3(0.f), active ? 0.9f : 0.7f, true));
-                */
 
     bool selected = false;
     bool clicked = false;
@@ -314,7 +313,7 @@ bool Gui::button(const char* text, bool active)
     return clicked;
 }
 
-bool Gui::vehicleButton(const char* text, Texture* icon)
+bool Gui::vehicleButton(const char* text, Texture* icon, Driver* driver)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -323,7 +322,7 @@ bool Gui::vehicleButton(const char* text, Texture* icon)
     WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
 
     glm::vec2& pos = parent.nextWidgetPosition;
-    f32 bh = convertSize(68);
+    f32 bh = glm::floor(convertSize(68));
     f32 bw = parent.size.x;
     bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
         return g_input.isMouseButtonPressed(MOUSE_LEFT);
@@ -331,11 +330,23 @@ bool Gui::vehicleButton(const char* text, Texture* icon)
         return didSelect();
     });
 
-    f32 iconSize = convertSize(64);
+    f32 iconSize = glm::floor(convertSize(64));
     renderer->push2D(TextRenderable(fontSmall, text, pos +
-                glm::vec2(iconSize + convertSize(8.f), bh/2),
+                glm::vec2(glm::floor(iconSize + convertSize(8.f)), glm::floor(convertSize(6.f))),
                 glm::vec3(1.f), 1.f, 1.f,
-                HorizontalAlign::LEFT, VerticalAlign::CENTER));
+                HorizontalAlign::LEFT, VerticalAlign::TOP));
+    renderer->push2D(TextRenderable(fontTiny, tstr("Credits: ", driver->credits), pos +
+                glm::vec2(glm::floor(iconSize + convertSize(8.f)), glm::floor(convertSize(26.f))),
+                glm::vec3(1.f), 1.f, 1.f,
+                HorizontalAlign::LEFT, VerticalAlign::TOP));
+    if (driver->vehicleIndex == -1)
+    {
+        renderer->push2D(TextRenderable(fontTiny, "You need to buy a vehicle!", pos +
+                    glm::vec2(glm::floor(iconSize + convertSize(8.f)),
+                        glm::floor(convertSize(42.f))),
+                    glm::vec3(1.f, 0.f, 0.f), 1.f, 1.f,
+                    HorizontalAlign::LEFT, VerticalAlign::TOP));
+    }
 
     renderer->push2D(QuadRenderable(icon,
                 pos + glm::vec2(convertSize(2)), iconSize, iconSize, glm::vec3(1.f),

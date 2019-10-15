@@ -9,6 +9,7 @@
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line?)
 - Add unlit mode for bright billboards
+- Implement lapping bonus
 
 - Ideas:
     - Weapon that drops bouncing explosive balls from the back of the vehicle

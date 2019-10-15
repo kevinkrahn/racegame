@@ -17,7 +17,9 @@ public:
     struct
     {
         std::vector<Driver> drivers;
-        u32 currentLeague;
+        u32 currentLeague = 0;
+        u32 currentRace = 0;
+        i32 driverContextIndex = 0;
     } state;
 
     struct

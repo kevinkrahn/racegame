@@ -16,8 +16,7 @@ void Menu::mainMenu()
     if (g_gui.button("Championship"))
     {
         menuMode = NEW_CHAMPIONSHIP;
-        g_game.state.drivers.clear();
-        g_game.state.currentLeague = 0;
+        g_game.state = {};
     }
 
     if (g_gui.button("Load Game"))
@@ -105,7 +104,8 @@ void Menu::newChampionship()
         }
         if (!keyboardPlayerExists)
         {
-            g_game.state.drivers.push_back(Driver(true, true, true, 1, 0, 0));
+            // TODO: ensure all player names are unique
+            g_game.state.drivers.push_back(Driver(true, true, true, -1, 0, 0));
         }
     }
 
@@ -126,7 +126,7 @@ void Menu::newChampionship()
             if (!controllerPlayerExists)
             {
                 g_game.state.drivers.push_back(Driver(true, true, false,
-                            0, 0, controller.first));
+                            -1, 0, controller.first));
             }
         }
     }
@@ -137,47 +137,53 @@ void Menu::newChampionship()
 
 void Menu::championshipMenu()
 {
-    f32 w = g_gui.convertSize(280);
+    f32 w = glm::floor(g_gui.convertSize(600));
     g_game.renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
-                glm::vec2(0, 0),
+                glm::vec2(g_game.windowWidth/2 - w/2, 0),
                 w, (f32)g_game.windowHeight,
                 glm::vec3(0.f), 0.8f, true));
 
     static RenderWorld renderWorlds[MAX_VIEWPORTS];
 
     g_gui.beginPanel("Championship Menu",
-            { (w - g_gui.convertSize(220)) / 2, g_game.windowHeight*0.1f },
+            { g_game.windowWidth * 0.5f - w/2 + g_gui.convertSize(32), g_game.windowHeight*0.3f },
             0.f, false, true, false);
 
-    bool allPlayersHaveVehicle = true;
-    u32 playerIndex = 0;
+    i32 vehicleCount = 0;
+    i32 playerIndex = 0;
     u32 vehicleIconSize = (u32)g_gui.convertSize(64);
     Mesh* quadMesh = g_resources.getMesh("world.Quad");
     for (auto& driver : g_game.state.drivers)
     {
         if (driver.isPlayer)
         {
+            renderWorlds[playerIndex].setName(tstr("Vehicle Icon ", playerIndex));
             renderWorlds[playerIndex].setSize(vehicleIconSize, vehicleIconSize);
             renderWorlds[playerIndex].push(LitRenderable(quadMesh,
                         glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-            driver.updateTuning();
-            g_vehicles[driver.vehicleIndex]->render(&renderWorlds[playerIndex],
-                glm::translate(glm::mat4(1.f),
-                    glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
-                glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-                nullptr, &driver);
+            if (driver.vehicleIndex != -1)
+            {
+                driver.updateTuning();
+                g_vehicles[driver.vehicleIndex]->render(&renderWorlds[playerIndex],
+                    glm::translate(glm::mat4(1.f),
+                        glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
+                    glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+                    nullptr, &driver);
+                ++vehicleCount;
+            }
             renderWorlds[playerIndex].setViewportCount(1);
             renderWorlds[playerIndex].addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
             renderWorlds[playerIndex].setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
                     glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
-            renderWorlds[playerIndex].render(g_game.renderer.get(), g_game.deltaTime);
             g_game.renderer->addRenderWorld(&renderWorlds[playerIndex]);
 
             if (g_gui.vehicleButton(tstr(driver.playerName, "'s Garage"),
-                    renderWorlds[playerIndex].getTexture()))
+                    renderWorlds[playerIndex].getTexture(), &driver))
             {
                 menuMode = MenuMode::CHAMPIONSHIP_GARAGE;
+                g_game.state.driverContextIndex = playerIndex;
             }
+
             ++playerIndex;
         }
     }
@@ -185,7 +191,12 @@ void Menu::championshipMenu()
     g_gui.label("");
 
     g_gui.button("View Standings");
-    g_gui.button("Begin Race", allPlayersHaveVehicle);
+    if (g_gui.button("Begin Race", playerIndex == vehicleCount))
+    {
+        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        scene->startRace();
+        menuMode = HIDDEN;
+    }
 
     g_gui.label("");
     if (g_gui.button("Quit"))
@@ -195,14 +206,98 @@ void Menu::championshipMenu()
 
     g_gui.end();
 
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    g_game.renderer->push2D(TextRenderable(smallfont, tstr("",
+                    "\nRaces Won: ", 0,
+                    "\nCredits Earned: ", 0,
+                    "\nCredits Spent: ", 0,
+                    "\nAttack Bonuses: ", 0,
+                    "\nLapping Bonuses: ", 0,
+                    "\nMost Attack Bonuses in Race: ", 0
+                    ),
+                glm::vec2(glm::floor(g_game.windowWidth/2 + g_gui.convertSize(28)),
+                    glm::floor(g_game.windowHeight*0.28f)), glm::vec3(1.f)));
+
+
     Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(64));
     g_game.renderer->push2D(TextRenderable(bigfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
-                glm::vec2(glm::floor(w + g_gui.convertSize(32)),
+                glm::vec2(glm::floor(g_game.windowWidth /2 - w/2 + g_gui.convertSize(32)),
                     glm::floor(g_gui.convertSize(32))), glm::vec3(1.f)));
+    Font* mediumFont = &g_resources.getFont("font", (u32)g_gui.convertSize(32));
+    g_game.renderer->push2D(TextRenderable(mediumFont, tstr("Race ", g_game.state.currentRace + 1),
+                glm::vec2(glm::floor(g_game.windowWidth/2 - w/2 + g_gui.convertSize(32)),
+                    glm::floor(g_gui.convertSize(92))), glm::vec3(1.f)));
+
+    u32 trackPreviewSize = (u32)g_gui.convertSize(256);
+    g_game.currentScene->drawTrackPreview(g_game.renderer.get(), trackPreviewSize,
+            glm::vec2(glm::floor(g_game.windowWidth * 0.58f),
+                glm::floor(g_game.windowHeight * 0.12f)));
+    g_game.renderer->add2D(&g_game.currentScene->getTrackPreview2D());
 }
 
 void Menu::championshipGarage()
 {
+    f32 w = glm::floor(g_gui.convertSize(600));
+    g_game.renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
+                glm::vec2(g_game.windowWidth/2 - w/2, 0),
+                w, (f32)g_game.windowHeight,
+                glm::vec3(0.f), 0.8f, true));
+
+    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
+
+    g_gui.beginPanel("Championship Garage",
+            { g_game.windowWidth * 0.5f - w/2 + g_gui.convertSize(32), g_game.windowHeight*0.5f },
+            0.f, false, true, false);
+
+    if (driver.vehicleIndex == -1)
+    {
+        driver.vehicleIndex = 0;
+    }
+
+    std::vector<std::string> carNames;
+    for (auto& v : g_vehicles)
+    {
+        carNames.push_back(v->name);
+    }
+
+    if (g_gui.select("Choose Car", carNames.data(), carNames.size(), driver.vehicleIndex))
+    {
+    }
+    if (g_gui.button("Upgrades", driver.vehicleIndex != -1))
+    {
+    }
+    if (g_gui.button("Weapons", driver.vehicleIndex != -1))
+    {
+    }
+    if (g_gui.button("Done"))
+    {
+        menuMode = MenuMode::CHAMPIONSHIP_MENU;
+    }
+    g_gui.end();
+
+    static RenderWorld renderWorld;
+    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    u32 vehicleIconSize = (u32)g_gui.convertSize(256);
+    renderWorld.setName("Garage");
+    renderWorld.setSize(vehicleIconSize, vehicleIconSize);
+    renderWorld.push(LitRenderable(quadMesh,
+            glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
+    driver.updateTuning();
+    g_vehicles[driver.vehicleIndex]->render(&renderWorld,
+        glm::translate(glm::mat4(1.f),
+            glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
+        glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+        nullptr, &driver);
+    renderWorld.setViewportCount(1);
+    renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    renderWorld.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
+            glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+    g_game.renderer->addRenderWorld(&renderWorld);
+
+    g_game.renderer->push2D(QuadRenderable(renderWorld.getTexture(),
+                glm::vec2(glm::floor(g_game.windowWidth/2 - w/2 + g_gui.convertSize(32)), glm::floor(g_gui.convertSize(32))),
+                vehicleIconSize, vehicleIconSize, glm::vec3(1.f), 1.f, false,
+                true, "texArray2D"));
 }
 
 void Menu::showOptionsMenu()

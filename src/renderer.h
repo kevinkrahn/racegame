@@ -128,6 +128,7 @@ class RenderWorld
     Texture tex;
 
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow);
+    void render(Renderer* renderer, f32 deltaTime);
 
 public:
     RenderWorld() {}
@@ -155,6 +156,7 @@ public:
 
     Texture* getTexture() { return &tex; }
 
+    void setName(const char* name) { this->name = name; }
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const { return cameras.size(); }
     Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
@@ -177,7 +179,6 @@ public:
 
     void updateWorldTime(f64 time);
     void createFramebuffers();
-    void render(Renderer* renderer, f32 deltaTime);
     void clear();
 };
 
@@ -187,6 +188,7 @@ private:
     FullscreenFramebuffers fsfb = { 0 };
     RenderWorld renderWorld;
 
+    u32 fullscreenBlurDivisor = 4;
     u32 settingsVersion = 0;
 
     std::map<std::string, u32> shaderHandleMap;

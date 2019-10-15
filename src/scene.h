@@ -92,6 +92,8 @@ public:
     void applyAreaForce(glm::vec3 const& position, f32 strength) const;
     void createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength);
     u32 numHumanDrivers() const;
+    void drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 pos);
+    TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
