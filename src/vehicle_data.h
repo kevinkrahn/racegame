@@ -109,6 +109,18 @@ struct VehicleTuning
     }
 };
 
+glm::vec3 g_vehicleColors[] = {
+    { 0.7f, 0.01f, 0.01f },
+    { 0.02f, 0.02f, 0.02f },
+    { 0.01f, 0.8f, 0.01f },
+    { 0.01f, 0.01f, 0.8f },
+    { 0.8f, 0.01f, 0.8f },
+    { 0.01f, 0.8f, 0.8f },
+    { 0.5f, 0.2f, 0.8f },
+    { 0.9f, 0.01f, 0.5f },
+    { 0.02f, 0.7f, 0.1f },
+};
+
 struct VehicleConfiguration
 {
     u32 armorUpgradeLevel = 0;
@@ -122,6 +134,8 @@ struct VehicleConfiguration
     u32 specialWeaponUpgradeLevel = 5;
 
     std::vector<u32> vehicleUpgrades;
+
+    u32 colorIndex = 0;
 };
 
 struct VehicleData
@@ -148,9 +162,9 @@ struct VehicleData
 
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
-            glm::mat4* wheelTransforms, struct Driver* driver);
+            glm::mat4* wheelTransforms, VehicleConfiguration const& config);
     virtual void renderDebris(class RenderWorld* rw,
-            std::vector<VehicleDebris> const& debris, struct Driver* driver);
+            std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
     void loadSceneData(const char* sceneName);

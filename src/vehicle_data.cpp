@@ -98,7 +98,7 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
 }
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
-        glm::mat4* wheelTransforms, Driver* driver)
+        glm::mat4* wheelTransforms, VehicleConfiguration const& config)
 {
     for (auto& m : chassisMeshes)
     {
@@ -106,7 +106,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         s.mesh = m.mesh;
         s.worldTransform = transform * m.transform;
         s.texture = nullptr;
-        s.color = m.isBody ? driver->vehicleColor : glm::vec3(1.f);
+        s.color = m.isBody ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
         s.specularStrength = m.isBody ? 0.15f : 0.3f;
         s.specularPower = m.isBody ? 20.f : 200.f;
         rw->push(LitRenderable(s));
@@ -136,7 +136,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
 }
 
 void VehicleData::renderDebris(RenderWorld* rw,
-        std::vector<VehicleDebris> const& debris, Driver* driver)
+        std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config)
 {
     for (auto const& d : debris)
     {
@@ -144,7 +144,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         s.mesh = d.meshInfo->mesh;
         s.worldTransform = convert(d.rigidBody->getGlobalPose());
         s.texture = nullptr;
-        s.color = d.meshInfo->isBody ? driver->vehicleColor : glm::vec3(1.f);
+        s.color = d.meshInfo->isBody ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
         s.specularStrength = d.meshInfo->isBody ? 0.15f : 0.3f;
         s.specularPower = d.meshInfo->isBody ? 20.f : 200.f;
         rw->push(LitRenderable(s));

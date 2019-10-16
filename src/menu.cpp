@@ -7,6 +7,7 @@
 #include "scene.h"
 #include "gui.h"
 #include "mesh_renderables.h"
+#include "weapon.h"
 
 void Menu::mainMenu()
 {
@@ -26,16 +27,16 @@ void Menu::mainMenu()
     if (g_gui.button("Quick Play"))
     {
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true,  true,  true,  1, 1, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 1, 3));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 4));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 5));
-        g_game.state.drivers.push_back(Driver(false, false, false, 1, 6));
-        g_game.state.drivers.push_back(Driver(false, false, false, 1, 7));
-        g_game.state.drivers.push_back(Driver(false, false, false, 1, 8));
+        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
 
         g_game.isEditing = false;
         Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
@@ -105,7 +106,7 @@ void Menu::newChampionship()
         if (!keyboardPlayerExists)
         {
             // TODO: ensure all player names are unique
-            g_game.state.drivers.push_back(Driver(true, true, true, -1, 0, 0));
+            g_game.state.drivers.push_back(Driver(true, true, true, 0));
         }
     }
 
@@ -125,8 +126,7 @@ void Menu::newChampionship()
 
             if (!controllerPlayerExists)
             {
-                g_game.state.drivers.push_back(Driver(true, true, false,
-                            -1, 0, controller.first));
+                g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
             }
         }
     }
@@ -165,12 +165,11 @@ void Menu::championshipMenu()
                         glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
             if (driver.vehicleIndex != -1)
             {
-                driver.updateTuning();
                 g_vehicles[driver.vehicleIndex]->render(&renderWorlds[playerIndex],
                     glm::translate(glm::mat4(1.f),
-                        glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
+                        glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
                     glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-                    nullptr, &driver);
+                    nullptr, *driver.getVehicleConfig());
                 ++vehicleCount;
             }
             renderWorlds[playerIndex].setViewportCount(1);
@@ -243,10 +242,14 @@ void Menu::championshipGarage()
     static u32 mode = 0;
     static i32 currentVehicleIndex = driver.vehicleIndex;
 
+    const char* messageStr = nullptr;
+
     if (driver.vehicleIndex == -1)
     {
         mode = 1;
     }
+    VehicleConfiguration vehicleConfig = driver.vehicleIndex == -1
+        ? VehicleConfiguration{} : *driver.getVehicleConfig();
 
     glm::vec2 panelPos = menuPos + glm::vec2(w - o, oy);
     g_gui.beginPanel(tstr("Garage ", mode), panelPos, 1.f, false, true, false);
@@ -260,33 +263,36 @@ void Menu::championshipGarage()
         g_gui.label("Vehicle Upgrades");
         if (g_gui.button("Performance", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 2;
         }
         if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 3;
         }
         g_gui.label("Equipment");
         if (g_gui.button("Front Weapon 1", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 4;
         }
         if (g_gui.button("Front Weapon 2", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 5;
         }
         if (g_gui.button("Front Weapon 3", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 6;
         }
         if (g_gui.button("Rear Weapon 1", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 7;
         }
         if (g_gui.button("Rear Weapon 2", driver.vehicleIndex != -1, "iconbg"))
         {
+            mode = 8;
         }
         if (g_gui.button("Special Ability", driver.vehicleIndex != -1, "iconbg"))
         {
-        }
-        g_gui.gap(20);
-        if (g_gui.button("Done"))
-        {
-            menuMode = MenuMode::CHAMPIONSHIP_MENU;
+            mode = 9;
         }
     }
     else if (mode == 1)
@@ -311,16 +317,14 @@ void Menu::championshipGarage()
         if (isOwned)
         {
             driver.vehicleIndex = currentVehicleIndex;
-            driver.vehicleConfig = ownedVehicle->vehicleConfig;
-            driver.updateTuning();
         }
         else
         {
-            driver.vehicleIndex = currentVehicleIndex;
-            driver.vehicleConfig = {};
-            driver.updateTuning();
             driver.vehicleIndex = -1;
+            vehicleConfig.colorIndex = driver.lastColorIndex;
         }
+
+        messageStr = vehicleData->description;
 
         if (g_gui.select("Vehicle", carNames.data(), carNames.size(), currentVehicleIndex))
         {
@@ -329,7 +333,10 @@ void Menu::championshipGarage()
         g_gui.gap(20);
         if (g_gui.button("Purchase", !isOwned && driver.credits >= vehicleData->price))
         {
-            driver.ownedVehicles.push_back({ currentVehicleIndex, {} });
+            driver.ownedVehicles.push_back({
+                currentVehicleIndex,
+                vehicleConfig
+            });
             driver.credits -= vehicleData->price;
         }
         if (g_gui.button("Sell", isOwned))
@@ -354,6 +361,58 @@ void Menu::championshipGarage()
                     vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(18)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
     }
+    else if (mode >= 4 && mode <= 6)
+    {
+        switch (mode)
+        {
+            case 4:
+                g_gui.label("Front Weapon 1");
+                break;
+            case 5:
+                g_gui.label("Front Weapon 2");
+                break;
+            case 6:
+                g_gui.label("Front Weapon 3");
+                break;
+        }
+        for (auto& weapon : g_weapons)
+        {
+            bool isSelected = false;
+            if (g_gui.itemButton(weapon->name, tstr("Price: ", weapon->price),
+                        driver.credits >= weapon->price, weapon->icon, &isSelected))
+            {
+                /*
+                auto ownedVehicle = std::find_if(driver.ownedVehicles.begin(),
+                                driver.ownedVehicles.end(),
+                                [&](auto& e) { return e.vehicleIndex == currentVehicleIndex; });
+                driver.credits -= weapon->price;
+                //ownedVehicle->getVehicleConfig()->primaryWeaponIndex;
+                driver.vehicleConfig = ownedVehicle->vehicleConfig;
+                */
+            }
+            if (isSelected)
+            {
+                messageStr = weapon->description;
+            }
+        }
+    }
+
+    g_gui.gap(20);
+    if (mode != 1)
+    {
+        if (g_gui.button("Done"))
+        {
+            if (mode > 0)
+            {
+                mode = 0;
+            }
+            else
+            {
+                menuMode = MenuMode::CHAMPIONSHIP_MENU;
+            }
+        }
+    }
+
     g_gui.end();
 
     static RenderWorld renderWorld;
@@ -362,14 +421,13 @@ void Menu::championshipGarage()
     renderWorld.setSize(vehicleIconWidth, vehicleIconHeight);
     renderWorld.push(LitRenderable(quadMesh,
             glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-    if (currentVehicleIndex != -1)
-    {
-        g_vehicles[currentVehicleIndex]->render(&renderWorld,
-            glm::translate(glm::mat4(1.f),
-                glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
-            glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-            nullptr, &driver);
-    }
+    VehicleTuning tuning;
+    g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig, tuning);
+    g_vehicles[currentVehicleIndex]->render(&renderWorld,
+        glm::translate(glm::mat4(1.f),
+            glm::vec3(0, 0, tuning.getRestOffset())) *
+        glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+        nullptr, vehicleConfig);
     renderWorld.setViewportCount(1);
     renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
     renderWorld.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
@@ -405,7 +463,6 @@ void Menu::championshipGarage()
         const char* name;
         f32 value = 0.f;
     };
-    VehicleTuning& tuning = driver.vehicleTuning;
     static Stat stats[] = {
         { "Acceleration" },
         { "Top Speed" },
@@ -444,9 +501,9 @@ void Menu::championshipGarage()
                     barWidth, barHeight, glm::vec3(0.8f)));
     }
 
-    if (currentVehicleIndex != -1)
+    if (messageStr)
     {
-        g_game.renderer->push2D(TextRenderable(smallfont, g_vehicles[currentVehicleIndex]->description,
+        g_game.renderer->push2D(TextRenderable(smallfont, messageStr,
                     statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(ARRAY_SIZE(stats) * 30 + 12))),
                     glm::vec3(1.f)));
     }

@@ -49,6 +49,7 @@ public:
     PxBatchQuery* batchQuery;
     PxVehicleDrivableSurfaceToTireFrictionPairs* frictionPairs;
 	PxWheelQueryResult wheelQueryResults[PX_MAX_NB_WHEELS];
+	VehicleTuning tuning;
 
     // gameplay data
 	bool finishedRace = false;
@@ -109,7 +110,7 @@ public:
 	};
 	SmallVec<Notification> notifications;
 
-	void setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMaterial* vehicleMaterial,
+	void setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
 
     void updatePhysics(PxScene* scene, f32 timestep, bool digital,
@@ -119,7 +120,7 @@ public:
 
 public:
 	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
-	        Driver* driver, PxMaterial* material, const PxMaterial** surfaceMaterials,
+	        Driver* driver, VehicleTuning&& tuning, PxMaterial* material, const PxMaterial** surfaceMaterials,
 	        u32 vehicleIndex, i32 cameraIndex);
 	~Vehicle();
 

@@ -219,25 +219,25 @@ static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
     return createConvexMesh(points, 32);
 }
 
-void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMaterial* vehicleMaterial,
+void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
         const PxMaterial** surfaceMaterials, glm::mat4 const& transform)
 {
     sceneQueryData = VehicleSceneQueryData::allocate(1, NUM_WHEELS, QUERY_HITS_PER_WHEEL, 1,
             &WheelSceneQueryPreFilterNonBlocking, &WheelSceneQueryPostFilterNonBlocking, g_game.physx.allocator);
     batchQuery = VehicleSceneQueryData::setUpBatchedSceneQuery(0, *sceneQueryData, scene);
-    frictionPairs = createFrictionPairs(settings, surfaceMaterials);
+    frictionPairs = createFrictionPairs(tuning, surfaceMaterials);
 
     PxConvexMesh* wheelConvexMeshes[NUM_WHEELS];
     PxMaterial* wheelMaterials[NUM_WHEELS];
 
-    PxConvexMesh* wheelMeshFront = createWheelMesh(settings.wheelWidthFront, settings.wheelRadiusFront);
+    PxConvexMesh* wheelMeshFront = createWheelMesh(tuning.wheelWidthFront, tuning.wheelRadiusFront);
     for(u32 i = WHEEL_FRONT_LEFT; i <= WHEEL_FRONT_RIGHT; ++i)
     {
         wheelConvexMeshes[i] = wheelMeshFront;
         wheelMaterials[i] = vehicleMaterial;
     }
 
-    PxConvexMesh* wheelMeshRear = createWheelMesh(settings.wheelWidthRear, settings.wheelRadiusRear);
+    PxConvexMesh* wheelMeshRear = createWheelMesh(tuning.wheelWidthRear, tuning.wheelRadiusRear);
     for(u32 i = WHEEL_REAR_LEFT; i < NUM_WHEELS; ++i)
     {
         wheelConvexMeshes[i] = wheelMeshRear;
@@ -264,7 +264,7 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
         wheelShape->setLocalPose(PxTransform(PxIdentity));
     }
 
-    for (auto const& cm : settings.collisionMeshes)
+    for (auto const& cm : tuning.collisionMeshes)
     {
         PxVec3 scale(glm::length(glm::vec3(cm.transform[0])),
                      glm::length(glm::vec3(cm.transform[1])),
@@ -278,41 +278,41 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
         chassisShape->setRestOffset(0.08f);
     }
 
-    PxVec3 centerOfMassOffset = convert(settings.centerOfMass);
-    PxRigidBodyExt::updateMassAndInertia(*actor, settings.chassisDensity);
+    PxVec3 centerOfMassOffset = convert(tuning.centerOfMass);
+    PxRigidBodyExt::updateMassAndInertia(*actor, tuning.chassisDensity);
     actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
     actor->userData = &actorUserData;
 
-    f32 wheelMOIFront = 0.5f * settings.wheelMassFront * square(settings.wheelRadiusFront);
-    f32 wheelMOIRear = 0.5f * settings.wheelMassRear * square(settings.wheelRadiusRear);
+    f32 wheelMOIFront = 0.5f * tuning.wheelMassFront * square(tuning.wheelRadiusFront);
+    f32 wheelMOIRear = 0.5f * tuning.wheelMassRear * square(tuning.wheelRadiusRear);
 
     PxVehicleWheelData wheels[NUM_WHEELS];
     for(u32 i = PxVehicleDrive4WWheelOrder::eFRONT_LEFT; i <= PxVehicleDrive4WWheelOrder::eFRONT_RIGHT; ++i)
     {
-        wheels[i].mMass   = settings.wheelMassFront;
+        wheels[i].mMass   = tuning.wheelMassFront;
         wheels[i].mMOI    = wheelMOIFront;
-        wheels[i].mRadius = settings.wheelRadiusFront;
-        wheels[i].mWidth  = settings.wheelWidthFront;
-        wheels[i].mMaxBrakeTorque = settings.maxBrakeTorque;
-        wheels[i].mDampingRate = settings.wheelDampingRate;
+        wheels[i].mRadius = tuning.wheelRadiusFront;
+        wheels[i].mWidth  = tuning.wheelWidthFront;
+        wheels[i].mMaxBrakeTorque = tuning.maxBrakeTorque;
+        wheels[i].mDampingRate = tuning.wheelDampingRate;
     }
     for(u32 i = PxVehicleDrive4WWheelOrder::eREAR_LEFT; i < NUM_WHEELS; ++i)
     {
-        wheels[i].mMass   = settings.wheelMassRear;
+        wheels[i].mMass   = tuning.wheelMassRear;
         wheels[i].mMOI    = wheelMOIRear;
-        wheels[i].mRadius = settings.wheelRadiusRear;
-        wheels[i].mWidth  = settings.wheelWidthRear;
-        wheels[i].mMaxBrakeTorque = settings.maxBrakeTorque;
-        wheels[i].mDampingRate = settings.wheelDampingRate;
+        wheels[i].mRadius = tuning.wheelRadiusRear;
+        wheels[i].mWidth  = tuning.wheelWidthRear;
+        wheels[i].mMaxBrakeTorque = tuning.maxBrakeTorque;
+        wheels[i].mDampingRate = tuning.wheelDampingRate;
     }
-    wheels[WHEEL_FRONT_LEFT].mToeAngle  =  settings.frontToeAngle;
-    wheels[WHEEL_FRONT_RIGHT].mToeAngle = -settings.frontToeAngle;
-    wheels[WHEEL_REAR_LEFT].mToeAngle  =  settings.rearToeAngle;
-    wheels[WHEEL_REAR_RIGHT].mToeAngle = -settings.rearToeAngle;
-    wheels[WHEEL_REAR_LEFT].mMaxHandBrakeTorque  = settings.maxHandbrakeTorque;
-    wheels[WHEEL_REAR_RIGHT].mMaxHandBrakeTorque = settings.maxHandbrakeTorque;
-    wheels[WHEEL_FRONT_LEFT].mMaxSteer = settings.maxSteerAngle;
-    wheels[WHEEL_FRONT_RIGHT].mMaxSteer = settings.maxSteerAngle;
+    wheels[WHEEL_FRONT_LEFT].mToeAngle  =  tuning.frontToeAngle;
+    wheels[WHEEL_FRONT_RIGHT].mToeAngle = -tuning.frontToeAngle;
+    wheels[WHEEL_REAR_LEFT].mToeAngle  =  tuning.rearToeAngle;
+    wheels[WHEEL_REAR_RIGHT].mToeAngle = -tuning.rearToeAngle;
+    wheels[WHEEL_REAR_LEFT].mMaxHandBrakeTorque  = tuning.maxHandbrakeTorque;
+    wheels[WHEEL_REAR_RIGHT].mMaxHandBrakeTorque = tuning.maxHandbrakeTorque;
+    wheels[WHEEL_FRONT_LEFT].mMaxSteer = tuning.maxSteerAngle;
+    wheels[WHEEL_FRONT_RIGHT].mMaxSteer = tuning.maxSteerAngle;
 
     PxVehicleTireData tires[NUM_WHEELS] = { };
     tires[WHEEL_FRONT_LEFT].mType = 0;
@@ -326,10 +326,10 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
     }
 
     PxVec3 wheelCenterOffsets[NUM_WHEELS];
-    wheelCenterOffsets[WHEEL_FRONT_LEFT]  = convert(settings.wheelPositions[WHEEL_FRONT_LEFT]);
-    wheelCenterOffsets[WHEEL_FRONT_RIGHT] = convert(settings.wheelPositions[WHEEL_FRONT_RIGHT]);
-    wheelCenterOffsets[WHEEL_REAR_LEFT]   = convert(settings.wheelPositions[WHEEL_REAR_LEFT]);
-    wheelCenterOffsets[WHEEL_REAR_RIGHT]  = convert(settings.wheelPositions[WHEEL_REAR_RIGHT]);
+    wheelCenterOffsets[WHEEL_FRONT_LEFT]  = convert(tuning.wheelPositions[WHEEL_FRONT_LEFT]);
+    wheelCenterOffsets[WHEEL_FRONT_RIGHT] = convert(tuning.wheelPositions[WHEEL_FRONT_RIGHT]);
+    wheelCenterOffsets[WHEEL_REAR_LEFT]   = convert(tuning.wheelPositions[WHEEL_REAR_LEFT]);
+    wheelCenterOffsets[WHEEL_REAR_RIGHT]  = convert(tuning.wheelPositions[WHEEL_REAR_RIGHT]);
 
     // set up suspension
     PxVehicleSuspensionData suspensions[NUM_WHEELS];
@@ -338,21 +338,21 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
             actor->getMass(), 2, suspSprungMasses);
     for(PxU32 i = 0; i < NUM_WHEELS; i++)
     {
-        suspensions[i].mMaxCompression = settings.suspensionMaxCompression;
-        suspensions[i].mMaxDroop = settings.suspensionMaxDroop;
-        suspensions[i].mSpringStrength = settings.suspensionSpringStrength;
-        suspensions[i].mSpringDamperRate = settings.suspensionSpringDamperRate;
+        suspensions[i].mMaxCompression = tuning.suspensionMaxCompression;
+        suspensions[i].mMaxDroop = tuning.suspensionMaxDroop;
+        suspensions[i].mSpringStrength = tuning.suspensionSpringStrength;
+        suspensions[i].mSpringDamperRate = tuning.suspensionSpringDamperRate;
         suspensions[i].mSprungMass = suspSprungMasses[i];
     }
 
     for(PxU32 i = 0; i < NUM_WHEELS; i+=2)
     {
-        suspensions[i + 0].mCamberAtRest =  settings.camberAngleAtRest;
-        suspensions[i + 1].mCamberAtRest = -settings.camberAngleAtRest;
-        suspensions[i + 0].mCamberAtMaxDroop =  settings.camberAngleAtMaxDroop;
-        suspensions[i + 1].mCamberAtMaxDroop = -settings.camberAngleAtMaxDroop;
-        suspensions[i + 0].mCamberAtMaxCompression =  settings.camberAngleAtMaxCompression;
-        suspensions[i + 1].mCamberAtMaxCompression = -settings.camberAngleAtMaxCompression;
+        suspensions[i + 0].mCamberAtRest =  tuning.camberAngleAtRest;
+        suspensions[i + 1].mCamberAtRest = -tuning.camberAngleAtRest;
+        suspensions[i + 0].mCamberAtMaxDroop =  tuning.camberAngleAtMaxDroop;
+        suspensions[i + 1].mCamberAtMaxDroop = -tuning.camberAngleAtMaxDroop;
+        suspensions[i + 0].mCamberAtMaxCompression =  tuning.camberAngleAtMaxCompression;
+        suspensions[i + 1].mCamberAtMaxCompression = -tuning.camberAngleAtMaxCompression;
     }
 
     PxVec3 suspTravelDirections[NUM_WHEELS];
@@ -388,39 +388,39 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
     PxVehicleAntiRollBarData barFront;
     barFront.mWheel0 = PxVehicleDrive4WWheelOrder::eFRONT_LEFT;
     barFront.mWheel1 = PxVehicleDrive4WWheelOrder::eFRONT_RIGHT;
-    barFront.mStiffness = settings.frontAntiRollbarStiffness;
+    barFront.mStiffness = tuning.frontAntiRollbarStiffness;
     wheelsSimData->addAntiRollBarData(barFront);
     PxVehicleAntiRollBarData barRear;
     barRear.mWheel0 = PxVehicleDrive4WWheelOrder::eREAR_LEFT;
     barRear.mWheel1 = PxVehicleDrive4WWheelOrder::eREAR_RIGHT;
-    barRear.mStiffness = settings.rearAntiRollbarStiffness;
+    barRear.mStiffness = tuning.rearAntiRollbarStiffness;
     wheelsSimData->addAntiRollBarData(barRear);
 
     PxVehicleDriveSimData4W driveSimData;
     PxVehicleDifferential4WData diff;
-    diff.mType = settings.differential;
+    diff.mType = tuning.differential;
     driveSimData.setDiffData(diff);
 
     PxVehicleEngineData engine;
-    engine.mPeakTorque = settings.peekEngineTorque;
-    engine.mMaxOmega = settings.maxEngineOmega;
-    engine.mDampingRateFullThrottle = settings.engineDampingFullThrottle;
-    engine.mDampingRateZeroThrottleClutchEngaged = settings.engineDampingZeroThrottleClutchEngaged;
-    engine.mDampingRateZeroThrottleClutchDisengaged = settings.engineDampingZeroThrottleClutchDisengaged;
+    engine.mPeakTorque = tuning.peekEngineTorque;
+    engine.mMaxOmega = tuning.maxEngineOmega;
+    engine.mDampingRateFullThrottle = tuning.engineDampingFullThrottle;
+    engine.mDampingRateZeroThrottleClutchEngaged = tuning.engineDampingZeroThrottleClutchEngaged;
+    engine.mDampingRateZeroThrottleClutchDisengaged = tuning.engineDampingZeroThrottleClutchDisengaged;
     driveSimData.setEngineData(engine);
 
     PxVehicleGearsData gears;
-    gears.mNbRatios = settings.gearRatios.size();
-    for (u32 i=0; i<settings.gearRatios.size(); ++i)
+    gears.mNbRatios = tuning.gearRatios.size();
+    for (u32 i=0; i<tuning.gearRatios.size(); ++i)
     {
-        gears.mRatios[i] = settings.gearRatios[i];
+        gears.mRatios[i] = tuning.gearRatios[i];
     }
-    gears.mFinalRatio = settings.finalGearRatio;
-    gears.mSwitchTime = settings.gearSwitchTime;
+    gears.mFinalRatio = tuning.finalGearRatio;
+    gears.mSwitchTime = tuning.gearSwitchTime;
     driveSimData.setGearsData(gears);
 
     PxVehicleClutchData clutch;
-    clutch.mStrength = settings.clutchStrength;
+    clutch.mStrength = tuning.clutchStrength;
     driveSimData.setClutchData(clutch);
 
     PxVehicleAutoBoxData autobox;
@@ -438,12 +438,12 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
     autobox.setUpRatios(PxVehicleGearsData::eFIFTH,   0.88f);
     autobox.setUpRatios(PxVehicleGearsData::eSIXTH,   0.88f);
     autobox.setUpRatios(PxVehicleGearsData::eSEVENTH, 0.88f);
-    autobox.setLatency(settings.autoBoxSwitchTime);
+    autobox.setLatency(tuning.autoBoxSwitchTime);
     driveSimData.setAutoBoxData(autobox);
 
     // ackermann steer accuracy
     PxVehicleAckermannGeometryData ackermann;
-    ackermann.mAccuracy = settings.ackermannAccuracy;
+    ackermann.mAccuracy = tuning.ackermannAccuracy;
     ackermann.mAxleSeparation =
         wheelsSimData->getWheelCentreOffset(PxVehicleDrive4WWheelOrder::eFRONT_LEFT).x-
         wheelsSimData->getWheelCentreOffset(PxVehicleDrive4WWheelOrder::eREAR_LEFT).x;
@@ -466,11 +466,11 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
     vehicle4W->mDriveDynData.setUseAutoGears(true);
-    //vehicle4W->mDriveDynData.setAutoBoxSwitchTime(settings.autoBoxSwitchTime);
+    //vehicle4W->mDriveDynData.setAutoBoxSwitchTime(tuning.autoBoxSwitchTime);
 }
 
 Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
-        Driver* driver, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
+        Driver* driver, VehicleTuning&& tuning, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
         u32 vehicleIndex, i32 cameraIndex)
 {
     this->cameraTarget = translationOf(transform);
@@ -486,16 +486,17 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
-    this->maxHitPoints = driver->vehicleTuning.maxHitPoints;
     this->hitPoints = this->maxHitPoints;
     this->cameraIndex = cameraIndex;
+    this->tuning = std::move(tuning);
+    this->maxHitPoints = tuning.maxHitPoints;
 
     engineSound = g_audio.playSound3D(g_resources.getSound("engine2"),
             SoundType::VEHICLE, translationOf(transform), true);
     tireSound = g_audio.playSound3D(g_resources.getSound("tires"),
             SoundType::VEHICLE, translationOf(transform), true, 1.f, 0.f);
 
-    setupPhysics(scene->getPhysicsScene(), driver->vehicleTuning, vehicleMaterial, surfaceMaterials, transform);
+    setupPhysics(scene->getPhysicsScene(), vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
     actorUserData.vehicle = this;
 }
@@ -518,13 +519,13 @@ Vehicle::~Vehicle()
 
 void Vehicle::resetAmmo()
 {
-    auto& primaryWeapon = g_weapons[driver->vehicleConfig.primaryWeaponIndex];
+    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->primaryWeaponIndex];
     primaryWeaponAmmo = primaryWeapon->getAmmoCountForUpgradeLevel(
-            driver->vehicleConfig.primaryWeaponUpgradeLevel);
+            driver->getVehicleConfig()->primaryWeaponUpgradeLevel);
 
-    auto& specialWeapon = g_weapons[driver->vehicleConfig.specialWeaponIndex];
+    auto& specialWeapon = g_weapons[driver->getVehicleConfig()->specialWeaponIndex];
     specialWeaponAmmo = specialWeapon->getAmmoCountForUpgradeLevel(
-            driver->vehicleConfig.specialWeaponUpgradeLevel);
+            driver->getVehicleConfig()->specialWeaponUpgradeLevel);
 }
 
 void Vehicle::reset(glm::mat4 const& transform) const
@@ -596,8 +597,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
             }
-            f32 topSpeed = driver->vehicleTuning.topSpeed;
-            if (forwardSpeed > topSpeed)
+            if (forwardSpeed > tuning.topSpeed)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(
                         PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL, accel * 0.49f);
@@ -622,8 +622,8 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     {
         PxVec3 down = getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
         f32 downforce =
-            driver->vehicleTuning.forwardDownforce * glm::abs(getForwardSpeed()) +
-            driver->vehicleTuning.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
+            tuning.forwardDownforce * glm::abs(getForwardSpeed()) +
+            tuning.constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
         getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
 
         f32 maxSlip = 0.f;
@@ -637,7 +637,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
             }
         }
         f32 driftBoost = glm::min(maxSlip, 1.f) * accel
-            * driver->vehicleTuning.driftBoost * 20.f;
+            * tuning.driftBoost * 20.f;
         PxVec3 boostDir = getRigidBody()->getLinearVelocity().getNormalized();
         getRigidBody()->addForce(boostDir * driftBoost, PxForceMode::eACCELERATION);
     }
@@ -680,7 +680,7 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex,
                 pos, iconSize, iconSize));
     u32 ammoUnitCount = g_weapons[weaponIndex]->ammoUnitCount;
     u32 maxAmmo = g_weapons[weaponIndex]
-        ->getAmmoCountForUpgradeLevel(driver->vehicleConfig.primaryWeaponUpgradeLevel);
+        ->getAmmoCountForUpgradeLevel(driver->getVehicleConfig()->primaryWeaponUpgradeLevel);
     u32 ammoTickCount = maxAmmo / ammoUnitCount;
     f32 ammoTickMargin = iconSize * 0.025f;
     f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCount;
@@ -748,10 +748,10 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         // weapons
         f32 weaponIconX = g_game.windowHeight * 0.35f;
         drawWeaponAmmo(renderer, offset + glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                driver->vehicleConfig.primaryWeaponIndex, primaryWeaponAmmo);
+                driver->getVehicleConfig()->primaryWeaponIndex, primaryWeaponAmmo);
         drawWeaponAmmo(renderer, offset +
                 glm::vec2(weaponIconX + g_game.windowHeight * 0.1f, d.y * g_game.windowHeight * 0.018f),
-                driver->vehicleConfig.specialWeaponIndex, specialWeaponAmmo);
+                driver->getVehicleConfig()->specialWeaponIndex, specialWeaponAmmo);
 
         // healthbar
         Texture* white = g_resources.getTexture("white");
@@ -815,7 +815,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
     if (cameraIndex >= 0 && isHidden)
     {
         rw->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
-                cameraIndex, transform, driver->vehicleColor));
+                cameraIndex, transform, g_vehicleColors[driver->getVehicleConfig()->colorIndex]));
     }
 
     glm::mat4 wheelTransforms[NUM_WHEELS];
@@ -823,8 +823,10 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
     {
         wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
-    g_vehicles[driver->vehicleIndex]->render(rw, transform, wheelTransforms, driver);
-    g_vehicles[driver->vehicleIndex]->renderDebris(rw, vehicleDebris, driver);
+    driver->getVehicleData()->render(rw, transform,
+            wheelTransforms, *driver->getVehicleConfig());
+    driver->getVehicleData()->renderDebris(rw, vehicleDebris,
+            *driver->getVehicleConfig());
 }
 
 void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
@@ -1020,7 +1022,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
 
             f32 brake = 0.f;
-            bool isSomethingBlockingMe = isBlocking(driver->vehicleTuning.collisionWidth / 2 + 0.05f,
+            bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
                     getForwardVector(), forwardTestDist);
             if (isSomethingBlockingMe && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
             {
@@ -1151,7 +1153,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             rotationSpeed += glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
         }
         rotationSpeed /= NUM_WHEELS;
-        f32 gearRatio = glm::abs(driver->vehicleTuning.gearRatios[
+        f32 gearRatio = glm::abs(tuning.gearRatios[
             vehicle4W->mDriveDynData.mCurrentGear]);
         engineRPM = smoothMove(engineRPM, rotationSpeed * gearRatio, 1.9f, deltaTime);
 
@@ -1235,12 +1237,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             // increase damping when offroad
             if (info.tireSurfaceMaterial == scene->offroadMaterial)
             {
-                d.mDampingRate = driver->vehicleTuning.wheelOffroadDampingRate;
+                d.mDampingRate = tuning.wheelOffroadDampingRate;
                 isWheelOffroad = true;
             }
             else
             {
-                d.mDampingRate = driver->vehicleTuning.wheelDampingRate;
+                d.mDampingRate = tuning.wheelDampingRate;
                 anyWheelOnRoad = true;
             }
 
@@ -1312,10 +1314,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         // add tire marks
         if (isWheelSlipping[i] && !isWheelOffroad)
         {
-            f32 wheelRadius = i < 2 ? driver->vehicleTuning.wheelRadiusFront
-                : driver->vehicleTuning.wheelRadiusRear;
-            f32 wheelWidth = i < 2 ? driver->vehicleTuning.wheelWidthFront
-                : driver->vehicleTuning.wheelWidthRear;
+            f32 wheelRadius = i < 2 ? tuning.wheelRadiusFront
+                : tuning.wheelRadiusRear;
+            f32 wheelWidth = i < 2 ? tuning.wheelWidthFront
+                : tuning.wheelWidthRear;
             glm::vec3 tn = convert(info.tireContactNormal);
             PxTransform contactPose = info.localPose;
             glm::vec3 markPosition = tn * -wheelRadius
@@ -1432,7 +1434,7 @@ void Vehicle::firePrimaryWeapon()
         // TODO: play no-no sound
         return;
     }
-    auto& primaryWeapon = g_weapons[driver->vehicleConfig.primaryWeaponIndex];
+    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->primaryWeaponIndex];
     primaryWeaponAmmo -= primaryWeapon->fire(scene, this);
 }
 
@@ -1443,7 +1445,7 @@ void Vehicle::fireSpecialWeapon()
         // TODO: play no-no sound
         return;
     }
-    auto& specialWeapon = g_weapons[driver->vehicleConfig.specialWeaponIndex];
+    auto& specialWeapon = g_weapons[driver->getVehicleConfig()->specialWeaponIndex];
     specialWeaponAmmo -= specialWeapon->fire(scene, this);
 }
 

@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "vehicle_data.h"
+#include <algorithm>
 
 struct ComputerDriverData
 {
@@ -23,9 +24,7 @@ struct Driver
     //ComputerDriverData aiDriverData;
     bool useKeyboard = false;
     u32 controllerID = 0;
-
-    VehicleConfiguration vehicleConfig;
-    VehicleTuning vehicleTuning;
+    i32 lastColorIndex = 0;
 
     struct OwnedVehicle
     {
@@ -35,16 +34,32 @@ struct Driver
     std::vector<OwnedVehicle> ownedVehicles;
 
     i32 vehicleIndex = -1;
-    glm::vec3 vehicleColor = { 1.f, 1.f, 1.f };
 
-    void updateTuning()
+    VehicleConfiguration* getVehicleConfig()
     {
-        vehicleTuning = {};
-        g_vehicles[vehicleIndex]->initTuning(vehicleConfig, vehicleTuning);
+        auto ownedVehicle = std::find_if(ownedVehicles.begin(),
+                        ownedVehicles.end(),
+                        [&](auto& e) { return e.vehicleIndex == vehicleIndex; });
+        assert(ownedVehicle != ownedVehicles.end());
+        return &ownedVehicle->vehicleConfig;
     }
 
-    Driver(bool hasCamera, bool isPlayer, bool useKeyboard, i32 vehicleIndex,
-            u32 colorIndex, u32 controllerID=0);
+    VehicleTuning getTuning()
+    {
+        assert(vehicleIndex != -1);
+        VehicleTuning tuning;
+        g_vehicles[vehicleIndex]->initTuning(*getVehicleConfig(), tuning);
+        return tuning;
+    }
+
+    VehicleData* getVehicleData()
+    {
+        assert(vehicleIndex != -1);
+        return g_vehicles[vehicleIndex].get();
+    }
+
+    Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
+            u32 controllerID=0, i32 vehicleIndex=-1);
 
     Driver() = default;
     Driver(Driver&& other) = default;

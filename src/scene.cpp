@@ -110,7 +110,6 @@ void Scene::startRace()
     for (u32 i=0; i<g_game.state.drivers.size(); ++i)
     {
         Driver* driver = &g_game.state.drivers[i];
-        driver->updateTuning();
 
         //glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
         glm::vec3 offset = -glm::vec3(
@@ -128,12 +127,14 @@ void Scene::startRace()
             return;
         }
 
+        VehicleTuning tuning = driver->getTuning();
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
                 convert(hit.block.position + hit.block.normal *
-                    driver->vehicleTuning.getRestOffset())) * rotationOf(start);
+                    tuning.getRestOffset())) * rotationOf(start);
 
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
-            driver, vehicleMaterial, surfaceMaterials, i, driver->hasCamera ? cameraIndex : -1));
+            driver, std::move(tuning), vehicleMaterial, surfaceMaterials, i,
+            driver->hasCamera ? cameraIndex : -1));
 
         if (driver->hasCamera)
         {
@@ -554,7 +555,7 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
             trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
                 * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
                 * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
-            v->getDriver()->vehicleColor, false);
+            g_vehicleColors[v->getDriver()->getVehicleConfig()->colorIndex], false);
     }
 
     trackPreview2D.endUpdate(hudTrackPos);

@@ -328,6 +328,50 @@ bool Gui::button(const char* text, bool active, const char* icon)
     return clicked;
 }
 
+bool Gui::itemButton(const char* text, const char* smallText, bool active, const char* icon,
+        bool* isSelected)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+
+    if (isSelected) *isSelected = false;
+
+    WidgetStackItem& parent = widgetStack.back();
+    WidgetState* widgetState = getWidgetState(parent.widgetState, text, WidgetType::BUTTON);
+
+    glm::vec2& pos = parent.nextWidgetPosition;
+    f32 bh = parent.itemHeight;
+    f32 bw = parent.size.x;
+    bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
+        return g_input.isMouseButtonPressed(MOUSE_LEFT);
+    }, [&] {
+        if (isSelected) *isSelected = true;
+        return didSelect();
+    }, active);
+
+    renderer->push2D(TextRenderable(fontSmall, text,
+                pos + glm::vec2(glm::floor(icon ? bh : convertSize(4.f)), glm::floor(convertSize(5.f))),
+                glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
+                HorizontalAlign::LEFT, VerticalAlign::TOP));
+
+    renderer->push2D(TextRenderable(fontTiny, smallText,
+                pos + glm::vec2(glm::floor(icon ? bh : convertSize(4.f)), glm::floor(convertSize(21.f))),
+                glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
+                HorizontalAlign::LEFT, VerticalAlign::TOP));
+
+    Texture* iconTexture = g_resources.getTexture(icon);
+    Texture* bgTexture = g_resources.getTexture("iconbg");
+    f32 iconSize = glm::floor(bh * 0.8f);
+    renderer->push2D(QuadRenderable(bgTexture,
+                pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    renderer->push2D(QuadRenderable(iconTexture,
+                pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+
+    pos.y += bh + parent.itemSpacing;
+
+    return clicked;
+}
+
 bool Gui::vehicleButton(const char* text, Texture* icon, Driver* driver)
 {
     assert(widgetStack.size() > 0);
