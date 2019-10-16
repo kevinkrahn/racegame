@@ -244,7 +244,11 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
         wheelMaterials[i] = vehicleMaterial;
     }
 
-    PxFilterData chassisSimFilterData(COLLISION_FLAG_CHASSIS, COLLISION_FLAG_CHASSIS, 0, 0);
+    PxFilterData chassisSimFilterData(COLLISION_FLAG_CHASSIS,
+            COLLISION_FLAG_CHASSIS |
+            COLLISION_FLAG_TRACK |
+            COLLISION_FLAG_GROUND |
+            COLLISION_FLAG_DEBRIS, 0, 0);
     PxFilterData chassisQryFilterData(COLLISION_FLAG_CHASSIS, 0, 0, UNDRIVABLE_SURFACE);
     PxFilterData wheelSimFilterData(0, 0, 0, 0);
     PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
@@ -1199,6 +1203,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
     }
 
+    bool isDustyRoad = checkRoadDust();
+
     // update wheels
     smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
     const f32 smokeInterval = 0.015f;
@@ -1256,12 +1262,28 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
         }
 
-        if (isWheelOffroad && smokeTimer == 0.f)
+        if ((isWheelOffroad || isDustyRoad) && smokeTimer == 0.f)
         {
-            f32 wheelRotationSpeed = vehicle4W->mWheelsDynData.getWheelRotationSpeed(i);
+            glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
+
+            f32 dustAmount = 1.f;
+            if (!isWheelOffroad)
+            {
+                dustAmount = 0.f;
+                for (auto& d : dustSpots)
+                {
+                    f32 dist = glm::distance(d.p, wheelPosition);
+                    f32 amount = clamp(1.f - dist / d.radius, 0.f, 1.f);
+                    if (amount > dustAmount)
+                    {
+                        dustAmount = amount;
+                    }
+                }
+            }
+
+            f32 wheelRotationSpeed = glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
             if (wheelRotationSpeed > 5.f || slip > 0.f)
             {
-                glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
                 glm::vec3 vel(glm::normalize(glm::vec3(
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f),
@@ -1269,7 +1291,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 scene->smoke.spawn(
                     wheelPosition - glm::vec3(0, 0, 0.2f),
                     (vel + glm::vec3(0, 0, 1)) * 0.8f,
-                    glm::clamp(glm::max(slip, glm::abs(wheelRotationSpeed * 0.022f)), 0.f, 1.f),
+                    glm::clamp(
+                        glm::max(slip, glm::abs(wheelRotationSpeed * 0.022f)) * dustAmount,
+                        0.f, 1.f),
                     glm::vec4(0.58f, 0.50f, 0.22f, 1.f));
                 smoked = true;
             }
@@ -1411,4 +1435,38 @@ void Vehicle::fireSpecialWeapon()
     }
     auto& specialWeapon = g_weapons[driver->vehicleConfig.specialWeaponIndex];
     specialWeaponAmmo -= specialWeapon->fire(scene, this);
+}
+
+void Vehicle::onTrigger(ActorUserData* userData)
+{
+}
+
+bool Vehicle::checkRoadDust()
+{
+    dustSpots.clear();
+
+    PxOverlapHit hitBuffer[8];
+    PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
+    PxQueryFilterData filter;
+    filter.flags = PxQueryFlag::eSTATIC;
+    filter.data = PxFilterData(COLLISION_FLAG_DUST, 0, 0, 0);
+    f32 radius = 1.5f;
+    if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
+            PxTransform(convert(getPosition()), PxIdentity), hit, filter))
+    {
+        for (u32 i=0; i<hit.getNbTouches(); ++i)
+        {
+            PxActor* actor = hit.getTouch(i).actor;
+            ActorUserData* userData = (ActorUserData*)actor->userData;
+            assert(userData);
+            dustSpots.push_back({
+                userData->placeableEntity->position,
+                glm::max(
+                        glm::abs(userData->placeableEntity->scale.x),
+                        glm::max(glm::abs(userData->placeableEntity->scale.y),
+                            glm::abs(userData->placeableEntity->scale.z)))*0.5f });
+        }
+    }
+
+    return dustSpots.size() > 0;
 }

@@ -45,6 +45,7 @@ public:
     virtual DataFile::Value serialize() { return {}; }
     virtual void deserialize(DataFile::Value& data) {}
     virtual bool isPersistent() const { return false; }
+    virtual void onTrigger(ActorUserData* userData) {}
 
     virtual void onCreate(class Scene* scene) {}
     virtual void onCreateEnd(class Scene* scene) {}

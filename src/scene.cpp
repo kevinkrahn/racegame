@@ -244,6 +244,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             listenerPositions.push_back(cameraTarget);
         }
 
+        // TODO: Use PhysX scratch buffer to reduce allocations
         physicsScene->simulate(deltaTime);
         physicsScene->fetchResults(true);
 
@@ -750,6 +751,41 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             SoundType::GAME_SFX, convert(contactPoints[j].position));
                     // TODO: create sparks at contactPoints[j].position
                 }
+            }
+        }
+    }
+}
+
+void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
+{
+    for (u32 i=0; i<count; ++i)
+    {
+        if (pairs[i].flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER
+                    | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
+        {
+            continue;
+        }
+
+        ActorUserData* userData = (ActorUserData*)pairs[i].triggerShape->userData;
+        ActorUserData* otherUserData = (ActorUserData*)pairs[i].otherShape->userData;
+        if (!userData)
+        {
+            userData = (ActorUserData*)pairs[i].triggerActor->userData;
+        }
+        if (!otherUserData)
+        {
+            otherUserData = (ActorUserData*)pairs[i].otherActor->userData;
+        }
+
+        if (userData && otherUserData)
+        {
+            if (userData->entityType == ActorUserData::ENTITY)
+            {
+                userData->entity->onTrigger(otherUserData);
+            }
+            if (otherUserData->entityType == ActorUserData::VEHICLE)
+            {
+                otherUserData->vehicle->onTrigger(userData);
             }
         }
     }

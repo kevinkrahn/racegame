@@ -91,6 +91,14 @@ public:
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 
+    struct DustSpot
+    {
+        glm::vec3 p;
+        f32 radius;
+    };
+    SmallVec<DustSpot, 16> dustSpots;
+    bool checkRoadDust();
+
     std::vector<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
 
@@ -148,6 +156,7 @@ public:
     void shakeScreen(f32 intensity);
     void updateCamera(RenderWorld* rw, f32 deltaTime);
     void resetAmmo();
+    void onTrigger(ActorUserData* userData);
 
     void firePrimaryWeapon();
     void fireSpecialWeapon();

@@ -21,10 +21,12 @@ class Decal : public Renderable
     std::vector<DecalVertex> vertices;
     u32 vertexCount = 0;
     GLuint vao = 0, vbo = 0;
+    i32 priority = 8000;
 
 public:
     Decal() {}
-    Decal(Texture* tex, glm::vec3 const& color = { 1, 1, 1 }) : color(color), tex(tex) {}
+    Decal(Texture* tex, glm::vec3 const& color = { 1, 1, 1 }, i32 priority=8000)
+        : color(color), tex(tex), priority(priority) {}
     ~Decal()
     {
         if (vao)
@@ -33,6 +35,7 @@ public:
             glDeleteVertexArrays(0, &vao);
         }
     }
+    void setPriority(i32 priority) { this->priority = priority; }
     void setColor(glm::vec3 const& color) { this->color = color; }
     void setTexture(Texture* tex) { this->tex = tex; }
     BoundingBox getBoundingBox() const
@@ -52,7 +55,7 @@ public:
     void addMesh(Mesh* mesh, glm::mat4 const& meshTransform);
     void addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform);
     void end();
-    i32 getPriority() const override { return 8000; }
+    i32 getPriority() const override { return priority; }
     std::string getDebugString() const override { return "Decal"; }
     void onLitPassPriorityTransition(class Renderer* renderer) override;
     void onLitPass(class Renderer* renderer) override;

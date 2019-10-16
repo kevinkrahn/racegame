@@ -7,10 +7,28 @@
 const char* textures[] = {
     "arrow",
     "arrow_left",
-    "arrow_right"
+    "arrow_right",
+    "crack",
+    "patch1",
+    "grunge1",
+    "grunge2",
+    "grunge3",
+    "sand",
 };
 
-StaticDecal::StaticDecal(u32 texIndex, glm::vec3 const& pos, u32 decalFilter)
+const char* textureNames[] = {
+    "Arrow Forward",
+    "Arrow Left",
+    "Arrow Right",
+    "Crack",
+    "Patch 1",
+    "Grunge 1",
+    "Grunge 2",
+    "Grunge 3",
+    "Dust",
+};
+
+StaticDecal::StaticDecal(i32 texIndex, glm::vec3 const& pos, u32 decalFilter)
 {
     position = pos;
     scale = glm::vec3(16.f);
@@ -25,10 +43,13 @@ void StaticDecal::onCreateEnd(Scene* scene)
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.placeableEntity = this;
     actor->userData = &physicsUserData;
+
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
             PxBoxGeometry(convert(scale * 0.5f)), *scene->genericMaterial);
     collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0));
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));
+    collisionShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+
     scene->getPhysicsScene()->addActor(*actor);
 
     updateTransform(scene);
@@ -44,9 +65,21 @@ void StaticDecal::updateTransform(Scene* scene)
         actor->getShapes(&shape, 1);
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
+
+        if (texIndex == 8)
+        {
+            shape->setQueryFilterData(PxFilterData(
+                        COLLISION_FLAG_SELECTABLE | COLLISION_FLAG_DUST, 0, 0, 0));
+        }
+        else
+        {
+            shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0));
+        }
     }
 
     tex = g_resources.getTexture(textures[texIndex]);
+    decal.setTexture(tex);
+    decal.setPriority(beforeMarking ? 14 : 8000);
 
     const u32 bufferSize = 32;
     PxOverlapHit hitBuffer[bufferSize];
@@ -76,7 +109,6 @@ void StaticDecal::updateTransform(Scene* scene)
 
 void StaticDecal::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    decal.setTexture(tex);
     rw->add(&decal);
 }
 
@@ -102,6 +134,7 @@ DataFile::Value StaticDecal::serialize()
     dict["scale"] = DataFile::makeVec3(scale);
     dict["texIndex"] = DataFile::makeInteger(texIndex);
     dict["decalFilter"] = DataFile::makeInteger(decalFilter);
+    dict["beforeMarking"] = DataFile::makeBool(beforeMarking);
     return dict;
 }
 
@@ -111,8 +144,9 @@ void StaticDecal::deserialize(DataFile::Value& data)
     glm::vec4 r = data["rotation"].vec4();
     rotation = glm::quat(r.w, r.x, r.y, r.z);
     scale = data["scale"].vec3();
-    texIndex = (u32)data["texIndex"].integer(0);
+    texIndex = (i32)data["texIndex"].integer(0);
     decalFilter = (u32)data["decalFilter"].integer(DECAL_TRACK);
+    beforeMarking = data["beforeMarking"].boolean(false);
 }
 
 void StaticDecal::showDetails(Scene* scene)
@@ -138,6 +172,21 @@ void StaticDecal::showDetails(Scene* scene)
     if (affectsGround)   decalFilter |= DECAL_GROUND;
 
     if (prevDecalFilter != decalFilter)
+    {
+        updateTransform(scene);
+    }
+
+    g_gui.beginSelect("Texture", &texIndex, true);
+    for (i32 i=0; i<(i32)ARRAY_SIZE(textureNames); ++i)
+    {
+        if (g_gui.option(textureNames[i], i, nullptr))
+        {
+            updateTransform(scene);
+        }
+    }
+    g_gui.end();
+
+    if (g_gui.toggle("Before Marking", beforeMarking))
     {
         updateTransform(scene);
     }

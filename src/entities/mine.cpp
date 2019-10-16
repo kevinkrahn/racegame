@@ -10,10 +10,11 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     bool activated = false;
     aliveTime += deltaTime;
 
+    // TODO: use a trigger instead for better performance
     PxOverlapHit hitBuffer[8];
     PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
     PxQueryFilterData filter;
-    filter.flags |= PxQueryFlag::eDYNAMIC;
+    filter.flags = PxQueryFlag::eDYNAMIC;
     filter.data = PxFilterData(COLLISION_FLAG_CHASSIS, 0, 0, 0);
     f32 radius = 1.5f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
