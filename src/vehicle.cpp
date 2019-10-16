@@ -519,13 +519,26 @@ Vehicle::~Vehicle()
 
 void Vehicle::resetAmmo()
 {
-    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->primaryWeaponIndex];
-    primaryWeaponAmmo = primaryWeapon->getAmmoCountForUpgradeLevel(
-            driver->getVehicleConfig()->primaryWeaponUpgradeLevel);
-
-    auto& specialWeapon = g_weapons[driver->getVehicleConfig()->specialWeaponIndex];
-    specialWeaponAmmo = specialWeapon->getAmmoCountForUpgradeLevel(
-            driver->getVehicleConfig()->specialWeaponUpgradeLevel);
+    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices); ++i)
+    {
+        i32 weaponIndex = driver->getVehicleConfig()->frontWeaponIndices[i];
+        if (weaponIndex >= 0)
+        {
+            auto& weapon = g_weapons[weaponIndex];
+            frontWeaponAmmo[i] = weapon->getAmmoCountForUpgradeLevel(
+                driver->getVehicleConfig()->frontWeaponUpgradeLevel[i]);
+        }
+    }
+    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
+    {
+        i32 weaponIndex = driver->getVehicleConfig()->rearWeaponIndices[i];
+        if (weaponIndex >= 0)
+        {
+            auto& weapon = g_weapons[weaponIndex];
+            rearWeaponAmmo[i] = weapon->getAmmoCountForUpgradeLevel(
+                driver->getVehicleConfig()->rearWeaponUpgradeLevel[i]);
+        }
+    }
 }
 
 void Vehicle::reset(glm::mat4 const& transform) const
@@ -668,7 +681,8 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
-void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo)
+void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo,
+        u32 upgradeLevel)
 {
     f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
     Texture* iconbg = g_resources.getTexture("iconbg");
@@ -679,8 +693,7 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex,
     renderer->push2D(QuadRenderable(g_resources.getTexture(weaponIcon),
                 pos, iconSize, iconSize));
     u32 ammoUnitCount = g_weapons[weaponIndex]->ammoUnitCount;
-    u32 maxAmmo = g_weapons[weaponIndex]
-        ->getAmmoCountForUpgradeLevel(driver->getVehicleConfig()->primaryWeaponUpgradeLevel);
+    u32 maxAmmo = g_weapons[weaponIndex]->getAmmoCountForUpgradeLevel(upgradeLevel);
     u32 ammoTickCount = maxAmmo / ammoUnitCount;
     f32 ammoTickMargin = iconSize * 0.025f;
     f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCount;
@@ -748,10 +761,12 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         // weapons
         f32 weaponIconX = g_game.windowHeight * 0.35f;
         drawWeaponAmmo(renderer, offset + glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                driver->getVehicleConfig()->primaryWeaponIndex, primaryWeaponAmmo);
+                driver->getVehicleConfig()->frontWeaponIndices[0], frontWeaponAmmo[0],
+                driver->getVehicleConfig()->frontWeaponUpgradeLevel[0]);
         drawWeaponAmmo(renderer, offset +
                 glm::vec2(weaponIconX + g_game.windowHeight * 0.1f, d.y * g_game.windowHeight * 0.018f),
-                driver->getVehicleConfig()->specialWeaponIndex, specialWeaponAmmo);
+                driver->getVehicleConfig()->rearWeaponIndices[0], rearWeaponAmmo[0],
+                driver->getVehicleConfig()->rearWeaponUpgradeLevel[0]);
 
         // healthbar
         Texture* white = g_resources.getTexture("white");
@@ -978,7 +993,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             if (shootSpecial)
             {
-                fireSpecialWeapon();
+                fireRearWeapon();
             }
         }
         else if (scene->getTrackGraph().getPaths().size() > 0)
@@ -1429,24 +1444,24 @@ void Vehicle::blowUp()
 
 void Vehicle::firePrimaryWeapon()
 {
-    if (primaryWeaponAmmo == 0)
+    if (frontWeaponAmmo[0] == 0)
     {
         // TODO: play no-no sound
         return;
     }
-    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->primaryWeaponIndex];
-    primaryWeaponAmmo -= primaryWeapon->fire(scene, this);
+    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->frontWeaponIndices[0]];
+    frontWeaponAmmo[0] -= primaryWeapon->fire(scene, this);
 }
 
-void Vehicle::fireSpecialWeapon()
+void Vehicle::fireRearWeapon()
 {
-    if (specialWeaponAmmo == 0)
+    if (rearWeaponAmmo[0] == 0)
     {
         // TODO: play no-no sound
         return;
     }
-    auto& specialWeapon = g_weapons[driver->getVehicleConfig()->specialWeaponIndex];
-    specialWeaponAmmo -= specialWeapon->fire(scene, this);
+    auto& rearWeapon = g_weapons[driver->getVehicleConfig()->rearWeaponIndices[0]];
+    rearWeaponAmmo[0] -= rearWeapon->fire(scene, this);
 }
 
 void Vehicle::onTrigger(ActorUserData* userData)

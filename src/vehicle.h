@@ -81,8 +81,8 @@ public:
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
 
-    u32 primaryWeaponAmmo = 0;
-    u32 specialWeaponAmmo = 0;
+    u32 frontWeaponAmmo[3] = { 0, 0, 0 };
+    u32 rearWeaponAmmo[3] = { 0, 0, 0 };
 
     glm::vec3 screenShakeVelocity = glm::vec3(0);
     glm::vec3 screenShakeOffset = glm::vec3(0);
@@ -152,7 +152,7 @@ public:
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);
-    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo);
+    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo, u32 upgradeLevel);
     void drawHUD(class Renderer* rw, f32 deltaTime);
     void shakeScreen(f32 intensity);
     void updateCamera(RenderWorld* rw, f32 deltaTime);
@@ -160,5 +160,5 @@ public:
     void onTrigger(ActorUserData* userData);
 
     void firePrimaryWeapon();
-    void fireSpecialWeapon();
+    void fireRearWeapon();
 };

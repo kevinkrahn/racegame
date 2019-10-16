@@ -127,11 +127,11 @@ struct VehicleConfiguration
     u32 engineUpgradeLevel = 0;
     u32 tireUpgradeLevel = 0;
 
-    u32 primaryWeaponIndex = 0;
-    u32 primaryWeaponUpgradeLevel = 5;
-
-    u32 specialWeaponIndex = 1;
-    u32 specialWeaponUpgradeLevel = 5;
+    i32 frontWeaponIndices[3] = { 0, -1, -1 };
+    u32 frontWeaponUpgradeLevel[3] = { 4, 0, 0 };
+    i32 rearWeaponIndices[2] = { 1, -1 };
+    u32 rearWeaponUpgradeLevel[2] = { 4, 0 };
+    i32 specialAbilityIndex;
 
     std::vector<u32> vehicleUpgrades;
 

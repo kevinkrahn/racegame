@@ -312,7 +312,10 @@ bool Gui::button(const char* text, bool active, const char* icon)
                     HorizontalAlign::LEFT, VerticalAlign::CENTER));
 
         Texture* iconTexture = g_resources.getTexture(icon);
+        Texture* bgTexture = g_resources.getTexture("iconbg");
         f32 iconSize = glm::floor(bh * 0.8f);
+        renderer->push2D(QuadRenderable(bgTexture,
+                    pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
         renderer->push2D(QuadRenderable(iconTexture,
                     pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
     }
@@ -328,8 +331,8 @@ bool Gui::button(const char* text, bool active, const char* icon)
     return clicked;
 }
 
-bool Gui::itemButton(const char* text, const char* smallText, bool active, const char* icon,
-        bool* isSelected)
+bool Gui::itemButton(const char* text, const char* smallText, const char* extraText,
+        bool active, const char* icon, bool* isSelected)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -345,14 +348,27 @@ bool Gui::itemButton(const char* text, const char* smallText, bool active, const
     bool clicked = buttonBase(parent, widgetState, pos, bw, bh, [] {
         return g_input.isMouseButtonPressed(MOUSE_LEFT);
     }, [&] {
-        if (isSelected) *isSelected = true;
         return didSelect();
     }, active);
+
+    if (isSelected)
+    {
+        *isSelected =
+            (parent.widgetState->selectableChildCount - 1 == parent.widgetState->selectIndex);
+    }
 
     renderer->push2D(TextRenderable(fontSmall, text,
                 pos + glm::vec2(glm::floor(icon ? bh : convertSize(4.f)), glm::floor(convertSize(5.f))),
                 glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
                 HorizontalAlign::LEFT, VerticalAlign::TOP));
+
+    if (extraText)
+    {
+        renderer->push2D(TextRenderable(fontSmall, extraText,
+                    pos + glm::vec2(bw - glm::floor(convertSize(4.f)), glm::floor(bh/2)),
+                    glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
+                    HorizontalAlign::RIGHT, VerticalAlign::CENTER));
+    }
 
     renderer->push2D(TextRenderable(fontTiny, smallText,
                 pos + glm::vec2(glm::floor(icon ? bh : convertSize(4.f)), glm::floor(convertSize(21.f))),
