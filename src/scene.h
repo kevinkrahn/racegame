@@ -40,6 +40,7 @@ private:
     glm::vec3 trackPreviewVelocity = { 0, 0, 0 };
     u32 currentTrackPreviewPoint = 0;
     f64 worldTime = 0.0;
+    bool readyToGo = false;
 
     // physx callbacks
     void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)  { PX_UNUSED(constraints); PX_UNUSED(count); }
@@ -99,6 +100,7 @@ public:
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
     u32 getTotalLaps() const { return totalLaps; }
+    bool canGo() const { return readyToGo; }
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
             PxRaycastBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK) const;

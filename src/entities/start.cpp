@@ -4,6 +4,7 @@
 #include "../vehicle.h"
 #include "../mesh_renderables.h"
 #include "../game.h"
+#include "../billboard.h"
 
 void Start::onCreateEnd(Scene* scene)
 {
@@ -36,6 +37,55 @@ void Start::updateTransform(Scene* scene)
 
 void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
+    i32 countIndex = -1;
+
+    if (scene->getWorldTime() > 1.f)
+    {
+        countIndex = 0;
+    }
+    if (scene->getWorldTime() > 2.f)
+    {
+        countIndex = 1;
+    }
+    if (scene->getWorldTime() > 3.f)
+    {
+        countIndex = 2;
+    }
+
+    if (countIndex >= 0 && scene->isRaceInProgress)
+    {
+        glm::vec3 lightStack1[] = {
+            { 2.6f, 2.564f, 9.284f },
+            { 2.6f, 2.564f, 8.000f },
+            { 2.6f, 2.564f, 6.738f },
+        };
+        glm::vec3 lightStack2[] = {
+            { 2.6f, 4.316f, 9.284f },
+            { 2.6f, 4.316f, 8.000f },
+            { 2.6f, 4.316f, 6.738f },
+        };
+
+        glm::vec3 p1 = lightStack1[countIndex];
+        glm::vec3 p2 = lightStack2[countIndex];
+        glm::vec3 p3 = glm::vec3(-p1.x, p1.y, p1.z);
+        glm::vec3 p4 = glm::vec3(-p2.x, p2.y, p2.z);
+        glm::vec3 p5 = glm::vec3(p1.x, -p1.y, p1.z);
+        glm::vec3 p6 = glm::vec3(p2.x, -p2.y, p2.z);
+        glm::vec3 p7 = glm::vec3(-p1.x, -p1.y, p1.z);
+        glm::vec3 p8 = glm::vec3(-p2.x, -p2.y, p2.z);
+        glm::vec3 positions[] = { p1, p2, p3, p4, p5, p6, p7, p8 };
+
+        Texture* flare = g_resources.getTexture("flare");
+        glm::vec4 col = countIndex == 2
+            ? glm::vec4(0.01f, 1.f, 0.01f, 0.6f) : glm::vec4(1.f, 0.01f, 0.01f, 0.6f);
+
+        for (auto& v : positions)
+        {
+            rw->push(BillboardRenderable(flare, transform * glm::vec4(v, 1.f),
+                        col, countIndex == 2 ? 1.3f : 1.f));
+        }
+    }
+
     LitSettings settings;
     settings.mesh = mesh;
     settings.fresnelScale = 0.3f;

@@ -157,6 +157,7 @@ void Scene::stopRace()
     isRaceInProgress = false;
     g_audio.setPaused(false);
     g_audio.stopAllGameplaySounds();
+    readyToGo = false;
 
     for (auto& e : entities)
     {
@@ -211,6 +212,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         worldTime += deltaTime;
         rw->updateWorldTime(worldTime);
+
+        if (worldTime >= 3.f)
+        {
+            readyToGo = true;
+        }
 
         SmallVec<glm::vec3> listenerPositions;
         if (!g_game.isEditing && !isRaceInProgress && trackGraph.getPaths().size() > 0)

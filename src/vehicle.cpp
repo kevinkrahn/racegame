@@ -16,49 +16,49 @@ const u32 QUERY_HITS_PER_WHEEL = 8;
 
 PxF32 steerVsForwardSpeedData[2*8] =
 {
-	0.0f,		0.75f,
-	5.0f,		0.75f,
-	30.0f,		0.5f,
-	120.0f,		0.25f,
-	PX_MAX_F32, PX_MAX_F32,
-	PX_MAX_F32, PX_MAX_F32,
-	PX_MAX_F32, PX_MAX_F32,
-	PX_MAX_F32, PX_MAX_F32
+    0.0f,       0.75f,
+    5.0f,       0.75f,
+    30.0f,      0.5f,
+    120.0f,     0.25f,
+    PX_MAX_F32, PX_MAX_F32,
+    PX_MAX_F32, PX_MAX_F32,
+    PX_MAX_F32, PX_MAX_F32,
+    PX_MAX_F32, PX_MAX_F32
 };
 PxFixedSizeLookupTable<8> steerVsForwardSpeedTable(steerVsForwardSpeedData, 4);
 
 PxVehicleKeySmoothingData keySmoothingData = {
-	{
-		6.0f,	//rise rate eANALOG_INPUT_ACCEL
-		6.0f,	//rise rate eANALOG_INPUT_BRAKE
-		6.0f,	//rise rate eANALOG_INPUT_HANDBRAKE
-		1.6f,	//rise rate eANALOG_INPUT_STEER_LEFT
-		1.6f,	//rise rate eANALOG_INPUT_STEER_RIGHT
-	},
-	{
-		10.0f,	//fall rate eANALOG_INPUT_ACCEL
-		10.0f,	//fall rate eANALOG_INPUT_BRAKE
-		10.0f,	//fall rate eANALOG_INPUT_HANDBRAKE
-		4.5f,	//fall rate eANALOG_INPUT_STEER_LEFT
-		4.5f	//fall rate eANALOG_INPUT_STEER_RIGHT
-	}
+    {
+        6.0f,   //rise rate eANALOG_INPUT_ACCEL
+        6.0f,   //rise rate eANALOG_INPUT_BRAKE
+        6.0f,   //rise rate eANALOG_INPUT_HANDBRAKE
+        1.6f,   //rise rate eANALOG_INPUT_STEER_LEFT
+        1.6f,   //rise rate eANALOG_INPUT_STEER_RIGHT
+    },
+    {
+        10.0f,  //fall rate eANALOG_INPUT_ACCEL
+        10.0f,  //fall rate eANALOG_INPUT_BRAKE
+        10.0f,  //fall rate eANALOG_INPUT_HANDBRAKE
+        4.5f,   //fall rate eANALOG_INPUT_STEER_LEFT
+        4.5f    //fall rate eANALOG_INPUT_STEER_RIGHT
+    }
 };
 
 PxVehiclePadSmoothingData padSmoothingData = {
-	{
-		6.0f,	//rise rate eANALOG_INPUT_ACCEL
-		6.0f,	//rise rate eANALOG_INPUT_BRAKE
-		6.0f,	//rise rate eANALOG_INPUT_HANDBRAKE
-		1.8f,	//rise rate eANALOG_INPUT_STEER_LEFT
-		1.8f,	//rise rate eANALOG_INPUT_STEER_RIGHT
-	},
-	{
-		10.0f,	//fall rate eANALOG_INPUT_ACCEL
-		10.0f,	//fall rate eANALOG_INPUT_BRAKE
-		10.0f,	//fall rate eANALOG_INPUT_HANDBRAKE
-		5.0f,	//fall rate eANALOG_INPUT_STEER_LEFT
-		5.0f	//fall rate eANALOG_INPUT_STEER_RIGHT
-	}
+    {
+        6.0f,   //rise rate eANALOG_INPUT_ACCEL
+        6.0f,   //rise rate eANALOG_INPUT_BRAKE
+        6.0f,   //rise rate eANALOG_INPUT_HANDBRAKE
+        1.8f,   //rise rate eANALOG_INPUT_STEER_LEFT
+        1.8f,   //rise rate eANALOG_INPUT_STEER_RIGHT
+    },
+    {
+        10.0f,  //fall rate eANALOG_INPUT_ACCEL
+        10.0f,  //fall rate eANALOG_INPUT_BRAKE
+        10.0f,  //fall rate eANALOG_INPUT_HANDBRAKE
+        5.0f,   //fall rate eANALOG_INPUT_STEER_LEFT
+        5.0f    //fall rate eANALOG_INPUT_STEER_RIGHT
+    }
 };
 
 PxQueryHitType::Enum WheelSceneQueryPreFilterNonBlocking(
@@ -132,23 +132,23 @@ VehicleSceneQueryData* VehicleSceneQueryData::allocate(
 
 PxBatchQuery* VehicleSceneQueryData::setUpBatchedSceneQuery(const PxU32 batchId, const VehicleSceneQueryData& vehicleSceneQueryData, PxScene* scene)
 {
-	const PxU32 maxNumQueriesInBatch =  vehicleSceneQueryData.mNumQueriesPerBatch;
-	const PxU32 maxNumHitResultsInBatch = vehicleSceneQueryData.mNumQueriesPerBatch*vehicleSceneQueryData.mNumHitResultsPerQuery;
+    const PxU32 maxNumQueriesInBatch =  vehicleSceneQueryData.mNumQueriesPerBatch;
+    const PxU32 maxNumHitResultsInBatch = vehicleSceneQueryData.mNumQueriesPerBatch*vehicleSceneQueryData.mNumHitResultsPerQuery;
 
-	PxBatchQueryDesc sqDesc(maxNumQueriesInBatch, maxNumQueriesInBatch, 0);
+    PxBatchQueryDesc sqDesc(maxNumQueriesInBatch, maxNumQueriesInBatch, 0);
 
-	sqDesc.queryMemory.userRaycastResultBuffer = vehicleSceneQueryData.mRaycastResults + batchId*maxNumQueriesInBatch;
-	sqDesc.queryMemory.userRaycastTouchBuffer = vehicleSceneQueryData.mRaycastHitBuffer + batchId*maxNumHitResultsInBatch;
-	sqDesc.queryMemory.raycastTouchBufferSize = maxNumHitResultsInBatch;
+    sqDesc.queryMemory.userRaycastResultBuffer = vehicleSceneQueryData.mRaycastResults + batchId*maxNumQueriesInBatch;
+    sqDesc.queryMemory.userRaycastTouchBuffer = vehicleSceneQueryData.mRaycastHitBuffer + batchId*maxNumHitResultsInBatch;
+    sqDesc.queryMemory.raycastTouchBufferSize = maxNumHitResultsInBatch;
 
-	sqDesc.queryMemory.userSweepResultBuffer = vehicleSceneQueryData.mSweepResults + batchId*maxNumQueriesInBatch;
-	sqDesc.queryMemory.userSweepTouchBuffer = vehicleSceneQueryData.mSweepHitBuffer + batchId*maxNumHitResultsInBatch;
-	sqDesc.queryMemory.sweepTouchBufferSize = maxNumHitResultsInBatch;
+    sqDesc.queryMemory.userSweepResultBuffer = vehicleSceneQueryData.mSweepResults + batchId*maxNumQueriesInBatch;
+    sqDesc.queryMemory.userSweepTouchBuffer = vehicleSceneQueryData.mSweepHitBuffer + batchId*maxNumHitResultsInBatch;
+    sqDesc.queryMemory.sweepTouchBufferSize = maxNumHitResultsInBatch;
 
-	sqDesc.preFilterShader = vehicleSceneQueryData.mPreFilterShader;
-	sqDesc.postFilterShader = vehicleSceneQueryData.mPostFilterShader;
+    sqDesc.preFilterShader = vehicleSceneQueryData.mPreFilterShader;
+    sqDesc.postFilterShader = vehicleSceneQueryData.mPostFilterShader;
 
-	return scene->createBatchQuery(sqDesc);
+    return scene->createBatchQuery(sqDesc);
 }
 
 static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(
@@ -220,7 +220,7 @@ static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
 }
 
 void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMaterial* vehicleMaterial,
-	    const PxMaterial** surfaceMaterials, glm::mat4 const& transform)
+        const PxMaterial** surfaceMaterials, glm::mat4 const& transform)
 {
     sceneQueryData = VehicleSceneQueryData::allocate(1, NUM_WHEELS, QUERY_HITS_PER_WHEEL, 1,
             &WheelSceneQueryPreFilterNonBlocking, &WheelSceneQueryPostFilterNonBlocking, g_game.physx.allocator);
@@ -470,8 +470,8 @@ void Vehicle::setupPhysics(PxScene* scene, VehicleTuning const& settings, PxMate
 }
 
 Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
-	    Driver* driver, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
-	    u32 vehicleIndex, i32 cameraIndex)
+        Driver* driver, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
+        u32 vehicleIndex, i32 cameraIndex)
 {
     this->cameraTarget = translationOf(transform);
     this->cameraFrom = cameraTarget;
@@ -508,12 +508,12 @@ Vehicle::~Vehicle()
     {
         d.rigidBody->release();
     }
-	vehicle4W->getRigidDynamicActor()->release();
-	vehicle4W->free();
-	sceneQueryData->free(g_game.physx.allocator);
+    vehicle4W->getRigidDynamicActor()->release();
+    vehicle4W->free();
+    sceneQueryData->free(g_game.physx.allocator);
     // TODO: find out why this causes an exception
-	//batchQuery->release();
-	frictionPairs->release();
+    //batchQuery->release();
+    frictionPairs->release();
 }
 
 void Vehicle::resetAmmo()
@@ -605,16 +605,16 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         }
     }
 
-	PxVehicleWheels* vehicles[1] = { vehicle4W };
-	PxSweepQueryResult* sweepResults = sceneQueryData->getSweepQueryResultBuffer(0);
-	const PxU32 sweepResultsSize = sceneQueryData->getQueryResultBufferSize();
-	PxVehicleSuspensionSweeps(batchQuery, 1, vehicles, sweepResultsSize, sweepResults, QUERY_HITS_PER_WHEEL, NULL, 1.0f, 1.01f);
+    PxVehicleWheels* vehicles[1] = { vehicle4W };
+    PxSweepQueryResult* sweepResults = sceneQueryData->getSweepQueryResultBuffer(0);
+    const PxU32 sweepResultsSize = sceneQueryData->getQueryResultBufferSize();
+    PxVehicleSuspensionSweeps(batchQuery, 1, vehicles, sweepResultsSize, sweepResults, QUERY_HITS_PER_WHEEL, NULL, 1.0f, 1.01f);
 
-	const PxVec3 grav = scene->getGravity();
-	PxVehicleWheelQueryResult vehicleQueryResults[1] = {
-	    { wheelQueryResults, NUM_WHEELS }
-	};
-	PxVehicleUpdates(timestep, grav, *frictionPairs, 1, vehicles, vehicleQueryResults);
+    const PxVec3 grav = scene->getGravity();
+    PxVehicleWheelQueryResult vehicleQueryResults[1] = {
+        { wheelQueryResults, NUM_WHEELS }
+    };
+    PxVehicleUpdates(timestep, grav, *frictionPairs, 1, vehicles, vehicleQueryResults);
 
     isInAir = PxVehicleIsInAir(vehicleQueryResults[0]);
 
@@ -861,7 +861,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         it->life -= deltaTime;
         if (it->life <= 0.f)
         {
-		    scene->getPhysicsScene()->removeActor(*it->rigidBody);
+            scene->getPhysicsScene()->removeActor(*it->rigidBody);
             it->rigidBody->release();
             //std::swap(*it, vehicleDebris.back());
             *it = vehicleDebris.back();
@@ -920,7 +920,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
     glm::vec3 currentPosition = getPosition();
     glm::mat4 transform = getTransform();
-    bool canGo = true;
+    bool canGo = scene->canGo();
     if (!finishedRace)
     {
         if (isPlayerControlled)
@@ -985,9 +985,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             i32 previousIndex = targetPointIndex - 1;
             if (previousIndex < 0)
-	    {
+            {
                 previousIndex = (i32)paths[followPathIndex].size() - 1;
-	    }
+            }
 
             glm::vec3 nextP = paths[followPathIndex][targetPointIndex];
             glm::vec3 previousP = paths[followPathIndex][previousIndex];
@@ -1009,6 +1009,16 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             //f32 accel = 0.85f;
             f32 accel = 1.f;
+            // TODO: make AI racers that are ahead of the player driver slower
+            if (placement == 0)
+            {
+                accel = 0.8f;
+            }
+            else if (placement == 1)
+            {
+                accel = 0.9f;
+            }
+
             f32 brake = 0.f;
             bool isSomethingBlockingMe = isBlocking(driver->vehicleTuning.collisionWidth / 2 + 0.05f,
                     getForwardVector(), forwardTestDist);
@@ -1387,20 +1397,20 @@ void Vehicle::blowUp()
     glm::mat4 transform = getTransform();
     for (auto& d : g_vehicles[driver->vehicleIndex]->debrisChunks)
     {
-		PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
-			    PxTransform(convert(transform * d.transform)));
-		body->attachShape(*d.collisionShape);
-		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-		scene->getPhysicsScene()->addActor(*body);
-	    body->setLinearVelocity(
-	            convert(previousVelocity) +
-	            convert(glm::vec3(glm::normalize(rotationOf(transform)
-	                        * glm::vec4(translationOf(d.transform), 1.0)))
-	                * random(scene->randomSeries, 3.f, 14.f) + glm::vec3(0, 0, 9.f)));
-	    body->setAngularVelocity(PxVec3(
-	                random(scene->randomSeries, 0.f, 9.f),
-	                random(scene->randomSeries, 0.f, 9.f),
-	                random(scene->randomSeries, 0.f, 9.f)));
+        PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
+                PxTransform(convert(transform * d.transform)));
+        body->attachShape(*d.collisionShape);
+        PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+        scene->getPhysicsScene()->addActor(*body);
+        body->setLinearVelocity(
+                convert(previousVelocity) +
+                convert(glm::vec3(glm::normalize(rotationOf(transform)
+                            * glm::vec4(translationOf(d.transform), 1.0)))
+                    * random(scene->randomSeries, 3.f, 14.f) + glm::vec3(0, 0, 9.f)));
+        body->setAngularVelocity(PxVec3(
+                    random(scene->randomSeries, 0.f, 9.f),
+                    random(scene->randomSeries, 0.f, 9.f),
+                    random(scene->randomSeries, 0.f, 9.f)));
 
         createVehicleDebris(VehicleDebris{
             &d,
