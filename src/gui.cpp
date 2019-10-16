@@ -287,7 +287,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
     return clicked;
 }
 
-bool Gui::button(const char* text, bool active)
+bool Gui::button(const char* text, bool active, const char* icon)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -304,9 +304,24 @@ bool Gui::button(const char* text, bool active)
         return didSelect();
     }, active);
 
-    renderer->push2D(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
-                glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
-                HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    if (icon)
+    {
+        renderer->push2D(TextRenderable(fontSmall, text,
+                    pos + glm::vec2(icon ? bh : convertSize(4.f), bh/2),
+                    glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
+                    HorizontalAlign::LEFT, VerticalAlign::CENTER));
+
+        Texture* iconTexture = g_resources.getTexture(icon);
+        f32 iconSize = glm::floor(bh * 0.8f);
+        renderer->push2D(QuadRenderable(iconTexture,
+                    pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    }
+    else
+    {
+        renderer->push2D(TextRenderable(fontSmall, text, pos + glm::vec2(bw/2, bh/2),
+                    glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
+                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    }
 
     pos.y += bh + parent.itemSpacing;
 

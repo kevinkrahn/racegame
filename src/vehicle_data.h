@@ -142,7 +142,7 @@ struct VehicleData
 
     const char* name;
     const char* description;
-    u32 price;
+    i32 price;
 
     std::vector<VehicleMesh> debrisChunks;
 

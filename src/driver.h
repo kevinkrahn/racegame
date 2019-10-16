@@ -27,13 +27,19 @@ struct Driver
     VehicleConfiguration vehicleConfig;
     VehicleTuning vehicleTuning;
 
+    struct OwnedVehicle
+    {
+        i32 vehicleIndex;
+        VehicleConfiguration vehicleConfig;
+    };
+    std::vector<OwnedVehicle> ownedVehicles;
+
     i32 vehicleIndex = -1;
     glm::vec3 vehicleColor = { 1.f, 1.f, 1.f };
 
     void updateTuning()
     {
-        VehicleTuning t;
-        vehicleTuning = std::move(t);
+        vehicleTuning = {};
         g_vehicles[vehicleIndex]->initTuning(vehicleConfig, vehicleTuning);
     }
 

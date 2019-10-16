@@ -223,87 +223,182 @@ void Menu::championshipMenu()
 
 void Menu::championshipGarage()
 {
-    f32 w = glm::floor(g_gui.convertSize(860));
+    f32 w = glm::floor(g_gui.convertSize(600));
 
     glm::vec2 menuPos = glm::vec2(g_game.windowWidth/2 - w/2, g_game.windowHeight * 0.1f);
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
     drawBox(menuPos, menuSize);
 
     f32 o = glm::floor(g_gui.convertSize(32));
+    f32 oy = glm::floor(g_gui.convertSize(48));
+
+    Texture* white = g_resources.getTexture("white");
+    u32 vehicleIconWidth = (u32)g_gui.convertSize(290);
+    u32 vehicleIconHeight = (u32)g_gui.convertSize(256);
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    glm::vec2 vehiclePreviewPos = menuPos + glm::vec2(o, oy);
 
     Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
 
-    g_gui.beginPanel("Garage",
-            { menuPos.x + w - o, menuPos.y + o },
-            1.f, false, true, false);
+    static u32 mode = 0;
+    static i32 currentVehicleIndex = driver.vehicleIndex;
 
     if (driver.vehicleIndex == -1)
     {
-        driver.vehicleIndex = 0;
+        mode = 1;
     }
 
-    std::vector<std::string> carNames;
-    for (auto& v : g_vehicles)
-    {
-        carNames.push_back(v->name);
-    }
+    glm::vec2 panelPos = menuPos + glm::vec2(w - o, oy);
+    g_gui.beginPanel(tstr("Garage ", mode), panelPos, 1.f, false, true, false);
 
-    if (g_gui.select("Choose Car", carNames.data(), carNames.size(), driver.vehicleIndex))
+    if (mode == 0)
     {
+        if (g_gui.button("Choose Vehicle"))
+        {
+            mode = 1;
+        }
+        g_gui.label("Vehicle Upgrades");
+        if (g_gui.button("Performance", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        g_gui.label("Equipment");
+        if (g_gui.button("Front Weapon 1", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        if (g_gui.button("Front Weapon 2", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        if (g_gui.button("Front Weapon 3", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        if (g_gui.button("Rear Weapon 1", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        if (g_gui.button("Rear Weapon 2", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        if (g_gui.button("Special Ability", driver.vehicleIndex != -1, "iconbg"))
+        {
+        }
+        g_gui.gap(20);
+        if (g_gui.button("Done"))
+        {
+            menuMode = MenuMode::CHAMPIONSHIP_MENU;
+        }
     }
-    g_gui.gap(20);
-    if (g_gui.button("Upgrades", driver.vehicleIndex != -1))
+    else if (mode == 1)
     {
-    }
-    if (g_gui.button("Weapons", driver.vehicleIndex != -1))
-    {
-    }
-    if (g_gui.button("Cosmetics", driver.vehicleIndex != -1))
-    {
-    }
-    g_gui.gap(20);
-    if (g_gui.button("Done"))
-    {
-        menuMode = MenuMode::CHAMPIONSHIP_MENU;
+        std::vector<std::string> carNames;
+        for (auto& v : g_vehicles)
+        {
+            carNames.push_back(v->name);
+        }
+
+        if (currentVehicleIndex == -1)
+        {
+            currentVehicleIndex = 0;
+        }
+
+        auto ownedVehicle = std::find_if(driver.ownedVehicles.begin(),
+                        driver.ownedVehicles.end(),
+                        [&](auto& e) { return e.vehicleIndex == currentVehicleIndex; });
+        bool isOwned = ownedVehicle != driver.ownedVehicles.end();
+        VehicleData* vehicleData = g_vehicles[currentVehicleIndex].get();
+
+        if (isOwned)
+        {
+            driver.vehicleIndex = currentVehicleIndex;
+            driver.vehicleConfig = ownedVehicle->vehicleConfig;
+            driver.updateTuning();
+        }
+        else
+        {
+            driver.vehicleIndex = currentVehicleIndex;
+            driver.vehicleConfig = {};
+            driver.updateTuning();
+            driver.vehicleIndex = -1;
+        }
+
+        if (g_gui.select("Vehicle", carNames.data(), carNames.size(), currentVehicleIndex))
+        {
+        }
+
+        g_gui.gap(20);
+        if (g_gui.button("Purchase", !isOwned && driver.credits >= vehicleData->price))
+        {
+            driver.ownedVehicles.push_back({ currentVehicleIndex, {} });
+            driver.credits -= vehicleData->price;
+        }
+        if (g_gui.button("Sell", isOwned))
+        {
+            driver.ownedVehicles.erase(ownedVehicle);
+            driver.credits += vehicleData->price / 2;
+            // TODO: make the vehicle worth more when it has upgrades
+        }
+        g_gui.gap(20);
+
+        if (g_gui.button("Done", isOwned))
+        {
+            mode = 0;
+        }
+
+        g_game.renderer->push2D(QuadRenderable(white,
+                    vehiclePreviewPos + glm::vec2(0, vehicleIconHeight - g_gui.convertSize(26)),
+                    g_gui.convertSize(120), g_gui.convertSize(26),
+                    glm::vec3(0.f), 0.25f, false), 1);
+        g_game.renderer->push2D(TextRenderable(smallfont,
+                    tstr(isOwned ? "Value: " : "Price: ", isOwned ? vehicleData->price/2 : vehicleData->price),
+                    vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(18)),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
     }
     g_gui.end();
 
     static RenderWorld renderWorld;
     Mesh* quadMesh = g_resources.getMesh("world.Quad");
-    u32 vehicleIconSize = (u32)g_gui.convertSize(256);
     renderWorld.setName("Garage");
-    renderWorld.setSize(vehicleIconSize, vehicleIconSize);
+    renderWorld.setSize(vehicleIconWidth, vehicleIconHeight);
     renderWorld.push(LitRenderable(quadMesh,
             glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-    driver.updateTuning();
-    g_vehicles[driver.vehicleIndex]->render(&renderWorld,
-        glm::translate(glm::mat4(1.f),
-            glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
-        glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-        nullptr, &driver);
+    if (currentVehicleIndex != -1)
+    {
+        g_vehicles[currentVehicleIndex]->render(&renderWorld,
+            glm::translate(glm::mat4(1.f),
+                glm::vec3(0, 0, driver.vehicleTuning.getRestOffset())) *
+            glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+            nullptr, &driver);
+    }
     renderWorld.setViewportCount(1);
     renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
     renderWorld.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
             glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
     g_game.renderer->addRenderWorld(&renderWorld);
 
-    glm::vec2 vehiclePreviewPos = menuPos + o;
     g_game.renderer->push2D(QuadRenderable(renderWorld.getTexture(),
-                vehiclePreviewPos, vehicleIconSize, vehicleIconSize,
+                vehiclePreviewPos, vehicleIconWidth, vehicleIconHeight,
                 glm::vec3(1.f), 1.f, false,
                 true, "texArray2D"));
 
-    Texture* white = g_resources.getTexture("white");
     g_game.renderer->push2D(QuadRenderable(white,
-                vehiclePreviewPos + glm::vec2(0, vehicleIconSize),
-                vehicleIconSize, g_gui.convertSize(26),
+                vehiclePreviewPos + glm::vec2(0, vehicleIconHeight),
+                vehicleIconWidth, g_gui.convertSize(26),
                 glm::vec3(0.f), 0.9f, true));
 
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
-    g_game.renderer->push2D(TextRenderable(smallfont, g_vehicles[driver.vehicleIndex]->name,
-                vehiclePreviewPos + glm::vec2((u32)vehicleIconSize / 2,
-                    glm::floor(vehicleIconSize + g_gui.convertSize(8))),
+    g_game.renderer->push2D(TextRenderable(smallfont,
+                currentVehicleIndex != -1 ? g_vehicles[currentVehicleIndex]->name : "No Vehicle",
+                vehiclePreviewPos + glm::vec2((u32)vehicleIconWidth / 2,
+                    glm::floor(vehicleIconHeight + g_gui.convertSize(8))),
                 glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER));
+
+    g_game.renderer->push2D(QuadRenderable(white,
+                menuPos, menuSize.x, g_gui.convertSize(26),
+                glm::vec3(0.f), 0.9f, true));
+    g_game.renderer->push2D(TextRenderable(smallfont,
+                tstr(driver.playerName, "'s Garage       Credits: ", driver.credits),
+                menuPos + glm::vec2(o + g_gui.convertSize(8), glm::floor(g_gui.convertSize(8))),
+                glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT));
 
     struct Stat
     {
@@ -326,9 +421,9 @@ void Menu::championshipGarage()
         tuning.specs.handling,
     };
 
-    const f32 maxBarWidth = vehicleIconSize;
+    const f32 maxBarWidth = vehicleIconWidth;
     glm::vec2 statsPos = vehiclePreviewPos
-        + glm::vec2(0, vehicleIconSize + glm::floor(g_gui.convertSize(48)));
+        + glm::vec2(0, vehicleIconHeight + glm::floor(g_gui.convertSize(48)));
     f32 barHeight = glm::floor(g_gui.convertSize(6));
     Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(14));
     for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
@@ -349,10 +444,12 @@ void Menu::championshipGarage()
                     barWidth, barHeight, glm::vec3(0.8f)));
     }
 
-    g_game.renderer->push2D(TextRenderable(smallfont, g_vehicles[driver.vehicleIndex]->description,
-                statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(ARRAY_SIZE(stats) * 30 + 12))),
-                glm::vec3(1.f)));
-
+    if (currentVehicleIndex != -1)
+    {
+        g_game.renderer->push2D(TextRenderable(smallfont, g_vehicles[currentVehicleIndex]->description,
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(ARRAY_SIZE(stats) * 30 + 12))),
+                    glm::vec3(1.f)));
+    }
 }
 
 void Menu::showOptionsMenu()
