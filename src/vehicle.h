@@ -56,7 +56,6 @@ public:
     glm::vec3 cameraTarget;
     glm::vec3 cameraFrom;
     f32 hitPoints = 0.f;
-    f32 maxHitPoints = 100.f;
     u32 currentLap = 0;
 	u32 placement = 1;
     TrackGraph::QueryResult graphResult;

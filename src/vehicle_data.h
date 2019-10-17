@@ -3,6 +3,7 @@
 #include "math.h"
 #include "datafile.h"
 #include "mesh.h"
+#include <algorithm>
 
 #define WHEEL_FRONT_LEFT  PxVehicleDrive4WWheelOrder::eFRONT_LEFT
 #define WHEEL_FRONT_RIGHT PxVehicleDrive4WWheelOrder::eFRONT_RIGHT
@@ -95,8 +96,9 @@ struct VehicleTuning
     // all [0,1]
     struct
     {
-        f32 acceleration;
-        f32 handling;
+        f32 acceleration = 0.f;
+        f32 handling = 0.f;
+        f32 offroad = 0.f;
     } specs;
 
     f32 collisionWidth = 0.f;
@@ -121,6 +123,12 @@ glm::vec3 g_vehicleColors[] = {
     { 0.02f, 0.7f, 0.1f },
 };
 
+std::string g_vehicleColorNames[] = {
+    "Red", "Black", "Green", "Blue", "Something0",
+    "Something1", "Something2" "Something3",
+    "Something4",
+};
+
 struct VehicleConfiguration
 {
     u32 armorUpgradeLevel = 0;
@@ -133,9 +141,53 @@ struct VehicleConfiguration
     u32 rearWeaponUpgradeLevel[2] = { 4, 0 };
     i32 specialAbilityIndex;
 
-    std::vector<u32> vehicleUpgrades;
+    struct Upgrade
+    {
+        i32 upgradeIndex;
+        i32 upgradeLevel;
+    };
+    std::vector<Upgrade> performanceUpgrades;
 
-    u32 colorIndex = 0;
+    i32 colorIndex = 0;
+
+    void addUpgrade(i32 upgradeIndex)
+    {
+        auto currentUpgrade = std::find_if(
+                performanceUpgrades.begin(),
+                performanceUpgrades.end(),
+                [&](auto& u) { return u.upgradeIndex == upgradeIndex; });
+        if (currentUpgrade != performanceUpgrades.end())
+        {
+            ++currentUpgrade->upgradeLevel;
+        }
+        else
+        {
+            performanceUpgrades.push_back({ upgradeIndex, 1 });
+        }
+    }
+};
+
+enum struct PerformanceUpgradeType
+{
+    ENGINE,
+    ARMOR,
+    TIRES,
+    SUSPENSION,
+    AERODYNAMICS,
+    TRANSMISSION,
+    WEIGHT_REDUCTION,
+    UNDER_PLATING,
+    ALL_WHEEL_DRIVE,
+};
+
+struct PerformanceUpgrade
+{
+    const char* name;
+    const char* description;
+    const char* icon;
+    PerformanceUpgradeType upgradeType;
+    i32 maxUpgradeLevel = 5;
+    i32 price;
 };
 
 struct VehicleData
@@ -153,6 +205,7 @@ struct VehicleData
     glm::vec3 sceneCenterOfMass = glm::vec3(0.f);
 
     std::vector<VehicleCollisionsMesh> collisionMeshes;
+    std::vector<PerformanceUpgrade> availableUpgrades;
 
     const char* name;
     const char* description;

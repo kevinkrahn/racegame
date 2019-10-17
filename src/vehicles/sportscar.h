@@ -11,6 +11,42 @@ public:
         description = "Small and quick, but has poor traction.";
         price = 8000;
         loadSceneData("sportscar.Vehicle");
+
+        // TODO: add upgrade icons
+        availableUpgrades = {
+            {
+                "Engine",
+                "Upgrades the engine to improve\nacceleration and top speed.",
+                nullptr,
+                PerformanceUpgradeType::ENGINE,
+                5,
+                1500,
+            },
+            {
+                "Tires",
+                "Equips better tires for improved traction\nand overall handling.",
+                nullptr,
+                PerformanceUpgradeType::TIRES,
+                5,
+                1000,
+            },
+            {
+                "Armor",
+                "Adds additional armor to improve\nresistance against all forms of damage.",
+                nullptr,
+                PerformanceUpgradeType::ARMOR,
+                5,
+                1000,
+            },
+            {
+                "Suspension",
+                "Upgrades the suspension to be stiffer\nand more stable around corners.",
+                nullptr,
+                PerformanceUpgradeType::SUSPENSION,
+                2,
+                1250,
+            },
+        };
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
@@ -21,6 +57,7 @@ public:
 
         tuning.specs.acceleration = 0.25f;
         tuning.specs.handling = 0.3f;
+        tuning.specs.offroad = 0.2f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
         tuning.chassisDensity = 89;
@@ -31,7 +68,7 @@ public:
         tuning.frontToeAngle = glm::radians(-0.5f); // more responsive to inputs
         tuning.rearToeAngle = glm::radians(4.5f); // faster recovery from slide
         tuning.trackTireFriction = 3.14f;
-        tuning.offroadTireFriction = 1.5f;
+        tuning.offroadTireFriction = 1.4f;
 
         tuning.rearTireGripPercent = 0.835f;
         tuning.constantDownforce = 0.f;
@@ -65,5 +102,37 @@ public:
         tuning.rearAntiRollbarStiffness = 7000.f;
 
         tuning.ackermannAccuracy = 0.5f;
+
+        for (auto& u : configuration.performanceUpgrades)
+        {
+            PerformanceUpgrade& upgrade = availableUpgrades[u.upgradeIndex];
+            switch (upgrade.upgradeType)
+            {
+                case PerformanceUpgradeType::ENGINE:
+                    tuning.peekEngineTorque += 11.f * u.upgradeLevel;
+                    tuning.topSpeed += 1.2f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.05f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::TIRES:
+                    tuning.trackTireFriction += 0.16f * u.upgradeLevel;
+                    tuning.offroadTireFriction += 0.05f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
+                    tuning.specs.offroad += 0.05f * u.upgradeLevel;
+                    tuning.specs.handling += 0.06f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::ARMOR:
+                    tuning.maxHitPoints += 12.f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::SUSPENSION:
+                    tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
+                    tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
+                    tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
+                    tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
+                    tuning.specs.handling += 0.05f * u.upgradeLevel;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 };

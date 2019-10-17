@@ -11,6 +11,58 @@ public:
         description = "Small and nimble. Quick acceleration, \nbut low top-speed.";
         price = 5000;
         loadSceneData("mini.Scene");
+
+        // TODO: add upgrade icons
+        availableUpgrades = {
+            {
+                "Engine",
+                "Upgrades the engine to improve\nacceleration and top speed.",
+                nullptr,
+                PerformanceUpgradeType::ENGINE,
+                5,
+                1500,
+            },
+            {
+                "Tires",
+                "Equips better tires for improved traction\nand overall handling.",
+                nullptr,
+                PerformanceUpgradeType::TIRES,
+                5,
+                1000,
+            },
+            {
+                "Armor",
+                "Adds additional armor to improve\nresistance against all forms of damage.",
+                nullptr,
+                PerformanceUpgradeType::ARMOR,
+                5,
+                1000,
+            },
+            {
+                "Suspension",
+                "Upgrades the suspension to be stiffer\nand more stable around corners.",
+                nullptr,
+                PerformanceUpgradeType::SUSPENSION,
+                2,
+                1250,
+            },
+            {
+                "Weight Reduction",
+                "Strips out unnecessary parts of the vehicle.\nThe reduced weight will improve acceleration and handling.",
+                nullptr,
+                PerformanceUpgradeType::WEIGHT_REDUCTION,
+                2,
+                1500,
+            },
+            {
+                "AWD Conversion",
+                "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
+                nullptr,
+                PerformanceUpgradeType::ALL_WHEEL_DRIVE,
+                1,
+                6000,
+            }
+        };
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
@@ -21,6 +73,7 @@ public:
 
         tuning.specs.acceleration = 0.3f;
         tuning.specs.handling = 0.5f;
+        tuning.specs.offroad = 0.25f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
         tuning.chassisDensity = 92;
@@ -65,5 +118,49 @@ public:
         tuning.rearAntiRollbarStiffness = 8000.f;
 
         tuning.ackermannAccuracy = 0.5f;
+
+        for (auto& u : configuration.performanceUpgrades)
+        {
+            PerformanceUpgrade& upgrade = availableUpgrades[u.upgradeIndex];
+            switch (upgrade.upgradeType)
+            {
+                case PerformanceUpgradeType::ENGINE:
+                    tuning.peekEngineTorque += 10.f * u.upgradeLevel;
+                    tuning.topSpeed += 1.f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.04f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::TIRES:
+                    tuning.trackTireFriction += 0.12f * u.upgradeLevel;
+                    tuning.offroadTireFriction += 0.05f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
+                    tuning.specs.offroad += 0.03f * u.upgradeLevel;
+                    tuning.specs.handling += 0.04f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::ARMOR:
+                    tuning.maxHitPoints += 12.f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::SUSPENSION:
+                    tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
+                    tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
+                    tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
+                    tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
+                    tuning.specs.handling += 0.04f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::WEIGHT_REDUCTION:
+                    tuning.chassisDensity -= 1.5f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
+                    tuning.specs.handling += 0.02f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::ALL_WHEEL_DRIVE:
+                    tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+                    tuning.peekEngineTorque += 5.f;
+                    tuning.specs.handling += 0.125f;
+                    tuning.specs.acceleration += 0.05f;
+                    tuning.specs.offroad += 0.15f;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 };

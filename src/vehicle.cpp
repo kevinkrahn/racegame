@@ -486,10 +486,9 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
-    this->hitPoints = this->maxHitPoints;
     this->cameraIndex = cameraIndex;
     this->tuning = std::move(tuning);
-    this->maxHitPoints = tuning.maxHitPoints;
+    this->hitPoints = this->tuning.maxHitPoints;
 
     engineSound = g_audio.playSound3D(g_resources.getSound("engine2"),
             SoundType::VEHICLE, translationOf(transform), true);
@@ -770,7 +769,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         // healthbar
         Texture* white = g_resources.getTexture("white");
-        const f32 healthPercentage = glm::clamp(hitPoints / maxHitPoints, 0.f, 1.f);
+        const f32 healthPercentage = glm::clamp(hitPoints / tuning.maxHitPoints, 0.f, 1.f);
         const f32 maxHealthbarWidth = g_game.windowHeight * 0.14f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
         const f32 healthbarHeight = g_game.windowHeight * 0.009f;
@@ -917,7 +916,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             if (engineSound) g_audio.setSoundVolume(engineSound, 1.f);
             backupTimer = 0.f;
             deadTimer = 0.f;
-            hitPoints = maxHitPoints;
+            hitPoints = tuning.maxHitPoints;
 
             const TrackGraph::Node* node = graphResult.lastNode;
             glm::vec2 dir(node->direction);
@@ -1376,7 +1375,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
     // spawn smoke when critically damaged
     smokeTimerDamage = glm::max(0.f, smokeTimerDamage - deltaTime);
-    f32 damagePercent = hitPoints / maxHitPoints;
+    f32 damagePercent = hitPoints / tuning.maxHitPoints;
     if (smokeTimerDamage <= 0.f && damagePercent < 0.3f)
     {
         // TODO: make the effect more intense the more critical the damage (fire and sparks?)

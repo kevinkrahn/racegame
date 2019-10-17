@@ -250,6 +250,7 @@ void Menu::championshipGarage()
     }
     VehicleConfiguration vehicleConfig = driver.vehicleIndex == -1
         ? VehicleConfiguration{} : *driver.getVehicleConfig();
+    VehicleConfiguration vehicleConfig2 = vehicleConfig;
 
     glm::vec2 panelPos = menuPos + glm::vec2(w - o, oy);
     g_gui.beginPanel(tstr("Garage ", mode), panelPos, 1.f, false, true, false);
@@ -359,6 +360,53 @@ void Menu::championshipGarage()
                     vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(18)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
     }
+    else if (mode == 2)
+    {
+        g_gui.label("Performance Upgrades");
+        for (i32 i=0; i<(i32)driver.getVehicleData()->availableUpgrades.size(); ++i)
+        {
+            auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
+            auto currentUpgrade = std::find_if(
+                    vehicleConfig.performanceUpgrades.begin(),
+                    vehicleConfig.performanceUpgrades.end(),
+                    [&](auto& u) { return u.upgradeIndex == i; });
+            bool isEquipped = currentUpgrade != vehicleConfig.performanceUpgrades.end();
+            i32 upgradeLevel = 1;
+            const char* extraText = nullptr;
+            i32 price = upgrade.price * upgradeLevel;
+            if (isEquipped)
+            {
+                upgradeLevel = currentUpgrade->upgradeLevel;
+                extraText =
+                    tstr(upgradeLevel, "/", upgrade.maxUpgradeLevel);
+                price = upgrade.price * (upgradeLevel + 1);
+            }
+            bool isSelected = false;
+            if (g_gui.itemButton(upgrade.name, tstr("Price: ", price),
+                    extraText, driver.credits >= price &&
+                        ((upgradeLevel < upgrade.maxUpgradeLevel && isEquipped) || !isEquipped),
+                    upgrade.icon, &isSelected))
+            {
+                // TODO: Play appropriate sound
+                driver.credits -= price;
+                driver.getVehicleConfig()->addUpgrade(i);
+            }
+            if (isSelected)
+            {
+                messageStr = upgrade.description;
+                if (upgradeLevel < upgrade.maxUpgradeLevel)
+                {
+                    vehicleConfig2.addUpgrade(i);
+                }
+            }
+        }
+    }
+    else if (mode == 3)
+    {
+        g_gui.label("Cosmetics");
+        g_gui.select("Color", g_vehicleColorNames,
+                (i32)ARRAY_SIZE(g_vehicleColorNames), driver.getVehicleConfig()->colorIndex);
+    }
     else if (mode >= 4 && mode <= 6)
     {
         u32 weaponNumber = mode - 4;
@@ -400,7 +448,7 @@ void Menu::championshipGarage()
             }
         }
     }
-    else if (mode >= 7 && mode <= 9)
+    else if (mode == 7 || mode == 8)
     {
         u32 weaponNumber = mode - 7;
         g_gui.label(tstr("Rear Weapon ", weaponNumber + 1));
@@ -441,6 +489,10 @@ void Menu::championshipGarage()
             }
         }
     }
+    else if (mode == 9)
+    {
+        g_gui.label("Special Ability");
+    }
 
     g_gui.gap(20);
     if (mode != 1)
@@ -466,11 +518,13 @@ void Menu::championshipGarage()
     renderWorld.setSize(vehicleIconWidth, vehicleIconHeight);
     renderWorld.push(LitRenderable(quadMesh,
             glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-    VehicleTuning tuning;
-    g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig, tuning);
+    VehicleTuning tuningReal;
+    g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig, tuningReal);
+    VehicleTuning tuningUpgrade = tuningReal;
+    g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig2, tuningUpgrade);
     g_vehicles[currentVehicleIndex]->render(&renderWorld,
         glm::translate(glm::mat4(1.f),
-            glm::vec3(0, 0, tuning.getRestOffset())) *
+            glm::vec3(0, 0, tuningUpgrade.getRestOffset())) *
         glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
         nullptr, vehicleConfig);
     renderWorld.setViewportCount(1);
@@ -505,7 +559,7 @@ void Menu::championshipGarage()
 
     struct Stat
     {
-        const char* name;
+        const char* name = nullptr;
         f32 value = 0.f;
     };
     static Stat stats[] = {
@@ -514,42 +568,70 @@ void Menu::championshipGarage()
         { "Armor" },
         { "Mass" },
         { "Handling" },
+        { "Offroad" },
     };
+    static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
     f32 targetStats[] = {
-        tuning.specs.acceleration,
-        tuning.topSpeed / 100.f,
-        tuning.maxHitPoints / 300.f,
-        tuning.chassisDensity / 350.f, // TODO: calculate the actual mass
-        tuning.specs.handling,
+        tuningReal.specs.acceleration,
+        tuningReal.topSpeed / 100.f,
+        tuningReal.maxHitPoints / 300.f,
+        tuningReal.chassisDensity / 350.f, // TODO: calculate the actual mass
+        tuningReal.specs.handling,
+        tuningReal.specs.offroad,
+    };
+    f32 targetStatsUpgrade[] = {
+        tuningUpgrade.specs.acceleration,
+        tuningUpgrade.topSpeed / 100.f,
+        tuningUpgrade.maxHitPoints / 300.f,
+        tuningUpgrade.chassisDensity / 350.f, // TODO: calculate the actual mass
+        tuningUpgrade.specs.handling,
+        tuningUpgrade.specs.offroad,
     };
 
     const f32 maxBarWidth = vehicleIconWidth;
     glm::vec2 statsPos = vehiclePreviewPos
         + glm::vec2(0, vehicleIconHeight + glm::floor(g_gui.convertSize(48)));
-    f32 barHeight = glm::floor(g_gui.convertSize(6));
+    f32 barHeight = glm::floor(g_gui.convertSize(5));
     Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(14));
     for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
     {
         stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
+        statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
 
         g_game.renderer->push2D(TextRenderable(tinyfont, stats[i].name,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 30))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27))),
                     glm::vec3(1.f)));
 
         g_game.renderer->push2D(QuadRenderable(white,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 30 + 12))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27 + 12))),
                     maxBarWidth, barHeight, glm::vec3(0.f), 0.9f, true));
 
+        f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
         f32 barWidth = maxBarWidth * stats[i].value;
+
+        if (upgradeBarWidth > barWidth)
+        {
+            g_game.renderer->push2D(QuadRenderable(white,
+                        statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27 + 12))),
+                        upgradeBarWidth, barHeight, glm::vec3(0.01f, 0.7f, 0.01f)));
+        }
+
         g_game.renderer->push2D(QuadRenderable(white,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 30 + 12))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27 + 12))),
                     barWidth, barHeight, glm::vec3(0.8f)));
+
+        if (upgradeBarWidth < barWidth)
+        {
+            g_game.renderer->push2D(QuadRenderable(white,
+                        statsPos + glm::vec2(upgradeBarWidth, glm::floor(g_gui.convertSize(i * 27 + 12))),
+                        barWidth-upgradeBarWidth, barHeight, glm::vec3(0.8f, 0.01f, 0.01f)));
+        }
     }
 
     if (messageStr)
     {
         g_game.renderer->push2D(TextRenderable(smallfont, messageStr,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(ARRAY_SIZE(stats) * 30 + 12))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(ARRAY_SIZE(stats) * 27 + 8))),
                     glm::vec3(1.f)));
     }
 }

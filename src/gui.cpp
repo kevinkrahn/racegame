@@ -358,7 +358,7 @@ bool Gui::itemButton(const char* text, const char* smallText, const char* extraT
     }
 
     renderer->push2D(TextRenderable(fontSmall, text,
-                pos + glm::vec2(glm::floor(icon ? bh : convertSize(4.f)), glm::floor(convertSize(5.f))),
+                pos + glm::vec2(bh, glm::floor(convertSize(5.f))),
                 glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
                 HorizontalAlign::LEFT, VerticalAlign::TOP));
 
@@ -371,17 +371,20 @@ bool Gui::itemButton(const char* text, const char* smallText, const char* extraT
     }
 
     renderer->push2D(TextRenderable(fontTiny, smallText,
-                pos + glm::vec2(glm::floor(icon ? bh : convertSize(4.f)), glm::floor(convertSize(21.f))),
+                pos + glm::vec2(bh, glm::floor(convertSize(21.f))),
                 glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
                 HorizontalAlign::LEFT, VerticalAlign::TOP));
 
-    Texture* iconTexture = g_resources.getTexture(icon);
     Texture* bgTexture = g_resources.getTexture("iconbg");
     f32 iconSize = glm::floor(bh * 0.8f);
     renderer->push2D(QuadRenderable(bgTexture,
                 pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
-    renderer->push2D(QuadRenderable(iconTexture,
-                pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    if (icon)
+    {
+        Texture* iconTexture = g_resources.getTexture(icon);
+        renderer->push2D(QuadRenderable(iconTexture,
+                    pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    }
 
     pos.y += bh + parent.itemSpacing;
 

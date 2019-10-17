@@ -16,7 +16,8 @@ struct ComputerDriverData
 struct Driver
 {
     u32 leaguePoints = 0;
-    i32 credits = 10000;
+    //i32 credits = 10000;
+    i32 credits = 100000;
 
     bool isPlayer = false;
     bool hasCamera = false;
