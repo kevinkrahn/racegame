@@ -16,6 +16,11 @@
 #include "collision_flags.h"
 #include <vector>
 
+struct RaceResult
+{
+    i32 driverIndex;
+};
+
 class Scene : public PxSimulationEventCallback
 {
 private:
@@ -41,6 +46,9 @@ private:
     u32 currentTrackPreviewPoint = 0;
     f64 worldTime = 0.0;
     bool readyToGo = false;
+
+    bool allPlayersFinished = false;
+    f32 finishTimer = 0.f;
 
     // physx callbacks
     void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)  { PX_UNUSED(constraints); PX_UNUSED(count); }
@@ -87,7 +95,7 @@ public:
     void onEnd();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
 
-    void vehicleFinish(u32 n) { finishOrder.push_back(n); }
+    void vehicleFinish(u32 n);
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
     void attackCredit(u32 instigator, u32 victim);
     void applyAreaForce(glm::vec3 const& position, f32 strength) const;

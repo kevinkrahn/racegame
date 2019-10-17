@@ -81,6 +81,7 @@ void Menu::newChampionship()
     {
         g_game.isEditing = false;
         g_game.changeScene("tracks/saved_scene.dat");
+        g_game.state.gameMode = GameMode::CHAMPIONSHIP;
         //scene->startRace();
         menuMode = CHAMPIONSHIP_MENU;
     }
@@ -636,6 +637,14 @@ void Menu::championshipGarage()
     }
 }
 
+void Menu::championshipStandings()
+{
+}
+
+void Menu::raceResults()
+{
+}
+
 void Menu::showOptionsMenu()
 {
     menuMode = MenuMode::OPTIONS_MAIN;
@@ -875,6 +884,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             break;
         case MenuMode::CHAMPIONSHIP_GARAGE:
             championshipGarage();
+            break;
+        case MenuMode::CHAMPIONSHIP_STANDINGS:
+            championshipStandings();
+            break;
+        case MenuMode::RACE_RESULTS:
+            raceResults();
             break;
         case MenuMode::OPTIONS_MAIN:
             mainOptions();

@@ -7,6 +7,13 @@
 #include "buffer.h"
 #include <memory>
 
+enum struct GameMode
+{
+    NONE,
+    CHAMPIONSHIP,
+    QUICK_RACE
+};
+
 class Game
 {
     void initPhysX();
@@ -20,6 +27,7 @@ public:
         u32 currentLeague = 0;
         u32 currentRace = 0;
         i32 driverContextIndex = 0;
+        GameMode gameMode = GameMode::NONE;
     } state;
 
     struct

@@ -159,6 +159,8 @@ void Scene::stopRace()
     g_audio.setPaused(false);
     g_audio.stopAllGameplaySounds();
     readyToGo = false;
+    allPlayersFinished = false;
+    finishTimer = 0.f;
 
     for (auto& e : entities)
     {
@@ -295,6 +297,17 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         ribbons.update(deltaTime);
 
         g_audio.setListeners(listenerPositions);
+
+        if (allPlayersFinished)
+        {
+            finishTimer += deltaTime;
+            if (finishTimer >= 5.f)
+            {
+                // TODO: build race results for menu to display
+                stopRace();
+                g_game.menu.showRaceResults();
+            }
+        }
     }
 
     // render vehicles
@@ -466,7 +479,14 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                         [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
                 stopRace();
                 g_game.isEditing = false;
-                g_game.menu.showMainMenu();
+                if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+                {
+                    g_game.menu.showRaceResults();
+                }
+                else
+                {
+                    g_game.menu.showMainMenu();
+                }
             }
         }
         else
@@ -512,6 +532,30 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f), 10);
         renderer->push2D(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f), 10);
+    }
+}
+
+void Scene::vehicleFinish(u32 n)
+{
+    finishOrder.push_back(n);
+    u32 playerCount = 0;
+    u32 playerFinishCount = 0;
+    for (u32 i=0; i<(u32)g_game.state.drivers.size(); ++i)
+    {
+        auto& driver = g_game.state.drivers[i];
+        if (driver.isPlayer)
+        {
+            ++playerCount;
+            if (std::find_if(finishOrder.begin(), finishOrder.end(),
+                [&i](u32 vehicleIndex) { return vehicleIndex == i; }) != finishOrder.end())
+            {
+                ++playerFinishCount;
+            }
+        }
+    }
+    if (playerCount == playerFinishCount)
+    {
+        allPlayersFinished = true;
     }
 }
 

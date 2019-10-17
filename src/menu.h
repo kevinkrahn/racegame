@@ -12,6 +12,8 @@ class Menu
         NEW_CHAMPIONSHIP,
         CHAMPIONSHIP_MENU,
         CHAMPIONSHIP_GARAGE,
+        CHAMPIONSHIP_STANDINGS,
+        RACE_RESULTS,
         OPTIONS_MAIN,
         OPTIONS_GAMEPLAY,
         OPTIONS_GRAPHICS,
@@ -24,6 +26,8 @@ class Menu
     void newChampionship();
     void championshipMenu();
     void championshipGarage();
+    void championshipStandings();
+    void raceResults();
     void mainOptions();
     void graphicsOptions();
     void audioOptions();
@@ -35,6 +39,8 @@ class Menu
 
 public:
     void showMainMenu() { menuMode = MenuMode::MAIN_MENU; }
+    void showChampionshipMenu() { menuMode = MenuMode::CHAMPIONSHIP_MENU; }
+    void showRaceResults() { menuMode = MenuMode::RACE_RESULTS; }
     void showOptionsMenu();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
 };
