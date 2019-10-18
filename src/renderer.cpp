@@ -629,10 +629,17 @@ void RenderWorld::createFramebuffers()
     // shadow framebuffer
     if (g_game.config.graphics.shadowsEnabled)
     {
+        shadowMapResolution = g_game.config.graphics.shadowMapResolution;
+        if (width < 128 || height < 128)
+        {
+            shadowMapResolution = 256;
+        }
+
         glGenTextures(1, &fb.shadowDepthTexture);
         glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-                g_game.config.graphics.shadowMapResolution, g_game.config.graphics.shadowMapResolution, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+                shadowMapResolution, shadowMapResolution, layers,
+                0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -648,7 +655,12 @@ void RenderWorld::createFramebuffers()
     }
 
     // bloom framebuffers
-    if (g_game.config.graphics.bloomEnabled)
+    bloomEnabled = g_game.config.graphics.bloomEnabled;
+    if (width < 128 || height < 128)
+    {
+        bloomEnabled = false;
+    }
+    if (bloomEnabled)
     {
         for (u32 i=firstBloomDivisor; i<lastBloomDivisor; i *= 2)
         {
@@ -753,7 +765,7 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
         glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
         f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
-        f32 snapMultiple = 2.f * extent / g_game.config.graphics.shadowMapResolution;
+        f32 snapMultiple = 2.f * extent / shadowMapResolution;
         center.x = snap(center.x, snapMultiple);
         center.y = snap(center.y, snapMultiple);
         center.z = snap(center.z, snapMultiple);
@@ -825,8 +837,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 
         glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
-        u32 shadowRes = g_game.config.graphics.shadowMapResolution;
-        glViewport(0, 0, shadowRes, shadowRes);
+        glViewport(0, 0, shadowMapResolution, shadowMapResolution);
         glDepthMask(GL_TRUE);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthFunc(GL_LESS);
@@ -912,60 +923,72 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO");
 
-        glBindVertexArray(emptyVAO);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glUseProgram(renderer->getShaderProgram("csz", cameras.size()));
-        glm::vec4 clipInfo[MAX_VIEWPORTS];
-        for (u32 i=0; i<cameras.size(); ++i)
+        bool skip = width < 128 || height < 128;
+        if (skip)
         {
-            Camera const& cam = cameras[i];
-            clipInfo[i] = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
-        }
-        glUniform4fv(0, cameras.size(), (GLfloat*)clipInfo);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindTextureUnit(3, fb.cszTexture);
-
-        // minify csz texture
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO CSZ Minify");
-        glUseProgram(renderer->getShaderProgram("csz_minify", cameras.size()));
-        for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glViewport(0, 0, i32(fb.renderWidth >> i), i32(fb.renderHeight >> i));
-            glUniform1i(0, i-1);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glClearColor(1, 1, 1, 1);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glBindTextureUnit(4, fb.saoTexture);
         }
-		glPopDebugGroup();
+        else
+        {
+            glBindVertexArray(emptyVAO);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            glUseProgram(renderer->getShaderProgram("csz", cameras.size()));
+            glm::vec4 clipInfo[MAX_VIEWPORTS];
+            for (u32 i=0; i<cameras.size(); ++i)
+            {
+                Camera const& cam = cameras[i];
+                clipInfo[i] = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
+            }
+            glUniform4fv(0, cameras.size(), (GLfloat*)clipInfo);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindTextureUnit(3, fb.cszTexture);
 
-        // scaleable ambient obscurance
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Texture");
-        glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glUseProgram(renderer->getShaderProgram("sao", cameras.size()));
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindTextureUnit(4, fb.saoTexture);
-		glPopDebugGroup();
+            // minify csz texture
+		    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO CSZ Minify");
+            glUseProgram(renderer->getShaderProgram("csz_minify", cameras.size()));
+            for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
+            {
+                glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+                glDrawBuffer(GL_COLOR_ATTACHMENT0);
+                glViewport(0, 0, i32(fb.renderWidth >> i), i32(fb.renderHeight >> i));
+                glUniform1i(0, i-1);
+                glDrawArrays(GL_TRIANGLES, 0, 3);
+            }
+		    glPopDebugGroup();
 
-    #if 1
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Blur");
-        glUseProgram(renderer->getShaderProgram("sao_blur", cameras.size()));
+            // scaleable ambient obscurance
+		    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Texture");
+            glViewport(0, 0, fb.renderWidth, fb.renderHeight);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            glUseProgram(renderer->getShaderProgram("sao", cameras.size()));
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindTextureUnit(4, fb.saoTexture);
+		    glPopDebugGroup();
 
-        // sao hblur
-        glDrawBuffer(GL_COLOR_ATTACHMENT1);
-        glUniform2i(0, 1, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindTextureUnit(4, fb.saoBlurTexture);
+        #if 1
+		    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Blur");
+            glUseProgram(renderer->getShaderProgram("sao_blur", cameras.size()));
 
-        // sao vblur
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glUniform2i(0, 0, 1);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-		glPopDebugGroup();
-    #endif
-        glBindTextureUnit(4, fb.saoTexture);
+            // sao hblur
+            glDrawBuffer(GL_COLOR_ATTACHMENT1);
+            glUniform2i(0, 1, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindTextureUnit(4, fb.saoBlurTexture);
+
+            // sao vblur
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
+            glUniform2i(0, 0, 1);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+		    glPopDebugGroup();
+        #endif
+            glBindTextureUnit(4, fb.saoTexture);
+		}
 
 		glPopDebugGroup();
     }
@@ -1019,7 +1042,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-    if (g_game.config.graphics.bloomEnabled)
+    if (bloomEnabled)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Bloom");
 

@@ -76,6 +76,7 @@ public:
     i32 didChangeSelection();
 
     f32 convertSize(f32 size);
+    f32 convertSizei(f32 size);
 
     void beginFrame();
     void endFrame();

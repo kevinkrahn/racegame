@@ -7,17 +7,17 @@ class Menu
 {
     enum MenuMode
     {
-        HIDDEN,
         MAIN_MENU,
-        NEW_CHAMPIONSHIP,
-        CHAMPIONSHIP_MENU,
-        CHAMPIONSHIP_GARAGE,
-        CHAMPIONSHIP_STANDINGS,
-        RACE_RESULTS,
         OPTIONS_MAIN,
         OPTIONS_GAMEPLAY,
         OPTIONS_GRAPHICS,
         OPTIONS_AUDIO,
+        NEW_CHAMPIONSHIP,
+        HIDDEN,
+        CHAMPIONSHIP_MENU,
+        CHAMPIONSHIP_GARAGE,
+        CHAMPIONSHIP_STANDINGS,
+        RACE_RESULTS,
     } menuMode = MAIN_MENU;
 
     Config tmpConfig;

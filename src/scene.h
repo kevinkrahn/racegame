@@ -16,9 +16,19 @@
 #include "collision_flags.h"
 #include <vector>
 
+struct RaceStatistics
+{
+    i32 attackBonuses = 0;
+    i32 lappingBonuses = 0;
+    i32 accidents = 0;
+    i32 destroyed = 0;
+};
+
 struct RaceResult
 {
-    i32 driverIndex;
+    u32 placement;
+    Driver* driver;
+    RaceStatistics statistics;
 };
 
 class Scene : public PxSimulationEventCallback
@@ -32,6 +42,7 @@ private:
     std::vector<u32> finishOrder;
     std::vector<std::unique_ptr<class Vehicle>> vehicles;
     std::vector<u32> placements;
+    std::vector<RaceResult> raceResults;
 
     bool debugCamera = false;
     glm::vec3 debugCameraPosition;
@@ -66,6 +77,7 @@ public:
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isRaceInProgress = false;
     bool isPaused = false;
+    bool isCameraTourEnabled = true;
 
     RandomSeries randomSeries;
     PxMaterial* vehicleMaterial = nullptr;
@@ -103,6 +115,7 @@ public:
     u32 numHumanDrivers() const;
     void drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 pos);
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
+    std::vector<RaceResult>& getRaceResults() { return raceResults; }
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }

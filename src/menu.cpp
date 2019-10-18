@@ -61,6 +61,32 @@ void Menu::mainMenu()
         g_game.shouldExit = true;
     }
 
+#if 0
+    if (g_gui.button("TEST"))
+    {
+        g_game.state.drivers.clear();
+        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+
+        auto& v = g_game.currentScene->getRaceResults();
+        for (u32 i=0; i<10; ++i)
+        {
+            v.push_back({
+                i, &g_game.state.drivers[i], {}
+            });
+        }
+        menuMode = RACE_RESULTS;
+    }
+#endif
+
     g_gui.end();
 }
 
@@ -82,7 +108,11 @@ void Menu::newChampionship()
         g_game.isEditing = false;
         g_game.changeScene("tracks/saved_scene.dat");
         g_game.state.gameMode = GameMode::CHAMPIONSHIP;
-        //scene->startRace();
+
+        for (u32 i=(u32)g_game.state.drivers.size(); i<10; ++i)
+        {
+            g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        }
         menuMode = CHAMPIONSHIP_MENU;
     }
 
@@ -118,7 +148,7 @@ void Menu::newChampionship()
             bool controllerPlayerExists = false;
             for (auto& driver : g_game.state.drivers)
             {
-                if (!driver.useKeyboard && driver.controllerID == controller.first)
+                if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.first)
                 {
                     controllerPlayerExists = true;
                     break;
@@ -197,7 +227,10 @@ void Menu::championshipMenu()
         scene->startRace();
         menuMode = HIDDEN;
     }
-    g_gui.button("Standings");
+    if (g_gui.button("Standings"))
+    {
+        menuMode = CHAMPIONSHIP_STANDINGS;
+    }
     g_gui.button("Player Stats");
     g_gui.gap(10);
 
@@ -639,10 +672,167 @@ void Menu::championshipGarage()
 
 void Menu::championshipStandings()
 {
+    f32 w = g_gui.convertSizei(550);
+
+    f32 cw = (f32)(g_game.windowWidth/2);
+    glm::vec2 menuPos = glm::vec2(cw - w/2, glm::floor(g_game.windowHeight * 0.1f));
+    glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
+    drawBox(menuPos, menuSize);
+
+    Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(26));
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+
+    g_game.renderer->push2D(TextRenderable(bigfont, "Championship Standings",
+                glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
+                1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+
+    g_game.renderer->push2D(TextRenderable(smallfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
+                glm::vec2(cw, menuPos.y + g_gui.convertSizei(58)), glm::vec3(1.f),
+                1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+
+    static RenderWorld renderWorlds[10];
+
+    f32 columnOffset[] = {
+        32, 60, 150, 350
+    };
+
+    u32 vehicleIconSize = (u32)g_gui.convertSize(48);
+    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    for (u32 i=0; i<(u32)g_game.state.drivers.size(); ++i)
+    {
+        Driver& driver = g_game.state.drivers[i];
+
+        RenderWorld& rw = renderWorlds[i];
+        rw.setName(tstr("Vehicle Icon ", i));
+        rw.setSize(vehicleIconSize, vehicleIconSize);
+        rw.push(LitRenderable(quadMesh,
+                    glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
+                    nullptr, glm::vec3(0.02f)));
+        if (driver.vehicleIndex != -1)
+        {
+            g_vehicles[driver.vehicleIndex]->render(&rw,
+                glm::translate(glm::mat4(1.f),
+                    glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
+                glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+                nullptr, *driver.getVehicleConfig());
+        }
+        rw.setViewportCount(1);
+        rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+        rw.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
+                glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 28.f);
+        g_game.renderer->addRenderWorld(&rw);
+
+        glm::vec2 pos = menuPos + glm::vec2(0.f,
+                        g_gui.convertSizei(100) + i * g_gui.convertSize(48));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(i + 1),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[0]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
+
+        g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[1]),
+                        -glm::floor(vehicleIconSize/2)),
+                    vehicleIconSize, vehicleIconSize,
+                    glm::vec3(1.f), 1.f, false, true, "texArray2D"));
+
+        g_game.renderer->push2D(TextRenderable(smallfont, driver.playerName.c_str(),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[2]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(driver.leaguePoints),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[3]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
+    }
+
+    if (g_gui.didSelect())
+    {
+        menuMode = CHAMPIONSHIP_MENU;
+    }
 }
 
 void Menu::raceResults()
 {
+    f32 w = g_gui.convertSizei(550);
+
+    f32 cw = (f32)(g_game.windowWidth/2);
+    glm::vec2 menuPos = glm::vec2(cw - w/2, glm::floor(g_game.windowHeight * 0.2f));
+    glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.6f);
+    drawBox(menuPos, menuSize);
+
+    Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(26));
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(14));
+
+    g_game.renderer->push2D(TextRenderable(bigfont, "Race Results",
+                glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
+                1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+
+    Texture* white = g_resources.getTexture("white");
+    g_game.renderer->push2D(QuadRenderable(white,
+                menuPos + glm::vec2(g_gui.convertSize(8), g_gui.convertSize(64)),
+                w - g_gui.convertSize(16), g_gui.convertSize(19), glm::vec3(0.f), 0.6f));
+
+    f32 columnOffset[] = {
+        32, 90, 230, 300, 370, 450
+    };
+    const char* columnTitle[] = {
+        "NO.",
+        "DRIVER",
+        "ACCIDENTS",
+        "DESTROYED",
+        "FRAGS",
+        "CREDITS EARNED"
+    };
+
+    u32 maxColumn = g_game.state.gameMode == GameMode::CHAMPIONSHIP
+        ? ARRAY_SIZE(columnTitle) : ARRAY_SIZE(columnTitle) - 1;
+
+    for (u32 i=0; i<maxColumn; ++i)
+    {
+        g_game.renderer->push2D(TextRenderable(tinyfont, columnTitle[i],
+                    menuPos + glm::vec2(g_gui.convertSizei(columnOffset[i]), g_gui.convertSize(70)),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+    }
+
+    for (auto& row : g_game.currentScene->getRaceResults())
+    {
+        glm::vec2 pos = menuPos + glm::vec2(0.f,
+                        g_gui.convertSizei(100) + row.placement * g_gui.convertSize(24));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.placement + 1),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[0]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        g_game.renderer->push2D(TextRenderable(smallfont, row.driver->playerName.c_str(),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[1]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.accidents),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[2]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.destroyed),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[3]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.attackBonuses),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[4]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+        {
+            i32 creditsEarned = glm::max((10 - (i32)row.placement), 0) * 100
+                    + row.statistics.attackBonuses * 150;
+            g_game.renderer->push2D(TextRenderable(smallfont, tstr(creditsEarned),
+                        pos + glm::vec2(g_gui.convertSizei(columnOffset[5]), 0),
+                        glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        }
+    }
+
+    if (g_gui.didSelect())
+    {
+        if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+        {
+            menuMode = CHAMPIONSHIP_STANDINGS;
+        }
+        else
+        {
+            menuMode = MAIN_MENU;
+            g_game.currentScene->isCameraTourEnabled = true;
+        }
+    }
 }
 
 void Menu::showOptionsMenu()
@@ -848,9 +1038,7 @@ void Menu::graphicsOptions()
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    if (menuMode != MenuMode::HIDDEN &&
-        menuMode != MenuMode::CHAMPIONSHIP_MENU &&
-        menuMode != MenuMode::CHAMPIONSHIP_GARAGE)
+    if (menuMode < MenuMode::HIDDEN)
     {
         f32 w = g_gui.convertSize(280);
         drawBox(glm::vec2(g_game.windowWidth/2 - w/2, g_game.windowHeight * 0.1f),

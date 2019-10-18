@@ -130,6 +130,9 @@ class RenderWorld
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow);
     void render(Renderer* renderer, f32 deltaTime);
 
+    u32 shadowMapResolution = 0;
+    bool bloomEnabled = false;
+
 public:
     RenderWorld() {}
     RenderWorld(u32 width, u32 height, const char* name)

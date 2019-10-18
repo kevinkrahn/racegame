@@ -109,6 +109,8 @@ public:
 	};
 	SmallVec<Notification> notifications;
 
+	RaceStatistics raceStatistics;
+
 	void setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
 	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
 

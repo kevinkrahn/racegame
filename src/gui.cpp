@@ -34,6 +34,11 @@ f32 Gui::convertSize(f32 size)
     return size * (g_game.windowHeight / baseHeight);
 }
 
+f32 Gui::convertSizei(f32 size)
+{
+    return glm::floor(convertSize(size));
+}
+
 WidgetState* Gui::getWidgetState(WidgetState* parent, const char* identifier,
         WidgetType widgetType)
 {
@@ -743,7 +748,7 @@ bool Gui::textEdit(const char* text, std::string& value)
         isKeyboardInputHandled = true;
     }
 
-    renderer->push2D(TextRenderable(fontSmall, value.c_str(), pos
+    renderer->push2D(TextRenderable(fontSmall, tstr(value), pos
                 + glm::vec2(textStart, glm::floor(bh/2)), glm::vec3(1.f), 1.f, 1.f,
                 HorizontalAlign::LEFT, VerticalAlign::CENTER));
 

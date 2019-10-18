@@ -222,7 +222,8 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
 
         SmallVec<glm::vec3> listenerPositions;
-        if (!g_game.isEditing && !isRaceInProgress && trackGraph.getPaths().size() > 0)
+        if (!g_game.isEditing && !isRaceInProgress && isCameraTourEnabled
+                && trackGraph.getPaths().size() > 0)
         {
             // move the camera around the track
             auto path = trackGraph.getPaths()[0];
@@ -303,8 +304,19 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             finishTimer += deltaTime;
             if (finishTimer >= 5.f)
             {
-                // TODO: build race results for menu to display
+                for (auto& v : vehicles)
+                {
+                    raceResults.push_back({
+                        v->placement,
+                        v->driver,
+                        v->raceStatistics
+                    });
+                }
+                std::sort(raceResults.begin(), raceResults.end(), [](auto& a, auto&b) {
+                    return a.placement > b.placement;
+                });
                 stopRace();
+                isCameraTourEnabled = false;
                 g_game.menu.showRaceResults();
             }
         }
