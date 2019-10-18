@@ -168,9 +168,6 @@ void initializeVehicleData()
 {
     g_weapons.push_back(std::make_unique<WBlaster>());
     g_weapons.push_back(std::make_unique<WExplosiveMine>());
-    g_weapons.push_back(std::make_unique<WBlaster>());
-    g_weapons.push_back(std::make_unique<WBlaster>());
-    g_weapons.push_back(std::make_unique<WBlaster>());
 
     g_vehicles.push_back(std::make_unique<VMini>());
     g_vehicles.push_back(std::make_unique<VSportscar>());

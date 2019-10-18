@@ -83,6 +83,7 @@ Scene::Scene(const char* name)
     deserialize(data);
 
     this->name = fs::path(name).stem().string();
+    this->filename = name;
 }
 
 Scene::~Scene()
@@ -306,7 +307,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 buildRaceResults();
                 stopRace();
-                isCameraTourEnabled = false;
+                //isCameraTourEnabled = false;
                 g_game.menu.showRaceResults();
             }
         }
@@ -484,7 +485,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                 {
                     buildRaceResults();
                     stopRace();
-                    isCameraTourEnabled = false;
+                    //isCameraTourEnabled = false;
                     g_game.menu.showRaceResults();
                 }
                 else

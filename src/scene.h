@@ -85,6 +85,7 @@ private:
 
 public:
     std::string name;
+    std::string filename;
 
     bool isDebugOverlayEnabled = false;
     bool isPhysicsDebugVisualizationEnabled = false;

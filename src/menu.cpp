@@ -9,6 +9,17 @@
 #include "mesh_renderables.h"
 #include "weapon.h"
 
+const char* championshipTracks[] = {
+    "tracks/saved_scene.dat",
+    "tracks/my_testwaaaasds.dat",
+    "tracks/saved_scene.dat",
+    "tracks/my_testwaaaasds.dat",
+    "tracks/saved_scene.dat",
+    "tracks/my_testwaaaasds.dat",
+    "tracks/saved_scene.dat",
+    "tracks/my_testwaaaasds.dat",
+};
+
 void Menu::mainMenu()
 {
     g_gui.beginPanel("Main Menu", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
@@ -38,6 +49,7 @@ void Menu::mainMenu()
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 8));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9));
 
+        g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
         Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
         scene->startRace();
@@ -106,8 +118,10 @@ void Menu::newChampionship()
     if (g_gui.button("Begin", g_game.state.drivers.size() > 0))
     {
         g_game.isEditing = false;
-        g_game.changeScene("tracks/saved_scene.dat");
+        g_game.state.currentLeague = 0;
+        g_game.state.currentRace = 0;
         g_game.state.gameMode = GameMode::CHAMPIONSHIP;
+        g_game.changeScene(championshipTracks[g_game.state.currentRace]);
 
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
@@ -224,7 +238,7 @@ void Menu::championshipMenu()
     g_gui.gap(10);
     if (g_gui.button("Begin Race", playerIndex == vehicleCount))
     {
-        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
         menuMode = HIDDEN;
     }
@@ -292,6 +306,8 @@ void Menu::championshipGarage()
 
     if (mode == 0)
     {
+        currentVehicleIndex = driver.vehicleIndex;
+
         if (g_gui.button("Choose Vehicle"))
         {
             mode = 1;
@@ -429,7 +445,8 @@ void Menu::championshipGarage()
             if (isSelected)
             {
                 messageStr = upgrade.description;
-                if (upgradeLevel < upgrade.maxUpgradeLevel)
+                if (upgradeLevel < upgrade.maxUpgradeLevel ||
+                        (!isEquipped && upgrade.maxUpgradeLevel == 1))
                 {
                     vehicleConfig2.addUpgrade(i);
                 }
@@ -755,6 +772,10 @@ void Menu::championshipStandings()
     if (g_gui.didSelect())
     {
         menuMode = CHAMPIONSHIP_MENU;
+        if (g_game.currentScene->filename != championshipTracks[g_game.state.currentRace])
+        {
+            g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+        }
     }
 }
 
@@ -839,6 +860,7 @@ void Menu::raceResults()
                 row.driver->credits += row.getCreditsEarned();
                 row.driver->leaguePoints += row.getLeaguePointsEarned();
             }
+            ++g_game.state.currentRace;
         }
         else
         {
