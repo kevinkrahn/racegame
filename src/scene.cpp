@@ -299,22 +299,12 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         g_audio.setListeners(listenerPositions);
 
-        if (allPlayersFinished)
+        if (allPlayersFinished && isRaceInProgress)
         {
             finishTimer += deltaTime;
-            if (finishTimer >= 5.f)
+            if (finishTimer >= 8.f)
             {
-                for (auto& v : vehicles)
-                {
-                    raceResults.push_back({
-                        v->placement,
-                        v->driver,
-                        v->raceStatistics
-                    });
-                }
-                std::sort(raceResults.begin(), raceResults.end(), [](auto& a, auto&b) {
-                    return a.placement > b.placement;
-                });
+                buildRaceResults();
                 stopRace();
                 isCameraTourEnabled = false;
                 g_game.menu.showRaceResults();
@@ -489,14 +479,17 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                 trackPreviewCameraFrom = rw->getCamera(0).position;
                 trackPreviewCameraTarget = (*std::find_if(vehicles.begin(), vehicles.end(),
                         [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
-                stopRace();
                 g_game.isEditing = false;
                 if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
                 {
+                    buildRaceResults();
+                    stopRace();
+                    isCameraTourEnabled = false;
                     g_game.menu.showRaceResults();
                 }
                 else
                 {
+                    stopRace();
                     g_game.menu.showMainMenu();
                 }
             }
@@ -627,12 +620,65 @@ void Scene::attackCredit(u32 instigator, u32 victim)
     {
         if (instigator == victim)
         {
+            ++vehicles[instigator]->raceStatistics.accidents;
             vehicles[instigator]->addNotification("ACCIDENT!");
         }
         else
         {
+            ++vehicles[victim]->raceStatistics.destroyed;
+            ++vehicles[instigator]->raceStatistics.attackBonuses;
             vehicles[instigator]->addNotification("ATTACK BONUS!");
         }
+    }
+}
+
+void Scene::buildRaceResults()
+{
+    u32 numDriversStillDriving = 0;
+    for (auto& v : vehicles)
+    {
+        if (!v->finishedRace)
+        {
+            ++numDriversStillDriving;
+        }
+    }
+
+    for (auto& v : vehicles)
+    {
+        RaceStatistics& stats = v->raceStatistics;
+        if (v->currentLap < totalLaps)
+        {
+            if (v->driver->isPlayer)
+            {
+                print("Player did not finish: ", v->currentLap, "/", totalLaps, " laps\n");
+                v->placement = -1;
+            }
+            else
+            {
+                print("AI did not finish: ", v->currentLap, "/", totalLaps, " laps\n");
+                // generate fake stats for the drivers that have not yet finished the race
+                for (u32 i = v->currentLap + 1; i<totalLaps; ++i)
+                {
+                    // TODO: base these stats on AI driver skill
+                    stats.accidents += irandom(randomSeries, 0, 2);
+                    stats.attackBonuses += irandom(randomSeries, 0, 3 * numDriversStillDriving);
+                    stats.destroyed += irandom(randomSeries, 0, 3 * numDriversStillDriving);
+                }
+            }
+        }
+        raceResults.push_back({
+            v->placement,
+            v->driver,
+            stats,
+            v->placement > -1
+        });
+    }
+    std::sort(raceResults.begin(), raceResults.end(), [](auto& a, auto&b) {
+        return a.placement < b.placement;
+    });
+    for (u32 i=0; i<(u32)raceResults.size(); ++i)
+    {
+        raceResults[i].placement = i;
     }
 }
 

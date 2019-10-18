@@ -26,9 +26,21 @@ struct RaceStatistics
 
 struct RaceResult
 {
-    u32 placement;
+    i32 placement;
     Driver* driver;
     RaceStatistics statistics;
+    bool finishedRace;
+
+    i32 getCreditsEarned() const
+    {
+        return (finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0)
+                + statistics.attackBonuses * 150;
+    }
+
+    i32 getLeaguePointsEarned() const
+    {
+        return finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0;
+    }
 };
 
 class Scene : public PxSimulationEventCallback
@@ -49,7 +61,7 @@ private:
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
     TrackGraph trackGraph;
-    u32 totalLaps = 4;
+    u32 totalLaps = 1;
     glm::vec3 trackPreviewCameraFrom = { 0, 0, 0 };
     glm::vec3 trackPreviewCameraTarget = { 0, 0, 0 };
     glm::vec3 trackPreviewPosition = { 0, 0, 0 };
@@ -68,6 +80,8 @@ private:
     void onTrigger(PxTriggerPair* pairs, PxU32 count);
     void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) {}
     void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
+
+    void buildRaceResults();
 
 public:
     std::string name;

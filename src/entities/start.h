@@ -10,6 +10,7 @@ class Start : public PlaceableEntity
     Mesh* mesh;
     Mesh* meshLights;
     Decal finishLineDecal;
+    i32 countIndex = -1;
 
 public:
     Start()

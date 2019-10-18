@@ -39,7 +39,7 @@ void Menu::mainMenu()
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
 
         g_game.isEditing = false;
-        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
         scene->startRace();
         menuMode = HIDDEN;
     }
@@ -698,9 +698,18 @@ void Menu::championshipStandings()
 
     u32 vehicleIconSize = (u32)g_gui.convertSize(48);
     Mesh* quadMesh = g_resources.getMesh("world.Quad");
-    for (u32 i=0; i<(u32)g_game.state.drivers.size(); ++i)
+    SmallVec<Driver*, 20> sortedDrivers;
+    for(auto& driver : g_game.state.drivers)
     {
-        Driver& driver = g_game.state.drivers[i];
+        sortedDrivers.push_back(&driver);
+    }
+    std::sort(sortedDrivers.begin(), sortedDrivers.end(), [](Driver* a, Driver* b) {
+        return a->leaguePoints > b->leaguePoints;
+    });
+
+    for (u32 i=0; i<sortedDrivers.size(); ++i)
+    {
+        Driver* driver = sortedDrivers[i];
 
         RenderWorld& rw = renderWorlds[i];
         rw.setName(tstr("Vehicle Icon ", i));
@@ -708,13 +717,13 @@ void Menu::championshipStandings()
         rw.push(LitRenderable(quadMesh,
                     glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
                     nullptr, glm::vec3(0.02f)));
-        if (driver.vehicleIndex != -1)
+        if (driver->vehicleIndex != -1)
         {
-            g_vehicles[driver.vehicleIndex]->render(&rw,
+            g_vehicles[driver->vehicleIndex]->render(&rw,
                 glm::translate(glm::mat4(1.f),
-                    glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
+                    glm::vec3(0, 0, driver->getTuning().getRestOffset())) *
                 glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-                nullptr, *driver.getVehicleConfig());
+                nullptr, *driver->getVehicleConfig());
         }
         rw.setViewportCount(1);
         rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
@@ -734,10 +743,10 @@ void Menu::championshipStandings()
                     vehicleIconSize, vehicleIconSize,
                     glm::vec3(1.f), 1.f, false, true, "texArray2D"));
 
-        g_game.renderer->push2D(TextRenderable(smallfont, driver.playerName.c_str(),
+        g_game.renderer->push2D(TextRenderable(smallfont, driver->playerName.c_str(),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[2]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(driver.leaguePoints),
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(driver->leaguePoints),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[3]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
     }
@@ -813,9 +822,7 @@ void Menu::raceResults()
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
-            i32 creditsEarned = glm::max((10 - (i32)row.placement), 0) * 100
-                    + row.statistics.attackBonuses * 150;
-            g_game.renderer->push2D(TextRenderable(smallfont, tstr(creditsEarned),
+            g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getCreditsEarned()),
                         pos + glm::vec2(g_gui.convertSizei(columnOffset[5]), 0),
                         glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         }
@@ -826,6 +833,11 @@ void Menu::raceResults()
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
             menuMode = CHAMPIONSHIP_STANDINGS;
+            for (auto& row : g_game.currentScene->getRaceResults())
+            {
+                row.driver->credits += row.getCreditsEarned();
+                row.driver->leaguePoints += row.getLeaguePointsEarned();
+            }
         }
         else
         {

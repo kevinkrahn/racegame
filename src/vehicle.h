@@ -57,7 +57,7 @@ public:
     glm::vec3 cameraFrom;
     f32 hitPoints = 0.f;
     u32 currentLap = 0;
-	u32 placement = 1;
+	i32 placement = 1;
     TrackGraph::QueryResult graphResult;
     u32 followPathIndex = 0;
     u32 targetPointIndex = 0;

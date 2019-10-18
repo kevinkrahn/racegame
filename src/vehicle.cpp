@@ -1152,6 +1152,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 finishedRace = true;
                 scene->vehicleFinish(vehicleIndex);
             }
+            // TODO: play sound
             ++currentLap;
             graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;

@@ -37,18 +37,28 @@ void Start::updateTransform(Scene* scene)
 
 void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    i32 countIndex = -1;
-
     if (scene->getWorldTime() > 1.f)
     {
+        if (countIndex != 0)
+        {
+            // TODO: play sound
+        }
         countIndex = 0;
     }
     if (scene->getWorldTime() > 2.f)
     {
+        if (countIndex != 1)
+        {
+            // TODO: play sound
+        }
         countIndex = 1;
     }
     if (scene->getWorldTime() > 3.f)
     {
+        if (countIndex != 2)
+        {
+            // TODO: play sound
+        }
         countIndex = 2;
     }
 
