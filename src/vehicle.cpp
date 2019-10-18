@@ -993,12 +993,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             if (shoot)
             {
-                firePrimaryWeapon();
+                fireFrontWeapon(0);
             }
 
             if (shootSpecial)
             {
-                fireRearWeapon();
+                fireRearWeapon(0);
             }
         }
         else if (scene->getTrackGraph().getPaths().size() > 0)
@@ -1020,6 +1020,56 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
             f32 steerAngle = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
+
+            // get behind target
+            if (!isInAir && driver->ai.aggression > 0.f)
+            {
+                if (!target && frontWeaponAmmo[0] > 0)
+                {
+                    f32 maxTargetDist = driver->ai.aggression * 30.f;
+                    for (auto& v : scene->getVehicles())
+                    {
+                        if (v.get() == this)
+                        {
+                            continue;
+                        }
+
+                        glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
+                        glm::vec2 targetDiff = glm::normalize(-diff);
+                        if (glm::dot(glm::vec2(getForwardVector()), targetDiff)
+                                < driver->ai.aggression && glm::length2(diff) < square(maxTargetDist))
+                        {
+                            target = v.get();
+                            break;
+                        }
+                    }
+                }
+
+                if (target)
+                {
+                    targetTimer += deltaTime;
+                    if (targetTimer > (1.f - driver->ai.aggression) * 2.f)
+                    {
+                        glm::vec2 targetDiff = currentPosition - target->getPosition();
+                        // only steer toward the target if doing so would not result in veering off course
+                        if (glm::dot(targetDiff, dirToTargetP) >
+                                0.7f - (driver->ai.aggression * 0.1f))
+                        {
+                            f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.5f;
+                            steerAngle = clamp(targetSteerAngle, -0.6f, 0.6f);
+                        }
+                    }
+                    if (targetTimer > 6.f)
+                    {
+                        targetTimer = 0.f;
+                        target = nullptr;
+                    }
+                }
+                else
+                {
+                    targetTimer = 0.f;
+                }
+            }
 
             f32 forwardTestDist = 14.f;
             f32 sideTestDist = 9.f;
@@ -1044,7 +1094,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             f32 brake = 0.f;
             bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
                     getForwardVector(), forwardTestDist);
-            if (isSomethingBlockingMe && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
+            if (isSomethingBlockingMe && !target
+                    && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
             {
                 const f32 avoidSteerAmount = 0.5f;
                 bool left = isBlocking(0.5f, testDir1, sideTestDist);
@@ -1107,6 +1158,45 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 if (targetPointIndex >= paths[followPathIndex].size())
                 {
                     targetPointIndex = 0;
+                }
+            }
+
+            // front weapons
+            if (driver->ai.aggression > 0.f && frontWeaponAmmo[0] > 0)
+            {
+                f32 rayLength = driver->ai.aggression * 50.f;
+                if (scene->sweep(0.5f, currentPosition,
+                            getForwardVector(),
+                            rayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
+                {
+                    attackTimer += deltaTime;
+                }
+                else
+                {
+                    attackTimer = 0.f;
+                }
+
+                if (attackTimer > 2.5f * (1.f - driver->ai.aggression) + 0.5f)
+                {
+                    attackTimer = 0.f;
+                    // TODO: fire other weapons as well
+                    fireFrontWeapon(0);
+                }
+            }
+            else
+            {
+                attackTimer = 0.f;
+            }
+
+            // rear weapons
+            if (!isInAir
+                    && driver->ai.aggression > 0.f
+                    && rearWeaponAmmo[0] > 0
+                    && getForwardSpeed() > 10.f)
+            {
+                if (random(scene->randomSeries, 0.f, 2.5f * (1.f - driver->ai.aggression) + 1.f) < 0.001f)
+                {
+                    fireRearWeapon(0);
                 }
             }
         }
@@ -1448,26 +1538,26 @@ void Vehicle::blowUp()
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
 }
 
-void Vehicle::firePrimaryWeapon()
+void Vehicle::fireFrontWeapon(u32 index)
 {
-    if (frontWeaponAmmo[0] == 0)
+    if (frontWeaponAmmo[index] == 0)
     {
         // TODO: play no-no sound
         return;
     }
-    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->frontWeaponIndices[0]];
-    frontWeaponAmmo[0] -= primaryWeapon->fire(scene, this);
+    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->frontWeaponIndices[index]];
+    frontWeaponAmmo[index] -= primaryWeapon->fire(scene, this);
 }
 
-void Vehicle::fireRearWeapon()
+void Vehicle::fireRearWeapon(u32 index)
 {
-    if (rearWeaponAmmo[0] == 0)
+    if (rearWeaponAmmo[index] == 0)
     {
         // TODO: play no-no sound
         return;
     }
-    auto& rearWeapon = g_weapons[driver->getVehicleConfig()->rearWeaponIndices[0]];
-    rearWeaponAmmo[0] -= rearWeapon->fire(scene, this);
+    auto& rearWeapon = g_weapons[driver->getVehicleConfig()->rearWeaponIndices[index]];
+    rearWeaponAmmo[index] -= rearWeapon->fire(scene, this);
 }
 
 void Vehicle::onTrigger(ActorUserData* userData)

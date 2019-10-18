@@ -39,19 +39,21 @@ void Menu::mainMenu()
     {
         g_game.state.drivers.clear();
         g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 2));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 3));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 4));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 5));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 6));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 7));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 8));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9));
+        //g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 2, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 3, 2));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 4, 3));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 5, 4));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 6, 5));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 7, 6));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 8, 7));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9, 8));
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-        Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
+        //Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
+        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
         scene->startRace();
         menuMode = HIDDEN;
     }
@@ -77,16 +79,16 @@ void Menu::mainMenu()
     if (g_gui.button("TEST"))
     {
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0));
+        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1, 0));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 2));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 3));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 4));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 5));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 6));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 7));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 8));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9));
 
         auto& v = g_game.currentScene->getRaceResults();
         for (u32 i=0; i<10; ++i)
@@ -126,7 +128,7 @@ void Menu::newChampionship()
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
             g_game.state.drivers.push_back(Driver(false, false, false, 0,
-                        irandom(series, 0, 3), i));
+                        irandom(series, 0, 3), i, i));
         }
         menuMode = CHAMPIONSHIP_MENU;
     }

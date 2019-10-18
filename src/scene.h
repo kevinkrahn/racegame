@@ -143,8 +143,11 @@ public:
     bool raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
     bool sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
             PxSweepBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK) const;
-    bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr) const;
+    bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
+            PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr,
+            u32 flags=COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS) const;
 
     void addEntity(Entity* entity) { newEntities.push_back(std::unique_ptr<Entity>(entity)); }
     std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
+    std::vector<std::unique_ptr<Vehicle>>& getVehicles() { return vehicles; }
 };

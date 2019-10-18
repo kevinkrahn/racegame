@@ -11,6 +11,15 @@
 #define WHEEL_REAR_RIGHT  PxVehicleDrive4WWheelOrder::eREAR_RIGHT
 #define NUM_WHEELS 4
 
+struct ComputerDriverData
+{
+    const char* name = "Computer Driver";
+    f32 drivingSkill = 1.f; // [0,1] how optimal of a path the AI takes on the track
+    f32 aggression = 1.f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
+    f32 awareness = 1.f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
+    f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
+};
+
 struct VehicleMesh
 {
     Mesh* mesh;
@@ -228,5 +237,92 @@ struct VehicleData
 
 std::vector<std::unique_ptr<VehicleData>> g_vehicles;
 std::vector<std::unique_ptr<class Weapon>> g_weapons;
+
+std::vector<ComputerDriverData> g_ais = {
+    {
+        "Vendetta",
+        1.f,
+        0.5f,
+        1.f,
+        1.f
+    },
+    {
+        "Dumb Dumb",
+        0.1f, // driving skill
+        0.1f, // aggression
+        0.f, // awareness
+        0.f, // fear
+    },
+    {
+        "Rad Racer",
+        0.5f,
+        0.5f,
+        0.6f,
+        0.25f,
+    },
+    {
+        "Me First",
+        0.9f,
+        0.1f,
+        0.1f,
+        0.1f
+    },
+    {
+        "Automosqueal",
+        0.5f,
+        1.f,
+        1.f,
+        0.25f,
+    },
+    {
+        "Rocketeer",
+        0.25f,
+        1.f,
+        0.1f,
+        0.f
+    },
+    {
+        "Zoom-Zoom",
+        1.f,
+        0.1f,
+        0.8f,
+        1.f,
+    },
+    {
+        "Octane",
+        0.7f,
+        0.2f,
+        0.2f,
+        0.2f,
+    },
+    {
+        "Joe Blow",
+        0.5f,
+        0.5f,
+        0.5f,
+        0.5f,
+    },
+    {
+        "Square Triangle",
+        0.3f,
+        0.4f,
+        0.1f,
+        0.7f,
+    },
+    {
+        "Questionable",
+        0.4f,
+        0.6f,
+        0.6f,
+        0.7f,
+    },
+    {
+        "McCarface",
+        0.9f,
+        0.9f,
+        0.f,
+        0.1f,
+    }
+};
 
 void initializeVehicleData();

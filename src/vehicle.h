@@ -80,6 +80,11 @@ public:
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
 
+    // ai timers
+    f32 attackTimer = 0.f;
+    f32 targetTimer = 0.f;
+    Vehicle* target = nullptr;
+
     u32 frontWeaponAmmo[3] = { 0, 0, 0 };
     u32 rearWeaponAmmo[3] = { 0, 0, 0 };
 
@@ -160,6 +165,6 @@ public:
     void resetAmmo();
     void onTrigger(ActorUserData* userData);
 
-    void firePrimaryWeapon();
-    void fireRearWeapon();
+    void fireFrontWeapon(u32 index);
+    void fireRearWeapon(u32 index);
 };

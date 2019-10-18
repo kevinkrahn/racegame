@@ -4,15 +4,6 @@
 #include "vehicle_data.h"
 #include <algorithm>
 
-struct ComputerDriverData
-{
-    std::string name;
-    f32 drivingSkill; // [0,1] how optimal of a path the AI takes on the track
-    f32 aggression;   // [0,1] how likely the AI is to go out of its way to attack other drivers
-    f32 awareness;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
-    f32 fear;         // [0,1] how much the AI tries to evade other drivers
-};
-
 struct Driver
 {
     u32 leaguePoints = 0;
@@ -22,7 +13,7 @@ struct Driver
     bool isPlayer = false;
     bool hasCamera = false;
     std::string playerName = "no-name";
-    //ComputerDriverData aiDriverData;
+    ComputerDriverData ai;
     bool useKeyboard = false;
     u32 controllerID = 0;
     i32 lastColorIndex = 0;
@@ -60,7 +51,7 @@ struct Driver
     }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-            u32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0);
+            u32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0, i32 aiIndex=-1);
 
     Driver() = default;
     Driver(Driver&& other) = default;

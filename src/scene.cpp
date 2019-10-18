@@ -754,7 +754,8 @@ bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRay
     }
 }
 
-bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit, u32 flags) const
+bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir,
+        f32 dist, PxSweepBuffer* hit, u32 flags) const
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
@@ -791,7 +792,8 @@ public:
     }
 };
 
-bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxSweepBuffer* hit, PxRigidActor* ignore) const
+bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
+        PxSweepBuffer* hit, PxRigidActor* ignore, u32 flags) const
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
@@ -801,7 +803,7 @@ bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 d
         filter.flags |= PxQueryFlag::ePREFILTER;
     }
     IgnoreActor cb(ignore);
-    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0, 0);
+    filter.data = PxFilterData(flags, 0, 0, 0);
     PxTransform initialPose(convert(from), PxQuat(PxIdentity));
     if (hit)
     {
