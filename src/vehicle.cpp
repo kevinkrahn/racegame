@@ -1005,6 +1005,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             auto const& paths = scene->getTrackGraph().getPaths();
 
+            // TODO: check graphResult to find and use closest point if the vehicle
+            // is too far off the course
+
             i32 previousIndex = targetPointIndex - 1;
             if (previousIndex < 0)
             {

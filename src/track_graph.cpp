@@ -317,6 +317,11 @@ void TrackGraph::findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f
             {
                 glm::vec3 result = a + distanceAlongLine * ab;
                 f32 distance = glm::length2(p - result);
+                // prioritize points that don't loose progress
+                if (queryResult.lapDistanceLowMark - t < 0.f)
+                {
+                    distance += 800.f;
+                }
                 if (minDistance > distance && distance < square(35))
                 {
                     minDistance = distance;
