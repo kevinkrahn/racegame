@@ -39,8 +39,8 @@ void Menu::mainMenu()
     {
         g_game.state.drivers.clear();
         g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1, 0));
-        //g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1, 0));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1, 0));
+#if 1
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 2, 1));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 3, 2));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 4, 3));
@@ -49,6 +49,7 @@ void Menu::mainMenu()
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 7, 6));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 8, 7));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9, 8));
+#endif
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;

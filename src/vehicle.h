@@ -84,6 +84,7 @@ public:
     f32 attackTimer = 0.f;
     f32 targetTimer = 0.f;
     Vehicle* target = nullptr;
+    f32 fearTimer = 0.f;
 
     u32 frontWeaponAmmo[3] = { 0, 0, 0 };
     u32 rearWeaponAmmo[3] = { 0, 0, 0 };

@@ -1074,15 +1074,38 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 }
             }
 
+            // fear
+            if (driver->ai.fear > 0.f)
+            {
+                f32 fearRayLength = driver->ai.aggression * 35.f + 10.f;
+                if (scene->sweep(0.5f, currentPosition, -getForwardVector(),
+                            fearRayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
+                {
+                    fearTimer += deltaTime;
+                    if (fearTimer > 1.f * (1.f - driver->ai.fear) + 0.5f)
+                    {
+                        steerAngle += glm::sin((f32)scene->getWorldTime() * 3.f)
+                            * (driver->ai.fear * 0.25f);
+                    }
+                }
+                else
+                {
+                    fearTimer = 0.f;
+                }
+                /*
+                scene->debugDraw.line(
+                        currentPosition,
+                        currentPosition-getForwardVector()*fearRayLength,
+                        glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                */
+            }
+
             f32 forwardTestDist = 14.f;
             f32 sideTestDist = 9.f;
             f32 testAngle = 0.65f;
             glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
             glm::vec3 testDir2(glm::rotate(glm::mat4(1.f), -testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
-            //renderer->drawLine(currentPosition, currentPosition + testDir1 * sideTestDist);
-            //renderer->drawLine(currentPosition, currentPosition + testDir2 * sideTestDist);
 
-            //f32 accel = 0.85f;
             f32 accel = 1.f;
             // TODO: make AI racers that are ahead of the player driver slower
             if (placement == 0)
@@ -1167,7 +1190,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             // front weapons
             if (driver->ai.aggression > 0.f && frontWeaponAmmo[0] > 0)
             {
-                f32 rayLength = driver->ai.aggression * 50.f;
+                f32 rayLength = driver->ai.aggression * 50.f + 10.f;
+                /*
+                scene->debugDraw.line(
+                        currentPosition,
+                        currentPosition+getForwardVector()*rayLength,
+                        glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                */
                 if (scene->sweep(0.5f, currentPosition,
                             getForwardVector(),
                             rayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
