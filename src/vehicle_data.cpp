@@ -11,7 +11,12 @@ void VehicleData::loadSceneData(const char* sceneName)
     {
         std::string name = e["name"].string();
         glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
-        if (name.find("debris") != std::string::npos)
+        if (name.find("debris") != std::string::npos ||
+            name.find("Debris") != std::string::npos ||
+            name.find("FL") != std::string::npos ||
+            name.find("FR") != std::string::npos ||
+            name.find("RL") != std::string::npos ||
+            name.find("RR") != std::string::npos)
         {
             std::string const& meshName = e["data_name"].string();
             Mesh* mesh = g_resources.getMesh(meshName.c_str());
@@ -38,7 +43,7 @@ void VehicleData::loadSceneData(const char* sceneName)
                 name.find("Body") != std::string::npos
             });
         }
-        else if (name.find("FL") != std::string::npos)
+        if (name.find("FL") != std::string::npos)
         {
             wheelMeshFront = {
                 g_resources.getMesh(e["data_name"].string().c_str()),
@@ -157,6 +162,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "vehicles/mini.h"
 #include "vehicles/sportscar.h"
 #include "vehicles/racecar.h"
+#include "vehicles/truck.h"
 
 void initializeVehicleData()
 {
@@ -168,5 +174,6 @@ void initializeVehicleData()
 
     g_vehicles.push_back(std::make_unique<VMini>());
     g_vehicles.push_back(std::make_unique<VSportscar>());
+    g_vehicles.push_back(std::make_unique<VTruck>());
     g_vehicles.push_back(std::make_unique<VRacecar>());
 }

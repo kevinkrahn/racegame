@@ -609,7 +609,13 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
             }
-            if (forwardSpeed > tuning.topSpeed)
+            f32 speedDiff = forwardSpeed - tuning.topSpeed;
+            if (speedDiff > 1.f)
+            {
+                vehicle4W->mDriveDynData.setAnalogInput(
+                        PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL, accel * 0.42f);
+            }
+            else if (speedDiff > 0.f)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(
                         PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL, accel * 0.49f);

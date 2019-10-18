@@ -131,6 +131,7 @@ public:
                     tuning.specs.handling += 0.05f * u.upgradeLevel;
                     break;
                 default:
+                    print("Unhandled upgrade: ", upgrade.name, '\n');
                     break;
             }
         }

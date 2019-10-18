@@ -121,12 +121,14 @@ glm::vec3 g_vehicleColors[] = {
     { 0.5f, 0.2f, 0.8f },
     { 0.9f, 0.01f, 0.5f },
     { 0.02f, 0.7f, 0.1f },
+    { 0.9f, 0.9f, 0.9f },
+    { 0.9f, 0.8f, 0.1f },
 };
 
 std::string g_vehicleColorNames[] = {
     "Red", "Black", "Green", "Blue", "Something0",
-    "Something1", "Something2" "Something3",
-    "Something4",
+    "Something1", "Something2", "Something3",
+    "Something4", "White", "Orange"
 };
 
 struct VehicleConfiguration

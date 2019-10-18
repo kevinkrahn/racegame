@@ -159,6 +159,7 @@ public:
                     tuning.specs.offroad += 0.15f;
                     break;
                 default:
+                    print("Unhandled upgrade: ", upgrade.name, '\n');
                     break;
             }
         }

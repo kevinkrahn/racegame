@@ -2,7 +2,7 @@
 #include "resources.h"
 
 Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-        u32 controllerID, i32 vehicleIndex)
+        u32 controllerID, i32 vehicleIndex, i32 colorIndex)
 {
     this->hasCamera = hasCamera;
     this->vehicleIndex = vehicleIndex;
@@ -12,6 +12,8 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
 
     if (vehicleIndex != -1)
     {
-        ownedVehicles.push_back({ vehicleIndex, {} });
+        VehicleConfiguration vehicleConfig;
+        vehicleConfig.colorIndex = colorIndex;
+        ownedVehicles.push_back({ vehicleIndex, vehicleConfig });
     }
 }
