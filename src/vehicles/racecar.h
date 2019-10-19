@@ -11,6 +11,9 @@ public:
         description = "It is very fast";
         //price = 80000;
         price = 1;
+        frontWeaponCount = 2;
+        rearWeaponCount = 2;
+
         loadSceneData("racecar.Vehicle");
     }
 

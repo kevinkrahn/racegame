@@ -325,20 +325,20 @@ void Menu::championshipGarage()
             mode = 3;
         }
         g_gui.label("Equipment");
-        for (u32 i=0; i<3; ++i)
+        for (u32 i=0; i<g_vehicles[currentVehicleIndex]->frontWeaponCount; ++i)
         {
             i32 weaponIndex = vehicleConfig.frontWeaponIndices[i];
             if (g_gui.button(tstr("Front Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? "iconbg" : g_weapons[weaponIndex]->icon))
+                        weaponIndex == -1 ? "iconbg" : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 4;
             }
         }
-        for (u32 i=0; i<2; ++i)
+        for (u32 i=0; i<g_vehicles[currentVehicleIndex]->rearWeaponCount; ++i)
         {
             i32 weaponIndex = vehicleConfig.rearWeaponIndices[i];
             if (g_gui.button(tstr("Rear Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? "iconbg" : g_weapons[weaponIndex]->icon))
+                        weaponIndex == -1 ? "iconbg" : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 7;
             }
@@ -469,7 +469,7 @@ void Menu::championshipGarage()
         i32 equippedWeaponIndex = vehicleConfig.frontWeaponIndices[weaponNumber];
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
-            Weapon* weapon = g_weapons[i].get();
+            auto& weapon = g_weapons[i];
             bool isSelected = false;
 
             const char* extraText = nullptr;
@@ -478,14 +478,14 @@ void Menu::championshipGarage()
             if (isEquipped)
             {
                 extraText =
-                    tstr(upgradeLevel, "/", weapon->maxUpgradeLevel);
+                    tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
             }
-            if (g_gui.itemButton(weapon->name, tstr("Price: ", weapon->price), extraText,
-                        driver.credits >= weapon->price &&
-                            ((upgradeLevel < weapon->maxUpgradeLevel && isEquipped) || !isEquipped),
-                        weapon->icon, &isSelected))
+            if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
+                        driver.credits >= weapon.info.price &&
+                            ((upgradeLevel < weapon.info.maxUpgradeLevel && isEquipped) || !isEquipped),
+                        weapon.info.icon, &isSelected))
             {
-                driver.credits -= weapon->price;
+                driver.credits -= weapon.info.price;
                 if (driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] != i)
                 {
                     driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] = i;
@@ -499,7 +499,7 @@ void Menu::championshipGarage()
             }
             if (isSelected)
             {
-                messageStr = weapon->description;
+                messageStr = weapon.info.description;
             }
         }
     }
@@ -510,7 +510,7 @@ void Menu::championshipGarage()
         i32 equippedWeaponIndex = vehicleConfig.rearWeaponIndices[weaponNumber];
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
-            Weapon* weapon = g_weapons[i].get();
+            auto& weapon = g_weapons[i];
             bool isSelected = false;
 
             const char* extraText = nullptr;
@@ -519,14 +519,14 @@ void Menu::championshipGarage()
             if (isEquipped)
             {
                 extraText =
-                    tstr(upgradeLevel, "/", weapon->maxUpgradeLevel);
+                    tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
             }
-            if (g_gui.itemButton(weapon->name, tstr("Price: ", weapon->price), extraText,
-                        driver.credits >= weapon->price &&
-                            ((upgradeLevel < weapon->maxUpgradeLevel && isEquipped) || !isEquipped),
-                        weapon->icon, &isSelected))
+            if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
+                        driver.credits >= weapon.info.price &&
+                            ((upgradeLevel < weapon.info.maxUpgradeLevel && isEquipped) || !isEquipped),
+                        weapon.info.icon, &isSelected))
             {
-                driver.credits -= weapon->price;
+                driver.credits -= weapon.info.price;
                 if (driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] != i)
                 {
                     driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] = i;
@@ -540,7 +540,7 @@ void Menu::championshipGarage()
             }
             if (isSelected)
             {
-                messageStr = weapon->description;
+                messageStr = weapon.info.description;
             }
         }
     }

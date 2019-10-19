@@ -10,6 +10,9 @@ public:
         name = "Mini";
         description = "Small and nimble. Quick acceleration, \nbut low top-speed.";
         price = 5000;
+        frontWeaponCount = 1;
+        rearWeaponCount = 1;
+
         loadSceneData("mini.Scene");
 
         // TODO: add upgrade icons

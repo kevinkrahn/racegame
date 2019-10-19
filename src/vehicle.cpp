@@ -498,6 +498,26 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     setupPhysics(scene->getPhysicsScene(), vehicleMaterial, surfaceMaterials, transform);
     actorUserData.entityType = ActorUserData::VEHICLE;
     actorUserData.vehicle = this;
+
+    // create weapons
+    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices); ++i)
+    {
+        VehicleConfiguration* config = driver->getVehicleConfig();
+        if (config->frontWeaponIndices[i] != -1)
+        {
+            frontWeapons[i] = g_weapons[config->frontWeaponIndices[i]].create();
+            frontWeapons[i]->upgradeLevel = config->frontWeaponUpgradeLevel[i];
+        }
+    }
+    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
+    {
+        VehicleConfiguration* config = driver->getVehicleConfig();
+        if (config->rearWeaponIndices[i] != -1)
+        {
+            rearWeapons[i] = g_weapons[config->rearWeaponIndices[i]].create();
+            rearWeapons[i]->upgradeLevel = config->rearWeaponUpgradeLevel[i];
+        }
+    }
 }
 
 Vehicle::~Vehicle()
@@ -518,24 +538,18 @@ Vehicle::~Vehicle()
 
 void Vehicle::resetAmmo()
 {
-    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices); ++i)
+    for (u32 i=0; i<ARRAY_SIZE(frontWeapons); ++i)
     {
-        i32 weaponIndex = driver->getVehicleConfig()->frontWeaponIndices[i];
-        if (weaponIndex >= 0)
+        if (frontWeapons[i])
         {
-            auto& weapon = g_weapons[weaponIndex];
-            frontWeaponAmmo[i] = weapon->getAmmoCountForUpgradeLevel(
-                driver->getVehicleConfig()->frontWeaponUpgradeLevel[i]);
+            frontWeapons[i]->refillAmmo();
         }
     }
-    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
+    for (u32 i=0; i<ARRAY_SIZE(rearWeapons); ++i)
     {
-        i32 weaponIndex = driver->getVehicleConfig()->rearWeaponIndices[i];
-        if (weaponIndex >= 0)
+        if (rearWeapons[i])
         {
-            auto& weapon = g_weapons[weaponIndex];
-            rearWeaponAmmo[i] = weapon->getAmmoCountForUpgradeLevel(
-                driver->getVehicleConfig()->rearWeaponUpgradeLevel[i]);
+            rearWeapons[i]->refillAmmo();
         }
     }
 }
@@ -545,6 +559,20 @@ void Vehicle::reset(glm::mat4 const& transform) const
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
     getRigidBody()->setGlobalPose(convert(transform));
+    for (auto& w : frontWeapons)
+    {
+        if (w)
+        {
+            w->reset();
+        }
+    }
+    for (auto& w : rearWeapons)
+    {
+        if (w)
+        {
+            w->reset();
+        }
+    }
 }
 
 void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
@@ -686,24 +714,22 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
-void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, u32 weaponIndex, u32 ammo,
-        u32 upgradeLevel)
+void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon)
 {
     f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
     Texture* iconbg = g_resources.getTexture("iconbg");
     renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0.f),
                 iconSize, iconSize, glm::vec3(0.35f)));
     renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
-    const char* weaponIcon = g_weapons[weaponIndex]->icon;
+    const char* weaponIcon = weapon->info.icon;
     renderer->push2D(QuadRenderable(g_resources.getTexture(weaponIcon),
                 pos, iconSize, iconSize));
-    u32 ammoUnitCount = g_weapons[weaponIndex]->ammoUnitCount;
-    u32 maxAmmo = g_weapons[weaponIndex]->getAmmoCountForUpgradeLevel(upgradeLevel);
-    u32 ammoTickCount = maxAmmo / ammoUnitCount;
+    u32 ammoTickCountMax = weapon->getMaxAmmo() / weapon->ammoUnitCount;
+    u32 ammoTickCount = (weapon->ammo + weapon->ammoUnitCount - 1) / weapon->ammoUnitCount;
     f32 ammoTickMargin = iconSize * 0.025f;
-    f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCount;
+    f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCountMax;
     Texture* ammoTickTex = g_resources.getTexture("ammotick");
-    for (u32 i=0; i<ammo; ++i)
+    for (u32 i=0; i<ammoTickCount; ++i)
     {
         renderer->push2D(QuadRenderable(ammoTickTex,
                     pos + glm::vec2(iconSize + ammoTickMargin * 2.f,
@@ -765,13 +791,25 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         // weapons
         f32 weaponIconX = g_game.windowHeight * 0.35f;
-        drawWeaponAmmo(renderer, offset + glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                driver->getVehicleConfig()->frontWeaponIndices[0], frontWeaponAmmo[0],
-                driver->getVehicleConfig()->frontWeaponUpgradeLevel[0]);
-        drawWeaponAmmo(renderer, offset +
-                glm::vec2(weaponIconX + g_game.windowHeight * 0.1f, d.y * g_game.windowHeight * 0.018f),
-                driver->getVehicleConfig()->rearWeaponIndices[0], rearWeaponAmmo[0],
-                driver->getVehicleConfig()->rearWeaponUpgradeLevel[0]);
+        for (auto& w : frontWeapons)
+        {
+            if (w)
+            {
+                drawWeaponAmmo(renderer, offset +
+                        glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f), w.get());
+                weaponIconX += g_game.windowHeight * 0.1f;
+            }
+        }
+        for (auto& w : rearWeapons)
+        {
+            if (w)
+            {
+                drawWeaponAmmo(renderer, offset +
+                        glm::vec2(weaponIconX + g_game.windowHeight * 0.1f,
+                            d.y * g_game.windowHeight * 0.018f), w.get());
+                weaponIconX += g_game.windowHeight * 0.1f;
+            }
+        }
 
         // healthbar
         Texture* white = g_resources.getTexture("white");
@@ -956,16 +994,19 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             f32 brake = 0.f;
             f32 steer = 0.f;
             bool digital = false;
-            bool shoot = false;
-            bool shootSpecial = false;
+            bool beginShoot = false;
+            bool holdShoot = false;
+            bool beginShootSpecial = false;
+            bool holdShootSpecial = false;
             if (driver->useKeyboard)
             {
                 digital = true;
                 accel = g_input.isKeyDown(KEY_UP);
                 brake = g_input.isKeyDown(KEY_DOWN);
                 steer = (f32)g_input.isKeyDown(KEY_LEFT) - (f32)g_input.isKeyDown(KEY_RIGHT);
-                shoot = g_input.isKeyPressed(KEY_C);
-                shootSpecial = g_input.isKeyPressed(KEY_V);
+                beginShoot = g_input.isKeyPressed(KEY_C);
+                holdShoot = g_input.isKeyDown(KEY_C);
+                beginShootSpecial = g_input.isKeyPressed(KEY_V);
             }
             if (!driver->useKeyboard || (scene->numHumanDrivers() == 1))
             {
@@ -975,8 +1016,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     accel = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_RIGHT), accel);
                     brake = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_LEFT), brake);
                     steer = nonZeroOrDefault(-controller->getAxis(AXIS_LEFT_X), steer);
-                    shoot = shoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
-                    shootSpecial = shootSpecial || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+                    beginShoot = beginShoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+                    holdShoot = holdShoot || controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
+                    beginShootSpecial = beginShootSpecial || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+                    holdShootSpecial = holdShootSpecial || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
                 }
             }
 
@@ -991,14 +1034,19 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         PxForceMode::eVELOCITY_CHANGE);
             }
 
-            if (shoot)
+            for (auto& w : frontWeapons)
             {
-                fireFrontWeapon(0);
+                if (w)
+                {
+                    w->update(scene, this, beginShoot, holdShoot, deltaTime);
+                }
             }
-
-            if (shootSpecial)
+            for (auto& w : rearWeapons)
             {
-                fireRearWeapon(0);
+                if (w)
+                {
+                    w->update(scene, this, beginShootSpecial, holdShootSpecial, deltaTime);
+                }
             }
         }
         else if (scene->getTrackGraph().getPaths().size() > 0)
@@ -1027,9 +1075,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             // get behind target
             if (!isInAir && driver->ai.aggression > 0.f)
             {
-                if (!target && frontWeaponAmmo[0] > 0)
+                if (!target && frontWeapons[0] && frontWeapons[0]->ammo > 0)
                 {
-                    f32 maxTargetDist = driver->ai.aggression * 30.f;
+                    f32 maxTargetDist = driver->ai.aggression * 25.f + 15.f;
                     for (auto& v : scene->getVehicles())
                     {
                         if (v.get() == this)
@@ -1056,10 +1104,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         glm::vec2 targetDiff = currentPosition - target->getPosition();
                         // only steer toward the target if doing so would not result in veering off course
                         if (glm::dot(targetDiff, dirToTargetP) >
-                                0.7f - (driver->ai.aggression * 0.1f))
+                                0.8f - (driver->ai.aggression * 0.2f))
                         {
-                            f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.5f;
-                            steerAngle = clamp(targetSteerAngle, -0.6f, 0.6f);
+                            f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.4f;
+                            steerAngle = clamp(targetSteerAngle, -0.5f, 0.5f);
                         }
                     }
                     if (targetTimer > 6.f)
@@ -1188,7 +1236,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
 
             // front weapons
-            if (driver->ai.aggression > 0.f && frontWeaponAmmo[0] > 0)
+            bool beginAttackFront = false;
+            bool holdAttackFront = false;
+            if (driver->ai.aggression > 0.f && frontWeapons[0] && frontWeapons[0]->ammo > 0)
             {
                 f32 rayLength = driver->ai.aggression * 50.f + 10.f;
                 /*
@@ -1208,28 +1258,48 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     attackTimer = 0.f;
                 }
 
-                if (attackTimer > 2.5f * (1.f - driver->ai.aggression) + 0.5f)
+                if (frontWeapons[0]->fireMode == Weapon::CONTINUOUS)
                 {
-                    attackTimer = 0.f;
-                    // TODO: fire other weapons as well
-                    fireFrontWeapon(0);
+                    if (attackTimer > 2.f * (1.f - driver->ai.aggression) + 0.4f)
+                    {
+                        holdAttackFront = true;
+                    }
+                }
+                else
+                {
+                    if (attackTimer > 2.5f * (1.f - driver->ai.aggression) + 0.7f)
+                    {
+                        attackTimer = 0.f;
+                        beginAttackFront = true;
+                    }
                 }
             }
             else
             {
                 attackTimer = 0.f;
             }
+            if (frontWeapons[0])
+            {
+                // TODO: fire other front weapons as well
+                frontWeapons[0]->update(scene, this, beginAttackFront,
+                        holdAttackFront, deltaTime);
+            }
 
             // rear weapons
-            if (!isInAir
-                    && driver->ai.aggression > 0.f
-                    && rearWeaponAmmo[0] > 0
-                    && getForwardSpeed() > 10.f)
+            if (rearWeapons[0])
             {
-                if (random(scene->randomSeries, 0.f, 2.5f * (1.f - driver->ai.aggression) + 1.f) < 0.001f)
+                bool fire = false;
+                if (!isInAir
+                        && driver->ai.aggression > 0.f
+                        && rearWeapons[0]->ammo > 0
+                        && getForwardSpeed() > 10.f)
                 {
-                    fireRearWeapon(0);
+                    if (random(scene->randomSeries, 0.f, 2.5f * (1.f - driver->ai.aggression) + 1.f) < 0.001f)
+                    {
+                        fire = true;
+                    }
                 }
+                rearWeapons[0]->update(scene, this, fire, false, deltaTime);
             }
         }
         else
@@ -1568,28 +1638,6 @@ void Vehicle::blowUp()
     scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
     scene->attackCredit(lastDamagedBy, vehicleIndex);
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
-}
-
-void Vehicle::fireFrontWeapon(u32 index)
-{
-    if (frontWeaponAmmo[index] == 0)
-    {
-        // TODO: play no-no sound
-        return;
-    }
-    auto& primaryWeapon = g_weapons[driver->getVehicleConfig()->frontWeaponIndices[index]];
-    frontWeaponAmmo[index] -= primaryWeapon->fire(scene, this);
-}
-
-void Vehicle::fireRearWeapon(u32 index)
-{
-    if (rearWeaponAmmo[index] == 0)
-    {
-        // TODO: play no-no sound
-        return;
-    }
-    auto& rearWeapon = g_weapons[driver->getVehicleConfig()->rearWeaponIndices[index]];
-    rearWeaponAmmo[index] -= rearWeapon->fire(scene, this);
 }
 
 void Vehicle::onTrigger(ActorUserData* userData)

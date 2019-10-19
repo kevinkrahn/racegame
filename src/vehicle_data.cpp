@@ -157,7 +157,10 @@ void VehicleData::renderDebris(RenderWorld* rw,
 }
 
 #include "weapons/blaster.h"
+#include "weapons/machinegun.h"
 #include "weapons/explosive_mine.h"
+#include "weapons/jumpjets.h"
+#include "weapons/rocket_booster.h"
 
 #include "vehicles/mini.h"
 #include "vehicles/sportscar.h"
@@ -166,11 +169,27 @@ void VehicleData::renderDebris(RenderWorld* rw,
 
 void initializeVehicleData()
 {
-    g_weapons.push_back(std::make_unique<WBlaster>());
-    g_weapons.push_back(std::make_unique<WExplosiveMine>());
+    registerWeapon<WBlaster>();
+    registerWeapon<WMachineGun>();
+    registerWeapon<WExplosiveMine>();
+    registerWeapon<WJumpJets>();
+    registerWeapon<WRocketBooster>();
 
-    g_vehicles.push_back(std::make_unique<VMini>());
-    g_vehicles.push_back(std::make_unique<VSportscar>());
-    g_vehicles.push_back(std::make_unique<VTruck>());
-    g_vehicles.push_back(std::make_unique<VRacecar>());
+    registerVehicle<VMini>();
+    registerVehicle<VSportscar>();
+    registerVehicle<VTruck>();
+    registerVehicle<VRacecar>();
+
+    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f);
+    registerAI("Dumb Dumb",       0.f,   0.f, 0.f,  0.f);
+    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f);
+    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f);
+    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f);
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f);
+    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f);
+    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f);
+    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f);
+    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f);
+    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f);
+    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f);
 }

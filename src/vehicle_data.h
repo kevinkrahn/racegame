@@ -4,6 +4,7 @@
 #include "datafile.h"
 #include "mesh.h"
 #include <algorithm>
+#include "weapon.h"
 
 #define WHEEL_FRONT_LEFT  PxVehicleDrive4WWheelOrder::eFRONT_LEFT
 #define WHEEL_FRONT_RIGHT PxVehicleDrive4WWheelOrder::eFRONT_RIGHT
@@ -18,6 +19,12 @@ struct ComputerDriverData
     f32 aggression = 1.f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
     f32 awareness = 1.f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
     f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
+};
+
+struct RegisteredWeapon
+{
+    WeaponInfo info;
+    std::function<std::unique_ptr<Weapon>()> create;
 };
 
 struct VehicleMesh
@@ -146,10 +153,10 @@ struct VehicleConfiguration
     u32 engineUpgradeLevel = 0;
     u32 tireUpgradeLevel = 0;
 
-    i32 frontWeaponIndices[3] = { 0, -1, -1 };
+    i32 frontWeaponIndices[3] = { 1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 4, 0, 0 };
-    i32 rearWeaponIndices[2] = { 1, -1 };
-    u32 rearWeaponUpgradeLevel[2] = { 4, 0 };
+    i32 rearWeaponIndices[3] = { 2, -1, -1 };
+    u32 rearWeaponUpgradeLevel[3] = { 4, 0, 0 };
     i32 specialAbilityIndex;
 
     struct Upgrade
@@ -218,9 +225,11 @@ struct VehicleData
     std::vector<VehicleCollisionsMesh> collisionMeshes;
     std::vector<PerformanceUpgrade> availableUpgrades;
 
-    const char* name;
-    const char* description;
-    i32 price;
+    const char* name ="";
+    const char* description ="";
+    i32 price = 0;
+    u32 frontWeaponCount = 1;
+    u32 rearWeaponCount = 1;
 
     std::vector<VehicleMesh> debrisChunks;
 
@@ -236,93 +245,27 @@ struct VehicleData
 };
 
 std::vector<std::unique_ptr<VehicleData>> g_vehicles;
-std::vector<std::unique_ptr<class Weapon>> g_weapons;
+std::vector<RegisteredWeapon> g_weapons;
+std::vector<ComputerDriverData> g_ais;
 
-std::vector<ComputerDriverData> g_ais = {
-    {
-        "Vendetta",
-        1.f,
-        0.5f,
-        1.f,
-        1.f
-    },
-    {
-        "Dumb Dumb",
-        0.1f, // driving skill
-        0.1f, // aggression
-        0.f, // awareness
-        0.f, // fear
-    },
-    {
-        "Rad Racer",
-        0.5f,
-        0.5f,
-        0.6f,
-        0.25f,
-    },
-    {
-        "Me First",
-        0.9f,
-        0.1f,
-        0.1f,
-        0.1f
-    },
-    {
-        "Automosqueal",
-        0.5f,
-        1.f,
-        1.f,
-        0.25f,
-    },
-    {
-        "Rocketeer",
-        0.25f,
-        1.f,
-        0.1f,
-        0.f
-    },
-    {
-        "Zoom-Zoom",
-        1.f,
-        0.1f,
-        0.8f,
-        1.f,
-    },
-    {
-        "Octane",
-        0.7f,
-        0.2f,
-        0.2f,
-        0.2f,
-    },
-    {
-        "Joe Blow",
-        0.5f,
-        0.5f,
-        0.5f,
-        0.5f,
-    },
-    {
-        "Square Triangle",
-        0.3f,
-        0.4f,
-        0.1f,
-        0.7f,
-    },
-    {
-        "Questionable",
-        0.4f,
-        0.6f,
-        0.6f,
-        0.7f,
-    },
-    {
-        "McCarface",
-        0.9f,
-        0.9f,
-        0.f,
-        0.1f,
-    }
-};
+template <typename T>
+void registerWeapon()
+{
+    g_weapons.push_back({
+        (T().info),
+        [] { return std::make_unique<T>(); }
+    });
+}
+
+template <typename T>
+void registerVehicle()
+{
+    g_vehicles.push_back(std::make_unique<T>());
+}
+
+void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear)
+{
+    g_ais.push_back({ name, drivingSkill, aggression, awareness, fear });
+}
 
 void initializeVehicleData();

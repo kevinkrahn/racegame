@@ -10,6 +10,9 @@ public:
         name = "Truck";
         description = "Rough and tough.\nDrives well off the road.";
         price = 12000;
+        frontWeaponCount = 2;
+        rearWeaponCount = 3;
+
         loadSceneData("truck.Truck");
 
         // TODO: add upgrade icons

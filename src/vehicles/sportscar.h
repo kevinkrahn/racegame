@@ -10,6 +10,9 @@ public:
         name = "Sportscar";
         description = "Small and quick, but has poor traction.";
         price = 8000;
+        frontWeaponCount = 1;
+        rearWeaponCount = 1;
+
         loadSceneData("sportscar.Vehicle");
 
         // TODO: add upgrade icons
