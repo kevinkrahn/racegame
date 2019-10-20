@@ -84,7 +84,7 @@ void Terrain::onCreate(Scene* scene)
     textures[0] = g_resources.getTexture("grass")->handle;
     textures[1] = g_resources.getTexture("rock")->handle;
     textures[2] = g_resources.getTexture("sand")->handle;
-    textures[3] = g_resources.getTexture("green")->handle;
+    textures[3] = g_resources.getTexture("dirt")->handle;
 
     materials[0] = scene->genericMaterial;
     materials[1] = scene->offroadMaterial;

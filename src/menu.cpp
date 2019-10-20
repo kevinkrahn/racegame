@@ -10,14 +10,18 @@
 #include "weapon.h"
 
 const char* championshipTracks[] = {
+    "tracks/my_testwaaaasds.dat",
+    "tracks/the_climb.dat",
+    "tracks/something.dat",
     "tracks/saved_scene.dat",
     "tracks/my_testwaaaasds.dat",
+    "tracks/the_climb.dat",
+    "tracks/something.dat",
     "tracks/saved_scene.dat",
     "tracks/my_testwaaaasds.dat",
+    "tracks/the_climb.dat",
+    "tracks/something.dat",
     "tracks/saved_scene.dat",
-    "tracks/my_testwaaaasds.dat",
-    "tracks/saved_scene.dat",
-    "tracks/my_testwaaaasds.dat",
 };
 
 void Menu::mainMenu()
@@ -54,7 +58,8 @@ void Menu::mainMenu()
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
         //Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
-        Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        //Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
+        Scene* scene = g_game.changeScene("tracks/the_climb.dat");
         scene->startRace();
         menuMode = HIDDEN;
     }

@@ -269,6 +269,7 @@ public:
         glm::vec3 xDir = getPointDir(pointIndex);
         return glm::length2(xDir) > 0.f;
     }
+    void matchZ(bool lowest);
     void extendTrack(i32 prefabCurveIndex);
     void connectPoints();
     void connectRailings();

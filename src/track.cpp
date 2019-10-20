@@ -750,6 +750,67 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     }
 }
 
+void Track::matchZ(bool lowest)
+{
+    if (selectedPoints.size() > 0)
+    {
+        f32 z = points[selectedPoints[0].pointIndex].position.z;
+        for (auto& p : selectedPoints)
+        {
+            if (lowest)
+            {
+                if (points[p.pointIndex].position.z < z)
+                {
+                    z = points[p.pointIndex].position.z;
+                }
+            }
+            else
+            {
+                if (points[p.pointIndex].position.z > z)
+                {
+                    z = points[p.pointIndex].position.z;
+                }
+            }
+        }
+        for (auto& p : selectedPoints)
+        {
+            points[p.pointIndex].position.z = z;
+        }
+    }
+
+    bool firstPoint = false;
+    f32 z = FLT_MIN;
+    for (auto& r : railings)
+    {
+        for (auto& s : r->selectedPoints)
+        {
+            if (lowest)
+            {
+                if (r->points[s.pointIndex].position.z < z || firstPoint)
+                {
+                    z = r->points[s.pointIndex].position.z;
+                    firstPoint = false;
+                }
+            }
+            else
+            {
+                if (r->points[s.pointIndex].position.z > z || firstPoint)
+                {
+                    z = r->points[s.pointIndex].position.z;
+                    firstPoint = false;
+                }
+            }
+        }
+    }
+    for (auto& r : railings)
+    {
+        for (auto& s : r->selectedPoints)
+        {
+            r->points[s.pointIndex].position.z = z;
+        }
+    }
+}
+
 void Track::extendTrack(i32 prefabCurveIndex)
 {
     i32 pointIndex = getSelectedPointIndex();

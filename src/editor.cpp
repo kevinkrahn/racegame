@@ -169,6 +169,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->track->split();
         }
 
+        if (g_gui.button("Match Highest Z [m]"))
+        {
+            scene->track->matchZ(false);
+        }
+
+        if (g_gui.button("Match Lowest Z [m]"))
+        {
+            scene->track->matchZ(true);
+        }
+
         if (g_gui.button("New Railing"))
         {
             placeMode = PlaceMode::NEW_RAILING;
