@@ -84,7 +84,7 @@ public:
     void beginPanel(const char* text, glm::vec2 position, f32 halign,
             bool solidBackground=false, bool useKeyboardControl=false,
             bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220);
-    bool button(const char* text, bool active=true, const char* icon=nullptr);
+    bool button(const char* text, bool active=true, const char* icon=nullptr, bool iconbg=true);
     bool itemButton(const char* text, const char* smallText, const char* extraText,
             bool active=true, const char* icon=nullptr, bool* isSelected=nullptr);
     bool vehicleButton(const char* text, Texture* icon, struct Driver* driver);

@@ -12,10 +12,11 @@ public:
     WRocketBooster()
     {
         info.name = "Rocket Booster";
-        info.description = "Propels the vehicle forward with a burst of speed.";
+        info.description = "It's like nitrous, but better!";
         info.icon = "mine_icon";
         info.price = 1000;
         info.maxUpgradeLevel = 5;
+        info.weaponType = WeaponInfo::REAR_WEAPON;
     }
 
     void reset() override

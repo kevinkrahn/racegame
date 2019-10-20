@@ -20,7 +20,7 @@ public:
             {
                 "Engine",
                 "Upgrades the engine to improve\nacceleration and top speed.",
-                nullptr,
+                "icon_pistons",
                 PerformanceUpgradeType::ENGINE,
                 5,
                 1500,
@@ -28,7 +28,7 @@ public:
             {
                 "Tires",
                 "Equips better tires for improved traction\nand overall handling.",
-                nullptr,
+                "icon_wheel",
                 PerformanceUpgradeType::TIRES,
                 5,
                 1000,
@@ -36,7 +36,7 @@ public:
             {
                 "Armor",
                 "Adds additional armor to improve\nresistance against all forms of damage.",
-                nullptr,
+                "icon_armor",
                 PerformanceUpgradeType::ARMOR,
                 5,
                 1000,
@@ -44,7 +44,7 @@ public:
             {
                 "Suspension",
                 "Upgrades the suspension to be stiffer\nand more stable around corners.",
-                nullptr,
+                "icon_suspension",
                 PerformanceUpgradeType::SUSPENSION,
                 2,
                 1250,
@@ -126,6 +126,7 @@ public:
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 12.f * u.upgradeLevel;
                     break;
+                // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:
                     tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
                     tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;

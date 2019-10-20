@@ -16,6 +16,7 @@ public:
         info.icon = "mine_icon";
         info.price = 900;
         info.maxUpgradeLevel = 5;
+        info.weaponType = WeaponInfo::REAR_WEAPON;
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

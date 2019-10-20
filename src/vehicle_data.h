@@ -157,7 +157,7 @@ struct VehicleConfiguration
     u32 frontWeaponUpgradeLevel[3] = { 4, 0, 0 };
     i32 rearWeaponIndices[3] = { 2, -1, -1 };
     u32 rearWeaponUpgradeLevel[3] = { 4, 0, 0 };
-    i32 specialAbilityIndex;
+    i32 specialAbilityIndex = -1;
 
     struct Upgrade
     {

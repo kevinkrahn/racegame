@@ -15,12 +15,11 @@ public:
 
         loadSceneData("mini.Scene");
 
-        // TODO: add upgrade icons
         availableUpgrades = {
             {
                 "Engine",
                 "Upgrades the engine to improve\nacceleration and top speed.",
-                nullptr,
+                "icon_pistons",
                 PerformanceUpgradeType::ENGINE,
                 5,
                 1500,
@@ -28,7 +27,7 @@ public:
             {
                 "Tires",
                 "Equips better tires for improved traction\nand overall handling.",
-                nullptr,
+                "icon_wheel",
                 PerformanceUpgradeType::TIRES,
                 5,
                 1000,
@@ -36,7 +35,7 @@ public:
             {
                 "Armor",
                 "Adds additional armor to improve\nresistance against all forms of damage.",
-                nullptr,
+                "icon_armor",
                 PerformanceUpgradeType::ARMOR,
                 5,
                 1000,
@@ -44,7 +43,7 @@ public:
             {
                 "Suspension",
                 "Upgrades the suspension to be stiffer\nand more stable around corners.",
-                nullptr,
+                "icon_suspension",
                 PerformanceUpgradeType::SUSPENSION,
                 2,
                 1250,
@@ -52,7 +51,7 @@ public:
             {
                 "Weight Reduction",
                 "Strips out unnecessary parts of the vehicle.\nThe reduced weight will improve acceleration and handling.",
-                nullptr,
+                "icon_weight",
                 PerformanceUpgradeType::WEIGHT_REDUCTION,
                 2,
                 1500,
@@ -60,7 +59,7 @@ public:
             {
                 "AWD Conversion",
                 "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
-                nullptr,
+                "icon_drivetrain",
                 PerformanceUpgradeType::ALL_WHEEL_DRIVE,
                 1,
                 6000,

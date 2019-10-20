@@ -10,6 +10,13 @@ struct WeaponInfo
     const char* icon = nullptr;
     i32 price = 0;
     u32 maxUpgradeLevel = 5;
+
+    enum WeaponType
+    {
+        FRONT_WEAPON,
+        REAR_WEAPON,
+        SPECIAL_ABILITY,
+    } weaponType = FRONT_WEAPON;
 };
 
 class Weapon

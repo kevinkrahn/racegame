@@ -292,7 +292,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
     return clicked;
 }
 
-bool Gui::button(const char* text, bool active, const char* icon)
+bool Gui::button(const char* text, bool active, const char* icon, bool iconbg)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -316,11 +316,14 @@ bool Gui::button(const char* text, bool active, const char* icon)
                     glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
                     HorizontalAlign::LEFT, VerticalAlign::CENTER));
 
-        Texture* iconTexture = g_resources.getTexture(icon);
-        Texture* bgTexture = g_resources.getTexture("iconbg");
         f32 iconSize = glm::floor(bh * 0.8f);
-        renderer->push2D(QuadRenderable(bgTexture,
-                    pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+        if (iconbg)
+        {
+            Texture* bgTexture = g_resources.getTexture("iconbg");
+            renderer->push2D(QuadRenderable(bgTexture,
+                        pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+        }
+        Texture* iconTexture = g_resources.getTexture(icon);
         renderer->push2D(QuadRenderable(iconTexture,
                     pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
     }

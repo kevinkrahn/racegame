@@ -16,6 +16,8 @@ public:
         info.icon = "blaster_icon";
         info.price = 1100;
         info.maxUpgradeLevel = 5;
+        info.weaponType = WeaponInfo::FRONT_WEAPON;
+
         ammoUnitCount = 12;
         fireMode = FireMode::CONTINUOUS;
     }

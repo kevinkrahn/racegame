@@ -244,17 +244,17 @@ void Menu::championshipMenu()
     }
 
     g_gui.gap(10);
-    if (g_gui.button("Begin Race", playerIndex == vehicleCount))
+    if (g_gui.button("Begin Race", playerIndex == vehicleCount, "icon_flag", false))
     {
         Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
         menuMode = HIDDEN;
     }
-    if (g_gui.button("Standings"))
+    if (g_gui.button("Championship Standings", true, "icon_stats", false))
     {
         menuMode = CHAMPIONSHIP_STANDINGS;
     }
-    g_gui.button("Player Stats");
+    g_gui.button("Player Stats", true, "icon_stats2", false);
     g_gui.gap(10);
 
     if (g_gui.button("Quit"))
@@ -321,11 +321,11 @@ void Menu::championshipGarage()
             mode = 1;
         }
         g_gui.label("Vehicle Upgrades");
-        if (g_gui.button("Performance", driver.vehicleIndex != -1, "iconbg"))
+        if (g_gui.button("Performance", driver.vehicleIndex != -1, "icon_engine", false))
         {
             mode = 2;
         }
-        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, "iconbg"))
+        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, "icon_spraycan", false))
         {
             mode = 3;
         }
@@ -348,7 +348,9 @@ void Menu::championshipGarage()
                 mode = i + 7;
             }
         }
-        if (g_gui.button("Special Ability", driver.vehicleIndex != -1, "iconbg"))
+        if (g_gui.button("Special Ability", driver.vehicleIndex != -1,
+                    vehicleConfig.specialAbilityIndex == -1 ? "iconbg"
+                    : g_weapons[vehicleConfig.specialAbilityIndex].info.icon))
         {
             mode = 9;
         }
@@ -475,6 +477,11 @@ void Menu::championshipGarage()
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
             auto& weapon = g_weapons[i];
+            if (weapon.info.weaponType != WeaponInfo::FRONT_WEAPON)
+            {
+                continue;
+            }
+
             bool isSelected = false;
 
             const char* extraText = nullptr;
@@ -516,6 +523,11 @@ void Menu::championshipGarage()
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
             auto& weapon = g_weapons[i];
+            if (weapon.info.weaponType != WeaponInfo::REAR_WEAPON)
+            {
+                continue;
+            }
+
             bool isSelected = false;
 
             const char* extraText = nullptr;
@@ -552,6 +564,36 @@ void Menu::championshipGarage()
     else if (mode == 9)
     {
         g_gui.label("Special Ability");
+        i32 equippedWeaponIndex = vehicleConfig.specialAbilityIndex;
+        for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
+        {
+            auto& weapon = g_weapons[i];
+            if (weapon.info.weaponType != WeaponInfo::SPECIAL_ABILITY)
+            {
+                continue;
+            }
+
+            bool isSelected = false;
+
+            const char* extraText = nullptr;
+            bool isEquipped = equippedWeaponIndex != -1 && equippedWeaponIndex == i;
+            if (isEquipped)
+            {
+                extraText = "Equipped";
+            }
+            if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
+                        driver.credits >= weapon.info.price && !isEquipped,
+                        weapon.info.icon, &isSelected))
+            {
+                driver.credits -= weapon.info.price;
+                driver.getVehicleConfig()->specialAbilityIndex = i;
+                // TODO: Play upgrade sound
+            }
+            if (isSelected)
+            {
+                messageStr = weapon.info.description;
+            }
+        }
     }
 
     g_gui.gap(20);

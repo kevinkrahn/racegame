@@ -14,6 +14,7 @@ public:
         info.icon = "blaster_icon";
         info.price = 800;
         info.maxUpgradeLevel = 5;
+        info.weaponType = WeaponInfo::FRONT_WEAPON;
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
