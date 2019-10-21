@@ -97,10 +97,18 @@ void Menu::mainMenu()
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9));
 
         auto& v = g_game.currentScene->getRaceResults();
-        for (u32 i=0; i<10; ++i)
+        for (i32 i=0; i<10; ++i)
         {
             v.push_back({
-                i, &g_game.state.drivers[i], {}
+                i,
+                &g_game.state.drivers[i],
+                {
+                    irandom(series, 0, 10),
+                    irandom(series, 0, 2),
+                    irandom(series, 0, 10),
+                    irandom(series, 0, 10),
+                },
+                true
             });
         }
         menuMode = RACE_RESULTS;
@@ -831,7 +839,7 @@ void Menu::championshipStandings()
 
 void Menu::raceResults()
 {
-    f32 w = g_gui.convertSizei(550);
+    f32 w = g_gui.convertSizei(600);
 
     f32 cw = (f32)(g_game.windowWidth/2);
     glm::vec2 menuPos = glm::vec2(cw - w/2, glm::floor(g_game.windowHeight * 0.2f));
@@ -852,7 +860,7 @@ void Menu::raceResults()
                 w - g_gui.convertSize(16), g_gui.convertSize(19), glm::vec3(0.f), 0.6f));
 
     f32 columnOffset[] = {
-        32, 90, 230, 300, 370, 450
+        32, 90, 230, 300, 370, 430, 490
     };
     const char* columnTitle[] = {
         "NO.",
@@ -860,6 +868,7 @@ void Menu::raceResults()
         "ACCIDENTS",
         "DESTROYED",
         "FRAGS",
+        "BONUS",
         "CREDITS EARNED"
     };
 
@@ -892,10 +901,13 @@ void Menu::raceResults()
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.attackBonuses),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[4]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getBonus()),
+                    pos + glm::vec2(g_gui.convertSizei(columnOffset[5]), 0),
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
             g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getCreditsEarned()),
-                        pos + glm::vec2(g_gui.convertSizei(columnOffset[5]), 0),
+                        pos + glm::vec2(g_gui.convertSizei(columnOffset[6]), 0),
                         glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         }
     }

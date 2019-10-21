@@ -518,6 +518,10 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
             rearWeapons[i]->upgradeLevel = config->rearWeaponUpgradeLevel[i];
         }
     }
+    if (driver->getVehicleConfig()->specialAbilityIndex != -1)
+    {
+        specialAbility = g_weapons[driver->getVehicleConfig()->specialAbilityIndex].create();
+    }
 }
 
 Vehicle::~Vehicle()
@@ -829,8 +833,8 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             renderer->push2D(TextRenderable(&font3, it->str,
                 layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
-                    glm::vec2(0, layout.scale.y * dim.y * 0.3) + glm::vec2(0, count * dim.y * 0.04),
-                { 1, 1, 1 }, 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+                    glm::vec2(0, layout.scale.y * dim.y * 0.3f) + glm::vec2(0, count * dim.y * 0.04f),
+                it->color, (glm::sin((f32)scene->getWorldTime()*6.f) + 1.f) * 0.25f + 0.5f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
             ++count;
             it->timeLeft -= deltaTime;
             if (it->timeLeft <= 0.f)
@@ -1331,6 +1335,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     lastValidPosition = currentPosition;
 
+    if (specialAbility)
+    {
+        specialAbility->update(scene, this, false, false, deltaTime);
+    }
+
     const f32 maxSkippableDistance = 250.f;
     if (canGo)
     {
@@ -1352,9 +1361,43 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
             // TODO: play sound
             ++currentLap;
+            if (currentLap == scene->getTotalLaps())
+            {
+                addNotification("LAST LAP!", 2.f, glm::vec3(1, 0, 0));
+            }
+            for (auto& b : lappedVehicles)
+            {
+                b = false;
+            }
             graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
             resetAmmo();
+        }
+    }
+
+    // check for lapping bonus
+    if (!finishedRace)
+    {
+        for (auto& v : scene->getVehicles())
+        {
+            if (v.get() == this)
+            {
+                continue;
+            }
+
+            if (lappedVehicles[v->vehicleIndex])
+            {
+                continue;
+            }
+
+            if (graphResult.lapDistanceLowMark < v->graphResult.lapDistanceLowMark
+                    && currentLap > v->currentLap)
+            {
+                lappedVehicles[v->vehicleIndex] = true;
+                ++raceStatistics.lappingBonuses;
+                addNotification("LAPPING BONUS!", 2.f, glm::vec3(1, 1, 0));
+                // TODO: play sound
+            }
         }
     }
 

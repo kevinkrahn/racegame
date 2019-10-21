@@ -61,10 +61,8 @@ public:
     TrackGraph::QueryResult graphResult;
     u32 followPathIndex = 0;
     u32 targetPointIndex = 0;
-    glm::vec3 targetOffset = glm::vec3(0);
     glm::vec3 startOffset = glm::vec3(0);
     glm::mat4 startTransform;
-	f32 backupTimer = 0.f;
 	f32 flipTimer = 0.f;
 	f32 deadTimer = 0.f;
 	f32 controlledBrakingTimer = 0.f;
@@ -79,17 +77,22 @@ public:
     bool isHidden = false;
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
+    bool lappedVehicles[16] = { 0 };
 
-    // ai timers
+    // ai
+    glm::vec3 targetOffset = glm::vec3(0);
+	f32 backupTimer = 0.f;
     f32 attackTimer = 0.f;
     f32 targetTimer = 0.f;
     Vehicle* target = nullptr;
     f32 fearTimer = 0.f;
 
+    // weapons
     std::unique_ptr<Weapon>
         frontWeapons[ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)];
     std::unique_ptr<Weapon>
         rearWeapons[ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)];
+    std::unique_ptr<Weapon> specialAbility;
 
     glm::vec3 screenShakeVelocity = glm::vec3(0);
     glm::vec3 screenShakeOffset = glm::vec3(0);
@@ -114,6 +117,7 @@ public:
 	{
         const char* str;
         f32 timeLeft;
+        glm::vec3 color;
 	};
 	SmallVec<Notification> notifications;
 
@@ -154,9 +158,13 @@ public:
             smokeTimerDamage = 0.015f;
         }
     }
-    void addNotification(const char* str)
+    void addNotification(const char* str, f32 time=2.f, glm::vec3 const& color=glm::vec3(1.f))
     {
-        if (notifications.size() < notifications.capacity()) notifications.push_back({ str, 2.f });
+        if (notifications.size() == notifications.capacity())
+        {
+            notifications.erase(notifications.begin());
+        }
+        notifications.push_back({ str, time, color });
     }
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);

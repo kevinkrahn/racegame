@@ -31,15 +31,19 @@ struct RaceResult
     RaceStatistics statistics;
     bool finishedRace;
 
-    i32 getCreditsEarned() const
+    i32 getBonus() const
     {
-        return (finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0)
-                + statistics.attackBonuses * 150;
+        return statistics.attackBonuses * 150 + statistics.lappingBonuses * 500;
     }
 
     i32 getLeaguePointsEarned() const
     {
         return finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0;
+    }
+
+    i32 getCreditsEarned() const
+    {
+        return getLeaguePointsEarned() + getBonus();
     }
 };
 
