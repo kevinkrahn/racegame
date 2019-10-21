@@ -967,6 +967,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             hitPoints = tuning.maxHitPoints;
 
             const TrackGraph::Node* node = graphResult.lastNode;
+            if (!node)
+            {
+                node = scene->getTrackGraph().getEndNode();
+            }
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
                 glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);

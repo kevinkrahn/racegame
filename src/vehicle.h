@@ -146,6 +146,10 @@ public:
     glm::vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
     Driver* getDriver() const { return driver; }
+    bool hasAbility(const char* name) const
+    {
+        return specialAbility && specialAbility->info.name == name;
+    }
 
     void blowUp();
     void reset(glm::mat4 const& transform) const;

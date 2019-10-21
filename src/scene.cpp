@@ -837,13 +837,26 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                 {
                     ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
                     ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
-                    f32 damage = glm::min(magnitude * 0.001f, 50.f);
+                    f32 damage = glm::min(magnitude * 0.001f, 60.f);
 
                     // apply damage
                     if (a && a->entityType == ActorUserData::VEHICLE)
                     {
-                        u32 instigator = (b && b->entityType == ActorUserData::VEHICLE) ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
-                        a->vehicle->applyDamage(damage, instigator);
+                        f32 myDamage = damage;
+                        if (b && b->entityType == ActorUserData::VEHICLE)
+                        {
+                            if (b->vehicle->hasAbility("Ram Booster"))
+                            {
+                                myDamage *= 2.5f;
+                            }
+                            if (a->vehicle->hasAbility("Ram Booster"))
+                            {
+                                myDamage *= 0.75f;
+                            }
+                        }
+                        u32 instigator = (b && b->entityType == ActorUserData::VEHICLE)
+                            ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
+                        a->vehicle->applyDamage(myDamage, instigator);
                         if (damage > 5.f)
                         {
                             a->vehicle->shakeScreen(damage * 0.3f);
@@ -851,11 +864,24 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                     }
                     if (b && b->entityType == ActorUserData::VEHICLE)
                     {
-                        u32 instigator = (a && a->entityType == ActorUserData::VEHICLE) ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
-                        b->vehicle->applyDamage(damage, instigator);
+                        f32 myDamage = damage;
+                        if (a && a->entityType == ActorUserData::VEHICLE)
+                        {
+                            if (a->vehicle->hasAbility("Ram Booster"))
+                            {
+                                myDamage *= 2.5f;
+                            }
+                            if (b->vehicle->hasAbility("Ram Booster"))
+                            {
+                                myDamage *= 0.75f;
+                            }
+                        }
+                        u32 instigator = (a && a->entityType == ActorUserData::VEHICLE)
+                            ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
+                        b->vehicle->applyDamage(myDamage, instigator);
                         if (damage > 5.f)
                         {
-                            a->vehicle->shakeScreen(damage * 0.3f);
+                            b->vehicle->shakeScreen(damage * 0.3f);
                         }
                     }
 
