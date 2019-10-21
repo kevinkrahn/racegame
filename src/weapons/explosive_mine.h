@@ -27,7 +27,7 @@ public:
 
         if (ammo == 0)
         {
-            // TODO: play no-no sound
+            outOfAmmo(vehicle);
             return;
         }
 
@@ -36,7 +36,7 @@ public:
         if (!scene->raycastStatic(vehicle->getPosition(), down, 2.f, &hit,
                     COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK))
         {
-            // TODO: play no-no sound
+            g_audio.playSound(g_resources.getSound("nono"), SoundType::GAME_SFX);
             return;
         }
 
@@ -49,6 +49,8 @@ public:
         m[2] = glm::vec4(glm::normalize(
                 glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
         scene->addEntity(new Mine(glm::translate(glm::mat4(1.f), pos) * m, vehicle->vehicleIndex));
+        g_audio.playSound3D(g_resources.getSound("thunk"), SoundType::GAME_SFX,
+                vehicle->getPosition(), false, 1.f, 0.9f);
 
         ammo -= 1;
     }

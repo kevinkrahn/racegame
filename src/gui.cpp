@@ -235,8 +235,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
                 isMouseClickHandled = true;
                 isMouseCaptured = true;
                 clicked = true;
-                // TODO: need different sound for this
-                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+                g_audio.playSound(g_resources.getSound("click"), SoundType::MENU_SFX);
             }
         }
     }
@@ -254,8 +253,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
             {
                 clicked = true;
                 isKeyboardInputHandled = true;
-                // TODO: need different sound for this
-                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+                g_audio.playSound(g_resources.getSound("click"), SoundType::MENU_SFX);
             }
         }
     }

@@ -559,9 +559,10 @@ void Scene::vehicleFinish(u32 n)
             }
         }
     }
-    if (playerCount == playerFinishCount)
+    if (playerCount == playerFinishCount && !allPlayersFinished)
     {
         allPlayersFinished = true;
+        g_audio.playSound(g_resources.getSound("clapping"), SoundType::GAME_SFX);
     }
 }
 

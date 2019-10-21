@@ -582,6 +582,7 @@ void Vehicle::reset(glm::mat4 const& transform) const
 void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake)
 {
+    engineThrottle = accel;
     if (canGo)
     {
         PxVehicleDrive4WRawInputData inputs;
@@ -961,7 +962,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         if (tireSound) g_audio.setSoundVolume(tireSound, 0.f);
         if (deadTimer <= 0.f)
         {
-            if (engineSound) g_audio.setSoundVolume(engineSound, 1.f);
             backupTimer = 0.f;
             deadTimer = 0.f;
             hitPoints = tuning.maxHitPoints;
@@ -1363,7 +1363,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 finishedRace = true;
                 scene->vehicleFinish(vehicleIndex);
             }
-            // TODO: play sound
+            if (currentLap > 0)
+            {
+                g_audio.playSound3D(g_resources.getSound("lap"), SoundType::GAME_SFX,
+                        currentPosition);
+            }
             ++currentLap;
             if (currentLap == scene->getTotalLaps())
             {
@@ -1419,6 +1423,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
         //g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
         g_audio.setSoundPitch(engineSound, 1.f + engineRPM * 0.04f);
+
+        engineThrottleLevel = smoothMove(engineThrottleLevel, glm::abs(engineThrottle), 1.5f, deltaTime);
+        g_audio.setSoundVolume(engineSound, clamp(engineThrottleLevel + 0.7f, 0.f, 1.f));
+
         g_audio.setSoundPosition(engineSound, lastValidPosition);
     }
     if (tireSound)
@@ -1684,6 +1692,15 @@ void Vehicle::blowUp()
     engineRPM = 0.f;
     scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
     scene->attackCredit(lastDamagedBy, vehicleIndex);
+    const char* sounds[] = {
+        "explosion4",
+        "explosion5",
+        "explosion6",
+        "explosion7",
+    };
+    u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(sounds));
+    g_audio.playSound3D(g_resources.getSound(sounds[index]), SoundType::GAME_SFX,
+            getPosition(), false, 1.f, 0.95f);
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
 }
 

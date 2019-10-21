@@ -5,12 +5,36 @@
 #include "../mesh_renderables.h"
 #include "../billboard.h"
 
+Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
+        glm::vec3 const& upVector, u32 instigator, ProjectileType projectileType)
+    : position(position), velocity(velocity), upVector(upVector),
+        instigator(instigator), projectileType(projectileType)
+{
+    bulletMesh = g_resources.getMesh("world.Bullet");
+    switch(projectileType)
+    {
+        case BLASTER:
+            life = 3.f;
+            groundFollow = false;
+            collisionRadius = 0.3f;
+            damage = 60.f;
+            break;
+        case BULLET:
+            life = 2.f;
+            groundFollow = false;
+            collisionRadius = 0.1f;
+            damage = 12.f;
+            break;
+    }
+}
+
+
 void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     glm::vec3 prevPosition = position;
     position += velocity * deltaTime;
 
-    if (groundFollow > 0.f)
+    if (groundFollow)
     {
         f32 speed = glm::length(velocity);
         PxRaycastBuffer rayHit;
@@ -37,6 +61,45 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         if (data && data->entityType == ActorUserData::VEHICLE)
         {
             data->vehicle->applyDamage(damage, instigator);
+            switch (projectileType)
+            {
+                case BLASTER:
+                    break;
+                case BULLET:
+                    const char* impacts[] = {
+                        "bullet_impact1",
+                        "bullet_impact2",
+                        "bullet_impact3",
+                    };
+                    u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
+                    g_audio.playSound3D(g_resources.getSound(impacts[index]),
+                            SoundType::GAME_SFX, position, false,
+                            random(scene->randomSeries, 0.8f, 1.2f),
+                            random(scene->randomSeries, 0.8f, 1.f));
+                    break;
+            }
+        }
+        else
+        {
+            switch (projectileType)
+            {
+                case BLASTER:
+                    g_audio.playSound3D(g_resources.getSound("blaster_hit"),
+                            SoundType::GAME_SFX, position, false, 1.f, 0.8f);
+                    break;
+                case BULLET:
+                    const char* impacts[] = {
+                        "richochet1",
+                        "richochet2",
+                        "richochet3",
+                        "richochet4",
+                    };
+                    u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
+                    g_audio.playSound3D(g_resources.getSound(impacts[index]),
+                            SoundType::GAME_SFX, position, false, 0.9f,
+                            random(scene->randomSeries, 0.75f, 0.9f));
+                    break;
+            }
         }
         this->destroy();
     }

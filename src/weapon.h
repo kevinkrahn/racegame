@@ -34,6 +34,7 @@ public:
     u32 ammoUnitCount = 1;
     u32 upgradeLevel;
 
+    void outOfAmmo(class Vehicle* vehicle);
     virtual ~Weapon() {}
     u32 getMaxAmmo() const { return ammoUnitCount * upgradeLevel; }
     void refillAmmo() { ammo = getMaxAmmo(); }

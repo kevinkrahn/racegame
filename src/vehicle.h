@@ -78,6 +78,8 @@ public:
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
     bool lappedVehicles[16] = { 0 };
+    f32 engineThrottle = 0.f;
+    f32 engineThrottleLevel = 0.f;
 
     // ai
     glm::vec3 targetOffset = glm::vec3(0);

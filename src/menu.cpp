@@ -829,6 +829,7 @@ void Menu::championshipStandings()
 
     if (g_gui.didSelect())
     {
+        g_audio.playSound(g_resources.getSound("close"), SoundType::MENU_SFX);
         menuMode = CHAMPIONSHIP_MENU;
         if (g_game.currentScene->filename != championshipTracks[g_game.state.currentRace])
         {
@@ -914,6 +915,7 @@ void Menu::raceResults()
 
     if (g_gui.didSelect())
     {
+        g_audio.playSound(g_resources.getSound("close"), SoundType::MENU_SFX);
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
             menuMode = CHAMPIONSHIP_STANDINGS;

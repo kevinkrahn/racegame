@@ -27,7 +27,7 @@ public:
 
         if (ammo == 0)
         {
-            // TODO: play no-no sound
+            outOfAmmo(vehicle);
             return;
         }
 
@@ -42,11 +42,13 @@ public:
             vel = glm::normalize(vel) * minSpeed;
         }
         glm::vec3 pos = translationOf(transform);
-        scene->addEntity(new Projectile(pos + forward * 3.f + right * 0.8f,
+        scene->addEntity(new Projectile(pos + forward * 2.5f + right * 0.8f,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BLASTER));
-        scene->addEntity(new Projectile(pos + forward * 3.f - right * 0.8f,
+        scene->addEntity(new Projectile(pos + forward * 2.5f - right * 0.8f,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BLASTER));
-        // TODO: play sound
+        g_audio.playSound3D(g_resources.getSound("blaster"),
+                SoundType::GAME_SFX, vehicle->getPosition(), false,
+                random(scene->randomSeries, 0.95f, 1.05f), 1.f);
 
         ammo -= 1;
     }
