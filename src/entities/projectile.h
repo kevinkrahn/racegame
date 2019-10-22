@@ -10,7 +10,8 @@ public:
     enum ProjectileType
     {
         BLASTER,
-        BULLET
+        BULLET,
+        MISSILE,
     };
 
 private:
@@ -23,6 +24,7 @@ private:
     bool groundFollow;
     f32 collisionRadius;
     u32 damage;
+    f32 accel = 0.f;
     ProjectileType projectileType;
 
 public:

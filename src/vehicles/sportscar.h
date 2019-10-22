@@ -63,7 +63,7 @@ public:
         tuning.specs.offroad = 0.2f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
-        tuning.chassisDensity = 89;
+        tuning.chassisMass = 1350;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.1f;
@@ -79,8 +79,8 @@ public:
         tuning.topSpeed = 33.f;
         tuning.driftBoost = 0.f;
 
-        tuning.maxEngineOmega = 650.f;
-        tuning.peekEngineTorque = 930.f;
+        tuning.maxEngineOmega = 710.f;
+        tuning.peekEngineTorque = 950.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -103,8 +103,8 @@ public:
 
         tuning.frontAntiRollbarStiffness = 7000.f;
         tuning.rearAntiRollbarStiffness = 7000.f;
-
         tuning.ackermannAccuracy = 0.5f;
+        tuning.centerOfMass = { 0.f, 0.f, -0.75f };
 
         for (auto& u : configuration.performanceUpgrades)
         {

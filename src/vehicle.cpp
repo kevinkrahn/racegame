@@ -279,8 +279,10 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
     }
 
     PxVec3 centerOfMassOffset = convert(tuning.centerOfMass);
-    PxRigidBodyExt::updateMassAndInertia(*actor, tuning.chassisDensity);
-    actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
+    PxRigidBodyExt::setMassAndUpdateInertia(*actor, tuning.chassisMass,
+            &centerOfMassOffset, false);
+    //PxRigidBodyExt::updateMassAndInertia(*actor, tuning.chassisDensity);
+    //actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
     actor->userData = &actorUserData;
 
     f32 wheelMOIFront = 0.5f * tuning.wheelMassFront * square(tuning.wheelRadiusFront);
@@ -1080,12 +1082,15 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
             f32 steerAngle = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
 
+            f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
+                    driver->ai.aggression);
+
             // get behind target
-            if (!isInAir && driver->ai.aggression > 0.f)
+            if (!isInAir && aggression > 0.f)
             {
                 if (!target && frontWeapons[0] && frontWeapons[0]->ammo > 0)
                 {
-                    f32 maxTargetDist = driver->ai.aggression * 25.f + 15.f;
+                    f32 maxTargetDist = aggression * 25.f + 15.f;
                     for (auto& v : scene->getVehicles())
                     {
                         if (v.get() == this)
@@ -1096,7 +1101,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
                         glm::vec2 targetDiff = glm::normalize(-diff);
                         if (glm::dot(glm::vec2(getForwardVector()), targetDiff)
-                                < driver->ai.aggression && glm::length2(diff) < square(maxTargetDist))
+                                < aggression && glm::length2(diff) < square(maxTargetDist))
                         {
                             target = v.get();
                             break;
@@ -1107,12 +1112,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 if (target)
                 {
                     targetTimer += deltaTime;
-                    if (targetTimer > (1.f - driver->ai.aggression) * 2.f)
+                    if (targetTimer > (1.f - aggression) * 2.f)
                     {
                         glm::vec2 targetDiff = currentPosition - target->getPosition();
                         // only steer toward the target if doing so would not result in veering off course
                         if (glm::dot(targetDiff, dirToTargetP) >
-                                0.8f - (driver->ai.aggression * 0.2f))
+                                0.8f - (aggression * 0.2f))
                         {
                             f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.4f;
                             steerAngle = clamp(targetSteerAngle, -0.5f, 0.5f);
@@ -1133,7 +1138,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             // fear
             if (driver->ai.fear > 0.f)
             {
-                f32 fearRayLength = driver->ai.aggression * 35.f + 10.f;
+                f32 fearRayLength = aggression * 35.f + 10.f;
                 if (scene->sweep(0.5f, currentPosition, -getForwardVector(),
                             fearRayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
                 {
@@ -1246,9 +1251,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             // front weapons
             bool beginAttackFront = false;
             bool holdAttackFront = false;
-            if (driver->ai.aggression > 0.f && frontWeapons[0] && frontWeapons[0]->ammo > 0)
+            if (aggression > 0.f && frontWeapons[0] && frontWeapons[0]->ammo > 0)
             {
-                f32 rayLength = driver->ai.aggression * 50.f + 10.f;
+                f32 rayLength = aggression * 50.f + 10.f;
                 /*
                 scene->debugDraw.line(
                         currentPosition,
@@ -1268,14 +1273,14 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
                 if (frontWeapons[0]->fireMode == Weapon::CONTINUOUS)
                 {
-                    if (attackTimer > 2.f * (1.f - driver->ai.aggression) + 0.4f)
+                    if (attackTimer > 2.f * (1.f - aggression) + 0.4f)
                     {
                         holdAttackFront = true;
                     }
                 }
                 else
                 {
-                    if (attackTimer > 2.5f * (1.f - driver->ai.aggression) + 0.7f)
+                    if (attackTimer > 2.5f * (1.f - aggression) + 0.7f)
                     {
                         attackTimer = 0.f;
                         beginAttackFront = true;
@@ -1298,11 +1303,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 bool fire = false;
                 if (!isInAir
-                        && driver->ai.aggression > 0.f
+                        && aggression > 0.f
                         && rearWeapons[0]->ammo > 0
                         && getForwardSpeed() > 10.f)
                 {
-                    if (random(scene->randomSeries, 0.f, 2.5f * (1.f - driver->ai.aggression) + 1.f) < 0.001f)
+                    if (random(scene->randomSeries, 0.f, 2.5f * (1.f - aggression) + 1.f) < 0.001f)
                     {
                         fire = true;
                     }

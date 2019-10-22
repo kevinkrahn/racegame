@@ -27,7 +27,7 @@ public:
         tuning.specs.handling = 0.9f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
-        tuning.chassisDensity = 78;
+        tuning.chassisMass = 1100;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.24f;

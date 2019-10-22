@@ -78,11 +78,11 @@ public:
         tuning.specs.offroad = 0.25f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
-        tuning.chassisDensity = 92;
+        tuning.chassisMass = 1300;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.5;
-        tuning.wheelOffroadDampingRate = 30;
+        tuning.wheelOffroadDampingRate = 35;
         tuning.frontToeAngle = 0;
         tuning.rearToeAngle = 0;
         tuning.trackTireFriction = 3.6f;
@@ -118,8 +118,8 @@ public:
 
         tuning.frontAntiRollbarStiffness = 8000.f;
         tuning.rearAntiRollbarStiffness = 8000.f;
-
         tuning.ackermannAccuracy = 0.5f;
+        tuning.centerOfMass = { 0.f, 0.f, -0.1f };
 
         for (auto& u : configuration.performanceUpgrades)
         {
@@ -149,7 +149,7 @@ public:
                     tuning.specs.handling += 0.04f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::WEIGHT_REDUCTION:
-                    tuning.chassisDensity -= 1.5f * u.upgradeLevel;
+                    tuning.chassisMass -= 70.f * u.upgradeLevel;
                     tuning.specs.acceleration += 0.02f * u.upgradeLevel;
                     tuning.specs.handling += 0.02f * u.upgradeLevel;
                     break;

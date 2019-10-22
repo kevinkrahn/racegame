@@ -39,10 +39,10 @@ void Menu::mainMenu()
     {
     }
 
-    if (g_gui.button("Quick Play"))
+    if (g_gui.button("Quick Race"))
     {
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 1, 0));
+        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 0, 0));
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1, 0));
 #if 1
         g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 2, 1));
@@ -57,9 +57,9 @@ void Menu::mainMenu()
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-        //Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
+        Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
         //Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
-        Scene* scene = g_game.changeScene("tracks/the_climb.dat");
+        //Scene* scene = g_game.changeScene("tracks/the_climb.dat");
         scene->startRace();
         menuMode = HIDDEN;
     }
@@ -389,7 +389,8 @@ void Menu::championshipGarage()
         else
         {
             driver.vehicleIndex = -1;
-            vehicleConfig.colorIndex = driver.lastColorIndex;
+            vehicleConfig = VehicleConfiguration{};
+            vehicleConfig.colorIndex = 0;
         }
 
         messageStr = vehicleData->description;
@@ -685,7 +686,7 @@ void Menu::championshipGarage()
         tuningReal.specs.acceleration,
         tuningReal.topSpeed / 100.f,
         tuningReal.maxHitPoints / 300.f,
-        tuningReal.chassisDensity / 350.f, // TODO: calculate the actual mass
+        tuningReal.chassisMass / 2500.f,
         tuningReal.specs.handling,
         tuningReal.specs.offroad,
     };
@@ -693,7 +694,7 @@ void Menu::championshipGarage()
         tuningUpgrade.specs.acceleration,
         tuningUpgrade.topSpeed / 100.f,
         tuningUpgrade.maxHitPoints / 300.f,
-        tuningUpgrade.chassisDensity / 350.f, // TODO: calculate the actual mass
+        tuningUpgrade.chassisMass / 2500.f,
         tuningUpgrade.specs.handling,
         tuningUpgrade.specs.offroad,
     };

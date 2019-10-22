@@ -16,7 +16,6 @@ struct Driver
     ComputerDriverData ai;
     bool useKeyboard = false;
     u32 controllerID = 0;
-    i32 lastColorIndex = 0;
 
     struct OwnedVehicle
     {

@@ -52,7 +52,7 @@ struct VehicleTuning
 {
     std::vector<VehicleCollisionsMesh> collisionMeshes;
 
-    f32 chassisDensity = 120.f;
+    f32 chassisMass = 1400.f;
     glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
 
     f32 wheelMassFront = 30.f;
@@ -128,6 +128,7 @@ struct VehicleTuning
 };
 
 glm::vec3 g_vehicleColors[] = {
+    { 0.9f, 0.9f, 0.9f },
     { 0.7f, 0.01f, 0.01f },
     { 0.02f, 0.02f, 0.02f },
     { 0.01f, 0.8f, 0.01f },
@@ -137,7 +138,6 @@ glm::vec3 g_vehicleColors[] = {
     { 0.5f, 0.2f, 0.8f },
     { 0.9f, 0.01f, 0.5f },
     { 0.02f, 0.7f, 0.1f },
-    { 0.9f, 0.9f, 0.9f },
     { 0.9f, 0.8f, 0.1f },
 };
 
@@ -153,9 +153,9 @@ struct VehicleConfiguration
     u32 engineUpgradeLevel = 0;
     u32 tireUpgradeLevel = 0;
 
-    i32 frontWeaponIndices[3] = { 1, -1, -1 };
-    u32 frontWeaponUpgradeLevel[3] = { 4, 0, 0 };
-    i32 rearWeaponIndices[3] = { 2, -1, -1 };
+    i32 frontWeaponIndices[3] = { 2, -1, -1 };
+    u32 frontWeaponUpgradeLevel[3] = { 5, 0, 0 };
+    i32 rearWeaponIndices[3] = { 3, -1, -1 };
     u32 rearWeaponUpgradeLevel[3] = { 4, 0, 0 };
     i32 specialAbilityIndex = -1;
 

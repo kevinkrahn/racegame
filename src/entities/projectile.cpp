@@ -25,6 +25,13 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             collisionRadius = 0.1f;
             damage = 12.f;
             break;
+        case MISSILE:
+            life = 4.f;
+            groundFollow = true;
+            collisionRadius = 0.6f;
+            damage = 110.f;
+            accel = 4.f;
+            break;
     }
 }
 
@@ -32,21 +39,40 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
 void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     glm::vec3 prevPosition = position;
-    position += velocity * deltaTime;
 
     if (groundFollow)
     {
         f32 speed = glm::length(velocity);
         PxRaycastBuffer rayHit;
-        f32 dist = 3.f;
-        if (scene->raycastStatic(position, { 0, 0, -1 }, dist, &rayHit))
+        f32 dist = 1.4f;
+        velocity.z -= deltaTime * 15.f;
+        if (scene->raycastStatic(position, { 0, 0, -1 }, 4.f, &rayHit))
         {
-            velocity.z = smoothMove(velocity.z, 0.f, 5.f, deltaTime);
-            f32 compression = 1.f - rayHit.block.distance;
-            if (rayHit.block.distance < 0.8f && velocity.z < 0.f) velocity.z = 0.f;
-            if (rayHit.block.distance > 1.2f && velocity.z > 0.f) velocity.z = 0.f;
-            velocity.z += compression * 90.f * deltaTime;
-            velocity = glm::normalize(velocity) * speed;
+            velocity.z -= deltaTime * 20.f;
+            if (rayHit.block.distance <= dist)
+            {
+                f32 compression = (dist - rayHit.block.distance) / dist;
+                velocity.z += compression * 400.f * deltaTime;
+                velocity.z = smoothMove(velocity.z, 0.f, 8.f, deltaTime);
+                f32 velAgainstHit = glm::dot(-velocity, convert(rayHit.block.normal));
+                if (velAgainstHit > 0.f)
+                {
+                    velocity += convert(rayHit.block.normal) *
+                        glm::min(velAgainstHit * deltaTime * 20.f, velAgainstHit);
+                }
+                velocity = glm::normalize(velocity) * (speed + accel * deltaTime);
+            }
+        }
+    }
+
+    position += velocity * deltaTime;
+
+    if (projectileType == MISSILE)
+    {
+        if (((u32)(life * 100.f) & 1) == 0)
+        {
+            scene->smoke.spawn(position, glm::vec3(0,0,1), 0.8f,
+                    glm::vec4(glm::vec3(0.6f), 1.f), 1.75f);
         }
     }
 
@@ -58,14 +84,19 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 glm::length(position - prevPosition), &sweepHit, ignoreBody))
     {
         ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
+        glm::vec3 hitPos = convert(sweepHit.block.position);
+
+        // hit vehicle
         if (data && data->entityType == ActorUserData::VEHICLE)
         {
             data->vehicle->applyDamage(damage, instigator);
             switch (projectileType)
             {
                 case BLASTER:
-                    break;
+                {
+                } break;
                 case BULLET:
+                {
                     const char* impacts[] = {
                         "bullet_impact1",
                         "bullet_impact2",
@@ -73,21 +104,30 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     };
                     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
                     g_audio.playSound3D(g_resources.getSound(impacts[index]),
-                            SoundType::GAME_SFX, position, false,
+                            SoundType::GAME_SFX, hitPos, false,
                             random(scene->randomSeries, 0.8f, 1.2f),
                             random(scene->randomSeries, 0.8f, 1.f));
-                    break;
+                } break;
+                case MISSILE:
+                {
+                    scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
+                    g_audio.playSound3D(g_resources.getSound("explosion1"),
+                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
+                } break;
             }
         }
+        // hit something else
         else
         {
             switch (projectileType)
             {
                 case BLASTER:
+                {
                     g_audio.playSound3D(g_resources.getSound("blaster_hit"),
-                            SoundType::GAME_SFX, position, false, 1.f, 0.8f);
-                    break;
+                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
+                } break;
                 case BULLET:
+                {
                     const char* impacts[] = {
                         "richochet1",
                         "richochet2",
@@ -96,9 +136,15 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     };
                     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
                     g_audio.playSound3D(g_resources.getSound(impacts[index]),
-                            SoundType::GAME_SFX, position, false, 0.9f,
+                            SoundType::GAME_SFX, hitPos, false, 0.9f,
                             random(scene->randomSeries, 0.75f, 0.9f));
-                    break;
+                } break;
+                case MISSILE:
+                {
+                    scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
+                    g_audio.playSound3D(g_resources.getSound("explosion1"),
+                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
+                } break;
             }
         }
         this->destroy();
@@ -145,6 +191,14 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_resources.getTexture("flare"),
                         position, glm::vec4(settings.emit, 0.8f), 0.75f));
+            break;
+        case MISSILE:
+            settings.color = glm::vec3(0.1f);
+            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+                * m * glm::scale(glm::mat4(1.f), glm::vec3(0.8f));
+            rw->push(LitRenderable(settings));
+            rw->push(BillboardRenderable(g_resources.getTexture("flare"), position,
+                        glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f));
             break;
     }
 }

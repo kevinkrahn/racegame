@@ -55,7 +55,7 @@ public:
         tuning.specs.offroad = 0.5f;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
-        tuning.chassisDensity = 98;
+        tuning.chassisMass = 2090;
         tuning.wheelMassFront = 25;
         tuning.wheelMassRear = 25;
         tuning.wheelDampingRate = 0.7f;
@@ -95,8 +95,8 @@ public:
 
         tuning.frontAntiRollbarStiffness = 8500.f;
         tuning.rearAntiRollbarStiffness = 8500.f;
-
         tuning.ackermannAccuracy = 0.5f;
+        tuning.centerOfMass = { 0.f, 0.f, -0.1f };
 
         for (auto& u : configuration.performanceUpgrades)
         {
