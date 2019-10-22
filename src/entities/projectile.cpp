@@ -17,26 +17,26 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             life = 3.f;
             groundFollow = false;
             collisionRadius = 0.3f;
-            damage = 50.f;
+            damage = 50;
             break;
         case BULLET:
             life = 2.f;
             groundFollow = false;
             collisionRadius = 0.1f;
-            damage = 12.f;
+            damage = 12;
             break;
         case MISSILE:
             life = 4.f;
             groundFollow = true;
             collisionRadius = 0.5f;
-            damage = 120.f;
+            damage = 120;
             accel = 4.f;
             break;
         case BOUNCER:
             life = 10.f;
             groundFollow = true;
             collisionRadius = 0.6f;
-            damage = 90.f;
+            damage = 90;
             break;
     }
 }
@@ -96,7 +96,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         // hit vehicle
         if (data && data->entityType == ActorUserData::VEHICLE)
         {
-            data->vehicle->applyDamage(damage, instigator);
+            data->vehicle->applyDamage((f32)damage, instigator);
             switch (projectileType)
             {
                 case BLASTER:

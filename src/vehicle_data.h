@@ -3,8 +3,9 @@
 #include "math.h"
 #include "datafile.h"
 #include "mesh.h"
-#include <algorithm>
 #include "weapon.h"
+#include <algorithm>
+#include <functional>
 
 #define WHEEL_FRONT_LEFT  PxVehicleDrive4WWheelOrder::eFRONT_LEFT
 #define WHEEL_FRONT_RIGHT PxVehicleDrive4WWheelOrder::eFRONT_RIGHT

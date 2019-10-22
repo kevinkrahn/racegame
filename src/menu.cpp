@@ -395,7 +395,7 @@ void Menu::championshipGarage()
 
         messageStr = vehicleData->description;
 
-        if (g_gui.select("Vehicle", carNames.data(), carNames.size(), currentVehicleIndex))
+        if (g_gui.select("Vehicle", carNames.data(), (i32)carNames.size(), currentVehicleIndex))
         {
         }
 
@@ -645,13 +645,13 @@ void Menu::championshipGarage()
     g_game.renderer->addRenderWorld(&renderWorld);
 
     g_game.renderer->push2D(QuadRenderable(renderWorld.getTexture(),
-                vehiclePreviewPos, vehicleIconWidth, vehicleIconHeight,
+                vehiclePreviewPos, (f32)vehicleIconWidth, (f32)vehicleIconHeight,
                 glm::vec3(1.f), 1.f, false,
                 true, "texArray2D"));
 
     g_game.renderer->push2D(QuadRenderable(white,
                 vehiclePreviewPos + glm::vec2(0, vehicleIconHeight),
-                vehicleIconWidth, g_gui.convertSize(26),
+                (f32)vehicleIconWidth, g_gui.convertSize(26),
                 glm::vec3(0.f), 0.9f, true));
 
     g_game.renderer->push2D(TextRenderable(smallfont,
@@ -699,7 +699,7 @@ void Menu::championshipGarage()
         tuningUpgrade.specs.offroad,
     };
 
-    const f32 maxBarWidth = vehicleIconWidth;
+    const f32 maxBarWidth = (f32)vehicleIconWidth;
     glm::vec2 statsPos = vehiclePreviewPos
         + glm::vec2(0, vehicleIconHeight + glm::floor(g_gui.convertSize(48)));
     f32 barHeight = glm::floor(g_gui.convertSize(5));
@@ -710,11 +710,11 @@ void Menu::championshipGarage()
         statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
 
         g_game.renderer->push2D(TextRenderable(tinyfont, stats[i].name,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f))),
                     glm::vec3(1.f)));
 
         g_game.renderer->push2D(QuadRenderable(white,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27 + 12))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f + 12.f))),
                     maxBarWidth, barHeight, glm::vec3(0.f), 0.9f, true));
 
         f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
@@ -723,18 +723,18 @@ void Menu::championshipGarage()
         if (upgradeBarWidth > barWidth)
         {
             g_game.renderer->push2D(QuadRenderable(white,
-                        statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27 + 12))),
+                        statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f + 12.f))),
                         upgradeBarWidth, barHeight, glm::vec3(0.01f, 0.7f, 0.01f)));
         }
 
         g_game.renderer->push2D(QuadRenderable(white,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27 + 12))),
+                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f + 12.f))),
                     barWidth, barHeight, glm::vec3(0.8f)));
 
         if (upgradeBarWidth < barWidth)
         {
             g_game.renderer->push2D(QuadRenderable(white,
-                        statsPos + glm::vec2(upgradeBarWidth, glm::floor(g_gui.convertSize(i * 27 + 12))),
+                        statsPos + glm::vec2((f32)upgradeBarWidth, g_gui.convertSizei(i * 27.f + 12.f)),
                         barWidth-upgradeBarWidth, barHeight, glm::vec3(0.8f, 0.01f, 0.01f)));
         }
     }
@@ -742,7 +742,7 @@ void Menu::championshipGarage()
     if (messageStr)
     {
         g_game.renderer->push2D(TextRenderable(smallfont, messageStr,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(ARRAY_SIZE(stats) * 27 + 8))),
+                    statsPos + glm::vec2(0, g_gui.convertSizei(ARRAY_SIZE(stats) * 27.f + 8.f)),
                     glm::vec3(1.f)));
     }
 }
@@ -817,7 +817,7 @@ void Menu::championshipStandings()
         g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[1]),
                         -glm::floor(vehicleIconSize/2)),
-                    vehicleIconSize, vehicleIconSize,
+                    (f32)vehicleIconSize, (f32)vehicleIconSize,
                     glm::vec3(1.f), 1.f, false, true, "texArray2D"));
 
         g_game.renderer->push2D(TextRenderable(smallfont, driver->playerName.c_str(),
@@ -1148,7 +1148,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     if (menuMode != MenuMode::HIDDEN)
     {
         Texture* tex = g_resources.getTexture("checkers_fade");
-        f32 w = g_game.windowWidth;
+        f32 w = (f32)g_game.windowWidth;
         f32 h = g_gui.convertSize(tex->height * 0.5f);
         renderer->push2D(QuadRenderable(tex, glm::vec2(0), w, h, glm::vec2(0.f, 0.999f),
                     glm::vec2(g_game.windowWidth/g_gui.convertSize(tex->width * 0.5f), 0.001f)));
