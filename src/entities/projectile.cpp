@@ -17,7 +17,7 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             life = 3.f;
             groundFollow = false;
             collisionRadius = 0.3f;
-            damage = 60.f;
+            damage = 50.f;
             break;
         case BULLET:
             life = 2.f;
@@ -28,9 +28,15 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
         case MISSILE:
             life = 4.f;
             groundFollow = true;
-            collisionRadius = 0.6f;
-            damage = 110.f;
+            collisionRadius = 0.5f;
+            damage = 120.f;
             accel = 4.f;
+            break;
+        case BOUNCER:
+            life = 10.f;
+            groundFollow = true;
+            collisionRadius = 0.6f;
+            damage = 90.f;
             break;
     }
 }
@@ -69,6 +75,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
     if (projectileType == MISSILE)
     {
+        // TODO: play sound while missile is traveling
         if (((u32)(life * 100.f) & 1) == 0)
         {
             scene->smoke.spawn(position, glm::vec3(0,0,1), 0.8f,
@@ -79,9 +86,9 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     Vehicle* vehicle = scene->getVehicle(instigator);
     PxRigidBody* ignoreBody = vehicle ? vehicle->getRigidBody() : nullptr;
     PxSweepBuffer sweepHit;
+    glm::vec3 sweepDir = glm::normalize(position - prevPosition);
     if (scene->sweep(collisionRadius, prevPosition,
-                glm::normalize(position - prevPosition),
-                glm::length(position - prevPosition), &sweepHit, ignoreBody))
+                sweepDir, glm::length(position - prevPosition), &sweepHit, ignoreBody))
     {
         ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
         glm::vec3 hitPos = convert(sweepHit.block.position);
@@ -94,6 +101,8 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             {
                 case BLASTER:
                 {
+                    // TODO: sound
+                    this->destroy();
                 } break;
                 case BULLET:
                 {
@@ -107,12 +116,19 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                             SoundType::GAME_SFX, hitPos, false,
                             random(scene->randomSeries, 0.8f, 1.2f),
                             random(scene->randomSeries, 0.8f, 1.f));
+                    this->destroy();
                 } break;
                 case MISSILE:
                 {
                     scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
                     g_audio.playSound3D(g_resources.getSound("explosion1"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
+                    this->destroy();
+                } break;
+                case BOUNCER:
+                {
+                    // TODO: sound
+                    this->destroy();
                 } break;
             }
         }
@@ -125,6 +141,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 {
                     g_audio.playSound3D(g_resources.getSound("blaster_hit"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
+                    this->destroy();
                 } break;
                 case BULLET:
                 {
@@ -138,16 +155,25 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     g_audio.playSound3D(g_resources.getSound(impacts[index]),
                             SoundType::GAME_SFX, hitPos, false, 0.9f,
                             random(scene->randomSeries, 0.75f, 0.9f));
+                    this->destroy();
                 } break;
                 case MISSILE:
                 {
                     scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
                     g_audio.playSound3D(g_resources.getSound("explosion1"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
+                    this->destroy();
+                } break;
+                case BOUNCER:
+                {
+                    glm::vec3 n = convert(sweepHit.block.normal);
+                    velocity = -2.f * glm::dot(velocity, n) * n + velocity;
+                    position = (prevPosition + sweepHit.block.distance * sweepDir) + n * 0.1f;
+                    g_audio.playSound3D(g_resources.getSound("bouncer_bounce"),
+                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.4f);
                 } break;
             }
         }
-        this->destroy();
     }
 
     life -= deltaTime;
@@ -199,6 +225,17 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_resources.getTexture("flare"), position,
                         glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f));
+            break;
+        case BOUNCER:
+            settings.mesh = g_resources.getMesh("world.Sphere");
+            settings.color = glm::vec3(1.f);
+            settings.emit = glm::vec3(0.5f);
+            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+                 * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
+            rw->push(LitRenderable(settings));
+            // TODO: use unlit billboard
+            rw->push(BillboardRenderable(g_resources.getTexture("bouncer_projectile"),
+                        position, glm::vec4(1.f), 1.75f));
             break;
     }
 }

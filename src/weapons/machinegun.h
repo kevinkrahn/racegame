@@ -12,7 +12,7 @@ public:
     WMachineGun()
     {
         info.name = "Machine Gun";
-        info.description = "It shoots";
+        info.description = "Low damage but high rate of fire.";
         info.icon = "mg_icon";
         info.price = 1100;
         info.maxUpgradeLevel = 5;

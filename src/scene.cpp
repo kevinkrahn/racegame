@@ -814,7 +814,8 @@ bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 d
     else
     {
         PxSweepBuffer tmpHit;
-        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist, tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter, &cb);
+        return physicsScene->sweep(PxSphereGeometry(radius), initialPose, convert(dir), dist,
+                tmpHit, PxHitFlags(PxHitFlag::eDEFAULT), filter, &cb);
     }
 }
 

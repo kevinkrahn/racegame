@@ -9,8 +9,6 @@
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line?)
 - Add unlit mode for bright billboards
-- Implement lapping bonus
-- Show final lap indicator
 - Allow setting the number of laps for a race in the editor
 - Add collectables on the track
 - Make better vehicle paint shader (maybe do reflections)

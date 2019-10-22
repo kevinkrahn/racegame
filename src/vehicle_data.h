@@ -138,7 +138,7 @@ glm::vec3 g_vehicleColors[] = {
     { 0.5f, 0.2f, 0.8f },
     { 0.9f, 0.01f, 0.5f },
     { 0.02f, 0.7f, 0.1f },
-    { 0.9f, 0.8f, 0.1f },
+    { 0.9f, 0.45f, 0.01f },
 };
 
 std::string g_vehicleColorNames[] = {
@@ -153,10 +153,10 @@ struct VehicleConfiguration
     u32 engineUpgradeLevel = 0;
     u32 tireUpgradeLevel = 0;
 
-    i32 frontWeaponIndices[3] = { 2, -1, -1 };
+    i32 frontWeaponIndices[3] = { 3, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 5, 0, 0 };
-    i32 rearWeaponIndices[3] = { 5, -1, -1 };
-    u32 rearWeaponUpgradeLevel[3] = { 5, 0, 0 };
+    i32 rearWeaponIndices[3] = { 6, -1, -1 };
+    u32 rearWeaponUpgradeLevel[3] = { 6, 0, 0 };
     i32 specialAbilityIndex = -1;
 
     struct Upgrade

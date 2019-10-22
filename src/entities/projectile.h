@@ -12,6 +12,7 @@ public:
         BLASTER,
         BULLET,
         MISSILE,
+        BOUNCER,
     };
 
 private:

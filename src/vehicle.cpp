@@ -847,10 +847,11 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         u32 count = 0;
         for (auto it = notifications.begin(); it != notifications.end();)
         {
-            renderer->push2D(TextRenderable(&font3, it->str,
-                layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
-                    glm::vec2(0, layout.scale.y * dim.y * 0.3f) + glm::vec2(0, count * dim.y * 0.04f),
-                it->color, (glm::sin((f32)scene->getWorldTime()*6.f) + 1.f) * 0.25f + 0.5f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+            glm::vec2 p = glm::floor(layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
+                    glm::vec2(0, layout.scale.y * dim.y * 0.3f) + glm::vec2(0, count * dim.y * 0.04f));
+            renderer->push2D(TextRenderable(&font3, it->str, p,
+                it->color, (glm::sin((f32)scene->getWorldTime()*6.f) + 1.f) * 0.25f + 0.5f,
+                1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
             ++count;
             it->timeLeft -= deltaTime;
             if (it->timeLeft <= 0.f)
@@ -1336,10 +1337,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         offsetChangeTimer += deltaTime;
         if (offsetChangeTimer > offsetChangeInterval)
         {
-            targetOffset.x = random(scene->randomSeries, -8.f, 8.f);
-            targetOffset.y = random(scene->randomSeries, -8.f, 8.f);
+            targetOffset.x = random(scene->randomSeries, -6.f, 6.f);
+            targetOffset.y = random(scene->randomSeries, -6.f, 6.f);
             offsetChangeTimer = 0.f;
-            offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
+            offsetChangeInterval = random(scene->randomSeries, 4.f, 12.f);
         }
     }
     else
@@ -1625,11 +1626,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (smoked) smokeTimer = smokeInterval;
 
     // destroy vehicle if it is flipped and unable to move
+    // TODO: fix this so that being flipped against a railing still counts as being flipped
+    // maybe do a raycast in local -Z that only considers the track
     if (onGround && numWheelsOnGround <= 1
-            && getRigidBody()->getLinearVelocity().magnitude() < 5.f)
+            && getRigidBody()->getLinearVelocity().magnitude() < 6.f)
     {
         flipTimer += deltaTime;
-        if (flipTimer > 1.8f)
+        if (flipTimer > 1.5f)
         {
             applyDamage(100.f, vehicleIndex);
         }
