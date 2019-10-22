@@ -11,7 +11,7 @@ public:
     {
         info.name = "Missiles";
         info.description = "Deals high damage and follows slopes!";
-        info.icon = "blaster_icon";
+        info.icon = "missile_icon";
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;

@@ -13,7 +13,7 @@ public:
         info.description =
             "Propels the vehicle upwards with a single burst of energy.\n"
             "Useful for avoiding hazards.";
-        info.icon = "mine_icon";
+        info.icon = "jumpjet_icon";
         info.price = 900;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::REAR_WEAPON;

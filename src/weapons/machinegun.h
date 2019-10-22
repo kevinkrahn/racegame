@@ -13,7 +13,7 @@ public:
     {
         info.name = "Machine Gun";
         info.description = "It shoots";
-        info.icon = "blaster_icon";
+        info.icon = "mg_icon";
         info.price = 1100;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;

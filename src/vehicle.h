@@ -175,7 +175,7 @@ public:
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);
-    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon);
+    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon, bool showAmmo);
     void drawHUD(class Renderer* rw, f32 deltaTime);
     void shakeScreen(f32 intensity);
     void updateCamera(RenderWorld* rw, f32 deltaTime);

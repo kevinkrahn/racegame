@@ -721,27 +721,33 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
-void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon)
+void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon, bool showAmmo)
 {
     f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
     Texture* iconbg = g_resources.getTexture("iconbg");
+    if (showAmmo)
+    {
     renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0.f),
                 iconSize, iconSize, glm::vec3(0.35f)));
+    }
     renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
     const char* weaponIcon = weapon->info.icon;
     renderer->push2D(QuadRenderable(g_resources.getTexture(weaponIcon),
                 pos, iconSize, iconSize));
-    u32 ammoTickCountMax = weapon->getMaxAmmo() / weapon->ammoUnitCount;
-    u32 ammoTickCount = (weapon->ammo + weapon->ammoUnitCount - 1) / weapon->ammoUnitCount;
-    f32 ammoTickMargin = iconSize * 0.025f;
-    f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCountMax;
-    Texture* ammoTickTex = g_resources.getTexture("ammotick");
-    for (u32 i=0; i<ammoTickCount; ++i)
+    if (showAmmo)
     {
-        renderer->push2D(QuadRenderable(ammoTickTex,
-                    pos + glm::vec2(iconSize + ammoTickMargin * 2.f,
-                        ammoTickHeight * i + (iconSize * 0.1f) + ammoTickMargin * 0.5f),
-                    iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
+        u32 ammoTickCountMax = weapon->getMaxAmmo() / weapon->ammoUnitCount;
+        u32 ammoTickCount = (weapon->ammo + weapon->ammoUnitCount - 1) / weapon->ammoUnitCount;
+        f32 ammoTickMargin = iconSize * 0.025f;
+        f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCountMax;
+        Texture* ammoTickTex = g_resources.getTexture("ammotick");
+        for (u32 i=0; i<ammoTickCount; ++i)
+        {
+            renderer->push2D(QuadRenderable(ammoTickTex,
+                        pos + glm::vec2(iconSize + ammoTickMargin * 2.f,
+                            ammoTickHeight * i + (iconSize * 0.1f) + ammoTickMargin * 0.5f),
+                        iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
+        }
     }
 }
 
@@ -803,7 +809,8 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
             if (w)
             {
                 drawWeaponAmmo(renderer, offset +
-                        glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f), w.get());
+                        glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                        w.get(), true);
                 weaponIconX += g_game.windowHeight * 0.1f;
             }
         }
@@ -812,10 +819,16 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
             if (w)
             {
                 drawWeaponAmmo(renderer, offset +
-                        glm::vec2(weaponIconX + g_game.windowHeight * 0.1f,
-                            d.y * g_game.windowHeight * 0.018f), w.get());
+                        glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                        w.get(), true);
                 weaponIconX += g_game.windowHeight * 0.1f;
             }
+        }
+        if (specialAbility)
+        {
+            drawWeaponAmmo(renderer, offset +
+                    glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                    specialAbility.get(), false);
         }
 
         // healthbar

@@ -7,13 +7,14 @@
 class WRocketBooster : public Weapon
 {
     f32 boostTimer = 0.f;
+    SoundHandle boostSound;
 
 public:
     WRocketBooster()
     {
         info.name = "Rocket Booster";
         info.description = "It's like nitrous, but better!";
-        info.icon = "mine_icon";
+        info.icon = "rocketbooster_icon";
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::REAR_WEAPON;
@@ -33,7 +34,12 @@ public:
                     convert(vehicle->getForwardVector() * 12.f),
                     PxForceMode::eACCELERATION);
             boostTimer = glm::max(boostTimer - deltaTime, 0.f);
-            // TODO: add flames shooting from the back of the vehicle
+            g_audio.setSoundPosition(boostSound, vehicle->getPosition());
+
+            scene->smoke.spawn(vehicle->getPosition() - vehicle->getForwardVector() * 1.5f,
+                    convert(vehicle->getRigidBody()->getLinearVelocity()) * 0.8f,
+                    1.f, glm::vec4(1.f, 0.5f, 0.05f, 1.f), 1.5f);
+
             return;
         }
 
@@ -41,13 +47,14 @@ public:
         {
             if (ammo == 0)
             {
-                // TODO: play no-no sound
+                outOfAmmo(vehicle);
                 return;
             }
 
-            // TODO: play sound
+            boostSound = g_audio.playSound3D(g_resources.getSound("rocketboost"),
+                    SoundType::GAME_SFX, vehicle->getPosition(), false, 1.f, 0.8f);
 
-            boostTimer = 1.f;
+            boostTimer = 1.25f;
             ammo -= 1;
         }
     }
