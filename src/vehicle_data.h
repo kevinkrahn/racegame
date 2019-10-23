@@ -150,14 +150,10 @@ std::string g_vehicleColorNames[] = {
 
 struct VehicleConfiguration
 {
-    u32 armorUpgradeLevel = 0;
-    u32 engineUpgradeLevel = 0;
-    u32 tireUpgradeLevel = 0;
-
-    i32 frontWeaponIndices[3] = { 3, -1, -1 };
-    u32 frontWeaponUpgradeLevel[3] = { 5, 0, 0 };
-    i32 rearWeaponIndices[3] = { 6, -1, -1 };
-    u32 rearWeaponUpgradeLevel[3] = { 6, 0, 0 };
+    i32 frontWeaponIndices[3] = { -1, -1, -1 };
+    u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
+    i32 rearWeaponIndices[3] = { -1, -1, -1 };
+    u32 rearWeaponUpgradeLevel[3] = { 0, 0, 0 };
     i32 specialAbilityIndex = -1;
 
     struct Upgrade
@@ -169,21 +165,9 @@ struct VehicleConfiguration
 
     i32 colorIndex = 0;
 
-    void addUpgrade(i32 upgradeIndex)
-    {
-        auto currentUpgrade = std::find_if(
-                performanceUpgrades.begin(),
-                performanceUpgrades.end(),
-                [&](auto& u) { return u.upgradeIndex == upgradeIndex; });
-        if (currentUpgrade != performanceUpgrades.end())
-        {
-            ++currentUpgrade->upgradeLevel;
-        }
-        else
-        {
-            performanceUpgrades.push_back({ upgradeIndex, 1 });
-        }
-    }
+    Upgrade* getUpgrade(i32 upgradeIndex);
+    bool canAddUpgrade(struct Driver* driver, i32 upgradeIndex);
+    void addUpgrade(i32 upgradeIndex);
 };
 
 enum struct PerformanceUpgradeType

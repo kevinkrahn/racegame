@@ -7,8 +7,7 @@
 struct Driver
 {
     u32 leaguePoints = 0;
-    //i32 credits = 10000;
-    i32 credits = 100000;
+    i32 credits = 10000;
 
     bool isPlayer = false;
     bool hasCamera = false;
@@ -25,6 +24,8 @@ struct Driver
     std::vector<OwnedVehicle> ownedVehicles;
 
     i32 vehicleIndex = -1;
+
+    u32 lastPlacement = 0;
 
     VehicleConfiguration* getVehicleConfig()
     {
@@ -55,4 +56,6 @@ struct Driver
     Driver() = default;
     Driver(Driver&& other) = default;
     Driver& operator = (Driver&& other) = default;
+
+    void aiUpgrades(RandomSeries& series);
 };

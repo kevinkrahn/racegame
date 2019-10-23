@@ -173,7 +173,8 @@ inline f32 random(RandomSeries& series, f32 min, f32 max)
 // return random integer between min (inclusive) and max (exclusive)
 inline i32 irandom(RandomSeries& series, i32 min, i32 max)
 {
-    return (xorshift32(series) % (max - min)) + min;
+    i32 diff = max - min;
+    return diff > 0 ? (xorshift32(series) % diff) + min : 0;
 }
 
 inline glm::vec3 closest(glm::vec3 const& p, glm::vec3 const& v1, glm::vec3 const& v2)

@@ -8,6 +8,7 @@
 #include "gui.h"
 #include "mesh_renderables.h"
 #include "weapon.h"
+#include "vehicle.h"
 
 const char* championshipTracks[] = {
     "tracks/my_testwaaaasds.dat",
@@ -42,18 +43,14 @@ void Menu::mainMenu()
     if (g_gui.button("Quick Race"))
     {
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true,  true,  true,  0, 0, 0));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 1, 0));
-#if 1
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 2, 1));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 3, 2));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 4, 3));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 5, 4));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 2, 6, 5));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 1, 7, 6));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 8, 7));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, 0, 9, 8));
-#endif
+        i32 driverCredits = irandom(series, 10000, 30000);
+        print("Starting quick race with driver budget: ", driverCredits, '\n');
+        for (u32 i=0; i<10; ++i)
+        {
+            g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1, 0, -1 + i));
+            g_game.state.drivers.back().credits = driverCredits;
+            g_game.state.drivers.back().aiUpgrades(series);
+        }
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
@@ -142,7 +139,14 @@ void Menu::newChampionship()
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
             g_game.state.drivers.push_back(Driver(false, false, false, 0,
-                        irandom(series, 0, 3), i, i));
+                        -1, i, i));
+        }
+        for (auto& driver : g_game.state.drivers)
+        {
+            if (!driver.isPlayer)
+            {
+                driver.aiUpgrades(series);
+            }
         }
         menuMode = CHAMPIONSHIP_MENU;
     }
@@ -834,6 +838,13 @@ void Menu::championshipStandings()
         menuMode = CHAMPIONSHIP_MENU;
         if (g_game.currentScene->filename != championshipTracks[g_game.state.currentRace])
         {
+            for (auto& driver : g_game.state.drivers)
+            {
+                if (!driver.isPlayer)
+                {
+                    driver.aiUpgrades(series);
+                }
+            }
             g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         }
     }
@@ -916,6 +927,11 @@ void Menu::raceResults()
 
     if (g_gui.didSelect())
     {
+        for (auto& r : g_game.currentScene->getRaceResults())
+        {
+            r.driver->lastPlacement = r.placement;
+        }
+
         g_audio.playSound(g_resources.getSound("close"), SoundType::MENU_SFX);
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {

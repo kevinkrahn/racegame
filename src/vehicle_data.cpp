@@ -4,6 +4,40 @@
 #include "scene.h"
 #include "mesh_renderables.h"
 
+VehicleConfiguration::Upgrade* VehicleConfiguration::getUpgrade(i32 upgradeIndex)
+{
+    auto currentUpgrade = std::find_if(
+            performanceUpgrades.begin(),
+            performanceUpgrades.end(),
+            [&](auto& u) { return u.upgradeIndex == upgradeIndex; });
+    return currentUpgrade != performanceUpgrades.end() ? &(*currentUpgrade) : nullptr;
+}
+
+bool VehicleConfiguration::canAddUpgrade(struct Driver* driver, i32 upgradeIndex)
+{
+    Upgrade* upgrade = getUpgrade(upgradeIndex);
+    i32 upgradeLevel = upgrade ? (upgrade->upgradeLevel + 1) : 1;
+    auto& upgradeInfo = driver->getVehicleData()->availableUpgrades[upgradeIndex];
+    if (upgradeLevel > upgradeInfo.maxUpgradeLevel)
+    {
+        return false;
+    }
+    return true;
+}
+
+void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
+{
+    Upgrade* upgrade = getUpgrade(upgradeIndex);
+    if (!upgrade)
+    {
+        performanceUpgrades.push_back({ upgradeIndex, 1 });
+    }
+    else
+    {
+        ++upgrade->upgradeLevel;
+    }
+}
+
 void VehicleData::loadSceneData(const char* sceneName)
 {
     DataFile::Value::Dict& scene = g_resources.getScene(sceneName);

@@ -9,7 +9,7 @@ public:
     {
         name = "Sportscar";
         description = "Small and quick, but has poor traction.";
-        price = 8000;
+        price = 8900;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 

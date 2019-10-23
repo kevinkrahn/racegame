@@ -108,9 +108,17 @@ void Scene::startRace()
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
     i32 cameraIndex = 0;
-    for (u32 i=0; i<g_game.state.drivers.size(); ++i)
+    std::vector<Driver*> createOrder;
+    for (auto& driver : g_game.state.drivers)
     {
-        Driver* driver = &g_game.state.drivers[i];
+        createOrder.push_back(&driver);
+    }
+    std::sort(createOrder.begin(), createOrder.end(),
+            [](Driver* a, Driver* b) { return a->lastPlacement < b->lastPlacement; });
+
+    for (u32 i=0; i<createOrder.size(); ++i)
+    {
+        Driver* driver = createOrder[i];
 
         //glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
         glm::vec3 offset = -glm::vec3(
@@ -648,12 +656,12 @@ void Scene::buildRaceResults()
     for (auto& v : vehicles)
     {
         RaceStatistics& stats = v->raceStatistics;
-        if (v->currentLap < totalLaps)
+        if (!v->finishedRace)
         {
             if (v->driver->isPlayer)
             {
                 print("Player did not finish: ", v->currentLap, "/", totalLaps, " laps\n");
-                v->placement = -1;
+                v->placement = 9999;
             }
             else
             {
@@ -661,18 +669,35 @@ void Scene::buildRaceResults()
                 // generate fake stats for the drivers that have not yet finished the race
                 for (u32 i = v->currentLap + 1; i<totalLaps; ++i)
                 {
-                    // TODO: base these stats on AI driver skill
                     stats.accidents += irandom(randomSeries, 0, 2);
-                    stats.attackBonuses += irandom(randomSeries, 0, 3 * numDriversStillDriving);
-                    stats.destroyed += irandom(randomSeries, 0, 3 * numDriversStillDriving);
+                    u32 attackBonuses = irandom(randomSeries, 0,
+                            (u32)(numDriversStillDriving * v->driver->ai.aggression * 0.5f));
+                    stats.attackBonuses += attackBonuses;
+                    while (attackBonuses > 0)
+                    {
+                        auto& v2 = vehicles[irandom(randomSeries, 0, vehicles.size())];
+                        if (v2.get() != v.get())
+                        {
+                            ++v2->raceStatistics.destroyed;
+                            --attackBonuses;
+                        }
+                    }
                 }
+                v->placement = v->placement +
+                    (u32)(random(randomSeries, 0.f, v->driver->ai.drivingSkill) +
+                            random(randomSeries, 0.f, v->driver->ai.awareness) +
+                            random(randomSeries, 0.f, v->driver->ai.aggression));
             }
         }
+    }
+    for (auto& v : vehicles)
+    {
+        RaceStatistics& stats = v->raceStatistics;
         raceResults.push_back({
             v->placement,
             v->driver,
             stats,
-            v->placement > -1
+            v->placement != 9999
         });
     }
     std::sort(raceResults.begin(), raceResults.end(), [](auto& a, auto&b) {

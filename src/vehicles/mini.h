@@ -9,7 +9,7 @@ public:
     {
         name = "Mini";
         description = "Small and nimble. Quick acceleration, \nbut low top-speed.";
-        price = 5000;
+        price = 8400;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
