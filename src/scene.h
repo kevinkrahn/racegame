@@ -33,7 +33,7 @@ struct RaceResult
 
     i32 getBonus() const
     {
-        return statistics.attackBonuses * 150 + statistics.lappingBonuses * 500;
+        return statistics.attackBonuses * 110 + statistics.lappingBonuses * 300;
     }
 
     i32 getLeaguePointsEarned() const

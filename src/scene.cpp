@@ -236,7 +236,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             // move the camera around the track
             auto path = trackGraph.getPaths()[0];
-            glm::vec3 targetP = path[currentTrackPreviewPoint];
+            glm::vec3 targetP = path[currentTrackPreviewPoint]->position;
             glm::vec3 diff = targetP - trackPreviewPosition;
             if (glm::length2(diff) < square(30.f))
             {

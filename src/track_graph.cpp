@@ -175,11 +175,11 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     // convert node indices to positions
     for (auto& indexPath : nodeIndexPaths)
     {
-        std::vector<glm::vec3> path;
+        std::vector<Node*> path;
         path.reserve(indexPath.size());
         for (u32 nodeIndex : indexPath)
         {
-            path.push_back(nodes[nodeIndex].position);
+            path.push_back(&nodes[nodeIndex]);
         }
         paths.push_back(std::move(path));
     }
@@ -284,7 +284,8 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
             }
             glm::vec4 col = colors[pathIndex % ARRAY_SIZE(colors)];
             glm::vec3 zoffset(0, 0, pathIndex * 2);
-            dbg->line(paths[pathIndex][i] + zoffset, paths[pathIndex][i-1] + zoffset, col, col);
+            dbg->line(paths[pathIndex][i]->position + zoffset,
+                    paths[pathIndex][i-1]->position + zoffset, col, col);
         }
     }
 }

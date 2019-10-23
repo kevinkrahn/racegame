@@ -25,7 +25,7 @@ private:
     void computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
             std::vector<std::vector<u32>>& nodeIndexPaths);
 
-    std::vector<std::vector<glm::vec3>> paths;
+    std::vector<std::vector<Node*>> paths;
     void computePaths();
 
 public:
@@ -56,5 +56,5 @@ public:
 
     void findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const;
 
-    std::vector<std::vector<glm::vec3>> const& getPaths() const { return paths; }
+    std::vector<std::vector<Node*>> const& getPaths() const { return paths; }
 };

@@ -483,10 +483,11 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
+    f32 skill = clamp(1.f - driver->ai.drivingSkill
+            + random(scene->randomSeries, -0.1f, 0.1f), 0.f, 1.f);
     this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
         irandom(scene->randomSeries, 0,
-                (u32)(scene->getTrackGraph().getPaths().size() *
-                    (1.f - driver->ai.drivingSkill))) : 0;
+                (u32)(scene->getTrackGraph().getPaths().size() * skill)) : 0;
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
@@ -1088,11 +1089,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 previousIndex = (i32)paths[followPathIndex].size() - 1;
             }
 
-            glm::vec3 nextP = paths[followPathIndex][targetPointIndex];
-            glm::vec3 previousP = paths[followPathIndex][previousIndex];
-            glm::vec2 dir = glm::normalize(glm::vec2(nextP) - glm::vec2(previousP));
+            TrackGraph::Node* nextPathNode = paths[followPathIndex][targetPointIndex];
+            glm::vec3 previousP = paths[followPathIndex][previousIndex]->position;
+            glm::vec2 dir = glm::normalize(glm::vec2(nextPathNode->position) - glm::vec2(previousP));
 
-            glm::vec3 targetP = nextP -
+            glm::vec3 targetP = nextPathNode->position -
                 glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
             glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
@@ -1221,8 +1222,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 }
                 else
                 {
-                    targetP = nextP;
-                    steerAngle = glm::dot(glm::vec2(getRightVector()), glm::normalize(glm::vec2(currentPosition - targetP)));
+                    targetP = nextPathNode->position;
+                    steerAngle = glm::dot(glm::vec2(getRightVector()),
+                            glm::normalize(glm::vec2(currentPosition - targetP)));
                     if (getForwardSpeed() > 18.f)
                     {
                         brake = 0.8f;
@@ -1255,7 +1257,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         -steerAngle, false, canGo, false);
             }
 
-            if (glm::length2(nextP - currentPosition) < square(30.f))
+            if (glm::length2(nextPathNode->position - currentPosition) < square(22.f)
+                    || (graphResult.currentLapDistance < nextPathNode->t &&
+                    nextPathNode->t - graphResult.currentLapDistance < 120.f))
             {
                 ++targetPointIndex;
                 if (targetPointIndex >= paths[followPathIndex].size())
