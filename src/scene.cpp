@@ -675,7 +675,7 @@ void Scene::buildRaceResults()
                     stats.attackBonuses += attackBonuses;
                     while (attackBonuses > 0)
                     {
-                        auto& v2 = vehicles[irandom(randomSeries, 0, vehicles.size())];
+                        auto& v2 = vehicles[irandom(randomSeries, 0, (i32)vehicles.size())];
                         if (v2.get() != v.get())
                         {
                             ++v2->raceStatistics.destroyed;
