@@ -549,14 +549,12 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 void Scene::vehicleFinish(u32 n)
 {
     finishOrder.push_back(n);
-    u32 playerCount = 0;
     u32 playerFinishCount = 0;
     for (u32 i=0; i<(u32)g_game.state.drivers.size(); ++i)
     {
         auto& driver = g_game.state.drivers[i];
         if (driver.isPlayer)
         {
-            ++playerCount;
             if (std::find_if(finishOrder.begin(), finishOrder.end(),
                 [&i](u32 vehicleIndex) { return vehicleIndex == i; }) != finishOrder.end())
             {
@@ -564,7 +562,7 @@ void Scene::vehicleFinish(u32 n)
             }
         }
     }
-    if (playerCount == playerFinishCount && !allPlayersFinished)
+    if (numHumanDrivers == playerFinishCount && !allPlayersFinished)
     {
         allPlayersFinished = true;
         g_audio.playSound(g_resources.getSound("clapping"), SoundType::GAME_SFX);

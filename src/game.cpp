@@ -125,9 +125,7 @@ void Game::run()
     g_resources.load();
     initializeVehicleData();
 
-    changeScene("tracks/saved_scene.dat");
-    //changeScene("tracks/my_testwaaaasds.dat");
-    //changeScene(nullptr);
+    changeScene(nullptr);
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;

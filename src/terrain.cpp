@@ -110,7 +110,7 @@ void Terrain::onCreate(Scene* scene)
             g_resources.getTexture("desert"),
             g_resources.getTexture("desert_stone"),
             g_resources.getTexture("sand"),
-            g_resources.getTexture("dirt"),
+            g_resources.getTexture("sand"),
         },
         { 0.1f, 0.1f, 0.12f, 0.1f }
     };
@@ -144,7 +144,7 @@ void Terrain::onCreate(Scene* scene)
             g_resources.getTexture("lava"),
             g_resources.getTexture("lava"),
             g_resources.getTexture("sand"),
-            g_resources.getTexture("dirt"),
+            g_resources.getTexture("lava"),
         },
         { 0.05f, 0.1f, 0.12f, 0.1f }
     };
