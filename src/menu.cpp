@@ -11,18 +11,29 @@
 #include "vehicle.h"
 
 const char* championshipTracks[] = {
-    "tracks/my_testwaaaasds.dat",
-    "tracks/the_climb.dat",
-    "tracks/thethingw.dat",
-    "tracks/saved_scene.dat",
-    "tracks/my_testwaaaasds.dat",
-    "tracks/the_climb.dat",
-    "tracks/thethingw.dat",
-    "tracks/saved_scene.dat",
-    "tracks/my_testwaaaasds.dat",
-    "tracks/the_climb.dat",
-    "tracks/thethingw.dat",
-    "tracks/saved_scene.dat",
+    "tracks/track1.dat",
+    "tracks/track2.dat",
+    "tracks/track3.dat",
+    "tracks/track4.dat",
+    "tracks/track5.dat",
+
+    "tracks/track1.dat",
+    "tracks/track2.dat",
+    "tracks/track3.dat",
+    "tracks/track4.dat",
+    "tracks/track5.dat",
+
+    "tracks/track1.dat",
+    "tracks/track2.dat",
+    "tracks/track3.dat",
+    "tracks/track4.dat",
+    "tracks/track5.dat",
+
+    "tracks/track1.dat",
+    "tracks/track2.dat",
+    "tracks/track3.dat",
+    "tracks/track4.dat",
+    "tracks/track5.dat",
 };
 
 void Menu::mainMenu()
@@ -56,11 +67,8 @@ void Menu::mainMenu()
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-        Scene* scene = g_game.changeScene("tracks/Desert.dat");
-        //Scene* scene = g_game.changeScene("tracks/thethingw.dat");
-        //Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
-        //Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
-        //Scene* scene = g_game.changeScene("tracks/the_climb.dat");
+        Scene* scene = g_game.changeScene(
+                championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);
         scene->startRace();
         menuMode = HIDDEN;
     }
