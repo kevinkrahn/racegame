@@ -32,6 +32,7 @@ struct WidgetState
     i32 selectableChildCount = 0;
     bool mouseCaptured = false;
     bool isMouseOver = false;
+    bool captured = false;
 };
 
 struct WidgetStackItem
@@ -57,6 +58,8 @@ class Gui
     class Font* fontBig = nullptr;
     struct Texture* white = nullptr;
     class Renderer* renderer = nullptr;
+    WidgetState* previousTextInputCapture = nullptr;
+    WidgetState* textInputCapture = nullptr;
 
     WidgetState* getWidgetState(WidgetState* parent, const char* identifier,
             WidgetType widgetType);

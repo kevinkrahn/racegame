@@ -231,8 +231,17 @@ public:
             }
         }
         */
-        SDL_StartTextInput();
         this->window = window;
+    }
+
+    void beginTextInput()
+    {
+        SDL_StartTextInput();
+    }
+
+    void stopTextInput()
+    {
+        SDL_StopTextInput();
     }
 
     std::map<u32, Controller> const& getControllers() const { return controllers; }

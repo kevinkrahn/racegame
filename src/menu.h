@@ -35,8 +35,6 @@ class Menu
 
     void drawBox(glm::vec2 pos, glm::vec2 size);
 
-    RandomSeries series;
-
 public:
     void showMainMenu() { menuMode = MenuMode::MAIN_MENU; }
     void showChampionshipMenu() { menuMode = MenuMode::CHAMPIONSHIP_MENU; }

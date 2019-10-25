@@ -43,11 +43,13 @@ void Menu::mainMenu()
     if (g_gui.button("Quick Race"))
     {
         g_game.state.drivers.clear();
-        i32 driverCredits = irandom(series, 10000, 30000);
+        RandomSeries series = randomSeed();
+        i32 driverCredits = irandom(series, 10000, 50000);
         print("Starting quick race with driver budget: ", driverCredits, '\n');
         for (u32 i=0; i<10; ++i)
         {
-            g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1, 0, -1 + i));
+            g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
+                        0, i==0 ? irandom(series, 0, (i32)g_ais.size()) : -1 + i));
             g_game.state.drivers.back().credits = driverCredits;
             g_game.state.drivers.back().aiUpgrades(series);
         }
@@ -142,6 +144,7 @@ void Menu::newChampionship()
             g_game.state.drivers.push_back(Driver(false, false, false, 0,
                         -1, i, i));
         }
+        RandomSeries series = randomSeed();
         for (auto& driver : g_game.state.drivers)
         {
             if (!driver.isPlayer)
@@ -838,6 +841,7 @@ void Menu::championshipStandings()
     {
         g_audio.playSound(g_resources.getSound("close"), SoundType::MENU_SFX);
         menuMode = CHAMPIONSHIP_MENU;
+        RandomSeries series = randomSeed();
         if (g_game.currentScene->filename != championshipTracks[g_game.state.currentRace])
         {
             for (auto& driver : g_game.state.drivers)

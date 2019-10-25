@@ -17,6 +17,8 @@ void Gui::beginFrame()
     isMouseClickHandled = false;
     isKeyboardInputHandled = false;
     isKeyboardInputCaptured = false;
+    previousTextInputCapture = textInputCapture;
+    textInputCapture = nullptr;
 }
 
 void Gui::endFrame()
@@ -25,6 +27,17 @@ void Gui::endFrame()
     if (g_input.isMouseButtonReleased(MOUSE_LEFT))
     {
         isMouseCaptured = false;
+    }
+    if (textInputCapture != previousTextInputCapture)
+    {
+        if (textInputCapture)
+        {
+            g_input.beginTextInput();
+        }
+        else
+        {
+            g_input.stopTextInput();
+        }
     }
 }
 
@@ -235,8 +248,8 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
     bool selected = false;
     bool clicked = false;
     glm::vec2 mousePos = g_input.getMousePosition();
-    bool canHover = (g_input.didMouseMove() || !widgetStack.back().useKeyboardControl)
-        && !isMouseCaptured;
+    bool canHover = (g_input.didMouseMove() || !widgetStack.back().useKeyboardControl);
+        //&& !isMouseCaptured;
     if ((g_input.isMouseButtonPressed(MOUSE_LEFT) || canHover)
             && pointInRectangle(mousePos, pos, pos + glm::vec2(bw, bh)))
     {
@@ -729,11 +742,14 @@ bool Gui::textEdit(const char* text, std::string& value)
     glm::vec2& pos = parent.nextWidgetPosition;
     f32 bh = parent.itemHeight;
     f32 bw = parent.size.x;
-    buttonBase(parent, widgetState, pos, bw, bh, [] {
+    if (buttonBase(parent, widgetState, pos, bw, bh, [] {
         return g_input.isMouseButtonPressed(MOUSE_LEFT);
     }, [this] {
         return didSelect();
-    });
+    }))
+    {
+        widgetState->captured = !widgetState->captured;
+    }
 
     f32 textBgStart = glm::floor(convertSize(6));
     f32 valueHeight = glm::floor(bh * 0.2f);
@@ -748,25 +764,33 @@ bool Gui::textEdit(const char* text, std::string& value)
     bool wasChanged = false;
     if (selected)
     {
-        if (!g_input.getInputText().empty())
+        if (widgetState->captured)
         {
-            value += g_input.getInputText();
-            wasChanged = true;
-        }
-        if (g_input.isKeyPressed(KEY_BACKSPACE, true) && !value.empty())
-        {
-            value.pop_back();
-            wasChanged = true;
-        }
+            if (!g_input.getInputText().empty())
+            {
+                value += g_input.getInputText();
+                wasChanged = true;
+            }
+            if (g_input.isKeyPressed(KEY_BACKSPACE, true) && !value.empty())
+            {
+                value.pop_back();
+                wasChanged = true;
+            }
 
-        f32 blinkHeight = fontSmall->getHeight() * 1.25f;
-        renderer->push2D(QuadRenderable(white, pos + glm::vec2(textStart +
-                        fontSmall->stringDimensions(value.c_str()).x + convertSize(1),
-                        bh/2 - blinkHeight / 2),
-                convertSize(1), blinkHeight, glm::vec3(1.f), 0.5f));
+            f32 blinkHeight = fontSmall->getHeight() * 1.25f;
+            renderer->push2D(QuadRenderable(white, pos + glm::vec2(textStart +
+                            fontSmall->stringDimensions(value.c_str()).x + convertSizei(2),
+                            bh/2 - blinkHeight / 2),
+                    convertSize(1), blinkHeight, glm::vec3(1.f), 0.5f));
 
-        isKeyboardInputCaptured = true;
-        isKeyboardInputHandled = true;
+            isKeyboardInputCaptured = true;
+            isKeyboardInputHandled = true;
+            textInputCapture = widgetState;
+        }
+    }
+    else
+    {
+        widgetState->captured = false;
     }
 
     renderer->push2D(TextRenderable(fontSmall, tstr(value), pos

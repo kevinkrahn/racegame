@@ -150,6 +150,11 @@ struct RandomSeries
     u32 state = 1234;
 };
 
+inline RandomSeries randomSeed()
+{
+    return RandomSeries{ (u32)getTime() };
+}
+
 inline u32 xorshift32(RandomSeries& series)
 {
     u32 x = series.state;
