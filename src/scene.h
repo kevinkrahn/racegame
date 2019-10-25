@@ -73,6 +73,7 @@ private:
     u32 currentTrackPreviewPoint = 0;
     f64 worldTime = 0.0;
     bool readyToGo = false;
+    u32 numHumanDrivers = 0;
 
     bool allPlayersFinished = false;
     f32 finishTimer = 0.f;
@@ -131,7 +132,7 @@ public:
     void attackCredit(u32 instigator, u32 victim);
     void applyAreaForce(glm::vec3 const& position, f32 strength) const;
     void createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength);
-    u32 numHumanDrivers() const;
+    u32 getNumHumanDrivers() const { return numHumanDrivers; }
     void drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 pos);
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
     std::vector<RaceResult>& getRaceResults() { return raceResults; }

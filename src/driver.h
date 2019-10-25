@@ -15,6 +15,7 @@ struct Driver
     ComputerDriverData ai;
     bool useKeyboard = false;
     u32 controllerID = 0;
+    std::string controllerGuid;
 
     struct OwnedVehicle
     {

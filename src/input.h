@@ -1,9 +1,8 @@
 #pragma once
 
 #include <SDL2/SDL.h>
-#include <glm/vec2.hpp>
 #include <map>
-#include "misc.h"
+#include "math.h"
 
 // These values line up with SDL_Button* defines
 enum MouseButton
@@ -154,10 +153,11 @@ private:
     bool buttonReleased[BUTTON_COUNT] = {};
     f32 axis[AXIS_COUNT] = {};
     bool anyButtonPressed = false;
+    std::string guid;
 
 public:
-    Controller() {}
-    Controller(SDL_GameController* controller) : controller(controller) {}
+    explicit Controller(SDL_GameController* controller, std::string && guid)
+        : controller(controller), guid(guid) {}
 
     SDL_GameController* getController() const { return controller; }
 
@@ -186,7 +186,11 @@ public:
         assert(index < AXIS_COUNT);
         return axis[index];
     }
+
+    std::string const& getGuid() const { return guid; }
 };
+
+#define NO_CONTROLLER UINT32_MAX
 
 class Input
 {
@@ -208,10 +212,14 @@ private:
     std::map<u32, Controller> controllers;
 
     std::string inputText;
+    f32 joystickDeadzone = 0.08f;
 
 public:
     void init(SDL_Window* window)
     {
+        // This is initialization is unnecessary because SDL creates events for each
+        // controller that is already plugged in when the game starts.
+        /*
         u32 numJoysticks = SDL_NumJoysticks();
         for (u32 i=0; i<numJoysticks; ++i)
         {
@@ -222,6 +230,7 @@ public:
                 controllers.emplace(id, controller);
             }
         }
+        */
         SDL_StartTextInput();
         this->window = window;
     }
@@ -231,8 +240,23 @@ public:
     Controller* getController(u32 id)
     {
         auto ctl = controllers.find(id);
-        if (ctl == controllers.end()) return nullptr;
+        if (ctl == controllers.end())
+        {
+            return nullptr;
+        }
         return &ctl->second;
+    }
+
+    u32 getControllerId(std::string const& guid)
+    {
+        for (auto& ctl : controllers)
+        {
+            if (ctl.second.guid == guid)
+            {
+                return ctl.first;
+            }
+        }
+        return NO_CONTROLLER;
     }
 
     bool isMouseButtonDown(u32 button)
@@ -375,8 +399,13 @@ public:
             {
                 SDL_GameController* controller = SDL_GameControllerOpen(e.cdevice.which);
                 SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
-                print("Controller added: ", id, '\n');
-                controllers.emplace(id, controller);
+                char buffer[64] = { 0 };
+                SDL_JoystickGetGUIDString(
+                        SDL_JoystickGetGUID(
+                            SDL_GameControllerGetJoystick(controller)), buffer, sizeof(buffer));
+                print("Controller added: ", id, " guid: ", buffer,
+                        " name: ", SDL_GameControllerName(controller), '\n');
+                controllers.emplace(id, Controller(controller, std::string(buffer)));
             } break;
             case SDL_CONTROLLERDEVICEREMOVED:
             {
@@ -392,22 +421,35 @@ public:
                 SDL_JoystickID which = e.caxis.which;
                 u8 axis = e.caxis.axis;
                 i16 value = e.caxis.value;
-                controllers[which].axis[axis] = value / 32768.f;
+                auto ctl = controllers.find(which);
+                if (ctl != controllers.end())
+                {
+                    f32 val = value / 32768.f;
+                    ctl->second.axis[axis] = glm::abs(val) < joystickDeadzone ? 0.f : val;
+                }
             } break;
             case SDL_CONTROLLERBUTTONDOWN:
             {
                 SDL_JoystickID which = e.cbutton.which;
                 u8 button = e.cbutton.button;
-                controllers[which].buttonPressed[button] = true;
-                controllers[which].buttonDown[button] = true;
-                controllers[which].anyButtonPressed = true;
+                auto ctl = controllers.find(which);
+                if (ctl != controllers.end())
+                {
+                    ctl->second.buttonPressed[button] = true;
+                    ctl->second.buttonDown[button] = true;
+                    ctl->second.anyButtonPressed = true;
+                }
             } break;
             case SDL_CONTROLLERBUTTONUP:
             {
                 SDL_JoystickID which = e.cbutton.which;
                 u8 button = e.cbutton.button;
-                controllers[which].buttonDown[button] = false;
-                controllers[which].buttonReleased[button] = true;
+                auto ctl = controllers.find(which);
+                if (ctl != controllers.end())
+                {
+                    ctl->second.buttonDown[button] = false;
+                    ctl->second.buttonReleased[button] = true;
+                }
             } break;
             case SDL_TEXTINPUT:
             {

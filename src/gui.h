@@ -74,6 +74,7 @@ public:
 
     bool didSelect();
     i32 didChangeSelection();
+    bool didGoBack();
 
     f32 convertSize(f32 size);
     f32 convertSizei(f32 size);

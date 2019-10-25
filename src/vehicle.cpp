@@ -1025,7 +1025,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             bool holdShoot = false;
             bool beginShootSpecial = false;
             bool holdShootSpecial = false;
-            if (driver->useKeyboard)
+            if (driver->useKeyboard || scene->getNumHumanDrivers() == 1)
             {
                 digital = true;
                 accel = g_input.isKeyDown(KEY_UP);
@@ -1035,11 +1035,30 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 holdShoot = g_input.isKeyDown(KEY_C);
                 beginShootSpecial = g_input.isKeyPressed(KEY_V);
             }
-            if (!driver->useKeyboard || (scene->numHumanDrivers() == 1))
+            if (!driver->controllerGuid.empty())
             {
                 Controller* controller = g_input.getController(driver->controllerID);
+                if (!controller)
+                {
+                    driver->controllerID = g_input.getControllerId(driver->controllerGuid);
+                    controller = g_input.getController(driver->controllerID);
+                }
                 if (controller)
                 {
+                    accel = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_RIGHT), accel);
+                    brake = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_LEFT), brake);
+                    steer = nonZeroOrDefault(-controller->getAxis(AXIS_LEFT_X), steer);
+                    beginShoot = beginShoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+                    holdShoot = holdShoot || controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
+                    beginShootSpecial = beginShootSpecial || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+                    holdShootSpecial = holdShootSpecial || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+                }
+            }
+            if (scene->getNumHumanDrivers() == 1)
+            {
+                for (auto& c : g_input.getControllers())
+                {
+                    const Controller* controller = &c.second;
                     accel = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_RIGHT), accel);
                     brake = nonZeroOrDefault(controller->getAxis(AXIS_TRIGGER_LEFT), brake);
                     steer = nonZeroOrDefault(-controller->getAxis(AXIS_LEFT_X), steer);

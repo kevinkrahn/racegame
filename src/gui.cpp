@@ -84,6 +84,22 @@ bool Gui::didSelect()
     return result;
 }
 
+bool Gui::didGoBack()
+{
+    if (g_input.isKeyPressed(KEY_ESCAPE))
+    {
+        return true;
+    }
+    for (auto& c : g_input.getControllers())
+    {
+        if (c.second.isButtonPressed(BUTTON_B))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 i32 Gui::didChangeSelection()
 {
     i32 result = (i32)(g_input.isKeyPressed(KEY_RIGHT, true) || didSelect())
@@ -93,6 +109,10 @@ i32 Gui::didChangeSelection()
     {
         i32 tmpResult = pair.second.isButtonPressed(BUTTON_DPAD_RIGHT) -
                         pair.second.isButtonPressed(BUTTON_DPAD_LEFT);
+        if (!tmpResult)
+        {
+            tmpResult = (i32)glm::sign(pair.second.getAxis(AXIS_LEFT_X));
+        }
         if (tmpResult)
         {
             result = tmpResult;

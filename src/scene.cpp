@@ -157,6 +157,9 @@ void Scene::startRace()
     }
 
     isRaceInProgress = true;
+
+    numHumanDrivers = (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
+            [](auto& d) { return d.isPlayer; });
 }
 
 void Scene::stopRace()
@@ -182,12 +185,6 @@ void Scene::stopRace()
 
 void Scene::onStart()
 {
-}
-
-u32 Scene::numHumanDrivers() const
-{
-    return (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
-            [](auto& d) { return d.isPlayer; });
 }
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)

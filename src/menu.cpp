@@ -152,7 +152,7 @@ void Menu::newChampionship()
         menuMode = CHAMPIONSHIP_MENU;
     }
 
-    if (g_gui.button("Back"))
+    if (g_gui.button("Back") || g_gui.didGoBack())
     {
         menuMode = MAIN_MENU;
     }
@@ -194,6 +194,7 @@ void Menu::newChampionship()
             if (!controllerPlayerExists)
             {
                 g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
+                g_game.state.drivers.back().controllerGuid = controller.second.getGuid();
             }
         }
     }
@@ -421,7 +422,7 @@ void Menu::championshipGarage()
         }
         g_gui.gap(20);
 
-        if (g_gui.button("Done", isOwned))
+        if (g_gui.button("Done", isOwned) || g_gui.didGoBack())
         {
             mode = 0;
         }
@@ -613,7 +614,7 @@ void Menu::championshipGarage()
     g_gui.gap(20);
     if (mode != 1)
     {
-        if (g_gui.button("Done"))
+        if (g_gui.button("Done") || g_gui.didGoBack())
         {
             if (mode > 0)
             {
@@ -978,7 +979,7 @@ void Menu::mainOptions()
         menuMode = OPTIONS_GAMEPLAY;
     }
 
-    if (g_gui.button("Back"))
+    if (g_gui.button("Back") || g_gui.didGoBack())
     {
         showMainMenu();
     }
@@ -1008,7 +1009,7 @@ void Menu::audioOptions()
         tmpConfig.audio = defaultConfig.audio;
     }
 
-    if (g_gui.button("Cancel"))
+    if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
         showOptionsMenu();
     }
@@ -1036,7 +1037,7 @@ void Menu::gameplayOptions()
         tmpConfig.gameplay = defaultConfig.gameplay;
     }
 
-    if (g_gui.button("Cancel"))
+    if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
         showOptionsMenu();
     }
@@ -1145,7 +1146,7 @@ void Menu::graphicsOptions()
         tmpConfig.graphics = defaultConfig.graphics;
     }
 
-    if (g_gui.button("Cancel"))
+    if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
         showOptionsMenu();
     }
