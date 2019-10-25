@@ -6,7 +6,7 @@
 #include "../game.h"
 
 const char* meshNames[] = {
-    "world.Rock",
+    "rock.rock",
     "world.Tunnel",
     "world.Sign",
     "cactus.cactus",
