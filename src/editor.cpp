@@ -26,6 +26,8 @@ std::vector<EntityType> entityTypes = {
     { "Rock", fn { return new StaticMesh(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, PI * 2.f)); } },
     { "Sign", fn { return new StaticMesh(2, p, glm::vec3(1.f), 0.f); } },
     { "Tree", fn { return new Tree(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
+    { "Cactus", fn { return new StaticMesh(3, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
+    { "Concrete", fn { return new StaticMesh(4, p, glm::vec3(10.f), 0.f); } },
     { "Tunnel", fn { return new StaticMesh(1, p, glm::vec3(1.f), 0.f); } },
     { "Straight Arrow", fn { return new StaticDecal(0, p); } },
     { "Left Arrow", fn { return new StaticDecal(1, p); } },
@@ -113,6 +115,13 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     if (editMode == EditMode::TERRAIN)
     {
+        g_gui.beginSelect("Terrain Type", (i32*)&scene->terrain->terrainType);
+        for (i32 i=0; i<(i32)ARRAY_SIZE(scene->terrain->surfaceMaterials); ++i)
+        {
+            g_gui.option(scene->terrain->surfaceMaterials[i].name, i);
+        }
+        g_gui.end();
+
         g_gui.beginSelect("Terrain Tool", (i32*)&terrainTool);
         g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, "terrain_icon");
         g_gui.option("Perturb", (i32)TerrainTool::PERTURB, "terrain_icon");
@@ -130,11 +139,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
         if (terrainTool == TerrainTool::PAINT)
         {
+            auto& m = scene->terrain->getSurfaceMaterial();
             g_gui.beginSelect("Paint Material", &paintMaterialIndex);
-            g_gui.option("Main", 0);
-            g_gui.option("Rock", 1);
-            g_gui.option("Offroad", 2);
-            g_gui.option("Garbage", 3);
+            g_gui.option(m.textureNames[0], 0);
+            g_gui.option(m.textureNames[1], 1);
+            g_gui.option(m.textureNames[2], 2);
+            g_gui.option(m.textureNames[3], 3);
             g_gui.end();
         }
     }

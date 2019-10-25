@@ -69,7 +69,6 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 
 void Game::run()
 {
-    print(getTime(), '\n');
 #ifndef NDEBUG
     print("Debug mode\n");
 #endif

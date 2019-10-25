@@ -81,10 +81,73 @@ void Terrain::onCreate(Scene* scene)
     actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
 
-    textures[0] = g_resources.getTexture("grass")->handle;
-    textures[1] = g_resources.getTexture("rock")->handle;
-    textures[2] = g_resources.getTexture("sand")->handle;
-    textures[3] = g_resources.getTexture("dirt")->handle;
+    surfaceMaterials[0] = {
+        "Grass",
+        {
+            "Grass (With cliffs)",
+            "Rock",
+            "Sand (Offroad)",
+            "Grass 2"
+        },
+        {
+            g_resources.getTexture("grass"),
+            g_resources.getTexture("rock_moss"),
+            g_resources.getTexture("sand"),
+            g_resources.getTexture("grass"),
+        },
+        { 0.1f, 0.05f, 0.12f, 0.1f }
+    };
+
+    surfaceMaterials[1] = {
+        "Sand",
+        {
+            "Sand (With cliffs)",
+            "Rock",
+            "Sand (Offroad)",
+            "Dirt"
+        },
+        {
+            g_resources.getTexture("desert"),
+            g_resources.getTexture("desert_stone"),
+            g_resources.getTexture("sand"),
+            g_resources.getTexture("dirt"),
+        },
+        { 0.1f, 0.1f, 0.12f, 0.1f }
+    };
+
+    surfaceMaterials[2] = {
+        "Snow",
+        {
+            "Snow (With cliffs)",
+            "Rock",
+            "Sand (Offroad)",
+            "Snow"
+        },
+        {
+            g_resources.getTexture("snow"),
+            g_resources.getTexture("rock"),
+            g_resources.getTexture("sand"),
+            g_resources.getTexture("snow"),
+        },
+        { 0.1f, 0.05f, 0.12f, 0.1f }
+    };
+
+    surfaceMaterials[3] = {
+        "Lava",
+        {
+            "Lava",
+            "Lava",
+            "Sand (Offroad)",
+            "Dirt"
+        },
+        {
+            g_resources.getTexture("lava"),
+            g_resources.getTexture("lava"),
+            g_resources.getTexture("sand"),
+            g_resources.getTexture("dirt"),
+        },
+        { 0.05f, 0.1f, 0.12f, 0.1f }
+    };
 
     materials[0] = scene->genericMaterial;
     materials[1] = scene->offroadMaterial;
@@ -617,13 +680,15 @@ void Terrain::onLitPass(class Renderer* renderer)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_EQUAL);
     glEnable(GL_CULL_FACE);
-    glBindTextureUnit(6, textures[0]);
-    glBindTextureUnit(7, textures[1]);
-    glBindTextureUnit(8, textures[2]);
-    glBindTextureUnit(9, textures[3]);
+    auto& m = getSurfaceMaterial();
+    glBindTextureUnit(6, m.textures[0]->handle);
+    glBindTextureUnit(7, m.textures[1]->handle);
+    glBindTextureUnit(8, m.textures[2]->handle);
+    glBindTextureUnit(9, m.textures[3]->handle);
     glUseProgram(renderer->getShaderProgram("terrain"));
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
+    glUniform4fv(5, 1, m.texScale);
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
@@ -643,6 +708,7 @@ DataFile::Value Terrain::serialize()
     dict["blendBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
                         (u8*)blend.get(),
                         (u8*)(blend.get() + heightBufferSize)));
+    dict["terrainType"] = DataFile::makeInteger((i64)terrainType);
     return dict;
 }
 
@@ -661,6 +727,7 @@ void Terrain::deserialize(DataFile::Value& data)
         auto& blendBytes = data["blendBuffer"].bytearray();
 		memcpy(blend.get(), blendBytes.data(), blendBytes.size());
     }
+    terrainType = (TerrainType)data["terrainType"].integer((i64)TerrainType::GRASS);
 }
 
 void Terrain::applyDecal(Decal& decal)

@@ -23,7 +23,6 @@ class Terrain : public Renderable, public Entity
     std::unique_ptr<u32[]> indices;
 	u32 indexCount = 0;
     std::unique_ptr<u32[]> blend;
-    GLuint textures[4];
 
     GLuint vao = 0, vbo = 0, ebo = 0;
     glm::vec3 brushSettings = { 1.f, 1.f, 1.f };
@@ -83,6 +82,26 @@ public:
     void regenerateCollisionMesh(class Scene* scene);
 
     i32 getPriority() const override { return 5; }
+
+    enum struct TerrainType : i32
+    {
+        GRASS,
+        SAND,
+        SNOW,
+        LAVA,
+        MAX
+    };
+    TerrainType terrainType = TerrainType::GRASS;
+
+    struct SurfaceMaterial
+    {
+        const char* name = "";
+        const char* textureNames[4];
+        struct Texture* textures[4];
+        f32 texScale[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
+    } surfaceMaterials[(u32)TerrainType::MAX];
+
+    SurfaceMaterial const& getSurfaceMaterial() const { return surfaceMaterials[(u32)terrainType]; }
 
     // entity
     void onCreate(class Scene* scene) override;

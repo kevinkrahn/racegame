@@ -56,7 +56,8 @@ void Menu::mainMenu()
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-        Scene* scene = g_game.changeScene("tracks/thethingw.dat");
+        Scene* scene = g_game.changeScene("tracks/Desert.dat");
+        //Scene* scene = g_game.changeScene("tracks/thethingw.dat");
         //Scene* scene = g_game.changeScene("tracks/my_testwaaaasds.dat");
         //Scene* scene = g_game.changeScene("tracks/saved_scene.dat");
         //Scene* scene = g_game.changeScene("tracks/the_climb.dat");
