@@ -2,17 +2,7 @@
 
 #include "math.h"
 #include "datafile.h"
-
-enum struct SerializedEntityID
-{
-    TERRAIN,
-    TRACK,
-    STATIC_MESH,
-    STATIC_DECAL,
-    START,
-    TREE,
-    BOOSTER,
-};
+#include <functional>
 
 struct ActorUserData
 {
@@ -35,16 +25,35 @@ struct ActorUserData
 
 class Entity
 {
-    bool isMarkedForDeletion = false;
-
 public:
-    void destroy() { isMarkedForDeletion = true; }
-    bool isDestroyed() { return isMarkedForDeletion; }
+    u32 entityID = 0xF0F0F0F0;
+    enum EntityFlags
+    {
+        NONE = 0,
+        DESTROYED = 1,
+        PERSISTENT = 1 << 1,
+    } entityFlags = NONE;
+
+    void destroy() { entityFlags = (EntityFlags)(entityFlags | DESTROYED); }
+    bool isDestroyed() { return (entityFlags & DESTROYED) == DESTROYED; }
+    void setPersistent(bool persistent)
+    {
+        entityFlags = (EntityFlags)(persistent
+            ? (entityFlags | PERSISTENT)
+            : (entityFlags & ~PERSISTENT));
+    }
+    bool isPersistent() const { return (entityFlags & PERSISTENT) == PERSISTENT; }
 
     virtual ~Entity() {}
-    virtual DataFile::Value serialize() { return {}; }
-    virtual void deserialize(DataFile::Value& data) {}
-    virtual bool isPersistent() const { return false; }
+    virtual DataFile::Value serializeState() { return {}; }
+    virtual void deserializeState(DataFile::Value& data) {}
+    DataFile::Value serialize()
+    {
+        assert(entityID != 0xF0F0F0F0);
+        auto val = serializeState();
+        val["entityID"] = DataFile::makeInteger(entityID);
+        return val;
+    }
     virtual void onTrigger(ActorUserData* userData) {}
 
     virtual void onCreate(class Scene* scene) {}
@@ -66,6 +75,23 @@ public:
     glm::mat4 transform;
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
+
+    virtual DataFile::Value serializeState() override
+    {
+        DataFile::Value dict = DataFile::makeDict();
+        dict["position"] = DataFile::makeVec3(position);
+        dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
+        dict["scale"] = DataFile::makeVec3(scale);
+        return dict;
+    }
+
+    virtual void deserializeState(DataFile::Value& data) override
+    {
+        position = data["position"].vec3();
+        glm::vec4 r = data["rotation"].vec4();
+        rotation = glm::quat(r.w, r.x, r.y, r.z);
+        scale = data["scale"].vec3();
+    }
 
     virtual void updateTransform(class Scene* scene)
     {
@@ -108,7 +134,29 @@ public:
             actor->release();
         }
     }
-
-    bool isPersistent() const override { return true; }
 };
+
+struct RegisteredEntity
+{
+    u32 entityID;
+    std::function<Entity*()> create;
+};
+
+std::vector<RegisteredEntity> g_entities;
+
+template<typename T>
+void registerEntity()
+{
+    u32 entityID = (u32)g_entities.size();
+    g_entities.push_back({
+        entityID,
+        [entityID] {
+            Entity* e = new T();
+            e->entityID = entityID;
+            return e;
+        }
+    });
+}
+
+void registerEntities();
 

@@ -28,13 +28,14 @@ const char* textureNames[] = {
     "Dust",
 };
 
-StaticDecal::StaticDecal(i32 texIndex, glm::vec3 const& pos, u32 decalFilter)
+StaticDecal* StaticDecal::setup(i32 texIndex, glm::vec3 const& pos, u32 decalFilter)
 {
     position = pos;
     scale = glm::vec3(16.f);
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
     this->texIndex = texIndex;
     this->decalFilter = decalFilter;
+    return this;
 }
 
 void StaticDecal::onCreateEnd(Scene* scene)
@@ -125,24 +126,18 @@ void StaticDecal::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelecte
     }
 }
 
-DataFile::Value StaticDecal::serialize()
+DataFile::Value StaticDecal::serializeState()
 {
-    DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::STATIC_DECAL);
-    dict["position"] = DataFile::makeVec3(position);
-    dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
-    dict["scale"] = DataFile::makeVec3(scale);
+    DataFile::Value dict = PlaceableEntity::serializeState();
     dict["texIndex"] = DataFile::makeInteger(texIndex);
     dict["decalFilter"] = DataFile::makeInteger(decalFilter);
     dict["beforeMarking"] = DataFile::makeBool(beforeMarking);
     return dict;
 }
 
-void StaticDecal::deserialize(DataFile::Value& data)
+void StaticDecal::deserializeState(DataFile::Value& data)
 {
-    position = data["position"].vec3();
-    glm::vec4 r = data["rotation"].vec4();
-    rotation = glm::quat(r.w, r.x, r.y, r.z);
+    PlaceableEntity::deserializeState(data);
     scale = data["scale"].vec3();
     texIndex = (i32)data["texIndex"].integer(0);
     decalFilter = (u32)data["decalFilter"].integer(DECAL_TRACK);

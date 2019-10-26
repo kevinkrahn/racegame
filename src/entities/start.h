@@ -15,16 +15,18 @@ class Start : public PlaceableEntity
 public:
     Start()
     {
+        position = glm::vec3(0, 0, 3);
+        rotation = glm::rotate(glm::identity<glm::quat>(), glm::vec3(0, 0, PI));
         mesh = g_resources.getMesh("world.Start");
         meshLights = g_resources.getMesh("world.StartLights");
+        setPersistent(true);
     }
 
     void applyDecal(class Decal& decal) override;
     void updateTransform(class Scene* scene) override;
+    void onCreate(class Scene* scene) override;
     void onCreateEnd(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    DataFile::Value serialize() override;
-    void deserialize(DataFile::Value& data) override;
     const char* getName() const override { return "Track Start"; }
 };

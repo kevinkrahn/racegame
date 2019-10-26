@@ -12,14 +12,24 @@ class Booster : public PlaceableEntity
     f32 intensity = 1.25f;
 
 public:
-    Booster(glm::vec3 const& pos={0,0,0});
+    Booster() { setPersistent(true); }
+    Booster* setup(glm::vec3 const& pos={0,0,0});
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    DataFile::Value serialize() override;
-    void deserialize(DataFile::Value& data) override;
+    DataFile::Value serializeState() override
+    {
+        auto val = PlaceableEntity::serializeState();
+        val["backwards"] = DataFile::makeBool(backwards);
+        return val;
+    }
+    void deserializeState(DataFile::Value& data) override
+    {
+        backwards = data["backwards"].boolean();
+        PlaceableEntity::deserializeState(data);
+    }
     const char* getName() const override { return "Booster"; }
     void showDetails(Scene* scene) override;
 };

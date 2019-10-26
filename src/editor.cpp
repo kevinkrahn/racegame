@@ -23,16 +23,16 @@ struct EntityType
 #define fn [](glm::vec3 const& p, RandomSeries& s) -> PlaceableEntity*
 
 std::vector<EntityType> entityTypes = {
-    { "Rock", fn { return new StaticMesh(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, PI * 2.f)); } },
-    { "Sign", fn { return new StaticMesh(2, p, glm::vec3(1.f), 0.f); } },
-    { "Tree", fn { return new Tree(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
-    { "Cactus", fn { return new StaticMesh(3, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
-    { "Concrete", fn { return new StaticMesh(4, p, glm::vec3(10.f), 0.f); } },
-    { "Tunnel", fn { return new StaticMesh(1, p, glm::vec3(1.f), 0.f); } },
-    { "Straight Arrow", fn { return new StaticDecal(0, p); } },
-    { "Left Arrow", fn { return new StaticDecal(1, p); } },
-    { "Right Arrow", fn { return new StaticDecal(2, p); } },
-    { "Booster", fn { return new Booster(p); } },
+    { "Rock", fn { return ((StaticMesh*)g_entities[2].create())->setup(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, PI * 2.f)); } },
+    { "Sign", fn { return ((StaticMesh*)g_entities[2].create())->setup(2, p, glm::vec3(1.f), 0.f); } },
+    { "Tree", fn { return ((Tree*)g_entities[5].create())->setup(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
+    { "Cactus", fn { return ((StaticMesh*)g_entities[2].create())->setup(3, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
+    { "Concrete", fn { return ((StaticMesh*)g_entities[2].create())->setup(4, p, glm::vec3(10.f), 0.f); } },
+    { "Tunnel", fn { return ((StaticMesh*)g_entities[2].create())->setup(1, p, glm::vec3(1.f), 0.f); } },
+    { "Straight Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(0, p); } },
+    { "Left Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(1, p); } },
+    { "Right Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(2, p); } },
+    { "Booster", fn { return ((Booster*)(g_entities[6].create()))->setup(p); } },
 };
 
 #undef fn

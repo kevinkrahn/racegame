@@ -217,6 +217,7 @@ public:
         segment->handleOffsetB = glm::vec3(10, 0, 0);
         segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
+        setPersistent(true);
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
@@ -307,9 +308,8 @@ public:
     // entity
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
-    DataFile::Value serialize() override;
-    void deserialize(DataFile::Value& data) override;
-    bool isPersistent() const override { return true; }
+    DataFile::Value serializeState() override;
+    void deserializeState(DataFile::Value& data) override;
 
     // renderable
     std::string getDebugString() const override { return "Track"; }

@@ -6,6 +6,14 @@
 #include "../game.h"
 #include "../billboard.h"
 
+void Start::onCreate(Scene* scene)
+{
+    if (!scene->start)
+    {
+        scene->start = this;
+    }
+}
+
 void Start::onCreateEnd(Scene* scene)
 {
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
@@ -127,24 +135,6 @@ void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
                 glm::translate(glm::mat4(1.f), {10, 0, -2}) *
                 glm::scale(glm::mat4(1.f), glm::vec3(3.f))));
     }
-}
-
-DataFile::Value Start::serialize()
-{
-    DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::START);
-    dict["position"] = DataFile::makeVec3(position);
-    dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
-    dict["scale"] = DataFile::makeVec3(scale);
-    return dict;
-}
-
-void Start::deserialize(DataFile::Value& data)
-{
-    position = data["position"].vec3();
-    glm::vec4 r = data["rotation"].vec4();
-    rotation = glm::quat(r.w, r.x, r.y, r.z);
-    scale = data["scale"].vec3();
 }
 
 void Start::applyDecal(Decal& decal)

@@ -154,6 +154,11 @@ void Terrain::onCreate(Scene* scene)
 
     regenerateMesh();
     regenerateCollisionMesh(scene);
+
+    if (!scene->terrain)
+    {
+        scene->terrain = this;
+    }
 }
 
 void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
@@ -693,10 +698,9 @@ void Terrain::onLitPass(class Renderer* renderer)
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
 
-DataFile::Value Terrain::serialize()
+DataFile::Value Terrain::serializeState()
 {
     DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::TERRAIN);
     dict["tileSize"] = DataFile::makeReal(tileSize);
     dict["x1"] = DataFile::makeReal(x1);
     dict["y1"] = DataFile::makeReal(y1);
@@ -712,7 +716,7 @@ DataFile::Value Terrain::serialize()
     return dict;
 }
 
-void Terrain::deserialize(DataFile::Value& data)
+void Terrain::deserializeState(DataFile::Value& data)
 {
     tileSize = (f32)data["tileSize"].real();
     x1 = (f32)data["x1"].real();

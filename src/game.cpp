@@ -124,6 +124,7 @@ void Game::run()
     initPhysX();
     g_resources.load();
     initializeVehicleData();
+    registerEntities();
 
     changeScene(nullptr);
 

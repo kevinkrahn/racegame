@@ -70,20 +70,40 @@ Scene::Scene(const char* name)
 
     if (!name)
     {
-        // loading empty scene, so add default terrain
-        terrain = new Terrain();
-        addEntity(terrain);
-        track = new Track();
-        addEntity(track);
+        // loading empty scene, so add default terrain, track, and start
+        addEntity(g_entities[0].create());
+        addEntity(g_entities[1].create());
+        addEntity(g_entities[4].create());
         this->name = "Untitled";
-        return;
+    }
+    else
+    {
+        this->name = fs::path(name).stem().string();
+        this->filename = name;
+        auto data = DataFile::load(name);
+        deserialize(data);
     }
 
-    auto data = DataFile::load(name);
-    deserialize(data);
+    while (newEntities.size() > 0)
+    {
+        for (auto& e : newEntities)
+        {
+            e->onCreate(this);
+        }
+        for (auto& e : newEntities)
+        {
+            e->onCreateEnd(this);
+            entities.push_back(std::move(e));
+        }
+        newEntities.clear();
+    }
 
-    this->name = fs::path(name).stem().string();
-    this->filename = name;
+    assert(track != nullptr);
+    assert(start != nullptr);
+    track->buildTrackGraph(&trackGraph, start->transform);
+    trackPreviewPosition = start->position;
+    trackPreviewCameraTarget = trackPreviewPosition;
+    trackPreviewCameraFrom = trackPreviewPosition + glm::vec3(0, 0, 5);
 }
 
 Scene::~Scene()
@@ -960,10 +980,9 @@ DataFile::Value Scene::serialize()
 
     for (auto& entity : this->entities)
     {
-        DataFile::Value entityData = entity->serialize();
-        if (entityData.hasValue())
+        if ((entity->entityFlags & Entity::PERSISTENT) == Entity::PERSISTENT)
         {
-            entityArray.push_back(std::move(entityData));
+            entityArray.push_back(entity->serialize());
         }
     }
 
@@ -972,55 +991,11 @@ DataFile::Value Scene::serialize()
 
 Entity* Scene::deserializeEntity(DataFile::Value& val)
 {
-    SerializedEntityID entityID = (SerializedEntityID)val["entityID"].integer();
-    switch (entityID)
-    {
-        case SerializedEntityID::TERRAIN:
-        {
-            this->terrain = new Terrain();
-            this->terrain->deserialize(val);
-            this->addEntity(this->terrain);
-        } break;
-        case SerializedEntityID::TRACK:
-        {
-            this->track = new Track();
-            this->track->deserialize(val);
-            this->addEntity(this->track);
-        } break;
-        case SerializedEntityID::STATIC_MESH:
-        {
-            StaticMesh* e = new StaticMesh();
-            e->deserialize(val);
-            e->updateTransform(this);
-            this->addEntity(e);
-        } break;
-        case SerializedEntityID::STATIC_DECAL:
-        {
-            StaticDecal* decal = new StaticDecal(0);
-            decal->deserialize(val);
-            this->addEntity(decal);
-        } break;
-        case SerializedEntityID::BOOSTER:
-        {
-            Booster* booster = new Booster();
-            booster->deserialize(val);
-            this->addEntity(booster);
-        } break;
-        case SerializedEntityID::START:
-        {
-            this->start = new Start();
-            this->start->deserialize(val);
-            this->addEntity(start);
-        } break;
-        case SerializedEntityID::TREE:
-        {
-            Tree* tree = new Tree();
-            tree->deserialize(val);
-            tree->updateTransform(this);
-            this->addEntity(tree);
-        } break;
-    }
-    return newEntities.back().get();
+    i32 entityID = (i32)val["entityID"].integer();
+    Entity* entity = g_entities[entityID].create();
+    entity->deserializeState(val);
+    this->addEntity(entity);
+    return entity;
 }
 
 void Scene::deserialize(DataFile::Value& data)
@@ -1030,23 +1005,4 @@ void Scene::deserialize(DataFile::Value& data)
     {
         deserializeEntity(val);
     }
-    while (newEntities.size() > 0)
-    {
-        for (auto& e : newEntities)
-        {
-            e->onCreate(this);
-        }
-        for (auto& e : newEntities)
-        {
-            e->onCreateEnd(this);
-            entities.push_back(std::move(e));
-        }
-        newEntities.clear();
-    }
-    assert(track != nullptr);
-    assert(start != nullptr);
-    track->buildTrackGraph(&trackGraph, start->transform);
-    trackPreviewPosition = start->position;
-    trackPreviewCameraTarget = trackPreviewPosition;
-    trackPreviewCameraFrom = trackPreviewPosition + glm::vec3(0, 0, 5);
 }

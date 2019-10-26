@@ -49,6 +49,7 @@ public:
         resize(-256, -256, 256, 256);
         //generate();
         createBuffers();
+        setPersistent(true);
     }
     Terrain(f32 x1, f32 y1, f32 x2, f32 y2)
     {
@@ -106,10 +107,9 @@ public:
     // entity
     void onCreate(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
-    DataFile::Value serialize() override;
-    void deserialize(DataFile::Value& data) override;
+    DataFile::Value serializeState() override;
+    void deserializeState(DataFile::Value& data) override;
     void applyDecal(class Decal& decal) override;
-    bool isPersistent() const override { return true; }
 
     // renderable
     //void onBeforeRender(f32 deltaTime) override {};

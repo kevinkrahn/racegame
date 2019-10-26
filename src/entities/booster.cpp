@@ -5,11 +5,12 @@
 #include "../gui.h"
 #include "../vehicle.h"
 
-Booster::Booster(glm::vec3 const& pos)
+Booster* Booster::setup(glm::vec3 const& pos)
 {
     position = pos;
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
     scale = glm::vec3(8.f);
+    return this;
 }
 
 void Booster::onCreateEnd(Scene* scene)
@@ -92,26 +93,6 @@ void Booster::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
     {
         scene->debugDraw.boundingBox(decalBoundingBox, transform, glm::vec4(1, 0.5f, 0, 1));
     }
-}
-
-DataFile::Value Booster::serialize()
-{
-    DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::BOOSTER);
-    dict["position"] = DataFile::makeVec3(position);
-    dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
-    dict["scale"] = DataFile::makeVec3(scale);
-    dict["backwards"] = DataFile::makeBool(backwards);
-    return dict;
-}
-
-void Booster::deserialize(DataFile::Value& data)
-{
-    position = data["position"].vec3();
-    glm::vec4 r = data["rotation"].vec4();
-    rotation = glm::quat(r.w, r.x, r.y, r.z);
-    scale = data["scale"].vec3();
-    backwards = data["backwards"].boolean();
 }
 
 void Booster::showDetails(Scene* scene)

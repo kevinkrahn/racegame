@@ -21,19 +21,24 @@ const char* texNames[] = {
     "concrete",
 };
 
-StaticMesh::StaticMesh(u32 meshIndex, glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)
+StaticMesh* StaticMesh::setup(u32 meshIndex, glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)
 {
     this->position = position;
     this->scale = scale;
     this->rotation = glm::rotate(this->rotation, zRotation, glm::vec3(0, 0, 1));
     this->meshIndex = meshIndex;
-    mesh = g_resources.getMesh(meshNames[meshIndex]);
-    tex = g_resources.getTexture(texNames[meshIndex]);
+    return this;
 }
 
 void StaticMesh::onCreate(Scene* scene)
 {
-    actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
+    updateTransform(scene);
+
+    mesh = g_resources.getMesh(meshNames[meshIndex]);
+    tex = g_resources.getTexture(texNames[meshIndex]);
+
+    actor = g_game.physx.physics->createRigidStatic(
+            PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
@@ -65,27 +70,17 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
     }
 }
 
-DataFile::Value StaticMesh::serialize()
+DataFile::Value StaticMesh::serializeState()
 {
-    DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::STATIC_MESH);
-    dict["position"] = DataFile::makeVec3(position);
-    dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
-    dict["scale"] = DataFile::makeVec3(scale);
+    DataFile::Value dict = PlaceableEntity::serializeState();
     dict["meshIndex"] = DataFile::makeInteger(meshIndex);
     return dict;
 }
 
-void StaticMesh::deserialize(DataFile::Value& data)
+void StaticMesh::deserializeState(DataFile::Value& data)
 {
-    position = data["position"].vec3();
-    glm::vec4 r = data["rotation"].vec4();
-    rotation = glm::quat(r.w, r.x, r.y, r.z);
-    scale = data["scale"].vec3();
+    PlaceableEntity::deserializeState(data);
     meshIndex = (u32)data["meshIndex"].integer(0);
-
-    mesh = g_resources.getMesh(meshNames[meshIndex]);
-    tex = g_resources.getTexture(texNames[meshIndex]);
 }
 
 void StaticMesh::applyDecal(Decal& decal)

@@ -38,23 +38,9 @@ void Track::onCreate(Scene* scene)
             railing->updateMesh();
         }
     }
-    if (!scene->start)
+    if (!scene->track)
     {
-        BezierSegment* c = getPointConnection(0);
-        f32 length = c->getLength();
-        f32 t = 30.f / length;
-        glm::vec3 xDir = glm::normalize(c->directionOnCurve(t));
-        glm::vec3 yDir = glm::cross(glm::vec3(0, 0, 1), xDir);
-        glm::vec3 zDir = glm::cross(xDir, yDir);
-        glm::mat4 m(1.f);
-        m[0] = glm::vec4(xDir, m[0].w);
-        m[1] = glm::vec4(yDir, m[1].w);
-        m[2] = glm::vec4(zDir, m[2].w);
-
-        scene->start = new Start();
-        scene->start->position = glm::vec3(0, 0, 3) + c->pointOnCurve(t);
-        scene->start->rotation = glm::quat_cast(m);
-        scene->addEntity(scene->start);
+        scene->track = this;
     }
 }
 
@@ -1310,11 +1296,9 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
     trackGraph->rebuild(startTransform);
 }
 
-DataFile::Value Track::serialize()
+DataFile::Value Track::serializeState()
 {
     DataFile::Value dict = DataFile::makeDict();
-    dict["entityID"] = DataFile::makeInteger((i64)SerializedEntityID::TRACK);
-
     dict["points"] = DataFile::makeArray();
     auto& pointsArray = dict["points"].array();
     for (auto& point : points)
@@ -1362,7 +1346,7 @@ DataFile::Value Track::serialize()
     return dict;
 }
 
-void Track::deserialize(DataFile::Value& data)
+void Track::deserializeState(DataFile::Value& data)
 {
     points.clear();
     connections.clear();
