@@ -189,14 +189,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->track->matchZ(true);
         }
 
-        if (g_gui.button("New Railing"))
+        std::string splineNames[ARRAY_SIZE(railingMeshTypes)];
+        for (u32 i=0; i<ARRAY_SIZE(railingMeshTypes); ++i)
         {
-            placeMode = PlaceMode::NEW_RAILING;
+            splineNames[i] = railingMeshTypes[i].name;
         }
+        g_gui.select("Spline", splineNames, ARRAY_SIZE(splineNames), selectedSplineTypeIndex);
 
-        if (g_gui.button("New Track Marking"))
+        if (g_gui.button("New Spline"))
         {
-            placeMode = PlaceMode::NEW_MARKING;
+            placeMode = PlaceMode::NEW_SPLINE;
         }
     }
     else if (editMode == EditMode::DECORATION)
@@ -446,13 +448,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             glm::vec3 p = scene->track->previewRailingPlacement(scene, renderer, cam.position, rayDir);
             if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
-                if (placeMode == PlaceMode::NEW_RAILING)
+                if (placeMode == PlaceMode::NEW_SPLINE)
                 {
-                    scene->track->placeRailing(p);
-                }
-                else
-                {
-                    scene->track->placeMarking(p);
+                    scene->track->placeSpline(p, selectedSplineTypeIndex);
                 }
                 isMouseClickHandled = true;
                 clickHandledUntilRelease = true;

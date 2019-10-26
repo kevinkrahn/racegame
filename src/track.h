@@ -47,6 +47,7 @@ struct RailingMeshType
 RailingMeshType railingMeshTypes[] = {
     { "Concrete Barrier", false, "world.Rail", "world.RailCollision", 1.f, "concrete" },
     { "Rumble Stip", true, "world.RumbleStrip", nullptr, 0.5f, "rumble" },
+    { "Metal Railing", false, "railing.Rail", "railing.RailCollision", 1.f, "white" },
 };
 
 class Track : public Renderable, public Entity
@@ -236,8 +237,7 @@ public:
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
-    void placeRailing(glm::vec3 const& p);
-    void placeMarking(glm::vec3 const& p);
+    void placeSpline(glm::vec3 const& p, u32 index);
     bool canConnect() const { return selectedPoints.size() == 2; }
     bool canConnectRailings() const
     {

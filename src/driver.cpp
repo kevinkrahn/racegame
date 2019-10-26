@@ -92,14 +92,14 @@ void Driver::aiUpgrades(RandomSeries& series)
         { ARMOR, 10 + ai.awareness, 3 },
         { ARMOR, 9  + ai.awareness, 4 },
         { ARMOR, 8  + ai.awareness, 5 },
-        { ENGINE, 15 + ai.drivingSkill * 2 + ai.awareness, 1 },
+        { ENGINE, 16 + ai.drivingSkill * 3 + ai.awareness, 1 },
         { ENGINE, 14 + ai.drivingSkill * 2 + ai.awareness, 2 },
         { ENGINE, 12 + ai.drivingSkill, 3 },
         { ENGINE, 11 + ai.drivingSkill, 4 },
         { ENGINE, 10 + ai.drivingSkill, MAX_UPGRADE },
         { TIRES, 15 + ai.drivingSkill * 2 + ai.awareness * 2, 1 },
-        { TIRES, 14 + ai.drivingSkill * 2 + ai.awareness * 2, 2 },
-        { TIRES, 12 + ai.drivingSkill * 2 + ai.awareness, 3 },
+        { TIRES, 14 + ai.drivingSkill * 2 + ai.awareness, 2 },
+        { TIRES, 12 + ai.drivingSkill * 2, 3 },
         { TIRES, 12 + ai.drivingSkill, 4 },
         { TIRES, 11 + ai.drivingSkill, MAX_UPGRADE },
         { MISC_PERFORMANCE, 12 + ai.drivingSkill * 2 + ai.awareness, 1 },
@@ -330,6 +330,10 @@ void Driver::aiUpgrades(RandomSeries& series)
                 {
                     auto upgrade = c.getUpgrade(ARMOR_INDEX);
                     u32 upgradeLevel = upgrade ? upgrade->upgradeIndex + 1 : 1;
+                    if (upgradeLevel >= upgradeChoice.upgradeLevel)
+                    {
+                        break;
+                    }
                     auto& upgradeInfo = getVehicleData()->availableUpgrades[ARMOR_INDEX];
                     i32 price = upgradeInfo.price * upgradeLevel;
                     if (credits < price)
@@ -338,7 +342,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                     }
                     else if (c.canAddUpgrade(this, upgradeLevel))
                     {
-                        print(playerName, " bought armor ", upgradeLevel, '\n');
+                        print(playerName, " bought armor ", upgradeLevel,
+                                '(', upgradeChoice.priority, ")\n");
                         credits -= price;
                         c.addUpgrade(ARMOR_INDEX);
                         restart = true;
@@ -348,6 +353,10 @@ void Driver::aiUpgrades(RandomSeries& series)
                 {
                     auto upgrade = c.getUpgrade(ENGINE_INDEX);
                     u32 upgradeLevel = upgrade ? upgrade->upgradeLevel + 1 : 1;
+                    if (upgradeLevel >= upgradeChoice.upgradeLevel)
+                    {
+                        break;
+                    }
                     auto& upgradeInfo = getVehicleData()->availableUpgrades[ENGINE_INDEX];
                     i32 price = upgradeInfo.price * upgradeLevel;
                     if (credits < price)
@@ -356,7 +365,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                     }
                     else if (c.canAddUpgrade(this, ENGINE_INDEX))
                     {
-                        print(playerName, " bought engine ", upgradeLevel, '\n');
+                        print(playerName, " bought engine ", upgradeLevel,
+                                '(', upgradeChoice.priority, ")\n");
                         credits -= price;
                         c.addUpgrade(ENGINE_INDEX);
                         restart = true;
@@ -366,6 +376,10 @@ void Driver::aiUpgrades(RandomSeries& series)
                 {
                     auto upgrade = c.getUpgrade(TIRES_INDEX);
                     u32 upgradeLevel = upgrade ? upgrade->upgradeLevel + 1 : 1;
+                    if (upgradeLevel >= upgradeChoice.upgradeLevel)
+                    {
+                        break;
+                    }
                     auto& upgradeInfo = getVehicleData()->availableUpgrades[TIRES_INDEX];
                     i32 price = upgradeInfo.price * upgradeLevel;
                     if (credits < price)
@@ -374,7 +388,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                     }
                     else if (c.canAddUpgrade(this, TIRES_INDEX))
                     {
-                        print(playerName, " bought tires ", upgradeLevel, '\n');
+                        print(playerName, " bought tires ", upgradeLevel,
+                                '(', upgradeChoice.priority, ")\n");
                         credits -= price;
                         c.addUpgrade(TIRES_INDEX);
                         restart = true;
@@ -392,6 +407,10 @@ void Driver::aiUpgrades(RandomSeries& series)
 
                         auto upgrade = c.getUpgrade(i);
                         u32 upgradeLevel = upgrade ? upgrade->upgradeLevel + 1 : 1;
+                        if (upgradeLevel >= upgradeChoice.upgradeLevel)
+                        {
+                            continue;
+                        }
                         auto& upgradeInfo = getVehicleData()->availableUpgrades[i];
                         i32 price = upgradeInfo.price * upgradeLevel;
                         if (credits < price)

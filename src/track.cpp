@@ -1036,26 +1036,14 @@ glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::
     return p;
 }
 
-void Track::placeRailing(glm::vec3 const& p)
+void Track::placeSpline(glm::vec3 const& p, u32 index)
 {
     for (auto& r : railings)
     {
         r->selectedPoints.clear();
     }
     auto railing = std::make_unique<Railing>(this);
-    railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
-    railing->selectedPoints.push_back({ 0, {} });
-    railings.push_back(std::move(railing));
-}
-
-void Track::placeMarking(glm::vec3 const& p)
-{
-    for (auto& r : railings)
-    {
-        r->selectedPoints.clear();
-    }
-    auto railing = std::make_unique<Railing>(this);
-    railing->meshTypeIndex = 1;
+    railing->meshTypeIndex = index;
     railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
     railing->selectedPoints.push_back({ 0, {} });
     railings.push_back(std::move(railing));
