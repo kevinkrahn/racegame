@@ -1427,8 +1427,6 @@ void Track::Railing::updateMesh()
         return;
     }
 
-    Mesh* railingMesh = g_resources.getMesh(railingMeshTypes[meshTypeIndex].meshName);
-    f32 scale = this->scale * railingMeshTypes[meshTypeIndex].scale;
     bool flat = railingMeshTypes[meshTypeIndex].flat;
     tex = g_resources.getTexture(railingMeshTypes[meshTypeIndex].texName);
 
@@ -1441,13 +1439,6 @@ void Track::Railing::updateMesh()
         track->scene->getPhysicsScene()->addActor(*actor);
     }
 
-    struct PolyLinePoint
-    {
-        glm::vec3 pos;
-        f32 distanceToHere;
-        glm::vec3 dir;
-        f32 distance; // distance at next point
-    };
     u32 steps = 32;
     std::vector<PolyLinePoint> polyLine;
     f32 zGroundOffset = flat ? 0.01f : 0.f;
@@ -1495,6 +1486,42 @@ void Track::Railing::updateMesh()
     }
     polyLine.pop_back();
 
+    Mesh* railingMesh = g_resources.getMesh(railingMeshTypes[meshTypeIndex].meshName);
+    Mesh* railingCollisionMesh = !flat
+        ? g_resources.getMesh(railingMeshTypes[meshTypeIndex].collisionMeshName)
+        : nullptr;
+    f32 scale = this->scale * railingMeshTypes[meshTypeIndex].scale;
+    deformMeshAlongPath(railingMesh, &mesh, scale, polyLine, pathLength, flat);
+    if (!flat)
+    {
+        deformMeshAlongPath(railingCollisionMesh, &collisionMesh, scale, polyLine, pathLength, flat);
+    }
+
+    mesh.createVAO();
+    collisionMesh.destroy();
+
+    if (railingCollisionMesh)
+    {
+        if (!collisionShape)
+        {
+            collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
+                    PxTriangleMeshGeometry(collisionMesh.getCollisionMesh()),
+                    *track->scene->trackMaterial);
+            collisionShape->setQueryFilterData(PxFilterData(
+                        COLLISION_FLAG_GROUND, DECAL_RAILING, 0, DRIVABLE_SURFACE));
+            collisionShape->setSimulationFilterData(PxFilterData(
+                        COLLISION_FLAG_GROUND, -1, 0, 0));
+        }
+        else
+        {
+            collisionShape->setGeometry(PxTriangleMeshGeometry(collisionMesh.getCollisionMesh()));
+        }
+    }
+}
+
+void Track::Railing::deformMeshAlongPath(Mesh* railingMesh, Mesh* outputMesh, f32 scale,
+        std::vector<PolyLinePoint> const& polyLine, f32 pathLength, bool flat)
+{
     f32 railingMeshLength = (railingMesh->aabb.max.x - railingMesh->aabb.min.x) * scale;
     f32 fractionalRepeatCount = pathLength / railingMeshLength;
     u32 totalRepeatCount = (u32)fractionalRepeatCount;
@@ -1505,17 +1532,17 @@ void Track::Railing::updateMesh()
     f32 lengthPerMesh = pathLength / totalRepeatCount;
     f32 railingMeshScaleFactor = lengthPerMesh / railingMeshLength;
 
-    mesh.vertices.resize(railingMesh->numVertices
+    outputMesh->vertices.resize(railingMesh->numVertices
             * railingMesh->formatStride / sizeof(f32) * totalRepeatCount);
-    mesh.indices.resize(railingMesh->numIndices * totalRepeatCount);
-    mesh.vertexFormat.clear();
+    outputMesh->indices.resize(railingMesh->numIndices * totalRepeatCount);
+    outputMesh->vertexFormat.clear();
     for (auto item : railingMesh->vertexFormat)
     {
-        mesh.vertexFormat.push_back(item);
+        outputMesh->vertexFormat.push_back(item);
     }
-    mesh.stride = railingMesh->formatStride;
-    mesh.elementSize = railingMesh->elementSize;
-    assert(mesh.elementSize == 3);
+    outputMesh->stride = railingMesh->formatStride;
+    outputMesh->elementSize = railingMesh->elementSize;
+    assert(outputMesh->elementSize == 3);
 
     //f32 invMeshWidth = 1.f / ((railingMesh->aabb.max.y - railingMesh->aabb.min.y) * 8);
     f32 distanceAlongPath = 0.f;
@@ -1566,20 +1593,20 @@ void Track::Railing::updateMesh()
             // copy over the remaining vertex attributes
             u32 nj = (repeatCount * railingMesh->formatStride / sizeof(f32) * railingMesh->numVertices)
                 + i * railingMesh->formatStride / sizeof(f32);
-            mesh.vertices[nj+0] = dp.x;
-            mesh.vertices[nj+1] = dp.y;
-            mesh.vertices[nj+2] = dp.z;
-            mesh.vertices[nj+3] = dn.x;
-            mesh.vertices[nj+4] = dn.y;
-            mesh.vertices[nj+5] = dn.z;
+            outputMesh->vertices[nj+0] = dp.x;
+            outputMesh->vertices[nj+1] = dp.y;
+            outputMesh->vertices[nj+2] = dp.z;
+            outputMesh->vertices[nj+3] = dn.x;
+            outputMesh->vertices[nj+4] = dn.y;
+            outputMesh->vertices[nj+5] = dn.z;
             for (u32 attrIndex = 6; attrIndex < railingMesh->formatStride / sizeof(f32); ++attrIndex)
             {
-                mesh.vertices[nj+attrIndex] = railingMesh->vertices[j+attrIndex];
+                outputMesh->vertices[nj+attrIndex] = railingMesh->vertices[j+attrIndex];
             }
             if (flat)
             {
-                mesh.vertices[nj+6] = uv.x;
-                mesh.vertices[nj+7] = uv.y;
+                outputMesh->vertices[nj+6] = uv.x;
+                outputMesh->vertices[nj+7] = uv.y;
             }
         }
 
@@ -1594,31 +1621,13 @@ void Track::Railing::updateMesh()
         // copy over the indices
         for (u32 i=0; i<railingMesh->numIndices; ++i)
         {
-            mesh.indices[repeatCount * railingMesh->numIndices + i] =
+            outputMesh->indices[repeatCount * railingMesh->numIndices + i] =
                 railingMesh->indices[i] + (railingMesh->numVertices * repeatCount);
         }
     }
-    mesh.numVertices = (u32)mesh.vertices.size() / (mesh.stride / sizeof(f32));
-    mesh.numIndices = (u32)mesh.indices.size();
-    mesh.createVAO();
-
-    if (!flat)
-    {
-        // TODO: don't use rendering geometry for collision mesh, but instead generate a simpler one
-        if (!collisionShape)
-        {
-            collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                    PxTriangleMeshGeometry(mesh.getCollisionMesh()), *track->scene->trackMaterial);
-            collisionShape->setQueryFilterData(PxFilterData(
-                        COLLISION_FLAG_GROUND, DECAL_RAILING, 0, DRIVABLE_SURFACE));
-            collisionShape->setSimulationFilterData(PxFilterData(
-                        COLLISION_FLAG_GROUND, -1, 0, 0));
-        }
-        else
-        {
-            collisionShape->setGeometry(PxTriangleMeshGeometry(mesh.getCollisionMesh()));
-        }
-    }
+    outputMesh->numVertices =
+        (u32)outputMesh->vertices.size() / (outputMesh->stride / sizeof(f32));
+    outputMesh->numIndices =(u32)outputMesh->indices.size();
 }
 
 void Track::Railing::onLitPassPriorityTransition(Renderer* renderer)

@@ -37,14 +37,16 @@ TrackItem prefabTrackItems[] = {
 
 struct RailingMeshType
 {
+    const char* name;
     bool flat;
     const char* meshName;
+    const char* collisionMeshName;
     f32 scale;
     const char* texName;
 };
 RailingMeshType railingMeshTypes[] = {
-    { false, "world.Rail", 1.f, "concrete" },
-    { true, "world.RumbleStrip", 0.5f, "rumble" },
+    { "Concrete Barrier", false, "world.Rail", "world.RailCollision", 1.f, "concrete" },
+    { "Rumble Stip", true, "world.RumbleStrip", nullptr, 0.5f, "rumble" },
 };
 
 class Track : public Renderable, public Entity
@@ -149,10 +151,12 @@ private:
     };
 
     // TODO: allow decals to affect railings
+    // TODO: make railings a seperate entity
     struct Railing : public Renderable
     {
         std::vector<RailingPoint> points;
         Mesh mesh;
+        Mesh collisionMesh;
         std::vector<Selection> selectedPoints;
         bool isDirty = true;
         PxRigidStatic* actor = nullptr;
@@ -175,9 +179,20 @@ private:
                 actor->release();
             }
             mesh.destroy();
+            collisionMesh.destroy();
         }
 
+        struct PolyLinePoint
+        {
+            glm::vec3 pos;
+            f32 distanceToHere;
+            glm::vec3 dir;
+            f32 distance; // distance at next point
+        };
+
         void updateMesh();
+        void deformMeshAlongPath(Mesh* railingMesh, Mesh* outputMesh, f32 scale,
+                std::vector<PolyLinePoint> const& polyLine, f32 pathLength, bool flat);
 
         i32 getPriority() const override { return 15; }
         std::string getDebugString() const override { return "Track Marking"; }

@@ -64,9 +64,9 @@ Scene::Scene(const char* name)
 
     // create physics materials
     vehicleMaterial = g_game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
-    trackMaterial   = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.4f);
+    trackMaterial   = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.4f);
     offroadMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
-    genericMaterial = g_game.physx.physics->createMaterial(0.5f, 0.5f, 0.05f);
+    genericMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
 
     if (!name)
     {
