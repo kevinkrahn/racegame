@@ -233,7 +233,6 @@ public:
         segment->handleOffsetB = glm::vec3(10, 0, 0);
         segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
-        setPersistent(true);
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
     glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);

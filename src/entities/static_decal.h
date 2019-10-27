@@ -13,7 +13,6 @@ class StaticDecal : public PlaceableEntity
     bool beforeMarking = false;
 
 public:
-    StaticDecal() { setPersistent(true); }
     StaticDecal* setup(i32 texIndex, glm::vec3 const& pos = {0, 0, 0}, u32 decalFilter=DECAL_TRACK);
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;

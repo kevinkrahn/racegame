@@ -19,7 +19,6 @@ public:
         rotation = glm::rotate(glm::identity<glm::quat>(), glm::vec3(0, 0, PI));
         mesh = g_resources.getMesh("world.Start");
         meshLights = g_resources.getMesh("world.StartLights");
-        setPersistent(true);
     }
 
     void applyDecal(class Decal& decal) override;

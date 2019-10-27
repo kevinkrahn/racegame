@@ -12,7 +12,6 @@ class Booster : public PlaceableEntity
     f32 intensity = 1.25f;
 
 public:
-    Booster() { setPersistent(true); }
     Booster* setup(glm::vec3 const& pos={0,0,0});
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;

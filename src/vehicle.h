@@ -103,14 +103,27 @@ public:
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
+	f32 wheelOilCoverage[NUM_WHEELS] = { 0 };
 
-    struct DustSpot
+    struct GroundSpot
     {
+        enum GroundType
+        {
+            DUST,
+            OIL,
+        };
+        u32 groundType;
         glm::vec3 p;
         f32 radius;
     };
-    SmallVec<DustSpot, 16> dustSpots;
-    bool checkRoadDust();
+    SmallVec<GroundSpot, 16> groundSpots;
+    void checkGroundSpots();
+    struct IgnoredGroundSpot
+    {
+        Entity* e;
+        f32 t;
+    };
+    SmallVec<IgnoredGroundSpot> ignoredGroundSpots;
 
     std::vector<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
@@ -154,7 +167,7 @@ public:
     }
 
     void blowUp();
-    void reset(glm::mat4 const& transform) const;
+    void reset(glm::mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator)
     {
         hitPoints -= amount;
@@ -172,6 +185,7 @@ public:
         }
         notifications.push_back({ str, time, color });
     }
+    void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

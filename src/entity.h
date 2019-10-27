@@ -32,15 +32,14 @@ public:
         NONE = 0,
         DESTROYED = 1,
         PERSISTENT = 1 << 1,
-    } entityFlags = NONE;
+    };
+    u32 entityFlags = NONE;
 
-    void destroy() { entityFlags = (EntityFlags)(entityFlags | DESTROYED); }
+    void destroy() { entityFlags |= DESTROYED; }
     bool isDestroyed() { return (entityFlags & DESTROYED) == DESTROYED; }
     void setPersistent(bool persistent)
     {
-        entityFlags = (EntityFlags)(persistent
-            ? (entityFlags | PERSISTENT)
-            : (entityFlags & ~PERSISTENT));
+        entityFlags = persistent ? (entityFlags | PERSISTENT) : (entityFlags & ~PERSISTENT);
     }
     bool isPersistent() const { return (entityFlags & PERSISTENT) == PERSISTENT; }
 

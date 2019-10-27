@@ -12,7 +12,6 @@ class Tree : public PlaceableEntity
     Texture* texLeaves;
 
 public:
-    Tree() { setPersistent(true); }
     Tree* setup(glm::vec3 const& position = {0, 0, 0},
             glm::vec3 const& scale = {1, 1, 1}, f32 zRotation=0.f);
 

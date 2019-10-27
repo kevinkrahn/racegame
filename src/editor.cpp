@@ -12,6 +12,7 @@
 #include "entities/static_decal.h"
 #include "entities/tree.h"
 #include "entities/booster.h"
+#include "entities/oil.h"
 #include <functional>
 
 struct EntityType
@@ -33,6 +34,7 @@ std::vector<EntityType> entityTypes = {
     { "Left Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(1, p); } },
     { "Right Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(2, p); } },
     { "Booster", fn { return ((Booster*)(g_entities[6].create()))->setup(p); } },
+    { "Oil Spill", fn { return ((Oil*)(g_entities[7].create()))->setup(p); } },
 };
 
 #undef fn
@@ -1024,6 +1026,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         PlaceableEntity* newEntity =
                             entityTypes[selectedEntityTypeIndex].make(hitPoint, scene->randomSeries);
                         newEntity->updateTransform(scene);
+                        newEntity->setPersistent(true);
                         scene->addEntity(newEntity);
                     }
                 }

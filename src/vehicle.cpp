@@ -155,11 +155,6 @@ static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(
         VehicleTuning const& settings, const PxMaterial** materials)
 {
     constexpr u32 NUM_SURFACE_TYPES = 2;
-    f32 frictionTable[NUM_SURFACE_TYPES] = {
-        settings.trackTireFriction,
-        settings.offroadTireFriction,
-    };
-
     PxVehicleDrivableSurfaceType surfaceTypes[NUM_SURFACE_TYPES] = { { 0 }, { 1 } };
 
     const u32 numTireTypes = 2;
@@ -171,6 +166,11 @@ static PxVehicleDrivableSurfaceToTireFrictionPairs* createFrictionPairs(
     f32 tireFriction[numTireTypes] = {
         1.f,
         settings.rearTireGripPercent,
+    };
+
+    f32 frictionTable[NUM_SURFACE_TYPES] = {
+        settings.trackTireFriction,
+        settings.offroadTireFriction,
     };
 
     for(u32 i = 0; i < NUM_SURFACE_TYPES; i++)
@@ -563,7 +563,7 @@ void Vehicle::resetAmmo()
     }
 }
 
-void Vehicle::reset(glm::mat4 const& transform) const
+void Vehicle::reset(glm::mat4 const& transform)
 {
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
@@ -582,12 +582,16 @@ void Vehicle::reset(glm::mat4 const& transform) const
             w->reset();
         }
     }
+    for (u32 i=0; i<NUM_WHEELS; ++i)
+    {
+        wheelOilCoverage[i] = 0.f;
+    }
 }
 
 void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake)
 {
-    engineThrottle = accel;
+    engineThrottle = 0.f;
     if (canGo)
     {
         PxVehicleDrive4WRawInputData inputs;
@@ -601,6 +605,11 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         else
         {
             f32 forwardSpeed = getForwardSpeed();
+            engineThrottle = accel;
+            if (forwardSpeed < 0.f)
+            {
+                engineThrottle = glm::max(accel, brake);
+            }
 
             if (accel > 0.f)
             {
@@ -615,7 +624,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
             }
             if (brake > 0.f)
             {
-                if (vehicle4W->computeForwardSpeed() < 1.5f && accel < 0.001f)
+                if (forwardSpeed < 1.5f && accel < 0.001f)
                 {
                     //vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eREVERSE);
                     vehicle4W->mDriveDynData.setTargetGear(PxVehicleGearsData::eREVERSE);
@@ -1468,7 +1477,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         //g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
         g_audio.setSoundPitch(engineSound, 1.f + engineRPM * 0.04f);
 
-        engineThrottleLevel = smoothMove(engineThrottleLevel, glm::abs(engineThrottle), 1.5f, deltaTime);
+        engineThrottleLevel = smoothMove(engineThrottleLevel,
+                engineThrottle, 1.5f, deltaTime);
         g_audio.setSoundVolume(engineSound, clamp(engineThrottleLevel + 0.7f, 0.f, 1.f));
 
         g_audio.setSoundPosition(engineSound, lastValidPosition);
@@ -1527,7 +1537,26 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
     }
 
-    bool isDustyRoad = checkRoadDust();
+    for (auto it = ignoredGroundSpots.begin(); it != ignoredGroundSpots.end();)
+    {
+        it->t -= deltaTime;
+        if (it->t <= 0.f)
+        {
+            ignoredGroundSpots.erase(it);
+            continue;
+        }
+        ++it;
+    }
+    checkGroundSpots();
+    bool isDustyRoad = false;
+    for (auto& d : groundSpots)
+    {
+        if (d.groundType == GroundSpot::DUST)
+        {
+            isDustyRoad = true;
+            break;
+        }
+    }
 
     // update wheels
     smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
@@ -1539,6 +1568,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         auto info = wheelQueryResults[i];
+        glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.f);
         bool isWheelOffroad = false;
         if (!info.isInAir)
         {
@@ -1556,6 +1586,35 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 d.mDampingRate = tuning.wheelDampingRate;
                 anyWheelOnRoad = true;
+
+                // cover wheels with oil if driving over oil
+                for (auto& d : groundSpots)
+                {
+                    if (d.groundType == GroundSpot::OIL)
+                    {
+                        f32 dist = glm::distance2(d.p, wheelPosition);
+                        if (dist < square(d.radius))
+                        {
+                            wheelOilCoverage[i] = 2.f;
+                        }
+                    }
+                }
+
+                // decrease traction if wheel is covered with oil
+                if (wheelOilCoverage[i] > 0.f)
+                {
+                    f32 amount = glm::clamp(wheelOilCoverage[i], 0.f, 1.f);
+                    f32 oilFriction = glm::lerp(tuning.trackTireFriction, 0.95f, amount);
+                    frictionPairs->setTypePairFriction(0, 0, oilFriction);
+                    frictionPairs->setTypePairFriction(0, 1,
+                            oilFriction * tuning.rearTireGripPercent);
+                }
+                else
+                {
+                    frictionPairs->setTypePairFriction(0, 0, tuning.trackTireFriction);
+                    frictionPairs->setTypePairFriction(0, 1,
+                            tuning.trackTireFriction * tuning.rearTireGripPercent);
+                }
             }
 
             vehicle4W->mWheelsSimData.setWheelData(i, d);
@@ -1565,15 +1624,15 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         f32 longitudinalSlip = glm::abs(info.longitudinalSlip) - 0.6f;
         f32 slip = glm::max(lateralSlip, longitudinalSlip);
         bool wasWheelSlipping = isWheelSlipping[i];
-        isWheelSlipping[i] = slip > 0.f && !info.isInAir;
+        isWheelSlipping[i] = (slip > 0.f || wheelOilCoverage[i] > 0.f) && !info.isInAir;
         maxSlip = glm::max(maxSlip, slip);
+	    wheelOilCoverage[i] = glm::max(wheelOilCoverage[i] - deltaTime, 0.f);
 
         // create smoke
         if (slip > 0.f && !info.isInAir && !isWheelOffroad)
         {
             if (smokeTimer == 0.f)
             {
-                glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
                 glm::vec3 vel(glm::normalize(glm::vec3(
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f),
@@ -1588,19 +1647,20 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
         if ((isWheelOffroad || isDustyRoad) && smokeTimer == 0.f)
         {
-            glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.0);
-
             f32 dustAmount = 1.f;
             if (!isWheelOffroad)
             {
                 dustAmount = 0.f;
-                for (auto& d : dustSpots)
+                for (auto& d : groundSpots)
                 {
-                    f32 dist = glm::distance(d.p, wheelPosition);
-                    f32 amount = clamp(1.f - dist / d.radius, 0.f, 1.f);
-                    if (amount > dustAmount)
+                    if (d.groundType == GroundSpot::DUST)
                     {
-                        dustAmount = amount;
+                        f32 dist = glm::distance(d.p, wheelPosition);
+                        f32 amount = clamp(1.f - dist / d.radius, 0.f, 1.f);
+                        if (amount > dustAmount)
+                        {
+                            dustAmount = amount;
+                        }
                     }
                 }
             }
@@ -1635,8 +1695,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             glm::vec3 markPosition = tn * -wheelRadius
                 + translationOf(transform * convert(info.localPose));
             //glm::vec4 color = isWheelOffroad ?  glm::vec4(0.45f, 0.39f, 0.12f, 1.f) : glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
+            f32 alpha = glm::clamp(glm::max(slip * 3.f, wheelOilCoverage[i]), 0.f, 1.f);
+            glm::vec3 color(1.f - glm::clamp(wheelOilCoverage[i], 0.f, 1.f));
             tireMarkRibbons[i].addPoint(markPosition, tn, wheelWidth / 2,
-                    glm::vec4(1.f, 1.f, 1.f, glm::clamp(slip * 3.f, 0.f, 1.f)));
+                    glm::vec4(color, alpha));
         }
         else if (wasWheelSlipping)
         {
@@ -1754,15 +1816,15 @@ void Vehicle::onTrigger(ActorUserData* userData)
 {
 }
 
-bool Vehicle::checkRoadDust()
+void Vehicle::checkGroundSpots()
 {
-    dustSpots.clear();
+    groundSpots.clear();
 
     PxOverlapHit hitBuffer[8];
     PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
     PxQueryFilterData filter;
     filter.flags = PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_DUST, 0, 0, 0);
+    filter.data = PxFilterData(COLLISION_FLAG_DUST | COLLISION_FLAG_OIL, 0, 0, 0);
     f32 radius = 1.5f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
             PxTransform(convert(getPosition()), PxIdentity), hit, filter))
@@ -1771,15 +1833,35 @@ bool Vehicle::checkRoadDust()
         {
             PxActor* actor = hit.getTouch(i).actor;
             ActorUserData* userData = (ActorUserData*)actor->userData;
+            u32 groundType = GroundSpot::DUST;
+            if ((hit.getTouch(i).shape->getQueryFilterData().word0 & COLLISION_FLAG_OIL)
+                    == COLLISION_FLAG_OIL)
+            {
+                groundType = GroundSpot::OIL;
+            }
             assert(userData);
-            dustSpots.push_back({
+
+            bool ignore = false;
+            for (auto& igs : ignoredGroundSpots)
+            {
+                if (igs.e == userData->placeableEntity)
+                {
+                    ignore = true;
+                    break;
+                }
+            }
+            if (ignore)
+            {
+                continue;
+            }
+
+            groundSpots.push_back({
+                groundType,
                 userData->placeableEntity->position,
                 glm::max(
                         glm::abs(userData->placeableEntity->scale.x),
                         glm::max(glm::abs(userData->placeableEntity->scale.y),
-                            glm::abs(userData->placeableEntity->scale.z)))*0.5f });
+                            glm::abs(userData->placeableEntity->scale.z))) * 0.48f });
         }
     }
-
-    return dustSpots.size() > 0;
 }

@@ -16,7 +16,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     PxQueryFilterData filter;
     filter.flags = PxQueryFlag::eDYNAMIC;
     filter.data = PxFilterData(COLLISION_FLAG_CHASSIS, 0, 0, 0);
-    f32 radius = 1.5f;
+    f32 radius = 1.2f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
             PxTransform(convert(translationOf(transform)), PxIdentity), hit, filter))
     {

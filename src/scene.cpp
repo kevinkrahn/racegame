@@ -88,6 +88,7 @@ Scene::Scene(const char* name)
     {
         for (auto& e : newEntities)
         {
+            e->setPersistent(true);
             e->onCreate(this);
         }
         for (auto& e : newEntities)

@@ -9,6 +9,7 @@ enum
     COLLISION_FLAG_DEBRIS     = 1 << 4,
     COLLISION_FLAG_SELECTABLE = 1 << 5,
     COLLISION_FLAG_DUST       = 1 << 6,
+    COLLISION_FLAG_OIL        = 1 << 7,
 };
 
 enum

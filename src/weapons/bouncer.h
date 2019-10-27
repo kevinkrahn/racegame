@@ -10,7 +10,7 @@ public:
     WBouncer()
     {
         info.name = "Bouncer";
-        info.description = "Medium damage.\n Bounces off obstacles and follows slopes.";
+        info.description = "Medium damage.\nBounces off obstacles and follows slopes.";
         info.icon = "bouncer_icon";
         info.price = 800;
         info.maxUpgradeLevel = 5;

@@ -5,6 +5,7 @@
 #include "start.h"
 #include "tree.h"
 #include "booster.h"
+#include "oil.h"
 
 void registerEntities()
 {
@@ -17,4 +18,5 @@ void registerEntities()
     registerEntity<Start>();
     registerEntity<Tree>();
     registerEntity<Booster>();
+    registerEntity<Oil>();
 }

@@ -11,7 +11,6 @@ class StaticMesh : public PlaceableEntity
     u32 meshIndex;
 
 public:
-    StaticMesh() { setPersistent(true); }
     StaticMesh* setup(u32 meshIndex=0, glm::vec3 const& position = {0, 0, 0},
             glm::vec3 const& scale = {1, 1, 1}, f32 zRotation=0.f);
     void applyDecal(class Decal& decal) override;

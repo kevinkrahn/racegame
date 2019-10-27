@@ -198,6 +198,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "weapons/ram_booster.h"
 #include "weapons/missiles.h"
 #include "weapons/bouncer.h"
+#include "weapons/oil.h"
 
 #include "vehicles/mini.h"
 #include "vehicles/sportscar.h"
@@ -214,6 +215,7 @@ void initializeVehicleData()
     registerWeapon<WJumpJets>();
     registerWeapon<WRocketBooster>();
     registerWeapon<WRamBooster>();
+    registerWeapon<WOil>();
 
     registerVehicle<VMini>();
     registerVehicle<VSportscar>();
