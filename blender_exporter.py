@@ -138,7 +138,7 @@ def save_mesh(obj, mesh_map):
                     for c in colors:
                         vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
                     for u in tex_coords:
-                        vertex_buffer += struct.pack("<2f", u[0], u[1])
+                        vertex_buffer += struct.pack("<2f", u[0], 1.0 - u[1])
 
                 indices.append(index)
 

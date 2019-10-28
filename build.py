@@ -133,11 +133,11 @@ def build_assets(force):
     for file in glob.glob('shaders/**/*', recursive=True):
         if not os.path.isfile(file):
             continue
-        if timestampCache.get(file, 0) < timestamp:
-            print('Copying', file)
-            copyFile(file, os.path.join('bin', file))
-            modified = True
-            timestampCache[file] = timestamp
+        #if timestampCache.get(file, 0) < timestamp:
+        #print('Copying', file)
+        copyFile(file, os.path.join('bin', file))
+        modified = True
+        timestampCache[file] = timestamp
 
     if modified:
         ensureDir('build')

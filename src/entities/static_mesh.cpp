@@ -11,6 +11,8 @@ const char* meshNames[] = {
     "world.Sign",
     "cactus.cactus",
     "world.Cube",
+    "plants.Plant1",
+    "plants.Plant2",
 };
 
 const char* texNames[] = {
@@ -19,6 +21,8 @@ const char* texNames[] = {
     "white",
     "cactus",
     "concrete",
+    "plant1",
+    "plant2",
 };
 
 StaticMesh* StaticMesh::setup(u32 meshIndex, glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)
@@ -44,8 +48,16 @@ void StaticMesh::onCreate(Scene* scene)
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
             PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->genericMaterial);
-    collisionShape->setQueryFilterData(PxFilterData(
-                COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
+    if (meshIndex == 5 || meshIndex == 6)
+    {
+        collisionShape->setQueryFilterData(PxFilterData(
+                    COLLISION_FLAG_SELECTABLE, 0, 0, UNDRIVABLE_SURFACE));
+    }
+    else
+    {
+        collisionShape->setQueryFilterData(PxFilterData(
+                    COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
+    }
     collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
 }
@@ -57,8 +69,14 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     settings.fresnelScale = 0.2f;
     settings.fresnelPower = 1.7f;
     settings.fresnelBias = -0.2f;
+    settings.specularStrength = 0.1f;
     settings.texture = tex;
     settings.worldTransform = transform;
+    if (meshIndex == 5 || meshIndex == 6)
+    {
+        settings.minAlpha = 0.5f;
+        //settings.culling = false;
+    }
     rw->push(LitRenderable(settings));
 }
 

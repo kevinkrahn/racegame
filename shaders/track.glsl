@@ -32,7 +32,7 @@ layout(binding = 0) uniform sampler2D texSampler;
 
 void main()
 {
-    const float texScale = 0.2;
+    const float texScale = 0.1;
 
     vec3 blending = abs(inNormal);
     blending = normalize(max(blending, 0.00001));

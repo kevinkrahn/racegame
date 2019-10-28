@@ -126,7 +126,7 @@ void Game::run()
     initializeVehicleData();
     registerEntities();
 
-    changeScene(nullptr);
+    changeScene("tracks/track1.dat");
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;

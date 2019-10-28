@@ -28,6 +28,8 @@ std::vector<EntityType> entityTypes = {
     { "Sign", fn { return ((StaticMesh*)g_entities[2].create())->setup(2, p, glm::vec3(1.f), 0.f); } },
     { "Tree", fn { return ((Tree*)g_entities[5].create())->setup(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
     { "Cactus", fn { return ((StaticMesh*)g_entities[2].create())->setup(3, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
+    { "Plant 1", fn { return ((StaticMesh*)g_entities[2].create())->setup(5, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
+    { "Plant 2", fn { return ((StaticMesh*)g_entities[2].create())->setup(6, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
     { "Concrete", fn { return ((StaticMesh*)g_entities[2].create())->setup(4, p, glm::vec3(10.f), 0.f); } },
     { "Tunnel", fn { return ((StaticMesh*)g_entities[2].create())->setup(1, p, glm::vec3(1.f), 0.f); } },
     { "Straight Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(0, p); } },
