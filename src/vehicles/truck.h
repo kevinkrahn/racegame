@@ -77,7 +77,7 @@ public:
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 6000.f;
-        tuning.maxSteerAngle = glm::radians(42.f);
+        tuning.maxSteerAngle = glm::radians(48.f);
         tuning.clutchStrength = 4.f;
         tuning.gearSwitchTime = 0.2f;
         tuning.autoBoxSwitchTime = 0.8f;

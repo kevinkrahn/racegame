@@ -22,7 +22,7 @@ struct Config
 
     struct Audio
     {
-        f32 masterVolume = 0.f;
+        f32 masterVolume = 1.f;
         f32 sfxVolume = 1.f;
         f32 vehicleVolume = 1.f;
         f32 musicVolume = 1.f;

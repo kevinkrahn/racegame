@@ -8,13 +8,16 @@
 Oil* Oil::setup(glm::vec3 const& pos)
 {
     position = pos;
-    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
+    rotation = glm::rotate(rotation, PI * 0.5f, glm::vec3(0, 1, 0));
     scale = glm::vec3(6.f);
     return this;
 }
 
 void Oil::onCreateEnd(Scene* scene)
 {
+    rotation = glm::rotate(rotation,
+            random(scene->randomSeries, 0.f, PI * 2.f), glm::vec3(1, 0, 0));
+
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.placeableEntity = this;
