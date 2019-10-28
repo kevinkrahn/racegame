@@ -875,7 +875,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                 {
                     ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
                     ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
-                    f32 damage = glm::min(magnitude * 0.001f, 60.f);
+                    f32 damage = glm::min(magnitude * 0.0008f, 60.f);
 
                     // apply damage
                     if (a && a->entityType == ActorUserData::VEHICLE)

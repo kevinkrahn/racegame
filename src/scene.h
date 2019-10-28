@@ -65,7 +65,7 @@ private:
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
     TrackGraph trackGraph;
-    u32 totalLaps = 4;
+    u32 totalLaps = 1;
     glm::vec3 trackPreviewCameraFrom = { 0, 0, 0 };
     glm::vec3 trackPreviewCameraTarget = { 0, 0, 0 };
     glm::vec3 trackPreviewPosition = { 0, 0, 0 };

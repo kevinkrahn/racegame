@@ -80,6 +80,8 @@ public:
     bool lappedVehicles[16] = { 0 };
     f32 engineThrottle = 0.f;
     f32 engineThrottleLevel = 0.f;
+	i32 currentFrontWeaponIndex = 0;
+	i32 currentRearWeaponIndex = 0;
 
     // ai
     glm::vec3 targetOffset = glm::vec3(0);
