@@ -16,7 +16,7 @@ private:
     std::map<std::string, Mesh> meshes;
     std::map<std::string, Texture> textures;
     std::map<std::string, DataFile::Value::Dict> scenes;
-    std::map<std::string, std::map<u32, Font>> fonts;
+    std::map<const char*, std::map<u32, Font>> fonts;
     std::map<std::string, std::unique_ptr<Sound>> sounds;
 
 public:

@@ -134,7 +134,7 @@ void Menu::mainMenu()
 
 void Menu::newChampionship()
 {
-    g_gui.beginPanel("Begin Championship ", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
+    g_gui.beginPanel("New Championship ", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
             0.5f, false, true);
 
     for (size_t i=0; i<g_game.state.drivers.size(); ++i)
@@ -322,7 +322,7 @@ void Menu::championshipGarage()
     Texture* white = g_resources.getTexture("white");
     u32 vehicleIconWidth = (u32)g_gui.convertSize(290);
     u32 vehicleIconHeight = (u32)g_gui.convertSize(256);
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(16));
     glm::vec2 vehiclePreviewPos = menuPos + glm::vec2(o, oy);
 
     Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
@@ -451,7 +451,7 @@ void Menu::championshipGarage()
                     glm::vec3(0.f), 0.25f, false), 1);
         g_game.renderer->push2D(TextRenderable(smallfont,
                     tstr(isOwned ? "Value: " : "Price: ", vehicleData->price),
-                    vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(18)),
+                    vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(16)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
     }
     else if (mode == 2)
@@ -727,7 +727,7 @@ void Menu::championshipGarage()
     glm::vec2 statsPos = vehiclePreviewPos
         + glm::vec2(0, vehicleIconHeight + glm::floor(g_gui.convertSize(48)));
     f32 barHeight = glm::floor(g_gui.convertSize(5));
-    Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(14));
+    Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(13));
     for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
     {
         stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
@@ -780,8 +780,8 @@ void Menu::championshipStandings()
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
     drawBox(menuPos, menuSize);
 
-    Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(26));
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    Font* bigfont = &g_resources.getFont("font_bold", (u32)g_gui.convertSize(26));
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(16));
 
     g_game.renderer->push2D(TextRenderable(bigfont, "Championship Standings",
                 glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
@@ -873,15 +873,15 @@ void Menu::championshipStandings()
 
 void Menu::raceResults()
 {
-    f32 w = g_gui.convertSizei(600);
+    f32 w = g_gui.convertSizei(650);
 
     f32 cw = (f32)(g_game.windowWidth/2);
     glm::vec2 menuPos = glm::vec2(cw - w/2, glm::floor(g_game.windowHeight * 0.2f));
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.6f);
     drawBox(menuPos, menuSize);
 
-    Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(26));
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(18));
+    Font* bigfont = &g_resources.getFont("font_bold", (u32)g_gui.convertSize(26));
+    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(16));
     Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(14));
 
     g_game.renderer->push2D(TextRenderable(bigfont, "Race Results",
@@ -894,7 +894,7 @@ void Menu::raceResults()
                 w - g_gui.convertSize(16), g_gui.convertSize(19), glm::vec3(0.f), 0.6f));
 
     f32 columnOffset[] = {
-        32, 90, 230, 300, 370, 430, 490
+        32, 90, 225, 315, 400, 460, 520
     };
     const char* columnTitle[] = {
         "NO.",

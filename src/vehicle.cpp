@@ -774,9 +774,9 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 {
     if (cameraIndex >= 0)
     {
-        Font& font1 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.04f));
-        Font& font2 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.08f));
-        Font& font3 = g_resources.getFont("font", (u32)(g_game.windowHeight * 0.05f));
+        Font& font1 = g_resources.getFont("font_bold", (u32)(g_game.windowHeight * 0.04f));
+        Font& font2 = g_resources.getFont("font_bold", (u32)(g_game.windowHeight * 0.08f));
+        Font& font3 = g_resources.getFont("font_bold", (u32)(g_game.windowHeight * 0.05f));
 
         ViewportLayout const& layout =
             viewportLayout[renderer->getRenderWorld()->getViewportCount() - 1];
@@ -797,7 +797,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         f32 o20 = (f32)g_game.windowHeight * 0.02f;
         f32 o25 = (f32)g_game.windowHeight * 0.03f;
-        f32 o200 = (f32)g_game.windowHeight * 0.20f;
+        f32 o200 = (f32)g_game.windowHeight * 0.21f;
 
         char* p = tstr(glm::min(currentLap, scene->getTotalLaps()));
         const char* lapStr = "LAP";
@@ -880,7 +880,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         // vehicle debug info
         if (scene->isDebugOverlayEnabled)
         {
-            Font* f = &g_resources.getFont("font", 20);
+            Font* f = &g_resources.getFont("font", 18);
             const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
             char* debugText = tstr(
                 "Engine RPM: ", getEngineRPM(),
@@ -1135,7 +1135,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         // get behind target
         if (!isInAir && aggression > 0.f)
         {
-            if (!target && frontWeapons[0] && frontWeapons[0]->ammo > 0)
+            if (!target && frontWeapons.size() > 0
+                    && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
             {
                 f32 maxTargetDist = aggression * 25.f + 15.f;
                 for (auto& v : scene->getVehicles())
@@ -1297,7 +1298,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 
         // front weapons
-        if (aggression > 0.f && frontWeapons[0] && frontWeapons[0]->ammo > 0)
+        if (aggression > 0.f && frontWeapons.size() > 0
+                && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
         {
             f32 rayLength = aggression * 50.f + 10.f;
             /*
@@ -1317,7 +1319,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 attackTimer = 0.f;
             }
 
-            if (frontWeapons[0]->fireMode == Weapon::CONTINUOUS)
+            if (frontWeapons[currentFrontWeaponIndex]->fireMode == Weapon::CONTINUOUS)
             {
                 if (attackTimer > 2.f * (1.f - aggression) + 0.4f)
                 {

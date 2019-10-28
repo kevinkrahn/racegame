@@ -8,9 +8,9 @@
 
 void Gui::beginFrame()
 {
-    fontTiny = &g_resources.getFont("font", (u32)convertSize(14));
-    fontSmall = &g_resources.getFont("font", (u32)convertSize(18));
-    fontBig = &g_resources.getFont("font", (u32)convertSize(28));
+    fontTiny = &g_resources.getFont("font", (u32)convertSize(13));
+    fontSmall = &g_resources.getFont("font", (u32)convertSize(16));
+    fontBig = &g_resources.getFont("font_bold", (u32)convertSize(26));
     white = g_resources.getTexture("white");
     renderer = g_game.renderer.get();
     isMouseOverUI = false;
@@ -197,7 +197,7 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
         WidgetType::PANEL,
         position,
         { width, 0.f },
-        showTitle ? position + glm::vec2(0, convertSize(40.f)) : position,
+        showTitle ? position + glm::vec2(0, convertSize(42.f)) : position,
         useKeyboardControl,
         panelState,
         nullptr,
