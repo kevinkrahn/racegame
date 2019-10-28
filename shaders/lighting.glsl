@@ -58,7 +58,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     float shadow = 1.f;
 #endif
     float cloudShadow = min(texture(cloudShadowTexture,
-            vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r + 0.06, 1.0);
+            vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r, 1.0);
     shadow *= cloudShadow;
 
     vec3 toCamera = cameraPosition[gl_Layer] - worldPosition;

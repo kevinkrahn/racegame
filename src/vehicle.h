@@ -92,10 +92,10 @@ public:
     f32 fearTimer = 0.f;
 
     // weapons
-    std::unique_ptr<Weapon>
-        frontWeapons[ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)];
-    std::unique_ptr<Weapon>
-        rearWeapons[ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)];
+    SmallVec<std::unique_ptr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
+        frontWeapons;
+    SmallVec<std::unique_ptr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
+        rearWeapons;
     std::unique_ptr<Weapon> specialAbility;
 
     glm::vec3 screenShakeVelocity = glm::vec3(0);
@@ -191,7 +191,8 @@ public:
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);
-    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon, bool showAmmo);
+    void drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
+            bool showAmmo, bool selected);
     void drawHUD(class Renderer* rw, f32 deltaTime);
     void shakeScreen(f32 intensity);
     void updateCamera(RenderWorld* rw, f32 deltaTime);

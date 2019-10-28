@@ -512,8 +512,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
         VehicleConfiguration* config = driver->getVehicleConfig();
         if (config->frontWeaponIndices[i] != -1)
         {
-            frontWeapons[i] = g_weapons[config->frontWeaponIndices[i]].create();
-            frontWeapons[i]->upgradeLevel = config->frontWeaponUpgradeLevel[i];
+            frontWeapons.push_back(g_weapons[config->frontWeaponIndices[i]].create());
+            frontWeapons.back()->upgradeLevel = config->frontWeaponUpgradeLevel[i];
         }
     }
     for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
@@ -521,8 +521,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
         VehicleConfiguration* config = driver->getVehicleConfig();
         if (config->rearWeaponIndices[i] != -1)
         {
-            rearWeapons[i] = g_weapons[config->rearWeaponIndices[i]].create();
-            rearWeapons[i]->upgradeLevel = config->rearWeaponUpgradeLevel[i];
+            rearWeapons.push_back(g_weapons[config->rearWeaponIndices[i]].create());
+            rearWeapons.back()->upgradeLevel = config->rearWeaponUpgradeLevel[i];
         }
     }
     if (driver->getVehicleConfig()->specialAbilityIndex != -1)
@@ -549,19 +549,13 @@ Vehicle::~Vehicle()
 
 void Vehicle::resetAmmo()
 {
-    for (u32 i=0; i<ARRAY_SIZE(frontWeapons); ++i)
+    for(auto& w : frontWeapons)
     {
-        if (frontWeapons[i])
-        {
-            frontWeapons[i]->refillAmmo();
-        }
+        w->refillAmmo();
     }
-    for (u32 i=0; i<ARRAY_SIZE(rearWeapons); ++i)
+    for(auto& w : rearWeapons)
     {
-        if (rearWeapons[i])
-        {
-            rearWeapons[i]->refillAmmo();
-        }
+        w->refillAmmo();
     }
 }
 
@@ -572,17 +566,11 @@ void Vehicle::reset(glm::mat4 const& transform)
     getRigidBody()->setGlobalPose(convert(transform));
     for (auto& w : frontWeapons)
     {
-        if (w)
-        {
-            w->reset();
-        }
+        w->reset();
     }
     for (auto& w : rearWeapons)
     {
-        if (w)
-        {
-            w->reset();
-        }
+        w->reset();
     }
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
@@ -735,19 +723,36 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     return false;
 }
 
-void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon, bool showAmmo)
+void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
+        bool showAmmo, bool selected)
 {
     f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
-    Texture* iconbg = g_resources.getTexture("iconbg");
+    /*
     if (showAmmo)
     {
-    renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0.f),
-                iconSize, iconSize, glm::vec3(0.35f)));
+        renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0.f),
+                    iconSize, iconSize, glm::vec3(0.35f)));
     }
-    renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
+    */
+    if (showAmmo)
+    {
+        Texture* iconbg = g_resources.getTexture("weapon_iconbg");
+        renderer->push2D(QuadRenderable(iconbg, pos, iconSize * 1.5f, iconSize));
+    }
+    else
+    {
+        Texture* iconbg = g_resources.getTexture("iconbg");
+        renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
+    }
+
     const char* weaponIcon = weapon->info.icon;
     renderer->push2D(QuadRenderable(g_resources.getTexture(weaponIcon),
                 pos, iconSize, iconSize));
+    if (selected)
+    {
+        Texture* selectedTex = g_resources.getTexture("weapon_iconbg_selected");
+        renderer->push2D(QuadRenderable(selectedTex, pos, iconSize * 1.5f, iconSize));
+    }
     if (showAmmo)
     {
         u32 ammoTickCountMax = weapon->getMaxAmmo() / weapon->ammoUnitCount;
@@ -818,31 +823,27 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         // weapons
         f32 weaponIconX = g_game.windowHeight * 0.35f;
-        for (auto& w : frontWeapons)
+        for (i32 i=0; i<(i32)frontWeapons.size(); ++i)
         {
-            if (w)
-            {
-                drawWeaponAmmo(renderer, offset +
-                        glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                        w.get(), true);
-                weaponIconX += g_game.windowHeight * 0.1f;
-            }
+            auto& w = frontWeapons[i];
+            drawWeaponAmmo(renderer, offset +
+                    glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                    w.get(), true, i == currentFrontWeaponIndex && frontWeapons[i]->ammo > 0);
+            weaponIconX += g_game.windowHeight * 0.1f;
         }
-        for (auto& w : rearWeapons)
+        for (i32 i=0; i<(i32)rearWeapons.size(); ++i)
         {
-            if (w)
-            {
-                drawWeaponAmmo(renderer, offset +
-                        glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                        w.get(), true);
-                weaponIconX += g_game.windowHeight * 0.1f;
-            }
+            auto& w = rearWeapons[i];
+            drawWeaponAmmo(renderer, offset +
+                    glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                    w.get(), true, i == currentRearWeaponIndex && rearWeapons[i]->ammo > 0);
+            weaponIconX += g_game.windowHeight * 0.1f;
         }
         if (specialAbility)
         {
             drawWeaponAmmo(renderer, offset +
                     glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                    specialAbility.get(), false);
+                    specialAbility.get(), false, false);
         }
 
         // healthbar
@@ -1024,12 +1025,14 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     f32 brake = 0.f;
     f32 steer = 0.f;
     bool digital = false;
+    bool beginShoot = false;
+    bool holdShoot = false;
+    bool beginShootRear = false;
+    bool holdShootRear = false;
+    bool switchFrontWeapon = false;
+    bool switchRearWeapon = false;
     if (isPlayerControlled)
     {
-        bool beginShoot = false;
-        bool holdShoot = false;
-        bool beginShootSpecial = false;
-        bool holdShootSpecial = false;
         if (driver->useKeyboard || scene->getNumHumanDrivers() == 1)
         {
             digital = true;
@@ -1038,7 +1041,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             steer = (f32)g_input.isKeyDown(KEY_LEFT) - (f32)g_input.isKeyDown(KEY_RIGHT);
             beginShoot = g_input.isKeyPressed(KEY_C);
             holdShoot = g_input.isKeyDown(KEY_C);
-            beginShootSpecial = g_input.isKeyPressed(KEY_V);
+            beginShootRear = g_input.isKeyPressed(KEY_V);
+            holdShootRear = g_input.isKeyDown(KEY_V);
+            switchFrontWeapon = g_input.isKeyPressed(KEY_X);
+            switchRearWeapon = g_input.isKeyPressed(KEY_B);
         }
         else if (!driver->controllerGuid.empty())
         {
@@ -1055,8 +1061,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 steer = -controller->getAxis(AXIS_LEFT_X);
                 beginShoot = controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
                 holdShoot = controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
-                beginShootSpecial = controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
-                holdShootSpecial = controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+                beginShootRear = controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+                holdShootRear = controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+                switchFrontWeapon = controller->isButtonPressed(BUTTON_X);
+                switchRearWeapon = controller->isButtonPressed(BUTTON_Y);
             }
         }
         if (scene->getNumHumanDrivers() == 1)
@@ -1084,8 +1092,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 }
                 beginShoot = beginShoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
                 holdShoot = holdShoot || controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
-                beginShootSpecial = beginShootSpecial || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
-                holdShootSpecial = holdShootSpecial || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+                beginShootRear = beginShootRear || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+                holdShootRear = holdShootRear || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+                switchFrontWeapon = switchFrontWeapon || controller->isButtonPressed(BUTTON_X);
+                switchRearWeapon = switchRearWeapon || controller->isButtonPressed(BUTTON_Y);
             }
         }
 
@@ -1095,21 +1105,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             getRigidBody()->addTorque(
                     getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
                     PxForceMode::eVELOCITY_CHANGE);
-        }
-
-        for (auto& w : frontWeapons)
-        {
-            if (w)
-            {
-                w->update(scene, this, beginShoot, holdShoot, deltaTime);
-            }
-        }
-        for (auto& w : rearWeapons)
-        {
-            if (w)
-            {
-                w->update(scene, this, beginShootSpecial, holdShootSpecial, deltaTime);
-            }
         }
     }
     else if (scene->getTrackGraph().getPaths().size() > 0)
@@ -1223,6 +1218,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         brake = 0.f;
 
         // TODO: make AI racers that are ahead of the player driver slower
+        /*
         if (placement == 0)
         {
             accel = 0.8f;
@@ -1231,6 +1227,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             accel = 0.9f;
         }
+        */
 
         bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
                 getForwardVector(), forwardTestDist);
@@ -1300,8 +1297,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 
         // front weapons
-        bool beginAttackFront = false;
-        bool holdAttackFront = false;
         if (aggression > 0.f && frontWeapons[0] && frontWeapons[0]->ammo > 0)
         {
             f32 rayLength = aggression * 50.f + 10.f;
@@ -1326,7 +1321,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 if (attackTimer > 2.f * (1.f - aggression) + 0.4f)
                 {
-                    holdAttackFront = true;
+                    holdShoot = true;
                 }
             }
             else
@@ -1334,7 +1329,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 if (attackTimer > 2.5f * (1.f - aggression) + 0.7f)
                 {
                     attackTimer = 0.f;
-                    beginAttackFront = true;
+                    beginShoot = true;
                 }
             }
         }
@@ -1342,33 +1337,62 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             attackTimer = 0.f;
         }
-        if (frontWeapons[0])
-        {
-            // TODO: fire other front weapons as well
-            frontWeapons[0]->update(scene, this, beginAttackFront,
-                    holdAttackFront, deltaTime);
-        }
 
         // rear weapons
-        if (rearWeapons[0])
+        if (rearWeapons.size() > 0)
         {
-            bool fire = false;
             if (!isInAir
                     && aggression > 0.f
-                    && rearWeapons[0]->ammo > 0
+                    && rearWeapons[currentRearWeaponIndex]->ammo > 0
                     && getForwardSpeed() > 10.f)
             {
                 if (random(scene->randomSeries, 0.f, 2.5f * (1.f - aggression) + 1.f) < 0.001f)
                 {
-                    fire = true;
+                    beginShootRear = true;
                 }
             }
-            rearWeapons[0]->update(scene, this, fire, false, deltaTime);
         }
 
         steer *= -1.f;
     }
 
+    // update weapons
+    for (i32 i=0; i<(i32)frontWeapons.size(); ++i)
+    {
+        auto& w = frontWeapons[i];
+        w->update(scene, this, currentFrontWeaponIndex == i ? beginShoot : false,
+                currentFrontWeaponIndex == i ? holdShoot : false, deltaTime);
+        if (w->ammo == 0 && currentFrontWeaponIndex == i)
+        {
+            switchFrontWeapon = true;
+        }
+    }
+    for (i32 i=0; i<(i32)rearWeapons.size(); ++i)
+    {
+        auto& w = rearWeapons[i];
+        w->update(scene, this, currentRearWeaponIndex == i ? beginShootRear : false,
+                currentRearWeaponIndex == i ? holdShootRear : false, deltaTime);
+        if (w->ammo == 0 && currentRearWeaponIndex == i)
+        {
+            switchRearWeapon = true;
+        }
+    }
+
+    if (switchFrontWeapon)
+    {
+        currentFrontWeaponIndex = (currentFrontWeaponIndex + 1) % frontWeapons.size();
+    }
+    if (switchRearWeapon)
+    {
+        currentRearWeaponIndex = (currentRearWeaponIndex + 1) % rearWeapons.size();
+    }
+
+    if (specialAbility)
+    {
+        specialAbility->update(scene, this, false, false, deltaTime);
+    }
+
+    // update vehicle physics
     if (!finishedRace)
     {
         updatePhysics(scene->getPhysicsScene(), deltaTime,
@@ -1389,6 +1413,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     lastValidPosition = currentPosition;
 
+    // periodically choose random offset
     offsetChangeTimer += deltaTime;
     if (offsetChangeTimer > offsetChangeInterval)
     {
@@ -1396,11 +1421,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         targetOffset.y = random(scene->randomSeries, -6.f, 6.f);
         offsetChangeTimer = 0.f;
         offsetChangeInterval = random(scene->randomSeries, 4.f, 12.f);
-    }
-
-    if (specialAbility)
-    {
-        specialAbility->update(scene, this, false, false, deltaTime);
     }
 
     const f32 maxSkippableDistance = 250.f;
