@@ -25,8 +25,15 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     glShaderSource(shader, 2, sources, 0);
 }
 
-GLuint Renderer::compileShader(std::string const& filename, SmallVec<std::string> defines, u32 viewportCount)
+void Renderer::loadShader(std::string filename, SmallVec<std::string> defines, std::string name)
 {
+    if (name.empty())
+    {
+        name = filename;
+    }
+
+    filename = "shaders/" + filename + ".glsl";
+
     std::ifstream file(filename);
     if (!file)
     {
@@ -74,97 +81,70 @@ GLuint Renderer::compileShader(std::string const& filename, SmallVec<std::string
         shaderStr.replace(pos, newLinePos - pos, includeContent);
     }
 
-    GLint success, errorMessageLength;
-    GLuint program = glCreateProgram();
-
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }), viewportCount);
-    glCompileShader(vertexShader);
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
+    for (u32 viewportCount=1; viewportCount<=MAX_VIEWPORTS; ++viewportCount)
     {
-        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
-        error("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
-    }
-    glAttachShader(program, vertexShader);
+        GLint success, errorMessageLength;
+        GLuint program = glCreateProgram();
 
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }), viewportCount);
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
-        error("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
-    }
-    glAttachShader(program, fragmentShader);
-
-    GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
-    if (hasGeometryShader)
-    {
-        glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }), viewportCount);
-        glCompileShader(geometryShader);
-        glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }), viewportCount);
+        glCompileShader(vertexShader);
+        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
         if (!success)
         {
-            glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+            glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
             std::string errorMessage(errorMessageLength, ' ');
-            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
-            error("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+            glGetShaderInfoLog(vertexShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+            FATAL_ERROR("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
         }
-        glAttachShader(program, geometryShader);
+        glAttachShader(program, vertexShader);
+
+        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }), viewportCount);
+        glCompileShader(fragmentShader);
+        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+            std::string errorMessage(errorMessageLength, ' ');
+            glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+            FATAL_ERROR("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+        }
+        glAttachShader(program, fragmentShader);
+
+        GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+        bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
+        if (hasGeometryShader)
+        {
+            glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }), viewportCount);
+            glCompileShader(geometryShader);
+            glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+            if (!success)
+            {
+                glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+                std::string errorMessage(errorMessageLength, ' ');
+                glGetShaderInfoLog(geometryShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+                FATAL_ERROR("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+            }
+            glAttachShader(program, geometryShader);
+        }
+
+        glLinkProgram(program);
+        glGetProgramiv(program, GL_LINK_STATUS, &success);
+        if (!success)
+        {
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
+            std::string errorMessage(errorMessageLength, ' ');
+            glGetProgramInfoLog(program, errorMessageLength, 0, (GLchar*)errorMessage.data());
+            FATAL_ERROR("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
+        }
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteShader(geometryShader);
+
+        shaderPrograms[name].push_back(program);
     }
-
-    glLinkProgram(program);
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetProgramInfoLog(program, errorMessageLength, 0, (GLchar*)errorMessage.data());
-        error("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    glDeleteShader(geometryShader);
-
-    return program;
-}
-
-u32 Renderer::loadShader(std::string const& filename, SmallVec<std::string> defines, std::string name)
-{
-    if (name.empty())
-    {
-        name = filename;
-    }
-
-    std::string fullfilename = "shaders/" + filename + ".glsl";
-
-    for (u32 i=0; i<MAX_VIEWPORTS; ++i)
-    {
-        GLuint program = compileShader(fullfilename, defines, i+1);
-        loadedShaders[i].push_back(program);
-    }
-    u32 handle = (u32)loadedShaders[0].size() - 1;
-    shaderHandleMap[name] = handle;
-    return handle;
-}
-
-u32 Renderer::getShader(const char* name, i32 viewportCount) const
-{
-    if (!viewportCount)
-    {
-        viewportCount = renderWorld.cameras.size() - 1;
-    }
-    auto it = shaderHandleMap.find(name);
-    assert(it != shaderHandleMap.end());
-    return it->second;
 }
 
 GLuint Renderer::getShaderProgram(const char* name, i32 viewportCount) const
@@ -173,9 +153,12 @@ GLuint Renderer::getShaderProgram(const char* name, i32 viewportCount) const
     {
         viewportCount = renderWorld.cameras.size();
     }
-    auto it = shaderHandleMap.find(name);
-    assert(it != shaderHandleMap.end());
-    return loadedShaders[viewportCount - 1][it->second];
+    auto it = shaderPrograms.find(name);
+    if (it == shaderPrograms.end())
+    {
+        FATAL_ERROR("Could not find shader: ", name, '\n');
+    }
+    return it->second[viewportCount - 1];
 }
 
 void Renderer::updateFramebuffers()
@@ -245,15 +228,14 @@ void Renderer::createFullscreenFramebuffers()
 
 void Renderer::initShaders()
 {
-    shaderHandleMap.clear();
-    for (u32 i=0; i<MAX_VIEWPORTS; ++i)
+    for (auto& p : shaderPrograms)
     {
-        for (GLuint program : loadedShaders[i])
+        for (GLuint program : p.second)
         {
             glDeleteProgram(program);
         }
-        loadedShaders[i].clear();
     }
+    shaderPrograms.clear();
 
     loadShader("bloom_filter");
     loadShader("blit");

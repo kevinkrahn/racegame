@@ -194,8 +194,7 @@ private:
     u32 fullscreenBlurDivisor = 4;
     u32 settingsVersion = 0;
 
-    std::map<std::string, u32> shaderHandleMap;
-    std::vector<GLuint> loadedShaders[MAX_VIEWPORTS];
+    std::map<std::string, SmallVec<GLuint, MAX_VIEWPORTS>> shaderPrograms;
 
     struct QueuedRenderable2D
     {
@@ -206,7 +205,6 @@ private:
     std::vector<RenderWorld*> renderWorlds;
 
     void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount);
-    GLuint compileShader(std::string const& filename, SmallVec<std::string> defines, u32 viewportCount);
 
     void createFullscreenFramebuffers();
 
@@ -229,7 +227,7 @@ public:
     void initShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    u32 loadShader(std::string const& filename, SmallVec<std::string> defines={}, std::string name="");
+    void loadShader(std::string filename, SmallVec<std::string> defines={}, std::string name="");
     u32 getShader(const char* name, i32 viewportCount=0) const;
     GLuint getShaderProgram(const char* name, i32 viewportCount=0) const;
     void render(f32 deltaTime);
