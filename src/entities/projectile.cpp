@@ -16,7 +16,7 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
         case BLASTER:
             life = 3.f;
             groundFollow = false;
-            collisionRadius = 0.3f;
+            collisionRadius = 0.4f;
             damage = 50;
             break;
         case BULLET:
@@ -33,10 +33,10 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             accel = 4.f;
             break;
         case BOUNCER:
-            life = 10.f;
+            life = 4.f;
             groundFollow = true;
             collisionRadius = 0.6f;
-            damage = 90;
+            damage = 70;
             break;
     }
 }

@@ -278,11 +278,13 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
         chassisShape->setRestOffset(0.08f);
     }
 
-    PxVec3 centerOfMassOffset = convert(tuning.centerOfMass);
+    //PxVec3 centerOfMassOffset = convert(tuning.centerOfMass);
+    PxVec3 centerOfMassOffset = { 0, 0, 0 };
     PxRigidBodyExt::setMassAndUpdateInertia(*actor, tuning.chassisMass,
             &centerOfMassOffset, false);
     //PxRigidBodyExt::updateMassAndInertia(*actor, tuning.chassisDensity);
-    //actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
+    centerOfMassOffset = convert(tuning.centerOfMass);
+    actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
     actor->userData = &actorUserData;
 
     f32 wheelMOIFront = 0.5f * tuning.wheelMassFront * square(tuning.wheelRadiusFront);

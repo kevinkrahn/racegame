@@ -286,7 +286,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true, true, true, 0, 0));
+        g_game.state.drivers.push_back(Driver(true, true, true, 0, 2));
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();
         entityDragAxis = DragAxis::NONE;

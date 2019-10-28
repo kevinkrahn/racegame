@@ -81,26 +81,26 @@ public:
         tuning.chassisMass = 1300;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
-        tuning.wheelDampingRate = 0.5;
-        tuning.wheelOffroadDampingRate = 35;
+        tuning.wheelDampingRate = 0.5f;
+        tuning.wheelOffroadDampingRate = 33;
         tuning.frontToeAngle = 0;
         tuning.rearToeAngle = 0;
-        tuning.trackTireFriction = 3.6f;
-        tuning.offroadTireFriction = 1.5f;
+        tuning.trackTireFriction = 3.f;
+        tuning.offroadTireFriction = 1.1f;
 
         tuning.rearTireGripPercent = 1.f;
-        tuning.constantDownforce = 0.f;
+        tuning.constantDownforce = 0.05f;
         tuning.forwardDownforce = 0.f;
-        tuning.topSpeed = 29.f;
+        tuning.topSpeed = 29.5f;
         tuning.driftBoost = 0.f;
 
         tuning.maxEngineOmega = 800.f;
-        tuning.peekEngineTorque = 960.f;
+        tuning.peekEngineTorque = 980.f;
         tuning.engineDampingFullThrottle = 0.15f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 4000.f;
-        tuning.maxSteerAngle = glm::radians(40.f);
+        tuning.maxSteerAngle = glm::radians(48.f);
         tuning.clutchStrength = 5.f;
         tuning.gearSwitchTime = 0.11f;
         tuning.autoBoxSwitchTime = 0.6f;
@@ -109,7 +109,7 @@ public:
 
         tuning.suspensionMaxCompression = 0.1f;
         tuning.suspensionMaxDroop = 0.2f;
-        tuning.suspensionSpringStrength = 24000.f;
+        tuning.suspensionSpringStrength = 26000.f;
         tuning.suspensionSpringDamperRate = 4000.f;
 
         tuning.camberAngleAtRest = -0.01f;
@@ -119,7 +119,7 @@ public:
         tuning.frontAntiRollbarStiffness = 8000.f;
         tuning.rearAntiRollbarStiffness = 8000.f;
         tuning.ackermannAccuracy = 0.5f;
-        tuning.centerOfMass = { 0.f, 0.f, -0.1f };
+        tuning.centerOfMass = { 0.f, 0.f, -0.3f };
 
         for (auto& u : configuration.performanceUpgrades)
         {

@@ -433,9 +433,10 @@ void Menu::championshipGarage()
         }
         if (g_gui.button("Sell", isOwned))
         {
-            driver.ownedVehicles.erase(ownedVehicle);
-            driver.credits += vehicleData->price / 2;
             // TODO: make the vehicle worth more when it has upgrades
+            driver.credits += vehicleData->price;
+            driver.vehicleIndex = -1;
+            driver.ownedVehicles.erase(ownedVehicle);
         }
         g_gui.gap(20);
 
@@ -449,7 +450,7 @@ void Menu::championshipGarage()
                     g_gui.convertSize(120), g_gui.convertSize(26),
                     glm::vec3(0.f), 0.25f, false), 1);
         g_game.renderer->push2D(TextRenderable(smallfont,
-                    tstr(isOwned ? "Value: " : "Price: ", isOwned ? vehicleData->price/2 : vehicleData->price),
+                    tstr(isOwned ? "Value: " : "Price: ", vehicleData->price),
                     vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(18)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
     }

@@ -62,11 +62,11 @@ public:
         tuning.wheelOffroadDampingRate = 19;
         tuning.frontToeAngle = 0;
         tuning.rearToeAngle = 0;
-        tuning.trackTireFriction = 2.9f;
-        tuning.offroadTireFriction = 1.4f;
+        tuning.trackTireFriction = 2.1f;
+        tuning.offroadTireFriction = 1.1f;
 
         tuning.rearTireGripPercent = 1.f;
-        tuning.constantDownforce = 0.f;
+        tuning.constantDownforce = 0.05f;
         tuning.forwardDownforce = 0.f;
         tuning.topSpeed = 31.f;
         tuning.driftBoost = 0.f;
@@ -86,8 +86,8 @@ public:
 
         tuning.suspensionMaxCompression = 0.15f;
         tuning.suspensionMaxDroop = 0.35f;
-        tuning.suspensionSpringStrength = 17000.f;
-        tuning.suspensionSpringDamperRate = 6000.f;
+        tuning.suspensionSpringStrength = 50000.f;
+        tuning.suspensionSpringDamperRate = 4500.f;
 
         tuning.camberAngleAtRest = -0.01f;
         tuning.camberAngleAtMaxDroop = 0.1f;
@@ -96,7 +96,7 @@ public:
         tuning.frontAntiRollbarStiffness = 8500.f;
         tuning.rearAntiRollbarStiffness = 8500.f;
         tuning.ackermannAccuracy = 0.5f;
-        tuning.centerOfMass = { 0.f, 0.f, -0.1f };
+        tuning.centerOfMass = { 0.f, 0.f, -0.2f };
 
         for (auto& u : configuration.performanceUpgrades)
         {

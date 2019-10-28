@@ -47,7 +47,7 @@ Scene::Scene(const char* name)
 {
     // create PhysX scene
     PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
-    sceneDesc.gravity = PxVec3(0.f, 0.f, -13.f);
+    sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f);
     sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
     sceneDesc.filterShader  = vehicleFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
@@ -571,16 +571,11 @@ void Scene::vehicleFinish(u32 n)
 {
     finishOrder.push_back(n);
     u32 playerFinishCount = 0;
-    for (u32 i=0; i<(u32)g_game.state.drivers.size(); ++i)
+    for (auto& v : vehicles)
     {
-        auto& driver = g_game.state.drivers[i];
-        if (driver.isPlayer)
+        if (v->driver->isPlayer && v->finishedRace)
         {
-            if (std::find_if(finishOrder.begin(), finishOrder.end(),
-                [&i](u32 vehicleIndex) { return vehicleIndex == i; }) != finishOrder.end())
-            {
-                ++playerFinishCount;
-            }
+            ++playerFinishCount;
         }
     }
     if (numHumanDrivers == playerFinishCount && !allPlayersFinished)

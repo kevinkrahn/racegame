@@ -67,25 +67,27 @@ public:
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.1f;
-        tuning.wheelOffroadDampingRate = 30;
-        tuning.frontToeAngle = glm::radians(-0.5f); // more responsive to inputs
-        tuning.rearToeAngle = glm::radians(4.5f); // faster recovery from slide
-        tuning.trackTireFriction = 3.14f;
-        tuning.offroadTireFriction = 1.4f;
+        tuning.wheelOffroadDampingRate = 28;
+        //tuning.frontToeAngle = glm::radians(-0.5f); // more responsive to inputs
+        tuning.frontToeAngle = glm::radians(0.f);
+        //tuning.rearToeAngle = glm::radians(4.5f); // faster recovery from slide
+        tuning.rearToeAngle = glm::radians(0.8f); // faster recovery from slide
+        tuning.trackTireFriction = 2.38f;
+        tuning.offroadTireFriction = 1.1f;
 
-        tuning.rearTireGripPercent = 0.835f;
+        tuning.rearTireGripPercent = 0.95f;
         tuning.constantDownforce = 0.f;
         tuning.forwardDownforce = 0.001f;
         tuning.topSpeed = 33.f;
         tuning.driftBoost = 0.f;
 
-        tuning.maxEngineOmega = 710.f;
-        tuning.peekEngineTorque = 950.f;
+        tuning.maxEngineOmega = 720.f;
+        tuning.peekEngineTorque = 990.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 6000.f;
-        tuning.maxSteerAngle = glm::radians(52.f);
+        tuning.maxSteerAngle = glm::radians(51.f);
         tuning.clutchStrength = 5.f;
         tuning.gearSwitchTime = 0.15f;
         tuning.autoBoxSwitchTime = 1.2f;
@@ -97,14 +99,14 @@ public:
         tuning.suspensionSpringStrength = 28000.f;
         tuning.suspensionSpringDamperRate = 5000.f;
 
-        tuning.camberAngleAtRest = -0.08f;
+        tuning.camberAngleAtRest = -0.07f;
         tuning.camberAngleAtMaxDroop = 0.f;
-        tuning.camberAngleAtMaxCompression = -0.15f;
+        tuning.camberAngleAtMaxCompression = -0.13f;
 
         tuning.frontAntiRollbarStiffness = 7000.f;
         tuning.rearAntiRollbarStiffness = 7000.f;
         tuning.ackermannAccuracy = 0.5f;
-        tuning.centerOfMass = { 0.f, 0.f, -0.75f };
+        tuning.centerOfMass = { 0.09f, 0.f, -0.6f };
 
         for (auto& u : configuration.performanceUpgrades)
         {
