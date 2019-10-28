@@ -74,14 +74,12 @@ Scene::Scene(const char* name)
         addEntity(g_entities[0].create());
         addEntity(g_entities[1].create());
         addEntity(g_entities[4].create());
-        this->name = "Untitled";
     }
     else
     {
-        this->name = fs::path(name).stem().string();
-        this->filename = name;
         auto data = DataFile::load(name);
         deserialize(data);
+        this->filename = name;
     }
 
     while (newEntities.size() > 0)
@@ -970,7 +968,7 @@ void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 DataFile::Value Scene::serialize()
 {
     DataFile::Value dict = DataFile::makeDict();
-    dict["name"] = DataFile::makeString("Scene");
+    dict["name"] = DataFile::makeString(name);
     dict["entities"] = DataFile::makeArray();
     DataFile::Value::Array& entityArray = dict["entities"].array();
 
@@ -996,6 +994,7 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
 
 void Scene::deserialize(DataFile::Value& data)
 {
+    name = data["name"].string("");
     auto& entityArray = data["entities"].array();
     for (auto& val : entityArray)
     {

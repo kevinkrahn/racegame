@@ -88,12 +88,9 @@ class Editor
 
     std::vector<PlaceableEntity*> selectedEntities;
 
-    i32 selectedFile = -1;
-    bool isChoosingFile = false;
-    std::vector<std::string> directoryContents;
-    void scanFolder();
-
 public:
     glm::vec3 getCameraTarget() const { return cameraTarget; }
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
 };
+
+std::string chooseFile(const char* defaultSelection, bool open);

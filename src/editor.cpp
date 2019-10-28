@@ -65,39 +65,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
 
     Texture* white = g_resources.getTexture("white");
-
-    if (isChoosingFile)
-    {
-        g_gui.beginPanel("Load Track", { g_game.windowWidth / 2, g_gui.convertSize(100) },
-                0.5f, true, false, false, 28, 4, 180);
-
-        g_gui.beginSelect("Choose File", &selectedFile, true);
-        for (i32 i=0; i<(i32)directoryContents.size(); ++i)
-        {
-            std::string const& filename = directoryContents[i];
-            g_gui.option(tstr(filename), i, nullptr);
-        }
-        g_gui.end();
-
-        if (g_gui.button("Open", selectedFile != -1))
-        {
-            g_game.changeScene(tstr(directoryContents[selectedFile]));
-            isChoosingFile = false;
-            directoryContents.clear();
-            selectedFile = -1;
-        }
-
-        if (g_gui.button("Cancel"))
-        {
-            isChoosingFile = false;
-            directoryContents.clear();
-            selectedFile = -1;
-        }
-
-        g_gui.end();
-        return;
-    }
-
     EditMode previousEditMode = editMode;
 
     if (g_input.isKeyPressed(KEY_TAB))
@@ -264,13 +231,19 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     // TODO: make this better by not having 3 panels for 3 buttons
     g_gui.beginPanel("Task1", { g_gui.convertSize(200), 0.f },
                 0.f, true, false, false, 28, 0, 100);
-    bool canSave = scene->name != "Untitled";
-    if ((g_gui.button("Save Track [F9]", canSave) || g_input.isKeyPressed(KEY_F9))
-            && canSave)
+    if ((g_gui.button("Save Track [F9]") || g_input.isKeyPressed(KEY_F9)))
     {
-        std::string filename = "tracks/" + scene->name + ".dat";
-        print("Saving scene to file: ", filename, '\n');
-        DataFile::save(scene->serialize(), filename.c_str());
+        std::string filename = scene->filename;
+        if (filename.empty())
+        {
+            filename = chooseFile("tracks/untitled.dat", false);
+        }
+        if (!filename.empty())
+        {
+            print("Saving scene to file: ", scene->filename, '\n');
+            DataFile::save(scene->serialize(), filename.c_str());
+            scene->filename = filename;
+        }
     }
     g_gui.end();
 
@@ -278,8 +251,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 0.f, true, false, false, 28, 0, 100);
     if (g_gui.button("Load Track [F10]") || g_input.isKeyPressed(KEY_F10))
     {
-        isChoosingFile = true;
-        scanFolder();
+        std::string filename = chooseFile("tracks/track1.dat", true);
+        if (!filename.empty())
+        {
+            g_game.changeScene(filename.c_str());
+        }
     }
     g_gui.end();
 
@@ -1099,13 +1075,74 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
 }
 
-void Editor::scanFolder()
+std::string chooseFile(const char* defaultSelection, bool open)
 {
-    for (auto& p : fs::directory_iterator("tracks"))
+#if _WIN32
+    char szFile[260];
+
+    OPENFILENAME ofn = { 0 };
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    ofn.lpstrFile = szFile;
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "All\0*.*\0Tracks\0*.dat\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    if (open)
     {
-        if (fs::is_regular_file(p))
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    }
+
+    if (open)
+    {
+        if (GetOpenFileName(&ofn) == TRUE)
         {
-            directoryContents.push_back(p.path().string());
+            return std::string(szFile);
+        }
+        else
+        {
+            return {};
         }
     }
+    else
+    {
+        if (GetSaveFileName(&ofn) == TRUE)
+        {
+            return std::string(szFile);
+        }
+        else
+        {
+            return {};
+        }
+    }
+#else
+    char filename[1024] = { 0 };
+    std::string cmd = "zenity";
+    if (open)
+    {
+        cmd += " --title 'Open Track' --file-selection --filename ";
+        cmd += defaultSelection;
+    }
+    else
+    {
+        cmd += " --title 'Save Track' --file-selection --save --confirm-overwrite --filename ";
+        cmd += defaultSelection;
+    }
+    FILE *f = popen(cmd.c_str(), "r");
+    if (!f || !fgets(filename, sizeof(filename) - 1, f))
+    {
+        error("Unable to create file dialog\n");
+        return {};
+    }
+    pclose(f);
+    std::string file(filename);
+    if (!file.empty())
+    {
+        file.pop_back();
+    }
+    return file;
+#endif
 }
