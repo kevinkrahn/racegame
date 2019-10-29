@@ -73,6 +73,8 @@ void Game::run()
     print("Debug mode\n");
 #endif
 
+    g_game.config.load();
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
     {
         FATAL_ERROR("SDL_Init Error: ", SDL_GetError())

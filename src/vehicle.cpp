@@ -1007,7 +1007,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             glm::vec3 pos = node->position -
                 glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
 
-            reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 5)) *
+            reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 7)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
         }
         if (cameraIndex >= 0)

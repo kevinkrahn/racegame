@@ -1019,6 +1019,7 @@ void Menu::audioOptions()
     if (g_gui.button("Save"))
     {
         g_game.config.audio = tmpConfig.audio;
+        g_game.config.save();
         showMainMenu();
     }
 
@@ -1047,6 +1048,7 @@ void Menu::gameplayOptions()
     if (g_gui.button("Save"))
     {
         g_game.config.gameplay = tmpConfig.gameplay;
+        g_game.config.save();
         showMainMenu();
     }
 
@@ -1156,6 +1158,7 @@ void Menu::graphicsOptions()
         g_game.renderer->updateSettingsVersion();
         SDL_SetWindowFullscreen(g_game.window, g_game.config.graphics.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
+        g_game.config.save();
         showMainMenu();
     }
 

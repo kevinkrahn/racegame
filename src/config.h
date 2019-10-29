@@ -3,6 +3,8 @@
 #include "math.h"
 #include "datafile.h"
 
+const char* CONFIG_FILE = "config.txt";
+
 struct Config
 {
     struct Graphics
@@ -36,12 +38,12 @@ struct Config
 
     DataFile::Value serialize()
     {
-        DataFile::Value data;
+        DataFile::Value data = DataFile::makeDict();
         data["resolutionX"] = DataFile::makeInteger(graphics.resolutionX);
         data["resolutionY"] = DataFile::makeInteger(graphics.resolutionY);
         data["fullscreen"] = DataFile::makeBool(graphics.fullscreen);
         data["maxFPS"] = DataFile::makeInteger(graphics.maxFPS);
-        data["vsync"] = DataFile::makeBool(graphics.vsync);
+        data["vsyncEnabled"] = DataFile::makeBool(graphics.vsync);
         data["shadowMapResolution"] = DataFile::makeInteger(graphics.shadowMapResolution);
         data["shadowsEnabled"] = DataFile::makeBool(graphics.shadowsEnabled);
         data["ssaoEnabled"] = DataFile::makeBool(graphics.ssaoEnabled);
@@ -67,7 +69,7 @@ struct Config
         graphics.resolutionY = (u32)data["resolutionY"].integer(d.graphics.resolutionY);
         graphics.fullscreen = data["fullscreen"].boolean(d.graphics.fullscreen);
         graphics.maxFPS = (u32)data["maxFPS"].integer(d.graphics.maxFPS);
-        graphics.vsync = data["vsync"].boolean(d.graphics.vsync);
+        graphics.vsync = data["vsyncEnabled"].boolean(d.graphics.vsync);
         graphics.shadowMapResolution = (u32)data["shadowMapResolution"].integer(d.graphics.shadowMapResolution);
         graphics.shadowsEnabled = data["shadowsEnabled"].boolean(d.graphics.shadowsEnabled);
         graphics.ssaoEnabled = data["ssaoEnabled"].boolean(d.graphics.ssaoEnabled);
@@ -82,6 +84,20 @@ struct Config
 
         gameplay.hudTrackScale = data["hudTrackScale"].real(d.gameplay.hudTrackScale);
         gameplay.hudTextScale = data["hudTextScale"].real(d.gameplay.hudTextScale);
+    }
+
+    void save()
+    {
+        DataFile::save(serialize(), CONFIG_FILE);
+    }
+
+    void load()
+    {
+        auto data = DataFile::load(CONFIG_FILE);
+        if (data.hasValue())
+        {
+            deserialize(data);
+        }
     }
 };
 
