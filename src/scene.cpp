@@ -127,17 +127,31 @@ void Scene::startRace()
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
     i32 cameraIndex = 0;
-    std::vector<Driver*> createOrder;
+    struct OrderedDriver
+    {
+        Driver* driver;
+        i32 cameraIndex;
+    };
+    std::vector<OrderedDriver> createOrder;
     for (auto& driver : g_game.state.drivers)
     {
-        createOrder.push_back(&driver);
+        createOrder.push_back({ &driver, driver.hasCamera ? cameraIndex : -1});
+        if (driver.hasCamera)
+        {
+            ++cameraIndex;
+        }
     }
     std::sort(createOrder.begin(), createOrder.end(),
-            [](Driver* a, Driver* b) { return a->lastPlacement < b->lastPlacement; });
+            [](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
 
+    numHumanDrivers = 0;
     for (u32 i=0; i<createOrder.size(); ++i)
     {
-        Driver* driver = createOrder[i];
+        OrderedDriver driverInfo = createOrder[i];
+        if (driverInfo.driver->isPlayer)
+        {
+            ++numHumanDrivers;
+        }
 
         //glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
         glm::vec3 offset = -glm::vec3(
@@ -155,19 +169,14 @@ void Scene::startRace()
             return;
         }
 
-        VehicleTuning tuning = driver->getTuning();
+        VehicleTuning tuning = driverInfo.driver->getTuning();
         glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
                 convert(hit.block.position + hit.block.normal *
                     tuning.getRestOffset())) * rotationOf(start);
 
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
-            driver, std::move(tuning), vehicleMaterial, surfaceMaterials, i,
-            driver->hasCamera ? cameraIndex : -1));
-
-        if (driver->hasCamera)
-        {
-            ++cameraIndex;
-        }
+            driverInfo.driver, std::move(tuning), vehicleMaterial, surfaceMaterials, i,
+            driverInfo.cameraIndex));
     }
 
     for (u32 i=0; i<vehicles.size(); ++i)
@@ -176,9 +185,6 @@ void Scene::startRace()
     }
 
     isRaceInProgress = true;
-
-    numHumanDrivers = (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
-            [](auto& d) { return d.isPlayer; });
 }
 
 void Scene::stopRace()
