@@ -12,7 +12,7 @@ struct Driver
     bool isPlayer = false;
     bool hasCamera = false;
     std::string playerName = "no-name";
-    ComputerDriverData ai;
+    i32 aiIndex = -1;
     bool useKeyboard = false;
     u32 controllerID = 0;
     std::string controllerGuid;
@@ -59,4 +59,50 @@ struct Driver
     Driver& operator = (Driver&& other) = default;
 
     void aiUpgrades(RandomSeries& series);
+
+    DataFile::Value serialize()
+    {
+        DataFile::Value data = DataFile::makeDict();
+        data["leaguePoints"] = DataFile::makeInteger(leaguePoints);
+        data["credits"] = DataFile::makeInteger(credits);
+        data["isPlayer"] = DataFile::makeBool(isPlayer);
+        data["aiIndex"] = DataFile::makeInteger(aiIndex);
+        data["hasCamera"] = DataFile::makeBool(hasCamera);
+        data["playerName"] = DataFile::makeString(playerName);
+        data["useKeyboard"] = DataFile::makeBool(useKeyboard);
+        data["controllerGuid"] = DataFile::makeString(controllerGuid);
+        data["ownedVehicles"] = DataFile::makeArray();
+        for (auto& v : ownedVehicles)
+        {
+            DataFile::Value vehicleData = DataFile::makeDict();
+            vehicleData["vehicleIndex"] = DataFile::makeInteger(vehicleIndex);
+            vehicleData["vehicleConfig"] = v.vehicleConfig.serialize();
+            data["ownedVehicles"].array().push_back(std::move(vehicleData));
+        }
+        data["vehicleIndex"] = DataFile::makeInteger(vehicleIndex);
+        data["lastPlacement"] = DataFile::makeInteger(lastPlacement);
+        return data;
+    }
+
+    void deserialize(DataFile::Value& data)
+    {
+        leaguePoints = (u32)data["leaguePoints"].integer();
+        credits = (i32)data["credits"].integer();
+        isPlayer = data["isPlayer"].boolean();
+        aiIndex = (i32)data["aiIndex"].integer();
+        hasCamera = data["hasCamera"].boolean();
+        playerName = data["playerName"].string();
+        useKeyboard = data["useKeyboard"].boolean();
+        controllerGuid = data["controllerGuid"].string();
+        auto& vehicles = data["ownedVehicles"].array();
+        for(auto& v : vehicles)
+        {
+            OwnedVehicle ov;
+            ov.vehicleIndex = (i32)v["vehicleIndex"].integer();
+            ov.vehicleConfig.deserialize(v["vehicleConfig"]);
+            ownedVehicles.push_back(std::move(ov));
+        }
+        vehicleIndex = (i32)data["vehicleIndex"].integer();
+        lastPlacement = (u32)data["lastPlacement"].integer();
+    }
 };

@@ -680,13 +680,14 @@ void Scene::buildRaceResults()
             }
             else
             {
+                auto& ai = g_ais[v->driver->aiIndex];
                 print("AI did not finish: ", v->currentLap, "/", totalLaps, " laps\n");
                 // generate fake stats for the drivers that have not yet finished the race
                 for (u32 i = v->currentLap + 1; i<totalLaps; ++i)
                 {
                     stats.accidents += irandom(randomSeries, 0, 2);
                     u32 attackBonuses = irandom(randomSeries, 0,
-                            (u32)(numDriversStillDriving * v->driver->ai.aggression * 0.5f));
+                            (u32)(numDriversStillDriving * ai.aggression * 0.5f));
                     stats.attackBonuses += attackBonuses;
                     while (attackBonuses > 0)
                     {
@@ -699,9 +700,9 @@ void Scene::buildRaceResults()
                     }
                 }
                 v->placement = v->placement +
-                    (u32)(random(randomSeries, 0.f, v->driver->ai.drivingSkill) +
-                            random(randomSeries, 0.f, v->driver->ai.awareness) +
-                            random(randomSeries, 0.f, v->driver->ai.aggression));
+                    (u32)(random(randomSeries, 0.f, ai.drivingSkill) +
+                            random(randomSeries, 0.f, ai.awareness) +
+                            random(randomSeries, 0.f, ai.aggression));
             }
         }
     }

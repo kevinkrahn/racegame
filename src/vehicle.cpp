@@ -485,7 +485,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
-    f32 skill = clamp(1.f - driver->ai.drivingSkill
+    auto& ai = g_ais[driver->aiIndex];
+    f32 skill = clamp(1.f - ai.drivingSkill
             + random(scene->randomSeries, -0.1f, 0.1f), 0.f, 1.f);
     this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
         irandom(scene->randomSeries, 0,
@@ -1109,6 +1110,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     else if (scene->getTrackGraph().getPaths().size() > 0)
     {
+        auto& ai = g_ais[driver->aiIndex];
         auto const& paths = scene->getTrackGraph().getPaths();
 
         // TODO: check graphResult to find and use closest point if the vehicle
@@ -1130,7 +1132,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         steer = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
 
         f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
-                driver->ai.aggression);
+                ai.aggression);
 
         // get behind target
         if (!isInAir && aggression > 0.f)
@@ -1184,17 +1186,17 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 
         // fear
-        if (driver->ai.fear > 0.f)
+        if (ai.fear > 0.f)
         {
             f32 fearRayLength = aggression * 35.f + 10.f;
             if (scene->sweep(0.5f, currentPosition, -getForwardVector(),
                         fearRayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
             {
                 fearTimer += deltaTime;
-                if (fearTimer > 1.f * (1.f - driver->ai.fear) + 0.5f)
+                if (fearTimer > 1.f * (1.f - ai.fear) + 0.5f)
                 {
                     steer += glm::sin((f32)scene->getWorldTime() * 3.f)
-                        * (driver->ai.fear * 0.25f);
+                        * (ai.fear * 0.25f);
                 }
             }
             else

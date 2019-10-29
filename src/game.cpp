@@ -221,3 +221,34 @@ Scene* Game::changeScene(const char* sceneName)
     nextScene.reset(scene);
     return scene;
 }
+
+void Game::saveGame()
+{
+    DataFile::Value data = DataFile::makeDict();
+    data["gameMode"] = DataFile::makeInteger((i64)state.gameMode);
+    data["currentLeague"] = DataFile::makeInteger(state.currentLeague);
+    data["currentRace"] = DataFile::makeInteger(state.currentRace);
+    data["drivers"] = DataFile::makeArray();
+    auto& drivers = data["drivers"].array();
+    for (auto& d : state.drivers)
+    {
+        drivers.push_back(d.serialize());
+    }
+    DataFile::save(data, "savedgame.sav");
+}
+
+void Game::loadGame()
+{
+    DataFile::Value data = DataFile::load("savedgame.sav");
+    state.gameMode = (GameMode)data["gameMode"].integer();
+    state.currentLeague = (u32)data["currentLeague"].integer();
+    state.currentRace = (u32)data["currentRace"].integer();
+    state.drivers.clear();
+    auto& drivers = data["drivers"].array();
+    for (auto& d : drivers)
+    {
+        Driver driver;
+        driver.deserialize(d);
+        state.drivers.push_back(std::move(driver));
+    }
+}

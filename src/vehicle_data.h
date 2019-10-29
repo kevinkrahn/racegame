@@ -150,6 +150,8 @@ std::string g_vehicleColorNames[] = {
 
 struct VehicleConfiguration
 {
+    i32 colorIndex = 0;
+
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
     i32 rearWeaponIndices[3] = { -1, -1, -1 };
@@ -163,11 +165,63 @@ struct VehicleConfiguration
     };
     std::vector<Upgrade> performanceUpgrades;
 
-    i32 colorIndex = 0;
-
     Upgrade* getUpgrade(i32 upgradeIndex);
     bool canAddUpgrade(struct Driver* driver, i32 upgradeIndex);
     void addUpgrade(i32 upgradeIndex);
+
+    DataFile::Value serialize()
+    {
+        DataFile::Value data = DataFile::makeDict();
+        data["colorIndex"] = DataFile::makeInteger(colorIndex);
+        data["frontWeapon0"] = DataFile::makeInteger(frontWeaponIndices[0]);
+        data["frontWeapon1"] = DataFile::makeInteger(frontWeaponIndices[1]);
+        data["frontWeapon2"] = DataFile::makeInteger(frontWeaponIndices[2]);
+        data["frontWeapon0UpgradeLevel"] = DataFile::makeInteger(frontWeaponUpgradeLevel[0]);
+        data["frontWeapon1UpgradeLevel"] = DataFile::makeInteger(frontWeaponUpgradeLevel[1]);
+        data["frontWeapon2UpgradeLevel"] = DataFile::makeInteger(frontWeaponUpgradeLevel[2]);
+        data["rearWeapon0"] = DataFile::makeInteger(rearWeaponIndices[0]);
+        data["rearWeapon1"] = DataFile::makeInteger(rearWeaponIndices[1]);
+        data["rearWeapon2"] = DataFile::makeInteger(rearWeaponIndices[2]);
+        data["rearWeapon0UpgradeLevel"] = DataFile::makeInteger(rearWeaponUpgradeLevel[0]);
+        data["rearWeapon1UpgradeLevel"] = DataFile::makeInteger(rearWeaponUpgradeLevel[1]);
+        data["rearWeapon2UpgradeLevel"] = DataFile::makeInteger(rearWeaponUpgradeLevel[2]);
+        data["specialAbilityIndex"] = DataFile::makeInteger(specialAbilityIndex);
+        data["performanceUpgrades"] = DataFile::makeArray();
+        for (auto& u : performanceUpgrades)
+        {
+            DataFile::Value upgrade = DataFile::makeDict();
+            upgrade["upgradeIndex"] = DataFile::makeInteger(u.upgradeIndex);
+            upgrade["upgradeLevel"] = DataFile::makeInteger(u.upgradeLevel);
+            data["performanceUpgrades"].array().push_back(upgrade);
+        }
+        return data;
+    }
+
+    void deserialize(DataFile::Value& data)
+    {
+        colorIndex = (i32)data["colorIndex"].integer();
+        frontWeaponIndices[0] = (i32)data["frontWeapon0"].integer();
+        frontWeaponIndices[1] = (i32)data["frontWeapon1"].integer();
+        frontWeaponIndices[2] = (i32)data["frontWeapon2"].integer();
+        frontWeaponUpgradeLevel[0] = (u32)data["frontWeapon0UpgradeLevel"].integer();
+        frontWeaponUpgradeLevel[1] = (u32)data["frontWeapon1UpgradeLevel"].integer();
+        frontWeaponUpgradeLevel[2] = (u32)data["frontWeapon2UpgradeLevel"].integer();
+        rearWeaponIndices[0] = (i32)data["rearWeapon0"].integer();
+        rearWeaponIndices[1] = (i32)data["rearWeapon1"].integer();
+        rearWeaponIndices[2] = (i32)data["rearWeapon2"].integer();
+        rearWeaponUpgradeLevel[0] = (u32)data["rearWeapon0UpgradeLevel"].integer();
+        rearWeaponUpgradeLevel[1] = (u32)data["rearWeapon1UpgradeLevel"].integer();
+        rearWeaponUpgradeLevel[2] = (u32)data["rearWeapon2UpgradeLevel"].integer();
+        specialAbilityIndex = (i32)data["specialAbilityIndex"].integer();
+        auto& upgrades = data["performanceUpgrades"].array();
+        for (auto& u : upgrades)
+        {
+            Upgrade upgrade;
+            upgrade.upgradeIndex = (i32)u["upgradeIndex"].integer();
+            upgrade.upgradeLevel = (i32)u["upgradeLevel"].integer();
+            performanceUpgrades.push_back(upgrade);
+        }
+    }
 };
 
 enum struct PerformanceUpgradeType

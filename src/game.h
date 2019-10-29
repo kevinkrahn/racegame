@@ -61,6 +61,9 @@ public:
 
     void run();
     Scene* changeScene(const char* sceneName);
+
+    void saveGame();
+    void loadGame();
 } g_game;
 
 template <typename... Args>

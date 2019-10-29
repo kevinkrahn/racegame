@@ -53,6 +53,9 @@ void Menu::mainMenu()
 
     if (g_gui.button("Load Game"))
     {
+        g_game.loadGame();
+        menuMode = CHAMPIONSHIP_MENU;
+        g_game.changeScene(championshipTracks[g_game.state.currentRace]);
     }
 
     if (g_gui.button("Quick Race"))
@@ -866,6 +869,7 @@ void Menu::championshipStandings()
                     driver.aiUpgrades(series);
                 }
             }
+            g_game.saveGame();
             g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         }
     }

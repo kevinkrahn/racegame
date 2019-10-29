@@ -19,13 +19,15 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
 
     if (aiIndex != -1 && !isPlayer)
     {
-        this->ai = g_ais[aiIndex];
-        this->playerName = this->ai.name;
+        this->playerName = g_ais[aiIndex].name;
+        this->aiIndex = aiIndex;
     }
 }
 
 void Driver::aiUpgrades(RandomSeries& series)
 {
+    assert(aiIndex != -1);
+
     if (ownedVehicles.empty())
     {
         std::vector<u32> affordableVehicles;
@@ -68,6 +70,7 @@ void Driver::aiUpgrades(RandomSeries& series)
 
     const u32 MAX_UPGRADE = 0;
 
+    ComputerDriverData ai = g_ais[aiIndex];
     std::vector<UpgradeChoice> upgradeChoices = {
         { FRONT_WEAPON1, 20 + ai.aggression, 2 },
         { FRONT_WEAPON1, 18 + ai.aggression * 2.f, 3 },
