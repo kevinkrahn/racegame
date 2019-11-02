@@ -1141,6 +1141,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
             {
                 f32 maxTargetDist = aggression * 25.f + 15.f;
+		f32 lowestTargetPriority = FLT_MAX;
                 for (auto& v : scene->getVehicles())
                 {
                     if (v.get() == this)
@@ -1150,11 +1151,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
                     glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
                     glm::vec2 targetDiff = glm::normalize(-diff);
-                    if (glm::dot(glm::vec2(getForwardVector()), targetDiff)
-                            < aggression && glm::length2(diff) < square(maxTargetDist))
+		    f32 d = glm::length2(diff);
+		    f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
+		    f32 targetPriority = d + dot * 4.f;
+                    if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
                     {
                         target = v.get();
-                        break;
+			lowestTargetPriority = targetPriority;
                     }
                 }
             }
