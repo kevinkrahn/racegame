@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(
     external
@@ -48,7 +49,7 @@ elseif(WIN32)
 endif()
 
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fno-rtti -fno-exceptions -Weverything -Wno-shadow -Wno-shadow-field -Wno-old-style-cast -Wno-c++98-compat -Wno-disabled-macro-expansion -Wno-padded -Wno-weak-vtables -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-sign-conversion -Wno-cast-align -Wno-float-equal -Wno-implicit-int-conversion -Wno-unused-parameter -Wno-reserved-id-macro -Wno-comma -Wno-extra-semi-stmt -Wno-double-promotion -Wno-shorten-64-to-32 -Wno-missing-variable-declarations -Wno-missing-field-initializers -Wno-global-constructors -Wno-exit-time-destructors -Wno-c++98-compat-pedantic -Wno-documentation-deprecated-sync -Wno-documentation-unknown-command -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-undef -Wno-implicit-fallthrough -Wno-deprecated -Wno-missing-prototypes -Wno-switch-enum -Wno-inconsistent-missing-destructor-override -Wno-header-hygiene")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions -Weverything -Wno-shadow -Wno-shadow-field -Wno-old-style-cast -Wno-c++98-compat -Wno-disabled-macro-expansion -Wno-padded -Wno-weak-vtables -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-sign-conversion -Wno-cast-align -Wno-float-equal -Wno-implicit-int-conversion -Wno-unused-parameter -Wno-reserved-id-macro -Wno-comma -Wno-extra-semi-stmt -Wno-double-promotion -Wno-shorten-64-to-32 -Wno-missing-variable-declarations -Wno-missing-field-initializers -Wno-global-constructors -Wno-exit-time-destructors -Wno-c++98-compat-pedantic -Wno-documentation-deprecated-sync -Wno-documentation-unknown-command -Wno-nested-anon-types -Wno-gnu-anonymous-struct -Wno-undef -Wno-implicit-fallthrough -Wno-deprecated -Wno-missing-prototypes -Wno-switch-enum -Wno-inconsistent-missing-destructor-override -Wno-header-hygiene")
 elseif(MSVC)
     #foreach(flag_var
     #    CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
