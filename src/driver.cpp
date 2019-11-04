@@ -17,10 +17,10 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
         ownedVehicles.push_back({ vehicleIndex, vehicleConfig });
     }
 
+    this->aiIndex = aiIndex;
     if (aiIndex != -1 && !isPlayer)
     {
         this->playerName = g_ais[aiIndex].name;
-        this->aiIndex = aiIndex;
     }
 }
 
