@@ -200,7 +200,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             for (auto e : selectedEntities)
             {
                 auto data = e->serialize();
-                newEntities.push_back((PlaceableEntity*)scene->deserializeEntity(data));
+                PlaceableEntity* newEntity = (PlaceableEntity*)scene->deserializeEntity(data);
+                newEntity->setPersistent(true);
+                newEntities.push_back(newEntity);
             }
             selectedEntities.clear();
             for (auto e : newEntities)
