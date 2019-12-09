@@ -31,8 +31,7 @@ void SmokeParticles::onLitPass(Renderer* renderer)
 
     glUseProgram(renderer->getShaderProgram("billboard"));
     glBindVertexArray(emptyVAO);
-    Texture* tex = g_resources.getTexture("smoke");
-    glBindTextureUnit(0, tex->handle);
+    glBindTextureUnit(0, g_res.textures->smoke.handle);
 
     for (auto p = particles.begin(); p != particles.end(); ++p)
     {

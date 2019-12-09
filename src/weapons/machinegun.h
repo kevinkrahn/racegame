@@ -13,7 +13,7 @@ public:
     {
         info.name = "Machine Gun";
         info.description = "Low damage but high rate of fire.";
-        info.icon = "mg_icon";
+        info.icon = &g_res.textures->icon_mg;
         info.price = 1100;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
@@ -58,7 +58,7 @@ public:
         scene->addEntity(new Projectile(pos + forward * 2.5f,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BULLET));
 
-        g_audio.playSound3D(g_resources.getSound("mg2"),
+        g_audio.playSound3D(&g_res.sounds->mg2,
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 1.f,
                 random(scene->randomSeries, -0.05f, 0.05f));

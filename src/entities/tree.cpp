@@ -17,10 +17,10 @@ void Tree::onCreate(Scene* scene)
 {
     updateTransform(scene);
 
-    this->meshTrunk = g_resources.getMesh("tree.Trunk");
-    this->meshLeaves = g_resources.getMesh("tree.Leaves");
-    this->texTrunk = g_resources.getTexture("bark");
-    this->texLeaves = g_resources.getTexture("leaves");
+    this->meshTrunk = g_res.getMesh("tree.Trunk");
+    this->meshLeaves = g_res.getMesh("tree.Leaves");
+    this->texTrunk = &g_res.textures->bark;
+    this->texLeaves = &g_res.textures->leaves;
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;

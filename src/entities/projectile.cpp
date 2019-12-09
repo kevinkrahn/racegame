@@ -10,7 +10,7 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
     : position(position), velocity(velocity), upVector(upVector),
         instigator(instigator), projectileType(projectileType)
 {
-    bulletMesh = g_resources.getMesh("world.Bullet");
+    bulletMesh = g_res.getMesh("world.Bullet");
     switch(projectileType)
     {
         case BLASTER:
@@ -106,13 +106,13 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 } break;
                 case BULLET:
                 {
-                    const char* impacts[] = {
-                        "bullet_impact1",
-                        "bullet_impact2",
-                        "bullet_impact3",
+                    Sound* impacts[] = {
+                        &g_res.sounds->bullet_impact1,
+                        &g_res.sounds->bullet_impact2,
+                        &g_res.sounds->bullet_impact3,
                     };
                     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
-                    g_audio.playSound3D(g_resources.getSound(impacts[index]),
+                    g_audio.playSound3D(impacts[index],
                             SoundType::GAME_SFX, hitPos, false,
                             random(scene->randomSeries, 0.8f, 1.2f),
                             random(scene->randomSeries, 0.8f, 1.f));
@@ -121,7 +121,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 case MISSILE:
                 {
                     scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
-                    g_audio.playSound3D(g_resources.getSound("explosion1"),
+                    g_audio.playSound3D(&g_res.sounds->explosion1,
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
                     this->destroy();
                 } break;
@@ -139,20 +139,20 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             {
                 case BLASTER:
                 {
-                    g_audio.playSound3D(g_resources.getSound("blaster_hit"),
+                    g_audio.playSound3D(&g_res.sounds->blaster_hit,
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
                     this->destroy();
                 } break;
                 case BULLET:
                 {
-                    const char* impacts[] = {
-                        "richochet1",
-                        "richochet2",
-                        "richochet3",
-                        "richochet4",
+                    Sound* impacts[] = {
+                        &g_res.sounds->richochet1,
+                        &g_res.sounds->richochet2,
+                        &g_res.sounds->richochet3,
+                        &g_res.sounds->richochet4,
                     };
                     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
-                    g_audio.playSound3D(g_resources.getSound(impacts[index]),
+                    g_audio.playSound3D(impacts[index],
                             SoundType::GAME_SFX, hitPos, false, 0.9f,
                             random(scene->randomSeries, 0.75f, 0.9f));
                     this->destroy();
@@ -160,7 +160,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 case MISSILE:
                 {
                     scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
-                    g_audio.playSound3D(g_resources.getSound("explosion1"),
+                    g_audio.playSound3D(&g_res.sounds->explosion1,
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
                     this->destroy();
                 } break;
@@ -169,7 +169,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     glm::vec3 n = convert(sweepHit.block.normal);
                     velocity = -2.f * glm::dot(velocity, n) * n + velocity;
                     position = (prevPosition + sweepHit.block.distance * sweepDir) + n * 0.1f;
-                    g_audio.playSound3D(g_resources.getSound("bouncer_bounce"),
+                    g_audio.playSound3D(&g_res.sounds->bouncer_bounce,
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.4f);
                 } break;
             }
@@ -206,7 +206,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             settings.worldTransform = glm::translate(glm::mat4(1.f), position)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
             rw->push(LitRenderable(settings));
-            rw->push(BillboardRenderable(g_resources.getTexture("flare"),
+            rw->push(BillboardRenderable(&g_res.textures->flare,
                         position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f));
             break;
         case BULLET:
@@ -215,7 +215,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             settings.worldTransform = glm::translate(glm::mat4(1.f), position)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.35f));
             rw->push(LitRenderable(settings));
-            rw->push(BillboardRenderable(g_resources.getTexture("flare"),
+            rw->push(BillboardRenderable(&g_res.textures->flare,
                         position, glm::vec4(settings.emit, 0.8f), 0.75f));
             break;
         case MISSILE:
@@ -223,18 +223,18 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             settings.worldTransform = glm::translate(glm::mat4(1.f), position)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.8f));
             rw->push(LitRenderable(settings));
-            rw->push(BillboardRenderable(g_resources.getTexture("flare"), position,
+            rw->push(BillboardRenderable(&g_res.textures->flare, position,
                         glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f));
             break;
         case BOUNCER:
-            settings.mesh = g_resources.getMesh("world.Sphere");
+            settings.mesh = g_res.getMesh("world.Sphere");
             settings.color = glm::vec3(1.f);
             settings.emit = glm::vec3(0.5f);
             settings.worldTransform = glm::translate(glm::mat4(1.f), position)
                  * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
             rw->push(LitRenderable(settings));
             // TODO: use unlit billboard
-            rw->push(BillboardRenderable(g_resources.getTexture("bouncer_projectile"),
+            rw->push(BillboardRenderable(&g_res.textures->bouncer_projectile,
                         position, glm::vec4(1.f), 1.75f));
             break;
     }

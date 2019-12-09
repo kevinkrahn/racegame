@@ -17,8 +17,8 @@ public:
     {
         position = glm::vec3(0, 0, 3);
         rotation = glm::rotate(glm::identity<glm::quat>(), glm::vec3(0, 0, PI));
-        mesh = g_resources.getMesh("world.Start");
-        meshLights = g_resources.getMesh("world.StartLights");
+        mesh = g_res.getMesh("world.Start");
+        meshLights = g_res.getMesh("world.StartLights");
     }
 
     void applyDecal(class Decal& decal) override;
@@ -27,5 +27,4 @@ public:
     void onCreateEnd(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    const char* getName() const override { return "Track Start"; }
 };

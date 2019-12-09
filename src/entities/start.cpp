@@ -27,7 +27,7 @@ void Start::onCreateEnd(Scene* scene)
     collisionShape->setSimulationFilterData(PxFilterData(
                 COLLISION_FLAG_GROUND, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
-    finishLineDecal.setTexture(g_resources.getTexture("checkers"));
+    finishLineDecal.setTexture(&g_res.textures->checkers);
     updateTransform(scene);
 }
 
@@ -51,7 +51,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             if (countIndex != 2)
             {
-                g_audio.playSound(g_resources.getSound("countdown_b"),
+                g_audio.playSound(&g_res.sounds->countdown_b,
                         SoundType::GAME_SFX, false, 1.f, 0.5f);
             }
             countIndex = 2;
@@ -60,7 +60,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             if (countIndex != 1)
             {
-                g_audio.playSound(g_resources.getSound("countdown_a"),
+                g_audio.playSound(&g_res.sounds->countdown_a,
                         SoundType::GAME_SFX, false, 1.f, 0.5f);
             }
             countIndex = 1;
@@ -69,7 +69,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             if (countIndex != 0)
             {
-                g_audio.playSound(g_resources.getSound("countdown_a"),
+                g_audio.playSound(&g_res.sounds->countdown_a,
                         SoundType::GAME_SFX, false, 1.f, 0.5f);
             }
             countIndex = 0;
@@ -98,7 +98,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             glm::vec3 p8 = glm::vec3(-p2.x, -p2.y, p2.z);
             glm::vec3 positions[] = { p1, p2, p3, p4, p5, p6, p7, p8 };
 
-            Texture* flare = g_resources.getTexture("flare");
+            Texture* flare = &g_res.textures->flare;
             glm::vec4 col = countIndex == 2
                 ? glm::vec4(0.01f, 1.f, 0.01f, 0.6f) : glm::vec4(1.f, 0.01f, 0.01f, 0.6f);
 
@@ -117,7 +117,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     settings.fresnelBias = -0.15f;
     settings.specularPower = 60.f;
     settings.specularStrength = 0.3f;
-    settings.texture = g_resources.getTexture("white");
+    settings.texture = &g_res.textures->white;
     settings.worldTransform = transform;
     rw->push(LitRenderable(settings));
     settings.mesh = meshLights;
@@ -130,7 +130,7 @@ void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
     if (isSelected)
     {
         rw->push(WireframeRenderable(mesh, transform));
-        rw->push(LitRenderable(g_resources.getMesh("world.Arrow"),
+        rw->push(LitRenderable(g_res.getMesh("world.Arrow"),
                 transform *
                 glm::translate(glm::mat4(1.f), {10, 0, -2}) *
                 glm::scale(glm::mat4(1.f), glm::vec3(3.f))));

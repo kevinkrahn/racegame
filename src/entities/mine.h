@@ -15,7 +15,7 @@ public:
     Mine(glm::mat4 const& transform, u32 instigator)
         : transform(transform), instigator(instigator)
     {
-        mesh = g_resources.getMesh("mine.Mine");
+        mesh = g_res.getMesh("mine.Mine");
     }
 
     void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;

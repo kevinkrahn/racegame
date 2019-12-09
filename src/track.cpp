@@ -132,7 +132,7 @@ void Track::clearSelection()
 
 void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, GridSettings* gridSettings)
 {
-    Mesh* sphere = g_resources.getMesh("world.Sphere");
+    Mesh* sphere = g_res.getMesh("world.Sphere");
     glm::vec2 mousePos = g_input.getMousePosition();
     Camera const& cam = renderer->getRenderWorld()->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,
@@ -1028,7 +1028,7 @@ glm::vec3 Track::previewRailingPlacement(Scene* scene, Renderer* renderer, glm::
     if (scene->raycastStatic(camPos, mouseRayDir, 10000.f, &hit))
     {
         p = convert(hit.block.position);
-        Mesh* sphere = g_resources.getMesh("world.Sphere");
+        Mesh* sphere = g_res.getMesh("world.Sphere");
         renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
                     glm::translate(glm::mat4(1.f), p) *
                     glm::scale(glm::mat4(0.6f), glm::vec3(1.f)), blue));
@@ -1244,7 +1244,7 @@ void Track::onLitPass(class Renderer* renderer)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_EQUAL);
     glEnable(GL_CULL_FACE);
-    glBindTextureUnit(0, g_resources.getTexture("tarmac")->handle);
+    glBindTextureUnit(0, g_res.textures->tarmac.handle);
     glUseProgram(renderer->getShaderProgram("track"));
     for (auto& c : connections)
     {
@@ -1415,8 +1415,8 @@ void Track::Railing::updateMesh()
         return;
     }
 
-    bool flat = railingMeshTypes[meshTypeIndex].flat;
-    tex = g_resources.getTexture(railingMeshTypes[meshTypeIndex].texName);
+    bool flat = track->railingMeshTypes[meshTypeIndex].flat;
+    tex = track->railingMeshTypes[meshTypeIndex].texture;
 
     if (!actor && !flat)
     {
@@ -1474,11 +1474,11 @@ void Track::Railing::updateMesh()
     }
     polyLine.pop_back();
 
-    Mesh* railingMesh = g_resources.getMesh(railingMeshTypes[meshTypeIndex].meshName);
+    Mesh* railingMesh = g_res.getMesh(track->railingMeshTypes[meshTypeIndex].meshName);
     Mesh* railingCollisionMesh = !flat
-        ? g_resources.getMesh(railingMeshTypes[meshTypeIndex].collisionMeshName)
+        ? g_res.getMesh(track->railingMeshTypes[meshTypeIndex].collisionMeshName)
         : nullptr;
-    f32 scale = this->scale * railingMeshTypes[meshTypeIndex].scale;
+    f32 scale = this->scale * track->railingMeshTypes[meshTypeIndex].scale;
     deformMeshAlongPath(railingMesh, &mesh, scale, polyLine, pathLength, flat);
     if (!flat)
     {

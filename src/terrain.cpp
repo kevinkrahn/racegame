@@ -90,10 +90,10 @@ void Terrain::onCreate(Scene* scene)
             "Grass 2"
         },
         {
-            g_resources.getTexture("grass"),
-            g_resources.getTexture("rock_moss"),
-            g_resources.getTexture("sand"),
-            g_resources.getTexture("grass"),
+            &g_res.textures->grass,
+            &g_res.textures->rock_moss,
+            &g_res.textures->sand,
+            &g_res.textures->grass,
         },
         { 0.1f, 0.05f, 0.12f, 0.1f }
     };
@@ -107,10 +107,10 @@ void Terrain::onCreate(Scene* scene)
             "Dirt"
         },
         {
-            g_resources.getTexture("desert"),
-            g_resources.getTexture("desert_stone"),
-            g_resources.getTexture("sand"),
-            g_resources.getTexture("sand"),
+            &g_res.textures->desert,
+            &g_res.textures->desert_stone,
+            &g_res.textures->sand,
+            &g_res.textures->sand,
         },
         { 0.1f, 0.1f, 0.12f, 0.1f }
     };
@@ -124,10 +124,10 @@ void Terrain::onCreate(Scene* scene)
             "Snow"
         },
         {
-            g_resources.getTexture("snow"),
-            g_resources.getTexture("rock"),
-            g_resources.getTexture("sand"),
-            g_resources.getTexture("snow"),
+            &g_res.textures->snow,
+            &g_res.textures->rock,
+            &g_res.textures->sand,
+            &g_res.textures->snow,
         },
         { 0.1f, 0.05f, 0.12f, 0.1f }
     };
@@ -141,10 +141,10 @@ void Terrain::onCreate(Scene* scene)
             "Dirt"
         },
         {
-            g_resources.getTexture("lava"),
-            g_resources.getTexture("lava"),
-            g_resources.getTexture("sand"),
-            g_resources.getTexture("lava"),
+            &g_res.textures->lava,
+            &g_res.textures->lava,
+            &g_res.textures->sand,
+            &g_res.textures->lava,
         },
         { 0.05f, 0.1f, 0.12f, 0.1f }
     };

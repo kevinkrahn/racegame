@@ -4,18 +4,6 @@
 #include "../game.h"
 #include "../gui.h"
 
-const char* textures[] = {
-    "arrow",
-    "arrow_left",
-    "arrow_right",
-    "crack",
-    "patch1",
-    "grunge1",
-    "grunge2",
-    "grunge3",
-    "sand",
-};
-
 const char* textureNames[] = {
     "Arrow Forward",
     "Arrow Left",
@@ -78,7 +66,18 @@ void StaticDecal::updateTransform(Scene* scene)
         }
     }
 
-    tex = g_resources.getTexture(textures[texIndex]);
+    Texture* textures[] = {
+        &g_res.textures->decal_arrow,
+        &g_res.textures->decal_arrow_left,
+        &g_res.textures->decal_arrow_right,
+        &g_res.textures->decal_crack,
+        &g_res.textures->decal_patch1,
+        &g_res.textures->decal_grunge1,
+        &g_res.textures->decal_grunge2,
+        &g_res.textures->decal_grunge3,
+        &g_res.textures->decal_sand,
+    };
+    tex = textures[texIndex];
     decal.setTexture(tex);
     decal.setPriority(beforeMarking ? 14 : 8000);
 

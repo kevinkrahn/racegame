@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vehicle_data.h"
+#include "../resources.h"
 
 class VSportscar : public VehicleData
 {
@@ -20,7 +21,7 @@ public:
             {
                 "Engine",
                 "Upgrades the engine to improve\nacceleration and top speed.",
-                "icon_pistons",
+                &g_res.textures->icon_pistons,
                 PerformanceUpgradeType::ENGINE,
                 5,
                 1500,
@@ -28,7 +29,7 @@ public:
             {
                 "Tires",
                 "Equips better tires for improved traction\nand overall handling.",
-                "icon_wheel",
+                &g_res.textures->icon_wheel,
                 PerformanceUpgradeType::TIRES,
                 5,
                 1000,
@@ -36,7 +37,7 @@ public:
             {
                 "Armor",
                 "Adds additional armor to improve\nresistance against all forms of damage.",
-                "icon_armor",
+                &g_res.textures->icon_armor,
                 PerformanceUpgradeType::ARMOR,
                 5,
                 1000,
@@ -44,7 +45,7 @@ public:
             {
                 "Suspension",
                 "Upgrades the suspension to be stiffer\nand more stable around corners.",
-                "icon_suspension",
+                &g_res.textures->icon_suspension,
                 PerformanceUpgradeType::SUSPENSION,
                 2,
                 1250,

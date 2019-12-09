@@ -241,7 +241,7 @@ struct PerformanceUpgrade
 {
     const char* name;
     const char* description;
-    const char* icon;
+    Texture* icon;
     PerformanceUpgradeType upgradeType;
     i32 maxUpgradeLevel = 5;
     i32 price;

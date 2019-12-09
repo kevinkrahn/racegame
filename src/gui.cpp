@@ -8,10 +8,10 @@
 
 void Gui::beginFrame()
 {
-    fontTiny = &g_resources.getFont("font", (u32)convertSize(13));
-    fontSmall = &g_resources.getFont("font", (u32)convertSize(16));
-    fontBig = &g_resources.getFont("font_bold", (u32)convertSize(26));
-    white = g_resources.getTexture("white");
+    fontTiny = &g_res.getFont("font", (u32)convertSize(13));
+    fontSmall = &g_res.getFont("font", (u32)convertSize(16));
+    fontBig = &g_res.getFont("font_bold", (u32)convertSize(26));
+    white = &g_res.textures->white;
     renderer = g_game.renderer.get();
     isMouseOverUI = false;
     isMouseClickHandled = false;
@@ -177,7 +177,7 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
         {
             if (move != 0)
             {
-                g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+                g_audio.playSound(&g_res.sounds->select, SoundType::MENU_SFX);
             }
             panelState->selectIndex += move;
             if (panelState->selectIndex < 0)
@@ -256,7 +256,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
         isMouseOverUI = true;
         if (!widgetState->isMouseOver)
         {
-            g_audio.playSound(g_resources.getSound("select"), SoundType::MENU_SFX);
+            g_audio.playSound(&g_res.sounds->select, SoundType::MENU_SFX);
             widgetState->isMouseOver = true;
         }
         parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
@@ -268,7 +268,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
                 isMouseClickHandled = true;
                 isMouseCaptured = true;
                 clicked = true;
-                g_audio.playSound(g_resources.getSound("click"), SoundType::MENU_SFX);
+                g_audio.playSound(&g_res.sounds->click, SoundType::MENU_SFX);
             }
         }
     }
@@ -286,7 +286,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
             {
                 clicked = true;
                 isKeyboardInputHandled = true;
-                g_audio.playSound(g_resources.getSound("click"), SoundType::MENU_SFX);
+                g_audio.playSound(&g_res.sounds->click, SoundType::MENU_SFX);
             }
         }
     }
@@ -323,7 +323,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
     return clicked;
 }
 
-bool Gui::button(const char* text, bool active, const char* icon, bool iconbg)
+bool Gui::button(const char* text, bool active, Texture* icon, bool iconbg)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -350,12 +350,10 @@ bool Gui::button(const char* text, bool active, const char* icon, bool iconbg)
         f32 iconSize = glm::floor(bh * 0.8f);
         if (iconbg)
         {
-            Texture* bgTexture = g_resources.getTexture("iconbg");
-            renderer->push2D(QuadRenderable(bgTexture,
+            renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
                         pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
         }
-        Texture* iconTexture = g_resources.getTexture(icon);
-        renderer->push2D(QuadRenderable(iconTexture,
+        renderer->push2D(QuadRenderable(icon,
                     pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
     }
     else
@@ -371,7 +369,7 @@ bool Gui::button(const char* text, bool active, const char* icon, bool iconbg)
 }
 
 bool Gui::itemButton(const char* text, const char* smallText, const char* extraText,
-        bool active, const char* icon, bool* isSelected)
+        bool active, Texture* icon, bool* isSelected)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -414,14 +412,12 @@ bool Gui::itemButton(const char* text, const char* smallText, const char* extraT
                 glm::vec3(1.f), active ? 1.f : 0.5f, 1.f,
                 HorizontalAlign::LEFT, VerticalAlign::TOP));
 
-    Texture* bgTexture = g_resources.getTexture("iconbg");
     f32 iconSize = glm::floor(bh * 0.8f);
-    renderer->push2D(QuadRenderable(bgTexture,
+    renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
                 pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
     if (icon)
     {
-        Texture* iconTexture = g_resources.getTexture(icon);
-        renderer->push2D(QuadRenderable(iconTexture,
+        renderer->push2D(QuadRenderable(icon,
                     pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
     }
 
@@ -590,7 +586,7 @@ void Gui::beginSelect(const char* text, i32* selectedIndex, bool showTitle)
     });
 }
 
-bool Gui::option(const char* text, i32 value, const char* icon)
+bool Gui::option(const char* text, i32 value, Texture* icon)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::SELECT);
@@ -620,9 +616,8 @@ bool Gui::option(const char* text, i32 value, const char* icon)
 
     if (icon)
     {
-        Texture* iconTexture = g_resources.getTexture(icon);
         f32 iconSize = glm::floor(bh * 0.5f);
-        renderer->push2D(QuadRenderable(iconTexture,
+        renderer->push2D(QuadRenderable(icon,
                     pos + glm::vec2(bh * 0.25f), iconSize, iconSize));
     }
 
@@ -707,7 +702,7 @@ i32 Gui::select(const char* text, std::string* firstValue,
 
     if (widgetState->hoverIntensity > 0.f)
     {
-        Texture* cheveron = g_resources.getTexture("cheveron");
+        Texture* cheveron = &g_res.textures->cheveron;
         if (currentIndex > 0)
         {
             renderer->push2D(QuadRenderable(cheveron, pos + glm::vec2(bh*0.25f), bh*0.5f, bh*0.5f,

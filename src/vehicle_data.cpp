@@ -40,7 +40,7 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
 
 void VehicleData::loadSceneData(const char* sceneName)
 {
-    DataFile::Value::Dict& scene = g_resources.getScene(sceneName);
+    DataFile::Value::Dict& scene = g_res.getScene(sceneName);
     for (auto& e : scene["entities"].array())
     {
         std::string name = e["name"].string();
@@ -53,7 +53,7 @@ void VehicleData::loadSceneData(const char* sceneName)
             name.find("RR") != std::string::npos)
         {
             std::string const& meshName = e["data_name"].string();
-            Mesh* mesh = g_resources.getMesh(meshName.c_str());
+            Mesh* mesh = g_res.getMesh(meshName.c_str());
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
             PxShape* shape = g_game.physx.physics->createShape(
@@ -71,7 +71,7 @@ void VehicleData::loadSceneData(const char* sceneName)
         else if (name.find("Chassis") != std::string::npos)
         {
             chassisMeshes.push_back({
-                g_resources.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().c_str()),
                 transform,
                 nullptr,
                 name.find("Body") != std::string::npos
@@ -80,7 +80,7 @@ void VehicleData::loadSceneData(const char* sceneName)
         if (name.find("FL") != std::string::npos)
         {
             wheelMeshFront = {
-                g_resources.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
             frontWheelMeshRadius = e["bound_z"].real() * 0.5f;
@@ -90,7 +90,7 @@ void VehicleData::loadSceneData(const char* sceneName)
         else if (name.find("RL") != std::string::npos)
         {
             wheelMeshRear = {
-                g_resources.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform))
             };
             rearWheelMeshRadius = e["bound_z"].real() * 0.5f;
@@ -108,7 +108,7 @@ void VehicleData::loadSceneData(const char* sceneName)
         else if (name.find("Collision") != std::string::npos)
         {
             collisionMeshes.push_back({
-                g_resources.getMesh(e["data_name"].string().c_str())->getConvexCollisionMesh(),
+                g_res.getMesh(e["data_name"].string().c_str())->getConvexCollisionMesh(),
                 transform
             });
             collisionWidth =

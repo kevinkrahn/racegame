@@ -88,9 +88,9 @@ public:
     void beginPanel(const char* text, glm::vec2 position, f32 halign,
             bool solidBackground=false, bool useKeyboardControl=false,
             bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220);
-    bool button(const char* text, bool active=true, const char* icon=nullptr, bool iconbg=true);
+    bool button(const char* text, bool active=true, Texture* icon=nullptr, bool iconbg=true);
     bool itemButton(const char* text, const char* smallText, const char* extraText,
-            bool active=true, const char* icon=nullptr, bool* isSelected=nullptr);
+            bool active=true, Texture* icon=nullptr, bool* isSelected=nullptr);
     bool vehicleButton(const char* text, Texture* icon, struct Driver* driver);
     bool toggle(const char* text, bool& enabled);
     bool slider(const char* text, f32 minValue, f32 maxValue, f32& value);
@@ -98,7 +98,7 @@ public:
     i32 select(const char* text, std::string* firstValue,
             i32 count, i32& currentIndex);
     void beginSelect(const char* text, i32* selectedIndex, bool showTitle=true);
-    bool option(const char* text, i32 value, const char* icon=nullptr);
+    bool option(const char* text, i32 value, Texture* icon=nullptr);
     void label(const char* text, bool showBackground=false);
     void gap(f32 size);
 } g_gui;

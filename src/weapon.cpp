@@ -6,7 +6,7 @@ void Weapon::outOfAmmo(Vehicle* vehicle)
 {
     if (vehicle->driver->isPlayer)
     {
-        g_audio.playSound(g_resources.getSound("nono"), SoundType::GAME_SFX);
+        g_audio.playSound(&g_res.sounds->nono, SoundType::GAME_SFX);
         // TODO: out of ammo notification?
     }
 }

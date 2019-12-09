@@ -307,8 +307,7 @@ public:
         glVertexArrayVertexBuffer(vao, 0, vertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
         glBindVertexArray(vao);
 
-        Texture* tex = g_resources.getTexture("tiremarks");
-        glBindTextureUnit(0, tex->handle);
+        glBindTextureUnit(0, g_res.textures->tiremarks.handle);
 
         u32 offset = 0;
         for (auto const& chunk : chunks)

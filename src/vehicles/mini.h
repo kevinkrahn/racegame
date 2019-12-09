@@ -19,7 +19,7 @@ public:
             {
                 "Engine",
                 "Upgrades the engine to improve\nacceleration and top speed.",
-                "icon_pistons",
+                &g_res.textures->icon_pistons,
                 PerformanceUpgradeType::ENGINE,
                 5,
                 1500,
@@ -27,7 +27,7 @@ public:
             {
                 "Tires",
                 "Equips better tires for improved traction\nand overall handling.",
-                "icon_wheel",
+                &g_res.textures->icon_wheel,
                 PerformanceUpgradeType::TIRES,
                 5,
                 1000,
@@ -35,7 +35,7 @@ public:
             {
                 "Armor",
                 "Adds additional armor to improve\nresistance against all forms of damage.",
-                "icon_armor",
+                &g_res.textures->icon_armor,
                 PerformanceUpgradeType::ARMOR,
                 5,
                 1000,
@@ -43,7 +43,7 @@ public:
             {
                 "Suspension",
                 "Upgrades the suspension to be stiffer\nand more stable around corners.",
-                "icon_suspension",
+                &g_res.textures->icon_suspension,
                 PerformanceUpgradeType::SUSPENSION,
                 2,
                 1250,
@@ -51,7 +51,7 @@ public:
             {
                 "Weight Reduction",
                 "Strips out unnecessary parts of the vehicle.\nThe reduced weight will improve acceleration and handling.",
-                "icon_weight",
+                &g_res.textures->icon_weight,
                 PerformanceUpgradeType::WEIGHT_REDUCTION,
                 2,
                 1500,
@@ -59,7 +59,7 @@ public:
             {
                 "AWD Conversion",
                 "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
-                "icon_drivetrain",
+                &g_res.textures->icon_drivetrain,
                 PerformanceUpgradeType::ALL_WHEEL_DRIVE,
                 1,
                 6000,

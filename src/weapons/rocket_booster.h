@@ -14,7 +14,7 @@ public:
     {
         info.name = "Rocket Booster";
         info.description = "It's like nitrous, but better!";
-        info.icon = "rocketbooster_icon";
+        info.icon = &g_res.textures->icon_rocketbooster;
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::REAR_WEAPON;
@@ -51,7 +51,7 @@ public:
                 return;
             }
 
-            boostSound = g_audio.playSound3D(g_resources.getSound("rocketboost"),
+            boostSound = g_audio.playSound3D(&g_res.sounds->rocketboost,
                     SoundType::GAME_SFX, vehicle->getPosition(), false, 1.f, 0.8f);
 
             boostTimer = 1.25f;

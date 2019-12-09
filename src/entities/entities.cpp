@@ -15,7 +15,7 @@ void registerEntities()
     registerEntity<Track>("Track");
     registerEntity<StaticMesh>("StaticMesh");
     registerEntity<StaticDecal>("StaticDecal");
-    registerEntity<Start>("Start");
+    registerEntity<Start>("Track Start");
     registerEntity<Tree>("Tree");
     registerEntity<Booster>("Booster");
     registerEntity<Oil>("Oil");

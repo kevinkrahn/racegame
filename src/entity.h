@@ -145,17 +145,17 @@ public:
 };
 
 template<typename T>
-void registerEntity(const char* name, bool forEditor)
+void registerEntity(const char* name)
 {
     u32 entityID = (u32)g_entities.size();
     g_entities.push_back({
-        name,
         entityID,
         [entityID] {
             Entity* e = new T();
             e->entityID = entityID;
             return e;
-        }
+        },
+        name
     });
 }
 

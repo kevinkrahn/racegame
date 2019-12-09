@@ -242,7 +242,7 @@ void Menu::championshipMenu()
     i32 vehicleCount = 0;
     i32 playerIndex = 0;
     u32 vehicleIconSize = (u32)g_gui.convertSize(64);
-    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getMesh("world.Quad");
     for (auto& driver : g_game.state.drivers)
     {
         if (driver.isPlayer)
@@ -278,17 +278,17 @@ void Menu::championshipMenu()
     }
 
     g_gui.gap(10);
-    if (g_gui.button("Begin Race", playerIndex == vehicleCount, "icon_flag", false))
+    if (g_gui.button("Begin Race", playerIndex == vehicleCount, &g_res.textures->icon_flag, false))
     {
         Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
         menuMode = HIDDEN;
     }
-    if (g_gui.button("Championship Standings", true, "icon_stats", false))
+    if (g_gui.button("Championship Standings", true, &g_res.textures->icon_stats, false))
     {
         menuMode = CHAMPIONSHIP_STANDINGS;
     }
-    g_gui.button("Player Stats", true, "icon_stats2", false);
+    g_gui.button("Player Stats", true, &g_res.textures->icon_stats2, false);
     g_gui.gap(10);
 
     if (g_gui.button("Quit"))
@@ -298,10 +298,10 @@ void Menu::championshipMenu()
 
     g_gui.end();
 
-    Font* bigfont = &g_resources.getFont("font", (u32)g_gui.convertSize(64));
+    Font* bigfont = &g_res.getFont("font", (u32)g_gui.convertSize(64));
     g_game.renderer->push2D(TextRenderable(bigfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
                 menuPos + o, glm::vec3(1.f)));
-    Font* mediumFont = &g_resources.getFont("font", (u32)g_gui.convertSize(32));
+    Font* mediumFont = &g_res.getFont("font", (u32)g_gui.convertSize(32));
     g_game.renderer->push2D(TextRenderable(mediumFont, tstr("Race ", g_game.state.currentRace + 1),
                 menuPos + o + glm::vec2(0, glm::floor(g_gui.convertSize(52))), glm::vec3(1.f)));
 
@@ -322,10 +322,10 @@ void Menu::championshipGarage()
     f32 o = glm::floor(g_gui.convertSize(32));
     f32 oy = glm::floor(g_gui.convertSize(48));
 
-    Texture* white = g_resources.getTexture("white");
+    Texture* white = &g_res.textures->white;
     u32 vehicleIconWidth = (u32)g_gui.convertSize(290);
     u32 vehicleIconHeight = (u32)g_gui.convertSize(256);
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(16));
+    Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
     glm::vec2 vehiclePreviewPos = menuPos + glm::vec2(o, oy);
 
     Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
@@ -355,11 +355,11 @@ void Menu::championshipGarage()
             mode = 1;
         }
         g_gui.label("Vehicle Upgrades");
-        if (g_gui.button("Performance", driver.vehicleIndex != -1, "icon_engine", false))
+        if (g_gui.button("Performance", driver.vehicleIndex != -1, &g_res.textures->icon_engine, false))
         {
             mode = 2;
         }
-        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, "icon_spraycan", false))
+        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, &g_res.textures->icon_spraycan, false))
         {
             mode = 3;
         }
@@ -368,7 +368,7 @@ void Menu::championshipGarage()
         {
             i32 weaponIndex = vehicleConfig.frontWeaponIndices[i];
             if (g_gui.button(tstr("Front Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? "iconbg" : g_weapons[weaponIndex].info.icon))
+                        weaponIndex == -1 ? &g_res.textures->iconbg : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 4;
             }
@@ -377,13 +377,13 @@ void Menu::championshipGarage()
         {
             i32 weaponIndex = vehicleConfig.rearWeaponIndices[i];
             if (g_gui.button(tstr("Rear Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? "iconbg" : g_weapons[weaponIndex].info.icon))
+                        weaponIndex == -1 ? &g_res.textures->iconbg : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 7;
             }
         }
         if (g_gui.button("Special Ability", driver.vehicleIndex != -1,
-                    vehicleConfig.specialAbilityIndex == -1 ? "iconbg"
+                    vehicleConfig.specialAbilityIndex == -1 ? &g_res.textures->iconbg
                     : g_weapons[vehicleConfig.specialAbilityIndex].info.icon))
         {
             mode = 9;
@@ -651,7 +651,7 @@ void Menu::championshipGarage()
     g_gui.end();
 
     static RenderWorld renderWorld;
-    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getMesh("world.Quad");
     renderWorld.setName("Garage");
     renderWorld.setSize(vehicleIconWidth, vehicleIconHeight);
     renderWorld.push(LitRenderable(quadMesh,
@@ -730,7 +730,7 @@ void Menu::championshipGarage()
     glm::vec2 statsPos = vehiclePreviewPos
         + glm::vec2(0, vehicleIconHeight + glm::floor(g_gui.convertSize(48)));
     f32 barHeight = glm::floor(g_gui.convertSize(5));
-    Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(13));
+    Font* tinyfont = &g_res.getFont("font", (u32)g_gui.convertSize(13));
     for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
     {
         stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
@@ -783,8 +783,8 @@ void Menu::championshipStandings()
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
     drawBox(menuPos, menuSize);
 
-    Font* bigfont = &g_resources.getFont("font_bold", (u32)g_gui.convertSize(26));
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(16));
+    Font* bigfont = &g_res.getFont("font_bold", (u32)g_gui.convertSize(26));
+    Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
 
     g_game.renderer->push2D(TextRenderable(bigfont, "Championship Standings",
                 glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
@@ -801,7 +801,7 @@ void Menu::championshipStandings()
     };
 
     u32 vehicleIconSize = (u32)g_gui.convertSize(48);
-    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getMesh("world.Quad");
     SmallVec<Driver*, 20> sortedDrivers;
     for(auto& driver : g_game.state.drivers)
     {
@@ -857,7 +857,7 @@ void Menu::championshipStandings()
 
     if (g_gui.didSelect())
     {
-        g_audio.playSound(g_resources.getSound("close"), SoundType::MENU_SFX);
+        g_audio.playSound(&g_res.sounds->close, SoundType::MENU_SFX);
         menuMode = CHAMPIONSHIP_MENU;
         RandomSeries series = randomSeed();
         if (g_game.currentScene->filename != championshipTracks[g_game.state.currentRace])
@@ -884,15 +884,15 @@ void Menu::raceResults()
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.6f);
     drawBox(menuPos, menuSize);
 
-    Font* bigfont = &g_resources.getFont("font_bold", (u32)g_gui.convertSize(26));
-    Font* smallfont = &g_resources.getFont("font", (u32)g_gui.convertSize(16));
-    Font* tinyfont = &g_resources.getFont("font", (u32)g_gui.convertSize(14));
+    Font* bigfont = &g_res.getFont("font_bold", (u32)g_gui.convertSize(26));
+    Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
+    Font* tinyfont = &g_res.getFont("font", (u32)g_gui.convertSize(14));
 
     g_game.renderer->push2D(TextRenderable(bigfont, "Race Results",
                 glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
                 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
 
-    Texture* white = g_resources.getTexture("white");
+    Texture* white = &g_res.textures->white;
     g_game.renderer->push2D(QuadRenderable(white,
                 menuPos + glm::vec2(g_gui.convertSize(8), g_gui.convertSize(64)),
                 w - g_gui.convertSize(16), g_gui.convertSize(19), glm::vec3(0.f), 0.6f));
@@ -957,7 +957,7 @@ void Menu::raceResults()
             r.driver->lastPlacement = r.placement;
         }
 
-        g_audio.playSound(g_resources.getSound("close"), SoundType::MENU_SFX);
+        g_audio.playSound(&g_res.sounds->close, SoundType::MENU_SFX);
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
             menuMode = CHAMPIONSHIP_STANDINGS;
@@ -1191,7 +1191,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (menuMode != MenuMode::HIDDEN)
     {
-        Texture* tex = g_resources.getTexture("checkers_fade");
+        Texture* tex = &g_res.textures->checkers_fade;
         f32 w = (f32)g_game.windowWidth;
         f32 h = g_gui.convertSize(tex->height * 0.5f);
         renderer->push2D(QuadRenderable(tex, glm::vec2(0), w, h, glm::vec2(0.f, 0.999f),
@@ -1241,9 +1241,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 {
     f32 border = glm::floor(g_gui.convertSize(3));
-    g_game.renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
+    g_game.renderer->push2D(QuadRenderable(&g_res.textures->white,
                 pos - border, size.x + border * 2, size.y + border * 2,
                 glm::vec3(1.f), 0.4f, false));
-    g_game.renderer->push2D(QuadRenderable(g_resources.getTexture("white"),
+    g_game.renderer->push2D(QuadRenderable(&g_res.textures->white,
                 pos, size.x, size.y, glm::vec3(0.f), 0.8f, true));
 }

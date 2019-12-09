@@ -65,12 +65,14 @@ void Renderer::loadShader(std::string filename, SmallVec<std::string> defines, s
         std::string includeStr = trim(shaderStr.substr(offset, newLinePos - offset));
         includeStr.erase(std::remove(includeStr.begin(), includeStr.end(), '"'), includeStr.end());
 
-        fs::path includePath = fs::path(filename).parent_path() / fs::path(includeStr);
+        size_t slashIndex = filename.find_last_of('/');
+        std::string parentPath = (slashIndex == std::string::npos) ? "" : filename.substr(0, slashIndex+1);
+        std::string includePath = parentPath + includeStr;
 
-        std::ifstream file(includePath.string());
+        std::ifstream file(includePath);
         if (!file)
         {
-            FATAL_ERROR("Cannot load shader include file: ", includePath.string(), " (Included from ", filename, ")");
+            FATAL_ERROR("Cannot load shader include file: ", includePath, " (Included from ", filename, ")");
         }
 
         std::stringstream stream;
@@ -978,7 +980,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     // color pass
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Main Color Pass");
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-    glBindTextureUnit(3, g_resources.getTexture("cloud_shadow")->handle);
+    glBindTextureUnit(3, g_res.textures->cloud_shadow.handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 #if 0
     glClearColor(0.15f, 0.35f, 0.9f, 1.f);

@@ -547,8 +547,8 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (isDebugOverlayEnabled)
     {
-        Font* font1 = &g_resources.getFont("font", 20);
-        Font* font2 = &g_resources.getFont("font", 18);
+        Font* font1 = &g_res.getFont("font", 20);
+        Font* font2 = &g_res.getFont("font", 18);
         char* debugText = tstr(
             "FPS: ", 1.f / g_game.realDeltaTime,
             "\nDelta: ", g_game.realDeltaTime * 1000.f, "ms",
@@ -556,7 +556,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             "\nResolution: ", g_game.config.graphics.resolutionX, "x", g_game.config.graphics.resolutionY,
             "\nTmpRenderMem: ", std::fixed, std::setprecision(2), renderer->getTempRenderBufferSize() / 1024.f, "kb");
 
-        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, g_game.windowHeight - 10 },
+        renderer->push2D(QuadRenderable(&g_res.textures->white, { 10, g_game.windowHeight - 10 },
                     { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText).y) },
                     {}, {}, { 0, 0, 0 }, 0.6f), 10);
         renderer->push2D(TextRenderable(font1, debugText,
@@ -565,7 +565,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         char* debugRenderListText = tstr(renderer->getDebugRenderList());
         auto dim = font2->stringDimensions(debugRenderListText);
-        renderer->push2D(QuadRenderable(g_resources.getTexture("white"), { 10, 10 },
+        renderer->push2D(QuadRenderable(&g_res.textures->white, { 10, 10 },
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f), 10);
         renderer->push2D(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f), 10);
@@ -586,7 +586,7 @@ void Scene::vehicleFinish(u32 n)
     if (numHumanDrivers == playerFinishCount && !allPlayersFinished)
     {
         allPlayersFinished = true;
-        g_audio.playSound(g_resources.getSound("clapping"), SoundType::GAME_SFX);
+        g_audio.playSound(&g_res.sounds->clapping, SoundType::GAME_SFX);
     }
 }
 
@@ -615,14 +615,14 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
 
     trackPreview2D.beginUpdate(renderer, size, size);
 
-    Mesh* quadMesh = g_resources.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getMesh("world.Quad");
     trackPreview2D.drawItem(
         quadMesh->vao, quadMesh->numIndices,
         trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
             * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
     track->drawTrackPreview(&trackPreview2D, trackOrtho);
 
-    Mesh* arrowMesh = g_resources.getMesh("world.TrackArrow");
+    Mesh* arrowMesh = g_res.getMesh("world.TrackArrow");
     for (auto const& v : vehicles)
     {
         glm::vec3 pos = v->getPosition();
@@ -929,7 +929,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         }
                     }
 
-                    g_audio.playSound3D(g_resources.getSound("impact"),
+                    g_audio.playSound3D(&g_res.sounds->impact,
                             SoundType::GAME_SFX, convert(contactPoints[j].position));
                     // TODO: create sparks at contactPoints[j].position
                 }

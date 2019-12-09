@@ -11,6 +11,8 @@ struct Sound
     std::unique_ptr<i16[]> audioData;
     u32 numSamples;
     u32 numChannels;
+
+    Sound(const char* filename);
 };
 
 enum struct SoundType

@@ -11,7 +11,7 @@ public:
     {
         info.name = "Missiles";
         info.description = "Deals high damage and follows slopes!";
-        info.icon = "missile_icon";
+        info.icon = &g_res.textures->icon_missile;
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
@@ -43,7 +43,7 @@ public:
         glm::vec3 pos = translationOf(transform);
         scene->addEntity(new Projectile(pos + forward * 1.f,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::MISSILE));
-        g_audio.playSound3D(g_resources.getSound("missile"),
+        g_audio.playSound3D(&g_res.sounds->missile,
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
 

@@ -124,7 +124,7 @@ void Game::run()
     g_input.init(window);
     g_audio.init();
     initPhysX();
-    g_resources.load();
+    g_res.load();
     initializeVehicleData();
     registerEntities();
 

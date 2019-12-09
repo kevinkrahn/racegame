@@ -64,7 +64,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         return;
     }
 
-    Texture* white = g_resources.getTexture("white");
+    Texture* white = &g_res.textures->white;
     EditMode previousEditMode = editMode;
 
     if (g_input.isKeyPressed(KEY_TAB))
@@ -79,9 +79,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     g_gui.textEdit("Name", scene->name);
 
     g_gui.beginSelect("Edit Mode", (i32*)&editMode, true);
-    g_gui.option("Terrain", (i32)EditMode::TERRAIN, "terrain_icon");
-    g_gui.option("Track", (i32)EditMode::TRACK, "track_icon");
-    g_gui.option("Decoration", (i32)EditMode::DECORATION, "decoration_icon");
+    g_gui.option("Terrain", (i32)EditMode::TERRAIN, &g_res.textures->icon_terrain);
+    g_gui.option("Track", (i32)EditMode::TRACK, &g_res.textures->icon_track);
+    g_gui.option("Decoration", (i32)EditMode::DECORATION, &g_res.textures->icon_decoration);
     g_gui.end();
 
     if (editMode == EditMode::TERRAIN)
@@ -94,13 +94,13 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.end();
 
         g_gui.beginSelect("Terrain Tool", (i32*)&terrainTool);
-        g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, "terrain_icon");
-        g_gui.option("Perturb", (i32)TerrainTool::PERTURB, "terrain_icon");
-        g_gui.option("Flatten", (i32)TerrainTool::FLATTEN, "terrain_icon");
-        g_gui.option("Smooth", (i32)TerrainTool::SMOOTH, "terrain_icon");
-        g_gui.option("Erode", (i32)TerrainTool::ERODE, "terrain_icon");
-        g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, "terrain_icon");
-        g_gui.option("Paint", (i32)TerrainTool::PAINT, "terrain_icon");
+        g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, &g_res.textures->icon_terrain);
+        g_gui.option("Perturb", (i32)TerrainTool::PERTURB, &g_res.textures->icon_terrain);
+        g_gui.option("Flatten", (i32)TerrainTool::FLATTEN, &g_res.textures->icon_terrain);
+        g_gui.option("Smooth", (i32)TerrainTool::SMOOTH, &g_res.textures->icon_terrain);
+        g_gui.option("Erode", (i32)TerrainTool::ERODE, &g_res.textures->icon_terrain);
+        g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, &g_res.textures->icon_terrain);
+        g_gui.option("Paint", (i32)TerrainTool::PAINT, &g_res.textures->icon_terrain);
         g_gui.end();
 
         g_gui.label("Brush Settings", false);
@@ -160,10 +160,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->track->matchZ(true);
         }
 
-        std::string splineNames[ARRAY_SIZE(railingMeshTypes)];
-        for (u32 i=0; i<ARRAY_SIZE(railingMeshTypes); ++i)
+        std::string splineNames[ARRAY_SIZE(Track::railingMeshTypes)];
+        for (u32 i=0; i<ARRAY_SIZE(Track::railingMeshTypes); ++i)
         {
-            splineNames[i] = railingMeshTypes[i].name;
+            splineNames[i] = scene->track->railingMeshTypes[i].name;
         }
         g_gui.select("Spline", splineNames, ARRAY_SIZE(splineNames), selectedSplineTypeIndex);
 
@@ -452,11 +452,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 u32 itemSize = (u32)(height * 0.08f);
                 u32 iconSize = (u32)(height * 0.08f);
                 u32 gap = (u32)(height * 0.015f);
-                f32 totalWidth = (f32)(itemSize * ARRAY_SIZE(prefabTrackItems) + gap * (ARRAY_SIZE(prefabTrackItems) - 2));
+                f32 totalWidth = (f32)(itemSize * ARRAY_SIZE(Track::prefabTrackItems) + gap * (ARRAY_SIZE(Track::prefabTrackItems) - 2));
                 f32 cx = g_game.windowWidth * 0.5f;
                 f32 yoffset = height * 0.02f;
 
-                for (u32 i=0; i<ARRAY_SIZE(prefabTrackItems); ++i)
+                for (u32 i=0; i<ARRAY_SIZE(Track::prefabTrackItems); ++i)
                 {
                     f32 alpha = 0.8f;
                     glm::vec3 color(0.f);
@@ -478,7 +478,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                             g_game.windowHeight - itemSize - yoffset);
                     renderer->push2D(QuadRenderable(white,
                         bp, (f32)itemSize, (f32)itemSize, color, alpha));
-                    renderer->push2D(QuadRenderable(g_resources.getTexture(prefabTrackItems[i].icon),
+                    renderer->push2D(QuadRenderable(&scene->track->prefabTrackItems[i].icon,
                         bp + glm::vec2((f32)(itemSize - iconSize)) * 0.5f, (f32)iconSize, (f32)iconSize));
                 }
             }
@@ -641,8 +641,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     }
                 }
 
-                Mesh* arrowMesh = g_resources.getMesh("world.TranslateArrow");
-                Mesh* centerMesh = g_resources.getMesh("world.Sphere");
+                Mesh* arrowMesh = g_res.getMesh("world.TranslateArrow");
+                Mesh* centerMesh = g_res.getMesh("world.Sphere");
                 rw->push(OverlayRenderable(centerMesh, 0,
                         glm::translate(glm::mat4(1.f), p), centerCol, -1));
 
@@ -774,8 +774,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 }
                 else
                 {
-                    Mesh* arrowMesh = g_resources.getMesh("world.RotateArrow");
-                    Mesh* sphereMesh = g_resources.getMesh("world.Sphere");
+                    Mesh* arrowMesh = g_res.getMesh("world.RotateArrow");
+                    Mesh* sphereMesh = g_res.getMesh("world.Sphere");
                     rw->push(OverlayRenderable(sphereMesh, 0,
                             glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f))
                             , {0,0,0}, -1, true));
@@ -954,8 +954,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     }
                 }
 
-                Mesh* arrowMesh = g_resources.getMesh("world.ScaleArrow");
-                Mesh* centerMesh = g_resources.getMesh("world.UnitCube");
+                Mesh* arrowMesh = g_res.getMesh("world.ScaleArrow");
+                Mesh* centerMesh = g_res.getMesh("world.UnitCube");
                 rw->push(OverlayRenderable(centerMesh, 0,
                         glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
 

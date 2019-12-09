@@ -239,7 +239,7 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
         ++pathPointDrawCount;
     }
 
-    Mesh* arrowMesh = g_resources.getMesh("world.Arrow");
+    Mesh* arrowMesh = g_res.getMesh("world.Arrow");
     for (u32 i=0; i<nodes.size(); ++i)
     {
         Node const& c = nodes[i];
@@ -261,7 +261,7 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
         p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * g_game.windowHeight;
 #if 0
         renderer->push2D(TextRenderable(
-                    &g_resources.getFont("font", 23),
+                    &g_res.getFont("font", 23),
                     str(std::fixed, std::setw(1), c.t), { p.x, p.y },
                     glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
 #endif

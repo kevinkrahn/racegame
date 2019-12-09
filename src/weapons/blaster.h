@@ -11,7 +11,7 @@ public:
     {
         info.name = "Blaster";
         info.description = "High damage split into two shots.\n";
-        info.icon = "blaster_icon";
+        info.icon = &g_res.textures->icon_blaster;
         info.price = 800;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
@@ -46,7 +46,7 @@ public:
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BLASTER));
         scene->addEntity(new Projectile(pos + forward * 2.5f - right * 0.8f,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BLASTER));
-        g_audio.playSound3D(g_resources.getSound("blaster"),
+        g_audio.playSound3D(&g_res.sounds->blaster,
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 1.f);
 

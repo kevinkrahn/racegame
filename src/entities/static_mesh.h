@@ -19,5 +19,4 @@ public:
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
     DataFile::Value serializeState() override;
     void deserializeState(DataFile::Value& data) override;
-    const char* getName() const override { return "StaticMesh"; }
 };

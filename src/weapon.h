@@ -7,7 +7,7 @@ struct WeaponInfo
 {
     const char* name;
     const char* description = "";
-    const char* icon = nullptr;
+    struct Texture* icon;
     i32 price = 0;
     u32 maxUpgradeLevel = 5;
 

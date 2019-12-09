@@ -3,6 +3,38 @@
 #include "game.h"
 #include <SDL2/SDL.h>
 
+Sound::Sound(const char* filename)
+{
+    // TODO: support .ogg files
+    SDL_AudioSpec spec;
+    u32 size;
+    u8* wavBuffer;
+    if (SDL_LoadWAV(filename, &spec, &wavBuffer, &size) == nullptr)
+    {
+        error("Failed to load wav file: ", filename, "(", SDL_GetError(), ")\n");
+        return;
+    }
+
+    if (spec.freq != 44100)
+    {
+        error("Failed to load wav file: ", filename, "(Unsupported frequency)\n");
+        return;
+    }
+
+    if (spec.format != AUDIO_S16)
+    {
+        error("Failed to load wav file: ", filename, "(Unsupported sample format)\n");
+        return;
+    }
+
+    numChannels = spec.channels;
+    numSamples = (size / spec.channels) / sizeof(i16);
+    audioData.reset(new i16[size / sizeof(i16)]);
+    memcpy(audioData.get(), wavBuffer, size);
+
+    SDL_FreeWAV(wavBuffer);
+}
+
 void SDLAudioCallback(void* userdata, u8* buf, i32 len)
 {
     ((Audio*)userdata)->audioCallback(buf, len);

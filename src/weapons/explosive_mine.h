@@ -11,7 +11,7 @@ public:
     {
         info.name = "Exploding Mine";
         info.description = "It explodes";
-        info.icon = "mine_icon";
+        info.icon = &g_res.textures->icon_mine;
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::REAR_WEAPON;
@@ -36,7 +36,7 @@ public:
         if (!scene->raycastStatic(vehicle->getPosition(), down, 2.f, &hit,
                     COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK))
         {
-            g_audio.playSound(g_resources.getSound("nono"), SoundType::GAME_SFX);
+            g_audio.playSound(&g_res.sounds->nono, SoundType::GAME_SFX);
             return;
         }
 
@@ -49,7 +49,7 @@ public:
         m[2] = glm::vec4(glm::normalize(
                 glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
         scene->addEntity(new Mine(glm::translate(glm::mat4(1.f), pos) * m, vehicle->vehicleIndex));
-        g_audio.playSound3D(g_resources.getSound("thunk"), SoundType::GAME_SFX,
+        g_audio.playSound3D(&g_res.sounds->thunk, SoundType::GAME_SFX,
                 vehicle->getPosition(), false, 1.f, 0.9f);
 
         ammo -= 1;

@@ -7,7 +7,8 @@ using namespace DataFile;
 Value DataFile::load(const char* filename)
 {
     // text format
-    if (fs::path(filename).extension() == ".txt")
+    std::string fname(filename);
+    if (fname.substr(fname.size()-4) == ".txt")
     {
         std::ifstream file(filename);
         if (!file)
@@ -71,7 +72,8 @@ Value DataFile::load(const char* filename)
 void DataFile::save(DataFile::Value const& val, const char* filename)
 {
     // text format
-    if (fs::path(filename).extension() == ".txt")
+    std::string fname(filename);
+    if (fname.substr(fname.size()-4) == ".txt")
     {
         std::ofstream file(filename);
         if (!file)

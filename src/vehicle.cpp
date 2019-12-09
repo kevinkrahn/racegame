@@ -498,9 +498,9 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->tuning = std::move(tuning);
     this->hitPoints = this->tuning.maxHitPoints;
 
-    engineSound = g_audio.playSound3D(g_resources.getSound("engine2"),
+    engineSound = g_audio.playSound3D(&g_res.sounds->engine2,
             SoundType::VEHICLE, translationOf(transform), true);
-    tireSound = g_audio.playSound3D(g_resources.getSound("tires"),
+    tireSound = g_audio.playSound3D(&g_res.sounds->tires,
             SoundType::VEHICLE, translationOf(transform), true, 1.f, 0.f);
 
     setupPhysics(scene->getPhysicsScene(), vehicleMaterial, surfaceMaterials, transform);
@@ -737,21 +737,20 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
     */
     if (showAmmo)
     {
-        Texture* iconbg = g_resources.getTexture("weapon_iconbg");
+        Texture* iconbg = &g_res.textures->weapon_iconbg;
         renderer->push2D(QuadRenderable(iconbg, pos, iconSize * 1.5f, iconSize));
     }
     else
     {
-        Texture* iconbg = g_resources.getTexture("iconbg");
+        Texture* iconbg = &g_res.textures->iconbg;
         renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
     }
 
-    const char* weaponIcon = weapon->info.icon;
-    renderer->push2D(QuadRenderable(g_resources.getTexture(weaponIcon),
+    renderer->push2D(QuadRenderable(weapon->info.icon,
                 pos, iconSize, iconSize));
     if (selected)
     {
-        Texture* selectedTex = g_resources.getTexture("weapon_iconbg_selected");
+        Texture* selectedTex = &g_res.textures->weapon_iconbg_selected;
         renderer->push2D(QuadRenderable(selectedTex, pos, iconSize * 1.5f, iconSize));
     }
     if (showAmmo)
@@ -760,7 +759,7 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
         u32 ammoTickCount = (weapon->ammo + weapon->ammoUnitCount - 1) / weapon->ammoUnitCount;
         f32 ammoTickMargin = iconSize * 0.025f;
         f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCountMax;
-        Texture* ammoTickTex = g_resources.getTexture("ammotick");
+        Texture* ammoTickTex = &g_res.textures->ammotick;
         for (u32 i=0; i<ammoTickCount; ++i)
         {
             renderer->push2D(QuadRenderable(ammoTickTex,
@@ -775,9 +774,9 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 {
     if (cameraIndex >= 0)
     {
-        Font& font1 = g_resources.getFont("font_bold", (u32)(g_game.windowHeight * 0.04f));
-        Font& font2 = g_resources.getFont("font_bold", (u32)(g_game.windowHeight * 0.08f));
-        Font& font3 = g_resources.getFont("font_bold", (u32)(g_game.windowHeight * 0.05f));
+        Font& font1 = g_res.getFont("font_bold", (u32)(g_game.windowHeight * 0.04f));
+        Font& font2 = g_res.getFont("font_bold", (u32)(g_game.windowHeight * 0.08f));
+        Font& font3 = g_res.getFont("font_bold", (u32)(g_game.windowHeight * 0.05f));
 
         ViewportLayout const& layout =
             viewportLayout[renderer->getRenderWorld()->getViewportCount() - 1];
@@ -848,7 +847,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         }
 
         // healthbar
-        Texture* white = g_resources.getTexture("white");
+        Texture* white = &g_res.textures->white;
         const f32 healthPercentage = glm::clamp(hitPoints / tuning.maxHitPoints, 0.f, 1.f);
         const f32 maxHealthbarWidth = g_game.windowHeight * 0.14f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
@@ -881,7 +880,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         // vehicle debug info
         if (scene->isDebugOverlayEnabled)
         {
-            Font* f = &g_resources.getFont("font", 18);
+            Font* f = &g_res.getFont("font", 18);
             const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
             char* debugText = tstr(
                 "Engine RPM: ", getEngineRPM(),
@@ -909,7 +908,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 
     if (cameraIndex >= 0 && isHidden)
     {
-        rw->push(OverlayRenderable(g_resources.getMesh("world.Arrow"),
+        rw->push(OverlayRenderable(g_res.getMesh("world.Arrow"),
                 cameraIndex, transform, g_vehicleColors[driver->getVehicleConfig()->colorIndex]));
     }
 
@@ -1451,8 +1450,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
             if (currentLap > 0)
             {
-                g_audio.playSound3D(g_resources.getSound("lap"), SoundType::GAME_SFX,
-                        currentPosition);
+                g_audio.playSound3D(&g_res.sounds->lap, SoundType::GAME_SFX, currentPosition);
             }
             ++currentLap;
             if (currentLap == scene->getTotalLaps())
@@ -1833,14 +1831,14 @@ void Vehicle::blowUp()
     engineRPM = 0.f;
     scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
     scene->attackCredit(lastDamagedBy, vehicleIndex);
-    const char* sounds[] = {
-        "explosion4",
-        "explosion5",
-        "explosion6",
-        "explosion7",
+    Sound* sounds[] = {
+        &g_res.sounds->explosion4,
+        &g_res.sounds->explosion5,
+        &g_res.sounds->explosion6,
+        &g_res.sounds->explosion7,
     };
     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(sounds));
-    g_audio.playSound3D(g_resources.getSound(sounds[index]), SoundType::GAME_SFX,
+    g_audio.playSound3D(sounds[index], SoundType::GAME_SFX,
             getPosition(), false, 1.f, 0.95f);
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
 }

@@ -43,7 +43,7 @@ void Oil::updateTransform(Scene* scene)
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
     }
-    tex = g_resources.getTexture("oil");
+    tex = &g_res.textures->icon_oil;
     decal.setTexture(tex);
     decal.setPriority(9001);
     decal.begin(transform);

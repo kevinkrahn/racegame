@@ -20,6 +20,5 @@ public:
     void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected) override;
     DataFile::Value serializeState() override;
     void deserializeState(DataFile::Value& data) override;
-    const char* getName() const override { return "Decal"; }
     void showDetails(Scene* scene) override;
 };

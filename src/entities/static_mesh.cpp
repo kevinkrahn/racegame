@@ -15,16 +15,6 @@ const char* meshNames[] = {
     "plants.Plant2",
 };
 
-const char* texNames[] = {
-    "rock",
-    "concrete",
-    "white",
-    "cactus",
-    "concrete",
-    "plant1",
-    "plant2",
-};
-
 StaticMesh* StaticMesh::setup(u32 meshIndex, glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)
 {
     this->position = position;
@@ -38,8 +28,18 @@ void StaticMesh::onCreate(Scene* scene)
 {
     updateTransform(scene);
 
-    mesh = g_resources.getMesh(meshNames[meshIndex]);
-    tex = g_resources.getTexture(texNames[meshIndex]);
+    mesh = g_res.getMesh(meshNames[meshIndex]);
+
+    Texture* textures[] = {
+        &g_res.textures->rock,
+        &g_res.textures->concrete,
+        &g_res.textures->white,
+        &g_res.textures->cactus,
+        &g_res.textures->concrete,
+        &g_res.textures->plant1,
+        &g_res.textures->plant2,
+    };
+    tex = textures[meshIndex];
 
     actor = g_game.physx.physics->createRigidStatic(
             PxTransform(convert(position), convert(rotation)));

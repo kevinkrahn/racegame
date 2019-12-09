@@ -20,5 +20,4 @@ public:
     void updateTransform(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    const char* getName() const override { return "Oil"; }
 };

@@ -29,6 +29,5 @@ public:
         backwards = data["backwards"].boolean();
         PlaceableEntity::deserializeState(data);
     }
-    const char* getName() const override { return "Booster"; }
     void showDetails(Scene* scene) override;
 };

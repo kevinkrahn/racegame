@@ -35,7 +35,7 @@ public:
         settings.color = color;
         if (!texture)
         {
-            texture = g_resources.getTexture("white");
+            texture = &g_res.textures->white;
         }
         settings.texture = texture;
         settings.worldTransform = worldTransform;
@@ -44,7 +44,7 @@ public:
     {
         if (!this->settings.texture)
         {
-            this->settings.texture = g_resources.getTexture("white");
+            this->settings.texture = &g_res.textures->white;
         }
     }
 
