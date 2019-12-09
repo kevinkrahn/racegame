@@ -159,9 +159,9 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             s.color = glm::vec3(0.f);
         }
         s.specularStrength = m.type == VehicleMesh::BODY ? 0.15f : 0.3f;
-        s.specularPower = m.type == VehicleMesh::BODY ? 20.f : 200.f;
-        s.reflectionStrength = m.type == VehicleMesh::BODY ? 0.12f :
-            (m.type == VehicleMesh::WINDOW ? 0.25f : 0.f);
+        s.specularPower = m.type == VehicleMesh::BODY ? 100.f : 200.f;
+        s.reflectionStrength = m.type == VehicleMesh::BODY ? 0.1f :
+            (m.type == VehicleMesh::WINDOW ? 0.2f : 0.f);
         s.reflectionLod = m.type == VehicleMesh::BODY ? 3.f : 2.f;
         rw->push(LitRenderable(s));
     }
