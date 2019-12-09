@@ -2,20 +2,19 @@
 
 #include "../vehicle_data.h"
 
-class VSportscar : public VehicleData
+class VStationWagon : public VehicleData
 {
 public:
-    VSportscar()
+    VStationWagon()
     {
-        name = "Sportscar";
-        description = "Small and quick, but has poor traction.";
-        price = 8900;
+        name = "Station Wagon";
+        description = "Not so great.";
+        price = 8000;
         frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        rearWeaponCount = 2;
 
-        loadSceneData("sportscar.Vehicle");
+        loadSceneData("stationwagon.Vehicle");
 
-        // TODO: add upgrade icons
         availableUpgrades = {
             {
                 "Engine",

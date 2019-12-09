@@ -249,7 +249,7 @@ struct PerformanceUpgrade
 
 struct VehicleData
 {
-    SmallVec<VehicleMesh> chassisMeshes;
+    SmallVec<VehicleMesh, 128> chassisMeshes;
     VehicleMesh wheelMeshFront;
     VehicleMesh wheelMeshRear;
 
