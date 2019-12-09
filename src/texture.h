@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "gl.h"
+#include <stb_image.h>
 
 struct Texture
 {
@@ -14,12 +15,32 @@ struct Texture
     Format format = Format::SRGBA8;
     u32 width = 0;
     u32 height = 0;
+    const char* name = "";
 
     GLuint handle = 0;
 
     Texture() {}
-    Texture(u32 width, u32 height, Format format, u8* data, size_t size)
-        : format(format), width(width), height(height)
+    Texture(const char* name, u32 width, u32 height, u8* data, Format format = Format::SRGBA8)
+        : format(format), width(width), height(height), name(name)
+    {
+        initGLTexture(data);
+    }
+
+    Texture(const char* filename, Format format = Format::SRGBA8) : format(format), name(filename)
+    {
+        i32 width, height, channels;
+        u8* data = (u8*)stbi_load(filename, &width, &height, &channels, 4);
+        if (!data)
+        {
+            error("Failed to load image: ", filename, " (", stbi_failure_reason(), ")\n");
+        }
+        this->width = (u32)width;
+        this->height = (u32)height;
+        initGLTexture(data);
+        stbi_image_free(data);
+    }
+
+    void initGLTexture(u8* data)
     {
         GLuint internalFormat, baseFormat;
         switch (format)
@@ -54,7 +75,34 @@ struct Texture
         glTextureParameteri(handle, GL_TEXTURE_MAX_ANISOTROPY, 8);
         glTextureParameterf(handle, GL_TEXTURE_LOD_BIAS, -0.2f);
         glGenerateTextureMipmap(handle);
+
+#ifndef NDEBUG
+        glObjectLabel(GL_TEXTURE, handle, strlen(name), name);
+#endif
     }
+
+    /*
+    Texture(const char* faces[6], u32 width, u32 height, size_t size)
+    {
+        GLuint internalFormat = GL_SRGB8;
+        GLuint baseFormat = GL_RGBA;
+        u32 mipLevels = 1 + (u32)(glm::log2((f32)glm::max(width, height)));
+
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &handle);
+        glTextureStorage2D(handle, mipLevels, internalFormat, width, height);
+        for (u32 i=0; i<6; ++i)
+        {
+            glTextureSubImage3D(handle, 0, 0, 0, i, width, height, 1, baseFormat, GL_UNSIGNED_BYTE, faces[i]);
+        }
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(handle, GL_TEXTURE_MAX_ANISOTROPY, 8);
+        glTextureParameterf(handle, GL_TEXTURE_LOD_BIAS, -0.2f);
+    }
+    */
 
     ~Texture()
     {

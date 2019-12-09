@@ -11,12 +11,12 @@ void registerEntities()
 {
     // DO NOT CHANGE THE ORDER OF THE REGISTERED ENTITIES!!!
     // If the order is changed it will break compatibility with previously saved scenes
-    registerEntity<Terrain>();
-    registerEntity<Track>();
-    registerEntity<StaticMesh>();
-    registerEntity<StaticDecal>();
-    registerEntity<Start>();
-    registerEntity<Tree>();
-    registerEntity<Booster>();
-    registerEntity<Oil>();
+    registerEntity<Terrain>("Terrain");
+    registerEntity<Track>("Track");
+    registerEntity<StaticMesh>("StaticMesh");
+    registerEntity<StaticDecal>("StaticDecal");
+    registerEntity<Start>("Start");
+    registerEntity<Tree>("Tree");
+    registerEntity<Booster>("Booster");
+    registerEntity<Oil>("Oil");
 }

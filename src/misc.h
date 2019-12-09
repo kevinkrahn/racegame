@@ -5,10 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cassert>
-#include <filesystem>
 #include <SDL2/SDL.h>
-
-namespace fs = std::filesystem;
 
 typedef uint8_t  u8;
 typedef uint16_t u16;

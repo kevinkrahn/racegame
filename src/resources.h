@@ -10,6 +10,17 @@
 #include <map>
 #include <string>
 
+constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
+struct Textures
+{
+    Texture white = Texture("white", 1, 1, (u8*)whiteBytes, Texture::Format::RGBA8);
+    Texture sand = Texture("textures/sand.jpg");
+};
+
+struct Meshes
+{
+};
+
 class Resources
 {
 private:

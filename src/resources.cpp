@@ -2,19 +2,9 @@
 #include "renderer.h"
 #include "game.h"
 #include "driver.h"
-#include <stb_image.h>
 
 void Resources::load()
 {
-    // load default texture
-    u8 white[] = { 255, 255, 255, 255 };
-    textures["white"] = Texture(1, 1, Texture::Format::RGBA8, white, sizeof(white));
-
-    for (auto& p : fs::recursive_directory_iterator("."))
-    {
-        if (fs::is_regular_file(p))
-        {
-            std::string ext = p.path().extension().string();
             if (ext == ".dat" || ext == ".txt")
             {
                 print("Loading data file: ", p.path().string(), '\n');
@@ -157,5 +147,10 @@ void Resources::load()
             }
         }
     }
+
+    u8* faces[] = {
+        getTexture("sky_ft")
+    };
+    textures["sky"] = Texture(256, 256, Texture::Format::RGBA8, faces, 256*256*4);
 }
 

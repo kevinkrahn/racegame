@@ -4,6 +4,15 @@
 #include "datafile.h"
 #include <functional>
 
+struct RegisteredEntity
+{
+    u32 entityID;
+    std::function<class Entity*()> create;
+    const char* name;
+};
+
+std::vector<RegisteredEntity> g_entities;
+
 struct ActorUserData
 {
     enum
@@ -36,7 +45,7 @@ public:
     u32 entityFlags = NONE;
 
     void destroy() { entityFlags |= DESTROYED; }
-    bool isDestroyed() { return (entityFlags & DESTROYED) == DESTROYED; }
+    bool isDestroyed() { return entityFlags & DESTROYED; }
     void setPersistent(bool persistent)
     {
         entityFlags = persistent ? (entityFlags | PERSISTENT) : (entityFlags & ~PERSISTENT);
@@ -123,7 +132,7 @@ public:
             }
         }
     }
-    virtual const char* getName() const { return "Unknown Entity"; }
+    const char* getName() const { return g_entities[entityID].name; }
     virtual void showDetails(Scene* scene) {}
 
     ~PlaceableEntity()
@@ -135,19 +144,12 @@ public:
     }
 };
 
-struct RegisteredEntity
-{
-    u32 entityID;
-    std::function<Entity*()> create;
-};
-
-std::vector<RegisteredEntity> g_entities;
-
 template<typename T>
-void registerEntity()
+void registerEntity(const char* name, bool forEditor)
 {
     u32 entityID = (u32)g_entities.size();
     g_entities.push_back({
+        name,
         entityID,
         [entityID] {
             Entity* e = new T();

@@ -19,7 +19,7 @@ project(game)
 add_executable(game src/main.cpp external/glad/glad.c)
 target_compile_definitions(game PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>")
 if(UNIX)
-    target_link_libraries(game general SDL2 GL dl pthread stdc++fs)
+    target_link_libraries(game general SDL2 GL dl pthread)
     foreach(LIB_NAME
         libPhysXCooking_static_64.a
         libPhysXVehicle_static_64.a
