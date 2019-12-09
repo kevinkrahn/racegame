@@ -37,7 +37,7 @@ void main()
 {
     outColor = lighting(texture(texSampler, inTexCoord) * vec4(color, 1.0),
             normalize(inNormal), inShadowCoord, inWorldPosition, 50.0, 0.2, vec3(1.0),
-            -0.1, 0.25, 3.0, vec3(0, 0, 0));
+            -0.1, 0.25, 3.0, vec3(0, 0, 0), 0.0, 0.0);
 }
 
 #elif defined GEOM

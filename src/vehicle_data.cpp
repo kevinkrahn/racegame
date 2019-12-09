@@ -38,6 +38,14 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
     }
 }
 
+u32 meshtype(std::string const& meshName)
+{
+    if (meshName.find("Body") != std::string::npos) return VehicleMesh::BODY;
+    if (meshName.find("Window") != std::string::npos) return VehicleMesh::WINDOW;
+    if (meshName.find("CarbonFiber") != std::string::npos) return VehicleMesh::CARBON_FIBER;
+    return VehicleMesh::PLASTIC;
+}
+
 void VehicleData::loadSceneData(const char* sceneName)
 {
     DataFile::Value::Dict& scene = g_res.getScene(sceneName);
@@ -65,7 +73,7 @@ void VehicleData::loadSceneData(const char* sceneName)
                 mesh,
                 transform,
                 shape,
-                name.find("Body") != std::string::npos
+                meshtype(name)
             });
         }
         else if (name.find("Chassis") != std::string::npos)
@@ -74,7 +82,7 @@ void VehicleData::loadSceneData(const char* sceneName)
                 g_res.getMesh(e["data_name"].string().c_str()),
                 transform,
                 nullptr,
-                name.find("Body") != std::string::npos
+                meshtype(name)
             });
         }
         if (name.find("FL") != std::string::npos)
@@ -145,9 +153,16 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         s.mesh = m.mesh;
         s.worldTransform = transform * m.transform;
         s.texture = nullptr;
-        s.color = m.isBody ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
-        s.specularStrength = m.isBody ? 0.15f : 0.3f;
-        s.specularPower = m.isBody ? 20.f : 200.f;
+        s.color = m.type == VehicleMesh::BODY ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
+        if (m.type == VehicleMesh::WINDOW)
+        {
+            s.color = glm::vec3(0.f);
+        }
+        s.specularStrength = m.type == VehicleMesh::BODY ? 0.15f : 0.3f;
+        s.specularPower = m.type == VehicleMesh::BODY ? 20.f : 200.f;
+        s.reflectionStrength = m.type == VehicleMesh::BODY ? 0.12f :
+            (m.type == VehicleMesh::WINDOW ? 0.25f : 0.f);
+        s.reflectionLod = m.type == VehicleMesh::BODY ? 3.f : 2.f;
         rw->push(LitRenderable(s));
     }
 
@@ -183,9 +198,9 @@ void VehicleData::renderDebris(RenderWorld* rw,
         s.mesh = d.meshInfo->mesh;
         s.worldTransform = convert(d.rigidBody->getGlobalPose());
         s.texture = nullptr;
-        s.color = d.meshInfo->isBody ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
-        s.specularStrength = d.meshInfo->isBody ? 0.15f : 0.3f;
-        s.specularPower = d.meshInfo->isBody ? 20.f : 200.f;
+        s.color = d.meshInfo->type == VehicleMesh::BODY ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
+        s.specularStrength = d.meshInfo->type == VehicleMesh::BODY ? 0.15f : 0.3f;
+        s.specularPower = d.meshInfo->type == VehicleMesh::BODY ? 20.f : 200.f;
         rw->push(LitRenderable(s));
     }
 }

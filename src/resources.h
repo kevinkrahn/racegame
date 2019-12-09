@@ -84,6 +84,15 @@ struct Textures
     Texture decal_grunge3 = Texture("textures/decals/grunge3.png");
     Texture decal_patch1 = Texture("textures/decals/patch1.png");
     Texture decal_sand = Texture("textures/decals/sand.png");
+
+    Texture sky_cubemap = Texture({
+        "textures/sky/sky_ft.png",
+        "textures/sky/sky_bk.png",
+        "textures/sky/sky_lf.png",
+        "textures/sky/sky_rt.png",
+        "textures/sky/sky_up.png",
+        "textures/sky/sky_dn.png"
+    });
 };
 
 struct Sounds

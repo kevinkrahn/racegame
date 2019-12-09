@@ -239,6 +239,7 @@ void Renderer::initShaders()
     }
     shaderPrograms.clear();
 
+    //loadShader("cubemap_test");
     loadShader("bloom_filter");
     loadShader("blit");
     loadShader("blit2");
@@ -980,6 +981,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     // color pass
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Main Color Pass");
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+    glBindTextureUnit(1, g_res.textures->sky_cubemap.handle);
     glBindTextureUnit(3, g_res.textures->cloud_shadow.handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 #if 0
@@ -997,6 +999,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
         r.renderable->onLitPass(renderer);
         prevPriority = r.priority;
     }
+
 	glPopDebugGroup();
 
     // resolve multi-sample color buffer

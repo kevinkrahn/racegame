@@ -1,3 +1,4 @@
+layout(binding = 1) uniform samplerCube cubemapSampler;
 layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
 layout(binding = 3) uniform sampler2D cloudShadowTexture;
 layout(binding = 4) uniform sampler2DArray ssaoTexture;
@@ -47,7 +48,8 @@ float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float
 
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float specularPower, float specularStrength, vec3 specularColor,
-        float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit)
+        float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit,
+        float reflectionStrength, float reflectionLod)
 {
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
@@ -98,6 +100,10 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 #endif
     color.rgb = mix(color.rgb, fogColor, fogIntensity);
 #endif
+
+    vec3 I = normalize(worldPosition - cameraPosition[gl_Layer]);
+    vec3 R = reflect(I, normalize(normal));
+    color.rgb += textureLod(cubemapSampler, R, reflectionLod).rgb * reflectionStrength * max(shadow, 0.5);;
 
     color.rgb += emit;
 

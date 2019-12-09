@@ -33,7 +33,14 @@ struct VehicleMesh
     Mesh* mesh;
     glm::mat4 transform;
     PxShape* collisionShape;
-    bool isBody;
+    enum Material {
+        BODY,
+        WINDOW,
+        RUBBER,
+        CARBON_FIBER,
+        PLASTIC
+    };
+    u32 type;
 };
 
 struct VehicleDebris

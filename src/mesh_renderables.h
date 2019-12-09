@@ -21,6 +21,8 @@ struct LitSettings
     bool castShadow = true;
     bool transparent = false;
     f32 minAlpha = 0.f;
+    f32 reflectionStrength = 0.f;
+    f32 reflectionLod = 1.f;
 };
 
 class LitRenderable : public Renderable
@@ -134,6 +136,7 @@ public:
         glUniform3f(4, settings.specularPower, settings.specularStrength, 0.f);
         glUniform1f(5, settings.minAlpha);
         glUniform3fv(6, 1, (GLfloat*)&settings.emit);
+        glUniform2f(7, settings.reflectionStrength, settings.reflectionLod);
 
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);

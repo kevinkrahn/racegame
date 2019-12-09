@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "gl.h"
+#include "smallvec.h"
 #include <stb_image.h>
 
 struct Texture
@@ -81,28 +82,43 @@ struct Texture
 #endif
     }
 
-    /*
-    Texture(const char* faces[6], u32 width, u32 height, size_t size)
+    Texture(SmallVec<const char*> faces)
     {
+        assert(faces.size() == 6);
+
+        u8* faceData[6];
+        for (u32 i=0; i<6; ++i)
+        {
+            i32 width, height, channels;
+            faceData[i] = (u8*)stbi_load(faces[i], &width, &height, &channels, 4);
+            if (!faceData[i])
+            {
+                error("Failed to load image: ", faces[i], " (", stbi_failure_reason(), ")\n");
+            }
+            this->width = (u32)width;
+            this->height = (u32)height;
+        }
+
+        u32 mipLevels = 1 + (u32)(glm::log2((f32)glm::max(width, height)));
         GLuint internalFormat = GL_SRGB8;
         GLuint baseFormat = GL_RGBA;
-        u32 mipLevels = 1 + (u32)(glm::log2((f32)glm::max(width, height)));
 
         glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &handle);
         glTextureStorage2D(handle, mipLevels, internalFormat, width, height);
         for (u32 i=0; i<6; ++i)
         {
-            glTextureSubImage3D(handle, 0, 0, 0, i, width, height, 1, baseFormat, GL_UNSIGNED_BYTE, faces[i]);
+            glTextureSubImage3D(handle, 0, 0, 0, i, width, height, 1,
+                    baseFormat, GL_UNSIGNED_BYTE, faceData[i]);
+            stbi_image_free(faceData[i]);
         }
         glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTextureParameteri(handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTextureParameteri(handle, GL_TEXTURE_MAX_ANISOTROPY, 8);
-        glTextureParameterf(handle, GL_TEXTURE_LOD_BIAS, -0.2f);
+        glGenerateTextureMipmap(handle);
     }
-    */
 
     ~Texture()
     {

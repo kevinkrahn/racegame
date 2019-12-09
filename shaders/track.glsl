@@ -47,7 +47,7 @@ void main()
     //vec4 baseColor = tex * vec4(inColor, 1.0);
     vec4 baseColor = tex;
     outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
-            70.0, 0.2, vec3(1.0), -0.13, 0.18, 3.0, vec3(0, 0, 0));
+            70.0, 0.2, vec3(1.0), -0.13, 0.18, 3.0, vec3(0, 0, 0), 0.0, 0.0);
 }
 
 #elif defined GEOM

@@ -18,9 +18,9 @@ layout(location = 3) out vec3 outWorldPosition;
 void main()
 {
     outColor = attrColor;
-    outNormal = normalize(normalMatrix * attrNormal);
+    outNormal = attrNormal;
     outTexCoord = attrTexCoord;
-    outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
+    outWorldPosition = attrPosition;
 }
 
 #elif defined FRAG
@@ -35,25 +35,13 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) in vec3 inWorldPosition;
 layout(location = 4) in vec3 inShadowCoord;
 
-layout(location = 2) uniform vec3 color;
-layout(location = 3) uniform vec3 fresnel; // x: bias, y: scale, z: power
-layout(location = 4) uniform vec3 specular; // x: power, y: strength
-layout(location = 5) uniform float minAlpha;
-layout(location = 6) uniform vec3 emit;
-layout(location = 7) uniform vec2 reflection;
-
-layout(binding = 0) uniform sampler2D texSampler;
+layout(binding = 0) uniform samplerCube cubemapSampler;
 
 void main()
 {
-    vec4 tex = texture(texSampler, inTexCoord);
-#if defined ALPHA_DISCARD
-    if (tex.a < minAlpha) { discard; }
-#else
-    outColor = lighting(tex * vec4(inColor * color, 1.0),
-            normalize(inNormal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
-            fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y);
-#endif
+    vec3 I = normalize(inWorldPosition - cameraPosition[gl_Layer]);
+    vec3 R = reflect(I, normalize(inNormal));
+    outColor = texture(cubemapSampler, R);
 }
 
 #elif defined GEOM
@@ -77,7 +65,7 @@ void main()
     for (uint i=0; i<3; ++i)
     {
         gl_Layer = gl_InvocationID;
-        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
+        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i] * 1.f, 1.0);
         outColor = inColor[i];
         outNormal = inNormal[i];
         outTexCoord = inTexCoord[i];
