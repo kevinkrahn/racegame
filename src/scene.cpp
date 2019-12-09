@@ -198,6 +198,7 @@ void Scene::stopRace()
     readyToGo = false;
     allPlayersFinished = false;
     finishTimer = 0.f;
+    smoke.clear();
 
     for (auto& e : entities)
     {

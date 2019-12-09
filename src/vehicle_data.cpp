@@ -205,6 +205,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "vehicles/racecar.h"
 #include "vehicles/truck.h"
 #include "vehicles/stationwagon.h"
+#include "vehicles/coolcar.h"
 
 void initializeVehicleData()
 {
@@ -221,6 +222,7 @@ void initializeVehicleData()
     registerVehicle<VMini>();
     registerVehicle<VSportscar>();
     registerVehicle<VStationWagon>();
+    registerVehicle<VCoolCar>();
     registerVehicle<VTruck>();
     registerVehicle<VRacecar>();
 

@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "track_graph.h"
+#include "nodemap.h"
 #include "entity.h"
 #include "ribbon.h"
 #include "smoke_particles.h"
@@ -64,7 +65,6 @@ private:
     glm::vec3 debugCameraPosition;
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
-    TrackGraph trackGraph;
     u32 totalLaps = 4;
     glm::vec3 trackPreviewCameraFrom = { 0, 0, 0 };
     glm::vec3 trackPreviewCameraTarget = { 0, 0, 0 };
@@ -74,6 +74,8 @@ private:
     f64 worldTime = 0.0;
     bool readyToGo = false;
     u32 numHumanDrivers = 0;
+    TrackGraph trackGraph;
+    NodeMap nodeMap;
 
     bool allPlayersFinished = false;
     f32 finishTimer = 0.f;
@@ -140,6 +142,7 @@ public:
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
+    NodeMap const& getNodeMap() const { return nodeMap; }
     u32 getTotalLaps() const { return totalLaps; }
     bool canGo() const { return readyToGo; }
 

@@ -60,6 +60,7 @@ public:
 
     i32 getPriority() const override { return 10000; }
     void update(f32 deltaTime);
+    void clear() { particles.clear(); }
     void onLitPass(Renderer* renderer) override;
 
     std::string getDebugString() const override { return "SmokeParticles"; }

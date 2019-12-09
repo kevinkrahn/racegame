@@ -12,6 +12,8 @@
 - Allow setting the number of laps for a race in the editor
 - Add collectables on the track
 - Make better vehicle paint shader (maybe do reflections)
+- Get rid of GLM because it makes compile times so long
+- Add better rocket booster flame effect
 
 - Ideas:
     - Weapon that drops bouncing explosive balls from the back of the vehicle

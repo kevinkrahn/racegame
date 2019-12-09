@@ -332,6 +332,10 @@ void Driver::aiUpgrades(RandomSeries& series)
                 case ARMOR:
                 {
                     auto upgrade = c.getUpgrade(ARMOR_INDEX);
+                    if (!upgrade)
+                    {
+                        break;
+                    }
                     u32 upgradeLevel = upgrade ? upgrade->upgradeIndex + 1 : 1;
                     if (upgradeLevel >= upgradeChoice.upgradeLevel)
                     {
@@ -355,6 +359,10 @@ void Driver::aiUpgrades(RandomSeries& series)
                 case ENGINE:
                 {
                     auto upgrade = c.getUpgrade(ENGINE_INDEX);
+                    if (!upgrade)
+                    {
+                        break;
+                    }
                     u32 upgradeLevel = upgrade ? upgrade->upgradeLevel + 1 : 1;
                     if (upgradeLevel >= upgradeChoice.upgradeLevel)
                     {
@@ -378,6 +386,10 @@ void Driver::aiUpgrades(RandomSeries& series)
                 case TIRES:
                 {
                     auto upgrade = c.getUpgrade(TIRES_INDEX);
+                    if (!upgrade)
+                    {
+                        break;
+                    }
                     u32 upgradeLevel = upgrade ? upgrade->upgradeLevel + 1 : 1;
                     if (upgradeLevel >= upgradeChoice.upgradeLevel)
                     {

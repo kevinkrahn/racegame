@@ -95,15 +95,15 @@ public:
 
         tuning.suspensionMaxCompression = 0.15f;
         tuning.suspensionMaxDroop = 0.25f;
-        tuning.suspensionSpringStrength = 28000.f;
+        tuning.suspensionSpringStrength = 26000.f;
         tuning.suspensionSpringDamperRate = 5000.f;
 
         tuning.camberAngleAtRest = -0.07f;
         tuning.camberAngleAtMaxDroop = 0.f;
         tuning.camberAngleAtMaxCompression = -0.13f;
 
-        tuning.frontAntiRollbarStiffness = 7000.f;
-        tuning.rearAntiRollbarStiffness = 7000.f;
+        tuning.frontAntiRollbarStiffness = 6500.f;
+        tuning.rearAntiRollbarStiffness = 6500.f;
         tuning.ackermannAccuracy = 0.5f;
         tuning.centerOfMass = { 0.09f, 0.f, -0.6f };
 
