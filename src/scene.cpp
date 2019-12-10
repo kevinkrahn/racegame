@@ -206,6 +206,10 @@ void Scene::stopRace()
         {
             e->destroy();
         }
+        else if (e->entityFlags & Entity::DYNAMIC)
+        {
+            ((PlaceableEntity*)e.get())->updateTransform(this);
+        }
     }
 }
 
@@ -287,8 +291,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
 
         // TODO: Use PhysX scratch buffer to reduce allocations
-        physicsScene->simulate(deltaTime);
-        physicsScene->fetchResults(true);
+        if (isRaceInProgress)
+        {
+            physicsScene->simulate(deltaTime);
+            physicsScene->fetchResults(true);
+        }
 
         // update vehicles
         for (u32 i=0; i<vehicles.size(); ++i)

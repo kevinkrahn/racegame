@@ -1809,12 +1809,12 @@ void Vehicle::blowUp()
         PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
                 PxTransform(convert(transform * d.transform)));
         body->attachShape(*d.collisionShape);
-        PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+        PxRigidBodyExt::updateMassAndInertia(*body, 10.f);
         scene->getPhysicsScene()->addActor(*body);
         body->setLinearVelocity(
                 convert(previousVelocity) +
                 convert(glm::vec3(glm::normalize(rotationOf(transform)
-                            * glm::vec4(translationOf(d.transform), 1.0)))
+                            * glm::vec4(translationOf(d.transform), 1.f)))
                     * random(scene->randomSeries, 3.f, 14.f) + glm::vec3(0, 0, 9.f)));
         body->setAngularVelocity(PxVec3(
                     random(scene->randomSeries, 0.f, 9.f),

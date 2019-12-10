@@ -13,6 +13,7 @@
 #include "entities/tree.h"
 #include "entities/booster.h"
 #include "entities/oil.h"
+#include "entities/barrel.h"
 #include <functional>
 
 struct EntityType
@@ -37,6 +38,7 @@ std::vector<EntityType> entityTypes = {
     { "Right Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(2, p); } },
     { "Booster", fn { return ((Booster*)(g_entities[6].create()))->setup(p); } },
     { "Oil Spill", fn { return ((Oil*)(g_entities[7].create()))->setup(p); } },
+    { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
 };
 
 #undef fn

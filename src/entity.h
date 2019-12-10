@@ -41,6 +41,7 @@ public:
         NONE = 0,
         DESTROYED = 1,
         PERSISTENT = 1 << 1,
+        DYNAMIC = 1 << 2,
     };
     u32 entityFlags = NONE;
 

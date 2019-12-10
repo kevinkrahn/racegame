@@ -14,9 +14,9 @@
 - Make better vehicle paint shader (maybe do reflections)
 - Get rid of GLM because it makes compile times so long
 - Add better rocket booster flame effect
+- Attenuate reflections with fresnel
 
 - Ideas:
     - Weapon that drops bouncing explosive balls from the back of the vehicle
     - Missile rack on back of truck
-    - Weapon that shoots projectiles that bounce off walls and continue on
     - Vehicle upgrade with visual properties, like a spoiler for downforce, or visual armour

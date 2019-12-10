@@ -6,6 +6,7 @@
 #include "tree.h"
 #include "booster.h"
 #include "oil.h"
+#include "barrel.h"
 
 void registerEntities()
 {
@@ -13,10 +14,11 @@ void registerEntities()
     // If the order is changed it will break compatibility with previously saved scenes
     registerEntity<Terrain>("Terrain");
     registerEntity<Track>("Track");
-    registerEntity<StaticMesh>("StaticMesh");
-    registerEntity<StaticDecal>("StaticDecal");
+    registerEntity<StaticMesh>("Static Mesh");
+    registerEntity<StaticDecal>("Static Decal");
     registerEntity<Start>("Track Start");
     registerEntity<Tree>("Tree");
     registerEntity<Booster>("Booster");
     registerEntity<Oil>("Oil");
+    registerEntity<WaterBarrel>("Water Barrel");
 }

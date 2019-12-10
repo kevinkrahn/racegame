@@ -145,6 +145,7 @@ const char* dataFiles[] = {
     "models/rock.dat",
     "models/tree.dat",
     "models/world.dat",
+    "models/barrel.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",
