@@ -282,6 +282,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "vehicles/truck.h"
 #include "vehicles/stationwagon.h"
 #include "vehicles/coolcar.h"
+#include "vehicles/muscle.h"
 
 void initializeVehicleData()
 {
@@ -299,6 +300,7 @@ void initializeVehicleData()
     registerVehicle<VSportscar>();
     registerVehicle<VStationWagon>();
     registerVehicle<VCoolCar>();
+    registerVehicle<VMuscle>();
     registerVehicle<VTruck>();
     registerVehicle<VRacecar>();
 

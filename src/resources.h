@@ -149,6 +149,7 @@ const char* dataFiles[] = {
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",
+    "models/vehicles/muscle.dat",
     "models/vehicles/racecar.dat",
     "models/vehicles/sportscar.dat",
     "models/vehicles/stationwagon.dat",
