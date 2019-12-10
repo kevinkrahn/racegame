@@ -102,7 +102,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 #endif
 
     vec3 I = normalize(worldPosition - cameraPosition[gl_Layer]);
-    vec3 R = reflect(I, normalize(normal));
+    vec3 R = reflect(I, normal);
     color.rgb += textureLod(cubemapSampler, R, reflectionLod).rgb * reflectionStrength * max(shadow, 0.1);
 
     color.rgb += emit;
