@@ -42,7 +42,9 @@ u32 meshtype(std::string const& meshName)
 {
     if (meshName.find("Body") != std::string::npos) return VehicleMesh::BODY;
     if (meshName.find("Window") != std::string::npos) return VehicleMesh::WINDOW;
+    if (meshName.find("Rubber") != std::string::npos) return VehicleMesh::RUBBER;
     if (meshName.find("CarbonFiber") != std::string::npos) return VehicleMesh::CARBON_FIBER;
+    if (meshName.find("Chrome") != std::string::npos) return VehicleMesh::CHROME;
     return VehicleMesh::PLASTIC;
 }
 
@@ -87,30 +89,46 @@ void VehicleData::loadSceneData(const char* sceneName)
         }
         if (name.find("FL") != std::string::npos)
         {
-            wheelMeshFront = {
+            wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
                 g_res.getMesh(e["data_name"].string().c_str()),
-                glm::scale(glm::mat4(1.f), scaleOf(transform))
-            };
-            frontWheelMeshRadius = e["bound_z"].real() * 0.5f;
-            frontWheelMeshWidth = e["bound_y"].real();
+                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                nullptr,
+                meshtype(name)
+            });
+            frontWheelMeshRadius = glm::max(frontWheelMeshRadius, e["bound_z"].real() * 0.5f);
+            frontWheelMeshWidth = glm::max(frontWheelMeshWidth, e["bound_y"].real());
             wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name.find("RL") != std::string::npos)
         {
-            wheelMeshRear = {
+            wheelMeshes[WHEEL_REAR_RIGHT].push_back({
                 g_res.getMesh(e["data_name"].string().c_str()),
-                glm::scale(glm::mat4(1.f), scaleOf(transform))
-            };
-            rearWheelMeshRadius = e["bound_z"].real() * 0.5f;
-            rearWheelMeshWidth = e["bound_y"].real();
+                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                nullptr,
+                meshtype(name)
+            });
+            rearWheelMeshRadius = glm::max(rearWheelMeshRadius, e["bound_z"].real() * 0.5f);
+            rearWheelMeshWidth = glm::max(rearWheelMeshWidth, e["bound_y"].real());
             wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name.find("FR") != std::string::npos)
         {
+            wheelMeshes[WHEEL_FRONT_LEFT].push_back({
+                g_res.getMesh(e["data_name"].string().c_str()),
+                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                nullptr,
+                meshtype(name)
+            });
             wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
         }
         else if (name.find("RR") != std::string::npos)
         {
+            wheelMeshes[WHEEL_REAR_LEFT].push_back({
+                g_res.getMesh(e["data_name"].string().c_str()),
+                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                nullptr,
+                meshtype(name)
+            });
             wheelPositions[WHEEL_REAR_LEFT] = transform[3];
         }
         else if (name.find("Collision") != std::string::npos)
@@ -144,6 +162,55 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
     tuning.collisionMeshes = collisionMeshes;
 }
 
+void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
+{
+    switch (type)
+    {
+        case VehicleMesh::BODY:
+            s.color = g_vehicleColors[config.colorIndex];
+            s.specularStrength = 0.15f;
+            s.specularPower = 100.f;
+            s.reflectionStrength = 0.1f;
+            s.reflectionLod = 3.f;
+            break;
+        case VehicleMesh::CARBON_FIBER:
+            s.color = { 0.1f, 0.1f, 0.1f };
+            break;
+        case VehicleMesh::CHROME:
+            s.specularStrength = 0.3f;
+            s.specularPower = 500.f;
+            s.reflectionStrength = 0.9f;
+            s.reflectionLod = 1.f;
+            s.color = glm::vec3(0.2f);
+            break;
+        case VehicleMesh::WINDOW:
+            s.color = { 0.f, 0.f, 0.f };
+            s.specularStrength = 0.3f;
+            s.specularPower = 700.f;
+            s.reflectionStrength = 0.2f;
+            s.reflectionLod = 2.f;
+            break;
+        case VehicleMesh::RUBBER:
+            s.color = { 0.08f, 0.08f, 0.08f };
+            s.specularStrength = 0.2f;
+            s.specularPower = 20.f;
+            break;
+        case VehicleMesh::PLASTIC:
+            s.color = { 0.08f, 0.08f, 0.08f };
+            s.specularStrength = 0.1f;
+            s.specularPower = 120.f;
+            s.reflectionStrength = 0.08f;
+            s.reflectionLod = 4.f;
+            break;
+        default:
+            s.reflectionStrength = 0.f;
+            s.specularStrength = 0.15f;
+            s.specularPower = 100.f;
+            s.color = { 1.f, 1.f, 1.f };
+            break;
+    }
+}
+
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, VehicleConfiguration const& config)
 {
@@ -152,17 +219,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         LitSettings s;
         s.mesh = m.mesh;
         s.worldTransform = transform * m.transform;
-        s.texture = nullptr;
-        s.color = m.type == VehicleMesh::BODY ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
-        if (m.type == VehicleMesh::WINDOW)
-        {
-            s.color = glm::vec3(0.f);
-        }
-        s.specularStrength = m.type == VehicleMesh::BODY ? 0.15f : 0.3f;
-        s.specularPower = m.type == VehicleMesh::BODY ? 100.f : 500.f;
-        s.reflectionStrength = m.type == VehicleMesh::BODY ? 0.1f :
-            (m.type == VehicleMesh::WINDOW ? 0.2f : 0.f);
-        s.reflectionLod = m.type == VehicleMesh::BODY ? 3.f : 2.f;
+        meshMaterial(m.type, s, config);
         rw->push(LitRenderable(s));
     }
 
@@ -184,8 +241,15 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         {
             wheelTransform = glm::rotate(wheelTransform, PI, glm::vec3(0, 0, 1));
         }
-        auto& mesh = i < 2 ? wheelMeshFront : wheelMeshRear;
-        rw->push(LitRenderable(mesh.mesh, wheelTransform * mesh.transform, nullptr));
+
+        for (auto& m : wheelMeshes[i])
+        {
+            LitSettings s;
+            s.mesh = m.mesh;
+            s.worldTransform = wheelTransform * m.transform;
+            meshMaterial(m.type, s, config);
+            rw->push(LitRenderable(s));
+        }
     }
 }
 
@@ -197,13 +261,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         LitSettings s;
         s.mesh = d.meshInfo->mesh;
         s.worldTransform = convert(d.rigidBody->getGlobalPose());
-        s.texture = nullptr;
-        s.color = d.meshInfo->type == VehicleMesh::BODY ? g_vehicleColors[config.colorIndex] : glm::vec3(1.f);
-        s.specularStrength = d.meshInfo->type == VehicleMesh::BODY ? 0.15f : 0.3f;
-        s.specularPower = d.meshInfo->type == VehicleMesh::BODY ? 100.f : 500.f;
-        s.reflectionStrength = d.meshInfo->type == VehicleMesh::BODY ? 0.1f :
-            (d.meshInfo->type == VehicleMesh::WINDOW ? 0.2f : 0.f);
-        s.reflectionLod = d.meshInfo->type == VehicleMesh::BODY ? 3.f : 2.f;
+        meshMaterial(d.meshInfo->type, s, config);
         rw->push(LitRenderable(s));
     }
 }

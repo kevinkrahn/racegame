@@ -38,7 +38,8 @@ struct VehicleMesh
         WINDOW,
         RUBBER,
         CARBON_FIBER,
-        PLASTIC
+        PLASTIC,
+        CHROME
     };
     u32 type;
 };
@@ -257,8 +258,7 @@ struct PerformanceUpgrade
 struct VehicleData
 {
     std::vector<VehicleMesh> chassisMeshes;
-    VehicleMesh wheelMeshFront;
-    VehicleMesh wheelMeshRear;
+    SmallVec<VehicleMesh> wheelMeshes[NUM_WHEELS];
 
     glm::vec3 wheelPositions[NUM_WHEELS] = {};
     f32 frontWheelMeshRadius = 0.f;
