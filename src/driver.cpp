@@ -139,6 +139,7 @@ void Driver::aiUpgrades(RandomSeries& series)
     VehicleConfiguration& c = *getVehicleConfig();
     while (!allDone)
     {
+        bool boughtSomething = false;
         for (auto& upgradeChoice : upgradeChoices)
         {
             bool restart = false;
@@ -169,6 +170,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             c.frontWeaponIndices[0] = index;
                             ++c.frontWeaponUpgradeLevel[0];
                             restart = true;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -197,6 +199,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             c.frontWeaponIndices[1] = index;
                             ++c.frontWeaponUpgradeLevel[1];
                             restart = true;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -225,6 +228,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             c.frontWeaponIndices[2] = index;
                             ++c.frontWeaponUpgradeLevel[2];
                             restart = true;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -253,6 +257,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             c.rearWeaponIndices[0] = index;
                             ++c.rearWeaponUpgradeLevel[0];
                             restart = true;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -281,6 +286,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             c.rearWeaponIndices[1] = index;
                             ++c.rearWeaponUpgradeLevel[1];
                             restart = true;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -309,6 +315,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             c.rearWeaponIndices[2] = index;
                             ++c.rearWeaponUpgradeLevel[2];
                             restart = true;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -326,6 +333,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             print(playerName, " bought special ability ", g_weapons[index].info.name, '\n');
                             credits -= g_weapons[index].info.price;
                             c.specialAbilityIndex = index;
+                            boughtSomething = true;
                         }
                     }
                 } break;
@@ -354,6 +362,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                         credits -= price;
                         c.addUpgrade(ARMOR_INDEX);
                         restart = true;
+                        boughtSomething = true;
                     }
                 } break;
                 case ENGINE:
@@ -381,6 +390,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                         credits -= price;
                         c.addUpgrade(ENGINE_INDEX);
                         restart = true;
+                        boughtSomething = true;
                     }
                 } break;
                 case TIRES:
@@ -408,6 +418,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                         credits -= price;
                         c.addUpgrade(TIRES_INDEX);
                         restart = true;
+                        boughtSomething = true;
                     }
                 } break;
                 case MISC_PERFORMANCE:
@@ -440,6 +451,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                             credits -= price;
                             c.addUpgrade(i);
                             restart = true;
+                            boughtSomething = true;
                             break;
                         }
                     }
@@ -449,6 +461,10 @@ void Driver::aiUpgrades(RandomSeries& series)
             {
                 break;
             }
+        }
+        if (!boughtSomething)
+        {
+            break;
         }
     }
 }

@@ -27,7 +27,7 @@ struct Texture
         initGLTexture(data);
     }
 
-    Texture(const char* filename, Format format = Format::SRGBA8, bool repeat=true) : format(format), name(filename)
+    Texture(const char* filename, bool repeat=true, Format format = Format::SRGBA8) : format(format), name(filename)
     {
         i32 width, height, channels;
         u8* data = (u8*)stbi_load(filename, &width, &height, &channels, 4);
@@ -37,7 +37,7 @@ struct Texture
         }
         this->width = (u32)width;
         this->height = (u32)height;
-        initGLTexture(data);
+        initGLTexture(data, repeat);
         stbi_image_free(data);
     }
 
