@@ -317,3 +317,8 @@ inline f32 nonZeroOrDefault(f32 val, f32 defaultVal)
 {
     return val != 0.f ? val : defaultVal;
 }
+
+inline glm::vec3 srgb(f32 r, f32 g, f32 b)
+{
+    return glm::vec3(glm::pow(r, 2.2f), glm::pow(g, 2.2f), glm::pow(b, 2.2f));
+}

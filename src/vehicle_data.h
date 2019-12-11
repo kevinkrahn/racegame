@@ -137,28 +137,57 @@ struct VehicleTuning
 };
 
 glm::vec3 g_vehicleColors[] = {
-    { 0.9f, 0.9f, 0.9f },
-    { 0.7f, 0.01f, 0.01f },
-    { 0.02f, 0.02f, 0.02f },
-    { 0.01f, 0.8f, 0.01f },
-    { 0.01f, 0.01f, 0.8f },
-    { 0.8f, 0.01f, 0.8f },
-    { 0.01f, 0.8f, 0.8f },
-    { 0.5f, 0.2f, 0.8f },
-    { 0.9f, 0.01f, 0.5f },
-    { 0.02f, 0.7f, 0.1f },
-    { 0.9f, 0.45f, 0.01f },
+    srgb(0.91f, 0.91f, 0.91f), // white
+    srgb(0.75f, 0.01f, 0.01f), // red
+    srgb(0.03f, 0.03f, 0.03f), // black
+    srgb(0.01f, 0.75f, 0.01f), // green
+    srgb(0.01f, 0.01f, 0.85f), // blue
+    srgb(0.95f, 0.47f, 0.02f), // orange
+    srgb(0.05f, 0.22f, 0.07f), // dark green
+    srgb(0.01f, 0.01f, 0.3f), // dark blue
+    srgb(0.78f, 0.01f, 0.78f), // magenta
+    srgb(0.01f, 0.7f, 0.8f), // aruba
+    srgb(0.9f, 0.9f, 0.f), // yellow
+    srgb(0.42f, 0.015f, 0.015f), // maroon
+    srgb(0.66f, 0.47f, 0.27f), // light brown
+    srgb(0.2f, 0.1f, 0.06f), // dark brown
 };
 
-std::string g_vehicleColorNames[] = {
-    "White", "Red", "Black", "Green", "Blue", "Something0",
-    "Something1", "Something2", "Something3",
-    "Something4", "Orange"
+std::string g_vehicleColorNames[ARRAY_SIZE(g_vehicleColors)] = {
+    "White",
+    "Red",
+    "Black",
+    "Green",
+    "Blue",
+    "Orange",
+    "Dark Green",
+    "Dark Blue",
+    "Magenta",
+    "Aruba",
+    "Yellow",
+    "Maroon",
+    "Light Brown",
+    "Dark Brown",
+};
+
+enum struct PaintType : i32
+{
+    METALLIC,
+    DULL,
+    MATTE,
+    MAX
+};
+
+std::string g_paintTypeNames[(i32)PaintType::MAX] = {
+    "Metallic",
+    "Dull",
+    "Matte"
 };
 
 struct VehicleConfiguration
 {
     i32 colorIndex = 0;
+    i32 paintTypeIndex = 0;
 
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
@@ -181,6 +210,7 @@ struct VehicleConfiguration
     {
         DataFile::Value data = DataFile::makeDict();
         data["colorIndex"] = DataFile::makeInteger(colorIndex);
+        data["paintTypeIndex"] = DataFile::makeInteger(paintTypeIndex);
         data["frontWeapon0"] = DataFile::makeInteger(frontWeaponIndices[0]);
         data["frontWeapon1"] = DataFile::makeInteger(frontWeaponIndices[1]);
         data["frontWeapon2"] = DataFile::makeInteger(frontWeaponIndices[2]);
@@ -208,6 +238,7 @@ struct VehicleConfiguration
     void deserialize(DataFile::Value& data)
     {
         colorIndex = (i32)data["colorIndex"].integer();
+        paintTypeIndex = (i32)data["paintTypeIndex"].integer(0);
         frontWeaponIndices[0] = (i32)data["frontWeapon0"].integer();
         frontWeaponIndices[1] = (i32)data["frontWeapon1"].integer();
         frontWeaponIndices[2] = (i32)data["frontWeapon2"].integer();

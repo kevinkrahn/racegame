@@ -29,6 +29,7 @@ struct Textures
     Texture desert_stone = Texture("textures/desert_stone.jpg");
     Texture flare = Texture("textures/flare.png");
     Texture flash = Texture("textures/flash.png");
+    Texture wood = Texture("textures/wood.jpg");
     Texture grass = Texture("textures/grass.jpg");
     Texture iconbg = Texture("textures/iconbg.png");
     Texture lava = Texture("textures/lava.jpg");

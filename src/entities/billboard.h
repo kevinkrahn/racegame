@@ -96,7 +96,7 @@ public:
         wood.settings.texture = &g_res.textures->thing;
         wood.settings.specularStrength = 0.05f;
         wood.settings.specularPower = 10.f;
-        wood.settings.texture = &g_res.textures->bark; // TODO: use a wood texture
+        wood.settings.texture = &g_res.textures->wood;
     }
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override

@@ -110,6 +110,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     color.rgb += emit;
 
     //color.rgb = vec3(getFresnel(normal, worldPosition, 0.2, 1.0, 1.5));
+    //color.rgb = textureLod(cubemapSampler, R, reflectionLod).rgb;
 
     return color;
 }

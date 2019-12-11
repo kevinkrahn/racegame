@@ -120,8 +120,13 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     settings.texture = &g_res.textures->white;
     settings.worldTransform = transform;
     rw->push(LitRenderable(settings));
+
     settings.mesh = meshLights;
+    settings.color = glm::vec3(0.8f);
+    settings.reflectionStrength = 0.4f;
+    settings.reflectionBias = 0.1f;
     rw->push(LitRenderable(settings));
+
     rw->add(&finishLineDecal);
 }
 

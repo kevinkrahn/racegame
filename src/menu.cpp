@@ -416,7 +416,8 @@ void Menu::championshipGarage()
         {
             driver.vehicleIndex = -1;
             vehicleConfig = VehicleConfiguration{};
-            vehicleConfig.colorIndex = 0;
+            RandomSeries s{(u32)currentVehicleIndex};
+            vehicleConfig.colorIndex = irandom(s, 0, g_vehicles.size());
         }
 
         messageStr = vehicleData->description;
@@ -504,6 +505,8 @@ void Menu::championshipGarage()
         g_gui.label("Cosmetics");
         g_gui.select("Color", g_vehicleColorNames,
                 (i32)ARRAY_SIZE(g_vehicleColorNames), driver.getVehicleConfig()->colorIndex);
+        g_gui.select("Paint Type", g_paintTypeNames,
+                (i32)ARRAY_SIZE(g_paintTypeNames), driver.getVehicleConfig()->paintTypeIndex);
     }
     else if (mode >= 4 && mode <= 6)
     {
