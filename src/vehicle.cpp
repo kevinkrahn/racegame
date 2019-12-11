@@ -930,7 +930,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     cameraTarget = pos + glm::vec3(0, 0, 2.f);
     cameraFrom = smoothMove(cameraFrom,
             cameraTarget - getForwardVector() * 10.f + glm::vec3(0, 0, 3.f), 8.f, deltaTime);
-    renderer->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
+    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
 #else
     cameraTarget = smoothMove(cameraTarget,
             pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
