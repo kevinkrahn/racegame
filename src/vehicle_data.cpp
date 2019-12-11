@@ -170,8 +170,9 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
             s.color = g_vehicleColors[config.colorIndex];
             s.specularStrength = 0.15f;
             s.specularPower = 100.f;
-            s.reflectionStrength = 0.1f;
+            s.reflectionStrength = 0.15f;
             s.reflectionLod = 3.f;
+            s.reflectionBias = 0.3f;
             break;
         case VehicleMesh::CARBON_FIBER:
             s.color = { 0.1f, 0.1f, 0.1f };
@@ -182,13 +183,15 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
             s.reflectionStrength = 0.9f;
             s.reflectionLod = 1.f;
             s.color = glm::vec3(0.2f);
+            s.reflectionBias = 1.f;
             break;
         case VehicleMesh::WINDOW:
             s.color = { 0.f, 0.f, 0.f };
             s.specularStrength = 0.3f;
-            s.specularPower = 700.f;
-            s.reflectionStrength = 0.2f;
+            s.specularPower = 1000.f;
+            s.reflectionStrength = 0.25f;
             s.reflectionLod = 2.f;
+            s.reflectionBias = 0.3f;
             break;
         case VehicleMesh::RUBBER:
             s.color = { 0.08f, 0.08f, 0.08f };
@@ -199,11 +202,12 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
             s.color = { 0.08f, 0.08f, 0.08f };
             s.specularStrength = 0.1f;
             s.specularPower = 120.f;
-            s.reflectionStrength = 0.08f;
+            s.reflectionStrength = 0.1f;
             s.reflectionLod = 4.f;
             break;
         default:
             s.reflectionStrength = 0.f;
+            s.reflectionBias = 0.2f;
             s.specularStrength = 0.15f;
             s.specularPower = 100.f;
             s.color = { 1.f, 1.f, 1.f };

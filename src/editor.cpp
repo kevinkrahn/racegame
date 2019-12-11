@@ -39,6 +39,7 @@ std::vector<EntityType> entityTypes = {
     { "Booster", fn { return ((Booster*)(g_entities[6].create()))->setup(p); } },
     { "Oil Spill", fn { return ((Oil*)(g_entities[7].create()))->setup(p); } },
     { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
+    { "CTV Pole", fn { return ((StaticMesh*)(g_entities[2].create()))->setup(7, p, glm::vec3(1.f), 0.f); } },
 };
 
 #undef fn

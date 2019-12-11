@@ -57,7 +57,7 @@ void main()
 #if defined LIT
     outColor = lighting(outColor,
             vec3(0, 0, 1), inShadowCoord, inWorldPosition, 0.f, 0.f, vec3(1.0),
-            0.f, 0.f, 0.f, vec3(0.f), 0.0, 0.0);
+            0.f, 0.f, 0.f, vec3(0.f), 0.0, 0.0, 0.0);
 #endif
 
     float depth = texture(depthSampler, vec3(gl_FragCoord.xy / textureSize(depthSampler, 0).xy, gl_Layer)).r;

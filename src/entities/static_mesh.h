@@ -3,11 +3,17 @@
 #include "../math.h"
 #include "../entity.h"
 #include "../resources.h"
+#include "../mesh_renderables.h"
 
 class StaticMesh : public PlaceableEntity
 {
-    Mesh* mesh;
-    Texture* tex;
+    struct MeshItem
+    {
+        LitRenderable s;
+        glm::mat4 transform;
+        PxShape* shape;
+    };
+    SmallVec<MeshItem> meshes;
     u32 meshIndex;
 
 public:
@@ -19,4 +25,5 @@ public:
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
     DataFile::Value serializeState() override;
     void deserializeState(DataFile::Value& data) override;
+    void updateTransform(class Scene* scene) override;
 };

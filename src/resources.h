@@ -19,7 +19,7 @@ struct Textures
     Texture booster = Texture("textures/booster.png");
     Texture bouncer_projectile = Texture("textures/bouncer_projectile.png");
     Texture cactus = Texture("textures/cactus.png");
-    Texture checkers = Texture("textures/checkers.png");
+    Texture checkers = Texture("textures/checkers.png", Texture::Format::SRGBA8, false);
     Texture checkers_fade = Texture("textures/checkers_fade.png");
     Texture cheveron = Texture("textures/cheveron.png");
     Texture circle = Texture("textures/circle.png");
@@ -146,6 +146,7 @@ const char* dataFiles[] = {
     "models/tree.dat",
     "models/world.dat",
     "models/barrel.dat",
+    "models/ctvpole.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",

@@ -40,7 +40,7 @@ layout(location = 3) uniform vec3 fresnel; // x: bias, y: scale, z: power
 layout(location = 4) uniform vec3 specular; // x: power, y: strength
 layout(location = 5) uniform float minAlpha;
 layout(location = 6) uniform vec3 emit;
-layout(location = 7) uniform vec2 reflection;
+layout(location = 7) uniform vec3 reflection;
 
 layout(binding = 0) uniform sampler2D texSampler;
 
@@ -52,7 +52,7 @@ void main()
 #else
     outColor = lighting(tex * vec4(inColor * color, 1.0),
             normalize(inNormal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
-            fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y);
+            fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
 #endif
 }
 

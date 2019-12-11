@@ -23,6 +23,19 @@ struct LitSettings
     f32 minAlpha = 0.f;
     f32 reflectionStrength = 0.f;
     f32 reflectionLod = 1.f;
+    f32 reflectionBias = 0.2f;
+
+    LitSettings() {}
+    LitSettings(glm::vec3 const& color, f32 specularStrength=0.2f, f32 specularPower=50.f,
+            f32 fresnelScale=0.f, f32 fresnelPower=2.5f, f32 fresnelBias=-0.2f,
+            Texture* texture=nullptr, bool culling=true, bool transparent=false,
+            f32 minAlpha=0.f, f32 reflectionStrength=0.f, f32 reflectionLod=1.f, f32 reflectionBias=0.2f)
+        : color(color), specularPower(specularPower), specularStrength(specularStrength),
+        fresnelScale(fresnelScale), fresnelPower(fresnelPower),
+        fresnelBias(fresnelBias), texture(texture), culling(culling), transparent(transparent),
+        minAlpha(minAlpha), reflectionStrength(reflectionStrength), reflectionLod(reflectionLod),
+        reflectionBias(reflectionBias)
+    {}
 };
 
 class LitRenderable : public Renderable
@@ -136,7 +149,7 @@ public:
         glUniform3f(4, settings.specularPower, settings.specularStrength, 0.f);
         glUniform1f(5, settings.minAlpha);
         glUniform3fv(6, 1, (GLfloat*)&settings.emit);
-        glUniform2f(7, settings.reflectionStrength, settings.reflectionLod);
+        glUniform3f(7, settings.reflectionStrength, settings.reflectionLod, settings.reflectionBias);
 
         glBindVertexArray(settings.mesh->vao);
         glDrawElements(GL_TRIANGLES, settings.mesh->numIndices, GL_UNSIGNED_INT, 0);

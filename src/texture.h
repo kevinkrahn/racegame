@@ -27,7 +27,7 @@ struct Texture
         initGLTexture(data);
     }
 
-    Texture(const char* filename, Format format = Format::SRGBA8) : format(format), name(filename)
+    Texture(const char* filename, Format format = Format::SRGBA8, bool repeat=true) : format(format), name(filename)
     {
         i32 width, height, channels;
         u8* data = (u8*)stbi_load(filename, &width, &height, &channels, 4);
@@ -41,7 +41,7 @@ struct Texture
         stbi_image_free(data);
     }
 
-    void initGLTexture(u8* data)
+    void initGLTexture(u8* data, bool repeat=true)
     {
         GLuint internalFormat, baseFormat;
         switch (format)
@@ -69,8 +69,16 @@ struct Texture
         glCreateTextures(GL_TEXTURE_2D, 1, &handle);
         glTextureStorage2D(handle, mipLevels, internalFormat, width, height);
         glTextureSubImage2D(handle, 0, 0, 0, width, height, baseFormat, GL_UNSIGNED_BYTE, data);
-        glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (repeat)
+        {
+            glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
+        else
+        {
+            glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
         glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTextureParameteri(handle, GL_TEXTURE_MAX_ANISOTROPY, 8);

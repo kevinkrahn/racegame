@@ -49,7 +49,7 @@ float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float specularPower, float specularStrength, vec3 specularColor,
         float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit,
-        float reflectionStrength, float reflectionLod)
+        float reflectionStrength, float reflectionLod, float reflectionBias)
 {
     const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
@@ -103,9 +103,13 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 
     vec3 I = normalize(worldPosition - cameraPosition[gl_Layer]);
     vec3 R = reflect(I, normal);
-    color.rgb += textureLod(cubemapSampler, R, reflectionLod).rgb * reflectionStrength * max(shadow, 0.1);
+    color.rgb += textureLod(cubemapSampler, R, reflectionLod).rgb
+        * reflectionStrength
+        * clamp(shadow * getFresnel(normal, worldPosition, reflectionBias, 1.0, 1.3), 0.1, 1.0);
 
     color.rgb += emit;
+
+    //color.rgb = vec3(getFresnel(normal, worldPosition, 0.2, 1.0, 1.5));
 
     return color;
 }

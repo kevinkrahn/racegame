@@ -82,7 +82,7 @@ void main()
     vec4 baseColor = inBlend.x*tex1 + inBlend.y*tex2 + inBlend.z*tex3 + inBlend.w*tex4;
 
     outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
-            20.0, 0.01, vec3(1.0), -0.1, 0.08, 2.5, vec3(0, 0, 0), 0.0, 0.0);
+            20.0, 0.01, vec3(1.0), -0.1, 0.08, 2.5, vec3(0, 0, 0), 0.0, 0.0, 0.0);
 
     float d = length(inWorldPosition - brushPosition);
     float t = pow(clamp((1.f - (d / brushSettings.x)), 0.f, 1.f), brushSettings.y) * clamp(abs(brushSettings.z / 16.f), 0.2f, 1.f);
