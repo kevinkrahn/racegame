@@ -169,7 +169,7 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
         case VehicleMesh::BODY:
             s.color = g_vehicleColors[config.colorIndex];
             s.specularStrength = 0.15f;
-            s.specularPower = 100.f;
+            s.specularPower = 500.f;
             s.reflectionStrength = 0.15f;
             s.reflectionLod = 3.f;
             s.reflectionBias = 0.3f;
@@ -188,7 +188,7 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
         case VehicleMesh::WINDOW:
             s.color = { 0.f, 0.f, 0.f };
             s.specularStrength = 0.3f;
-            s.specularPower = 1000.f;
+            s.specularPower = 1100.f;
             s.reflectionStrength = 0.25f;
             s.reflectionLod = 2.f;
             s.reflectionBias = 0.3f;
@@ -300,13 +300,13 @@ void initializeVehicleData()
     registerWeapon<WRamBooster>();
     registerWeapon<WOil>();
 
-    registerVehicle<VMini>();
-    registerVehicle<VSportscar>();
+    //registerVehicle<VMini>();
+    //registerVehicle<VSportscar>();
     registerVehicle<VStationWagon>();
     registerVehicle<VCoolCar>();
     registerVehicle<VMuscle>();
-    registerVehicle<VTruck>();
-    registerVehicle<VRacecar>();
+    //registerVehicle<VTruck>();
+    //registerVehicle<VRacecar>();
 
     registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f);
     registerAI("Dumb Dumb",       0.f,   0.f, 0.f,  0.f);

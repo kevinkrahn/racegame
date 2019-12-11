@@ -9,7 +9,7 @@
 
 class WaterBarrel : public PlaceableEntity
 {
-    LitRenderable lit = LitRenderable({});
+    LitRenderable lit;
 
 public:
     WaterBarrel* setup(glm::vec3 const& position = {0, 0, 0}, f32 zRotation=0.f)

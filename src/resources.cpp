@@ -32,6 +32,8 @@ void Resources::load()
                     u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
                     u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
+                    //print("Mesh: ", meshInfo["name"].string(), '\n');
+
                     SmallVec<VertexAttribute> vertexFormat = {
                         VertexAttribute::FLOAT3, // position
                         VertexAttribute::FLOAT3, // normal

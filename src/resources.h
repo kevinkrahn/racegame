@@ -47,6 +47,10 @@ struct Textures
     Texture tiremarks = Texture("textures/tiremarks.png");
     Texture weapon_iconbg = Texture("textures/weapon_iconbg.png");
     Texture weapon_iconbg_selected = Texture("textures/weapon_iconbg_selected.png");
+    Texture billboard_1 = Texture("textures/billboard_1.jpg");
+    Texture billboard_2 = Texture("textures/billboard_2.jpg");
+    Texture billboard_3 = Texture("textures/billboard_3.jpg");
+    Texture billboard_4 = Texture("textures/billboard_4.jpg");
 
     Texture icon_blaster = Texture("textures/icons/blaster_icon.png");
     Texture icon_bouncer = Texture("textures/icons/bouncer_icon.png");
@@ -147,6 +151,7 @@ const char* dataFiles[] = {
     "models/world.dat",
     "models/barrel.dat",
     "models/ctvpole.dat",
+    "models/billboard.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",

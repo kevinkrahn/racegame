@@ -14,6 +14,7 @@
 #include "entities/booster.h"
 #include "entities/oil.h"
 #include "entities/barrel.h"
+#include "entities/billboard.h"
 #include <functional>
 
 struct EntityType
@@ -40,6 +41,7 @@ std::vector<EntityType> entityTypes = {
     { "Oil Spill", fn { return ((Oil*)(g_entities[7].create()))->setup(p); } },
     { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
     { "CTV Pole", fn { return ((StaticMesh*)(g_entities[2].create()))->setup(7, p, glm::vec3(1.f), 0.f); } },
+    { "Billboard", fn { return ((Billboard*)(g_entities[9].create()))->setup(p); } },
 };
 
 #undef fn
@@ -269,7 +271,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true, true, true, 0, 4));
+        g_game.state.drivers.push_back(Driver(true, true, true, 0, 1));
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();
         entityDragAxis = DragAxis::NONE;

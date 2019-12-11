@@ -43,6 +43,7 @@ class LitRenderable : public Renderable
 public:
     LitSettings settings;
 
+    LitRenderable() {}
     LitRenderable(Mesh* mesh, glm::mat4 const& worldTransform,
             Texture* texture = nullptr, glm::vec3 color = {1, 1, 1})
     {
