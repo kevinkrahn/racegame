@@ -21,6 +21,35 @@ void Gui::beginFrame()
     textInputCapture = nullptr;
 }
 
+void Gui::pushSelection()
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+    selectStack.push_back(widgetStack.back().widgetState->selectIndex);
+    //print("Pushed ", selectStack.back(), '\n');
+}
+
+void Gui::popSelection()
+{
+    if (!selectStack.empty())
+    {
+        poppedSelectIndex = selectStack.back();
+        selectStack.pop_back();
+        //print("Popped ", poppedSelectIndex, '\n');
+    }
+}
+
+void Gui::clearSelectionStack()
+{
+    selectStack.clear();
+    //print("Cleared stack\n");
+}
+void Gui::forceSelection(i32 selection)
+{
+    poppedSelectIndex = selection;
+    //print("Forced selection: ", selection, "\n");
+}
+
 void Gui::endFrame()
 {
     assert(widgetStack.empty());
@@ -77,6 +106,14 @@ WidgetState* Gui::getWidgetState(WidgetState* parent, const char* identifier,
     assert(it->second->widgetType == widgetType);
     it->second->frameCount = g_game.frameCount;
     return it->second.get();
+}
+
+void Gui::clearWidgetState(const char* text)
+{
+    assert(widgetStack.size() > 0);
+    assert(widgetStack.back().widgetType == WidgetType::PANEL);
+    WidgetStackItem& parent = widgetStack.back();
+    parent.widgetState->childState.erase(text);
 }
 
 bool Gui::didSelect()
@@ -148,7 +185,6 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
                     position + glm::vec2(width/2, convertSize(10.f)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
     }
-    i32 selectIndex = 0;
     WidgetState* panelState = getWidgetState(nullptr, text, WidgetType::PANEL);
     if (useKeyboardControl)
     {
@@ -190,8 +226,11 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
             }
         }
         panelState->selectableChildCount = 0;
-
-        selectIndex = panelState->selectIndex;
+    }
+    if (poppedSelectIndex != -1)
+    {
+        panelState->selectIndex = poppedSelectIndex;
+        poppedSelectIndex = -1;
     }
     widgetStack.push_back({
         WidgetType::PANEL,

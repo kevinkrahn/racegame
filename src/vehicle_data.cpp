@@ -211,7 +211,7 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
             break;
         case VehicleMesh::RUBBER:
             s.color = { 0.08f, 0.08f, 0.08f };
-            s.specularStrength = 0.2f;
+            s.specularStrength = 0.1f;
             s.specularPower = 20.f;
             break;
         case VehicleMesh::PLASTIC:

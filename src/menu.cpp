@@ -84,6 +84,7 @@ void Menu::mainMenu()
     if (g_gui.button("Options"))
     {
         showOptionsMenu();
+        g_gui.pushSelection();
     }
 
     if (g_gui.button("Track Editor"))
@@ -283,10 +284,12 @@ void Menu::championshipMenu()
         Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
         menuMode = HIDDEN;
+        g_gui.clearSelectionStack();
     }
     if (g_gui.button("Championship Standings", true, &g_res.textures->icon_stats, false))
     {
         menuMode = CHAMPIONSHIP_STANDINGS;
+        g_gui.pushSelection();
     }
     g_gui.button("Player Stats", true, &g_res.textures->icon_stats2, false);
     g_gui.gap(10);
@@ -294,6 +297,7 @@ void Menu::championshipMenu()
     if (g_gui.button("Quit"))
     {
         menuMode = MenuMode::MAIN_MENU;
+        g_gui.clearSelectionStack();
     }
 
     g_gui.end();
@@ -334,18 +338,23 @@ void Menu::championshipGarage()
     static i32 currentVehicleIndex = driver.vehicleIndex;
 
     const char* messageStr = nullptr;
-
     if (driver.vehicleIndex == -1)
     {
         mode = 1;
     }
+
     VehicleConfiguration vehicleConfig = driver.vehicleIndex == -1
         ? VehicleConfiguration{} : *driver.getVehicleConfig();
     VehicleConfiguration vehicleConfig2 = vehicleConfig;
 
     glm::vec2 panelPos = menuPos + glm::vec2(w - o, oy);
     g_gui.beginPanel(tstr("Garage ", mode), panelPos, 1.f, false, true, false);
+    if (driver.vehicleIndex == -1)
+    {
+        g_gui.pushSelection();
+    }
 
+    u32 previousMode = mode;
     if (mode == 0)
     {
         currentVehicleIndex = driver.vehicleIndex;
@@ -353,15 +362,21 @@ void Menu::championshipGarage()
         if (g_gui.button("Choose Vehicle"))
         {
             mode = 1;
+            g_gui.pushSelection();
+            g_gui.forceSelection(0);
         }
         g_gui.label("Vehicle Upgrades");
         if (g_gui.button("Performance", driver.vehicleIndex != -1, &g_res.textures->icon_engine, false))
         {
             mode = 2;
+            g_gui.pushSelection();
+            g_gui.forceSelection(0);
         }
         if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, &g_res.textures->icon_spraycan, false))
         {
             mode = 3;
+            g_gui.pushSelection();
+            g_gui.forceSelection(0);
         }
         g_gui.label("Equipment");
         for (u32 i=0; i<g_vehicles[currentVehicleIndex]->frontWeaponCount; ++i)
@@ -371,6 +386,8 @@ void Menu::championshipGarage()
                         weaponIndex == -1 ? &g_res.textures->iconbg : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 4;
+                g_gui.pushSelection();
+                g_gui.forceSelection(0);
             }
         }
         for (u32 i=0; i<g_vehicles[currentVehicleIndex]->rearWeaponCount; ++i)
@@ -380,6 +397,8 @@ void Menu::championshipGarage()
                         weaponIndex == -1 ? &g_res.textures->iconbg : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 7;
+                g_gui.pushSelection();
+                g_gui.forceSelection(0);
             }
         }
         if (g_gui.button("Special Ability", driver.vehicleIndex != -1,
@@ -387,6 +406,8 @@ void Menu::championshipGarage()
                     : g_weapons[vehicleConfig.specialAbilityIndex].info.icon))
         {
             mode = 9;
+            g_gui.pushSelection();
+            g_gui.forceSelection(0);
         }
     }
     else if (mode == 1)
@@ -400,6 +421,10 @@ void Menu::championshipGarage()
         if (currentVehicleIndex == -1)
         {
             currentVehicleIndex = 0;
+        }
+
+        if (g_gui.select("Vehicle", carNames.data(), (i32)carNames.size(), currentVehicleIndex))
+        {
         }
 
         auto ownedVehicle = std::find_if(driver.ownedVehicles.begin(),
@@ -416,15 +441,12 @@ void Menu::championshipGarage()
         {
             driver.vehicleIndex = -1;
             vehicleConfig = VehicleConfiguration{};
-            RandomSeries s{(u32)currentVehicleIndex};
-            vehicleConfig.colorIndex = irandom(s, 0, g_vehicles.size());
+            RandomSeries s{(u32)currentVehicleIndex+1};
+            // TODO: set default color in vehicle class
+            vehicleConfig.colorIndex = irandom(s, 0, ARRAY_SIZE(g_vehicleColors));
         }
 
         messageStr = vehicleData->description;
-
-        if (g_gui.select("Vehicle", carNames.data(), (i32)carNames.size(), currentVehicleIndex))
-        {
-        }
 
         g_gui.gap(20);
         if (g_gui.button("Purchase", !isOwned && driver.credits >= vehicleData->price))
@@ -433,6 +455,8 @@ void Menu::championshipGarage()
                 currentVehicleIndex,
                 vehicleConfig
             });
+            driver.vehicleIndex = currentVehicleIndex;
+            isOwned = true;
             driver.credits -= vehicleData->price;
         }
         if (g_gui.button("Sell", isOwned))
@@ -446,7 +470,10 @@ void Menu::championshipGarage()
 
         if (g_gui.button("Done", isOwned) || g_gui.didGoBack())
         {
+            g_gui.popSelection();
             mode = 0;
+            // TODO: fix the gui and remove this hack
+            g_gui.clearWidgetState("Done");
         }
 
         g_game.renderer->push2D(QuadRenderable(white,
@@ -636,7 +663,7 @@ void Menu::championshipGarage()
     }
 
     g_gui.gap(20);
-    if (mode != 1)
+    if (previousMode != 1 && mode != 1)
     {
         if (g_gui.button("Done") || g_gui.didGoBack())
         {
@@ -648,6 +675,9 @@ void Menu::championshipGarage()
             {
                 menuMode = MenuMode::CHAMPIONSHIP_MENU;
             }
+            g_gui.popSelection();
+            // TODO: fix the gui and remove this hack
+            g_gui.clearWidgetState("Done");
         }
     }
 
@@ -875,6 +905,7 @@ void Menu::championshipStandings()
             g_game.saveGame();
             g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         }
+        g_gui.popSelection();
     }
 }
 
@@ -993,21 +1024,25 @@ void Menu::mainOptions()
     if (g_gui.button("Graphics Options"))
     {
         menuMode = OPTIONS_GRAPHICS;
+        g_gui.pushSelection();
     }
 
     if (g_gui.button("Audio Options"))
     {
         menuMode = OPTIONS_AUDIO;
+        g_gui.pushSelection();
     }
 
     if (g_gui.button("Gameplay Options"))
     {
         menuMode = OPTIONS_GAMEPLAY;
+        g_gui.pushSelection();
     }
 
     if (g_gui.button("Back") || g_gui.didGoBack())
     {
         showMainMenu();
+        g_gui.popSelection();
     }
 
     g_gui.end();
@@ -1028,6 +1063,7 @@ void Menu::audioOptions()
         g_game.config.audio = tmpConfig.audio;
         g_game.config.save();
         showMainMenu();
+        g_gui.popSelection();
     }
 
     if (g_gui.button("Reset to Defaults"))
@@ -1039,6 +1075,7 @@ void Menu::audioOptions()
     if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
         showOptionsMenu();
+        g_gui.popSelection();
     }
 
     g_gui.end();
@@ -1057,6 +1094,7 @@ void Menu::gameplayOptions()
         g_game.config.gameplay = tmpConfig.gameplay;
         g_game.config.save();
         showMainMenu();
+        g_gui.popSelection();
     }
 
     if (g_gui.button("Reset to Defaults"))
@@ -1068,6 +1106,7 @@ void Menu::gameplayOptions()
     if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
         showOptionsMenu();
+        g_gui.popSelection();
     }
 
     g_gui.end();
@@ -1167,6 +1206,7 @@ void Menu::graphicsOptions()
         SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
         g_game.config.save();
         showMainMenu();
+        g_gui.popSelection();
     }
 
     if (g_gui.button("Reset to Defaults"))
@@ -1178,6 +1218,7 @@ void Menu::graphicsOptions()
     if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
         showOptionsMenu();
+        g_gui.popSelection();
     }
 
     g_gui.end();

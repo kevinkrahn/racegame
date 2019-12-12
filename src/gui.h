@@ -61,6 +61,9 @@ class Gui
     WidgetState* previousTextInputCapture = nullptr;
     WidgetState* textInputCapture = nullptr;
 
+    std::vector<i32> selectStack;
+    i32 poppedSelectIndex = -1;
+
     WidgetState* getWidgetState(WidgetState* parent, const char* identifier,
             WidgetType widgetType);
 
@@ -101,5 +104,10 @@ public:
     bool option(const char* text, i32 value, Texture* icon=nullptr);
     void label(const char* text, bool showBackground=false);
     void gap(f32 size);
+    void pushSelection();
+    void popSelection();
+    void clearSelectionStack();
+    void forceSelection(i32 selection);
+    void clearWidgetState(const char* text);
 } g_gui;
 

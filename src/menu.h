@@ -37,7 +37,7 @@ class Menu
 
 public:
     void showMainMenu() { menuMode = MenuMode::MAIN_MENU; }
-    void showChampionshipMenu() { menuMode = MenuMode::CHAMPIONSHIP_MENU; }
+    //void showChampionshipMenu() { menuMode = MenuMode::CHAMPIONSHIP_MENU; }
     void showRaceResults() { menuMode = MenuMode::RACE_RESULTS; }
     void showOptionsMenu();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
