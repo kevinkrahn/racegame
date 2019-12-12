@@ -5,7 +5,6 @@
 
 class Oil : public PlaceableEntity
 {
-    struct Texture* tex;
     Decal decal;
 
 public:

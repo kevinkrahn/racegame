@@ -1570,7 +1570,8 @@ void Track::Railing::deformMeshAlongPath(Mesh* railingMesh, Mesh* outputMesh, f3
                 (distanceAlongPath - line.distanceToHere) + m * p;
 
             // TODO: there is a better way to bend the normal
-            glm::mat3 nm = glm::inverseTranspose(glm::mat3(m));
+            //glm::mat3 nm = glm::inverseTranspose(m);
+            glm::mat3 nm = m;
             glm::vec3 dn = glm::normalize(nm * n);
 
             if (flat)

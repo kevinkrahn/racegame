@@ -8,6 +8,12 @@ void Decal::begin(glm::mat4 const& transform)
     vertices.reserve(128);
 }
 
+void Decal::setTexture(Texture* tex, Texture* texNormal)
+{
+    this->tex = tex;
+    this->texNormal = texNormal ? texNormal : &g_res.textures->identityNormal;
+}
+
 void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform)
 {
     //print("Adding mesh with ", indexCount * 3, " vertices\n");
@@ -173,6 +179,7 @@ void Decal::onLitPass(Renderer* renderer)
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(0.f, -500.f);
     glBindTextureUnit(0, tex->handle);
+    glBindTextureUnit(6, texNormal->handle);
     glBindVertexArray(vao);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
     glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalTransform));

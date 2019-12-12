@@ -51,7 +51,7 @@ public:
         collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
 
         collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(g_res.getMesh("billboard.BillboardMetal")->getCollisionMesh(), PxMeshScale(convert(scale))),
+                PxTriangleMeshGeometry(g_res.getMesh("billboard.BillboardWood")->getCollisionMesh(), PxMeshScale(convert(scale))),
                 *scene->genericMaterial);
         collisionShape->setQueryFilterData(PxFilterData(
                     COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));

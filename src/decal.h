@@ -18,6 +18,7 @@ class Decal : public Renderable
     glm::mat3 normalTransform;
     glm::vec3 color = { 1, 1, 1 };
     Texture* tex = nullptr;
+    Texture* texNormal = nullptr;
     std::vector<DecalVertex> vertices;
     u32 vertexCount = 0;
     GLuint vao = 0, vbo = 0;
@@ -37,7 +38,7 @@ public:
     }
     void setPriority(i32 priority) { this->priority = priority; }
     void setColor(glm::vec3 const& color) { this->color = color; }
-    void setTexture(Texture* tex) { this->tex = tex; }
+    void setTexture(Texture* tex, Texture* texNormal = nullptr);
     BoundingBox getBoundingBox() const
     {
         BoundingBox bb{ glm::vec3(-0.5f), glm::vec3(0.5f) };

@@ -11,27 +11,29 @@
 #include <string>
 
 constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
+constexpr u8 identityNormalBytes[] = { 128, 128, 255, 255 };
 struct Textures
 {
     Texture white = Texture("white", 1, 1, (u8*)whiteBytes, Texture::Format::RGBA8);
-    Texture ammotick = Texture("textures/ammotick.png");
+    Texture identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes, Texture::Format::RGBA8);
+    Texture ammotick = Texture("textures/ammotick.png", false);
     Texture bark = Texture("textures/bark.png");
-    Texture booster = Texture("textures/booster.png");
-    Texture bouncer_projectile = Texture("textures/bouncer_projectile.png");
+    Texture booster = Texture("textures/booster.png", false);
+    Texture bouncer_projectile = Texture("textures/bouncer_projectile.png", false);
     Texture cactus = Texture("textures/cactus.png");
     Texture checkers = Texture("textures/checkers.png", false);
     Texture checkers_fade = Texture("textures/checkers_fade.png");
-    Texture cheveron = Texture("textures/cheveron.png");
-    Texture circle = Texture("textures/circle.png");
+    Texture cheveron = Texture("textures/cheveron.png", false);
+    Texture circle = Texture("textures/circle.png", false);
     Texture cloud_shadow = Texture("textures/cloud_shadow.png");
     Texture concrete = Texture("textures/concrete.jpg");
     Texture desert = Texture("textures/desert.jpg");
     Texture desert_stone = Texture("textures/desert_stone.jpg");
-    Texture flare = Texture("textures/flare.png");
-    Texture flash = Texture("textures/flash.png");
+    Texture flare = Texture("textures/flare.png", false);
+    Texture flash = Texture("textures/flash.png", false);
     Texture wood = Texture("textures/wood.jpg");
     Texture grass = Texture("textures/grass.jpg");
-    Texture iconbg = Texture("textures/iconbg.png");
+    Texture iconbg = Texture("textures/iconbg.png", false);
     Texture lava = Texture("textures/lava.jpg");
     Texture leaves = Texture("textures/leaves.png");
     Texture plant1 = Texture("textures/plant1.png");
@@ -40,17 +42,18 @@ struct Textures
     Texture rock_moss = Texture("textures/rock_moss.jpg");
     Texture rumble = Texture("textures/rumble.png");
     Texture sand = Texture("textures/sand.jpg");
-    Texture smoke = Texture("textures/smoke.png");
+    Texture smoke = Texture("textures/smoke.png", false);
     Texture snow = Texture("textures/snow.jpg");
     Texture tarmac = Texture("textures/tarmac.jpg");
-    Texture thing = Texture("textures/thing.png");
+    Texture thing = Texture("textures/thing.png", false);
     Texture tiremarks = Texture("textures/tiremarks.png");
-    Texture weapon_iconbg = Texture("textures/weapon_iconbg.png");
-    Texture weapon_iconbg_selected = Texture("textures/weapon_iconbg_selected.png");
+    Texture weapon_iconbg = Texture("textures/weapon_iconbg.png", false);
+    Texture weapon_iconbg_selected = Texture("textures/weapon_iconbg_selected.png", false);
     Texture billboard_1 = Texture("textures/billboard_1.jpg");
     Texture billboard_2 = Texture("textures/billboard_2.jpg");
     Texture billboard_3 = Texture("textures/billboard_3.jpg");
     Texture billboard_4 = Texture("textures/billboard_4.jpg");
+    Texture oil_normal = Texture("textures/oil_normal.png", false, Texture::Format::RGBA8);
 
     Texture icon_decoration = Texture("textures/decoration_icon.png", false);
     Texture icon_blaster = Texture("textures/icons/blaster_icon.png", false);
