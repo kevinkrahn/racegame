@@ -3,6 +3,7 @@
 #include "../weapon.h"
 #include "../vehicle.h"
 #include "../entities/projectile.h"
+#include "../mesh_renderables.h"
 
 class WMachineGun : public Weapon
 {
@@ -14,12 +15,14 @@ public:
         info.name = "Machine Gun";
         info.description = "Low damage but high rate of fire.";
         info.icon = &g_res.textures->icon_mg;
-        info.price = 1100;
+        info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
 
         ammoUnitCount = 12;
         fireMode = FireMode::CONTINUOUS;
+
+        loadSceneData("minigun.Minigun");
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
@@ -45,7 +48,6 @@ public:
             return;
         }
 
-        glm::vec3 forward = vehicle->getForwardVector();
         glm::mat4 transform = vehicle->getTransform();
         f32 minSpeed = 90.f;
         glm::vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
@@ -54,8 +56,8 @@ public:
         {
             vel = glm::normalize(vel) * minSpeed;
         }
-        glm::vec3 pos = translationOf(transform);
-        scene->addEntity(new Projectile(pos + forward * 2.5f,
+        glm::vec3 pos = transform * mountTransform * glm::vec4(projectileSpawnPoint, 1.f);
+        scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BULLET));
 
         g_audio.playSound3D(&g_res.sounds->mg2,
@@ -66,5 +68,11 @@ public:
         ammo -= 1;
 
         repeatTimer = 0.09f;
+    }
+
+    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+            VehicleConfiguration const& config, VehicleData const& vehicleData) override
+    {
+        rw->push(LitRenderable(g_res.getMesh("minigun.Minigun"), vehicleTransform * mountTransform));
     }
 };

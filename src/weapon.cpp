@@ -10,3 +10,18 @@ void Weapon::outOfAmmo(Vehicle* vehicle)
         // TODO: out of ammo notification?
     }
 }
+
+void Weapon::loadSceneData(const char* sceneName)
+{
+    DataFile::Value::Dict& scene = g_res.getScene(sceneName);
+    for (auto& e : scene["entities"].array())
+    {
+        std::string name = e["name"].string();
+        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
+        if (name.find("SpawnPoint") != std::string::npos)
+        {
+            projectileSpawnPoint = translationOf(transform);
+            break;
+        }
+    }
+}

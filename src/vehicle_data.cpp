@@ -3,6 +3,7 @@
 #include "resources.h"
 #include "scene.h"
 #include "mesh_renderables.h"
+#include "vehicle.h"
 
 VehicleConfiguration::Upgrade* VehicleConfiguration::getUpgrade(i32 upgradeIndex)
 {
@@ -144,6 +145,22 @@ void VehicleData::loadSceneData(const char* sceneName)
         {
             sceneCenterOfMass = transform[3];
         }
+        else if (name.find("WeaponMount1") != std::string::npos)
+        {
+            weaponMounts[0] = glm::translate(glm::mat4(1.f), translationOf(transform)) * rotationOf(transform);
+        }
+        else if (name.find("WeaponMount2") != std::string::npos)
+        {
+            weaponMounts[1] = glm::translate(glm::mat4(1.f), translationOf(transform)) * rotationOf(transform);
+        }
+        else if (name.find("WeaponMount3") != std::string::npos)
+        {
+            weaponMounts[2] = glm::translate(glm::mat4(1.f), translationOf(transform)) * rotationOf(transform);
+        }
+        else if (name.find("ExhaustHole") != std::string::npos)
+        {
+            exhaustHoles.push_back(translationOf(transform));
+        }
     }
 }
 
@@ -232,7 +249,7 @@ void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config)
 }
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
-        glm::mat4* wheelTransforms, VehicleConfiguration const& config)
+        glm::mat4* wheelTransforms, VehicleConfiguration const& config, Vehicle* vehicle)
 {
     for (auto& m : chassisMeshes)
     {
@@ -269,6 +286,49 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             s.worldTransform = wheelTransform * m.transform;
             meshMaterial(m.type, s, config);
             rw->push(LitRenderable(s));
+        }
+    }
+
+    if (vehicle)
+    {
+        for (auto& w : vehicle->frontWeapons)
+        {
+            w->render(rw, transform, config, *this);
+        }
+        for (auto& w : vehicle->rearWeapons)
+        {
+            w->render(rw, transform, config, *this);
+        }
+        if (vehicle->specialAbility)
+        {
+            vehicle->specialAbility->render(rw, transform, config, *this);
+        }
+    }
+    else
+    {
+        for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices); ++i)
+        {
+            if (config.frontWeaponIndices[i] != -1)
+            {
+                auto w = g_weapons[config.frontWeaponIndices[i]].create();
+                w->upgradeLevel = config.frontWeaponUpgradeLevel[i];
+                w->mountTransform = weaponMounts[i];
+                w->render(rw, transform, config, *this);
+            }
+        }
+        for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
+        {
+            if (config.rearWeaponIndices[i] != -1)
+            {
+                auto w = g_weapons[config.rearWeaponIndices[i]].create();
+                w->upgradeLevel = config.rearWeaponUpgradeLevel[i];
+                w->render(rw, transform, config, *this);
+            }
+        }
+        if (config.specialAbilityIndex != -1)
+        {
+            auto w = g_weapons[config.specialAbilityIndex].create();
+            w->render(rw, transform, config, *this);
         }
     }
 }

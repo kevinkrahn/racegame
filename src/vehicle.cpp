@@ -515,6 +515,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
         {
             frontWeapons.push_back(g_weapons[config->frontWeaponIndices[i]].create());
             frontWeapons.back()->upgradeLevel = config->frontWeaponUpgradeLevel[i];
+            frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[i];
         }
     }
     for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
@@ -572,6 +573,10 @@ void Vehicle::reset(glm::mat4 const& transform)
     for (auto& w : rearWeapons)
     {
         w->reset();
+    }
+    if (specialAbility)
+    {
+        specialAbility->reset();
     }
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
@@ -918,7 +923,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
     driver->getVehicleData()->render(rw, transform,
-            wheelTransforms, *driver->getVehicleConfig());
+            wheelTransforms, *driver->getVehicleConfig(), this);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
 }

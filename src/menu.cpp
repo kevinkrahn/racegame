@@ -254,11 +254,11 @@ void Menu::championshipMenu()
                         glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
             if (driver.vehicleIndex != -1)
             {
-                g_vehicles[driver.vehicleIndex]->render(&renderWorlds[playerIndex],
+                glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
+                driver.getVehicleData()->render(&renderWorlds[playerIndex],
                     glm::translate(glm::mat4(1.f),
                         glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
-                    glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-                    nullptr, *driver.getVehicleConfig());
+                    vehicleTransform, nullptr, *driver.getVehicleConfig());
                 ++vehicleCount;
             }
             renderWorlds[playerIndex].setViewportCount(1);

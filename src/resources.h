@@ -54,6 +54,7 @@ struct Textures
     Texture billboard_3 = Texture("textures/billboard_3.jpg");
     Texture billboard_4 = Texture("textures/billboard_4.jpg");
     Texture oil_normal = Texture("textures/oil_normal.png", false, Texture::Format::RGBA8);
+    Texture flames = Texture("textures/flames.png");
 
     Texture icon_decoration = Texture("textures/decoration_icon.png", false);
     Texture icon_blaster = Texture("textures/icons/blaster_icon.png", false);
@@ -164,6 +165,8 @@ const char* dataFiles[] = {
     "models/vehicles/sportscar.dat",
     "models/vehicles/stationwagon.dat",
     "models/vehicles/truck.dat",
+
+    "models/weapons/minigun.dat",
 };
 
 class Resources

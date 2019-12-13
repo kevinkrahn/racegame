@@ -292,6 +292,12 @@ struct VehicleData
     SmallVec<VehicleMesh> wheelMeshes[NUM_WHEELS];
 
     glm::vec3 wheelPositions[NUM_WHEELS] = {};
+    glm::mat4 weaponMounts[3] = {
+        glm::translate(glm::mat4(1.f), { 3.f, 0.f, 0.6f }),
+        glm::translate(glm::mat4(1.f), { 0.f, 0.f, 2.f }),
+        glm::translate(glm::mat4(1.f), { -2.f, 0.f, 2.f }),
+    };
+    SmallVec<glm::vec3> exhaustHoles;
     f32 frontWheelMeshRadius = 0.f;
     f32 frontWheelMeshWidth = 0.f;
     f32 rearWheelMeshRadius = 0.f;
@@ -312,7 +318,7 @@ struct VehicleData
 
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
-            glm::mat4* wheelTransforms, VehicleConfiguration const& config);
+            glm::mat4* wheelTransforms, VehicleConfiguration const& config, class Vehicle* vehicle=nullptr);
     virtual void renderDebris(class RenderWorld* rw,
             std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config);
 

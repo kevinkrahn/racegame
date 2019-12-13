@@ -267,6 +267,7 @@ void Renderer::initShaders()
     loadShader("mesh_decal");
     loadShader("terrain");
     loadShader("track");
+    loadShader("flames");
 }
 
 void Renderer::init()

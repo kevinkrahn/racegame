@@ -47,6 +47,8 @@ void Driver::aiUpgrades(RandomSeries& series)
         print(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');
     }
 
+    // TODO: make AI buy better vehicles over time
+
     enum UpgradeType
     {
         FRONT_WEAPON1,
