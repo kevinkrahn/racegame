@@ -8,12 +8,15 @@ layout(location = 2) in vec4 attrBlend;
 
 layout(location = 0) out vec3 outWorldPosition;
 layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec4 outBlend;
+layout(location = 2) out vec3 outShadowCoord;
+layout(location = 3) out vec4 outBlend;
 
 void main()
 {
-    outWorldPosition = attrPosition;
+    gl_Position = cameraViewProjection[0] * vec4(attrPosition, 1.0);
     outNormal = attrNormal;
+    outWorldPosition = attrPosition;
+    outShadowCoord = (shadowViewProjectionBias[0] * vec4(attrPosition, 1.0)).xyz;
     outBlend = attrBlend;
 }
 
@@ -90,35 +93,4 @@ void main()
     if (brushSettings.z >= 0.0) outColor += vec4(vec3(0.05, 0.2, 1.0) * t, 1.0);
     else outColor += vec4(vec3(0.8, 0.02, 0.02) * t, 1.0);
 }
-
-#elif defined GEOM
-
-layout(triangles, invocations = VIEWPORT_COUNT) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-layout(location = 0) in vec3 inWorldPosition[];
-layout(location = 1) in vec3 inNormal[];
-layout(location = 2) in vec4 inBlend[];
-
-layout(location = 0) out vec3 outWorldPosition;
-layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec3 outShadowCoord;
-layout(location = 3) out vec4 outBlend;
-
-void main()
-{
-    for (uint i=0; i<3; ++i)
-    {
-        gl_Layer = gl_InvocationID;
-        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
-        outNormal = inNormal[i];
-        outWorldPosition = inWorldPosition[i];
-        outShadowCoord = (shadowViewProjectionBias[gl_InvocationID] * vec4(inWorldPosition[i], 1.0)).xyz;
-        outBlend = inBlend[i];
-        EmitVertex();
-    }
-
-    EndPrimitive();
-}
-
 #endif

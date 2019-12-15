@@ -24,27 +24,4 @@ void main()
     const float minBrightness = 0.125;
     outColor = vec4(color.rgb * max(brightness - cutoff, minBrightness), 1.0);
 }
-
-#elif defined GEOM
-
-layout(location = 0) in vec2 inTexCoord[];
-
-layout(location = 0) out vec2 outTexCoord;
-
-layout(triangles, invocations = VIEWPORT_COUNT) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-void main()
-{
-    for (uint i=0; i<3; ++i)
-    {
-        gl_Layer = gl_InvocationID;
-        gl_Position = gl_in[i].gl_Position;
-        outTexCoord = inTexCoord[i];
-        EmitVertex();
-    }
-
-    EndPrimitive();
-}
-
 #endif

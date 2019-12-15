@@ -64,22 +64,4 @@ void main()
     const float epsilon = 0.0001;
     outColor.VALUE_COMPONENTS = sum / (totalWeight + epsilon);
 }
-
-#elif defined GEOM
-
-layout(triangles, invocations = VIEWPORT_COUNT) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-void main()
-{
-    for (uint i=0; i<3; ++i)
-    {
-        gl_Layer = gl_InvocationID;
-        gl_Position = gl_in[i].gl_Position;
-        EmitVertex();
-    }
-
-    EndPrimitive();
-}
-
 #endif

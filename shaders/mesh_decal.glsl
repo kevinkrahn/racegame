@@ -11,12 +11,13 @@ layout(location = 1) uniform mat3 normalMatrix;
 #define NORMAL_MAPPING 0
 
 #if NORMAL_MAPPING
-//layout(location = 0) out mat3 outTBN;
+layout(location = 0) out mat3 outTBN;
 #else
 layout(location = 0) out vec3 outNormal;
 #endif
 layout(location = 3) out vec2 outTexCoord;
 layout(location = 4) out vec3 outWorldPosition;
+layout(location = 5) out vec3 outShadowCoord;
 
 void main()
 {
@@ -35,6 +36,8 @@ void main()
 #endif
     outTexCoord = attrTexCoord;
     outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
+    gl_Position = cameraViewProjection[0] * vec4(outWorldPosition, 1.0);
+    outShadowCoord = (shadowViewProjectionBias[0] * vec4(outWorldPosition, 1.0)).xyz;
 }
 
 #elif defined FRAG
@@ -70,47 +73,4 @@ void main()
             normal, inShadowCoord, inWorldPosition, 800.0, 0.5, vec3(1.0),
             -0.1, 0.25, 3.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
 }
-
-#elif defined GEOM
-
-layout(triangles, invocations = VIEWPORT_COUNT) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-#if NORMAL_MAPPING
-layout(location = 0) in mat3 inTBN[];
-#else
-layout(location = 0) in vec3 inNormal[];
-#endif
-layout(location = 3) in vec2 inTexCoord[];
-layout(location = 4) in vec3 inWorldPosition[];
-
-#if NORMAL_MAPPING
-layout(location = 0) out mat3 outTBN;
-#else
-layout(location = 0) out vec3 outNormal;
-#endif
-layout(location = 3) out vec2 outTexCoord;
-layout(location = 4) out vec3 outWorldPosition;
-layout(location = 5) out vec3 outShadowCoord;
-
-void main()
-{
-    for (uint i=0; i<3; ++i)
-    {
-        gl_Layer = gl_InvocationID;
-        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
-#if NORMAL_MAPPING
-        outTBN = inTBN[i];
-#else
-        outNormal = inNormal[i];
-#endif
-        outTexCoord = inTexCoord[i];
-        outWorldPosition = inWorldPosition[i];
-        outShadowCoord = (shadowViewProjectionBias[gl_InvocationID] * vec4(inWorldPosition[i], 1.0)).xyz;
-        EmitVertex();
-    }
-
-    EndPrimitive();
-}
-
 #endif

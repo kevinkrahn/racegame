@@ -9,12 +9,15 @@ layout(location = 2) in vec3 attrColor;
 layout(location = 0) out vec3 outColor;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec3 outWorldPosition;
+layout(location = 3) out vec3 outShadowCoord;
 
 void main()
 {
+    outWorldPosition = attrPosition;
+    gl_Position = cameraViewProjection[0] * vec4(outWorldPosition, 1.0);
     outColor = attrColor;
     outNormal = attrNormal;
-    outWorldPosition = attrPosition;
+    outShadowCoord = (shadowViewProjectionBias[0] * vec4(outWorldPosition, 1.0)).xyz;
 }
 
 #elif defined FRAG
@@ -49,35 +52,4 @@ void main()
     outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
             70.0, 0.2, vec3(1.0), -0.13, 0.18, 3.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
 }
-
-#elif defined GEOM
-
-layout(triangles, invocations = VIEWPORT_COUNT) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-layout(location = 0) in vec3 inColor[];
-layout(location = 1) in vec3 inNormal[];
-layout(location = 2) in vec3 inWorldPosition[];
-
-layout(location = 0) out vec3 outColor;
-layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec3 outWorldPosition;
-layout(location = 3) out vec3 outShadowCoord;
-
-void main()
-{
-    for (uint i=0; i<3; ++i)
-    {
-        gl_Layer = gl_InvocationID;
-        gl_Position = cameraViewProjection[gl_InvocationID] * vec4(inWorldPosition[i], 1.0);
-        outColor = inColor[i];
-        outNormal = inNormal[i];
-        outWorldPosition = inWorldPosition[i];
-        outShadowCoord = (shadowViewProjectionBias[gl_InvocationID] * vec4(inWorldPosition[i], 1.0)).xyz;
-        EmitVertex();
-    }
-
-    EndPrimitive();
-}
-
 #endif

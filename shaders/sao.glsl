@@ -124,22 +124,4 @@ void main() {
     outColor.r = A;
     outColor.a = 1.0;
 }
-
-#elif defined GEOM
-
-layout(triangles, invocations = VIEWPORT_COUNT) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-void main()
-{
-    for (uint i=0; i<3; ++i)
-    {
-        gl_Layer = gl_InvocationID;
-        gl_Position = gl_in[i].gl_Position;
-        EmitVertex();
-    }
-
-    EndPrimitive();
-}
-
 #endif
