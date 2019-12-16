@@ -23,6 +23,7 @@ struct RaceStatistics
     i32 lappingBonuses = 0;
     i32 accidents = 0;
     i32 destroyed = 0;
+    i32 pickupBonuses = 0;
 };
 
 struct RaceResult
@@ -34,11 +35,13 @@ struct RaceResult
 
     i32 getBonus() const
     {
-        return statistics.attackBonuses * 110 + statistics.lappingBonuses * 300;
+        return statistics.attackBonuses * 110 + statistics.lappingBonuses * 300
+            + statistics.pickupBonuses * 200;
     }
 
     i32 getLeaguePointsEarned() const
     {
+        // TODO: have bonus points also affect league points earned
         return finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0;
     }
 
@@ -124,6 +127,9 @@ public:
     DataFile::Value serialize();
     void deserialize(DataFile::Value& data);
     Entity* deserializeEntity(DataFile::Value& data);
+
+    std::vector<DataFile::Value> serializeTransientEntities();
+    void deserializeTransientEntities(std::vector<DataFile::Value>& entities);
 
     void onStart();
     void onEnd();

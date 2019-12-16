@@ -15,6 +15,7 @@
 #include "entities/oil.h"
 #include "entities/barrel.h"
 #include "entities/billboard.h"
+#include "entities/pickup.h"
 #include <functional>
 
 struct EntityType
@@ -42,6 +43,7 @@ std::vector<EntityType> entityTypes = {
     { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
     { "CTV Pole", fn { return ((StaticMesh*)(g_entities[2].create()))->setup(7, p, glm::vec3(1.f), 0.f); } },
     { "Billboard", fn { return ((Billboard*)(g_entities[9].create()))->setup(p); } },
+    { "Money", fn { return ((Pickup*)(g_entities[10].create()))->setup(p); } },
 };
 
 #undef fn
@@ -60,6 +62,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         if (scene->isRaceInProgress)
         {
             scene->stopRace();
+            scene->deserializeTransientEntities(serializedTransientEntities);
         }
         entityDragAxis = DragAxis::NONE;
     }
@@ -270,6 +273,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 0.f, true, false, false, 28, 0, 100);
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
+        serializedTransientEntities = scene->serializeTransientEntities();
         g_game.state.drivers.clear();
         g_game.state.drivers.push_back(Driver(true, true, true, 0, 1));
         scene->terrain->regenerateCollisionMesh(scene);

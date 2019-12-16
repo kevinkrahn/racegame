@@ -188,6 +188,11 @@ public:
         notifications.push_back({ str, time, color });
     }
     void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
+    void addPickupBonus()
+    {
+        raceStatistics.pickupBonuses += 1;
+        addNotification("$$$", 2.f, glm::vec3(0.9f, 0.9f, 0.01f));
+    }
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

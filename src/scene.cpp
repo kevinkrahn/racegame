@@ -968,7 +968,8 @@ void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 
         if (userData && otherUserData)
         {
-            if (userData->entityType == ActorUserData::ENTITY)
+            if (userData->entityType == ActorUserData::ENTITY
+                    || userData->entityType == ActorUserData::SELECTABLE_ENTITY)
             {
                 userData->entity->onTrigger(otherUserData);
             }
@@ -989,7 +990,7 @@ DataFile::Value Scene::serialize()
 
     for (auto& entity : this->entities)
     {
-        if ((entity->entityFlags & Entity::PERSISTENT) == Entity::PERSISTENT)
+        if (entity->entityFlags & Entity::PERSISTENT)
         {
             entityArray.push_back(entity->serialize());
         }
@@ -1014,5 +1015,37 @@ void Scene::deserialize(DataFile::Value& data)
     for (auto& val : entityArray)
     {
         deserializeEntity(val);
+    }
+}
+
+std::vector<DataFile::Value> Scene::serializeTransientEntities()
+{
+    std::vector<DataFile::Value> transientEntities;
+    for (auto& entity : this->entities)
+    {
+        if (entity->entityFlags & Entity::TRANSIENT)
+        {
+            transientEntities.push_back(entity->serialize());
+        }
+    }
+    return transientEntities;
+}
+
+void Scene::deserializeTransientEntities(std::vector<DataFile::Value>& entities)
+{
+    for (auto it = this->entities.begin(); it != this->entities.end();)
+    {
+        if ((*it)->entityFlags & Entity::TRANSIENT)
+        {
+            this->entities.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    for (auto& e : entities)
+    {
+        deserializeEntity(e);
     }
 }

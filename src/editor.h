@@ -26,6 +26,8 @@ namespace DragAxis
 
 class Editor
 {
+    std::vector<DataFile::Value> serializedTransientEntities;
+
     f32 cameraDistance = 90.f;
     f32 zoomSpeed = 0.f;
     f32 cameraAngle = 0.f;

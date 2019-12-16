@@ -248,7 +248,8 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
             COLLISION_FLAG_CHASSIS |
             COLLISION_FLAG_TRACK |
             COLLISION_FLAG_GROUND |
-            COLLISION_FLAG_DEBRIS, 0, 0);
+            COLLISION_FLAG_DEBRIS |
+            COLLISION_FLAG_PICKUP, 0, 0);
     PxFilterData chassisQryFilterData(COLLISION_FLAG_CHASSIS, 0, 0, UNDRIVABLE_SURFACE);
     PxFilterData wheelSimFilterData(0, 0, 0, 0);
     PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);

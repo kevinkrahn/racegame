@@ -8,6 +8,7 @@
 #include "oil.h"
 #include "barrel.h"
 #include "billboard.h"
+#include "pickup.h"
 
 void registerEntities()
 {
@@ -23,4 +24,5 @@ void registerEntities()
     registerEntity<Oil>("Oil");
     registerEntity<WaterBarrel>("Water Barrel");
     registerEntity<Billboard>("Billboard");
+    registerEntity<Pickup>("Pickup");
 }

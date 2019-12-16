@@ -10,11 +10,8 @@
 - Use time dilation for some effect (maybe when last person crosses finish line?)
 - Add unlit mode for bright billboards
 - Allow setting the number of laps for a race in the editor
-- Add collectables on the track
-- Make better vehicle paint shader (maybe do reflections)
 - Get rid of GLM because it makes compile times so long
-- Add better rocket booster flame effect
-- Attenuate reflections with fresnel
+- Add motion blur when using rocket booster
 
 - Ideas:
     - Weapon that drops bouncing explosive balls from the back of the vehicle
