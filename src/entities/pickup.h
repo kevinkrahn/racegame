@@ -39,6 +39,7 @@ public:
         collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_PICKUP, -1, 0, 0));
         collisionShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
         collisionShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+        collisionShape->setLocalPose(PxTransform(PxVec3(0, 0, 1.4f)));
 
         scene->getPhysicsScene()->addActor(*actor);
     }
