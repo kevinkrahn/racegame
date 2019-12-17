@@ -106,6 +106,7 @@ struct Textures
 
 struct Sounds
 {
+    Sound evironment = Sound("sounds/environment.ogg");
     Sound blaster = Sound("sounds/blaster.wav");
     Sound blaster_hit = Sound("sounds/blaster_hit.wav");
     Sound bouncer_bounce = Sound("sounds/bouncer_bounce.wav");

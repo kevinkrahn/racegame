@@ -23,7 +23,6 @@ public:
     {
         this->entityFlags |= Entity::TRANSIENT;
         mesh = g_res.getMesh("money.Money");
-        print("creating pickup\n");
 
         updateTransform(scene);
         actor = g_game.physx.physics->createRigidStatic(

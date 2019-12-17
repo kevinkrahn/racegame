@@ -5,34 +5,65 @@
 
 Sound::Sound(const char* filename)
 {
-    // TODO: support .ogg files
-    SDL_AudioSpec spec;
-    u32 size;
-    u8* wavBuffer;
-    if (SDL_LoadWAV(filename, &spec, &wavBuffer, &size) == nullptr)
+    std::string fname(filename);
+    std::string ext = fname.substr(fname.size()-4);
+    if (ext == ".wav")
     {
-        error("Failed to load wav file: ", filename, "(", SDL_GetError(), ")\n");
-        return;
-    }
+        SDL_AudioSpec spec;
+        u32 size;
+        u8* wavBuffer;
+        if (SDL_LoadWAV(filename, &spec, &wavBuffer, &size) == nullptr)
+        {
+            error("Failed to load wav file: ", filename, "(", SDL_GetError(), ")\n");
+            return;
+        }
 
-    if (spec.freq != 44100)
+        if (spec.freq != 44100)
+        {
+            error("Failed to load wav file: ", filename, "(Unsupported frequency)\n");
+            return;
+        }
+
+        if (spec.format != AUDIO_S16)
+        {
+            error("Failed to load wav file: ", filename, "(Unsupported sample format)\n");
+            return;
+        }
+
+        numChannels = spec.channels;
+        numSamples = (size / spec.channels) / sizeof(i16);
+        audioData.reset(new i16[size / sizeof(i16)]);
+        memcpy(audioData.get(), wavBuffer, size);
+
+        SDL_FreeWAV(wavBuffer);
+    }
+    else if (ext == ".ogg")
     {
-        error("Failed to load wav file: ", filename, "(Unsupported frequency)\n");
-        return;
-    }
+        short* buf;
+        int channels;
+        int rate;
+        int count = decodeVorbis(filename, &channels, &rate, &buf);
+        if (count == -1)
+        {
+            error("Failed to load audio file: ", filename);
+            return;
+        }
+        if (rate != 44100)
+        {
+            error("Unsupported sample rate: ", rate, " (", filename, ")");
+            return;
+        }
 
-    if (spec.format != AUDIO_S16)
+        numSamples = count;
+        numChannels = channels;
+        audioData.reset(new i16[count * numChannels]);
+        memcpy(audioData.get(), buf, count * numChannels * sizeof(i16));
+        free(buf);
+    }
+    else
     {
-        error("Failed to load wav file: ", filename, "(Unsupported sample format)\n");
-        return;
+        error("Unsupported audio format: ", filename, '\n');
     }
-
-    numChannels = spec.channels;
-    numSamples = (size / spec.channels) / sizeof(i16);
-    audioData.reset(new i16[size / sizeof(i16)]);
-    memcpy(audioData.get(), wavBuffer, size);
-
-    SDL_FreeWAV(wavBuffer);
 }
 
 void SDLAudioCallback(void* userdata, u8* buf, i32 len)
