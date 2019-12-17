@@ -20,8 +20,7 @@ void Weapon::loadSceneData(const char* sceneName)
         glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
         if (name.find("SpawnPoint") != std::string::npos)
         {
-            projectileSpawnPoint = translationOf(transform);
-            break;
+            projectileSpawnPoints.push_back(translationOf(transform));
         }
     }
 }

@@ -12,8 +12,10 @@
 - Allow setting the number of laps for a race in the editor
 - Get rid of GLM because it makes compile times so long
 - Add motion blur when using rocket booster
+- Add muzzle flash for minigun
 
 - Ideas:
+    - Grenade launcher weapon
     - Weapon that drops bouncing explosive balls from the back of the vehicle
-    - Missile rack on back of truck
+    - Missile rack on back of truck (shoots high into the air and homes down on a target)
     - Vehicle upgrade with visual properties, like a spoiler for downforce, or visual armour

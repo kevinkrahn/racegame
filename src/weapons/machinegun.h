@@ -8,6 +8,10 @@
 class WMachineGun : public Weapon
 {
     f32 repeatTimer = 0.f;
+    Mesh* mesh;
+    Mesh* meshBarrel;
+    f32 barrelSpin = 0.f;
+    f32 barrelSpinSpeed = 0.f;
 
 public:
     WMachineGun()
@@ -23,11 +27,16 @@ public:
         fireMode = FireMode::CONTINUOUS;
 
         loadSceneData("minigun.Minigun");
+        mesh = g_res.getMesh("minigun.Minigun");
+        meshBarrel = g_res.getMesh("minigun.MinigunBarrel");
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
+        barrelSpinSpeed = glm::max(barrelSpinSpeed - deltaTime * 8.f, 0.f);
+        barrelSpin += barrelSpinSpeed * deltaTime;
+
         if (!fireHold)
         {
             return;
@@ -41,6 +50,8 @@ public:
             }
             return;
         }
+
+        barrelSpinSpeed = 12.f;
 
         if (repeatTimer > 0.f)
         {
@@ -56,7 +67,7 @@ public:
         {
             vel = glm::normalize(vel) * minSpeed;
         }
-        glm::vec3 pos = transform * mountTransform * glm::vec4(projectileSpawnPoint, 1.f);
+        glm::vec3 pos = transform * mountTransform * glm::vec4(projectileSpawnPoints[0], 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BULLET));
 
@@ -73,6 +84,9 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        rw->push(LitRenderable(g_res.getMesh("minigun.Minigun"), vehicleTransform * mountTransform));
+        rw->push(LitRenderable(mesh, vehicleTransform * mountTransform));
+        rw->push(LitRenderable(meshBarrel, vehicleTransform * mountTransform
+                    * glm::translate(glm::mat4(1.f), glm::vec3(0.556007, 0, 0.397523f))
+                    * glm::rotate(glm::mat4(1.f), barrelSpin, glm::vec3(1, 0, 0))));
     }
 };

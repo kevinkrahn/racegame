@@ -219,9 +219,9 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                         position, glm::vec4(settings.emit, 0.8f), 0.75f));
             break;
         case MISSILE:
-            settings.color = glm::vec3(0.1f);
-            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
-                * m * glm::scale(glm::mat4(1.f), glm::vec3(0.8f));
+            settings.mesh = g_res.getMesh("missile.Missile");
+            settings.color = glm::vec3(1.f);
+            settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(&g_res.textures->flare, position,
                         glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f));

@@ -313,6 +313,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
                 auto w = g_weapons[config.frontWeaponIndices[i]].create();
                 w->upgradeLevel = config.frontWeaponUpgradeLevel[i];
                 w->mountTransform = weaponMounts[i];
+                w->refillAmmo();
                 w->render(rw, transform, config, *this);
             }
         }
@@ -322,6 +323,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             {
                 auto w = g_weapons[config.rearWeaponIndices[i]].create();
                 w->upgradeLevel = config.rearWeaponUpgradeLevel[i];
+                w->refillAmmo();
                 w->render(rw, transform, config, *this);
             }
         }

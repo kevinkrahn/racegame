@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include <vector>
+#include "smallvec.h"
 
 struct WeaponInfo
 {
@@ -34,7 +35,7 @@ public:
     u32 ammoUnitCount = 1;
     u32 upgradeLevel;
     glm::mat4 mountTransform;
-    glm::vec3 projectileSpawnPoint = glm::vec3(3.f, 0, 0);
+    SmallVec<glm::vec3, 3> projectileSpawnPoints;
 
     void loadSceneData(const char* sceneName);
     void outOfAmmo(class Vehicle* vehicle);
