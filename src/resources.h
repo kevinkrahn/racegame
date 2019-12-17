@@ -83,6 +83,7 @@ struct Textures
     Texture icon_straight_track = Texture("textures/icons/straight_track_icon.png", false);
     Texture icon_terrain = Texture("textures/icons/terrain_icon.png", false);
     Texture icon_track = Texture("textures/icons/track_icon.png", false);
+    Texture icon_sell = Texture("textures/icons/icon_sell.png", false);
 
     Texture decal_arrow = Texture("textures/decals/arrow.png");
     Texture decal_arrow_left = Texture("textures/decals/arrow_left.png");

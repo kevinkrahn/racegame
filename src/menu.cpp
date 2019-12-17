@@ -544,6 +544,7 @@ void Menu::championshipGarage()
         u32 weaponNumber = mode - 4;
         g_gui.label(tstr("Front Weapon ", weaponNumber + 1));
         i32 equippedWeaponIndex = vehicleConfig.frontWeaponIndices[weaponNumber];
+        bool hasWeapon = driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] != -1;
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
             auto& weapon = g_weapons[i];
@@ -559,11 +560,10 @@ void Menu::championshipGarage()
             bool isEquipped = equippedWeaponIndex != -1 && equippedWeaponIndex == i;
             if (isEquipped)
             {
-                extraText =
-                    tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
+                extraText = tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
             }
             if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
-                        driver.credits >= weapon.info.price &&
+                        driver.credits >= weapon.info.price && (isEquipped || !hasWeapon) &&
                             ((upgradeLevel < weapon.info.maxUpgradeLevel && isEquipped) || !isEquipped),
                         weapon.info.icon, &isSelected))
             {
@@ -584,12 +584,28 @@ void Menu::championshipGarage()
                 messageStr = weapon.info.description;
             }
         }
+
+        if (hasWeapon)
+        {
+            g_gui.gap(20);
+            auto& weapon = g_weapons[driver.getVehicleConfig()->frontWeaponIndices[weaponNumber]];
+            u32 upgradeLevel = driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber];
+            if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
+                        tstr("Value: ", weapon.info.price * upgradeLevel / 2), nullptr, true,
+                        &g_res.textures->icon_sell, nullptr, false))
+            {
+                driver.credits += weapon.info.price * upgradeLevel / 2;
+                driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] = -1;
+                driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber] = 0;
+            }
+        }
     }
     else if (mode == 7 || mode == 8)
     {
         u32 weaponNumber = mode - 7;
         g_gui.label(tstr("Rear Weapon ", weaponNumber + 1));
         i32 equippedWeaponIndex = vehicleConfig.rearWeaponIndices[weaponNumber];
+        bool hasWeapon = driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] != -1;
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
             auto& weapon = g_weapons[i];
@@ -605,11 +621,10 @@ void Menu::championshipGarage()
             bool isEquipped = equippedWeaponIndex != -1 && equippedWeaponIndex == i;
             if (isEquipped)
             {
-                extraText =
-                    tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
+                extraText = tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
             }
             if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
-                        driver.credits >= weapon.info.price &&
+                        driver.credits >= weapon.info.price && (isEquipped || !hasWeapon) &&
                             ((upgradeLevel < weapon.info.maxUpgradeLevel && isEquipped) || !isEquipped),
                         weapon.info.icon, &isSelected))
             {
@@ -630,11 +645,27 @@ void Menu::championshipGarage()
                 messageStr = weapon.info.description;
             }
         }
+
+        if (hasWeapon)
+        {
+            g_gui.gap(20);
+            auto& weapon = g_weapons[driver.getVehicleConfig()->rearWeaponIndices[weaponNumber]];
+            u32 upgradeLevel = driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber];
+            if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
+                        tstr("Value: ", weapon.info.price * upgradeLevel / 2), nullptr, true,
+                        &g_res.textures->icon_sell, nullptr, false))
+            {
+                driver.credits += weapon.info.price * upgradeLevel / 2;
+                driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] = -1;
+                driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber] = 0;
+            }
+        }
     }
     else if (mode == 9)
     {
         g_gui.label("Special Ability");
         i32 equippedWeaponIndex = vehicleConfig.specialAbilityIndex;
+        bool hasWeapon = vehicleConfig.specialAbilityIndex != -1;
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
         {
             auto& weapon = g_weapons[i];
@@ -652,7 +683,7 @@ void Menu::championshipGarage()
                 extraText = "Equipped";
             }
             if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
-                        driver.credits >= weapon.info.price && !isEquipped,
+                        driver.credits >= weapon.info.price && !hasWeapon,
                         weapon.info.icon, &isSelected))
             {
                 driver.credits -= weapon.info.price;
@@ -662,6 +693,19 @@ void Menu::championshipGarage()
             if (isSelected)
             {
                 messageStr = weapon.info.description;
+            }
+        }
+
+        if (hasWeapon)
+        {
+            g_gui.gap(20);
+            auto& weapon = g_weapons[driver.getVehicleConfig()->specialAbilityIndex];
+            if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
+                        tstr("Value: ", weapon.info.price / 2), nullptr, true,
+                        &g_res.textures->icon_sell, nullptr, false))
+            {
+                driver.credits += weapon.info.price / 2;
+                driver.getVehicleConfig()->specialAbilityIndex = -1;
             }
         }
     }

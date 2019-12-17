@@ -408,7 +408,7 @@ bool Gui::button(const char* text, bool active, Texture* icon, bool iconbg)
 }
 
 bool Gui::itemButton(const char* text, const char* smallText, const char* extraText,
-        bool active, Texture* icon, bool* isSelected)
+        bool active, Texture* icon, bool* isSelected, bool showIconBackground)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -452,8 +452,11 @@ bool Gui::itemButton(const char* text, const char* smallText, const char* extraT
                 HorizontalAlign::LEFT, VerticalAlign::TOP));
 
     f32 iconSize = glm::floor(bh * 0.8f);
-    renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
-                pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    if (showIconBackground)
+    {
+        renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
+                    pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    }
     if (icon)
     {
         renderer->push2D(QuadRenderable(icon,
