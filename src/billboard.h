@@ -3,6 +3,7 @@
 #include "math.h"
 #include "renderable.h"
 #include "resources.h"
+#include "renderer.h"
 
 class BillboardRenderable : public Renderable
 {
@@ -11,13 +12,19 @@ class BillboardRenderable : public Renderable
     glm::vec4 color;
     f32 scale;
     f32 angle;
+    bool lit;
 
 public:
     BillboardRenderable(Texture* tex, glm::vec3 const& position, glm::vec4 const& color,
-            f32 scale=1.f, f32 angle=0.f)
-        : tex(tex->handle), position(position), color(color), scale(scale), angle(angle) {}
+            f32 scale=1.f, f32 angle=0.f, bool lit=true)
+        : tex(tex->handle), position(position), color(color), scale(scale), angle(angle), lit(lit) {}
 
-    i32 getPriority() const override { return 10001; }
+    i32 getPriority() const override { return 10001 + lit; }
+
+    void onLitPassPriorityTransition(Renderer* renderer) override
+    {
+        glUseProgram(renderer->getShaderProgram(lit ? "billboard" : "billboard_unlit"));
+    }
 
     void onLitPass(Renderer* renderer) override
     {

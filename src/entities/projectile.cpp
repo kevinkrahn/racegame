@@ -207,7 +207,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(&g_res.textures->flare,
-                        position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f));
+                        position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f, 0.f, false));
             break;
         case BULLET:
             settings.color = glm::vec3(1.f, 0.5f, 0.01f);
@@ -216,7 +216,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.35f));
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(&g_res.textures->flare,
-                        position, glm::vec4(settings.emit, 0.8f), 0.75f));
+                        position, glm::vec4(settings.emit, 0.8f), 0.75f, 0.f, false));
             break;
         case MISSILE:
             settings.mesh = g_res.getMesh("missile.Missile");
@@ -224,7 +224,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(&g_res.textures->flare, position,
-                        glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f));
+                        glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false));
             break;
         case BOUNCER:
             settings.mesh = g_res.getMesh("world.Sphere");
@@ -233,9 +233,8 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             settings.worldTransform = glm::translate(glm::mat4(1.f), position)
                  * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
             rw->push(LitRenderable(settings));
-            // TODO: use unlit billboard
             rw->push(BillboardRenderable(&g_res.textures->bouncer_projectile,
-                        position, glm::vec4(1.f), 1.75f));
+                        position, glm::vec4(1.f), 1.75f, 0.f, false));
             break;
     }
 }

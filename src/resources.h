@@ -173,6 +173,7 @@ const char* dataFiles[] = {
     "models/weapons/minigun.dat",
     "models/weapons/blaster.dat",
     "models/weapons/missile.dat",
+    "models/weapons/bouncer.dat",
 };
 
 class Resources

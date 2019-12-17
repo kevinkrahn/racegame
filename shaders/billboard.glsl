@@ -63,6 +63,7 @@ void main()
     float depth = texture(depthSampler, vec3(gl_FragCoord.xy / textureSize(depthSampler, 0).xy, gl_Layer)).r;
     float d = depth - gl_FragCoord.z;
     outColor.a *= clamp(d, 0.0, 0.002) * 800.0;
+    outColor.a = clamp(outColor.a, 0.0, 1.0);
 }
 
 #elif defined GEOM

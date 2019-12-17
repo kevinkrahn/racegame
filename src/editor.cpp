@@ -277,7 +277,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_game.state.drivers.clear();
         g_game.state.drivers.push_back(Driver(true, true, true, 0, 2));
         auto conf = g_game.state.drivers.back().getVehicleConfig();
-        conf->frontWeaponIndices[0] = 2;
+        conf->frontWeaponIndices[0] = 3;
         conf->frontWeaponUpgradeLevel[0] = 5;
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();

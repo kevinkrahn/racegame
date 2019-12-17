@@ -258,6 +258,7 @@ void Renderer::initShaders()
     loadShader("post");
     loadShader("mesh2D");
     loadShader("billboard", { "LIT" });
+    loadShader("billboard", {}, "billboard_unlit");
     loadShader("ribbon");
     loadShader("csz");
     loadShader("csz_minify");
