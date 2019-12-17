@@ -17,6 +17,7 @@ const char* championshipTracks[] = {
     "tracks/track4.dat",
     "tracks/track5.dat",
     "tracks/track6.dat",
+    "tracks/track7.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -24,6 +25,7 @@ const char* championshipTracks[] = {
     "tracks/track4.dat",
     "tracks/track5.dat",
     "tracks/track6.dat",
+    "tracks/track7.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -31,6 +33,7 @@ const char* championshipTracks[] = {
     "tracks/track4.dat",
     "tracks/track5.dat",
     "tracks/track6.dat",
+    "tracks/track7.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -38,6 +41,7 @@ const char* championshipTracks[] = {
     "tracks/track4.dat",
     "tracks/track5.dat",
     "tracks/track6.dat",
+    "tracks/track7.dat",
 };
 
 void Menu::mainMenu()

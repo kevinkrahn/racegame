@@ -1146,7 +1146,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
             {
                 f32 maxTargetDist = aggression * 25.f + 15.f;
-		f32 lowestTargetPriority = FLT_MAX;
+                f32 lowestTargetPriority = FLT_MAX;
                 for (auto& v : scene->getVehicles())
                 {
                     if (v.get() == this)
@@ -1156,13 +1156,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
                     glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
                     glm::vec2 targetDiff = glm::normalize(-diff);
-		    f32 d = glm::length2(diff);
-		    f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
-		    f32 targetPriority = d + dot * 4.f;
+                    f32 d = glm::length2(diff);
+                    f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
+                    f32 targetPriority = d + dot * 4.f;
                     if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
                     {
                         target = v.get();
-			lowestTargetPriority = targetPriority;
+                        lowestTargetPriority = targetPriority;
                     }
                 }
             }
@@ -1663,7 +1663,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         bool wasWheelSlipping = isWheelSlipping[i];
         isWheelSlipping[i] = (slip > 0.f || wheelOilCoverage[i] > 0.f) && !info.isInAir;
         maxSlip = glm::max(maxSlip, slip);
-	    wheelOilCoverage[i] = glm::max(wheelOilCoverage[i] - deltaTime, 0.f);
+        wheelOilCoverage[i] = glm::max(wheelOilCoverage[i] - deltaTime, 0.f);
 
         // create smoke
         if (slip > 0.f && !info.isInAir && !isWheelOffroad)
