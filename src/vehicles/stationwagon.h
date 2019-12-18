@@ -15,41 +15,7 @@ public:
         rearWeaponCount = 2;
 
         loadSceneData("stationwagon.Vehicle");
-
-        availableUpgrades = {
-            {
-                "Engine",
-                "Upgrades the engine to improve\nacceleration and top speed.",
-                &g_res.textures->icon_pistons,
-                PerformanceUpgradeType::ENGINE,
-                5,
-                1500,
-            },
-            {
-                "Tires",
-                "Equips better tires for improved traction\nand overall handling.",
-                &g_res.textures->icon_wheel,
-                PerformanceUpgradeType::TIRES,
-                5,
-                1000,
-            },
-            {
-                "Armor",
-                "Adds additional armor to improve\nresistance against all forms of damage.",
-                &g_res.textures->icon_armor,
-                PerformanceUpgradeType::ARMOR,
-                5,
-                1000,
-            },
-            {
-                "Suspension",
-                "Upgrades the suspension to be stiffer\nand more stable around corners.",
-                &g_res.textures->icon_suspension,
-                PerformanceUpgradeType::SUSPENSION,
-                2,
-                1250,
-            },
-        };
+        initStandardUpgrades();
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
@@ -127,6 +93,11 @@ public:
                     break;
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 12.f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::WEIGHT_REDUCTION:
+                    tuning.chassisMass -= 30.f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
+                    tuning.specs.handling += 0.02f * u.upgradeLevel;
                     break;
                 // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:

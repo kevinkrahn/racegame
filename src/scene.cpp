@@ -899,6 +899,8 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             if (b->vehicle->hasAbility("Ram Booster"))
                             {
                                 myDamage *= 2.5f;
+                                // TODO: test this out
+                                myDamage = std::max(myDamage, 5.f);
                             }
                             if (a->vehicle->hasAbility("Ram Booster"))
                             {
@@ -921,6 +923,8 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             if (a->vehicle->hasAbility("Ram Booster"))
                             {
                                 myDamage *= 2.5f;
+                                // TODO: test this out
+                                myDamage = std::max(myDamage, 5.f);
                             }
                             if (b->vehicle->hasAbility("Ram Booster"))
                             {

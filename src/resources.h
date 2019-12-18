@@ -61,6 +61,8 @@ struct Textures
     Texture icon_bouncer = Texture("textures/icons/bouncer_icon.png", false);
     Texture icon_glow = Texture("textures/icons/glow_icon.png", false);
     Texture icon_armor = Texture("textures/icons/icon_armor.png", false);
+    Texture icon_kinetic_armor = Texture("textures/icons/icon_kinetic_armor.png", false);
+    Texture icon_underplating = Texture("textures/icons/icon_underplating.png", false);
     Texture icon_drivetrain = Texture("textures/icons/icon_drivetrain.png", false);
     Texture icon_engine = Texture("textures/icons/icon_engine.png", false);
     Texture icon_flag = Texture("textures/icons/icon_flag.png", false);

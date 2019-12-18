@@ -272,7 +272,6 @@ enum struct PerformanceUpgradeType
     AERODYNAMICS,
     TRANSMISSION,
     WEIGHT_REDUCTION,
-    UNDER_PLATING,
     ALL_WHEEL_DRIVE,
 };
 
@@ -325,6 +324,7 @@ struct VehicleData
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
     void loadSceneData(const char* sceneName);
     void copySceneDataToTuning(VehicleTuning& tuning);
+    void initStandardUpgrades();
 };
 
 std::vector<std::unique_ptr<VehicleData>> g_vehicles;

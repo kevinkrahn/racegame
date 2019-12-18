@@ -418,7 +418,7 @@ void Menu::championshipGarage()
                 g_gui.forceSelection(0);
             }
         }
-        if (g_gui.button("Special Ability", driver.vehicleIndex != -1,
+        if (g_gui.button("Passive Ability", driver.vehicleIndex != -1,
                     vehicleConfig.specialAbilityIndex == -1 ? &g_res.textures->iconbg
                     : g_weapons[vehicleConfig.specialAbilityIndex].info.icon))
         {
@@ -676,7 +676,7 @@ void Menu::championshipGarage()
     }
     else if (mode == 9)
     {
-        g_gui.label("Special Ability");
+        g_gui.label("Passive Ability");
         i32 equippedWeaponIndex = vehicleConfig.specialAbilityIndex;
         bool hasWeapon = vehicleConfig.specialAbilityIndex != -1;
         for (i32 i = 0; i<(i32)g_weapons.size(); ++i)

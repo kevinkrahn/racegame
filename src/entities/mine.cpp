@@ -68,7 +68,10 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 if (userData && (userData->entityType == ActorUserData::VEHICLE))
                 {
                     Vehicle* vehicle = (Vehicle*)userData->vehicle;
-                    vehicle->applyDamage(50.f, instigator);
+                    if (!vehicle->hasAbility("Underplating"))
+                    {
+                        vehicle->applyDamage(50.f, instigator);
+                    }
                     vehicle->getRigidBody()->addForce(convert(zAxisOf(transform) * 6000.f),
                             PxForceMode::eIMPULSE);
                 }
