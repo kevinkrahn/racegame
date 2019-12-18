@@ -8,11 +8,11 @@
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line?)
-- Add unlit mode for bright billboards
 - Allow setting the number of laps for a race in the editor
 - Get rid of GLM because it makes compile times so long
 - Add motion blur when using rocket booster
 - Add muzzle flash for minigun
+- Add testing zone where you can drive around an open area
 
 - Ideas:
     - Grenade launcher weapon

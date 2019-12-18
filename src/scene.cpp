@@ -1046,6 +1046,6 @@ void Scene::deserializeTransientEntities(std::vector<DataFile::Value>& entities)
     }
     for (auto& e : entities)
     {
-        deserializeEntity(e);
+        deserializeEntity(e)->setPersistent(true);
     }
 }
