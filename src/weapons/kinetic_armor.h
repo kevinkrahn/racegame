@@ -27,4 +27,17 @@ public:
     {
         // TODO: show effect when taking damage
     }
+
+    f32 onDamage(f32 damage) override
+    {
+        if (ammo > 0)
+        {
+            if (damage > 8.f)
+            {
+                ammo = 0;
+            }
+            return 0.f;
+        }
+        return damage;
+    }
 };

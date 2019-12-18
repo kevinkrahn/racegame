@@ -48,5 +48,6 @@ public:
     virtual void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             struct VehicleConfiguration const& config, struct VehicleData const& vehicleData) {}
     virtual void reset() {}
+    virtual f32 onDamage(f32 damage) { return damage; }
 };
 

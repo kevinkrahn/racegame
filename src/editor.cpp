@@ -279,6 +279,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         auto conf = g_game.state.drivers.back().getVehicleConfig();
         conf->frontWeaponIndices[0] = 3;
         conf->frontWeaponUpgradeLevel[0] = 5;
+        conf->specialAbilityIndex = 10;
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();
         entityDragAxis = DragAxis::NONE;

@@ -560,6 +560,10 @@ void Vehicle::resetAmmo()
     {
         w->refillAmmo();
     }
+    if (specialAbility)
+    {
+        specialAbility->refillAmmo();
+    }
 }
 
 void Vehicle::reset(glm::mat4 const& transform)

@@ -172,11 +172,18 @@ public:
     void reset(glm::mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator)
     {
-        hitPoints -= amount;
-        lastDamagedBy = instigator;
-        if (smokeTimerDamage <= 0.f)
+        if (specialAbility)
         {
-            smokeTimerDamage = 0.015f;
+            amount = specialAbility->onDamage(amount);
+        }
+        if (amount > 0.f)
+        {
+            hitPoints -= amount;
+            lastDamagedBy = instigator;
+            if (smokeTimerDamage <= 0.f)
+            {
+                smokeTimerDamage = 0.015f;
+            }
         }
     }
     void addNotification(const char* str, f32 time=2.f, glm::vec3 const& color=glm::vec3(1.f))
