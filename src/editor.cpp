@@ -109,12 +109,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.option("Erode", (i32)TerrainTool::ERODE, &g_res.textures->icon_terrain);
         g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, &g_res.textures->icon_terrain);
         g_gui.option("Paint", (i32)TerrainTool::PAINT, &g_res.textures->icon_terrain);
+        g_gui.option("Resize", (i32)TerrainTool::RESIZE, &g_res.textures->icon_terrain);
         g_gui.end();
 
-        g_gui.label("Brush Settings", false);
-        g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
-        g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
-        g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
+        if ((i32)terrainTool < (i32)TerrainTool::RESIZE)
+        {
+            g_gui.label("Brush Settings", false);
+            g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
+            g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
+            g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
+        }
 
         if (terrainTool == TerrainTool::PAINT)
         {
@@ -125,6 +129,44 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             g_gui.option(m.textureNames[2], 2);
             g_gui.option(m.textureNames[3], 3);
             g_gui.end();
+        }
+
+        if (terrainTool == TerrainTool::RESIZE)
+        {
+            Terrain* t = scene->terrain;
+            f32 s = t->tileSize * 4.f;
+            if (g_gui.button("X1+"))
+            {
+                t->resize(t->x1 + s, t->y1, t->x2, t->y2, true);
+            }
+            if (g_gui.button("X1-"))
+            {
+                t->resize(t->x1 - s, t->y1, t->x2, t->y2, true);
+            }
+            if (g_gui.button("Y1+"))
+            {
+                t->resize(t->x1, t->y1 + s, t->x2, t->y2, true);
+            }
+            if (g_gui.button("Y1-"))
+            {
+                t->resize(t->x1, t->y1 - s, t->x2, t->y2, true);
+            }
+            if (g_gui.button("X2+"))
+            {
+                t->resize(t->x1, t->y1, t->x2 + s, t->y2, true);
+            }
+            if (g_gui.button("X2-"))
+            {
+                t->resize(t->x1, t->y1, t->x2 - s, t->y2, true);
+            }
+            if (g_gui.button("Y2+"))
+            {
+                t->resize(t->x1, t->y1, t->x2, t->y2 + s, true);
+            }
+            if (g_gui.button("Y2-"))
+            {
+                t->resize(t->x1, t->y1, t->x2, t->y2 - s, true);
+            }
         }
     }
     else if (editMode == EditMode::TRACK)

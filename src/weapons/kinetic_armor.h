@@ -36,6 +36,10 @@ public:
             {
                 ammo = 0;
             }
+            else
+            {
+                // TODO: play "absorb" sound effect
+            }
             return 0.f;
         }
         return damage;

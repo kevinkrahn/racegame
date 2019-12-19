@@ -49,8 +49,17 @@ void Terrain::generate(f32 heightScale, f32 scale)
     setDirty();
 }
 
-void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
+void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve)
 {
+    // record old info
+    std::unique_ptr<f32[]> oldHeightBuffer(heightBuffer.release());
+    i32 ow = (i32)((this->x2 - this->x1) / tileSize);
+    i32 oh = (i32)((this->y2 - this->y1) / tileSize);
+    std::unique_ptr<u32[]> oldBlend(blend.release());
+    i32 xOffset = (i32)((this->x1 - x1) / tileSize);
+    i32 yOffset = (i32)((this->y1 - y1) / tileSize);
+
+    // allocate and clear new buffers
     this->x1 = snap(x1, tileSize);
     this->y1 = snap(y1, tileSize);
     this->x2 = snap(x2, tileSize);
@@ -70,6 +79,23 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2)
 	{
 		blend[i] = 0x000000FF;
 	}
+
+    // copy over old
+    if (preserve)
+    {
+        i32 startOffsetX = glm::max(0, -xOffset);
+        i32 startOffsetY = glm::max(0, -yOffset);
+        i32 w = glm::min(width - xOffset, ow);
+        i32 h = glm::min(height - yOffset, oh);
+        for (i32 x=startOffsetX; x<w; ++x)
+        {
+            for (i32 y=startOffsetY; y<h; ++y)
+            {
+                heightBuffer[(y + yOffset) * width + x + xOffset] = oldHeightBuffer[y * ow + x];
+            }
+        }
+    }
+
     setDirty();
 }
 

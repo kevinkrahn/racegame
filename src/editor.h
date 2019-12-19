@@ -55,6 +55,7 @@ class Editor
         ERODE,
         MATCH_TRACK,
         PAINT,
+        RESIZE,
         MAX
     } terrainTool = TerrainTool::RAISE;
     i32 paintMaterialIndex = 2;
