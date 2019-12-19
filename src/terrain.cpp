@@ -92,6 +92,7 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve)
             for (i32 y=startOffsetY; y<h; ++y)
             {
                 heightBuffer[(y + yOffset) * width + x + xOffset] = oldHeightBuffer[y * ow + x];
+                blend[(y + yOffset) * width + x + xOffset] = oldBlend[y * ow + x];
             }
         }
     }
