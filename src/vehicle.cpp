@@ -1567,15 +1567,28 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     else
     {
+        bool validGround = false;
         PxRaycastBuffer hit;
         if (scene->raycastStatic(currentPosition, { 0, 0, -1 }, 3.0f, &hit))
         {
             onGround = true;
             PxMaterial* hitMaterial = hit.block.shape->getMaterialFromInternalFaceIndex(hit.block.faceIndex);
-            if (hitMaterial != scene->trackMaterial && hitMaterial != scene->offroadMaterial)
+            if (hitMaterial == scene->trackMaterial || hitMaterial == scene->offroadMaterial)
             {
-                applyDamage(100.f, vehicleIndex);
+                validGround = true;
             }
+        }
+        if (!validGround)
+        {
+            if (scene->raycastStatic(currentPosition, { 0, 0, -1 }, 3.0f, nullptr, COLLISION_FLAG_TRACK))
+            {
+                onGround = true;
+                validGround = true;
+            }
+        }
+        if (onGround && !validGround)
+        {
+            applyDamage(100.f, vehicleIndex);
         }
     }
 

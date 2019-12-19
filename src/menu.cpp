@@ -19,6 +19,7 @@ const char* championshipTracks[] = {
     "tracks/track6.dat",
     "tracks/track7.dat",
     "tracks/track8.dat",
+    "tracks/track9.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -28,6 +29,7 @@ const char* championshipTracks[] = {
     "tracks/track6.dat",
     "tracks/track7.dat",
     "tracks/track8.dat",
+    "tracks/track9.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -37,6 +39,7 @@ const char* championshipTracks[] = {
     "tracks/track6.dat",
     "tracks/track7.dat",
     "tracks/track8.dat",
+    "tracks/track9.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -46,6 +49,7 @@ const char* championshipTracks[] = {
     "tracks/track6.dat",
     "tracks/track7.dat",
     "tracks/track8.dat",
+    "tracks/track9.dat",
 
     "tracks/track1.dat",
     "tracks/track2.dat",
@@ -55,6 +59,7 @@ const char* championshipTracks[] = {
     "tracks/track6.dat",
     "tracks/track7.dat",
     "tracks/track8.dat",
+    "tracks/track9.dat",
 };
 
 void Menu::mainMenu()
@@ -91,9 +96,9 @@ void Menu::mainMenu()
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-        //Scene* scene = g_game.changeScene("tracks/track6.dat");
-        Scene* scene = g_game.changeScene(
-                championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);
+        Scene* scene = g_game.changeScene("tracks/track9.dat");
+        //Scene* scene = g_game.changeScene(
+                //championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);
         scene->startRace();
         menuMode = HIDDEN;
     }
