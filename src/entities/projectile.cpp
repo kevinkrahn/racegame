@@ -18,12 +18,14 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             groundFollow = false;
             collisionRadius = 0.4f;
             damage = 50;
+            this->velocity -= upVector * 0.7f;
             break;
         case BULLET:
             life = 2.f;
             groundFollow = false;
             collisionRadius = 0.1f;
             damage = 12;
+            this->velocity -= upVector;
             break;
         case MISSILE:
             life = 4.f;

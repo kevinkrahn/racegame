@@ -317,9 +317,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     {
         serializedTransientEntities = scene->serializeTransientEntities();
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true, true, true, 0, 2));
+        g_game.state.drivers.push_back(Driver(true, true, true, 0, 0));
         auto conf = g_game.state.drivers.back().getVehicleConfig();
-        conf->frontWeaponIndices[0] = 3;
+        conf->frontWeaponIndices[0] = 1;
         conf->frontWeaponUpgradeLevel[0] = 5;
         conf->specialAbilityIndex = 10;
         scene->terrain->regenerateCollisionMesh(scene);

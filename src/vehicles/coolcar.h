@@ -73,7 +73,7 @@ public:
         tuning.frontAntiRollbarStiffness = 8000.f;
         tuning.rearAntiRollbarStiffness = 8000.f;
         tuning.ackermannAccuracy = 0.8f;
-        tuning.centerOfMass = { 0.09f, 0.f, -0.6f };
+        tuning.centerOfMass = { 0.4f, 0.f, -0.6f };
 
         for (auto& u : configuration.performanceUpgrades)
         {
