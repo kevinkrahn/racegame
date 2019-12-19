@@ -593,6 +593,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake)
 {
     engineThrottle = 0.f;
+    isBraking = handbrake || brake > 0.2f || onlyBrake;
     if (canGo)
     {
         PxVehicleDrive4WRawInputData inputs;
@@ -928,7 +929,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
     driver->getVehicleData()->render(rw, transform,
-            wheelTransforms, *driver->getVehicleConfig(), this);
+            wheelTransforms, *driver->getVehicleConfig(), this, isBraking);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
 }

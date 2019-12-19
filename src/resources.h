@@ -156,6 +156,7 @@ const char* dataFiles[] = {
     "models/mine.dat",
     "models/plants.dat",
     "models/railing.dat",
+    "models/railing2.dat",
     "models/rock.dat",
     "models/tree.dat",
     "models/world.dat",

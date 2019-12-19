@@ -113,7 +113,18 @@ void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             }
             else
             {
-                rw->push(LitRenderable(&railing->mesh, glm::mat4(1.f), railing->tex));
+                LitRenderable l;
+                l.settings.mesh = &railing->mesh;
+                l.settings.worldTransform = glm::mat4(1.f);
+                l.settings.texture = railing->tex;
+                if (railing->meshTypeIndex == 3)
+                {
+                    l.settings.reflectionLod = 1.f;
+                    l.settings.reflectionBias = 0.2f;
+                    l.settings.reflectionStrength = 0.8f;
+                    l.settings.color = glm::vec3(0.2f);
+                }
+                rw->push(std::move(l));
             }
         }
     }

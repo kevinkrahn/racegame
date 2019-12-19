@@ -43,6 +43,7 @@ public:
 
     // physics data
     bool isInAir = true;
+    bool isBraking = false;
     PxVehicleDrive4W* vehicle4W;
     ActorUserData actorUserData;
     VehicleSceneQueryData* sceneQueryData;
