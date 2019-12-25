@@ -79,7 +79,7 @@ public:
     bool isKeyboardInputHandled = true;
 
     bool didSelect();
-    i32 didChangeSelection();
+    i32 didChangeSelection(WidgetState* panelState);
     bool didGoBack();
 
     f32 convertSize(f32 size);
@@ -90,7 +90,8 @@ public:
     void end();
     void beginPanel(const char* text, glm::vec2 position, f32 halign,
             bool solidBackground=false, bool useKeyboardControl=false,
-            bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220);
+            bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220,
+            f32 maxHeight=0.f);
     bool button(const char* text, bool active=true, Texture* icon=nullptr, bool iconbg=true);
     bool itemButton(const char* text, const char* smallText, const char* extraText,
             bool active=true, Texture* icon=nullptr, bool* isSelected=nullptr, bool showIconBackground=true);

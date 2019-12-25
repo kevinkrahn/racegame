@@ -150,7 +150,7 @@ bool Gui::didGoBack()
     return false;
 }
 
-i32 Gui::didChangeSelection()
+i32 Gui::didChangeSelection(WidgetState* panelState)
 {
     i32 result = (i32)(g_input.isKeyPressed(KEY_RIGHT, true) || didSelect())
                 - (i32)g_input.isKeyPressed(KEY_LEFT, true);
@@ -161,7 +161,20 @@ i32 Gui::didChangeSelection()
                         pair.second.isButtonPressed(BUTTON_DPAD_LEFT);
         if (!tmpResult)
         {
-            tmpResult = (i32)glm::sign(pair.second.getAxis(AXIS_LEFT_X));
+            if (panelState->repeatTimer == 0.f)
+            {
+                f32 xaxis = pair.second.getAxis(AXIS_LEFT_X);
+                if (xaxis < -0.2f)
+                {
+                    tmpResult = -1;
+                    panelState->repeatTimer = 0.2f;
+                }
+                else if (xaxis > 0.2f)
+                {
+                    tmpResult = 1;
+                    panelState->repeatTimer = 0.2f;
+                }
+            }
         }
         if (tmpResult)
         {
@@ -175,7 +188,7 @@ i32 Gui::didChangeSelection()
 
 void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
         bool solidBackground, bool useKeyboardControl, bool showTitle,
-        f32 itemHeight, f32 itemSpacing, f32 panelWidth)
+        f32 itemHeight, f32 itemSpacing, f32 panelWidth, f32 maxHeight)
 {
     f32 width = convertSize(panelWidth);
     position.x -= width * halign;
@@ -235,7 +248,7 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
     widgetStack.push_back({
         WidgetType::PANEL,
         position,
-        { width, 0.f },
+        { width, maxHeight},
         showTitle ? position + glm::vec2(0, convertSize(42.f)) : position,
         useKeyboardControl,
         panelState,
@@ -562,7 +575,7 @@ bool Gui::slider(const char* text, f32 minValue, f32 maxValue, f32& value)
         }
         return false;
     }, [&] {
-        f32 valChange = didChangeSelection() * ((maxValue - minValue) / 20.f);
+        f32 valChange = didChangeSelection(parent.widgetState) * ((maxValue - minValue) / 20.f);
         if (valChange != 0.f)
         {
             value = clamp(value + valChange, minValue, maxValue);
@@ -725,7 +738,7 @@ i32 Gui::select(const char* text, std::string* firstValue,
         }
         return false;
     }, [&] {
-        i32 valChange = didChangeSelection();
+        i32 valChange = didChangeSelection(parent.widgetState);
         if (valChange != 0)
         {
             currentIndex += valChange;

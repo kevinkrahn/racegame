@@ -200,9 +200,9 @@ void Menu::newChampionship()
         menuMode = MAIN_MENU;
     }
 
-    g_gui.label("Press keyboard or controller to join");
+    g_gui.label("Press SPACE or controller button to join");
 
-    if (g_input.isKeyPressed(KEY_SPACE) || g_input.isKeyPressed(KEY_RETURN))
+    if (g_input.isKeyPressed(KEY_SPACE))
     {
         bool keyboardPlayerExists = false;
         for (auto& driver : g_game.state.drivers)
