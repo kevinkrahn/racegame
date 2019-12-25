@@ -442,10 +442,10 @@ void initializeVehicleData()
     registerWeapon<WKineticArmor>();
 
     //registerVehicle<VMini>();
-    //registerVehicle<VSportscar>();
     registerVehicle<VStationWagon>();
     registerVehicle<VCoolCar>();
     registerVehicle<VMuscle>();
+    //registerVehicle<VSportscar>();
     //registerVehicle<VTruck>();
     //registerVehicle<VRacecar>();
 

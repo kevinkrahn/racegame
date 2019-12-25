@@ -9,7 +9,7 @@ public:
     {
         name = "Muscle Car";
         description = "It can drive";
-        price = 8000;
+        price = 8900;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 

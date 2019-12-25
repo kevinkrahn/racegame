@@ -14,7 +14,7 @@ struct Driver
     std::string playerName = "no-name";
     i32 aiIndex = -1;
     bool useKeyboard = false;
-    u32 controllerID = 0;
+    i32 controllerID = -1;
     std::string controllerGuid;
 
     struct OwnedVehicle
@@ -52,7 +52,7 @@ struct Driver
     }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-            u32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0, i32 aiIndex=-1);
+            i32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0, i32 aiIndex=-1);
 
     Driver() = default;
     Driver(Driver&& other) = default;

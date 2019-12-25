@@ -10,9 +10,9 @@ public:
     {
         name = "Station Wagon";
         description = "Not so great.";
-        price = 8000;
+        price = 9000;
         frontWeaponCount = 1;
-        rearWeaponCount = 2;
+        rearWeaponCount = 1;
 
         loadSceneData("stationwagon.Vehicle");
         initStandardUpgrades();

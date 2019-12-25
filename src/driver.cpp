@@ -2,7 +2,7 @@
 #include "resources.h"
 
 Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-        u32 controllerID, i32 vehicleIndex, i32 colorIndex, i32 aiIndex)
+        i32 controllerID, i32 vehicleIndex, i32 colorIndex, i32 aiIndex)
 {
     this->hasCamera = hasCamera;
     this->vehicleIndex = vehicleIndex;

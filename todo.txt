@@ -13,6 +13,8 @@
 - Add motion blur when using rocket booster
 - Add muzzle flash for minigun
 - Add testing zone where you can drive around an open area
+- Add rippling flag
+- Add wind motion for plants and trees
 
 - Ideas:
     - Grenade launcher weapon
