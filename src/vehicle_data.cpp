@@ -418,6 +418,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "weapons/missiles.h"
 #include "weapons/bouncer.h"
 #include "weapons/oil.h"
+#include "weapons/glue.h"
 
 #include "vehicles/mini.h"
 #include "vehicles/sportscar.h"
@@ -438,6 +439,7 @@ void initializeVehicleData()
     registerWeapon<WRocketBooster>();
     registerWeapon<WRamBooster>();
     registerWeapon<WOil>();
+    registerWeapon<WGlue>();
     registerWeapon<WUnderPlating>();
     registerWeapon<WKineticArmor>();
 

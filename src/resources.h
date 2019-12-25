@@ -81,6 +81,7 @@ struct Textures
     Texture icon_mine = Texture("textures/icons/mine_icon.png", false);
     Texture icon_missile = Texture("textures/icons/missile_icon.png", false);
     Texture icon_oil = Texture("textures/icons/oil.png", false);
+    Texture icon_glue = Texture("textures/icons/glue.png", false);
     Texture icon_rocketbooster = Texture("textures/icons/rocketbooster_icon.png", false);
     Texture icon_straight_track = Texture("textures/icons/straight_track_icon.png", false);
     Texture icon_terrain = Texture("textures/icons/terrain_icon.png", false);

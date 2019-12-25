@@ -1,0 +1,52 @@
+#pragma once
+
+#include "../weapon.h"
+#include "../vehicle.h"
+#include "../entities/glue.h"
+
+class WGlue : public Weapon
+{
+public:
+    WGlue()
+    {
+        info.name = "Glue";
+        info.description = "Force your opponents to slow down!";
+        info.icon = &g_res.textures->icon_glue;
+        info.price = 1000;
+        info.maxUpgradeLevel = 5;
+        info.weaponType = WeaponInfo::REAR_WEAPON;
+    }
+
+    void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
+            f32 deltaTime) override
+    {
+        if (!fireBegin)
+        {
+            return;
+        }
+
+        if (ammo == 0)
+        {
+            outOfAmmo(vehicle);
+            return;
+        }
+
+        PxRaycastBuffer hit;
+        glm::vec3 down = convert(vehicle->getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
+        if (!scene->raycastStatic(vehicle->getPosition(), down, 2.f, &hit, COLLISION_FLAG_TRACK))
+        {
+            g_audio.playSound(&g_res.sounds->nono, SoundType::GAME_SFX);
+            return;
+        }
+
+        glm::vec3 pos = convert(hit.block.position);
+        Glue* glue = new Glue(pos);
+        scene->addEntity(glue);
+        // TODO: add glue sound
+        g_audio.playSound3D(&g_res.sounds->oil, SoundType::GAME_SFX,
+                vehicle->getPosition(), false, 1.f, 0.9f);
+        vehicle->addIgnoredGroundSpot(glue);
+
+        ammo -= 1;
+    }
+};

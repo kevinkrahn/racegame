@@ -188,7 +188,7 @@ i32 Gui::didChangeSelection(WidgetState* panelState)
 
 void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
         bool solidBackground, bool useKeyboardControl, bool showTitle,
-        f32 itemHeight, f32 itemSpacing, f32 panelWidth, f32 maxHeight)
+        f32 itemHeight, f32 itemSpacing, f32 panelWidth)
 {
     f32 width = convertSize(panelWidth);
     position.x -= width * halign;
@@ -248,7 +248,7 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
     widgetStack.push_back({
         WidgetType::PANEL,
         position,
-        { width, maxHeight},
+        { width, 0.f },
         showTitle ? position + glm::vec2(0, convertSize(42.f)) : position,
         useKeyboardControl,
         panelState,

@@ -35,6 +35,7 @@
 #include "entities/start.cpp"
 #include "entities/booster.cpp"
 #include "entities/oil.cpp"
+#include "entities/glue.cpp"
 #include "entities/entities.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION

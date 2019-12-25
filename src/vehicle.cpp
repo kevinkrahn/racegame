@@ -1653,6 +1653,14 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                             wheelOilCoverage[i] = 2.f;
                         }
                     }
+                    else if (d.groundType == GroundSpot::GLUE)
+                    {
+                        // TODO: add glue sound
+                        PxVec3 vel = getRigidBody()->getLinearVelocity();
+                        f32 speed = vel.magnitude();
+                        speed = glm::max(speed - deltaTime * (40.f - glm::distance(d.p, wheelPosition) * 2.f), 8.f);
+                        getRigidBody()->setLinearVelocity(vel.getNormalized() * speed);
+                    }
                 }
 
                 // decrease traction if wheel is covered with oil
@@ -1879,7 +1887,7 @@ void Vehicle::checkGroundSpots()
     PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
     PxQueryFilterData filter;
     filter.flags = PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_DUST | COLLISION_FLAG_OIL, 0, 0, 0);
+    filter.data = PxFilterData(COLLISION_FLAG_DUST | COLLISION_FLAG_OIL | COLLISION_FLAG_GLUE, 0, 0, 0);
     f32 radius = 1.5f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
             PxTransform(convert(getPosition()), PxIdentity), hit, filter))
@@ -1893,6 +1901,11 @@ void Vehicle::checkGroundSpots()
                     == COLLISION_FLAG_OIL)
             {
                 groundType = GroundSpot::OIL;
+            }
+            else if ((hit.getTouch(i).shape->getQueryFilterData().word0 & COLLISION_FLAG_GLUE)
+                    == COLLISION_FLAG_GLUE)
+            {
+                groundType = GroundSpot::GLUE;
             }
             assert(userData);
 

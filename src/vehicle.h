@@ -114,6 +114,7 @@ public:
         {
             DUST,
             OIL,
+            GLUE,
         };
         u32 groundType;
         glm::vec3 p;
