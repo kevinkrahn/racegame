@@ -43,7 +43,8 @@ std::vector<EntityType> entityTypes = {
     { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
     { "CTV Pole", fn { return ((StaticMesh*)(g_entities[2].create()))->setup(7, p, glm::vec3(1.f), 0.f); } },
     { "Billboard", fn { return ((Billboard*)(g_entities[9].create()))->setup(p); } },
-    { "Money", fn { return ((Pickup*)(g_entities[10].create()))->setup(p); } },
+    { "Money", fn { return ((Pickup*)(g_entities[10].create()))->setup(p, PickupType::MONEY); } },
+    { "Armor", fn { return ((Pickup*)(g_entities[10].create()))->setup(p, PickupType::ARMOR); } },
 };
 
 #undef fn

@@ -142,6 +142,8 @@ struct Sounds
     Sound thunk = Sound("sounds/thunk.wav");
     Sound tires = Sound("sounds/tires.wav");
     Sound money = Sound("sounds/money.wav");
+    Sound fixup = Sound("sounds/fixup.wav");
+    Sound airdrill = Sound("sounds/airdrill.wav");
 
     Sound bullet_impact1 = Sound("sounds/impacts/bullet_impact1.wav");
     Sound bullet_impact2 = Sound("sounds/impacts/bullet_impact2.wav");
@@ -165,6 +167,7 @@ const char* dataFiles[] = {
     "models/ctvpole.dat",
     "models/billboard.dat",
     "models/money.dat",
+    "models/wrench.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",

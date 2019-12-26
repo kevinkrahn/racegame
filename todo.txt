@@ -15,6 +15,9 @@
 - Add testing zone where you can drive around an open area
 - Add rippling flag
 - Add wind motion for plants and trees
+- Add air time bonus for being in the air a long time
+- Add armor pickup
+- Add powerups? Will have to think about whether this is a good idea game design wise
 
 - Ideas:
     - Grenade launcher weapon

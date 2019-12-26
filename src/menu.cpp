@@ -534,7 +534,7 @@ void Menu::championshipGarage()
                         ((upgradeLevel < upgrade.maxUpgradeLevel && isEquipped) || !isEquipped),
                     upgrade.icon, &isSelected))
             {
-                // TODO: Play appropriate sound
+                g_audio.playSound(&g_res.sounds->airdrill, SoundType::MENU_SFX);
                 driver.credits -= price;
                 driver.getVehicleConfig()->addUpgrade(i);
             }

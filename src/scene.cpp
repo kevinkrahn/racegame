@@ -111,6 +111,7 @@ Scene::~Scene()
     vehicleMaterial->release();
     trackMaterial->release();
     offroadMaterial->release();
+    updateBackgroundSound(false);
 }
 
 void Scene::startRace()
@@ -120,6 +121,7 @@ void Scene::startRace()
         error("There is no starting point!");
         return;
     }
+    updateBackgroundSound(true);
     glm::mat4 const& start = this->start->transform;
 
     track->buildTrackGraph(&trackGraph, start);
@@ -211,10 +213,29 @@ void Scene::stopRace()
             ((PlaceableEntity*)e.get())->updateTransform(this);
         }
     }
+
+    updateBackgroundSound(true);
+}
+
+void Scene::updateBackgroundSound(bool shouldPlay)
+{
+    if (!shouldPlay)
+    {
+        if (backgroundSound)
+        {
+            g_audio.stopSound(backgroundSound);
+            backgroundSound = 0;
+        }
+    }
+    else if (isRaceInProgress || !g_game.isEditing)
+    {
+        backgroundSound = g_audio.playSound(&g_res.sounds->evironment, SoundType::MUSIC, true);
+    }
 }
 
 void Scene::onStart()
 {
+    updateBackgroundSound(true);
 }
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)

@@ -1658,7 +1658,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         // TODO: add glue sound
                         PxVec3 vel = getRigidBody()->getLinearVelocity();
                         f32 speed = vel.magnitude();
-                        speed = glm::max(speed - deltaTime * (40.f - glm::distance(d.p, wheelPosition) * 2.f), 8.f);
+                        f32 originalSpeed = speed;
+                        speed = glm::max(speed - deltaTime * (40.f - glm::distance(d.p, wheelPosition) * 2.f),
+                                glm::min(originalSpeed, 8.f));
                         getRigidBody()->setLinearVelocity(vel.getNormalized() * speed);
                     }
                 }

@@ -134,7 +134,6 @@ void Game::run()
     registerEntities();
 
     changeScene("tracks/track1.dat");
-    g_audio.playSound(&g_res.sounds->evironment, SoundType::MUSIC, true);
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;

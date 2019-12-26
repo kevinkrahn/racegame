@@ -202,6 +202,11 @@ public:
         raceStatistics.pickupBonuses += 1;
         addNotification("$$$", 2.f, glm::vec3(0.9f, 0.9f, 0.01f));
     }
+    void fixup()
+    {
+        hitPoints = this->tuning.maxHitPoints;
+        addNotification("Fixup!", 2.f, glm::vec3(1.f));
+    }
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

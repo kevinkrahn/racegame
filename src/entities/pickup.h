@@ -8,21 +8,36 @@
 #include "../vehicle.h"
 #include "../mesh_renderables.h"
 
+enum struct PickupType : u32
+{
+    MONEY,
+    ARMOR,
+};
+
 class Pickup : public PlaceableEntity
 {
     Mesh* mesh;
+    PickupType pickupType = PickupType::MONEY;
 
 public:
-    Pickup* setup(glm::vec3 const& position)
+    Pickup* setup(glm::vec3 const& position, PickupType pickupType)
     {
         this->position = position;
+        this->pickupType = pickupType;
         return this;
     }
 
     void onCreate(Scene* scene) override
     {
         this->entityFlags |= Entity::TRANSIENT;
-        mesh = g_res.getMesh("money.Money");
+        if (pickupType == PickupType::MONEY)
+        {
+            mesh = g_res.getMesh("money.Money");
+        }
+        else
+        {
+            mesh = g_res.getMesh("wrench.Wrench");
+        }
 
         updateTransform(scene);
         actor = g_game.physx.physics->createRigidStatic(
@@ -50,10 +65,17 @@ public:
                 && !this->isDestroyed())
         {
             Vehicle* v = userData->vehicle;
-            v->addPickupBonus();
+            if (pickupType == PickupType::MONEY)
+            {
+                v->addPickupBonus();
+                g_audio.playSound3D(&g_res.sounds->money, SoundType::GAME_SFX, position);
+            }
+            else
+            {
+                v->fixup();
+                g_audio.playSound3D(&g_res.sounds->fixup, SoundType::GAME_SFX, position);
+            }
             this->destroy();
-
-            g_audio.playSound3D(&g_res.sounds->money, SoundType::GAME_SFX, position);
         }
     }
 
@@ -64,9 +86,32 @@ public:
             transform * glm::rotate(glm::mat4(1.f), (f32)scene->getWorldTime(), glm::vec3(0, 0, 1));
         LitSettings s;
         s.mesh = mesh;
-        s.color = glm::vec3(0.95f, 0.47f, 0.02f);
-        s.emit = s.color * 0.5f;
+        if (pickupType == PickupType::MONEY)
+        {
+            s.color = glm::vec3(0.95f, 0.47f, 0.02f);
+            s.emit = s.color * 0.5f;
+        }
+        else
+        {
+            s.color = glm::vec3(0.2f);
+            s.emit = glm::vec3(0.125f);
+            s.reflectionStrength = 0.9f;
+            s.reflectionBias = 0.8f;
+        }
         s.worldTransform = t;
         rw->push(LitRenderable(s));
+    }
+
+    DataFile::Value serializeState() override
+    {
+        DataFile::Value dict = PlaceableEntity::serializeState();
+        dict["pickupType"] = DataFile::makeInteger((i64)pickupType);
+        return dict;
+    }
+
+    void deserializeState(DataFile::Value& data) override
+    {
+        PlaceableEntity::deserializeState(data);
+        pickupType = (PickupType)data["pickupType"].integer(0);
     }
 };

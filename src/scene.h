@@ -115,6 +115,7 @@ public:
     Terrain* terrain = nullptr;
     Track* track = nullptr;
     Start* start = nullptr;
+    SoundHandle backgroundSound = 0;
 
     Scene(const char* name);
     ~Scene();
@@ -134,6 +135,7 @@ public:
     void onStart();
     void onEnd();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
+    void updateBackgroundSound(bool shouldPlay);
 
     void vehicleFinish(u32 n);
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
