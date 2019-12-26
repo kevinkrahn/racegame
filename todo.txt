@@ -18,6 +18,7 @@
 - Add air time bonus for being in the air a long time
 - Add armor pickup
 - Add powerups? Will have to think about whether this is a good idea game design wise
+- Kinetic armor effect
 
 - Ideas:
     - Grenade launcher weapon
