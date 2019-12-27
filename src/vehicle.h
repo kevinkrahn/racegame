@@ -107,6 +107,7 @@ public:
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 	f32 wheelOilCoverage[NUM_WHEELS] = { 0 };
+	bool isStuckOnGlue = false;
 
     struct GroundSpot
     {

@@ -42,8 +42,7 @@ public:
         glm::vec3 pos = convert(hit.block.position);
         Glue* glue = new Glue(pos);
         scene->addEntity(glue);
-        // TODO: add glue sound
-        g_audio.playSound3D(&g_res.sounds->oil, SoundType::GAME_SFX,
+        g_audio.playSound3D(&g_res.sounds->glue, SoundType::GAME_SFX,
                 vehicle->getPosition(), false, 1.f, 0.9f);
         vehicle->addIgnoredGroundSpot(glue);
 

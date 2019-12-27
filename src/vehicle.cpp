@@ -1619,6 +1619,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     bool smoked = false;
     u32 numWheelsOnTrack = 0;
     bool anyWheelOnRoad = false;
+    bool isTouchingAnyGlue = false;
     f32 maxSlip = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
@@ -1660,13 +1661,24 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     }
                     else if (d.groundType == GroundSpot::GLUE)
                     {
-                        // TODO: add glue sound
-                        PxVec3 vel = getRigidBody()->getLinearVelocity();
-                        f32 speed = vel.magnitude();
-                        f32 originalSpeed = speed;
-                        speed = glm::max(speed - deltaTime * (40.f - glm::distance(d.p, wheelPosition) * 2.f),
-                                glm::min(originalSpeed, 8.f));
-                        getRigidBody()->setLinearVelocity(vel.getNormalized() * speed);
+                        f32 dist = glm::distance2(d.p, wheelPosition);
+                        if (dist < square(d.radius))
+                        {
+                            PxVec3 vel = getRigidBody()->getLinearVelocity();
+                            f32 speed = vel.magnitude();
+                            f32 originalSpeed = speed;
+                            speed = glm::max(speed - deltaTime * (40.f - glm::distance(d.p, wheelPosition) * 2.f),
+                                    glm::min(originalSpeed, 8.f));
+                            getRigidBody()->setLinearVelocity(vel.getNormalized() * speed);
+                            isTouchingAnyGlue = true;
+
+                            if (!isStuckOnGlue)
+                            {
+                                g_audio.playSound3D(&g_res.sounds->sticky, SoundType::GAME_SFX,
+                                        getPosition(), false, 1.f, 0.95f);
+                                isStuckOnGlue = true;
+                            }
+                        }
                     }
                 }
 
@@ -1774,6 +1786,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             tireMarkRibbons[i].capWithLastPoint();
         }
+    }
+    if (!isTouchingAnyGlue)
+    {
+        isStuckOnGlue = false;
     }
 
     g_audio.setSoundVolume(tireSound,

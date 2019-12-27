@@ -137,6 +137,8 @@ struct Sounds
     Sound missile = Sound("sounds/missile.wav");
     Sound nono = Sound("sounds/nono.wav");
     Sound oil = Sound("sounds/oil.wav");
+    Sound glue = Sound("sounds/glue.wav");
+    Sound sticky = Sound("sounds/sticky.wav");
     Sound rocketboost = Sound("sounds/rocketboost.wav");
     Sound select = Sound("sounds/select.wav");
     Sound thunk = Sound("sounds/thunk.wav");
