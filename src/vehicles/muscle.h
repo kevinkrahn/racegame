@@ -21,7 +21,7 @@ public:
     {
         copySceneDataToTuning(tuning);
 
-        tuning.maxHitPoints = 100;
+        tuning.maxHitPoints = 110;
 
         tuning.specs.acceleration = 0.25f;
         tuning.specs.handling = 0.4f;

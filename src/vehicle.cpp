@@ -1617,7 +1617,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
     const f32 smokeInterval = 0.015f;
     bool smoked = false;
-    u32 numWheelsOnGround = 0;
+    u32 numWheelsOnTrack = 0;
     bool anyWheelOnRoad = false;
     f32 maxSlip = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -1627,7 +1627,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         bool isWheelOffroad = false;
         if (!info.isInAir)
         {
-            ++numWheelsOnGround;
+            auto filterData = info.tireContactShape->getSimulationFilterData();
+            if ((filterData.word0 & COLLISION_FLAG_TRACK)
+                    || info.tireSurfaceMaterial == scene->offroadMaterial)
+            {
+                ++numWheelsOnTrack;
+            }
 
             PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
 
@@ -1780,7 +1785,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     // destroy vehicle if it is flipped and unable to move
     // TODO: fix this so that being flipped against a railing still counts as being flipped
     // maybe do a raycast in local -Z that only considers the track
-    if (onGround && numWheelsOnGround <= 1
+    if (onGround && numWheelsOnTrack <= 2
             && getRigidBody()->getLinearVelocity().magnitude() < 6.f)
     {
         flipTimer += deltaTime;

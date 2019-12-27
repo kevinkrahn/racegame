@@ -164,6 +164,7 @@ public:
     glm::vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
     glm::vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
+    glm::vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
     Driver* getDriver() const { return driver; }
     bool hasAbility(const char* name) const
     {
