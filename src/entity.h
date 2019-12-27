@@ -42,6 +42,7 @@ public:
         DESTROYED = 1,
         PERSISTENT = 1 << 1,
         DYNAMIC = 1 << 2,
+        TRANSIENT = 1 << 3,
     };
     u32 entityFlags = NONE;
 

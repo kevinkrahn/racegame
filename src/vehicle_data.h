@@ -39,7 +39,9 @@ struct VehicleMesh
         RUBBER,
         CARBON_FIBER,
         PLASTIC,
-        CHROME
+        CHROME,
+        FRONT_LIGHTS,
+        REAR_LIGHTS,
     };
     u32 type;
 };
@@ -272,7 +274,6 @@ enum struct PerformanceUpgradeType
     AERODYNAMICS,
     TRANSMISSION,
     WEIGHT_REDUCTION,
-    UNDER_PLATING,
     ALL_WHEEL_DRIVE,
 };
 
@@ -318,13 +319,15 @@ struct VehicleData
 
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
-            glm::mat4* wheelTransforms, VehicleConfiguration const& config, class Vehicle* vehicle=nullptr);
+            glm::mat4* wheelTransforms, VehicleConfiguration const& config,
+            class Vehicle* vehicle=nullptr, bool isBraking=false);
     virtual void renderDebris(class RenderWorld* rw,
             std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
     void loadSceneData(const char* sceneName);
     void copySceneDataToTuning(VehicleTuning& tuning);
+    void initStandardUpgrades();
 };
 
 std::vector<std::unique_ptr<VehicleData>> g_vehicles;

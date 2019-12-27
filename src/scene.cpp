@@ -111,6 +111,7 @@ Scene::~Scene()
     vehicleMaterial->release();
     trackMaterial->release();
     offroadMaterial->release();
+    updateBackgroundSound(false);
 }
 
 void Scene::startRace()
@@ -120,6 +121,7 @@ void Scene::startRace()
         error("There is no starting point!");
         return;
     }
+    updateBackgroundSound(true);
     glm::mat4 const& start = this->start->transform;
 
     track->buildTrackGraph(&trackGraph, start);
@@ -211,10 +213,29 @@ void Scene::stopRace()
             ((PlaceableEntity*)e.get())->updateTransform(this);
         }
     }
+
+    updateBackgroundSound(true);
+}
+
+void Scene::updateBackgroundSound(bool shouldPlay)
+{
+    if (!shouldPlay)
+    {
+        if (backgroundSound)
+        {
+            g_audio.stopSound(backgroundSound);
+            backgroundSound = 0;
+        }
+    }
+    else if (isRaceInProgress || !g_game.isEditing)
+    {
+        backgroundSound = g_audio.playSound(&g_res.sounds->evironment, SoundType::MUSIC, true);
+    }
 }
 
 void Scene::onStart()
 {
+    updateBackgroundSound(true);
 }
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
@@ -899,6 +920,8 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             if (b->vehicle->hasAbility("Ram Booster"))
                             {
                                 myDamage *= 2.5f;
+                                // TODO: test this out
+                                myDamage = std::max(myDamage, 5.f);
                             }
                             if (a->vehicle->hasAbility("Ram Booster"))
                             {
@@ -921,6 +944,8 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             if (a->vehicle->hasAbility("Ram Booster"))
                             {
                                 myDamage *= 2.5f;
+                                // TODO: test this out
+                                myDamage = std::max(myDamage, 5.f);
                             }
                             if (b->vehicle->hasAbility("Ram Booster"))
                             {
@@ -968,7 +993,8 @@ void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 
         if (userData && otherUserData)
         {
-            if (userData->entityType == ActorUserData::ENTITY)
+            if (userData->entityType == ActorUserData::ENTITY
+                    || userData->entityType == ActorUserData::SELECTABLE_ENTITY)
             {
                 userData->entity->onTrigger(otherUserData);
             }
@@ -989,7 +1015,7 @@ DataFile::Value Scene::serialize()
 
     for (auto& entity : this->entities)
     {
-        if ((entity->entityFlags & Entity::PERSISTENT) == Entity::PERSISTENT)
+        if (entity->entityFlags & Entity::PERSISTENT)
         {
             entityArray.push_back(entity->serialize());
         }
@@ -1014,5 +1040,37 @@ void Scene::deserialize(DataFile::Value& data)
     for (auto& val : entityArray)
     {
         deserializeEntity(val);
+    }
+}
+
+std::vector<DataFile::Value> Scene::serializeTransientEntities()
+{
+    std::vector<DataFile::Value> transientEntities;
+    for (auto& entity : this->entities)
+    {
+        if (entity->entityFlags & Entity::TRANSIENT)
+        {
+            transientEntities.push_back(entity->serialize());
+        }
+    }
+    return transientEntities;
+}
+
+void Scene::deserializeTransientEntities(std::vector<DataFile::Value>& entities)
+{
+    for (auto it = this->entities.begin(); it != this->entities.end();)
+    {
+        if ((*it)->entityFlags & Entity::TRANSIENT)
+        {
+            this->entities.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    for (auto& e : entities)
+    {
+        deserializeEntity(e)->setPersistent(true);
     }
 }

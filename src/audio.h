@@ -15,6 +15,8 @@ struct Sound
     Sound(const char* filename);
 };
 
+int decodeVorbis(const char* filename, int* channels, int* sampleRate, short** data);
+
 enum struct SoundType
 {
     VEHICLE,

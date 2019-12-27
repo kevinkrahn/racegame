@@ -79,7 +79,7 @@ public:
     bool isKeyboardInputHandled = true;
 
     bool didSelect();
-    i32 didChangeSelection();
+    i32 didChangeSelection(WidgetState* panelState);
     bool didGoBack();
 
     f32 convertSize(f32 size);
@@ -93,7 +93,7 @@ public:
             bool showTitle=true, f32 itemHeight=36, f32 itemSpacing=6, f32 panelWidth = 220);
     bool button(const char* text, bool active=true, Texture* icon=nullptr, bool iconbg=true);
     bool itemButton(const char* text, const char* smallText, const char* extraText,
-            bool active=true, Texture* icon=nullptr, bool* isSelected=nullptr);
+            bool active=true, Texture* icon=nullptr, bool* isSelected=nullptr, bool showIconBackground=true);
     bool vehicleButton(const char* text, Texture* icon, struct Driver* driver);
     bool toggle(const char* text, bool& enabled);
     bool slider(const char* text, f32 minValue, f32 maxValue, f32& value);

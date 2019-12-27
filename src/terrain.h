@@ -15,8 +15,6 @@ class Terrain : public Renderable, public Entity
         u32 blend;
     };
 
-    f32 tileSize = 2.0f;
-    f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     std::unique_ptr<f32[]> heightBuffer;
 	u32 heightBufferSize = 0;
     std::unique_ptr<Vertex[]> vertices;
@@ -44,6 +42,9 @@ class Terrain : public Renderable, public Entity
     }
 
 public:
+    f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+    f32 tileSize = 2.0f;
+
     Terrain()
     {
         resize(-256, -256, 256, 256);
@@ -72,7 +73,7 @@ public:
 
     void generate(f32 heightScale=4.f, f32 scale=0.05f);
     void createBuffers();
-    void resize(f32 x1, f32 y1, f32 x2, f32 y2);
+    void resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve=false);
     f32 getZ(glm::vec2 pos) const;
     //bool containsPoint(glm::vec2 p) const { return p.x >= x1 && p.y >= y1 && p.x <= x2 && p.y <= y2; };
     i32 getCellX(f32 x) const;

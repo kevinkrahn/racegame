@@ -8,15 +8,21 @@
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line?)
-- Add unlit mode for bright billboards
 - Allow setting the number of laps for a race in the editor
-- Add collectables on the track
-- Make better vehicle paint shader (maybe do reflections)
 - Get rid of GLM because it makes compile times so long
-- Add better rocket booster flame effect
-- Attenuate reflections with fresnel
+- Add motion blur when using rocket booster
+- Add muzzle flash for minigun
+- Add testing zone where you can drive around an open area
+- Add rippling flag
+- Add wind motion for plants and trees
+- Add air time bonus for being in the air a long time
+- Add powerups? Will have to think about whether this is a good idea game design wise
+- Kinetic armor effect
 
 - Ideas:
+    - Grenade launcher weapon
     - Weapon that drops bouncing explosive balls from the back of the vehicle
-    - Missile rack on back of truck
+    - Missile rack on back of truck (shoots high into the air and homes down on a target)
     - Vehicle upgrade with visual properties, like a spoiler for downforce, or visual armour
+    - Shield ability
+    - Ability that creates huge explosion when vehicle is destoyed, damaging nearby vehicles

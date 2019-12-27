@@ -15,6 +15,7 @@
 #include "entities/oil.h"
 #include "entities/barrel.h"
 #include "entities/billboard.h"
+#include "entities/pickup.h"
 #include <functional>
 
 struct EntityType
@@ -42,6 +43,8 @@ std::vector<EntityType> entityTypes = {
     { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
     { "CTV Pole", fn { return ((StaticMesh*)(g_entities[2].create()))->setup(7, p, glm::vec3(1.f), 0.f); } },
     { "Billboard", fn { return ((Billboard*)(g_entities[9].create()))->setup(p); } },
+    { "Money", fn { return ((Pickup*)(g_entities[10].create()))->setup(p, PickupType::MONEY); } },
+    { "Armor", fn { return ((Pickup*)(g_entities[10].create()))->setup(p, PickupType::ARMOR); } },
 };
 
 #undef fn
@@ -60,6 +63,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         if (scene->isRaceInProgress)
         {
             scene->stopRace();
+            scene->deserializeTransientEntities(serializedTransientEntities);
         }
         entityDragAxis = DragAxis::NONE;
     }
@@ -106,12 +110,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_gui.option("Erode", (i32)TerrainTool::ERODE, &g_res.textures->icon_terrain);
         g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, &g_res.textures->icon_terrain);
         g_gui.option("Paint", (i32)TerrainTool::PAINT, &g_res.textures->icon_terrain);
+        g_gui.option("Resize", (i32)TerrainTool::RESIZE, &g_res.textures->icon_terrain);
         g_gui.end();
 
-        g_gui.label("Brush Settings", false);
-        g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
-        g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
-        g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
+        if ((i32)terrainTool < (i32)TerrainTool::RESIZE)
+        {
+            g_gui.label("Brush Settings", false);
+            g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
+            g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
+            g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
+        }
 
         if (terrainTool == TerrainTool::PAINT)
         {
@@ -122,6 +130,44 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             g_gui.option(m.textureNames[2], 2);
             g_gui.option(m.textureNames[3], 3);
             g_gui.end();
+        }
+
+        if (terrainTool == TerrainTool::RESIZE)
+        {
+            Terrain* t = scene->terrain;
+            f32 s = t->tileSize * 4.f;
+            if (g_gui.button("X1+"))
+            {
+                t->resize(t->x1 + s, t->y1, t->x2, t->y2, true);
+            }
+            if (g_gui.button("X1-"))
+            {
+                t->resize(t->x1 - s, t->y1, t->x2, t->y2, true);
+            }
+            if (g_gui.button("Y1+"))
+            {
+                t->resize(t->x1, t->y1 + s, t->x2, t->y2, true);
+            }
+            if (g_gui.button("Y1-"))
+            {
+                t->resize(t->x1, t->y1 - s, t->x2, t->y2, true);
+            }
+            if (g_gui.button("X2+"))
+            {
+                t->resize(t->x1, t->y1, t->x2 + s, t->y2, true);
+            }
+            if (g_gui.button("X2-"))
+            {
+                t->resize(t->x1, t->y1, t->x2 - s, t->y2, true);
+            }
+            if (g_gui.button("Y2+"))
+            {
+                t->resize(t->x1, t->y1, t->x2, t->y2 + s, true);
+            }
+            if (g_gui.button("Y2-"))
+            {
+                t->resize(t->x1, t->y1, t->x2, t->y2 - s, true);
+            }
         }
     }
     else if (editMode == EditMode::TRACK)
@@ -270,8 +316,15 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 0.f, true, false, false, 28, 0, 100);
     if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
     {
+        serializedTransientEntities = scene->serializeTransientEntities();
         g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true, true, true, 0, 1));
+        g_game.state.drivers.push_back(Driver(true, true, true, 0, 0));
+        auto conf = g_game.state.drivers.back().getVehicleConfig();
+        conf->frontWeaponIndices[0] = 1;
+        conf->frontWeaponUpgradeLevel[0] = 5;
+        conf->rearWeaponIndices[0] = 9;
+        conf->rearWeaponUpgradeLevel[0] = 5;
+        conf->specialAbilityIndex = 10;
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();
         entityDragAxis = DragAxis::NONE;

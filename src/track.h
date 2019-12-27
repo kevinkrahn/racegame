@@ -37,10 +37,11 @@ public:
     };
 
     // I hate this
-    RailingMeshType railingMeshTypes[3] = {
+    RailingMeshType railingMeshTypes[4] = {
         { "Concrete Barrier", false, "world.Rail", "world.RailCollision", 1.f, &g_res.textures->concrete },
         { "Rumble Stip", true, "world.RumbleStrip", nullptr, 0.5f, &g_res.textures->rumble },
         { "Metal Railing", false, "railing.Rail", "railing.RailCollision", 1.f, &g_res.textures->white },
+        { "Tall Metal Railing", false, "railing2.Rail", "railing2.RailCollision", 1.5f, &g_res.textures->white },
     };
 
     struct TrackItem

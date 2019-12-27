@@ -14,7 +14,7 @@ class DebugDraw : public Renderable
         glm::vec4 color;
     };
     std::vector<Vertex> verts;
-    DynamicBuffer buffer = DynamicBuffer(sizeof(Vertex) * 300000);
+    DynamicBuffer buffer = DynamicBuffer(sizeof(Vertex) * 500000);
     GLuint vao;
 
 public:

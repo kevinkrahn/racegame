@@ -90,8 +90,13 @@ void Game::run()
     //SDL_GL_SetAttribute(SDL_GL_CONTEXT_NO_ERROR);
 #endif
 
+    u32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+    if (config.graphics.fullscreen)
+    {
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    }
     window = SDL_CreateWindow("The Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-            config.graphics.resolutionX, config.graphics.resolutionY, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            config.graphics.resolutionX, config.graphics.resolutionY, flags);
     if (!window)
     {
         FATAL_ERROR("Failed to create SDL window: ", SDL_GetError())

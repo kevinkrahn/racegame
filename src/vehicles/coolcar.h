@@ -1,19 +1,22 @@
 #pragma once
 
 #include "../vehicle_data.h"
+#include "../resources.h"
 
 class VCoolCar : public VehicleData
 {
 public:
     VCoolCar()
     {
-        name = "Cool Card";
+        name = "Cool Car";
         description = "Pretty great";
-        price = 8000;
+        price = 10000;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
         loadSceneData("coolcar.Vehicle");
+
+        initStandardUpgrades();
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
@@ -70,6 +73,45 @@ public:
         tuning.frontAntiRollbarStiffness = 8000.f;
         tuning.rearAntiRollbarStiffness = 8000.f;
         tuning.ackermannAccuracy = 0.8f;
-        tuning.centerOfMass = { 0.09f, 0.f, -0.6f };
+        tuning.centerOfMass = { 0.4f, 0.f, -0.6f };
+
+        for (auto& u : configuration.performanceUpgrades)
+        {
+            PerformanceUpgrade& upgrade = availableUpgrades[u.upgradeIndex];
+            switch (upgrade.upgradeType)
+            {
+                case PerformanceUpgradeType::ENGINE:
+                    tuning.peekEngineTorque += 8.f * u.upgradeLevel;
+                    tuning.topSpeed += 1.2f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.05f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::TIRES:
+                    tuning.trackTireFriction += 0.1f * u.upgradeLevel;
+                    tuning.offroadTireFriction += 0.02f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.015f * u.upgradeLevel;
+                    tuning.specs.offroad += 0.04f * u.upgradeLevel;
+                    tuning.specs.handling += 0.06f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::ARMOR:
+                    tuning.maxHitPoints += 10.f * u.upgradeLevel;
+                    break;
+                case PerformanceUpgradeType::WEIGHT_REDUCTION:
+                    tuning.chassisMass -= 30.f * u.upgradeLevel;
+                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
+                    tuning.specs.handling += 0.02f * u.upgradeLevel;
+                    break;
+                // TODO: Add visible lowering of suspension
+                case PerformanceUpgradeType::SUSPENSION:
+                    tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
+                    tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
+                    tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
+                    tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
+                    tuning.specs.handling += 0.05f * u.upgradeLevel;
+                    break;
+                default:
+                    print("Unhandled upgrade: ", upgrade.name, '\n');
+                    break;
+            }
+        }
     }
 };

@@ -68,7 +68,10 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 if (userData && (userData->entityType == ActorUserData::VEHICLE))
                 {
                     Vehicle* vehicle = (Vehicle*)userData->vehicle;
-                    vehicle->applyDamage(50.f, instigator);
+                    if (!vehicle->hasAbility("Underplating"))
+                    {
+                        vehicle->applyDamage(50.f, instigator);
+                    }
                     vehicle->getRigidBody()->addForce(convert(zAxisOf(transform) * 6000.f),
                             PxForceMode::eIMPULSE);
                 }
@@ -82,5 +85,5 @@ void Mine::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     rw->push(LitRenderable(mesh, transform, nullptr));
     rw->push(BillboardRenderable(&g_res.textures->flare,
                 translationOf(transform) + glm::vec3(0,0,0.7f), {2.f,0.02f,0.02f,0.3f},
-                (glm::sin(aliveTime * 2.f) + 2.f) * 0.3f));
+                (glm::sin(aliveTime * 2.f) + 2.f) * 0.3f, 0.f, false));
 }

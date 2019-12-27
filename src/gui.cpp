@@ -150,7 +150,7 @@ bool Gui::didGoBack()
     return false;
 }
 
-i32 Gui::didChangeSelection()
+i32 Gui::didChangeSelection(WidgetState* panelState)
 {
     i32 result = (i32)(g_input.isKeyPressed(KEY_RIGHT, true) || didSelect())
                 - (i32)g_input.isKeyPressed(KEY_LEFT, true);
@@ -161,7 +161,20 @@ i32 Gui::didChangeSelection()
                         pair.second.isButtonPressed(BUTTON_DPAD_LEFT);
         if (!tmpResult)
         {
-            tmpResult = (i32)glm::sign(pair.second.getAxis(AXIS_LEFT_X));
+            if (panelState->repeatTimer == 0.f)
+            {
+                f32 xaxis = pair.second.getAxis(AXIS_LEFT_X);
+                if (xaxis < -0.2f)
+                {
+                    tmpResult = -1;
+                    panelState->repeatTimer = 0.2f;
+                }
+                else if (xaxis > 0.2f)
+                {
+                    tmpResult = 1;
+                    panelState->repeatTimer = 0.2f;
+                }
+            }
         }
         if (tmpResult)
         {
@@ -408,7 +421,7 @@ bool Gui::button(const char* text, bool active, Texture* icon, bool iconbg)
 }
 
 bool Gui::itemButton(const char* text, const char* smallText, const char* extraText,
-        bool active, Texture* icon, bool* isSelected)
+        bool active, Texture* icon, bool* isSelected, bool showIconBackground)
 {
     assert(widgetStack.size() > 0);
     assert(widgetStack.back().widgetType == WidgetType::PANEL);
@@ -452,8 +465,11 @@ bool Gui::itemButton(const char* text, const char* smallText, const char* extraT
                 HorizontalAlign::LEFT, VerticalAlign::TOP));
 
     f32 iconSize = glm::floor(bh * 0.8f);
-    renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
-                pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    if (showIconBackground)
+    {
+        renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
+                    pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
+    }
     if (icon)
     {
         renderer->push2D(QuadRenderable(icon,
@@ -559,7 +575,7 @@ bool Gui::slider(const char* text, f32 minValue, f32 maxValue, f32& value)
         }
         return false;
     }, [&] {
-        f32 valChange = didChangeSelection() * ((maxValue - minValue) / 20.f);
+        f32 valChange = didChangeSelection(parent.widgetState) * ((maxValue - minValue) / 20.f);
         if (valChange != 0.f)
         {
             value = clamp(value + valChange, minValue, maxValue);
@@ -722,7 +738,7 @@ i32 Gui::select(const char* text, std::string* firstValue,
         }
         return false;
     }, [&] {
-        i32 valChange = didChangeSelection();
+        i32 valChange = didChangeSelection(parent.widgetState);
         if (valChange != 0)
         {
             currentIndex += valChange;

@@ -248,7 +248,8 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
             COLLISION_FLAG_CHASSIS |
             COLLISION_FLAG_TRACK |
             COLLISION_FLAG_GROUND |
-            COLLISION_FLAG_DEBRIS, 0, 0);
+            COLLISION_FLAG_DEBRIS |
+            COLLISION_FLAG_PICKUP, 0, 0);
     PxFilterData chassisQryFilterData(COLLISION_FLAG_CHASSIS, 0, 0, UNDRIVABLE_SURFACE);
     PxFilterData wheelSimFilterData(0, 0, 0, 0);
     PxFilterData wheelQryFilterData(0, 0, 0, UNDRIVABLE_SURFACE);
@@ -559,6 +560,10 @@ void Vehicle::resetAmmo()
     {
         w->refillAmmo();
     }
+    if (specialAbility)
+    {
+        specialAbility->refillAmmo();
+    }
 }
 
 void Vehicle::reset(glm::mat4 const& transform)
@@ -588,6 +593,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake)
 {
     engineThrottle = 0.f;
+    isBraking = handbrake || brake > 0.2f || onlyBrake;
     if (canGo)
     {
         PxVehicleDrive4WRawInputData inputs;
@@ -923,7 +929,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
     driver->getVehicleData()->render(rw, transform,
-            wheelTransforms, *driver->getVehicleConfig(), this);
+            wheelTransforms, *driver->getVehicleConfig(), this, isBraking);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
 }
@@ -1145,7 +1151,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
             {
                 f32 maxTargetDist = aggression * 25.f + 15.f;
-		f32 lowestTargetPriority = FLT_MAX;
+                f32 lowestTargetPriority = FLT_MAX;
                 for (auto& v : scene->getVehicles())
                 {
                     if (v.get() == this)
@@ -1155,13 +1161,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
                     glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
                     glm::vec2 targetDiff = glm::normalize(-diff);
-		    f32 d = glm::length2(diff);
-		    f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
-		    f32 targetPriority = d + dot * 4.f;
+                    f32 d = glm::length2(diff);
+                    f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
+                    f32 targetPriority = d + dot * 4.f;
                     if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
                     {
                         target = v.get();
-			lowestTargetPriority = targetPriority;
+                        lowestTargetPriority = targetPriority;
                     }
                 }
             }
@@ -1561,15 +1567,28 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     else
     {
+        bool validGround = false;
         PxRaycastBuffer hit;
         if (scene->raycastStatic(currentPosition, { 0, 0, -1 }, 3.0f, &hit))
         {
             onGround = true;
             PxMaterial* hitMaterial = hit.block.shape->getMaterialFromInternalFaceIndex(hit.block.faceIndex);
-            if (hitMaterial != scene->trackMaterial && hitMaterial != scene->offroadMaterial)
+            if (hitMaterial == scene->trackMaterial || hitMaterial == scene->offroadMaterial)
             {
-                applyDamage(100.f, vehicleIndex);
+                validGround = true;
             }
+        }
+        if (!validGround)
+        {
+            if (scene->raycastStatic(currentPosition, { 0, 0, -1 }, 3.0f, nullptr, COLLISION_FLAG_TRACK))
+            {
+                onGround = true;
+                validGround = true;
+            }
+        }
+        if (onGround && !validGround)
+        {
+            applyDamage(100.f, vehicleIndex);
         }
     }
 
@@ -1598,8 +1617,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
     const f32 smokeInterval = 0.015f;
     bool smoked = false;
-    u32 numWheelsOnGround = 0;
+    u32 numWheelsOnTrack = 0;
     bool anyWheelOnRoad = false;
+    bool isTouchingAnyGlue = false;
     f32 maxSlip = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
@@ -1608,7 +1628,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         bool isWheelOffroad = false;
         if (!info.isInAir)
         {
-            ++numWheelsOnGround;
+            auto filterData = info.tireContactShape->getSimulationFilterData();
+            if ((filterData.word0 & COLLISION_FLAG_TRACK)
+                    || info.tireSurfaceMaterial == scene->offroadMaterial)
+            {
+                ++numWheelsOnTrack;
+            }
 
             PxVehicleWheelData d = vehicle4W->mWheelsSimData.getWheelData(i);
 
@@ -1632,6 +1657,27 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         if (dist < square(d.radius))
                         {
                             wheelOilCoverage[i] = 2.f;
+                        }
+                    }
+                    else if (d.groundType == GroundSpot::GLUE)
+                    {
+                        f32 dist = glm::distance2(d.p, wheelPosition);
+                        if (dist < square(d.radius))
+                        {
+                            PxVec3 vel = getRigidBody()->getLinearVelocity();
+                            f32 speed = vel.magnitude();
+                            f32 originalSpeed = speed;
+                            speed = glm::max(speed - deltaTime * (40.f - glm::distance(d.p, wheelPosition) * 2.f),
+                                    glm::min(originalSpeed, 8.f));
+                            getRigidBody()->setLinearVelocity(vel.getNormalized() * speed);
+                            isTouchingAnyGlue = true;
+
+                            if (!isStuckOnGlue)
+                            {
+                                g_audio.playSound3D(&g_res.sounds->sticky, SoundType::GAME_SFX,
+                                        getPosition(), false, 1.f, 0.95f);
+                                isStuckOnGlue = true;
+                            }
                         }
                     }
                 }
@@ -1662,7 +1708,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         bool wasWheelSlipping = isWheelSlipping[i];
         isWheelSlipping[i] = (slip > 0.f || wheelOilCoverage[i] > 0.f) && !info.isInAir;
         maxSlip = glm::max(maxSlip, slip);
-	    wheelOilCoverage[i] = glm::max(wheelOilCoverage[i] - deltaTime, 0.f);
+        wheelOilCoverage[i] = glm::max(wheelOilCoverage[i] - deltaTime, 0.f);
 
         // create smoke
         if (slip > 0.f && !info.isInAir && !isWheelOffroad)
@@ -1741,6 +1787,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             tireMarkRibbons[i].capWithLastPoint();
         }
     }
+    if (!isTouchingAnyGlue)
+    {
+        isStuckOnGlue = false;
+    }
 
     g_audio.setSoundVolume(tireSound,
             anyWheelOnRoad ? glm::min(1.f, glm::min(maxSlip * 1.2f,
@@ -1751,7 +1801,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     // destroy vehicle if it is flipped and unable to move
     // TODO: fix this so that being flipped against a railing still counts as being flipped
     // maybe do a raycast in local -Z that only considers the track
-    if (onGround && numWheelsOnGround <= 1
+    if (onGround && numWheelsOnTrack <= 2
             && getRigidBody()->getLinearVelocity().magnitude() < 6.f)
     {
         flipTimer += deltaTime;
@@ -1860,7 +1910,7 @@ void Vehicle::checkGroundSpots()
     PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
     PxQueryFilterData filter;
     filter.flags = PxQueryFlag::eSTATIC;
-    filter.data = PxFilterData(COLLISION_FLAG_DUST | COLLISION_FLAG_OIL, 0, 0, 0);
+    filter.data = PxFilterData(COLLISION_FLAG_DUST | COLLISION_FLAG_OIL | COLLISION_FLAG_GLUE, 0, 0, 0);
     f32 radius = 1.5f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
             PxTransform(convert(getPosition()), PxIdentity), hit, filter))
@@ -1874,6 +1924,11 @@ void Vehicle::checkGroundSpots()
                     == COLLISION_FLAG_OIL)
             {
                 groundType = GroundSpot::OIL;
+            }
+            else if ((hit.getTouch(i).shape->getQueryFilterData().word0 & COLLISION_FLAG_GLUE)
+                    == COLLISION_FLAG_GLUE)
+            {
+                groundType = GroundSpot::GLUE;
             }
             assert(userData);
 

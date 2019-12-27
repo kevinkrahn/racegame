@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vehicle_data.h"
+#include "../resources.h"
 
 class VMini : public VehicleData
 {
@@ -14,57 +15,16 @@ public:
         rearWeaponCount = 1;
 
         loadSceneData("mini.Scene");
+        initStandardUpgrades();
 
-        availableUpgrades = {
-            {
-                "Engine",
-                "Upgrades the engine to improve\nacceleration and top speed.",
-                &g_res.textures->icon_pistons,
-                PerformanceUpgradeType::ENGINE,
-                5,
-                1500,
-            },
-            {
-                "Tires",
-                "Equips better tires for improved traction\nand overall handling.",
-                &g_res.textures->icon_wheel,
-                PerformanceUpgradeType::TIRES,
-                5,
-                1000,
-            },
-            {
-                "Armor",
-                "Adds additional armor to improve\nresistance against all forms of damage.",
-                &g_res.textures->icon_armor,
-                PerformanceUpgradeType::ARMOR,
-                5,
-                1000,
-            },
-            {
-                "Suspension",
-                "Upgrades the suspension to be stiffer\nand more stable around corners.",
-                &g_res.textures->icon_suspension,
-                PerformanceUpgradeType::SUSPENSION,
-                2,
-                1250,
-            },
-            {
-                "Weight Reduction",
-                "Strips out unnecessary parts of the vehicle.\nThe reduced weight will improve acceleration and handling.",
-                &g_res.textures->icon_weight,
-                PerformanceUpgradeType::WEIGHT_REDUCTION,
-                2,
-                1500,
-            },
-            {
-                "AWD Conversion",
-                "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
-                &g_res.textures->icon_drivetrain,
-                PerformanceUpgradeType::ALL_WHEEL_DRIVE,
-                1,
-                6000,
-            }
-        };
+        availableUpgrades.push_back({
+            "AWD Conversion",
+            "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
+            &g_res.textures->icon_drivetrain,
+            PerformanceUpgradeType::ALL_WHEEL_DRIVE,
+            1,
+            6000,
+        });
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override

@@ -43,6 +43,7 @@ public:
 
     // physics data
     bool isInAir = true;
+    bool isBraking = false;
     PxVehicleDrive4W* vehicle4W;
     ActorUserData actorUserData;
     VehicleSceneQueryData* sceneQueryData;
@@ -106,6 +107,7 @@ public:
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 	f32 wheelOilCoverage[NUM_WHEELS] = { 0 };
+	bool isStuckOnGlue = false;
 
     struct GroundSpot
     {
@@ -113,6 +115,7 @@ public:
         {
             DUST,
             OIL,
+            GLUE,
         };
         u32 groundType;
         glm::vec3 p;
@@ -162,6 +165,7 @@ public:
     glm::vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
     glm::vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
+    glm::vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
     Driver* getDriver() const { return driver; }
     bool hasAbility(const char* name) const
     {
@@ -172,11 +176,18 @@ public:
     void reset(glm::mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator)
     {
-        hitPoints -= amount;
-        lastDamagedBy = instigator;
-        if (smokeTimerDamage <= 0.f)
+        if (specialAbility)
         {
-            smokeTimerDamage = 0.015f;
+            amount = specialAbility->onDamage(amount);
+        }
+        if (amount > 0.f)
+        {
+            hitPoints -= amount;
+            lastDamagedBy = instigator;
+            if (smokeTimerDamage <= 0.f)
+            {
+                smokeTimerDamage = 0.015f;
+            }
         }
     }
     void addNotification(const char* str, f32 time=2.f, glm::vec3 const& color=glm::vec3(1.f))
@@ -188,6 +199,16 @@ public:
         notifications.push_back({ str, time, color });
     }
     void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
+    void addPickupBonus()
+    {
+        raceStatistics.pickupBonuses += 1;
+        addNotification("$$$", 2.f, glm::vec3(0.9f, 0.9f, 0.01f));
+    }
+    void fixup()
+    {
+        hitPoints = this->tuning.maxHitPoints;
+        addNotification("FIXUP!", 2.f, glm::vec3(1.f));
+    }
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

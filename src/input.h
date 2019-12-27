@@ -209,7 +209,7 @@ private:
     bool mouseMoved = false;
     i32 mouseScrollX;
     i32 mouseScrollY;
-    std::map<u32, Controller> controllers;
+    std::map<i32, Controller> controllers;
 
     std::string inputText;
     f32 joystickDeadzone = 0.08f;
@@ -244,9 +244,9 @@ public:
         SDL_StopTextInput();
     }
 
-    std::map<u32, Controller> const& getControllers() const { return controllers; }
+    std::map<i32, Controller> const& getControllers() const { return controllers; }
 
-    Controller* getController(u32 id)
+    Controller* getController(i32 id)
     {
         auto ctl = controllers.find(id);
         if (ctl == controllers.end())
@@ -256,7 +256,7 @@ public:
         return &ctl->second;
     }
 
-    u32 getControllerId(std::string const& guid)
+    i32 getControllerId(std::string const& guid)
     {
         for (auto& ctl : controllers)
         {

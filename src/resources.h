@@ -61,6 +61,8 @@ struct Textures
     Texture icon_bouncer = Texture("textures/icons/bouncer_icon.png", false);
     Texture icon_glow = Texture("textures/icons/glow_icon.png", false);
     Texture icon_armor = Texture("textures/icons/icon_armor.png", false);
+    Texture icon_kinetic_armor = Texture("textures/icons/icon_kinetic_armor.png", false);
+    Texture icon_underplating = Texture("textures/icons/icon_underplating.png", false);
     Texture icon_drivetrain = Texture("textures/icons/icon_drivetrain.png", false);
     Texture icon_engine = Texture("textures/icons/icon_engine.png", false);
     Texture icon_flag = Texture("textures/icons/icon_flag.png", false);
@@ -79,10 +81,12 @@ struct Textures
     Texture icon_mine = Texture("textures/icons/mine_icon.png", false);
     Texture icon_missile = Texture("textures/icons/missile_icon.png", false);
     Texture icon_oil = Texture("textures/icons/oil.png", false);
+    Texture icon_glue = Texture("textures/icons/glue.png", false);
     Texture icon_rocketbooster = Texture("textures/icons/rocketbooster_icon.png", false);
     Texture icon_straight_track = Texture("textures/icons/straight_track_icon.png", false);
     Texture icon_terrain = Texture("textures/icons/terrain_icon.png", false);
     Texture icon_track = Texture("textures/icons/track_icon.png", false);
+    Texture icon_sell = Texture("textures/icons/icon_sell.png", false);
 
     Texture decal_arrow = Texture("textures/decals/arrow.png");
     Texture decal_arrow_left = Texture("textures/decals/arrow_left.png");
@@ -106,6 +110,7 @@ struct Textures
 
 struct Sounds
 {
+    Sound evironment = Sound("sounds/environment.ogg");
     Sound blaster = Sound("sounds/blaster.wav");
     Sound blaster_hit = Sound("sounds/blaster_hit.wav");
     Sound bouncer_bounce = Sound("sounds/bouncer_bounce.wav");
@@ -132,10 +137,15 @@ struct Sounds
     Sound missile = Sound("sounds/missile.wav");
     Sound nono = Sound("sounds/nono.wav");
     Sound oil = Sound("sounds/oil.wav");
+    Sound glue = Sound("sounds/glue.wav");
+    Sound sticky = Sound("sounds/sticky.wav");
     Sound rocketboost = Sound("sounds/rocketboost.wav");
     Sound select = Sound("sounds/select.wav");
     Sound thunk = Sound("sounds/thunk.wav");
     Sound tires = Sound("sounds/tires.wav");
+    Sound money = Sound("sounds/money.wav");
+    Sound fixup = Sound("sounds/fixup.wav");
+    Sound airdrill = Sound("sounds/airdrill.wav");
 
     Sound bullet_impact1 = Sound("sounds/impacts/bullet_impact1.wav");
     Sound bullet_impact2 = Sound("sounds/impacts/bullet_impact2.wav");
@@ -151,12 +161,15 @@ const char* dataFiles[] = {
     "models/mine.dat",
     "models/plants.dat",
     "models/railing.dat",
+    "models/railing2.dat",
     "models/rock.dat",
     "models/tree.dat",
     "models/world.dat",
     "models/barrel.dat",
     "models/ctvpole.dat",
     "models/billboard.dat",
+    "models/money.dat",
+    "models/wrench.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",
@@ -167,6 +180,9 @@ const char* dataFiles[] = {
     "models/vehicles/truck.dat",
 
     "models/weapons/minigun.dat",
+    "models/weapons/blaster.dat",
+    "models/weapons/missile.dat",
+    "models/weapons/bouncer.dat",
 };
 
 class Resources

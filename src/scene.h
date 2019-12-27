@@ -23,6 +23,7 @@ struct RaceStatistics
     i32 lappingBonuses = 0;
     i32 accidents = 0;
     i32 destroyed = 0;
+    i32 pickupBonuses = 0;
 };
 
 struct RaceResult
@@ -34,11 +35,13 @@ struct RaceResult
 
     i32 getBonus() const
     {
-        return statistics.attackBonuses * 110 + statistics.lappingBonuses * 300;
+        return statistics.attackBonuses * 110 + statistics.lappingBonuses * 300
+            + statistics.pickupBonuses * 200;
     }
 
     i32 getLeaguePointsEarned() const
     {
+        // TODO: have bonus points also affect league points earned
         return finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0;
     }
 
@@ -112,6 +115,7 @@ public:
     Terrain* terrain = nullptr;
     Track* track = nullptr;
     Start* start = nullptr;
+    SoundHandle backgroundSound = 0;
 
     Scene(const char* name);
     ~Scene();
@@ -125,9 +129,13 @@ public:
     void deserialize(DataFile::Value& data);
     Entity* deserializeEntity(DataFile::Value& data);
 
+    std::vector<DataFile::Value> serializeTransientEntities();
+    void deserializeTransientEntities(std::vector<DataFile::Value>& entities);
+
     void onStart();
     void onEnd();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
+    void updateBackgroundSound(bool shouldPlay);
 
     void vehicleFinish(u32 n);
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
