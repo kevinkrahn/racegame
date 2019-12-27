@@ -8,12 +8,11 @@ layout(location = 2) in vec3 attrColor;
 layout(location = 0) out vec3 outColor;
 
 layout(location = 0) uniform mat4 worldMatrix;
-layout(location = 2) uniform int layerIndex;
 
 void main()
 {
     float scaleFactor = 0.01;
-    mat4 mvp = cameraViewProjection[layerIndex] * worldMatrix;
+    mat4 mvp = cameraViewProjection * worldMatrix;
     float w = (mvp * vec4(0, 0, 0, 1)).w * scaleFactor;
     gl_Position = mvp * vec4(attrPosition * w, 1.0);
     outColor = attrColor;

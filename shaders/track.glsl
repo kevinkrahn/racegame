@@ -14,10 +14,10 @@ layout(location = 3) out vec3 outShadowCoord;
 void main()
 {
     outWorldPosition = attrPosition;
-    gl_Position = cameraViewProjection[0] * vec4(outWorldPosition, 1.0);
+    gl_Position = cameraViewProjection * vec4(outWorldPosition, 1.0);
     outColor = attrColor;
     outNormal = attrNormal;
-    outShadowCoord = (shadowViewProjectionBias[0] * vec4(outWorldPosition, 1.0)).xyz;
+    outShadowCoord = (shadowViewProjectionBias * vec4(outWorldPosition, 1.0)).xyz;
 }
 
 #elif defined FRAG

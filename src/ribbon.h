@@ -289,6 +289,11 @@ public:
         }
     }
 
+    void endUpdate()
+    {
+        chunks.clear();
+    }
+
     void onLitPass(Renderer* renderer) override
     {
         if (chunks.empty())
@@ -315,8 +320,6 @@ public:
             glDrawArrays(GL_TRIANGLES, offset, chunk.count);
             offset += chunk.count;
         }
-
-        chunks.clear();
     }
 
     std::string getDebugString() const override { return "RibbonRenderable"; }

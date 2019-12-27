@@ -14,10 +14,10 @@ layout(location = 0) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 1) uniform sampler2DArray tex;
+layout(binding = 1) uniform sampler2D tex;
 
 void main()
 {
-    outColor = texture(tex, vec3(inTexCoord, gl_Layer));
+    outColor = texture(tex, inTexCoord);
 }
 #endif

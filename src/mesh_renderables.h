@@ -192,13 +192,17 @@ public:
 
     void onLitPass(Renderer* renderer) override
     {
+        if (renderer->getCurrentRenderingCameraIndex() != cameraIndex)
+        {
+            return;
+        }
+
         if (onlyDepth)
         {
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         }
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldTransform));
         glUniform3f(1, color.x, color.y, color.z);
-        glUniform1i(2, cameraIndex);
         glBindVertexArray(mesh->vao);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(0.f, -2000000.f);
@@ -227,14 +231,17 @@ public:
 
     void onLitPass(Renderer* renderer) override
     {
+        if (renderer->getCurrentRenderingCameraIndex() != 0)
+        {
+            return;
+        }
+
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
         glDisable(GL_CULL_FACE);
 
-        // TODO: This should be changed because this camera matrix will be wrong
-        // in any RenderWorld that is not the main RenderWorld
         Camera const& camera = renderer->getRenderWorld()->getCamera(0);
         glUseProgram(renderer->getShaderProgram("debug"));
         glUniform4f(2, color.x, color.y, color.z, color.w);

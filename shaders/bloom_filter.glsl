@@ -14,11 +14,11 @@ layout(location = 0) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 0) uniform sampler2DArray tex;
+layout(binding = 0) uniform sampler2D tex;
 
 void main()
 {
-    vec4 color = texture(tex, vec3(inTexCoord, gl_Layer));
+    vec4 color = texture(tex, inTexCoord);
     float brightness = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     const float cutoff = 0.8;
     const float minBrightness = 0.125;

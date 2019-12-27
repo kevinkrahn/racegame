@@ -50,9 +50,8 @@ struct Framebuffers
     GLuint finalColorTexture;
     GLuint finalFramebuffer;
 
-    u32 msaaResolveFramebuffersCount;
-    GLuint msaaResolveFromFramebuffers[MAX_VIEWPORTS];
-    GLuint msaaResolveFramebuffers[MAX_VIEWPORTS];
+    GLuint msaaResolveFromFramebuffer;
+    GLuint msaaResolveFramebuffer;
     GLuint msaaResolveColorTexture;
     GLuint msaaResolveDepthTexture;
 
@@ -89,13 +88,11 @@ struct WorldInfo
     f32 time;
     glm::vec3 sunColor;
     f32 pad;
-    glm::mat4 cameraViewProjection[MAX_VIEWPORTS];
-    glm::mat4 cameraProjection[MAX_VIEWPORTS];
-    glm::mat4 cameraView[MAX_VIEWPORTS];
-    glm::vec4 cameraPosition[MAX_VIEWPORTS];
-    glm::mat4 shadowViewProjectionBias[MAX_VIEWPORTS];
-    glm::vec4 projInfo[MAX_VIEWPORTS];
-    glm::vec4 projScale;
+    glm::mat4 cameraViewProjection;
+    glm::mat4 cameraProjection;
+    glm::mat4 cameraView;
+    glm::vec4 cameraPosition;
+    glm::mat4 shadowViewProjectionBias;
 };
 
 class RenderWorld
@@ -107,10 +104,10 @@ class RenderWorld
 
     const char* name = "";
     WorldInfo worldInfo;
-    Framebuffers fb;
+    SmallVec<Framebuffers, MAX_VIEWPORTS> fbs;
     SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
-    DynamicBuffer worldInfoUBO = DynamicBuffer(sizeof(WorldInfo));
-    DynamicBuffer worldInfoUBOShadow = DynamicBuffer(sizeof(WorldInfo));
+    SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
+    SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
 
     // TODO: calculate these based on render resolution
     u32 firstBloomDivisor = 2;
@@ -125,9 +122,10 @@ class RenderWorld
 
     Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
 
-    Texture tex;
+    Texture tex[MAX_VIEWPORTS];
 
-    void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow);
+    void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex);
+    void renderViewport(Renderer* renderer, u32 cameraIndex, f32 deltaTime);
     void render(Renderer* renderer, f32 deltaTime);
 
     u32 shadowMapResolution = 0;
@@ -138,8 +136,11 @@ public:
     RenderWorld(u32 width, u32 height, const char* name)
         : width(width), height(height), name(name)
     {
-        tex.width = width;
-        tex.height = height;
+        for (u32 i=0; i<MAX_VIEWPORTS; ++i)
+        {
+            tex[i].width = width;
+            tex[i].height = height;
+        }
         createFramebuffers();
     }
 
@@ -157,7 +158,7 @@ public:
         return ptr;
     }
 
-    Texture* getTexture() { return &tex; }
+    Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
 
     void setName(const char* name) { this->name = name; }
     void setViewportCount(u32 viewports);
@@ -191,10 +192,12 @@ private:
     FullscreenFramebuffers fsfb = { 0 };
     RenderWorld renderWorld;
 
+    u32 currentRenderingCameraIndex = 0;
+
     u32 fullscreenBlurDivisor = 4;
     u32 settingsVersion = 0;
 
-    std::map<std::string, SmallVec<GLuint, MAX_VIEWPORTS>> shaderPrograms;
+    std::map<std::string, GLuint> shaderPrograms;
 
     struct QueuedRenderable2D
     {
@@ -204,7 +207,7 @@ private:
     std::vector<QueuedRenderable2D> renderables2D;
     std::vector<RenderWorld*> renderWorlds;
 
-    void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount);
+    void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines);
 
     void createFullscreenFramebuffers();
 
@@ -223,13 +226,15 @@ public:
         return ptr;
     }
 
+    u32 getCurrentRenderingCameraIndex() const { return currentRenderingCameraIndex; }
+    void setCurrentRenderingCameraIndex(u32 index) { currentRenderingCameraIndex = index; }
     void init();
     void initShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
     void loadShader(std::string filename, SmallVec<std::string> defines={}, std::string name="");
     u32 getShader(const char* name, i32 viewportCount=0) const;
-    GLuint getShaderProgram(const char* name, i32 viewportCount=0) const;
+    GLuint getShaderProgram(const char* name) const;
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
     void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }

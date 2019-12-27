@@ -1,9 +1,9 @@
 layout(binding = 1) uniform samplerCube cubemapSampler;
-layout(binding = 2) uniform sampler2DArrayShadow shadowDepthSampler;
+layout(binding = 2) uniform sampler2DShadow shadowDepthSampler;
 layout(binding = 3) uniform sampler2D cloudShadowTexture;
-layout(binding = 4) uniform sampler2DArray ssaoTexture;
+layout(binding = 4) uniform sampler2D ssaoTexture;
 
-float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
+float getShadow(sampler2DShadow tex, vec3 shadowCoord)
 {
 #if 0
     const uint count = 4;
@@ -31,10 +31,9 @@ float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
     float shadow = 0.0;
     for (uint i=0; i<count; ++i)
     {
-        vec4 texCoord;
+        vec3 texCoord;
         texCoord.xy = shadowCoord.xy + offsets[i] / 800.0;
-        texCoord.w = shadowCoord.z;
-        texCoord.z = gl_Layer;
+        texCoord.z = shadowCoord.z;
         shadow += texture(tex, texCoord) / count;
     }
 
@@ -43,7 +42,7 @@ float getShadow(sampler2DArrayShadow tex, vec3 shadowCoord)
 
 float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float power)
 {
-    return max(bias + scale * pow(1.0 + dot(normalize(worldPosition - cameraPosition[gl_Layer]), normal), power), 0.0);
+    return max(bias + scale * pow(1.0 + dot(normalize(worldPosition - cameraPosition), normal), power), 0.0);
 }
 
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
@@ -63,7 +62,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
             vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r, 1.0);
     shadow *= cloudShadow;
 
-    vec3 toCamera = cameraPosition[gl_Layer] - worldPosition;
+    vec3 toCamera = cameraPosition - worldPosition;
 
     float sunPower = 1.0;
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)
@@ -78,7 +77,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 
 #if SSAO_ENABLED
 #ifndef NO_SSAO
-    float ssaoAmount = texelFetch(ssaoTexture, ivec3(gl_FragCoord.xy, gl_Layer), 0).r;
+    float ssaoAmount = texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r;
     color.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
 #endif
 #endif
@@ -101,7 +100,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     color.rgb = mix(color.rgb, fogColor, fogIntensity);
 #endif
 
-    vec3 I = normalize(worldPosition - cameraPosition[gl_Layer]);
+    vec3 I = normalize(worldPosition - cameraPosition);
     vec3 R = reflect(I, normal);
     color.rgb += textureLod(cubemapSampler, R, reflectionLod).rgb
         * reflectionStrength

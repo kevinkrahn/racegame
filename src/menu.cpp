@@ -93,6 +93,12 @@ void Menu::mainMenu()
             g_game.state.drivers.back().credits = driverCredits;
             g_game.state.drivers.back().aiUpgrades(series);
         }
+#if 0
+        g_game.state.drivers[0].hasCamera = true;
+        g_game.state.drivers[1].hasCamera = true;
+        g_game.state.drivers[2].hasCamera = true;
+        g_game.state.drivers[3].hasCamera = true;
+#endif
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
@@ -772,8 +778,7 @@ void Menu::championshipGarage()
 
     g_game.renderer->push2D(QuadRenderable(renderWorld.getTexture(),
                 vehiclePreviewPos, (f32)vehicleIconWidth, (f32)vehicleIconHeight,
-                glm::vec3(1.f), 1.f, false,
-                true, "texArray2D"));
+                glm::vec3(1.f), 1.f, false, true));
 
     g_game.renderer->push2D(QuadRenderable(white,
                 vehiclePreviewPos + glm::vec2(0, vehicleIconHeight),
@@ -943,8 +948,7 @@ void Menu::championshipStandings()
         g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[1]),
                         -glm::floor(vehicleIconSize/2)),
-                    (f32)vehicleIconSize, (f32)vehicleIconSize,
-                    glm::vec3(1.f), 1.f, false, true, "texArray2D"));
+                    (f32)vehicleIconSize, (f32)vehicleIconSize, glm::vec3(1.f), 1.f, false, true));
 
         g_game.renderer->push2D(TextRenderable(smallfont, driver->playerName.c_str(),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[2]), 0),

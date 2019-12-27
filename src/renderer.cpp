@@ -7,12 +7,11 @@
 constexpr u32 viewportGapPixels = 1;
 constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
 
-void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines, u32 viewportCount)
+void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
 {
     std::ostringstream str;
     str << "#version 450\n";
     str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
-    str << "#define VIEWPORT_COUNT " << viewportCount << '\n';
     str << "#define SHADOWS_ENABLED " << u32(g_game.config.graphics.shadowsEnabled) << '\n';
     str << "#define SSAO_ENABLED " << u32(g_game.config.graphics.ssaoEnabled) << '\n';
     str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
@@ -83,84 +82,77 @@ void Renderer::loadShader(std::string filename, SmallVec<std::string> defines, s
         shaderStr.replace(pos, newLinePos - pos, includeContent);
     }
 
-    for (u32 viewportCount=1; viewportCount<=MAX_VIEWPORTS; ++viewportCount)
+    GLint success, errorMessageLength;
+    GLuint program = glCreateProgram();
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }));
+    glCompileShader(vertexShader);
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
     {
-        GLint success, errorMessageLength;
-        GLuint program = glCreateProgram();
-
-        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }), viewportCount);
-        glCompileShader(vertexShader);
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-            std::string errorMessage(errorMessageLength, ' ');
-            glGetShaderInfoLog(vertexShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
-            FATAL_ERROR("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
-        }
-        glAttachShader(program, vertexShader);
-
-        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }), viewportCount);
-        glCompileShader(fragmentShader);
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-            std::string errorMessage(errorMessageLength, ' ');
-            glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
-            FATAL_ERROR("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
-        }
-        glAttachShader(program, fragmentShader);
-
-        GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-        bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
-        if (hasGeometryShader)
-        {
-            glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }), viewportCount);
-            glCompileShader(geometryShader);
-            glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
-            if (!success)
-            {
-                glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-                std::string errorMessage(errorMessageLength, ' ');
-                glGetShaderInfoLog(geometryShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
-                FATAL_ERROR("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
-            }
-            glAttachShader(program, geometryShader);
-        }
-
-        glLinkProgram(program);
-        glGetProgramiv(program, GL_LINK_STATUS, &success);
-        if (!success)
-        {
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
-            std::string errorMessage(errorMessageLength, ' ');
-            glGetProgramInfoLog(program, errorMessageLength, 0, (GLchar*)errorMessage.data());
-            FATAL_ERROR("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-        glDeleteShader(geometryShader);
-
-        shaderPrograms[name].push_back(program);
+        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+        FATAL_ERROR("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
+    glAttachShader(program, vertexShader);
+
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }));
+    glCompileShader(fragmentShader);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+        FATAL_ERROR("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+    }
+    glAttachShader(program, fragmentShader);
+
+    GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+    bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
+    if (hasGeometryShader)
+    {
+        glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }));
+        glCompileShader(geometryShader);
+        glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
+            std::string errorMessage(errorMessageLength, ' ');
+            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+            FATAL_ERROR("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+        }
+        glAttachShader(program, geometryShader);
+    }
+
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
+        std::string errorMessage(errorMessageLength, ' ');
+        glGetProgramInfoLog(program, errorMessageLength, 0, (GLchar*)errorMessage.data());
+        FATAL_ERROR("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    glDeleteShader(geometryShader);
+
+    shaderPrograms[name] = program;
 }
 
-GLuint Renderer::getShaderProgram(const char* name, i32 viewportCount) const
+GLuint Renderer::getShaderProgram(const char* name) const
 {
-    if (!viewportCount)
-    {
-        viewportCount = renderWorld.cameras.size();
-    }
     auto it = shaderPrograms.find(name);
     if (it == shaderPrograms.end())
     {
         FATAL_ERROR("Could not find shader: ", name, '\n');
     }
-    return it->second[viewportCount - 1];
+    return it->second;
 }
 
 void Renderer::updateFramebuffers()
@@ -232,10 +224,7 @@ void Renderer::initShaders()
 {
     for (auto& p : shaderPrograms)
     {
-        for (GLuint program : p.second)
-        {
-            glDeleteProgram(program);
-        }
+        glDeleteProgram(p.second);
     }
     shaderPrograms.clear();
 
@@ -253,7 +242,6 @@ void Renderer::initShaders()
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
     loadShader("quad2D", { "BLUR" }, "texBlur2D");
-    loadShader("quad2D", { "TEXARRAY" }, "texArray2D");
     loadShader("quad2D", {}, "text2D");
     loadShader("post");
     loadShader("mesh2D");
@@ -308,7 +296,7 @@ void Renderer::render(f32 deltaTime)
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(getShaderProgram("post", renderWorld.cameras.size()));
+    glUseProgram(getShaderProgram("post"));
     glm::vec2 res(g_game.windowWidth, g_game.windowHeight);
     glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[renderWorld.cameras.size() - 1];
@@ -324,7 +312,7 @@ void Renderer::render(f32 deltaTime)
                                        glm::vec2(layout.scale.x < 1.f ? viewportGapPixels : 0,
                                                  layout.scale.y < 1.f ? viewportGapPixels : 0), 1.0));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(matrix));
-        glUniform1ui(1, i);
+        glBindTextureUnit(0, renderWorld.getTexture(i)->handle);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 	glPopDebugGroup();
@@ -335,7 +323,7 @@ void Renderer::render(f32 deltaTime)
             g_game.windowWidth/fullscreenBlurDivisor,
             g_game.windowHeight/fullscreenBlurDivisor);
 
-    glUseProgram(getShaderProgram("blit2", 1));
+    glUseProgram(getShaderProgram("blit2"));
     glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenBlurFramebuffer);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glBindTextureUnit(1, fsfb.fullscreenTexture);
@@ -345,13 +333,13 @@ void Renderer::render(f32 deltaTime)
         (glm::vec2(g_game.windowWidth/fullscreenBlurDivisor,
                    g_game.windowHeight/fullscreenBlurDivisor));
 
-    glUseProgram(getShaderProgram("hblur2", 1));
+    glUseProgram(getShaderProgram("hblur2"));
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
     glUniform2f(2, invResolution.x, invResolution.y);
     glBindTextureUnit(1, fsfb.fullscreenBlurTextures[0]);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    glUseProgram(getShaderProgram("vblur2", 1));
+    glUseProgram(getShaderProgram("vblur2"));
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glUniform2f(2, invResolution.x, invResolution.y);
     glBindTextureUnit(1, fsfb.fullscreenBlurTextures[1]);
@@ -367,7 +355,7 @@ void Renderer::render(f32 deltaTime)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
 
-    glUseProgram(getShaderProgram("blit2", 1));
+    glUseProgram(getShaderProgram("blit2"));
     glBindTextureUnit(1, fsfb.fullscreenTexture);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -432,268 +420,287 @@ void RenderWorld::updateWorldTime(f64 time)
 
 void RenderWorld::createFramebuffers()
 {
-    if (fb.mainFramebuffer)
+    for (auto& b : worldInfoUBO)
     {
-        glDeleteTextures(1, &fb.mainColorTexture);
-        glDeleteTextures(1, &fb.mainDepthTexture);
-        glDeleteFramebuffers(1, &fb.mainFramebuffer);
+        b.destroy();
     }
-    if (fb.finalFramebuffer)
+    worldInfoUBO.clear();
+
+    for (auto& b : worldInfoUBOShadow)
     {
-        glDeleteTextures(1, &fb.finalColorTexture);
-        glDeleteFramebuffers(1, &fb.finalFramebuffer);
+        b.destroy();
     }
-    if (fb.msaaResolveFramebuffersCount > 0)
+    worldInfoUBOShadow.clear();
+
+    for (auto& fb : fbs)
     {
-        glDeleteTextures(1, &fb.msaaResolveColorTexture);
-        glDeleteTextures(1, &fb.msaaResolveDepthTexture);
-        glDeleteFramebuffers(fb.msaaResolveFramebuffersCount, fb.msaaResolveFramebuffers);
-        glDeleteFramebuffers(fb.msaaResolveFramebuffersCount, fb.msaaResolveFromFramebuffers);
-    }
-    if (fb.shadowFramebuffer)
-    {
-        glDeleteTextures(1, &fb.shadowDepthTexture);
-        glDeleteFramebuffers(1, &fb.shadowFramebuffer);
-    }
-    if (fb.cszFramebuffers[0])
-    {
-        glDeleteTextures(1, &fb.cszTexture);
-        glDeleteFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
-    }
-    if (fb.saoFramebuffer)
-    {
-        glDeleteTextures(1, &fb.saoTexture);
-        glDeleteTextures(1, &fb.saoBlurTexture);
-        glDeleteFramebuffers(1, &fb.saoFramebuffer);
-    }
-    if (fb.bloomFramebuffers.size() > 0)
-    {
-        glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
-        glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
-    }
-
-    fb = { 0 };
-
-    ViewportLayout& layout = viewportLayout[cameras.size() - 1];
-    fb.renderWidth = (u32)(width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
-    fb.renderHeight = (u32)(height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
-    u32 layers = cameras.size();
-
-    glEnable(GL_FRAMEBUFFER_SRGB);
-    glGenTextures(1, &fb.mainColorTexture);
-    glGenTextures(1, &fb.mainDepthTexture);
-    if (g_game.config.graphics.msaaLevel > 0)
-    {
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainColorTexture);
-        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.graphics.msaaLevel,
-                colorFormat, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, 0);
-
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, fb.mainDepthTexture);
-        glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, g_game.config.graphics.msaaLevel,
-                GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, layers, GL_TRUE);
-
-        glGenTextures(1, &fb.msaaResolveColorTexture);
-        glGenTextures(1, &fb.msaaResolveDepthTexture);
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.msaaResolveColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth, fb.renderHeight,
-                layers, 0, GL_RGB, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.msaaResolveDepthTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
-                layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        fb.msaaResolveFramebuffersCount = layers;
-        glGenFramebuffers(layers, fb.msaaResolveFramebuffers);
-        glGenFramebuffers(layers, fb.msaaResolveFromFramebuffers);
-        for (u32 i=0; i<layers; ++i)
+        if (fb.mainFramebuffer)
         {
-            glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                    fb.msaaResolveDepthTexture, 0, i);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                    fb.msaaResolveColorTexture, 0, i);
-            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
-            glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                    fb.mainDepthTexture, 0, i);
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                    fb.mainColorTexture, 0, i);
-            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+            glDeleteTextures(1, &fb.mainColorTexture);
+            glDeleteTextures(1, &fb.mainDepthTexture);
+            glDeleteFramebuffers(1, &fb.mainFramebuffer);
+        }
+        if (fb.finalFramebuffer)
+        {
+            glDeleteTextures(1, &fb.finalColorTexture);
+            glDeleteFramebuffers(1, &fb.finalFramebuffer);
+        }
+        if (fb.msaaResolveColorTexture)
+        {
+            glDeleteTextures(1, &fb.msaaResolveColorTexture);
+            glDeleteTextures(1, &fb.msaaResolveDepthTexture);
+            glDeleteFramebuffers(1, &fb.msaaResolveFramebuffer);
+            glDeleteFramebuffers(1, &fb.msaaResolveFromFramebuffer);
+        }
+        if (fb.shadowFramebuffer)
+        {
+            glDeleteTextures(1, &fb.shadowDepthTexture);
+            glDeleteFramebuffers(1, &fb.shadowFramebuffer);
+        }
+        if (fb.cszFramebuffers[0])
+        {
+            glDeleteTextures(1, &fb.cszTexture);
+            glDeleteFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
+        }
+        if (fb.saoFramebuffer)
+        {
+            glDeleteTextures(1, &fb.saoTexture);
+            glDeleteTextures(1, &fb.saoBlurTexture);
+            glDeleteFramebuffers(1, &fb.saoFramebuffer);
+        }
+        if (fb.bloomFramebuffers.size() > 0)
+        {
+            glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
+            glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
         }
     }
-    else
+    fbs.clear();
+
+    for (u32 i=0; i<cameras.size(); ++i)
     {
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth, fb.renderHeight,
-                layers, 0, GL_RGB, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        Framebuffers fb = { 0 };
 
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.mainDepthTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
-                layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    }
+        ViewportLayout& layout = viewportLayout[cameras.size() - 1];
+        fb.renderWidth = (u32)(width * layout.scale.x - (layout.scale.x < 1.f ? viewportGapPixels : 0));
+        fb.renderHeight = (u32)(height * layout.scale.y - (layout.scale.y < 1.f ? viewportGapPixels : 0));
 
-    glGenFramebuffers(1, &fb.mainFramebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.mainDepthTexture, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.mainColorTexture, 0);
-
-    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
-    if (g_game.config.graphics.ssaoEnabled)
-    {
-        // csv framebuffers
-        glGenTextures(1, &fb.cszTexture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.cszTexture);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, ARRAY_SIZE(fb.cszFramebuffers) - 1);
-        for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
+        glEnable(GL_FRAMEBUFFER_SRGB);
+        glGenTextures(1, &fb.mainColorTexture);
+        glGenTextures(1, &fb.mainDepthTexture);
+        if (g_game.config.graphics.msaaLevel > 0)
         {
-            i32 w = i32(fb.renderWidth >> (i - 1));
-            i32 h = i32(fb.renderHeight >> (i - 1));
-            glTexImage3D(GL_TEXTURE_2D_ARRAY, i - 1, GL_R32F, w, h, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-        }
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.mainColorTexture);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, g_game.config.graphics.msaaLevel,
+                    colorFormat, fb.renderWidth, fb.renderHeight, GL_TRUE);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glm::vec4 borderColor(1.f);
-        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.mainDepthTexture);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, g_game.config.graphics.msaaLevel,
+                    GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, GL_TRUE);
 
-        glGenFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
-        for (u32 i=0; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.cszTexture, i);
+            glGenTextures(1, &fb.msaaResolveColorTexture);
+            glGenTextures(1, &fb.msaaResolveDepthTexture);
 
+            glBindTexture(GL_TEXTURE_2D, fb.msaaResolveColorTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth, fb.renderHeight,
+                    0, GL_RGB, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glBindTexture(GL_TEXTURE_2D, fb.msaaResolveDepthTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
+                    0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            glGenFramebuffers(1, &fb.msaaResolveFramebuffer);
+            glGenFramebuffers(1, &fb.msaaResolveFromFramebuffer);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFramebuffer);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                    fb.msaaResolveDepthTexture, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                    fb.msaaResolveColorTexture, 0);
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE,
+                    fb.mainDepthTexture, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE,
+                    fb.mainColorTexture, 0);
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, fb.mainColorTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth, fb.renderHeight,
+                    0, GL_RGB, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        // sao framebuffers
-        glGenTextures(1, &fb.saoTexture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+            glBindTexture(GL_TEXTURE_2D, fb.mainDepthTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
+                    0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
 
-        glGenTextures(1, &fb.saoBlurTexture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.saoBlurTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, layers, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
-
-        glGenFramebuffers(1, &fb.saoFramebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.saoTexture, 0);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fb.saoBlurTexture, 0);
+        glGenFramebuffers(1, &fb.mainFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.mainDepthTexture, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.mainColorTexture, 0);
 
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-    }
 
-    // shadow framebuffer
-    if (g_game.config.graphics.shadowsEnabled)
-    {
-        shadowMapResolution = g_game.config.graphics.shadowMapResolution;
-        if (width < 128 || height < 128)
+        if (g_game.config.graphics.ssaoEnabled)
         {
-            shadowMapResolution = 256;
-        }
-
-        glGenTextures(1, &fb.shadowDepthTexture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.shadowDepthTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT,
-                shadowMapResolution, shadowMapResolution, layers,
-                0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-
-        glGenFramebuffers(1, &fb.shadowFramebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.shadowDepthTexture, 0);
-
-        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-    }
-
-    // bloom framebuffers
-    bloomEnabled = g_game.config.graphics.bloomEnabled;
-    if (width < 128 || height < 128)
-    {
-        bloomEnabled = false;
-    }
-    if (bloomEnabled)
-    {
-        for (u32 i=firstBloomDivisor; i<lastBloomDivisor; i *= 2)
-        {
-            GLuint tex[2];
-            glGenTextures(2, tex);
-            for (u32 n=0; n<2; ++n)
+            // csv framebuffers
+            glGenTextures(1, &fb.cszTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.cszTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, ARRAY_SIZE(fb.cszFramebuffers) - 1);
+            for (u32 i=1; i<=ARRAY_SIZE(fb.cszFramebuffers); ++i)
             {
-                glBindTexture(GL_TEXTURE_2D_ARRAY, tex[n]);
-                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth/i, fb.renderHeight/i,
-                        layers, 0, GL_RGB, GL_FLOAT, nullptr);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                fb.bloomColorTextures.push_back(tex[n]);
+                i32 w = i32(fb.renderWidth >> (i - 1));
+                i32 h = i32(fb.renderHeight >> (i - 1));
+                glTexImage2D(GL_TEXTURE_2D, i - 1, GL_R32F, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
             }
 
-            GLuint framebuffer;
-            glGenFramebuffers(1, &framebuffer);
-            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex[0], 0);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tex[1], 0);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glm::vec4 borderColor(1.f);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+
+            glGenFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
+            for (u32 i=0; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
+            {
+                glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.cszTexture, i);
+
+                assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+            }
+
+            // sao framebuffers
+            glGenTextures(1, &fb.saoTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.saoTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+
+            glGenTextures(1, &fb.saoBlurTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.saoBlurTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
+
+            glGenFramebuffers(1, &fb.saoFramebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.saoTexture, 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fb.saoBlurTexture, 0);
 
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-
-            fb.bloomFramebuffers.push_back(framebuffer);
-            fb.bloomBufferSize.push_back({ fb.renderWidth/i, fb.renderHeight/i });
         }
 
-        glGenTextures(1, &fb.finalColorTexture);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, fb.finalColorTexture);
-        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, colorFormat, fb.renderWidth, fb.renderHeight,
-                layers, 0, GL_RGB, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // shadow framebuffer
+        if (g_game.config.graphics.shadowsEnabled)
+        {
+            shadowMapResolution = g_game.config.graphics.shadowMapResolution;
+            if (width < 128 || height < 128)
+            {
+                shadowMapResolution = 256;
+            }
 
-        glGenFramebuffers(1, &fb.finalFramebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.finalColorTexture, 0);
+            glGenTextures(1, &fb.shadowDepthTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.shadowDepthTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+                    shadowMapResolution, shadowMapResolution,
+                    0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
-        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+            glGenFramebuffers(1, &fb.shadowFramebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.shadowDepthTexture, 0);
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        }
+
+        // bloom framebuffers
+        bloomEnabled = g_game.config.graphics.bloomEnabled;
+        if (width < 128 || height < 128)
+        {
+            bloomEnabled = false;
+        }
+        if (bloomEnabled)
+        {
+            for (u32 i=firstBloomDivisor; i<lastBloomDivisor; i *= 2)
+            {
+                GLuint tex[2];
+                glGenTextures(2, tex);
+                for (u32 n=0; n<2; ++n)
+                {
+                    glBindTexture(GL_TEXTURE_2D, tex[n]);
+                    glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth/i, fb.renderHeight/i,
+                            0, GL_RGB, GL_FLOAT, nullptr);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                    fb.bloomColorTextures.push_back(tex[n]);
+                }
+
+                GLuint framebuffer;
+                glGenFramebuffers(1, &framebuffer);
+                glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex[0], 0);
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tex[1], 0);
+
+                assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+                fb.bloomFramebuffers.push_back(framebuffer);
+                fb.bloomBufferSize.push_back({ fb.renderWidth/i, fb.renderHeight/i });
+            }
+
+            glGenTextures(1, &fb.finalColorTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.finalColorTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth, fb.renderHeight,
+                    0, GL_RGB, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glGenFramebuffers(1, &fb.finalFramebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.finalColorTexture, 0);
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        }
+
+        fbs.push_back(fb);
+        worldInfoUBO.push_back(DynamicBuffer(sizeof(WorldInfo)));
+        worldInfoUBOShadow.push_back(DynamicBuffer(sizeof(WorldInfo)));
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -706,105 +713,97 @@ void RenderWorld::clear()
     tempRenderBuffer.clear();
 }
 
-void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow)
+void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)
 {
     glm::vec3 inverseLightDir = worldInfo.sunDirection;
     glm::mat4 depthView = glm::lookAt(inverseLightDir, glm::vec3(0), glm::vec3(0, 0, 1));
-    for (u32 i=0; i<cameras.size(); ++i)
+    if (!g_game.config.graphics.shadowsEnabled)
     {
-        if (!g_game.config.graphics.shadowsEnabled)
-        {
-            worldInfo.shadowViewProjectionBias[i] = glm::mat4(0.f);
-            continue;
-        }
-
-        Camera const& cam = cameras[i];
-        glm::mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
-
-        glm::vec3 ndc[] = {
-            { -1,  1, 0 },
-            {  1,  1, 0 },
-            {  1, -1, 0 },
-            { -1, -1, 0 },
-
-            { -1,  1, 1 },
-            {  1,  1, 1 },
-            {  1, -1, 1 },
-            { -1, -1, 1 },
-        };
-
-        f32 minx =  FLT_MAX;
-        f32 maxx = -FLT_MAX;
-        f32 miny =  FLT_MAX;
-        f32 maxy = -FLT_MAX;
-        f32 minz =  FLT_MAX;
-        f32 maxz = -FLT_MAX;
-        for (auto& v : ndc)
-        {
-            glm::vec4 b = inverseViewProj * glm::vec4(v, 1.f);
-            v = glm::vec3(b) / b.w;
-
-            if (v.x < minx) minx = v.x;
-            if (v.x > maxx) maxx = v.x;
-            if (v.y < miny) miny = v.y;
-            if (v.y > maxy) maxy = v.y;
-            if (v.z < minz) minz = v.z;
-            if (v.z > maxz) maxz = v.z;
-        }
-
-        glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
-        f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
-        f32 snapMultiple = 2.f * extent / shadowMapResolution;
-        center.x = snap(center.x, snapMultiple);
-        center.y = snap(center.y, snapMultiple);
-        center.z = snap(center.z, snapMultiple);
-
-        glm::mat4 depthProjection = glm::ortho(center.x-extent, center.x+extent,
-                                            center.y+extent, center.y-extent, -maxz, -minz);
-        glm::mat4 viewProj = depthProjection * depthView;
-
-        worldInfoShadow.cameraViewProjection[i] = viewProj;
-        worldInfo.shadowViewProjectionBias[i] = glm::mat4(
-            0.5f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.5f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.5f, 0.0f,
-            0.5f, 0.5f, 0.5f, 1.0f
-        ) * viewProj;
+        worldInfo.shadowViewProjectionBias = glm::mat4(0.f);
+        return;
     }
+
+	// TODO: adjust znear and zfar for better shadow quality
+    Camera const& cam = cameras[cameraIndex];
+    glm::mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
+
+    glm::vec3 ndc[] = {
+        { -1,  1, 0 },
+        {  1,  1, 0 },
+        {  1, -1, 0 },
+        { -1, -1, 0 },
+
+        { -1,  1, 1 },
+        {  1,  1, 1 },
+        {  1, -1, 1 },
+        { -1, -1, 1 },
+    };
+
+    f32 minx =  FLT_MAX;
+    f32 maxx = -FLT_MAX;
+    f32 miny =  FLT_MAX;
+    f32 maxy = -FLT_MAX;
+    f32 minz =  FLT_MAX;
+    f32 maxz = -FLT_MAX;
+    for (auto& v : ndc)
+    {
+        glm::vec4 b = inverseViewProj * glm::vec4(v, 1.f);
+        v = glm::vec3(b) / b.w;
+
+        if (v.x < minx) minx = v.x;
+        if (v.x > maxx) maxx = v.x;
+        if (v.y < miny) miny = v.y;
+        if (v.y > maxy) maxy = v.y;
+        if (v.z < minz) minz = v.z;
+        if (v.z > maxz) maxz = v.z;
+    }
+
+    glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
+    f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
+    f32 snapMultiple = 2.f * extent / shadowMapResolution;
+    center.x = snap(center.x, snapMultiple);
+    center.y = snap(center.y, snapMultiple);
+    center.z = snap(center.z, snapMultiple);
+
+    glm::mat4 depthProjection = glm::ortho(center.x-extent, center.x+extent,
+                                        center.y+extent, center.y-extent, -maxz, -minz);
+    glm::mat4 viewProj = depthProjection * depthView;
+
+    worldInfoShadow.cameraViewProjection = viewProj;
+    worldInfo.shadowViewProjectionBias = glm::mat4(
+        0.5f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.5f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.5f, 0.0f,
+        0.5f, 0.5f, 0.5f, 1.0f
+    ) * viewProj;
 }
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World ", name));
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     std::stable_sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
         return a.priority < b.priority;
     });
 
+    for (u32 i=0; i<fbs.size(); ++i)
+    {
+        renderer->setCurrentRenderingCameraIndex(i);
+        renderViewport(renderer, i, deltaTime);
+    }
+}
+
+void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
+{
     // update worldinfo uniform buffer
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
-    u32 viewportCount = cameras.size();
-	// TODO: adjust znear and zfar for better shadow quality
-    for (u32 i=0; i<viewportCount; ++i)
-    {
-        worldInfo.cameraViewProjection[i] = cameras[i].viewProjection;
-        worldInfo.cameraProjection[i] = cameras[i].projection;
-        worldInfo.cameraView[i] = cameras[i].view;
-        worldInfo.cameraPosition[i] = glm::vec4(cameras[i].position, 1.0);
-    }
-    for (u32 i=0; i<cameras.size(); ++i)
-    {
-        Camera const& cam = cameras[i];
-        worldInfo.projInfo[i] = {
-            -2.f / (fb.renderWidth * cam.projection[0][0]),
-            -2.f / (fb.renderHeight * cam.projection[1][1]),
-            (1.f - cam.projection[0][2]) / cam.projection[0][0],
-            (1.f + cam.projection[1][2]) / cam.projection[1][1]
-        };
-        const float scale = glm::abs(2.f * glm::tan(cam.fov * 0.5f));
-        worldInfo.projScale[i] = fb.renderHeight / scale;
-    }
+    worldInfo.cameraViewProjection = cameras[index].viewProjection;
+    worldInfo.cameraProjection = cameras[index].projection;
+    worldInfo.cameraView = cameras[index].view;
+    worldInfo.cameraPosition = glm::vec4(cameras[index].position, 1.0);
+
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World: ", name, ", Viewport #", index + 1));
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    Framebuffers const& fb = fbs[index];
 
     i32 prevPriority = INT32_MIN;
 
@@ -814,15 +813,15 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Shadow Depth Pass");
 
 		// NOTE: this is here to silence a warning (nvidia warning 131222)
-        glUseProgram(renderer->getShaderProgram("blit2", 1));
+        glUseProgram(renderer->getShaderProgram("blit2"));
 
 		WorldInfo worldInfoShadow = worldInfo;
-		setShadowMatrices(worldInfo, worldInfoShadow);
+		setShadowMatrices(worldInfo, worldInfoShadow, index);
 
-        worldInfoUBOShadow.updateData(&worldInfoShadow);
+        worldInfoUBOShadow[index].updateData(&worldInfoShadow);
 
         // bind worldinfo with shadow matrices
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBOShadow.getBuffer());
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBOShadow[index].getBuffer());
 
         glBindFramebuffer(GL_FRAMEBUFFER, fb.shadowFramebuffer);
 
@@ -856,8 +855,8 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     }
 
     // bind real worldinfo
-    worldInfoUBO.updateData(&worldInfo);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO.getBuffer());
+    worldInfoUBO[index].updateData(&worldInfo);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, worldInfoUBO[index].getBuffer());
 
     // depth prepass
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Depth PrePass");
@@ -890,14 +889,11 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     if (g_game.config.graphics.msaaLevel > 0)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Depth Resolve");
-        for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
-        {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
-            glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
-                            0, 0, fb.renderWidth, fb.renderHeight,
-                            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-        }
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffer);
+        glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
+                        0, 0, fb.renderWidth, fb.renderHeight,
+                        GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
         glBindTextureUnit(1, fb.msaaResolveDepthTexture);
 		glPopDebugGroup();
@@ -926,20 +922,16 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
             glBindVertexArray(emptyVAO);
             glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glUseProgram(renderer->getShaderProgram("csz", cameras.size()));
-            glm::vec4 clipInfo[MAX_VIEWPORTS];
-            for (u32 i=0; i<cameras.size(); ++i)
-            {
-                Camera const& cam = cameras[i];
-                clipInfo[i] = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
-            }
-            glUniform4fv(0, cameras.size(), (GLfloat*)clipInfo);
+            glUseProgram(renderer->getShaderProgram("csz"));
+            Camera const& cam = cameras[index];
+            glm::vec4 clipInfo = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
+            glUniform4fv(1, 1, (GLfloat*)&clipInfo);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindTextureUnit(3, fb.cszTexture);
 
             // minify csz texture
 		    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO CSZ Minify");
-            glUseProgram(renderer->getShaderProgram("csz_minify", cameras.size()));
+            glUseProgram(renderer->getShaderProgram("csz_minify"));
             for (u32 i=1; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
             {
                 glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[i]);
@@ -955,14 +947,26 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
             glViewport(0, 0, fb.renderWidth, fb.renderHeight);
             glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glUseProgram(renderer->getShaderProgram("sao", cameras.size()));
+            glUseProgram(renderer->getShaderProgram("sao"));
+
+            glm::vec4 projInfo = {
+                -2.f / (fb.renderWidth * cam.projection[0][0]),
+                -2.f / (fb.renderHeight * cam.projection[1][1]),
+                (1.f - cam.projection[0][2]) / cam.projection[0][0],
+                (1.f + cam.projection[1][2]) / cam.projection[1][1]
+            };
+            const float scale = glm::abs(2.f * glm::tan(cam.fov * 0.5f));
+            f32 projScale = fb.renderHeight / scale;
+            glUniform4fv(1, 1, (GLfloat*)&projInfo);
+            glUniform1f(2, projScale);
+
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindTextureUnit(4, fb.saoTexture);
 		    glPopDebugGroup();
 
         #if 1
 		    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO Blur");
-            glUseProgram(renderer->getShaderProgram("sao_blur", cameras.size()));
+            glUseProgram(renderer->getShaderProgram("sao_blur"));
 
             // sao hblur
             glDrawBuffer(GL_COLOR_ATTACHMENT1);
@@ -1010,22 +1014,19 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     if (g_game.config.graphics.msaaLevel > 0)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
-        for (u32 i=0; i<fb.msaaResolveFramebuffersCount; ++i)
-        {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffers[i]);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffers[i]);
-            glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
-                            0, 0, fb.renderWidth, fb.renderHeight,
-                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        }
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffer);
+        glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
+                        0, 0, fb.renderWidth, fb.renderHeight,
+                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
         glBindTextureUnit(0, fb.msaaResolveColorTexture);
 		glPopDebugGroup();
-        this->tex.handle = fb.msaaResolveColorTexture;
+        this->tex[index].handle = fb.msaaResolveColorTexture;
     }
     else
     {
         glBindTextureUnit(0, fb.mainColorTexture);
-        this->tex.handle = fb.mainColorTexture;
+        this->tex[index].handle = fb.mainColorTexture;
     }
 
     // bloom
@@ -1042,13 +1043,13 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
         glBindFramebuffer(GL_FRAMEBUFFER, fb.bloomFramebuffers[0]);
         glViewport(0, 0, fb.bloomBufferSize[0].x, fb.bloomBufferSize[0].y);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        glUseProgram(renderer->getShaderProgram("bloom_filter", cameras.size()));
+        glUseProgram(renderer->getShaderProgram("bloom_filter"));
         glDrawArrays(GL_TRIANGLES, 0, 3);
 		glPopDebugGroup();
 
-        GLuint blit = renderer->getShaderProgram("blit", cameras.size());
-        GLuint hblur = renderer->getShaderProgram("hblur", cameras.size());
-        GLuint vblur = renderer->getShaderProgram("vblur", cameras.size());
+        GLuint blit = renderer->getShaderProgram("blit");
+        GLuint hblur = renderer->getShaderProgram("hblur");
+        GLuint vblur = renderer->getShaderProgram("vblur");
 
         // downscale (skip first downscale because that one is done by bloom filter)
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Downscale Bloom Textures");
@@ -1091,7 +1092,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Post Process");
         glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-        glUseProgram(renderer->getShaderProgram("post_process", cameras.size()));
+        glUseProgram(renderer->getShaderProgram("post_process"));
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {
             glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);
@@ -1102,7 +1103,7 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
         glBindTextureUnit(0, fb.finalColorTexture);
 		glPopDebugGroup();
 
-		this->tex.handle = fb.finalColorTexture;
+		this->tex[index].handle = fb.finalColorTexture;
     }
 
 	glPopDebugGroup();

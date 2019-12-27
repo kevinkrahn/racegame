@@ -13,10 +13,10 @@ layout(location = 3) out vec4 outBlend;
 
 void main()
 {
-    gl_Position = cameraViewProjection[0] * vec4(attrPosition, 1.0);
+    gl_Position = cameraViewProjection * vec4(attrPosition, 1.0);
     outNormal = attrNormal;
     outWorldPosition = attrPosition;
-    outShadowCoord = (shadowViewProjectionBias[0] * vec4(attrPosition, 1.0)).xyz;
+    outShadowCoord = (shadowViewProjectionBias * vec4(attrPosition, 1.0)).xyz;
     outBlend = attrBlend;
 }
 

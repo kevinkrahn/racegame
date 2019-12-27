@@ -11,7 +11,7 @@ void main()
 {
     outPosition = attrPosition;
     vec3 worldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
-    gl_Position = cameraViewProjection[0] * vec4(worldPosition, 1.0);
+    gl_Position = cameraViewProjection * vec4(worldPosition, 1.0);
 }
 
 #elif defined FRAG

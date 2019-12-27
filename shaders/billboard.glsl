@@ -34,7 +34,7 @@ const vec2 uvs[6] = vec2[](
 
 void main()
 {
-    mat4 modelView = cameraView[0] * translation;
+    mat4 modelView = cameraView * translation;
     modelView[0][0] = scale.x;
     modelView[0][1] = 0;
     modelView[0][2] = 0;
@@ -44,7 +44,7 @@ void main()
     modelView[2][0] = 0;
     modelView[2][1] = 0;
     modelView[2][2] = scale.z;
-    mat4 matrix = cameraProjection[0] * modelView * rotation;
+    mat4 matrix = cameraProjection * modelView * rotation;
 
     gl_Position = matrix * vec4(vertices[gl_VertexID], 0.0, 1.0);
     outTexCoord = uvs[gl_VertexID];
@@ -71,7 +71,7 @@ layout(location = 2) in vec3 inShadowCoord;
 layout(location = 0) out vec4 outColor;
 
 layout(binding = 0) uniform sampler2D texSampler;
-layout(binding = 1) uniform sampler2DArray depthSampler;
+layout(binding = 1) uniform sampler2D depthSampler;
 
 layout(location = 0) uniform vec4 color;
 
@@ -84,7 +84,7 @@ void main()
             0.f, 0.f, 0.f, vec3(0.f), 0.0, 0.0, 0.0);
 #endif
 
-    float depth = texture(depthSampler, vec3(gl_FragCoord.xy / textureSize(depthSampler, 0).xy, gl_Layer)).r;
+    float depth = texture(depthSampler, gl_FragCoord.xy / textureSize(depthSampler, 0)).r;
     float d = depth - gl_FragCoord.z;
     outColor.a *= clamp(d, 0.0, 0.002) * 800.0;
     outColor.a = clamp(outColor.a, 0.0, 1.0);

@@ -186,6 +186,7 @@ void Game::run()
         menu.onUpdate(renderer.get(), deltaTime);
         g_gui.endFrame();
         renderer->render(deltaTime);
+        currentScene->onEndUpdate();
         g_input.onFrameEnd();
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;

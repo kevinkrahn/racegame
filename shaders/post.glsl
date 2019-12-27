@@ -36,11 +36,10 @@ layout(location = 0) out vec4 outColor;
 
 layout(location = 0) in vec2 inTexCoord;
 
-layout(location = 1) uniform uint layerIndex;
-layout(binding = 0) uniform sampler2DArray tex;
+layout(binding = 0) uniform sampler2D tex;
 
 void main()
 {
-    outColor = texture(tex, vec3(inTexCoord, layerIndex));
+    outColor = texture(tex, inTexCoord);
 }
 #endif

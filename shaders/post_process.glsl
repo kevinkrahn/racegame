@@ -14,18 +14,18 @@ layout(location = 0) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 0) uniform sampler2DArray colorSampler;
-layout(binding = 1) uniform sampler2DArray bloomSampler1;
-layout(binding = 2) uniform sampler2DArray bloomSampler2;
-layout(binding = 3) uniform sampler2DArray bloomSampler3;
+layout(binding = 0) uniform sampler2D colorSampler;
+layout(binding = 1) uniform sampler2D bloomSampler1;
+layout(binding = 2) uniform sampler2D bloomSampler2;
+layout(binding = 3) uniform sampler2D bloomSampler3;
 
 void main()
 {
-    outColor = texture(colorSampler, vec3(inTexCoord, gl_Layer));
+    outColor = texture(colorSampler, inTexCoord);
 #if defined BLOOM_ENABLED
-    vec3 bloom = (texture(bloomSampler1, vec3(inTexCoord, gl_Layer)).rgb
-                + texture(bloomSampler2, vec3(inTexCoord, gl_Layer)).rgb
-                + texture(bloomSampler3, vec3(inTexCoord, gl_Layer)).rgb) / 3.0;
+    vec3 bloom = (texture(bloomSampler1, inTexCoord).rgb
+                + texture(bloomSampler2, inTexCoord).rgb
+                + texture(bloomSampler3, inTexCoord).rgb) / 3.0;
     outColor += vec4(bloom, 0.0);
 #endif
 }

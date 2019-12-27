@@ -517,7 +517,10 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         size = (u32)(size * g_game.config.gameplay.hudTrackScale);
 
         drawTrackPreview(renderer, size, hudTrackPos);
-        renderer->add2D(&trackPreview2D);
+        if (!(isPaused && renderer->getRenderWorld()->getViewportCount() == 4))
+        {
+            renderer->add2D(&trackPreview2D);
+        }
     }
 
     if (isPaused)
@@ -598,6 +601,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         renderer->push2D(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f), 10);
     }
+}
+
+void Scene::onEndUpdate()
+{
+    ribbons.endUpdate();
 }
 
 void Scene::vehicleFinish(u32 n)

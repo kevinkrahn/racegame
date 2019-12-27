@@ -135,6 +135,7 @@ public:
     void onStart();
     void onEnd();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
+    void onEndUpdate();
     void updateBackgroundSound(bool shouldPlay);
 
     void vehicleFinish(u32 n);

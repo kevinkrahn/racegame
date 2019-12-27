@@ -26,11 +26,7 @@ void main()
 #ifdef BLUR
 layout(binding = 0) uniform sampler2D texBlurBg;
 #endif
-#ifdef TEXARRAY
-layout(binding = 1) uniform sampler2DArray tex;
-#else
 layout(binding = 1) uniform sampler2D tex;
-#endif
 
 layout(location = 0) out vec4 outColor;
 
@@ -44,8 +40,6 @@ void main()
 {
 #ifdef COLOR
     outColor = inColor * texture(tex, inTexCoord);
-#elif defined TEXARRAY
-    outColor = inColor * texture(tex, vec3(inTexCoord, 0));
 #elif defined BLUR
     vec4 texColor = texture(tex, inTexCoord);
     vec4 color = inColor * texColor;

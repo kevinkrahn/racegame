@@ -11,7 +11,7 @@ layout(location = 0) out vec3 outColor;
 
 layout(location = 0) uniform ivec2 axis;
 
-layout(binding = 4) uniform sampler2DArray sourceTexture;
+layout(binding = 4) uniform sampler2D sourceTexture;
 
 #define EDGE_SHARPNESS 1.0
 #define SCALE 2
@@ -36,7 +36,7 @@ void main()
 {
     ivec2 ssC = ivec2(gl_FragCoord.xy);
 
-    vec4 temp = texelFetch(sourceTexture, ivec3(ssC, gl_Layer), 0);
+    vec4 temp = texelFetch(sourceTexture, ssC, 0);
 
     outColor.KEY_COMPONENTS = temp.KEY_COMPONENTS;
     float key = unpackKey(outColor.KEY_COMPONENTS);
@@ -51,7 +51,7 @@ void main()
     {
         if (r != 0)
         {
-            temp = texelFetch(sourceTexture, ivec3(ssC + axis * (r * SCALE), gl_Layer), 0);
+            temp = texelFetch(sourceTexture, ssC + axis * (r * SCALE), 0);
             float tapKey = unpackKey(temp.KEY_COMPONENTS);
             VALUE_TYPE value  = temp.VALUE_COMPONENTS;
             float weight = 0.3 + gaussian[abs(r)];

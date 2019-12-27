@@ -9,13 +9,13 @@ void main()
 
 layout(location = 0) out float result;
 
-layout(location = 0) uniform vec4 clipInfo[VIEWPORT_COUNT];
+layout(location = 1) uniform vec4 clipInfo;
 
-layout(binding = 1) uniform sampler2DArray depthTexture;
+layout(binding = 1) uniform sampler2D depthTexture;
 
 void main()
 {
-    float d = texelFetch(depthTexture, ivec3(ivec2(gl_FragCoord.xy), gl_Layer), 0).r;
-    result = clipInfo[gl_Layer][0] / (clipInfo[gl_Layer][1] * d + clipInfo[gl_Layer][2]);
+    float d = texelFetch(depthTexture, ivec2(gl_FragCoord.xy), 0).r;
+    result = clipInfo[0] / (clipInfo[1] * d + clipInfo[2]);
 }
 #endif

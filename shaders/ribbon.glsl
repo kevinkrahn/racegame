@@ -19,8 +19,8 @@ void main()
     outNormal = attrNormal;
     outTexCoord = attrTexCoord;
     outWorldPosition = attrPosition;
-    gl_Position = cameraViewProjection[0] * vec4(outWorldPosition, 1.0);
-    outShadowCoord = (shadowViewProjectionBias[0] * vec4(outWorldPosition, 1.0)).xyz;
+    gl_Position = cameraViewProjection * vec4(outWorldPosition, 1.0);
+    outShadowCoord = (shadowViewProjectionBias * vec4(outWorldPosition, 1.0)).xyz;
 }
 
 #elif defined FRAG

@@ -517,8 +517,7 @@ bool Gui::vehicleButton(const char* text, Texture* icon, Driver* driver)
     }
 
     renderer->push2D(QuadRenderable(icon,
-                pos + glm::vec2(convertSize(2)), iconSize, iconSize, glm::vec3(1.f),
-                1.f, false, true, "texArray2D"));
+                pos + glm::vec2(convertSize(2)), iconSize, iconSize, glm::vec3(1.f), 1.f, false, true));
 
     pos.y += bh + parent.itemSpacing;
 
