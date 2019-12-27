@@ -1856,6 +1856,28 @@ void Vehicle::shakeScreen(f32 intensity)
     }
 }
 
+void Vehicle::applyDamage(f32 amount, u32 instigator)
+{
+    if (specialAbility)
+    {
+        amount = specialAbility->onDamage(amount);
+    }
+    if (amount > 0.f)
+    {
+        hitPoints -= amount;
+        lastDamagedBy = instigator;
+        if (instigator != vehicleIndex)
+        {
+            lastOpponentDamagedBy = instigator;
+            lastTimeDamagedByOpponent = scene->getWorldTime();
+        }
+        if (smokeTimerDamage <= 0.f)
+        {
+            smokeTimerDamage = 0.015f;
+        }
+    }
+}
+
 void Vehicle::blowUp()
 {
     glm::mat4 transform = getTransform();
@@ -1885,7 +1907,14 @@ void Vehicle::blowUp()
     deadTimer = 1.f;
     engineRPM = 0.f;
     scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
-    scene->attackCredit(lastDamagedBy, vehicleIndex);
+    if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.5)
+    {
+        scene->attackCredit(lastOpponentDamagedBy, vehicleIndex);
+    }
+    else
+    {
+        scene->attackCredit(lastDamagedBy, vehicleIndex);
+    }
     Sound* sounds[] = {
         &g_res.sounds->explosion4,
         &g_res.sounds->explosion5,

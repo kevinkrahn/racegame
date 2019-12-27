@@ -68,6 +68,8 @@ public:
 	f32 deadTimer = 0.f;
 	f32 controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
+	u32 lastOpponentDamagedBy = UINT32_MAX;
+	f64 lastTimeDamagedByOpponent = 0.f;
 	f32 smokeTimer = 0.f;
 	f32 smokeTimerDamage = 0.f;
 	f32 offsetChangeTimer = 0.f;
@@ -174,22 +176,7 @@ public:
 
     void blowUp();
     void reset(glm::mat4 const& transform);
-    void applyDamage(f32 amount, u32 instigator)
-    {
-        if (specialAbility)
-        {
-            amount = specialAbility->onDamage(amount);
-        }
-        if (amount > 0.f)
-        {
-            hitPoints -= amount;
-            lastDamagedBy = instigator;
-            if (smokeTimerDamage <= 0.f)
-            {
-                smokeTimerDamage = 0.015f;
-            }
-        }
-    }
+    void applyDamage(f32 amount, u32 instigator);
     void addNotification(const char* str, f32 time=2.f, glm::vec3 const& color=glm::vec3(1.f))
     {
         if (notifications.size() == notifications.capacity())
