@@ -45,7 +45,6 @@ struct Textures
     Texture smoke = Texture("textures/smoke.png", false);
     Texture snow = Texture("textures/snow.jpg");
     Texture tarmac = Texture("textures/tarmac.jpg");
-    Texture thing = Texture("textures/thing.png", false);
     Texture tiremarks = Texture("textures/tiremarks.png");
     Texture weapon_iconbg = Texture("textures/weapon_iconbg.png", false);
     Texture weapon_iconbg_selected = Texture("textures/weapon_iconbg_selected.png", false);

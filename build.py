@@ -102,7 +102,7 @@ def build_assets(force):
                 raise
 
     def exportFile(blendFile):
-        blenderCommand = 'blender' if sys.platform != 'win32' else 'C:/Program Files/Blender Foundation/Blender/blender.exe'
+        blenderCommand = 'blender' if sys.platform != 'win32' else 'C:/Program Files/Blender Foundation/Blender 2.81/blender.exe'
         output = subprocess.check_output([blenderCommand, '-b', blendFile, '-P', 'blender_exporter.py', '--enable-autoexec']).decode('utf-8')
         #print(output)
         return 'Saved to file:' in output

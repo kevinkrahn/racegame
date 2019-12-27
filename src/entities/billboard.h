@@ -93,7 +93,6 @@ public:
 
         wood.settings.mesh = g_res.getMesh("billboard.BillboardWood");
         wood.settings.color = glm::vec3(1.f);
-        wood.settings.texture = &g_res.textures->thing;
         wood.settings.specularStrength = 0.05f;
         wood.settings.specularPower = 10.f;
         wood.settings.texture = &g_res.textures->wood;
