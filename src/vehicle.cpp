@@ -1623,6 +1623,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         auto info = wheelQueryResults[i];
         glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.f);
         bool isWheelOffroad = false;
+        bool isWheelOnTrack = false;
         if (!info.isInAir)
         {
             auto filterData = info.tireContactShape->getSimulationFilterData();
@@ -1642,6 +1643,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
             else
             {
+                if (info.tireSurfaceMaterial == scene->trackMaterial)
+                {
+                    isWheelOnTrack = true;
+                }
+
                 d.mDampingRate = tuning.wheelDampingRate;
                 anyWheelOnRoad = true;
 
@@ -1708,7 +1714,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         wheelOilCoverage[i] = glm::max(wheelOilCoverage[i] - deltaTime, 0.f);
 
         // create smoke
-        if (slip > 0.f && !info.isInAir && !isWheelOffroad)
+        if (slip > 0.f && !info.isInAir && isWheelOnTrack)
         {
             if (smokeTimer == 0.f)
             {
@@ -1763,7 +1769,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 
         // add tire marks
-        if (isWheelSlipping[i] && !isWheelOffroad)
+        if (isWheelSlipping[i] && isWheelOnTrack)
         {
             f32 wheelRadius = i < 2 ? tuning.wheelRadiusFront
                 : tuning.wheelRadiusRear;

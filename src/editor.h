@@ -3,6 +3,8 @@
 #include "misc.h"
 #include "math.h"
 #include "entity.h"
+#include "texture.h"
+#include "renderer.h"
 
 struct GridSettings
 {
@@ -92,6 +94,7 @@ class Editor
     std::vector<PlaceableEntity*> selectedEntities;
 
 public:
+    Editor();
     glm::vec3 getCameraTarget() const { return cameraTarget; }
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
 };

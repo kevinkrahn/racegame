@@ -16,14 +16,10 @@ const char* textureNames[] = {
     "Dust",
 };
 
-StaticDecal* StaticDecal::setup(i32 texIndex, glm::vec3 const& pos, u32 decalFilter)
+StaticDecal::StaticDecal()
 {
-    position = pos;
     scale = glm::vec3(16.f);
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
-    this->texIndex = texIndex;
-    this->decalFilter = decalFilter;
-    return this;
 }
 
 void StaticDecal::onCreateEnd(Scene* scene)

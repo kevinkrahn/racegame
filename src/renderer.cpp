@@ -707,6 +707,70 @@ void RenderWorld::createFramebuffers()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+Texture RenderWorld::releaseTexture(u32 cameraIndex)
+{
+    GLuint t = tex[cameraIndex].handle;
+    Framebuffers& fb = fbs[cameraIndex];
+
+    if (t == fbs[cameraIndex].mainColorTexture)
+    {
+        glGenTextures(1, &fb.mainColorTexture);
+        glBindTexture(GL_TEXTURE_2D, fb.mainColorTexture);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth, fb.renderHeight,
+                0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.mainColorTexture, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
+    else if (t == fbs[cameraIndex].msaaResolveColorTexture)
+    {
+        glGenTextures(1, &fb.msaaResolveColorTexture);
+        glBindTexture(GL_TEXTURE_2D, fb.msaaResolveColorTexture);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth, fb.renderHeight,
+                0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFramebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                fb.msaaResolveColorTexture, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
+    else if (t == fbs[cameraIndex].finalColorTexture)
+    {
+        glGenTextures(1, &fb.finalColorTexture);
+        glBindTexture(GL_TEXTURE_2D, fb.finalColorTexture);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, fb.renderWidth, fb.renderHeight,
+                0, GL_RGB, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.finalColorTexture, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    }
+
+    return tex[cameraIndex];
+}
+
 void RenderWorld::clear()
 {
     renderables.clear();
@@ -992,7 +1056,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glBindTextureUnit(1, g_res.textures->sky_cubemap.handle);
     glBindTextureUnit(3, g_res.textures->cloud_shadow.handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-#if 0
+#if 1
     glClearColor(0.15f, 0.35f, 0.9f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 #endif

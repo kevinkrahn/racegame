@@ -4,11 +4,26 @@
 #include "datafile.h"
 #include <functional>
 
+enum struct EditorCategory
+{
+    NONE,
+    ROCKS,
+    VEGETATION,
+    OBSTACLES,
+    DECALS,
+    SIGNS,
+    MISC,
+
+    MAX
+};
+
 struct RegisteredEntity
 {
     u32 entityID;
     std::function<class Entity*()> create;
-    const char* name;
+    //EditorCategory category;
+    bool isPlaceableInEditor;
+    u32 variationCount;
 };
 
 std::vector<RegisteredEntity> g_entities;
@@ -70,10 +85,14 @@ public:
     virtual void onCreateEnd(class Scene* scene) {}
     virtual void onUpdate(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
     virtual void onRender(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
+    virtual void onPreview(class RenderWorld* rw) {}
 
     virtual void applyDecal(class Decal& decal) {}
 
     virtual void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected) {}
+
+    virtual u32 getVariationCount() const { return 1; }
+    virtual void setVariationIndex(u32 variationIndex) {}
 };
 
 class PlaceableEntity : public Entity
@@ -134,7 +153,7 @@ public:
             }
         }
     }
-    const char* getName() const { return g_entities[entityID].name; }
+    virtual const char* getName() const { return "Entity"; }
     virtual void showDetails(Scene* scene) {}
 
     ~PlaceableEntity()
@@ -147,7 +166,7 @@ public:
 };
 
 template<typename T>
-void registerEntity(const char* name)
+void registerEntity()
 {
     u32 entityID = (u32)g_entities.size();
     g_entities.push_back({
@@ -157,7 +176,8 @@ void registerEntity(const char* name)
             e->entityID = entityID;
             return e;
         },
-        name
+        std::is_base_of<PlaceableEntity, T>::value,
+        (T()).getVariationCount()
     });
 }
 

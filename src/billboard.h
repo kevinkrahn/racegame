@@ -23,6 +23,9 @@ public:
 
     void onLitPassPriorityTransition(Renderer* renderer) override
     {
+        glEnable(GL_BLEND);
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
         glUseProgram(renderer->getShaderProgram(lit ? "billboard" : "billboard_unlit"));
     }
 

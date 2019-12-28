@@ -159,6 +159,7 @@ public:
     }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
+    Texture releaseTexture(u32 cameraIndex=0);
 
     void setName(const char* name) { this->name = name; }
     void setViewportCount(u32 viewports);

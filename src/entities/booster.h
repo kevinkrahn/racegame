@@ -12,11 +12,12 @@ class Booster : public PlaceableEntity
     f32 intensity = 1.25f;
 
 public:
-    Booster* setup(glm::vec3 const& pos={0,0,0});
+    Booster();
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onPreview(RenderWorld* rw) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
     DataFile::Value serializeState() override
     {

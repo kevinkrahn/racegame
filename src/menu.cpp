@@ -86,6 +86,7 @@ void Menu::mainMenu()
         RandomSeries series = randomSeed();
         i32 driverCredits = irandom(series, 10000, 50000);
         print("Starting quick race with driver budget: ", driverCredits, '\n');
+        // TODO: drivers should all pick unique colors
         for (u32 i=0; i<10; ++i)
         {
             g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
@@ -185,6 +186,7 @@ void Menu::newChampionship()
         g_game.state.gameMode = GameMode::CHAMPIONSHIP;
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
 
+        // TODO: drivers should all pick unique colors
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
             g_game.state.drivers.push_back(Driver(false, false, false, 0,

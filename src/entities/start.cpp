@@ -130,6 +130,29 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     rw->add(&finishLineDecal);
 }
 
+void Start::onPreview(RenderWorld* rw)
+{
+    rw->setViewportCamera(0, glm::vec3(3.f, 3.f, 3.5f) * 6.f,
+            glm::vec3(0.f, 0.f, 2.f), 1.f, 200.f, 50.f);
+
+    LitSettings settings;
+    settings.mesh = mesh;
+    settings.fresnelScale = 0.3f;
+    settings.fresnelPower = 1.5f;
+    settings.fresnelBias = -0.15f;
+    settings.specularPower = 60.f;
+    settings.specularStrength = 0.3f;
+    settings.texture = &g_res.textures->white;
+    settings.worldTransform = glm::translate(glm::mat4(1.f), { 0, 0, 3 });
+    rw->push(LitRenderable(settings));
+
+    settings.mesh = meshLights;
+    settings.color = glm::vec3(0.8f);
+    settings.reflectionStrength = 0.4f;
+    settings.reflectionBias = 0.1f;
+    rw->push(LitRenderable(settings));
+}
+
 void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     if (isSelected)

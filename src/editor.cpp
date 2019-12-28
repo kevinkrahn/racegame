@@ -8,51 +8,33 @@
 #include "mesh_renderables.h"
 #include "track.h"
 #include "gui.h"
-#include "entities/static_mesh.h"
-#include "entities/static_decal.h"
-#include "entities/tree.h"
-#include "entities/booster.h"
-#include "entities/oil.h"
-#include "entities/barrel.h"
-#include "entities/billboard.h"
-#include "entities/pickup.h"
-#include <functional>
 
-struct EntityType
+struct EntityItem
 {
-    const char* name;
-    std::function<PlaceableEntity*(glm::vec3 const& p, RandomSeries& s)> make;
+    Texture icon;
+    bool hasIcon;
+    u32 variationIndex;
+    u32 entityIndex;
 };
+std::vector<EntityItem> editorEntityItems;
 
-#define fn [](glm::vec3 const& p, RandomSeries& s) -> PlaceableEntity*
-
-std::vector<EntityType> entityTypes = {
-    { "Rock", fn { return ((StaticMesh*)g_entities[2].create())->setup(0, p, glm::vec3(random(s, 0.5f, 1.f)), random(s, 0, PI * 2.f)); } },
-    { "Sign", fn { return ((StaticMesh*)g_entities[2].create())->setup(2, p, glm::vec3(1.f), 0.f); } },
-    { "Tree", fn { return ((Tree*)g_entities[5].create())->setup(p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
-    { "Cactus", fn { return ((StaticMesh*)g_entities[2].create())->setup(3, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
-    { "Plant 1", fn { return ((StaticMesh*)g_entities[2].create())->setup(5, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
-    { "Plant 2", fn { return ((StaticMesh*)g_entities[2].create())->setup(6, p, glm::vec3(random(s, 1.0f, 1.5f)), random(s, 0, PI * 2.f)); } },
-    { "Concrete", fn { return ((StaticMesh*)g_entities[2].create())->setup(4, p, glm::vec3(10.f), 0.f); } },
-    { "Tunnel", fn { return ((StaticMesh*)g_entities[2].create())->setup(1, p, glm::vec3(1.f), 0.f); } },
-    { "Straight Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(0, p); } },
-    { "Left Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(1, p); } },
-    { "Right Arrow", fn { return ((StaticDecal*)g_entities[3].create())->setup(2, p); } },
-    { "Booster", fn { return ((Booster*)(g_entities[6].create()))->setup(p); } },
-    { "Oil Spill", fn { return ((Oil*)(g_entities[7].create()))->setup(p); } },
-    { "Barrel", fn { return ((WaterBarrel*)(g_entities[8].create()))->setup(p, random(s, 0, PI * 2.f)); } },
-    { "CTV Pole", fn { return ((StaticMesh*)(g_entities[2].create()))->setup(7, p, glm::vec3(1.f), 0.f); } },
-    { "Billboard", fn { return ((Billboard*)(g_entities[9].create()))->setup(p); } },
-    { "Money", fn { return ((Pickup*)(g_entities[10].create()))->setup(p, PickupType::MONEY); } },
-    { "Armor", fn { return ((Pickup*)(g_entities[10].create()))->setup(p, PickupType::ARMOR); } },
-};
-
-#undef fn
-
-glm::vec4 baseButtonColor = glm::vec4(0.f, 0.f, 0.f, 0.9f);
-glm::vec4 hoverButtonColor = glm::vec4(0.06f, 0.06f, 0.06f, 0.92f);
-glm::vec4 selectedButtonColor = glm::vec4(0.06f, 0.06f, 0.06f, 0.92f);
-glm::vec4 disabledButtonColor = glm::vec4(0.f, 0.f, 0.f, 0.75f);
+Editor::Editor()
+{
+    if (editorEntityItems.empty())
+    {
+        for (u32 entityIndex = 0; entityIndex < (u32)g_entities.size(); ++entityIndex)
+        {
+            auto& e = g_entities[entityIndex];
+            if (e.isPlaceableInEditor)
+            {
+                for (u32 i=0; i<e.variationCount; ++i)
+                {
+                    editorEntityItems.push_back({ {}, false, i, entityIndex });
+                }
+            }
+        }
+    }
+}
 
 void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
@@ -132,6 +114,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             g_gui.end();
         }
 
+        // TODO: make a better terrain resize tool
         if (terrainTool == TerrainTool::RESIZE)
         {
             Terrain* t = scene->terrain;
@@ -272,6 +255,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             selectedEntities.clear();
         }
 
+        /*
         g_gui.beginSelect("Select Entity", &selectedEntityTypeIndex);
         for (i32 i=0; i<(i32)entityTypes.size(); ++i)
         {
@@ -279,6 +263,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             g_gui.option(entityType.name, i);
         }
         g_gui.end();
+        */
     }
 
     // TODO: make this better by not having 3 panels for 3 buttons
@@ -549,6 +534,80 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
+        u32 count = (u32)editorEntityItems.size();
+        u32 itemSize = (u32)g_gui.convertSizei(48);
+        u32 iconSize = (u32)g_gui.convertSizei(44);
+        u32 gap = (u32)g_gui.convertSizei(4);
+        f32 totalWidth = (f32)(itemSize * count + gap * (count - 2));
+        f32 cx = g_game.windowWidth * 0.5f;
+        f32 yoffset = height * 0.02f;
+
+        static RenderWorld renderWorld;
+        static i32 lastEntityIconRendered = -1;
+        if (lastEntityIconRendered != -1)
+        {
+            editorEntityItems[lastEntityIconRendered].icon = renderWorld.releaseTexture();
+            editorEntityItems[lastEntityIconRendered].hasIcon = true;
+            lastEntityIconRendered = -1;
+        }
+
+        for (u32 i=0; i<count; ++i)
+        {
+            bool isHovering = false;
+            if (pointInRectangle(g_input.getMousePosition(),
+                { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
+                (f32)itemSize, (f32)itemSize))
+            {
+                isMouseClickHandled = true;
+                isHovering = true;
+                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                {
+                    clickHandledUntilRelease = true;
+                    selectedEntityTypeIndex = (i32)i;
+                }
+            }
+
+            glm::vec2 bp(cx - totalWidth * 0.5f + ((itemSize + gap) * i),
+                    g_game.windowHeight - itemSize - yoffset);
+            if (isHovering)
+            {
+                renderer->push2D(QuadRenderable(white,
+                    bp, itemSize, itemSize));
+            }
+            else if ((i32)i == selectedEntityTypeIndex)
+            {
+                renderer->push2D(QuadRenderable(white,
+                    bp, itemSize, itemSize, glm::vec3(1, 1, 0)));
+            }
+
+            if (editorEntityItems[i].hasIcon)
+            {
+                renderer->push2D(QuadRenderable(&editorEntityItems[i].icon,
+                    bp + glm::vec2((f32)(itemSize - iconSize)) * 0.5f, iconSize, iconSize,
+                    glm::vec3(1.f), 1.f, false, true));
+            }
+            else if (lastEntityIconRendered == -1)
+            {
+                renderWorld.setName("Entity Icon");
+                renderWorld.setSize(128, 128);
+                Mesh* quadMesh = g_res.getMesh("world.Quad");
+                renderWorld.push(LitRenderable(quadMesh,
+                            glm::scale(glm::mat4(1.f), glm::vec3(80.f)), nullptr, glm::vec3(0.15f)));
+                renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
+                renderWorld.setViewportCount(1);
+                renderWorld.updateWorldTime(30.f);
+                renderWorld.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
+                        glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
+                static std::unique_ptr<PlaceableEntity> ptr;
+                ptr.reset((PlaceableEntity*)
+                        g_entities[editorEntityItems[i].entityIndex].create());
+                ptr->setVariationIndex(editorEntityItems[i].variationIndex);
+                ptr->onPreview(&renderWorld);
+                g_game.renderer->addRenderWorld(&renderWorld);
+                lastEntityIconRendered = (i32)i;
+            }
+        }
+
         glm::vec3 minP(FLT_MAX);
         glm::vec3 maxP(-FLT_MAX);
         for (PlaceableEntity* e : selectedEntities)
@@ -1062,7 +1121,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     {
                         glm::vec3 hitPoint = convert(hit.block.position);
                         PlaceableEntity* newEntity =
-                            entityTypes[selectedEntityTypeIndex].make(hitPoint, scene->randomSeries);
+                            (PlaceableEntity*)g_entities[editorEntityItems[selectedEntityTypeIndex].entityIndex].create();
+                        newEntity->setVariationIndex(editorEntityItems[selectedEntityTypeIndex].variationIndex);
+                        newEntity->position = hitPoint;
                         newEntity->updateTransform(scene);
                         newEntity->setPersistent(true);
                         scene->addEntity(newEntity);

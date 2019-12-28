@@ -8,12 +8,12 @@ class StaticDecal : public PlaceableEntity
 {
     struct Texture* tex;
     Decal decal;
-    u32 decalFilter;
-    i32 texIndex;
+    u32 decalFilter = DECAL_TRACK;
+    i32 texIndex = 0;
     bool beforeMarking = false;
 
 public:
-    StaticDecal* setup(i32 texIndex, glm::vec3 const& pos = {0, 0, 0}, u32 decalFilter=DECAL_TRACK);
+    StaticDecal();
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onRender(class RenderWorld* rw, class Scene* scene, f32 deltaTime) override;

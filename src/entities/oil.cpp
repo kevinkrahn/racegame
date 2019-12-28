@@ -4,6 +4,7 @@
 #include "../game.h"
 #include "../gui.h"
 #include "../vehicle.h"
+#include "../billboard.h"
 
 Oil* Oil::setup(glm::vec3 const& pos)
 {
@@ -53,6 +54,14 @@ void Oil::updateTransform(Scene* scene)
 void Oil::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     rw->add(&decal);
+}
+
+void Oil::onPreview(RenderWorld* rw)
+{
+    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
+            glm::vec3(0.f), 1.f, 200.f, 50.f);
+    rw->push(BillboardRenderable(&g_res.textures->icon_oil, glm::vec3(0, 0, 2.f),
+                glm::vec4(1.f), 8.f, 0.f, false));
 }
 
 void Oil::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)

@@ -6,6 +6,7 @@
 #include "tree.h"
 #include "booster.h"
 #include "oil.h"
+#include "glue.h"
 #include "barrel.h"
 #include "billboard.h"
 #include "pickup.h"
@@ -14,15 +15,17 @@ void registerEntities()
 {
     // DO NOT CHANGE THE ORDER OF THE REGISTERED ENTITIES!!!
     // If the order is changed it will break compatibility with previously saved scenes
-    registerEntity<Terrain>("Terrain");
-    registerEntity<Track>("Track");
-    registerEntity<StaticMesh>("Static Mesh");
-    registerEntity<StaticDecal>("Static Decal");
-    registerEntity<Start>("Track Start");
-    registerEntity<Tree>("Tree");
-    registerEntity<Booster>("Booster");
-    registerEntity<Oil>("Oil");
-    registerEntity<WaterBarrel>("Water Barrel");
-    registerEntity<Billboard>("Billboard");
-    registerEntity<Pickup>("Pickup");
+    // If the order must be changed, then compatibility must be added to Scene::deserialize()
+    registerEntity<Terrain>();
+    registerEntity<Track>();
+    registerEntity<StaticMesh>();
+    registerEntity<StaticDecal>();
+    registerEntity<Start>();
+    registerEntity<Tree>();
+    registerEntity<Booster>();
+    registerEntity<Oil>();
+    registerEntity<WaterBarrel>();
+    registerEntity<Billboard>();
+    registerEntity<Pickup>();
+    registerEntity<Glue>();
 }

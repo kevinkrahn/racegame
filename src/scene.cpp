@@ -1019,6 +1019,7 @@ DataFile::Value Scene::serialize()
 {
     DataFile::Value dict = DataFile::makeDict();
     dict["name"] = DataFile::makeString(name);
+    dict["version"] = DataFile::makeInteger(0);
     dict["entities"] = DataFile::makeArray();
     DataFile::Value::Array& entityArray = dict["entities"].array();
 
@@ -1045,10 +1046,26 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
 void Scene::deserialize(DataFile::Value& data)
 {
     name = data["name"].string("");
+    u32 version = (u32)data["version"].integer(0);
     auto& entityArray = data["entities"].array();
-    for (auto& val : entityArray)
+    if (version == 0)
     {
-        deserializeEntity(val);
+        for (auto& val : entityArray)
+        {
+            i32 entityID = (i32)val["entityID"].integer();
+            if (entityID == 2)
+            {
+
+            }
+            deserializeEntity(val);
+        }
+    }
+    else
+    {
+        for (auto& val : entityArray)
+        {
+            deserializeEntity(val);
+        }
     }
 }
 

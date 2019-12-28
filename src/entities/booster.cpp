@@ -4,13 +4,12 @@
 #include "../game.h"
 #include "../gui.h"
 #include "../vehicle.h"
+#include "../billboard.h"
 
-Booster* Booster::setup(glm::vec3 const& pos)
+Booster::Booster()
 {
-    position = pos;
     rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
     scale = glm::vec3(8.f);
-    return this;
 }
 
 void Booster::onCreateEnd(Scene* scene)
@@ -80,6 +79,15 @@ void Booster::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     decal.setColor(backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f));
     rw->add(&decal);
+}
+
+void Booster::onPreview(RenderWorld* rw)
+{
+    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
+            glm::vec3(0.f), 1.f, 200.f, 50.f);
+    glm::vec3 color = backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f);
+    rw->push(BillboardRenderable(&g_res.textures->booster, glm::vec3(0, 0, 2.f),
+                glm::vec4(color, 1.f), 8.f, 0.f, false));
 }
 
 void Booster::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
