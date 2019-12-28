@@ -688,8 +688,8 @@ void Scene::attackCredit(u32 instigator, u32 victim)
         else
         {
             ++vehicles[victim]->raceStatistics.destroyed;
-            ++vehicles[instigator]->raceStatistics.attackBonuses;
-            vehicles[instigator]->addNotification("ATTACK BONUS!");
+            ++vehicles[instigator]->raceStatistics.frags;
+            vehicles[instigator]->addBonus("ATTACK BONUS", ATTACK_BONUS_AMOUNT, glm::vec3(1.f));
         }
     }
 }
@@ -725,7 +725,8 @@ void Scene::buildRaceResults()
                     stats.accidents += irandom(randomSeries, 0, 2);
                     u32 attackBonuses = irandom(randomSeries, 0,
                             (u32)(numDriversStillDriving * ai.aggression * 0.5f));
-                    stats.attackBonuses += attackBonuses;
+                    stats.frags += attackBonuses;
+                    stats.bonuses.push_back({ "", attackBonuses * ATTACK_BONUS_AMOUNT });
                     while (attackBonuses > 0)
                     {
                         auto& v2 = vehicles[irandom(randomSeries, 0, (i32)vehicles.size())];

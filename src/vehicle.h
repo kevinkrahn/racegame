@@ -80,11 +80,15 @@ public:
     bool isHidden = false;
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
-    bool lappedVehicles[16] = { 0 };
+    f32 lappingOffset[16] = { 0 };
     f32 engineThrottle = 0.f;
     f32 engineThrottleLevel = 0.f;
 	i32 currentFrontWeaponIndex = 0;
 	i32 currentRearWeaponIndex = 0;
+	f32 airTime = 0.f;
+	f32 savedAirTime = 0.f;
+	f32 airBonusGracePeriod = 0.f;
+	u32 totalAirBonuses = 0;
 
     // ai
     glm::vec3 targetOffset = glm::vec3(0);
@@ -186,10 +190,10 @@ public:
         notifications.push_back({ str, time, color });
     }
     void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
-    void addPickupBonus()
+    void addBonus(const char* name, u32 amount, glm::vec3 const& color = glm::vec3(0.9f, 0.9f, 0.01f))
     {
-        raceStatistics.pickupBonuses += 1;
-        addNotification("$$$", 2.f, glm::vec3(0.9f, 0.9f, 0.01f));
+        raceStatistics.bonuses.push_back({ name, amount });
+        addNotification(name, 2.f, color);
     }
     void fixup()
     {

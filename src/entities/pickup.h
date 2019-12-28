@@ -67,7 +67,7 @@ public:
             Vehicle* v = userData->vehicle;
             if (pickupType == PickupType::MONEY)
             {
-                v->addPickupBonus();
+                v->addBonus("$$$", PICKUP_BONUS_AMOUNT);
                 g_audio.playSound3D(&g_res.sounds->money, SoundType::GAME_SFX, position);
             }
             else

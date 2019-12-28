@@ -17,13 +17,25 @@
 #include "collision_flags.h"
 #include <vector>
 
+struct RaceBonus
+{
+    const char* name;
+    u32 amount;
+};
+
+const u32 ATTACK_BONUS_AMOUNT = 110;
+const u32 LAPPING_BONUS_AMOUNT = 300;
+const u32 PICKUP_BONUS_AMOUNT = 150;
+const u32 AIR_BONUS_AMOUNT = 200;
+const u32 BIG_AIR_BONUS_AMOUNT = 350;
+const u32 VICTIM_BONUS_AMOUNT = 400;
+
 struct RaceStatistics
 {
-    i32 attackBonuses = 0;
-    i32 lappingBonuses = 0;
+    i32 frags = 0;
     i32 accidents = 0;
     i32 destroyed = 0;
-    i32 pickupBonuses = 0;
+    std::vector<RaceBonus> bonuses;
 };
 
 struct RaceResult
@@ -35,8 +47,12 @@ struct RaceResult
 
     i32 getBonus() const
     {
-        return statistics.attackBonuses * 110 + statistics.lappingBonuses * 300
-            + statistics.pickupBonuses * 200;
+        i32 amount = 0;
+        for (auto& bonus : statistics.bonuses)
+        {
+            amount += (i32)bonus.amount;
+        }
+        return amount;
     }
 
     i32 getLeaguePointsEarned() const

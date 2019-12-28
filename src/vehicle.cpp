@@ -568,6 +568,8 @@ void Vehicle::resetAmmo()
 
 void Vehicle::reset(glm::mat4 const& transform)
 {
+    airTime = 0.f;
+    airBonusGracePeriod = 0.f;
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
     getRigidBody()->setGlobalPose(convert(transform));
@@ -1468,10 +1470,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 addNotification("LAST LAP!", 2.f, glm::vec3(1, 0, 0));
             }
-            for (auto& b : lappedVehicles)
-            {
-                b = false;
-            }
             graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
             resetAmmo();
@@ -1488,17 +1486,16 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 continue;
             }
 
-            if (lappedVehicles[v->vehicleIndex])
-            {
-                continue;
-            }
+            f32 lapDistance = scene->getTrackGraph().getStartNode()->t;
+            f32 myDistance = glm::max((i32)currentLap - 1, 0) * lapDistance
+                + (lapDistance - graphResult.lapDistanceLowMark);
+            f32 otherDistance = glm::max((i32)v->currentLap - 1, 0) * lapDistance
+                + (lapDistance - v->graphResult.lapDistanceLowMark);
 
-            if (graphResult.lapDistanceLowMark < v->graphResult.lapDistanceLowMark
-                    && currentLap > v->currentLap)
+            if (myDistance - otherDistance > lapDistance + lappingOffset[v->vehicleIndex])
             {
-                lappedVehicles[v->vehicleIndex] = true;
-                ++raceStatistics.lappingBonuses;
-                addNotification("LAPPING BONUS!", 2.f, glm::vec3(1, 1, 0));
+                lappingOffset[v->vehicleIndex] += lapDistance;
+                addBonus("LAPPING BONUS!", LAPPING_BONUS_AMOUNT, glm::vec3(1, 1, 0));
                 // TODO: play sound
             }
         }
@@ -1799,8 +1796,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (smoked) smokeTimer = smokeInterval;
 
     // destroy vehicle if it is flipped and unable to move
-    // TODO: fix this so that being flipped against a railing still counts as being flipped
-    // maybe do a raycast in local -Z that only considers the track
     if (onGround && numWheelsOnTrack <= 2
             && getRigidBody()->getLinearVelocity().magnitude() < 6.f)
     {
@@ -1841,6 +1836,37 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (g_input.isKeyPressed(KEY_R) && isPlayerControlled)
     {
         applyDamage(15, vehicleIndex);
+    }
+
+    // give air bonus if in air long enough
+    if (!onGround)
+    {
+        airTime += deltaTime;
+        airBonusGracePeriod = 0.f;
+    }
+    else
+    {
+        if (airTime > 2.f)
+        {
+            savedAirTime = airTime;
+        }
+        airTime = 0.f;
+        airBonusGracePeriod += deltaTime;
+        if (savedAirTime > 0.f && airBonusGracePeriod > 0.5f && totalAirBonuses < 10)
+        {
+            if (savedAirTime > 4.f)
+            {
+                addBonus("BIG AIR BONUS!", BIG_AIR_BONUS_AMOUNT, glm::vec3(1, 0.6f, 0.05f));
+                ++totalAirBonuses;
+            }
+            else if (savedAirTime > 2.f)
+            {
+                addBonus("AIR BONUS!", AIR_BONUS_AMOUNT, glm::vec3(1, 0.7f, 0.05f));
+                ++totalAirBonuses;
+            }
+            airBonusGracePeriod = 0.f;
+            savedAirTime = 0.f;
+        }
     }
 
     previousVelocity = convert(getRigidBody()->getLinearVelocity());
@@ -1925,6 +1951,10 @@ void Vehicle::blowUp()
     g_audio.playSound3D(sounds[index], SoundType::GAME_SFX,
             getPosition(), false, 1.f, 0.95f);
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
+    if (raceStatistics.destroyed + raceStatistics.accidents == 10)
+    {
+        addBonus("VICTIM BONUS", VICTIM_BONUS_AMOUNT, glm::vec3(1.f, 0.3f, 0.02f));
+    }
 }
 
 void Vehicle::onTrigger(ActorUserData* userData)

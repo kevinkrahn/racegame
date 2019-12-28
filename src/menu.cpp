@@ -1040,7 +1040,7 @@ void Menu::raceResults()
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.destroyed),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[3]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.attackBonuses),
+        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.frags),
                     pos + glm::vec2(g_gui.convertSizei(columnOffset[4]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getBonus()),
