@@ -1509,9 +1509,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             rotationSpeed += glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
         }
         rotationSpeed /= NUM_WHEELS;
-        f32 gearRatio = glm::abs(tuning.gearRatios[
-            vehicle4W->mDriveDynData.mCurrentGear]);
-        engineRPM = smoothMove(engineRPM, rotationSpeed * gearRatio, 1.9f, deltaTime);
+        f32 gearRatio = glm::abs(tuning.gearRatios[vehicle4W->mDriveDynData.mCurrentGear]);
+        engineRPM = smoothMove(engineRPM, glm::min(rotationSpeed * gearRatio, 150.f), 1.9f, deltaTime);
 
         //g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
         g_audio.setSoundPitch(engineSound, 1.f + engineRPM * 0.04f);

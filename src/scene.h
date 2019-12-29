@@ -152,7 +152,6 @@ public:
     void onEnd();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
     void onEndUpdate();
-    void updateBackgroundSound(bool shouldPlay);
 
     void vehicleFinish(u32 n);
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
