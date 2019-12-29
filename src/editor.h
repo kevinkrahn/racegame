@@ -89,6 +89,7 @@ class Editor
     glm::vec3 entityDragOffset;
     glm::vec3 rotatePivot;
     i32 selectedEntityTypeIndex = 0;
+    i32 selectedEntityCategory = 0;
     i32 selectedSplineTypeIndex = 0;
 
     std::vector<PlaceableEntity*> selectedEntities;

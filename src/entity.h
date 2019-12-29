@@ -33,9 +33,7 @@ struct RegisteredEntity
 {
     u32 entityID;
     std::function<class Entity*()> create;
-    //EditorCategory category;
     bool isPlaceableInEditor;
-    u32 variationCount;
 };
 
 std::vector<RegisteredEntity> g_entities;
@@ -190,7 +188,6 @@ void registerEntity()
             return e;
         },
         std::is_base_of<PlaceableEntity, T>::value,
-        (T()).getVariationCount()
     });
 }
 

@@ -15,6 +15,7 @@ struct EntityItem
     bool hasIcon;
     u32 variationIndex;
     u32 entityIndex;
+    EditorCategory category;
 };
 std::vector<EntityItem> editorEntityItems;
 
@@ -27,9 +28,12 @@ Editor::Editor()
             auto& e = g_entities[entityIndex];
             if (e.isPlaceableInEditor)
             {
-                for (u32 i=0; i<e.variationCount; ++i)
+                std::unique_ptr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
+                u32 variationCount = ptr->getVariationCount();
+                for (u32 i=0; i<variationCount; ++i)
                 {
-                    editorEntityItems.push_back({ {}, false, i, entityIndex });
+                    editorEntityItems.push_back({
+                            {}, false, i, entityIndex, ptr->getEditorCategory(i) });
                 }
             }
         }
@@ -255,15 +259,15 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             selectedEntities.clear();
         }
 
-        /*
-        g_gui.beginSelect("Select Entity", &selectedEntityTypeIndex);
-        for (i32 i=0; i<(i32)entityTypes.size(); ++i)
+        g_gui.beginSelect("Entities", &selectedEntityCategory);
+        for (i32 i=1; i<(i32)ARRAY_SIZE(editorCategoryNames); ++i)
         {
-            auto& entityType = entityTypes[i];
-            g_gui.option(entityType.name, i);
+            g_gui.option(editorCategoryNames[i], i);
         }
         g_gui.end();
-        */
+
+        // TODO: add scatter tools
+        // TODO: add settings for randomizing rotation and scale of placed entities
     }
 
     // TODO: make this better by not having 3 panels for 3 buttons
@@ -413,7 +417,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
 
-    if (editMode == EditMode::TERRAIN)
+    if (editMode == EditMode::TERRAIN
+            && (i32)terrainTool < (i32)TerrainTool::RESIZE)
     {
         const f32 step = 0.01f;
         glm::vec3 p = cam.position;
@@ -551,8 +556,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             lastEntityIconRendered = -1;
         }
 
-        for (u32 i=0; i<count; ++i)
+        for (u32 i=0, itemIndex = 0; itemIndex<count; ++itemIndex)
         {
+            if ((i32)editorEntityItems[itemIndex].category != selectedEntityCategory)
+            {
+                continue;
+            }
+            ++i;
+
             bool isHovering = false;
             if (pointInRectangle(g_input.getMousePosition(),
                 { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
@@ -563,7 +574,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
                     clickHandledUntilRelease = true;
-                    selectedEntityTypeIndex = (i32)i;
+                    selectedEntityTypeIndex = (i32)itemIndex;
                 }
             }
 
@@ -574,15 +585,15 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 renderer->push2D(QuadRenderable(white,
                     bp, itemSize, itemSize));
             }
-            else if ((i32)i == selectedEntityTypeIndex)
+            else if ((i32)itemIndex == selectedEntityTypeIndex)
             {
                 renderer->push2D(QuadRenderable(white,
                     bp, itemSize, itemSize, glm::vec3(1, 1, 0)));
             }
 
-            if (editorEntityItems[i].hasIcon)
+            if (editorEntityItems[itemIndex].hasIcon)
             {
-                renderer->push2D(QuadRenderable(&editorEntityItems[i].icon,
+                renderer->push2D(QuadRenderable(&editorEntityItems[itemIndex].icon,
                     bp + glm::vec2((f32)(itemSize - iconSize)) * 0.5f, iconSize, iconSize,
                     glm::vec3(1.f), 1.f, false, true));
             }
@@ -600,11 +611,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
                 static std::unique_ptr<PlaceableEntity> ptr;
                 ptr.reset((PlaceableEntity*)
-                        g_entities[editorEntityItems[i].entityIndex].create());
-                ptr->setVariationIndex(editorEntityItems[i].variationIndex);
+                        g_entities[editorEntityItems[itemIndex].entityIndex].create());
+                ptr->setVariationIndex(editorEntityItems[itemIndex].variationIndex);
                 ptr->onPreview(&renderWorld);
                 g_game.renderer->addRenderWorld(&renderWorld);
-                lastEntityIconRendered = (i32)i;
+                lastEntityIconRendered = (i32)itemIndex;
             }
         }
 
