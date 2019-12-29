@@ -592,7 +592,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 renderWorld.setSize(128, 128);
                 Mesh* quadMesh = g_res.getMesh("world.Quad");
                 renderWorld.push(LitRenderable(quadMesh,
-                            glm::scale(glm::mat4(1.f), glm::vec3(80.f)), nullptr, glm::vec3(0.15f)));
+                            glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));
                 renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
                 renderWorld.setViewportCount(1);
                 renderWorld.updateWorldTime(30.f);

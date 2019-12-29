@@ -12,10 +12,10 @@ class Tree : public PlaceableEntity
     Texture* texLeaves;
 
 public:
-    Tree* setup(glm::vec3 const& position = {0, 0, 0},
-            glm::vec3 const& scale = {1, 1, 1}, f32 zRotation=0.f);
-
+    Tree();
     void onCreate(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onPreview(RenderWorld* rw) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
+    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::VEGETATION; }
 };

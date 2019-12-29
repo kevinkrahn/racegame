@@ -9,12 +9,24 @@ enum struct EditorCategory
     NONE,
     ROCKS,
     VEGETATION,
+    ROADSIDE,
     OBSTACLES,
     DECALS,
-    SIGNS,
+    PICKUPS,
     MISC,
 
     MAX
+};
+
+const char* editorCategoryNames[] = {
+    "Uncategorized",
+    "Rocks",
+    "Vegetation",
+    "Roadside",
+    "Obstacles",
+    "Decals",
+    "Pickups",
+    "Misc",
 };
 
 struct RegisteredEntity
@@ -93,6 +105,7 @@ public:
 
     virtual u32 getVariationCount() const { return 1; }
     virtual void setVariationIndex(u32 variationIndex) {}
+    virtual EditorCategory getEditorCategory(u32 variationIndex) const { return EditorCategory::MISC; }
 };
 
 class PlaceableEntity : public Entity

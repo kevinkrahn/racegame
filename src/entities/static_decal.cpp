@@ -3,6 +3,7 @@
 #include "../scene.h"
 #include "../game.h"
 #include "../gui.h"
+#include "../billboard.h"
 
 const char* textureNames[] = {
     "Arrow Forward",
@@ -62,19 +63,6 @@ void StaticDecal::updateTransform(Scene* scene)
         }
     }
 
-    Texture* textures[] = {
-        &g_res.textures->decal_arrow,
-        &g_res.textures->decal_arrow_left,
-        &g_res.textures->decal_arrow_right,
-        &g_res.textures->decal_crack,
-        &g_res.textures->decal_patch1,
-        &g_res.textures->decal_grunge1,
-        &g_res.textures->decal_grunge2,
-        &g_res.textures->decal_grunge3,
-        &g_res.textures->decal_sand,
-    };
-    tex = textures[texIndex];
-    decal.setTexture(tex);
     decal.setPriority(beforeMarking ? 14 : 8000);
 
     const u32 bufferSize = 32;
@@ -108,6 +96,14 @@ void StaticDecal::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     rw->add(&decal);
 }
 
+void StaticDecal::onPreview(RenderWorld* rw)
+{
+    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
+            glm::vec3(0.f), 1.f, 200.f, 50.f);
+    rw->push(BillboardRenderable(tex, glm::vec3(0, 0, 2.f),
+                glm::vec4(1.f), 8.f, 0.f, false));
+}
+
 void StaticDecal::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
@@ -137,6 +133,8 @@ void StaticDecal::deserializeState(DataFile::Value& data)
     texIndex = (i32)data["texIndex"].integer(0);
     decalFilter = (u32)data["decalFilter"].integer(DECAL_TRACK);
     beforeMarking = data["beforeMarking"].boolean(false);
+
+    this->setVariationIndex((u32)texIndex);
 }
 
 void StaticDecal::showDetails(Scene* scene)
@@ -166,18 +164,31 @@ void StaticDecal::showDetails(Scene* scene)
         updateTransform(scene);
     }
 
-    g_gui.beginSelect("Texture", &texIndex, true);
-    for (i32 i=0; i<(i32)ARRAY_SIZE(textureNames); ++i)
-    {
-        if (g_gui.option(textureNames[i], i, nullptr))
-        {
-            updateTransform(scene);
-        }
-    }
-    g_gui.end();
-
     if (g_gui.toggle("Before Marking", beforeMarking))
     {
         updateTransform(scene);
     }
+}
+
+u32 StaticDecal::getVariationCount() const
+{
+    return ARRAY_SIZE(textureNames);
+}
+
+void StaticDecal::setVariationIndex(u32 variationIndex)
+{
+    this->texIndex = variationIndex;
+    Texture* textures[] = {
+        &g_res.textures->decal_arrow,
+        &g_res.textures->decal_arrow_left,
+        &g_res.textures->decal_arrow_right,
+        &g_res.textures->decal_crack,
+        &g_res.textures->decal_patch1,
+        &g_res.textures->decal_grunge1,
+        &g_res.textures->decal_grunge2,
+        &g_res.textures->decal_grunge3,
+        &g_res.textures->decal_sand,
+    };
+    tex = textures[texIndex];
+    decal.setTexture(tex);
 }

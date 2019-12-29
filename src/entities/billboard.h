@@ -18,10 +18,38 @@ class Billboard : public PlaceableEntity
     i32 billboardIndex = 0;
 
 public:
-    Billboard* setup(glm::vec3 const& position = {0, 0, 0})
+    Billboard()
     {
-        this->position = position;
-        return this;
+        glow.settings.mesh = g_res.getMesh("billboard.BillboardGlow");
+        glow.settings.color = glm::vec3(1.f);
+        glow.settings.emit = glm::vec3(3.f);
+        glow.settings.specularStrength = 0.1f;
+        glow.settings.texture = &g_res.textures->white;
+
+        lights.settings.mesh = g_res.getMesh("billboard.BillboardLights");
+        lights.settings.color = glm::vec3(0.05f);
+        lights.settings.specularStrength = 0.2f;
+        lights.settings.specularPower = 500.f;
+        lights.settings.reflectionLod = 3.f;
+        lights.settings.reflectionStrength = 0.8f;
+        lights.settings.texture = &g_res.textures->white;
+
+        metal.settings.mesh = g_res.getMesh("billboard.BillboardMetal");
+        metal.settings.color = glm::vec3(0.05f);
+        metal.settings.specularStrength = 0.2f;
+        metal.settings.specularPower = 1000.f;
+        metal.settings.reflectionLod = 2.f;
+        metal.settings.reflectionStrength = 0.9f;
+        metal.settings.texture = &g_res.textures->white;
+
+        sign.settings.mesh = g_res.getMesh("billboard.BillboardSign");
+        sign.settings.color = glm::vec3(1.f);
+
+        wood.settings.mesh = g_res.getMesh("billboard.BillboardWood");
+        wood.settings.color = glm::vec3(1.f);
+        wood.settings.specularStrength = 0.05f;
+        wood.settings.specularPower = 10.f;
+        wood.settings.texture = &g_res.textures->wood;
     }
 
     void applyDecal(class Decal& decal) override
@@ -65,37 +93,6 @@ public:
         collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
 
         scene->getPhysicsScene()->addActor(*actor);
-
-        glow.settings.mesh = g_res.getMesh("billboard.BillboardGlow");
-        glow.settings.color = glm::vec3(1.f);
-        glow.settings.emit = glm::vec3(3.f);
-        glow.settings.specularStrength = 0.1f;
-        glow.settings.texture = &g_res.textures->white;
-
-        lights.settings.mesh = g_res.getMesh("billboard.BillboardLights");
-        lights.settings.color = glm::vec3(0.05f);
-        lights.settings.specularStrength = 0.2f;
-        lights.settings.specularPower = 500.f;
-        lights.settings.reflectionLod = 3.f;
-        lights.settings.reflectionStrength = 0.8f;
-        lights.settings.texture = &g_res.textures->white;
-
-        metal.settings.mesh = g_res.getMesh("billboard.BillboardMetal");
-        metal.settings.color = glm::vec3(0.05f);
-        metal.settings.specularStrength = 0.2f;
-        metal.settings.specularPower = 1000.f;
-        metal.settings.reflectionLod = 2.f;
-        metal.settings.reflectionStrength = 0.9f;
-        metal.settings.texture = &g_res.textures->white;
-
-        sign.settings.mesh = g_res.getMesh("billboard.BillboardSign");
-        sign.settings.color = glm::vec3(1.f);
-
-        wood.settings.mesh = g_res.getMesh("billboard.BillboardWood");
-        wood.settings.color = glm::vec3(1.f);
-        wood.settings.specularStrength = 0.05f;
-        wood.settings.specularPower = 10.f;
-        wood.settings.texture = &g_res.textures->wood;
     }
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
@@ -118,6 +115,14 @@ public:
         rw->add(&metal);
         rw->add(&sign);
         rw->add(&wood);
+    }
+
+    void onPreview(RenderWorld* rw) override
+    {
+        rw->setViewportCamera(0, glm::vec3(3.f, 1.f, 4.f) * 4.5f,
+                glm::vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
+        transform = glm::mat4(1.f);
+        onRender(rw, nullptr, 0.f);
     }
 
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override
@@ -159,4 +164,6 @@ public:
         PlaceableEntity::deserializeState(data);
         billboardIndex = (i32)data["billboardIndex"].integer(0);
     }
+
+    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::ROADSIDE; }
 };

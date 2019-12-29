@@ -27,5 +27,6 @@ public:
     void updateTransform(class Scene* scene) override;
     u32 getVariationCount() const override;
     void setVariationIndex(u32 variationIndex) override { meshIndex = variationIndex; }
+    EditorCategory getEditorCategory(u32 variationIndex) const override;
     void loadMeshes();
 };

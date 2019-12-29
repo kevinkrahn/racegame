@@ -10,17 +10,18 @@ struct MeshScene
     const char* sceneName;
     glm::vec3 previewCameraFrom;
     glm::vec3 previewCameraTo;
+    EditorCategory category;
 };
 
 MeshScene meshScenes[] = {
-    { "rock.Scene", glm::vec3(8.f, 8.f, 10.f) * 2.5f, glm::vec3(0, 0, 3) },
-    { "world.Tunnel", glm::vec3(8.f, 8.f, 10.f) * 3.f, glm::vec3(0, 0, 3) },
-    { "world.Sign", glm::vec3(8.f, 8.f, 10.f) * 1.5f, glm::vec3(0, 0, 4) },
-    { "cactus.Scene", glm::vec3(8.f, 8.f, 10.f) * 2.1f, glm::vec3(0, 0, 6) },
-    { "world.Cube", glm::vec3(8.f, 8.f, 10.f) * 0.5f, glm::vec3(0, 0, 1) },
-    { "plants.Plant1", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1) },
-    { "plants.Plant2", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1) },
-    { "ctvpole.CTVPole", glm::vec3(8.f, 8.f, 10.f), glm::vec3(0, 0, 3) },
+    { "rock.Scene", glm::vec3(8.f, 8.f, 10.f) * 2.5f, glm::vec3(0, 0, 3), EditorCategory::ROCKS },
+    { "world.Tunnel", glm::vec3(8.f, 8.f, 10.f) * 3.f, glm::vec3(0, 0, 3), EditorCategory::ROADSIDE },
+    { "world.Sign", glm::vec3(8.f, 8.f, 10.f) * 1.5f, glm::vec3(0, 0, 4), EditorCategory::ROADSIDE },
+    { "cactus.Scene", glm::vec3(8.f, 8.f, 10.f) * 2.1f, glm::vec3(0, 0, 6), EditorCategory::VEGETATION },
+    { "world.Cube", glm::vec3(8.f, 8.f, 10.f) * 0.5f, glm::vec3(0, 0, 1), EditorCategory::MISC },
+    { "plants.Plant1", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1), EditorCategory::VEGETATION },
+    { "plants.Plant2", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1), EditorCategory::VEGETATION },
+    { "ctvpole.CTVPole", glm::vec3(8.f, 8.f, 10.f), glm::vec3(0, 0, 3), EditorCategory::ROADSIDE },
 };
 
 void StaticMesh::onCreate(Scene* scene)
@@ -157,3 +158,8 @@ void StaticMesh::applyDecal(Decal& decal)
 }
 
 u32 StaticMesh::getVariationCount() const { return ARRAY_SIZE(meshScenes); }
+
+EditorCategory StaticMesh::getEditorCategory(u32 variationIndex) const
+{
+    return meshScenes[variationIndex].category;
+}

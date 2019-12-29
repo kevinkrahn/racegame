@@ -31,4 +31,5 @@ public:
         PlaceableEntity::deserializeState(data);
     }
     void showDetails(Scene* scene) override;
+    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::MISC; }
 };

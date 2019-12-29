@@ -12,11 +12,17 @@ class WaterBarrel : public PlaceableEntity
     LitRenderable lit;
 
 public:
-    WaterBarrel* setup(glm::vec3 const& position = {0, 0, 0}, f32 zRotation=0.f)
+    WaterBarrel()
     {
-        this->position = position;
-        this->rotation = glm::rotate(this->rotation, zRotation, glm::vec3(0, 0, 1));
-        return this;
+        lit.settings.mesh = g_res.getMesh("barrel.Barrel");
+        lit.settings.color = { 1, 1, 1 };
+        lit.settings.texture = &g_res.textures->white;
+        lit.settings.fresnelScale = 0.2f;
+        lit.settings.fresnelPower = 1.7f;
+        lit.settings.fresnelBias = -0.2f;
+        lit.settings.specularStrength = 0.1f;
+        lit.settings.texture = &g_res.textures->white;
+        lit.settings.worldTransform = transform;
     }
 
     void applyDecal(class Decal& decal) override
@@ -44,22 +50,20 @@ public:
         PxRigidBodyExt::updateMassAndInertia(*body, 150.f);
         actor = body;
         scene->getPhysicsScene()->addActor(*actor);
-
-        lit.settings.mesh = g_res.getMesh("barrel.Barrel");
-        lit.settings.color = { 1, 1, 1 };
-        lit.settings.texture = &g_res.textures->white;
-        lit.settings.fresnelScale = 0.2f;
-        lit.settings.fresnelPower = 1.7f;
-        lit.settings.fresnelBias = -0.2f;
-        lit.settings.specularStrength = 0.1f;
-        lit.settings.texture = &g_res.textures->white;
-        lit.settings.worldTransform = transform;
     }
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
         lit.settings.worldTransform = convert(actor->getGlobalPose());
         transform = lit.settings.worldTransform;
+        rw->add(&lit);
+    }
+
+    void onPreview(RenderWorld* rw) override
+    {
+        rw->setViewportCamera(0, glm::vec3(3.f, 3.f, 4.f) * 1.1f,
+                glm::vec3(0, 0, 1), 1.f, 200.f, 32.f);
+        lit.settings.worldTransform = glm::mat4(1.f);
         rw->add(&lit);
     }
 
@@ -70,4 +74,6 @@ public:
             rw->push(WireframeRenderable(lit.settings.mesh, transform));
         }
     }
+
+    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::OBSTACLES; }
 };

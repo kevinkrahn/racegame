@@ -5,22 +5,18 @@
 #include "../mesh_renderables.h"
 #include "../game.h"
 
-Tree* Tree::setup(glm::vec3 const& position, glm::vec3 const& scale, f32 zRotation)
+Tree::Tree()
 {
-    this->position = position;
-    this->scale = scale;
-    this->rotation = glm::rotate(this->rotation, zRotation, glm::vec3(0, 0, 1));
-    return this;
+    this->meshTrunk = g_res.getMesh("tree.Trunk");
+    this->meshLeaves = g_res.getMesh("tree.Leaves");
+    this->texTrunk = &g_res.textures->bark;
+    this->texLeaves = &g_res.textures->leaves;
 }
 
 void Tree::onCreate(Scene* scene)
 {
     updateTransform(scene);
 
-    this->meshTrunk = g_res.getMesh("tree.Trunk");
-    this->meshLeaves = g_res.getMesh("tree.Leaves");
-    this->texTrunk = &g_res.textures->bark;
-    this->texLeaves = &g_res.textures->leaves;
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;
@@ -52,6 +48,14 @@ void Tree::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     settings.minAlpha = 0.5f;
     //settings.transparent = true;
     rw->push(LitRenderable(settings));
+}
+
+void Tree::onPreview(RenderWorld* rw)
+{
+    rw->setViewportCamera(0, glm::vec3(3.f, 3.f, 3.f) * 10.f,
+            glm::vec3(0, 0, 8), 1.f, 200.f, 32.f);
+    transform = glm::mat4(1.f);
+    onRender(rw, nullptr, 0.f);
 }
 
 void Tree::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
