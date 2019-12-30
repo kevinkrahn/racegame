@@ -1017,7 +1017,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
-                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0) * 0.25f;
+                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0) * 0.35f;
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 7)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
@@ -1124,23 +1124,68 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         auto& ai = g_ais[driver->aiIndex];
         auto const& paths = scene->getTrackGraph().getPaths();
 
-        // TODO: check graphResult to find and use closest point if the vehicle
-        // is too far off the course
+        std::vector<TrackGraph::Node*> const* currentPath = &paths[followPathIndex];
+        bool pathHasLastNode = false;
+        for (size_t i=0; i<currentPath->size(); ++i)
+        {
+            if ((*currentPath)[i] == graphResult.lastNode)
+            {
+                targetPointIndex = (u32)i + 1;
+                if (targetPointIndex >= (u32)currentPath->size())
+                {
+                    targetPointIndex = 0;
+                }
+                pathHasLastNode = true;
+                break;
+            }
+        }
+
+        // follow closest path
+        if (!pathHasLastNode)
+        {
+            for (auto& path : paths)
+            {
+                bool found = false;
+                for (size_t i=0; i<path.size(); ++i)
+                {
+                    if (path[i] == graphResult.lastNode)
+                    {
+                        currentPath = &path;
+                        targetPointIndex = (u32)i + 1;
+                        if (targetPointIndex >= (u32)currentPath->size())
+                        {
+                            targetPointIndex = 0;
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                {
+                    break;
+                }
+            }
+        }
 
         i32 previousIndex = targetPointIndex - 1;
         if (previousIndex < 0)
         {
-            previousIndex = (i32)paths[followPathIndex].size() - 1;
+            previousIndex = (i32)currentPath->size() - 1;
         }
 
-        TrackGraph::Node* nextPathNode = paths[followPathIndex][targetPointIndex];
-        glm::vec3 previousP = paths[followPathIndex][previousIndex]->position;
+        TrackGraph::Node* nextPathNode = (*currentPath)[targetPointIndex];
+        glm::vec3 previousP = (*currentPath)[previousIndex]->position;
         glm::vec2 dir = glm::normalize(
                 glm::vec2(nextPathNode->position) - glm::vec2(previousP));
         glm::vec3 targetP = nextPathNode->position -
             glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
         glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
         steer = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
+
+#if 0
+        rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
+                    glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
+#endif
 
         f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
                 ai.aggression);
@@ -1285,7 +1330,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         if (canGo)
         {
             backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
-            if (backupTimer > 2.f)
+            if (backupTimer > 1.75f)
             {
                 accel = 0.f;
                 brake = 1.f;
@@ -1307,7 +1352,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 nextPathNode->t - graphResult.currentLapDistance < 120.f))
         {
             ++targetPointIndex;
-            if (targetPointIndex >= paths[followPathIndex].size())
+            if (targetPointIndex >= (*currentPath).size())
             {
                 targetPointIndex = 0;
             }
@@ -1435,10 +1480,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     offsetChangeTimer += deltaTime;
     if (offsetChangeTimer > offsetChangeInterval)
     {
-        targetOffset.x = random(scene->randomSeries, -6.f, 6.f);
-        targetOffset.y = random(scene->randomSeries, -6.f, 6.f);
+        targetOffset.x = random(scene->randomSeries, -4.f, 4.f);
+        targetOffset.y = random(scene->randomSeries, -4.f, 4.f);
         offsetChangeTimer = 0.f;
-        offsetChangeInterval = random(scene->randomSeries, 4.f, 12.f);
+        offsetChangeInterval = random(scene->randomSeries, 5.f, 14.f);
     }
 
     const f32 maxSkippableDistance = 250.f;
