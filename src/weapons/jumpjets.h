@@ -4,6 +4,7 @@
 #include "../vehicle.h"
 #include "../entities/projectile.h"
 
+// TODO: make AI drivers use this more intelligently
 class WJumpJets : public Weapon
 {
 public:
@@ -32,8 +33,9 @@ public:
             // TODO: play no-no sound
             return;
         }
-        vehicle->getRigidBody()->addForce(
-                convert(zAxisOf(vehicle->getTransform()) * 12.f),
+        vehicle->getRigidBody()->setAngularVelocity(PxVec3(0));
+        vehicle->getRigidBody()->addForce(PxVec3(0, 0, 12),
+                //convert(zAxisOf(vehicle->getTransform()) * 12.f),
                 PxForceMode::eVELOCITY_CHANGE);
         ammo -= 1;
     }
