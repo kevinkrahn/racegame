@@ -1140,7 +1140,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
         }
 
-        // follow closest path
+        // switch path if too far off course
         if (!pathHasLastNode)
         {
             for (auto& path : paths)
@@ -1347,6 +1347,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             steer = 0.f;
         }
 
+        /*
         if (glm::length2(nextPathNode->position - currentPosition) < square(22.f)
                 || (graphResult.currentLapDistance < nextPathNode->t &&
                 nextPathNode->t - graphResult.currentLapDistance < 120.f))
@@ -1357,6 +1358,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 targetPointIndex = 0;
             }
         }
+        */
 
         // front weapons
         if (aggression > 0.f && frontWeapons.size() > 0

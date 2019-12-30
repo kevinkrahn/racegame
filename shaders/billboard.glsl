@@ -50,7 +50,7 @@ void main()
     outTexCoord = uvs[gl_VertexID];
 #if defined LIT
     outWorldPos = (translation * rotation * vec4(vertices[gl_VertexID], 0.0, 1.0)).xyz;
-    outShadowCoord = (shadowViewProjectionBias[0]
+    outShadowCoord = (shadowViewProjectionBias
             * (translation * rotation * vec4(vertices[gl_VertexID], 0.0, 1.0))).xyz;
 #endif
 }

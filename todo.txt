@@ -17,6 +17,7 @@
 - Add wind motion for plants and trees
 - Add powerups? Will have to think about whether this is a good idea game design wise
 - Kinetic armor effect
+- Create general-purpose particle system
 
 - Ideas:
     - Grenade launcher weapon
