@@ -1015,10 +1015,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 node = scene->getTrackGraph().getEndNode();
             }
-            // TODO: ensure that the vehicle will spawn entirely over the track
             glm::vec2 dir(node->direction);
             glm::vec3 pos = node->position -
-                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
+                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0) * 0.25f;
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 7)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
