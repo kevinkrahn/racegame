@@ -35,10 +35,7 @@ public:
             if (damage > 8.f)
             {
                 ammo = 0;
-            }
-            else
-            {
-                // TODO: play "absorb" sound effect
+                g_audio.playSound(&g_res.sounds->kinetic_armor, SoundType::GAME_SFX);
             }
             return 0.f;
         }

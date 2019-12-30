@@ -18,6 +18,7 @@
 - Add powerups? Will have to think about whether this is a good idea game design wise
 - Kinetic armor effect
 - Create general-purpose particle system
+- Make better explosion effect
 
 - Ideas:
     - Grenade launcher weapon

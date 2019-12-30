@@ -7,6 +7,8 @@
 // TODO: make AI drivers use this more intelligently
 class WJumpJets : public Weapon
 {
+    f32 t = 0.f;
+
 public:
     WJumpJets()
     {
@@ -23,6 +25,15 @@ public:
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
+        t = glm::max(t - deltaTime, 0.f);
+        if (t > 0.f)
+        {
+            PxVec3 vel = vehicle->getRigidBody()->getAngularVelocity();
+            vel.x = 0.f;
+            vel.y = 0.f;
+            vehicle->getRigidBody()->setAngularVelocity(vel);
+        }
+
         if (!fireBegin)
         {
             return;
@@ -33,10 +44,17 @@ public:
             // TODO: play no-no sound
             return;
         }
-        vehicle->getRigidBody()->setAngularVelocity(PxVec3(0));
+        g_audio.playSound(&g_res.sounds->jumpjet, SoundType::GAME_SFX, false, 1.f, 0.9f);
+        PxVec3 vel = vehicle->getRigidBody()->getAngularVelocity();
+        vel.x = 0.f;
+        vel.y = 0.f;
+        vel.z *= 0.5f;
+        vehicle->getRigidBody()->setAngularVelocity(vel);
         vehicle->getRigidBody()->addForce(PxVec3(0, 0, 12),
                 //convert(zAxisOf(vehicle->getTransform()) * 12.f),
                 PxForceMode::eVELOCITY_CHANGE);
+        // TODO: add effect under the vehicle
         ammo -= 1;
+        t = 0.1f;
     }
 };

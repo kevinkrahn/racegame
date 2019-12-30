@@ -908,7 +908,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                 {
                     ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
                     ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
-                    f32 damage = glm::min(magnitude * 0.0008f, 60.f);
+                    f32 damage = glm::min(magnitude * 0.0006f, 100.f);
 
                     // apply damage
                     if (a && a->entityType == ActorUserData::VEHICLE)
@@ -918,7 +918,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         {
                             if (b->vehicle->hasAbility("Ram Booster"))
                             {
-                                myDamage *= 2.5f;
+                                myDamage *= 2.75f;
                                 // TODO: test this out
                                 myDamage = std::max(myDamage, 5.f);
                             }
@@ -932,7 +932,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         a->vehicle->applyDamage(myDamage, instigator);
                         if (damage > 5.f)
                         {
-                            a->vehicle->shakeScreen(damage * 0.3f);
+                            a->vehicle->shakeScreen(damage * 0.35f);
                         }
                     }
                     if (b && b->entityType == ActorUserData::VEHICLE)
@@ -942,7 +942,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         {
                             if (a->vehicle->hasAbility("Ram Booster"))
                             {
-                                myDamage *= 2.5f;
+                                myDamage *= 2.75f;
                                 // TODO: test this out
                                 myDamage = std::max(myDamage, 5.f);
                             }
@@ -956,7 +956,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         b->vehicle->applyDamage(myDamage, instigator);
                         if (damage > 5.f)
                         {
-                            b->vehicle->shakeScreen(damage * 0.3f);
+                            b->vehicle->shakeScreen(damage * 0.35f);
                         }
                     }
 

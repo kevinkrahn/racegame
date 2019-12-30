@@ -313,7 +313,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         conf->frontWeaponUpgradeLevel[0] = 5;
         conf->rearWeaponIndices[0] = 5;
         conf->rearWeaponUpgradeLevel[0] = 5;
-        conf->specialAbilityIndex = 10;
+        conf->specialAbilityIndex = 11;
         scene->terrain->regenerateCollisionMesh(scene);
         scene->startRace();
         entityDragAxis = DragAxis::NONE;
@@ -404,9 +404,9 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (g_input.getMouseScroll() != 0)
     {
-        zoomSpeed = g_input.getMouseScroll() * 1.25f;
+        zoomSpeed = g_input.getMouseScroll() * 1.1f;
     }
-    cameraDistance = clamp(cameraDistance - zoomSpeed, 10.f, 180.f);
+    cameraDistance = clamp(cameraDistance - zoomSpeed, 10.f, 200.f);
     zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
     RenderWorld* rw = renderer->getRenderWorld();
