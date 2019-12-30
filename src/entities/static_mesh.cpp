@@ -22,6 +22,7 @@ MeshScene meshScenes[] = {
     { "plants.Plant1", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1), EditorCategory::VEGETATION },
     { "plants.Plant2", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1), EditorCategory::VEGETATION },
     { "ctvpole.CTVPole", glm::vec3(8.f, 8.f, 10.f), glm::vec3(0, 0, 3), EditorCategory::ROADSIDE },
+    { "windmill.Windmill", glm::vec3(14.f, 14.f, 26.f), glm::vec3(0, 0, 12), EditorCategory::ROADSIDE },
 };
 
 void StaticMesh::onCreate(Scene* scene)
@@ -61,6 +62,8 @@ void StaticMesh::loadMeshes()
         { "Plant1", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, &g_res.textures->plant1, true, false, 0.5f) },
         { "Plant2", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, &g_res.textures->plant2, true, false, 0.5f) },
         { "Metal", LitSettings(glm::vec3(0.01f), 0.2f, 120.f, 0.f, 0.f, 0.f, nullptr, true, false, 0.f, 0.4f, 4.f) },
+        { "WindmillBlades", LitSettings(glm::vec3(1.f), 0.2f, 120.f, 0.f, 0.f, 0.f, &g_res.textures->windmill_blades, true, false, 0.f, 0.4f, 4.f) },
+        { "WindmillBase", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, &g_res.textures->windmill_base) },
     };
 
     DataFile::Value::Dict& sceneData = g_res.getScene(meshScenes[meshIndex].sceneName);

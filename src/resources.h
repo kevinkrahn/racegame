@@ -54,6 +54,8 @@ struct Textures
     Texture billboard_4 = Texture("textures/billboard_4.jpg");
     Texture oil_normal = Texture("textures/oil_normal.png", false, Texture::Format::RGBA8);
     Texture flames = Texture("textures/flames.png");
+    Texture windmill_base = Texture("textures/windmill_base.jpg");
+    Texture windmill_blades = Texture("textures/windmill_blades.jpg");
 
     Texture icon_decoration = Texture("textures/decoration_icon.png", false);
     Texture icon_blaster = Texture("textures/icons/blaster_icon.png", false);
@@ -169,6 +171,7 @@ const char* dataFiles[] = {
     "models/billboard.dat",
     "models/money.dat",
     "models/wrench.dat",
+    "models/windmill.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",

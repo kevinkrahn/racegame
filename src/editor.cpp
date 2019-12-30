@@ -522,7 +522,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                         }
                     }
 
-                    glm::vec2 bp( cx - totalWidth * 0.5f + ((itemSize + gap) * i),
+                    glm::vec2 bp(cx - totalWidth * 0.5f + ((itemSize + gap) * i),
                             g_game.windowHeight - itemSize - yoffset);
                     renderer->push2D(QuadRenderable(white,
                         bp, (f32)itemSize, (f32)itemSize, color, alpha));
@@ -543,9 +543,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         u32 itemSize = (u32)g_gui.convertSizei(48);
         u32 iconSize = (u32)g_gui.convertSizei(44);
         u32 gap = (u32)g_gui.convertSizei(4);
-        f32 totalWidth = (f32)(itemSize * count + gap * (count - 2));
-        f32 cx = g_game.windowWidth * 0.5f;
-        f32 yoffset = height * 0.02f;
+        f32 yoffset = (u32)(height * 0.02f);
 
         static RenderWorld renderWorld;
         static i32 lastEntityIconRendered = -1;
@@ -562,11 +560,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             {
                 continue;
             }
-            ++i;
 
             bool isHovering = false;
             if (pointInRectangle(g_input.getMousePosition(),
-                { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
+                { yoffset + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
                 (f32)itemSize, (f32)itemSize))
             {
                 isMouseClickHandled = true;
@@ -578,7 +575,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 }
             }
 
-            glm::vec2 bp(cx - totalWidth * 0.5f + ((itemSize + gap) * i),
+            glm::vec2 bp(yoffset + ((itemSize + gap) * i),
                     g_game.windowHeight - itemSize - yoffset);
             if (isHovering)
             {
@@ -617,6 +614,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 g_game.renderer->addRenderWorld(&renderWorld);
                 lastEntityIconRendered = (i32)itemIndex;
             }
+            ++i;
         }
 
         glm::vec3 minP(FLT_MAX);
