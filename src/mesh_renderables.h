@@ -81,7 +81,10 @@ public:
         {
             return;
         }
-        glUniform1f(5, settings.minAlpha);
+        if (settings.minAlpha > 0.f)
+        {
+            glUniform1f(5, settings.minAlpha);
+        }
         glBindTextureUnit(0, settings.texture->handle);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glBindVertexArray(settings.mesh->vao);
@@ -95,7 +98,10 @@ public:
 
     void onShadowPass(Renderer* renderer) override
     {
-        glUniform1f(5, settings.transparent ? 0.5f : settings.minAlpha);
+        if (settings.minAlpha > 0.f)
+        {
+            glUniform1f(5, settings.transparent ? 0.5f : settings.minAlpha);
+        }
         glBindTextureUnit(0, settings.texture->handle);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(settings.worldTransform));
         glBindVertexArray(settings.mesh->vao);
@@ -148,7 +154,7 @@ public:
         glUniform3fv(2, 1, (GLfloat*)&settings.color);
         glUniform3f(3, settings.fresnelBias, settings.fresnelScale, settings.fresnelPower);
         glUniform3f(4, settings.specularPower, settings.specularStrength, 0.f);
-        glUniform1f(5, settings.minAlpha);
+        //glUniform1f(5, settings.minAlpha);
         glUniform3fv(6, 1, (GLfloat*)&settings.emit);
         glUniform3f(7, settings.reflectionStrength, settings.reflectionLod, settings.reflectionBias);
 

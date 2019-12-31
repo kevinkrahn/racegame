@@ -486,12 +486,15 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
-    auto& ai = g_ais[driver->aiIndex];
-    f32 skill = clamp(1.f - ai.drivingSkill
-            + random(scene->randomSeries, -0.1f, 0.1f), 0.f, 1.f);
-    this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
-        irandom(scene->randomSeries, 0,
-                (u32)(scene->getTrackGraph().getPaths().size() * skill)) : 0;
+	if (driver->aiIndex != -1)
+	{
+		auto& ai = g_ais[driver->aiIndex];
+		f32 skill = clamp(1.f - ai.drivingSkill
+				+ random(scene->randomSeries, -0.1f, 0.1f), 0.f, 1.f);
+		this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
+			irandom(scene->randomSeries, 0,
+					(u32)(scene->getTrackGraph().getPaths().size() * skill)) : 0;
+	}
     this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = translationOf(transform);
