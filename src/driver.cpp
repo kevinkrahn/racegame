@@ -27,21 +27,13 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
 void Driver::aiUpgrades(RandomSeries& series)
 {
     assert(aiIndex != -1);
+    ComputerDriverData const& ai = g_ais[aiIndex];
 
     if (ownedVehicles.empty())
     {
-        std::vector<u32> affordableVehicles;
-        for (u32 i=0; i<(u32)g_vehicles.size(); ++i)
-        {
-            if (credits >= g_vehicles[i]->price)
-            {
-                affordableVehicles.push_back(i);
-            }
-        }
-        vehicleIndex = affordableVehicles[
-            irandom(series, 0, (u32)affordableVehicles.size())];
         VehicleConfiguration vehicleConfig;
-        vehicleConfig.colorIndex = irandom(series, 0, ARRAY_SIZE(g_vehicleColors));
+        vehicleConfig.colorIndex = ai.colorIndex;
+        vehicleIndex = (i32)ai.vehicleIndex;
         ownedVehicles.push_back({ vehicleIndex, vehicleConfig });
         credits -= g_vehicles[vehicleIndex]->price;
         print(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');
@@ -72,7 +64,6 @@ void Driver::aiUpgrades(RandomSeries& series)
 
     const u32 MAX_UPGRADE = 0;
 
-    ComputerDriverData ai = g_ais[aiIndex];
     std::vector<UpgradeChoice> upgradeChoices = {
         { FRONT_WEAPON1, 20 + ai.aggression, 2 },
         { FRONT_WEAPON1, 18 + ai.aggression * 2.f, 3 },

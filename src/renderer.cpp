@@ -228,7 +228,6 @@ void Renderer::initShaders()
     }
     shaderPrograms.clear();
 
-    //loadShader("cubemap_test");
     loadShader("bloom_filter");
     loadShader("blit");
     loadShader("blit2");

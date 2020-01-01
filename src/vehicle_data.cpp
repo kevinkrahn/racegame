@@ -451,16 +451,16 @@ void initializeVehicleData()
     //registerVehicle<VTruck>();
     //registerVehicle<VRacecar>();
 
-    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f);
-    registerAI("Dumb Dumb",       0.f,   0.f, 0.f,  0.f);
-    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f);
-    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f);
-    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f);
-    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f);
-    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f);
-    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f);
-    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f);
-    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f);
-    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f);
-    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f);
+    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f, "Red", "Station Wagon");
+    registerAI("Dumb Dumb",       0.f,   0.f, 0.f,  0.f, "Light Brown", "Muscle Car");
+    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, "Orange", "Cool Car");
+    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f, "Yellow", "Cool Car");
+    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, "Blue", "Muscle Car");
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f, "Dark Blue", "Muscle Car");
+    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f, "Aruba", "Station Wagon");
+    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f, "White", "Cool Car");
+    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f, "Black", "Station Wagon");
+    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f, "Green", "Muscle Car");
+    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f, "Maroon", "Cool Car");
+    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f, "Dark Brown", "Station Wagon");
 }

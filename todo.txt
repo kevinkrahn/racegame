@@ -19,6 +19,7 @@
 - Kinetic armor effect
 - Create general-purpose particle system
 - Make better explosion effect
+- Add more cosmetic options (decals)
 
 - Ideas:
     - Grenade launcher weapon

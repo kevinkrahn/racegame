@@ -368,7 +368,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         if ((*it)->isDestroyed())
         {
-            entities.erase(it);
+            it = entities.erase(it);
         }
         else
         {
@@ -1078,7 +1078,7 @@ void Scene::deserializeTransientEntities(std::vector<DataFile::Value>& entities)
     {
         if ((*it)->entityFlags & Entity::TRANSIENT)
         {
-            this->entities.erase(it);
+            it = this->entities.erase(it);
         }
         else
         {

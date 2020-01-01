@@ -20,6 +20,8 @@ struct ComputerDriverData
     f32 aggression = 1.f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
     f32 awareness = 1.f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
     f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
+    u32 colorIndex = 0;
+    u32 vehicleIndex = 0;
 };
 
 struct RegisteredWeapon
@@ -171,6 +173,19 @@ std::string g_vehicleColorNames[ARRAY_SIZE(g_vehicleColors)] = {
     "Light Brown",
     "Dark Brown",
 };
+
+u32 findColorIndexByName(const char* name)
+{
+    for (u32 i=0; i<ARRAY_SIZE(g_vehicleColorNames); ++i)
+    {
+        if (name == g_vehicleColorNames[i])
+        {
+            return i;
+        }
+    }
+    error("No color exists with name: \"", name, "\"\n");
+    return 0;
+}
 
 enum struct PaintType : i32
 {
@@ -334,6 +349,19 @@ std::vector<std::unique_ptr<VehicleData>> g_vehicles;
 std::vector<RegisteredWeapon> g_weapons;
 std::vector<ComputerDriverData> g_ais;
 
+u32 findVehicleIndexByName(const char* name)
+{
+    for (u32 i=0; i<g_vehicles.size(); ++i)
+    {
+        if (strcmp(g_vehicles[i]->name, name) == 0)
+        {
+            return i;
+        }
+    }
+    error("No vehicle exists with name: \"", name, "\"\n");
+    return 0;
+}
+
 template <typename T>
 void registerWeapon()
 {
@@ -349,9 +377,18 @@ void registerVehicle()
     g_vehicles.push_back(std::make_unique<T>());
 }
 
-void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear)
+void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear,
+    const char* colorName, const char* vehicleName)
 {
-    g_ais.push_back({ name, drivingSkill, aggression, awareness, fear });
+    g_ais.push_back({
+        name,
+        drivingSkill,
+        aggression,
+        awareness,
+        fear,
+        findColorIndexByName(colorName),
+        findVehicleIndexByName(vehicleName),
+    });
 }
 
 void initializeVehicleData();

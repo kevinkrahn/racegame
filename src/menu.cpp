@@ -86,7 +86,6 @@ void Menu::mainMenu()
         RandomSeries series = randomSeed();
         i32 driverCredits = irandom(series, 10000, 50000);
         print("Starting quick race with driver budget: ", driverCredits, '\n');
-        // TODO: drivers should all pick unique colors
         for (u32 i=0; i<10; ++i)
         {
             g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
@@ -186,7 +185,6 @@ void Menu::newChampionship()
         g_game.state.gameMode = GameMode::CHAMPIONSHIP;
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
 
-        // TODO: drivers should all pick unique colors
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
             g_game.state.drivers.push_back(Driver(false, false, false, 0,
@@ -210,46 +208,48 @@ void Menu::newChampionship()
 
     g_gui.label("Press SPACE or controller button to join");
 
-    if (g_input.isKeyPressed(KEY_SPACE))
+    if (g_game.state.drivers.size() < 4)
     {
-        bool keyboardPlayerExists = false;
-        for (auto& driver : g_game.state.drivers)
+        if (g_input.isKeyPressed(KEY_SPACE))
         {
-            if (driver.useKeyboard)
-            {
-                keyboardPlayerExists = true;
-                break;
-            }
-        }
-        if (!keyboardPlayerExists)
-        {
-            // TODO: ensure all player names are unique
-            g_game.state.drivers.push_back(Driver(true, true, true, 0));
-        }
-    }
-
-    for (auto& controller : g_input.getControllers())
-    {
-        if (controller.second.isAnyButtonPressed())
-        {
-            bool controllerPlayerExists = false;
+            bool keyboardPlayerExists = false;
             for (auto& driver : g_game.state.drivers)
             {
-                if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.first)
+                if (driver.useKeyboard)
                 {
-                    controllerPlayerExists = true;
+                    keyboardPlayerExists = true;
                     break;
                 }
             }
-
-            if (!controllerPlayerExists)
+            if (!keyboardPlayerExists)
             {
-                g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
-                g_game.state.drivers.back().controllerGuid = controller.second.getGuid();
+                // TODO: ensure all player names are unique
+                g_game.state.drivers.push_back(Driver(true, true, true, 0));
+            }
+        }
+
+        for (auto& controller : g_input.getControllers())
+        {
+            if (controller.second.isAnyButtonPressed())
+            {
+                bool controllerPlayerExists = false;
+                for (auto& driver : g_game.state.drivers)
+                {
+                    if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.first)
+                    {
+                        controllerPlayerExists = true;
+                        break;
+                    }
+                }
+
+                if (!controllerPlayerExists)
+                {
+                    g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
+                    g_game.state.drivers.back().controllerGuid = controller.second.getGuid();
+                }
             }
         }
     }
-
 
     g_gui.end();
 }
