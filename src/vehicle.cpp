@@ -573,6 +573,7 @@ void Vehicle::reset(glm::mat4 const& transform)
 {
     airTime = 0.f;
     airBonusGracePeriod = 0.f;
+    savedAirTime = 0.f;
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
     getRigidBody()->setGlobalPose(convert(transform));
@@ -1906,7 +1907,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
         airTime = 0.f;
         airBonusGracePeriod += deltaTime;
-        if (savedAirTime > 0.f && airBonusGracePeriod > 0.5f && totalAirBonuses < 10)
+        if (savedAirTime > 0.f && airBonusGracePeriod > 0.4f && totalAirBonuses < 10)
         {
             if (savedAirTime > 4.f)
             {
