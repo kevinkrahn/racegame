@@ -210,7 +210,7 @@ void Menu::newChampionship()
 
     if (g_game.state.drivers.size() < 4)
     {
-        if (g_input.isKeyPressed(KEY_SPACE))
+        if (g_input.isKeyPressed(KEY_SPACE) && !g_gui.isKeyboardInputCaptured)
         {
             bool keyboardPlayerExists = false;
             for (auto& driver : g_game.state.drivers)
