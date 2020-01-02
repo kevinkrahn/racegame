@@ -44,7 +44,8 @@ public:
             // TODO: play no-no sound
             return;
         }
-        g_audio.playSound(&g_res.sounds->jumpjet, SoundType::GAME_SFX, false, 1.f, 0.9f);
+        g_audio.playSound3D(&g_res.sounds->jumpjet, SoundType::GAME_SFX,
+                vehicle->getPosition(), false, 1.f, 0.9f);
         PxVec3 vel = vehicle->getRigidBody()->getAngularVelocity();
         vel.x = 0.f;
         vel.y = 0.f;

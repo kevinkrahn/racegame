@@ -28,14 +28,14 @@ public:
         // TODO: show effect when taking damage
     }
 
-    f32 onDamage(f32 damage) override
+    f32 onDamage(f32 damage, Vehicle* vehicle) override
     {
         if (ammo > 0)
         {
             if (damage > 8.f)
             {
                 ammo = 0;
-                g_audio.playSound(&g_res.sounds->kinetic_armor, SoundType::GAME_SFX);
+                g_audio.playSound3D(&g_res.sounds->kinetic_armor, SoundType::GAME_SFX, vehicle->getPosition());
             }
             return 0.f;
         }
