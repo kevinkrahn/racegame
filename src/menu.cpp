@@ -1111,6 +1111,7 @@ void Menu::mainOptions()
         g_gui.pushSelection();
     }
 
+    g_gui.gap(20);
     if (g_gui.button("Back") || g_gui.didGoBack())
     {
         showMainMenu();
@@ -1130,6 +1131,7 @@ void Menu::audioOptions()
     g_gui.slider("SFX Volume", 0.f, 1.f, tmpConfig.audio.sfxVolume);
     g_gui.slider("Music Volume", 0.f, 1.f, tmpConfig.audio.musicVolume);
 
+    g_gui.gap(20);
     if (g_gui.button("Save"))
     {
         g_game.config.audio = tmpConfig.audio;
@@ -1161,6 +1163,7 @@ void Menu::gameplayOptions()
     g_gui.slider("HUD Track Scale", 0.5f, 2.f, tmpConfig.gameplay.hudTrackScale);
     g_gui.slider("HUD Text Scale", 0.5f, 2.f, tmpConfig.gameplay.hudTextScale);
 
+    g_gui.gap(20);
     if (g_gui.button("Save"))
     {
         g_game.config.gameplay = tmpConfig.gameplay;
@@ -1270,6 +1273,7 @@ void Menu::graphicsOptions()
     g_gui.select("Anti-Aliasing", aaLevelNames, ARRAY_SIZE(aaLevelNames), aaIndex);
     tmpConfig.graphics.msaaLevel = aaLevels[aaIndex];
 
+    g_gui.gap(20);
     if (g_gui.button("Save"))
     {
         g_game.config = tmpConfig;

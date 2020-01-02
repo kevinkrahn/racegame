@@ -20,6 +20,13 @@
 - Create general-purpose particle system
 - Make better explosion effect
 - Add more cosmetic options (decals)
+- Fix respawning (don't spawn on top of other vehicles, or add temporary invulnerability)
+- Allow vehicles to move before race starts?
+- Add armor icon beside healthbar
+- Add sound (clapping?) when a crossing finish line
+- Add batching or instancing to improve rendering performance
+- Don't blow up so easily when two wheels are off the track
+- Add splitscreen configuration (horizontal vs vertical split for two and three players)
 
 - Ideas:
     - Grenade launcher weapon
