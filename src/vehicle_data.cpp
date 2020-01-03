@@ -118,7 +118,7 @@ void VehicleData::loadSceneData(const char* sceneName)
             PxShape* shape = g_game.physx.physics->createShape(
                     PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
-                        COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0));
+                        COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
             debrisChunks.push_back({
                 mesh,

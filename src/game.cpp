@@ -30,6 +30,7 @@ void Game::initPhysX()
     physx.physics = PxCreatePhysics(PX_PHYSICS_VERSION, *physx.foundation, PxTolerancesScale(), true, physx.pvd);
 
     PxCookingParams cookingParams = PxCookingParams(PxTolerancesScale());
+    cookingParams.midphaseDesc = PxMeshMidPhase::eBVH34;
     // TODO: investigate the ideal cooking params (load time vs runtime performance)
     /*
     cookingParams.buildGPUData = false;

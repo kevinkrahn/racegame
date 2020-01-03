@@ -3,16 +3,17 @@
 enum
 {
     COLLISION_FLAG_TRACK      = 1 << 0,
-    COLLISION_FLAG_GROUND     = 1 << 1,
-    COLLISION_FLAG_WHEEL      = 1 << 2,
-    COLLISION_FLAG_CHASSIS    = 1 << 3,
-    COLLISION_FLAG_DEBRIS     = 1 << 4,
-    COLLISION_FLAG_SELECTABLE = 1 << 5,
-    COLLISION_FLAG_DUST       = 1 << 6,
-    COLLISION_FLAG_OIL        = 1 << 7,
-    COLLISION_FLAG_GLUE       = 1 << 8,
-    COLLISION_FLAG_DYNAMIC    = 1 << 9,
-    COLLISION_FLAG_PICKUP     = 1 << 10,
+    COLLISION_FLAG_TERRAIN    = 1 << 1,
+    COLLISION_FLAG_OBJECT     = 1 << 2,
+    COLLISION_FLAG_WHEEL      = 1 << 3,
+    COLLISION_FLAG_CHASSIS    = 1 << 4,
+    COLLISION_FLAG_DEBRIS     = 1 << 5,
+    COLLISION_FLAG_SELECTABLE = 1 << 6,
+    COLLISION_FLAG_DUST       = 1 << 7,
+    COLLISION_FLAG_OIL        = 1 << 8,
+    COLLISION_FLAG_GLUE       = 1 << 9,
+    COLLISION_FLAG_DYNAMIC    = 1 << 10,
+    COLLISION_FLAG_PICKUP     = 1 << 11,
 };
 
 enum

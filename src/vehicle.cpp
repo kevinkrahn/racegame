@@ -247,7 +247,8 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
     PxFilterData chassisSimFilterData(COLLISION_FLAG_CHASSIS,
             COLLISION_FLAG_CHASSIS |
             COLLISION_FLAG_TRACK |
-            COLLISION_FLAG_GROUND |
+            COLLISION_FLAG_OBJECT |
+            COLLISION_FLAG_TERRAIN |
             COLLISION_FLAG_DEBRIS |
             COLLISION_FLAG_PICKUP, 0, 0);
     PxFilterData chassisQryFilterData(COLLISION_FLAG_CHASSIS, 0, 0, UNDRIVABLE_SURFACE);
@@ -1489,7 +1490,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         targetOffset.x = clamp(targetOffset.x + random(scene->randomSeries, -1.f, 1.f), -4.5f, 4.5f);
         targetOffset.y = clamp(targetOffset.y + random(scene->randomSeries, -1.f, 1.f), -4.5f, 4.5f);
         offsetChangeTimer = 0.f;
-        offsetChangeInterval = random(scene->randomSeries, 5.f, 14.f);
+        offsetChangeInterval = random(scene->randomSeries, 6.f, 16.f);
     }
 
     const f32 maxSkippableDistance = 250.f;
@@ -1589,7 +1590,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         PxQueryFilterData filter;
         filter.flags |= PxQueryFlag::eANY_HIT;
         filter.flags |= PxQueryFlag::eSTATIC;
-        filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK, 0, 0, 0);
+        filter.data = PxFilterData(COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK, 0, 0, 0);
         PxHitFlags hitFlags(PxHitFlag::eMESH_BOTH_SIDES | PxHitFlag::eMESH_ANY);
         isHidden = true;
         for (u32 i=0; i<NUM_WHEELS; ++i)

@@ -43,8 +43,8 @@ void StaticMesh::onCreate(Scene* scene)
         collisionShape->setLocalPose(convert(transform));
         //collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, UNDRIVABLE_SURFACE));
         collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+                    COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
+        collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
         m.shape = collisionShape;
     }
 

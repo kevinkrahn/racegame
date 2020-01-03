@@ -215,6 +215,14 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     rw->add(this);
 }
 
+bool Terrain::isOffroadAt(f32 x, f32 y) const
+{
+    u32 ux = getCellX(x);
+    u32 uy = getCellX(y);
+    i32 width = (i32)((x2 - x1) / tileSize);
+    return (blend[uy * width + ux] & 0x00FF0000) > OFFROAD_THRESHOLD;
+}
+
 glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
 {
     x = clamp(x, 1u, width - 2);
@@ -297,7 +305,7 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     materialIndices.reset(new PxMaterialTableIndex[materialIndexCount]);
     for (u32 i=0; i<materialIndexCount; ++i)
     {
-        u32 threshold = 127;
+        u32 threshold = OFFROAD_THRESHOLD;
         u32 vertexIndex1 = indices[i * 3 + 0];
         u32 vertexIndex2 = indices[i * 3 + 1];
         u32 vertexIndex3 = indices[i * 3 + 2];
@@ -329,8 +337,8 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     {
         PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(triMesh), materials, ARRAY_SIZE(materials));
-        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_GROUND, DECAL_TERRAIN, 0, DRIVABLE_SURFACE));
-        shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+        shape->setQueryFilterData(PxFilterData(COLLISION_FLAG_TERRAIN, DECAL_TERRAIN, 0, DRIVABLE_SURFACE));
+        shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_TERRAIN, -1, 0, 0));
         shape->setFlag(PxShapeFlag::eVISUALIZATION, false);
     }
     triMesh->release();

@@ -116,6 +116,7 @@ public:
     bool isDebugOverlayEnabled = false;
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;
+    bool isMotionGridDebugVisualizationEnabled = false;
     bool isRaceInProgress = false;
     bool isPaused = false;
     bool isCameraTourEnabled = true;
@@ -125,6 +126,7 @@ public:
     PxMaterial* trackMaterial = nullptr;
     PxMaterial* offroadMaterial = nullptr;
     PxMaterial* genericMaterial = nullptr;
+    PxMaterial* railingMaterial = nullptr;
     SmokeParticles smoke;
     RibbonRenderable ribbons;
     DebugDraw debugDraw;
@@ -171,13 +173,13 @@ public:
     bool canGo() const { return readyToGo; }
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
-            PxRaycastBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK) const;
+            PxRaycastBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK) const;
     bool raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
     bool sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
-            PxSweepBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK) const;
+            PxSweepBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK) const;
     bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
             PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr,
-            u32 flags=COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS) const;
+            u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS) const;
 
     void addEntity(Entity* entity) { newEntities.push_back(std::unique_ptr<Entity>(entity)); }
     std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }

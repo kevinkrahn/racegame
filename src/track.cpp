@@ -1275,7 +1275,7 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
     for (auto& c : connections)
     {
         f32 totalLength = c->getLength();
-        f32 stepSize = 30.f;
+        f32 stepSize = 20.f;
         u32 totalSteps = glm::max(2u, (u32)(totalLength / stepSize));
         u32 startNodeIndex = nodeIndex;
         // TODO: distribute points more evenly
@@ -1505,11 +1505,11 @@ void Track::Railing::updateMesh()
         {
             collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(collisionMesh.getCollisionMesh()),
-                    *track->scene->trackMaterial);
+                    *track->scene->railingMaterial);
             collisionShape->setQueryFilterData(PxFilterData(
-                        COLLISION_FLAG_GROUND, DECAL_RAILING, 0, DRIVABLE_SURFACE));
+                        COLLISION_FLAG_OBJECT, DECAL_RAILING, 0, DRIVABLE_SURFACE));
             collisionShape->setSimulationFilterData(PxFilterData(
-                        COLLISION_FLAG_GROUND, -1, 0, 0));
+                        COLLISION_FLAG_OBJECT, -1, 0, 0));
         }
         else
         {

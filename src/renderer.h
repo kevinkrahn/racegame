@@ -120,7 +120,7 @@ class RenderWorld
     };
     std::vector<QueuedRenderable> renderables;
 
-    Buffer tempRenderBuffer = Buffer(megabytes(4), 32);
+    Buffer tempRenderBuffer = Buffer(megabytes(400), 32);
 
     Texture tex[MAX_VIEWPORTS];
 

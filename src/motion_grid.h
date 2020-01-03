@@ -12,30 +12,29 @@ public:
         NONE         = 0,
         BLOCKED      = 1 << 0,
         OFFROAD      = 1 << 1,
-        VEHICLE      = 1 << 2,
-        HAZARD       = 1 << 3,
-        TRACK        = 1 << 4,
+        TRACK        = 1 << 2,
+        VEHICLE      = 1 << 3,
+        HAZARD       = 1 << 4,
         PICKUP_MONEY = 1 << 5,
         PICKUP_ARMOR = 1 << 6,
     };
 
     struct CellContents
     {
-        f32 z = FLT_MAX;
-        CellType staticCellType = CellType::NONE;
-        CellType dynamicCellType = CellType::NONE;
+        f32 z;
+        CellType staticCellType;
+        CellType dynamicCellType;
     };
 
     struct Cell
     {
-        CellContents contents[4];
+        SmallVec<CellContents> contents;
     };
 
 private:
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     i32 width, height;
     static constexpr f32 CELL_SIZE = 2.f;
-    static constexpr f32 AGENT_COLLISION_RADIUS = 1.f;
 
     std::unique_ptr<Cell[]> grid;
 
@@ -53,4 +52,8 @@ public:
     void setDynamicCell(f32 x, f32 y, f32 z, CellType cellType)
     {
     }
+
+    CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
+
+    void debugDraw(class RenderWorld* rw);
 };

@@ -52,6 +52,8 @@ Scene::Scene(const char* name)
     sceneDesc.filterShader  = vehicleFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
     sceneDesc.simulationEventCallback = this;
+    sceneDesc.solverType = PxSolverType::eTGS;
+    sceneDesc.broadPhaseType = PxBroadPhaseType::eABP;
 
     physicsScene = g_game.physx.physics->createScene(sceneDesc);
 
@@ -67,6 +69,7 @@ Scene::Scene(const char* name)
     trackMaterial   = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.4f);
     offroadMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
     genericMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
+    railingMaterial = g_game.physx.physics->createMaterial(0.2f, 0.2f, 0.3f);
 
     if (!name)
     {
@@ -111,6 +114,8 @@ Scene::~Scene()
     vehicleMaterial->release();
     trackMaterial->release();
     offroadMaterial->release();
+    genericMaterial->release();
+    railingMaterial->release();
     if (backgroundSound)
     {
         g_audio.stopSound(backgroundSound);
@@ -152,7 +157,8 @@ void Scene::startRace()
             [](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
 
     numHumanDrivers = 0;
-    for (u32 i=0; i<createOrder.size(); ++i)
+    //for (u32 i=0; i<createOrder.size(); ++i)
+    for (u32 i=0; i<2; ++i)
     {
         OrderedDriver driverInfo = createOrder[i];
         if (driverInfo.driver->isPlayer)
@@ -468,6 +474,16 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     if (isTrackGraphDebugVisualizationEnabled)
     {
         trackGraph.debugDraw(&debugDraw, renderer);
+    }
+
+    if (g_input.isKeyPressed(KEY_F6))
+    {
+        isMotionGridDebugVisualizationEnabled = !isMotionGridDebugVisualizationEnabled;
+    }
+
+    if (isMotionGridDebugVisualizationEnabled)
+    {
+        motionGrid.debugDraw(rw);
     }
 
     if (g_input.isKeyPressed(KEY_F1))
@@ -815,7 +831,8 @@ bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRay
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
     filter.flags |= PxQueryFlag::eDYNAMIC;
-    filter.data = PxFilterData(COLLISION_FLAG_GROUND | COLLISION_FLAG_CHASSIS, 0, 0, 0);
+    filter.data = PxFilterData(
+            COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS, 0, 0, 0);
     if (hit)
     {
         return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);

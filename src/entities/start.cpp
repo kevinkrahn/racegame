@@ -25,7 +25,7 @@ void Start::onCreateEnd(Scene* scene)
     collisionShape->setQueryFilterData(PxFilterData(
                 COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
     collisionShape->setSimulationFilterData(PxFilterData(
-                COLLISION_FLAG_GROUND, -1, 0, 0));
+                COLLISION_FLAG_OBJECT, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
     finishLineDecal.setTexture(&g_res.textures->checkers);
     updateTransform(scene);

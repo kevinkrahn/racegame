@@ -34,7 +34,7 @@ public:
         PxRaycastBuffer hit;
         glm::vec3 down = convert(vehicle->getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
         if (!scene->raycastStatic(vehicle->getPosition(), down, 2.f, &hit,
-                    COLLISION_FLAG_GROUND | COLLISION_FLAG_TRACK))
+                    COLLISION_FLAG_TERRAIN | COLLISION_FLAG_TRACK))
         {
             g_audio.playSound(&g_res.sounds->nono, SoundType::GAME_SFX);
             return;

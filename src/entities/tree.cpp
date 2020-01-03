@@ -24,8 +24,8 @@ void Tree::onCreate(Scene* scene)
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
             PxTriangleMeshGeometry(meshTrunk->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->genericMaterial);
     collisionShape->setQueryFilterData(PxFilterData(
-                COLLISION_FLAG_GROUND | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
-    collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_GROUND, -1, 0, 0));
+                COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
+    collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
 }
 

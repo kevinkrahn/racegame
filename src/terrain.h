@@ -41,6 +41,8 @@ class Terrain : public Renderable, public Entity
         isCollisionMeshDirty = true;
     }
 
+    static constexpr u8 OFFROAD_THRESHOLD = 170;
+
 public:
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     f32 tileSize = 2.0f;
@@ -103,6 +105,8 @@ public:
     } surfaceMaterials[(u32)TerrainType::MAX];
 
     SurfaceMaterial const& getSurfaceMaterial() const { return surfaceMaterials[(u32)terrainType]; }
+
+    bool isOffroadAt(f32 x, f32 y) const;
 
     // entity
     void onCreate(class Scene* scene) override;
