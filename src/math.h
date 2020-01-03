@@ -145,6 +145,26 @@ inline bool pointInRectangle(glm::vec2 p, glm::vec2 v1, f32 width, f32 height)
     return p.x >= v1.x && p.y >= v1.y && p.x <= v2.x && p.y <= v2.y;
 }
 
+inline bool pointInTriangle(glm::vec2 s, glm::vec2 a, glm::vec2 b, glm::vec2 c)
+{
+    f32 as_x = s.x - a.x;
+    f32 as_y = s.y - a.y;
+
+    bool s_ab = (b.x - a.x) * as_y - (b.y - a.y) * as_x > 0;
+
+    if ((c.x - a.x) * as_y - (c.y - a.y) * as_x > 0 == s_ab)
+    {
+        return false;
+    }
+
+    if ((c.x - b.x) * (s.y - b.y) - (c.y - b.y) * (s.x - b.x) > 0 != s_ab)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 struct RandomSeries
 {
     u32 state = 1234;

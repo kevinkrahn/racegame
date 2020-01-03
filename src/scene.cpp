@@ -126,11 +126,14 @@ void Scene::startRace()
     }
     glm::mat4 const& start = this->start->transform;
 
-    track->buildTrackGraph(&trackGraph, start);
     const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
     i32 cameraIndex = 0;
+
+    track->buildTrackGraph(&trackGraph, start);
+    nodeMap.build(this);
+
     struct OrderedDriver
     {
         Driver* driver;
