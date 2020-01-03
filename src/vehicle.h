@@ -177,6 +177,7 @@ public:
     {
         return specialAbility && specialAbility->info.name == name;
     }
+    bool isDead() const { return deadTimer > 0.f; }
 
     void blowUp();
     void reset(glm::mat4 const& transform);

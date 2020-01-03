@@ -1222,7 +1222,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 }
             }
 
-            if (target)
+            if (target && !target->isDead())
             {
                 targetTimer += deltaTime;
                 if (targetTimer > (1.f - aggression) * 2.f)

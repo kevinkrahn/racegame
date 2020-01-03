@@ -2,7 +2,7 @@
 
 #include "math.h"
 #include "track_graph.h"
-#include "nodemap.h"
+#include "motion_grid.h"
 #include "entity.h"
 #include "ribbon.h"
 #include "smoke_particles.h"
@@ -94,7 +94,7 @@ private:
     bool readyToGo = false;
     u32 numHumanDrivers = 0;
     TrackGraph trackGraph;
-    NodeMap nodeMap;
+    MotionGrid motionGrid;
 
     bool allPlayersFinished = false;
     f32 finishTimer = 0.f;
@@ -166,7 +166,7 @@ public:
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
-    NodeMap const& getNodeMap() const { return nodeMap; }
+    MotionGrid const& getMotionGrid() const { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
     bool canGo() const { return readyToGo; }
 

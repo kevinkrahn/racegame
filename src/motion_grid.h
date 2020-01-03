@@ -4,7 +4,7 @@
 #include "smallvec.h"
 #include <vector>
 
-class NodeMap
+class MotionGrid
 {
 public:
     enum CellType : u8
@@ -40,7 +40,7 @@ private:
     std::unique_ptr<Cell[]> grid;
 
 public:
-    NodeMap()
+    MotionGrid()
     {
     }
 

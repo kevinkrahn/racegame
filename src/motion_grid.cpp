@@ -1,8 +1,8 @@
-#include "nodemap.h"
+#include "motion_grid.h"
 #include "scene.h"
 #include "collision_flags.h"
 
-void NodeMap::build(Scene* scene)
+void MotionGrid::build(Scene* scene)
 {
     f32 x1 = scene->terrain->x1;
     f32 y1 = scene->terrain->y1;

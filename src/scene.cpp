@@ -132,7 +132,7 @@ void Scene::startRace()
     i32 cameraIndex = 0;
 
     track->buildTrackGraph(&trackGraph, start);
-    nodeMap.build(this);
+    motionGrid.build(this);
 
     struct OrderedDriver
     {
