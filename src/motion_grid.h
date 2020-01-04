@@ -38,6 +38,25 @@ private:
 
     std::unique_ptr<Cell[]> grid;
 
+    u32 pathGeneration = 0;
+    struct CellPathInfo
+    {
+        u32 pathGeneration[8] = { 0 };
+    };
+    std::unique_ptr<CellPathInfo[]> pathFindingBuffer;
+
+    struct Node
+    {
+        i32 x;
+        i32 y;
+        i32 z;
+        f32 g = 0.f;
+        f32 h = 0.f;
+        f32 f = 0.f;
+        Node* parent = nullptr;
+    };
+    std::vector<Node*> open;
+
 public:
     MotionGrid()
     {
@@ -53,7 +72,7 @@ public:
     {
     }
 
-    std::vector<glm::vec3> findPath(glm::vec3 const& from, glm::vec3 const& to) const;
+    std::vector<glm::vec3> findPath(glm::vec3 const& from, glm::vec3 const& to);
 
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
 

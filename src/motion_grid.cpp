@@ -2,7 +2,7 @@
 #include "scene.h"
 #include "collision_flags.h"
 #include "mesh_renderables.h"
-#include <deque>
+#include "game.h"
 
 void MotionGrid::build(Scene* scene)
 {
@@ -19,6 +19,7 @@ void MotionGrid::build(Scene* scene)
     height = (i32)((this->y2 - this->y1) / CELL_SIZE);
 	i32 size = width * height;
     grid.reset(new Cell[size]);
+    pathFindingBuffer.reset(new CellPathInfo[size]);
 
     PxRaycastHit hitBuffer[8];
     PxRaycastBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
@@ -186,67 +187,47 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
     }
 }
 
-std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 const& to) const
+std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 const& to)
 {
     std::vector<glm::vec3> outPath;
 
-    struct Node
-    {
-        i32 x;
-        i32 y;
-        i32 z;
-        f32 g = 0.f;
-        f32 h = 0.f;
-        f32 f = 0.f;
-        i32 parentNodeIndex = -1;
-    };
-
-    Node startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), 0 };
+    Node* startNode = g_game.tempMem.bump<Node>();
+    *startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), 0 };
     Node endNode = { (i32)((to.x - x1) / CELL_SIZE), (i32)((to.y - y1) / CELL_SIZE), 0 };
 
-    if (grid[endNode.y * width + endNode.x].contents.empty())
-    {
-        return outPath;
-    }
+    open.clear();
+    open.push_back(startNode);
 
-    std::vector<Node> nodes;
-    nodes.push_back(std::move(startNode));
-
-    std::deque<i32> open = { 0 };
-    std::vector<i32> closed;
-
+    ++pathGeneration;
     u32 iterations = 0;
     while (!open.empty())
     {
-        i32 currentNodeIndex = open[0];
-        u32 currentOpenIndex = 0;
-        for (u32 i=1; i<open.size(); ++i)
+        auto currentNodeIt = open.begin();
+        for (auto it = open.begin()+1; it != open.end(); ++it)
         {
-            if (nodes[open[i]].f < nodes[currentNodeIndex].f)
+            if ((*it)->f < (*currentNodeIt)->f)
             {
-                currentNodeIndex = open[i];
-                currentOpenIndex = i;
+                currentNodeIt = it;
             }
         }
 
-        closed.push_back(currentNodeIndex);
-        open.erase(open.begin() + currentOpenIndex);
-
-        Node& currentNode = nodes[currentNodeIndex];
+        Node* currentNode = *currentNodeIt;
+        open.erase(currentNodeIt);
+        pathFindingBuffer[currentNode->y * width + currentNode->x].pathGeneration[currentNode->z] = pathGeneration;
 
         ++iterations;
-        if ((currentNode.x == endNode.x && currentNode.y == endNode.y && currentNode.z == endNode.z)
+        if ((currentNode->x == endNode.x && currentNode->y == endNode.y && currentNode->z == endNode.z)
                 || iterations > 1000)
         {
-            i32 current = currentNodeIndex;
-            while (current != -1)
+            Node* current = currentNode;
+            while (current)
             {
                 outPath.push_back({
-                    x1 + nodes[current].x * CELL_SIZE,
-                    y1 + nodes[current].y * CELL_SIZE,
-                    grid[nodes[current].y * width + nodes[current].x].contents[nodes[current].z].z
+                    x1 + current->x * CELL_SIZE,
+                    y1 + current->y * CELL_SIZE,
+                    grid[current->y * width + current->x].contents[current->z].z
                 });
-                current = nodes[current].parentNodeIndex;
+                current = current->parent;
             }
             std::reverse(outPath.begin(), outPath.end());
             return outPath;
@@ -264,8 +245,8 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
         };
         for (auto& offset : offsets)
         {
-            i32 tx = currentNode.x + offset.x;
-            i32 ty = currentNode.y + offset.y;
+            i32 tx = currentNode->x + offset.x;
+            i32 ty = currentNode->y + offset.y;
             i32 tz = 0;
 
             if (tx < 0 || tx >= width || ty < 0 || ty >= height)
@@ -278,7 +259,7 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
             for (u32 i=0; i<contents.size(); ++i)
             {
                 CellContents& cell = contents[i];
-                if (glm::abs(cell.z - grid[currentNode.y * width + currentNode.x].contents[currentNode.z].z) < 10.f)
+                if (glm::abs(cell.z - grid[currentNode->y * width + currentNode->x].contents[currentNode->z].z) < 10.f)
                 {
                     if (cell.staticCellType > CellType::BLOCKED)
                     {
@@ -294,18 +275,7 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
                 continue;
             }
 
-            bool isOnClosed = false;
-            for (i32 closedNodeIndex : closed)
-            {
-                Node& n = nodes[closedNodeIndex];
-                if (n.x == tx && n.y == ty && n.z == tz)
-                {
-                    isOnClosed = true;
-                    break;
-                }
-            }
-
-            if (isOnClosed)
+            if (pathFindingBuffer[ty * width + tx].pathGeneration[tz] == pathGeneration)
             {
                 continue;
             }
@@ -313,11 +283,11 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
             Node newNode = {
                 tx, ty, tz,
                 0.f, 0.f, 0.f,
-                currentNodeIndex,
+                currentNode,
             };
-            newNode.g = currentNode.g + glm::distance(
+            newNode.g = currentNode->g + glm::distance(
                     glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE),
-                    glm::vec2(x1 + currentNode.x * CELL_SIZE, y1 + currentNode.y * CELL_SIZE));
+                    glm::vec2(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE));
             /*
             if (targetCell->staticCellType == CellType::OFFROAD)
             {
@@ -329,10 +299,9 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
             newNode.f = newNode.g + newNode.h;
 
             bool isOnOpen = false;
-            for (i32 openNodeIndex : open)
+            for (Node* openNode : open)
             {
-                Node& n = nodes[openNodeIndex];
-                if (n.x == tx && n.y == ty && n.z == tz && newNode.g > n.g)
+                if (openNode->x == tx && openNode->y == ty && openNode->z == tz && newNode.g > openNode->g)
                 {
                     isOnOpen = true;
                     break;
@@ -344,8 +313,9 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
                 continue;
             }
 
-            nodes.push_back(newNode);
-            open.push_back(nodes.size() - 1);
+            Node* node = g_game.tempMem.bump<Node>();
+            *node = newNode;
+            open.push_back(node);
         }
     }
 

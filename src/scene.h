@@ -168,7 +168,7 @@ public:
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph const& getTrackGraph() const { return trackGraph; }
-    MotionGrid const& getMotionGrid() const { return motionGrid; }
+    MotionGrid& getMotionGrid() { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
     bool canGo() const { return readyToGo; }
 
