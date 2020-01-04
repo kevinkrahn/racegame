@@ -1123,6 +1123,46 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
                     PxForceMode::eVELOCITY_CHANGE);
         }
+
+        // test path finding
+        static std::vector<glm::vec3> myPath;
+        static glm::vec3 start;
+        static glm::vec3 end;
+        static bool hasPath = false;
+        if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
+        {
+            Camera const& cam = rw->getCamera(0);
+            glm::vec2 mousePos = g_input.getMousePosition();
+            glm::vec3 rayDir = screenToWorldRay(mousePos,
+                    glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
+            PxRaycastBuffer hit;
+            if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+            {
+                glm::vec3 hitPoint = convert(hit.block.position);
+                start = currentPosition;
+                end = hitPoint;
+                myPath = scene->getMotionGrid().findPath(currentPosition, hitPoint);
+                hasPath = true;
+            }
+        }
+
+        if (hasPath)
+        {
+            Mesh* sphere = g_res.getMesh("world.Sphere");
+            /*
+            rw->push(LitRenderable(sphere,
+                        glm::translate(glm::mat4(1.f), start + glm::vec3(0, 0, 1)), nullptr, glm::vec3(0, 1, 0)));
+            rw->push(LitRenderable(sphere,
+                        glm::translate(glm::mat4(1.f), end + glm::vec3(0, 0, 1)), nullptr, glm::vec3(1, 0, 0)));
+                        */
+            for (auto& p : myPath)
+            {
+                rw->push(LitRenderable(sphere,
+                            glm::translate(glm::mat4(1.f), p + glm::vec3(0, 0, 1))
+                                * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)),
+                            nullptr, glm::vec3(1, 1, 0)));
+            }
+        }
     }
     else if (scene->getTrackGraph().getPaths().size() > 0)
     {

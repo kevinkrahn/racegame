@@ -53,6 +53,8 @@ public:
     {
     }
 
+    std::vector<glm::vec3> findPath(glm::vec3 const& from, glm::vec3 const& to) const;
+
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
 
     void debugDraw(class RenderWorld* rw);

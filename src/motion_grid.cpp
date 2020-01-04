@@ -2,6 +2,7 @@
 #include "scene.h"
 #include "collision_flags.h"
 #include "mesh_renderables.h"
+#include <deque>
 
 void MotionGrid::build(Scene* scene)
 {
@@ -183,4 +184,170 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
             }
         }
     }
+}
+
+std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 const& to) const
+{
+    std::vector<glm::vec3> outPath;
+
+    struct Node
+    {
+        i32 x;
+        i32 y;
+        i32 z;
+        f32 g = 0.f;
+        f32 h = 0.f;
+        f32 f = 0.f;
+        i32 parentNodeIndex = -1;
+    };
+
+    Node startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), 0 };
+    Node endNode = { (i32)((to.x - x1) / CELL_SIZE), (i32)((to.y - y1) / CELL_SIZE), 0 };
+
+    if (grid[endNode.y * width + endNode.x].contents.empty())
+    {
+        return outPath;
+    }
+
+    std::vector<Node> nodes;
+    nodes.push_back(std::move(startNode));
+
+    std::deque<i32> open = { 0 };
+    std::vector<i32> closed;
+
+    u32 iterations = 0;
+    while (!open.empty())
+    {
+        i32 currentNodeIndex = open[0];
+        u32 currentOpenIndex = 0;
+        for (u32 i=1; i<open.size(); ++i)
+        {
+            if (nodes[open[i]].f < nodes[currentNodeIndex].f)
+            {
+                currentNodeIndex = open[i];
+                currentOpenIndex = i;
+            }
+        }
+
+        closed.push_back(currentNodeIndex);
+        open.erase(open.begin() + currentOpenIndex);
+
+        Node& currentNode = nodes[currentNodeIndex];
+
+        ++iterations;
+        if ((currentNode.x == endNode.x && currentNode.y == endNode.y && currentNode.z == endNode.z)
+                || iterations > 1000)
+        {
+            i32 current = currentNodeIndex;
+            while (current != -1)
+            {
+                outPath.push_back({
+                    x1 + nodes[current].x * CELL_SIZE,
+                    y1 + nodes[current].y * CELL_SIZE,
+                    grid[nodes[current].y * width + nodes[current].x].contents[nodes[current].z].z
+                });
+                current = nodes[current].parentNodeIndex;
+            }
+            std::reverse(outPath.begin(), outPath.end());
+            return outPath;
+        }
+
+        glm::ivec2 offsets[] = {
+            { 0, -1 },
+            { 0, 1 },
+            { -1, 0 },
+            { 1, 0 },
+            { -1, -1 },
+            { -1, 1 },
+            { 1, -1 },
+            { 1, 1 },
+        };
+        for (auto& offset : offsets)
+        {
+            i32 tx = currentNode.x + offset.x;
+            i32 ty = currentNode.y + offset.y;
+            i32 tz = 0;
+
+            if (tx < 0 || tx >= width || ty < 0 || ty >= height)
+            {
+                continue;
+            }
+
+            CellContents* targetCell = nullptr;
+            auto& contents = grid[ty * width + tx].contents;
+            for (u32 i=0; i<contents.size(); ++i)
+            {
+                CellContents& cell = contents[i];
+                if (glm::abs(cell.z - grid[currentNode.y * width + currentNode.x].contents[currentNode.z].z) < 10.f)
+                {
+                    if (cell.staticCellType > CellType::BLOCKED)
+                    {
+                        targetCell = &cell;
+                        tz = (i32)i;
+                        break;
+                    }
+                }
+            }
+
+            if (!targetCell)
+            {
+                continue;
+            }
+
+            bool isOnClosed = false;
+            for (i32 closedNodeIndex : closed)
+            {
+                Node& n = nodes[closedNodeIndex];
+                if (n.x == tx && n.y == ty && n.z == tz)
+                {
+                    isOnClosed = true;
+                    break;
+                }
+            }
+
+            if (isOnClosed)
+            {
+                continue;
+            }
+
+            Node newNode = {
+                tx, ty, tz,
+                0.f, 0.f, 0.f,
+                currentNodeIndex,
+            };
+            newNode.g = currentNode.g + glm::distance(
+                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE),
+                    glm::vec2(x1 + currentNode.x * CELL_SIZE, y1 + currentNode.y * CELL_SIZE));
+            /*
+            if (targetCell->staticCellType == CellType::OFFROAD)
+            {
+                newNode.g += 1000.f;
+            }
+            */
+            newNode.h = glm::distance2(
+                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE), glm::vec2(to));
+            newNode.f = newNode.g + newNode.h;
+
+            bool isOnOpen = false;
+            for (i32 openNodeIndex : open)
+            {
+                Node& n = nodes[openNodeIndex];
+                if (n.x == tx && n.y == ty && n.z == tz && newNode.g > n.g)
+                {
+                    isOnOpen = true;
+                    break;
+                }
+            }
+
+            if (isOnOpen)
+            {
+                continue;
+            }
+
+            nodes.push_back(newNode);
+            open.push_back(nodes.size() - 1);
+        }
+    }
+
+    return outPath;
 }
