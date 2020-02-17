@@ -31,6 +31,12 @@ public:
         SmallVec<CellContents> contents;
     };
 
+    struct PathNode
+    {
+        glm::vec3 p;
+        f32 f, g, h;
+    };
+
 private:
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     i32 width, height;
@@ -64,15 +70,11 @@ public:
 
     void build(class Scene* scene);
 
-    void setStaticCell(f32 x, f32 y, f32 z, CellType cellType)
+    void setCell(glm::vec3 const&, CellType cellType)
     {
     }
 
-    void setDynamicCell(f32 x, f32 y, f32 z, CellType cellType)
-    {
-    }
-
-    std::vector<glm::vec3> findPath(glm::vec3 const& from, glm::vec3 const& to);
+    std::vector<PathNode> findPath(glm::vec3 const& from, glm::vec3 const& to);
 
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
 

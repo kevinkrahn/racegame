@@ -187,9 +187,9 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
     }
 }
 
-std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 const& to)
+std::vector<MotionGrid::PathNode> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 const& to)
 {
-    std::vector<glm::vec3> outPath;
+    std::vector<PathNode> outPath;
 
     Node* startNode = g_game.tempMem.bump<Node>();
     *startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), 0 };
@@ -197,6 +197,8 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
 
     open.clear();
     open.push_back(startNode);
+
+    const u32 MAX_ITERATIONS = 1000;
 
     ++pathGeneration;
     u32 iterations = 0;
@@ -217,15 +219,32 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
 
         ++iterations;
         if ((currentNode->x == endNode.x && currentNode->y == endNode.y && currentNode->z == endNode.z)
-                || iterations > 1000)
+                || iterations > MAX_ITERATIONS)
         {
+            // if we have hit max iterations, then get as close to the goal as possible
+            if (iterations > MAX_ITERATIONS)
+            {
+                currentNodeIt = open.begin();
+                for (auto it = open.begin()+1; it != open.end(); ++it)
+                {
+                    if ((*it)->h < (*currentNodeIt)->h)
+                    {
+                        currentNodeIt = it;
+                    }
+                }
+            }
             Node* current = currentNode;
             while (current)
             {
-                outPath.push_back({
-                    x1 + current->x * CELL_SIZE,
-                    y1 + current->y * CELL_SIZE,
-                    grid[current->y * width + current->x].contents[current->z].z
+                outPath.push_back(PathNode{
+                    {
+                        x1 + current->x * CELL_SIZE,
+                        y1 + current->y * CELL_SIZE,
+                        grid[current->y * width + current->x].contents[current->z].z
+                    },
+                    current->f,
+                    current->g,
+                    current->h
                 });
                 current = current->parent;
             }
@@ -285,17 +304,18 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
                 0.f, 0.f, 0.f,
                 currentNode,
             };
-            newNode.g = currentNode->g + glm::distance(
-                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE),
-                    glm::vec2(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE));
-            /*
+            f32 costMultiplier = 1.f;
             if (targetCell->staticCellType == CellType::OFFROAD)
             {
-                newNode.g += 1000.f;
+                costMultiplier = 2.f;
             }
-            */
-            newNode.h = glm::distance2(
-                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE), glm::vec2(to));
+            newNode.g = currentNode->g + glm::distance(
+                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE),
+                    glm::vec2(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE))
+                * costMultiplier;
+            newNode.h = glm::distance(
+                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE), glm::vec2(to))
+                * 1.5f;
             newNode.f = newNode.g + newNode.h;
 
             bool isOnOpen = false;
@@ -308,14 +328,12 @@ std::vector<glm::vec3> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 con
                 }
             }
 
-            if (isOnOpen)
+            if (!isOnOpen)
             {
-                continue;
+                Node* node = g_game.tempMem.bump<Node>();
+                *node = newNode;
+                open.push_back(node);
             }
-
-            Node* node = g_game.tempMem.bump<Node>();
-            *node = newNode;
-            open.push_back(node);
         }
     }
 

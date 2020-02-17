@@ -255,14 +255,14 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
                     glm::vec4(1.f, 0.6f, 0.f, 1.f), glm::vec4(1.f, 0.6f, 0.f, 1.f));
         }
 
+#if 0
         glm::vec4 p = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
             glm::vec4(c.position + glm::vec3(0, 0, 1) * f32(i % 2) * 2.f, 1.f);
         p.x = (((p.x / p.w) + 1.f) / 2.f) * g_game.windowWidth;
         p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * g_game.windowHeight;
-#if 0
         renderer->push2D(TextRenderable(
                     &g_res.getFont("font", 23),
-                    str(std::fixed, std::setw(1), c.t), { p.x, p.y },
+                    tstr(std::fixed, std::setprecision(1), c.t), { p.x, p.y },
                     glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
 #endif
     }

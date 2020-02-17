@@ -102,9 +102,12 @@ void Menu::mainMenu()
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-        //Scene* scene = g_game.changeScene("tracks/track1.dat");
+#if 1
+        Scene* scene = g_game.changeScene("tracks/track5.dat");
+#else
         Scene* scene = g_game.changeScene(
                 championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);
+#endif
         scene->startRace();
         menuMode = HIDDEN;
     }

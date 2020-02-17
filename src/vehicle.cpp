@@ -1125,7 +1125,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 
         // test path finding
-        static std::vector<glm::vec3> myPath;
+        static std::vector<MotionGrid::PathNode> myPath;
         static glm::vec3 start;
         static glm::vec3 end;
         static bool hasPath = false;
@@ -1155,12 +1155,21 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             rw->push(LitRenderable(sphere,
                         glm::translate(glm::mat4(1.f), end + glm::vec3(0, 0, 1)), nullptr, glm::vec3(1, 0, 0)));
                         */
+            Font* font = &g_res.getFont("font", 18);
             for (auto& p : myPath)
             {
                 rw->push(LitRenderable(sphere,
-                            glm::translate(glm::mat4(1.f), p + glm::vec3(0, 0, 1))
+                            glm::translate(glm::mat4(1.f), p.p + glm::vec3(0, 0, 1))
                                 * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)),
                             nullptr, glm::vec3(1, 1, 0)));
+
+                glm::vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
+                    glm::vec4(p.p + glm::vec3(0, 0, 1), 1.f);
+                tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * g_game.windowWidth;
+                tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * g_game.windowHeight;
+                g_game.renderer->push2D(TextRenderable(font,
+                    tstr(std::fixed, std::setprecision(1), p.g, ", ", p.h), { tp.x, tp.y },
+                    glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
             }
         }
     }
