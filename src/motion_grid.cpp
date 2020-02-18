@@ -40,6 +40,7 @@ void MotionGrid::build(Scene* scene)
 
     u32 count = 0;
     u32 hitCount = 0;
+    u32 highestLayerCount = 0;
     for (i32 x = 0; x<width; ++x)
     {
         for (i32 y = 0; y<height; ++y)
@@ -66,6 +67,7 @@ void MotionGrid::build(Scene* scene)
                         ++hitCount;
                     }
                 }
+                highestLayerCount = glm::max(grid[y * width + x].contents.size(), highestLayerCount);
             }
 
             if (scene->terrain->isOffroadAt(rx, ry))
@@ -136,6 +138,7 @@ void MotionGrid::build(Scene* scene)
     */
 
     print("Built motion grid: ", count, " (", hitCount, ")\n");
+    print("Num layers: ", highestLayerCount, '\n');
 }
 
 MotionGrid::CellType MotionGrid::getCellBleed(i32 x, i32 y, f32 z, CellType cellType)
@@ -187,18 +190,39 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
     }
 }
 
-std::vector<MotionGrid::PathNode> MotionGrid::findPath(glm::vec3 const& from, glm::vec3 const& to)
+i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
 {
-    std::vector<PathNode> outPath;
+    i32 x = (i32)((p.x - x1) / CELL_SIZE);
+    i32 y = (i32)((p.y - y1) / CELL_SIZE);
+    auto& contents = grid[y * width + x].contents;
+    for (u32 i=0; i<contents.size(); ++i)
+    {
+        CellContents& cell = contents[i];
+        if (glm::abs(cell.z - p.z) < 4.f)
+        {
+            return (i32)i;
+        }
+    }
+    return 0;
+}
+
+void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>& outPath)
+{
+    outPath.clear();
+
+    from.x = clamp(from.x, x1, x2);
+    from.y = clamp(from.y, y1, y2);
+    to.x = clamp(to.x, x1, x2);
+    to.y = clamp(to.y, y1, y2);
 
     Node* startNode = g_game.tempMem.bump<Node>();
-    *startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), 0 };
-    Node endNode = { (i32)((to.x - x1) / CELL_SIZE), (i32)((to.y - y1) / CELL_SIZE), 0 };
+    *startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), getCellLayerIndex(from) };
+    Node endNode = { (i32)((to.x - x1) / CELL_SIZE), (i32)((to.y - y1) / CELL_SIZE), getCellLayerIndex(to) };
 
     open.clear();
     open.push_back(startNode);
 
-    const u32 MAX_ITERATIONS = 1000;
+    const u32 MAX_ITERATIONS = 700;
 
     ++pathGeneration;
     u32 iterations = 0;
@@ -249,7 +273,7 @@ std::vector<MotionGrid::PathNode> MotionGrid::findPath(glm::vec3 const& from, gl
                 current = current->parent;
             }
             std::reverse(outPath.begin(), outPath.end());
-            return outPath;
+            return;
         }
 
         glm::ivec2 offsets[] = {
@@ -278,7 +302,11 @@ std::vector<MotionGrid::PathNode> MotionGrid::findPath(glm::vec3 const& from, gl
             for (u32 i=0; i<contents.size(); ++i)
             {
                 CellContents& cell = contents[i];
-                if (glm::abs(cell.z - grid[currentNode->y * width + currentNode->x].contents[currentNode->z].z) < 10.f)
+                if (grid[currentNode->y * width + currentNode->x].contents.empty())
+                {
+                    break;
+                }
+                if (glm::abs(cell.z - grid[currentNode->y * width + currentNode->x].contents[currentNode->z].z) < 4.f)
                 {
                     if (cell.staticCellType > CellType::BLOCKED)
                     {
@@ -336,6 +364,4 @@ std::vector<MotionGrid::PathNode> MotionGrid::findPath(glm::vec3 const& from, gl
             }
         }
     }
-
-    return outPath;
 }

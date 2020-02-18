@@ -30,6 +30,8 @@ void Glue::onCreateEnd(Scene* scene)
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
 
+    scene->getMotionGrid().setCell(position, MotionGrid::CellType::HAZARD, true);
+
     updateTransform(scene);
 }
 

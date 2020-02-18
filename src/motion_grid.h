@@ -70,11 +70,37 @@ public:
 
     void build(class Scene* scene);
 
-    void setCell(glm::vec3 const&, CellType cellType)
+    void setCell(glm::vec3 const& p, CellType cellType, bool permanent=false)
     {
+        i32 x = (i32)((p.x - x1) / CELL_SIZE);
+        i32 y = (i32)((p.y - y1) / CELL_SIZE);
+        i32 z = 0;
+        auto& contents = grid[y * width + x].contents;
+        for (u32 i=0; i<contents.size(); ++i)
+        {
+            CellContents& cell = contents[i];
+            if (glm::abs(cell.z - p.z) < 4.f)
+            {
+                z = (i32)i;
+                break;
+            }
+        }
+        if (grid[y * width + x].contents[z].staticCellType != CellType::BLOCKED)
+        {
+            if (permanent)
+            {
+                grid[y * width + x].contents[z].staticCellType = cellType;
+            }
+            else
+            {
+                grid[y * width + x].contents[z].dynamicCellType = cellType;
+            }
+        }
     }
 
-    std::vector<PathNode> findPath(glm::vec3 const& from, glm::vec3 const& to);
+    i32 getCellLayerIndex(glm::vec3 const& p) const;
+
+    void findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>& outPath);
 
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
 

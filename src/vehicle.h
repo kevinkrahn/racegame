@@ -89,6 +89,7 @@ public:
 	f32 savedAirTime = 0.f;
 	f32 airBonusGracePeriod = 0.f;
 	u32 totalAirBonuses = 0;
+    std::vector<MotionGrid::PathNode> motionPath;
 
     // ai
     glm::vec3 targetOffset = glm::vec3(0);

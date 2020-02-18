@@ -939,6 +939,30 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             wheelTransforms, *driver->getVehicleConfig(), this, isBraking);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
+
+    // visualize path finding
+    if (motionPath.size() > 0)
+    {
+        Mesh* sphere = g_res.getMesh("world.Sphere");
+        //Font* font = &g_res.getFont("font", 18);
+        for (auto& p : motionPath)
+        {
+            rw->push(LitRenderable(sphere,
+                        glm::translate(glm::mat4(1.f), p.p + glm::vec3(0, 0, 1))
+                            * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)),
+                        nullptr, glm::vec3(1, 1, 0)));
+
+            /*
+            glm::vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
+                glm::vec4(p.p + glm::vec3(0, 0, 1), 1.f);
+            tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * g_game.windowWidth;
+            tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * g_game.windowHeight;
+            g_game.renderer->push2D(TextRenderable(font,
+                tstr(std::fixed, std::setprecision(1), p.g, ", ", p.h), { tp.x, tp.y },
+                glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
+            */
+        }
+    }
 }
 
 void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
@@ -1124,11 +1148,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     PxForceMode::eVELOCITY_CHANGE);
         }
 
+#if 0
         // test path finding
-        static std::vector<MotionGrid::PathNode> myPath;
-        static glm::vec3 start;
-        static glm::vec3 end;
-        static bool hasPath = false;
         if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
         {
             Camera const& cam = rw->getCamera(0);
@@ -1139,39 +1160,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
             {
                 glm::vec3 hitPoint = convert(hit.block.position);
-                start = currentPosition;
-                end = hitPoint;
-                myPath = scene->getMotionGrid().findPath(currentPosition, hitPoint);
-                hasPath = true;
+                scene->getMotionGrid().findPath(currentPosition, hitPoint, motionPath);
             }
         }
-
-        if (hasPath)
-        {
-            Mesh* sphere = g_res.getMesh("world.Sphere");
-            /*
-            rw->push(LitRenderable(sphere,
-                        glm::translate(glm::mat4(1.f), start + glm::vec3(0, 0, 1)), nullptr, glm::vec3(0, 1, 0)));
-            rw->push(LitRenderable(sphere,
-                        glm::translate(glm::mat4(1.f), end + glm::vec3(0, 0, 1)), nullptr, glm::vec3(1, 0, 0)));
-                        */
-            Font* font = &g_res.getFont("font", 18);
-            for (auto& p : myPath)
-            {
-                rw->push(LitRenderable(sphere,
-                            glm::translate(glm::mat4(1.f), p.p + glm::vec3(0, 0, 1))
-                                * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)),
-                            nullptr, glm::vec3(1, 1, 0)));
-
-                glm::vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
-                    glm::vec4(p.p + glm::vec3(0, 0, 1), 1.f);
-                tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * g_game.windowWidth;
-                tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * g_game.windowHeight;
-                g_game.renderer->push2D(TextRenderable(font,
-                    tstr(std::fixed, std::setprecision(1), p.g, ", ", p.h), { tp.x, tp.y },
-                    glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
-            }
-        }
+#endif
     }
     else if (scene->getTrackGraph().getPaths().size() > 0)
     {
@@ -1184,7 +1176,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             if ((*currentPath)[i] == graphResult.lastNode)
             {
-                targetPointIndex = (u32)i + 1;
+                targetPointIndex = (u32)i + 2;
                 if (targetPointIndex >= (u32)currentPath->size())
                 {
                     targetPointIndex = 0;
@@ -1205,7 +1197,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     if (path[i] == graphResult.lastNode)
                     {
                         currentPath = &path;
-                        targetPointIndex = (u32)i + 1;
+                        targetPointIndex = (u32)i + 2;
                         if (targetPointIndex >= (u32)currentPath->size())
                         {
                             targetPointIndex = 0;
@@ -1229,14 +1221,29 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
         TrackGraph::Node* nextPathNode = (*currentPath)[targetPointIndex];
         glm::vec3 previousP = (*currentPath)[previousIndex]->position;
-        glm::vec2 dir = glm::normalize(
-                glm::vec2(nextPathNode->position) - glm::vec2(previousP));
+        glm::vec2 diff = glm::vec2(nextPathNode->position) - glm::vec2(previousP);
+        glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(1.f, 0.f);
         glm::vec3 targetP = nextPathNode->position -
             glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
         glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
+
+        // motion planning
+        accel = 1.f;
+        brake = 0.f;
+
+        if (!target)
+        {
+            scene->getMotionGrid().findPath(currentPosition, targetP, motionPath);
+            if (motionPath.size() > 2)
+            {
+                glm::vec3 to = motionPath[2].p;
+                dirToTargetP = glm::normalize(glm::vec2(motionPath[0].p - to));
+            }
+        }
+
         steer = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
 
-#if 0
+#if 1
         rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
                     glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
 #endif
@@ -1285,8 +1292,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                         f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.4f;
                         steer = clamp(targetSteerAngle, -0.5f, 0.5f);
                     }
+                    else
+                    {
+                        targetTimer = 0.f;
+                        target = nullptr;
+                    }
                 }
-                if (targetTimer > 6.f)
+                if (targetTimer > 3.f + aggression)
                 {
                     targetTimer = 0.f;
                     target = nullptr;
@@ -1295,6 +1307,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             else
             {
                 targetTimer = 0.f;
+                target = nullptr;
             }
         }
 
@@ -1324,14 +1337,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             */
         }
 
+        // obsolete raycast avoidance
+#if 0
         f32 forwardTestDist = 14.f;
         f32 sideTestDist = 9.f;
         f32 testAngle = 0.65f;
         glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
         glm::vec3 testDir2(glm::rotate(glm::mat4(1.f), -testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
-
-        accel = 1.f;
-        brake = 0.f;
 
         // TODO: make AI racers that are ahead of the player driver slower
         /*
@@ -1381,6 +1393,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
         }
 
+#endif
         if (canGo)
         {
             backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
