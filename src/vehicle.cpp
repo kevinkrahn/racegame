@@ -12,6 +12,8 @@
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>
 
+const f32 camDistance = 80.f;
+
 const u32 QUERY_HITS_PER_WHEEL = 8;
 
 PxF32 steerVsForwardSpeedData[2*8] =
@@ -413,6 +415,15 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
     engine.mDampingRateFullThrottle = tuning.engineDampingFullThrottle;
     engine.mDampingRateZeroThrottleClutchEngaged = tuning.engineDampingZeroThrottleClutchEngaged;
     engine.mDampingRateZeroThrottleClutchDisengaged = tuning.engineDampingZeroThrottleClutchDisengaged;
+
+#if 1
+    if (driver->isPlayer)
+    {
+        engine.mPeakTorque += 1400.f;
+        engine.mMaxOmega += 300.f;
+    }
+#endif
+
     driveSimData.setEngineData(engine);
 
     PxVehicleGearsData gears;
@@ -479,7 +490,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
         Driver* driver, VehicleTuning&& tuning, PxMaterial* vehicleMaterial, const PxMaterial** surfaceMaterials,
         u32 vehicleIndex, i32 cameraIndex)
 {
-    this->cameraTarget = translationOf(transform);
+    this->cameraTarget = translationOf(transform) - camDistance * 0.5f;
     this->cameraFrom = cameraTarget;
     this->startTransform = transform;
     this->targetOffset = startOffset;
@@ -720,6 +731,10 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
 bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
 {
     PxSweepBuffer hit;
+    return scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit,
+            getRigidBody(), COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBJECT);
+    /*
+    PxSweepBuffer hit;
     if (!scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit, getRigidBody()))
     {
         return false;
@@ -740,6 +755,7 @@ bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
     }
 
     return false;
+    */
 }
 
 void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
@@ -977,10 +993,9 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     cameraTarget = smoothMove(cameraTarget,
             pos + glm::vec3(glm::normalize(glm::vec2(getForwardVector())), 0.f) * getForwardSpeed() * 0.3f,
             5.f, deltaTime);
-    f32 camDistance = 80.f;
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
     cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 25.f, 200.f);
+    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 23.f, 250.f);
 #endif
 }
 
@@ -1148,7 +1163,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     PxForceMode::eVELOCITY_CHANGE);
         }
 
-#if 0
+#if 1
         // test path finding
         if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
         {
@@ -1160,7 +1175,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
             {
                 glm::vec3 hitPoint = convert(hit.block.position);
-                scene->getMotionGrid().findPath(currentPosition, hitPoint, motionPath);
+                glm::vec3 forwardVector = getForwardVector();
+                bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
+                        forwardVector, 20.f);
+                scene->getMotionGrid().findPath(currentPosition, hitPoint, isSomethingBlockingMe,
+                        forwardVector, motionPath);
             }
         }
 #endif
@@ -1233,7 +1252,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
         if (!target)
         {
-            scene->getMotionGrid().findPath(currentPosition, targetP, motionPath);
+            glm::vec3 forwardVector = getForwardVector();
+            bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
+                    forwardVector, 20.f);
+            scene->getMotionGrid().findPath(currentPosition, targetP, isSomethingBlockingMe,
+                    forwardVector, motionPath);
             if (motionPath.size() > 2)
             {
                 glm::vec3 to = motionPath[2].p;
@@ -1252,6 +1275,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 ai.aggression);
 
         // get behind target
+#if 0
         if (!isInAir && aggression > 0.f)
         {
             if (!target && frontWeapons.size() > 0
@@ -1310,6 +1334,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 target = nullptr;
             }
         }
+#endif
 
         // fear
         if (ai.fear > 0.f)
@@ -1989,7 +2014,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
     previousVelocity = convert(getRigidBody()->getLinearVelocity());
 }
-
 
 void Vehicle::shakeScreen(f32 intensity)
 {

@@ -156,9 +156,15 @@ void Scene::startRace()
     std::sort(createOrder.begin(), createOrder.end(),
             [](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
 
+#if 1
+    if (createOrder.size() > 2)
+    {
+        createOrder.resize(2);
+    }
+#endif
+
     numHumanDrivers = 0;
-    //for (u32 i=0; i<createOrder.size(); ++i)
-    for (u32 i=0; i<2; ++i)
+    for (u32 i=0; i<createOrder.size(); ++i)
     {
         OrderedDriver driverInfo = createOrder[i];
         if (driverInfo.driver->isPlayer)

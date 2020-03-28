@@ -7,6 +7,8 @@
 class MotionGrid
 {
 public:
+    static constexpr f32 CELL_SIZE = 2.f;
+
     enum CellType : u8
     {
         NONE         = 0,
@@ -24,6 +26,7 @@ public:
         f32 z;
         CellType staticCellType;
         CellType dynamicCellType;
+        u32 generation;
     };
 
     struct Cell
@@ -40,7 +43,6 @@ public:
 private:
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     i32 width, height;
-    static constexpr f32 CELL_SIZE = 2.f;
 
     std::unique_ptr<Cell[]> grid;
 
@@ -70,37 +72,13 @@ public:
 
     void build(class Scene* scene);
 
-    void setCell(glm::vec3 const& p, CellType cellType, bool permanent=false)
-    {
-        i32 x = (i32)((p.x - x1) / CELL_SIZE);
-        i32 y = (i32)((p.y - y1) / CELL_SIZE);
-        i32 z = 0;
-        auto& contents = grid[y * width + x].contents;
-        for (u32 i=0; i<contents.size(); ++i)
-        {
-            CellContents& cell = contents[i];
-            if (glm::abs(cell.z - p.z) < 4.f)
-            {
-                z = (i32)i;
-                break;
-            }
-        }
-        if (grid[y * width + x].contents[z].staticCellType != CellType::BLOCKED)
-        {
-            if (permanent)
-            {
-                grid[y * width + x].contents[z].staticCellType = cellType;
-            }
-            else
-            {
-                grid[y * width + x].contents[z].dynamicCellType = cellType;
-            }
-        }
-    }
+    void setCell(glm::vec3 p, CellType cellType, bool permanent=false);
+    void setCells(glm::vec3 p, f32 radius, CellType cellType, bool permanent=false);
 
     i32 getCellLayerIndex(glm::vec3 const& p) const;
 
-    void findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>& outPath);
+    void findPath(glm::vec3& from, glm::vec3& to, bool isBlockedAhead, glm::vec2 forward,
+            std::vector<PathNode>& outPath);
 
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
 

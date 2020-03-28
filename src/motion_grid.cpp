@@ -36,7 +36,7 @@ void MotionGrid::build(Scene* scene)
     PxQueryFilterData overlapFilter;
     overlapFilter.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eANY_HIT;
     overlapFilter.data = PxFilterData(COLLISION_FLAG_OBJECT, 0, 0, 0);
-    const f32 overlapRadius = 2.f;
+    const f32 overlapRadius = 4.f;
 
     u32 count = 0;
     u32 hitCount = 0;
@@ -63,7 +63,7 @@ void MotionGrid::build(Scene* scene)
                                 PxTransform(PxVec3(rx, ry, hit.touches[i].position.z + overlapRadius), PxIdentity),
                                 overlapHit, overlapFilter);
                         grid[y * width + x].contents.push_back({
-                                hit.touches[i].position.z, obstructed ? CellType::BLOCKED : CellType::TRACK });
+                                hit.touches[i].position.z, obstructed ? CellType::BLOCKED : CellType::TRACK, CellType::NONE });
                         ++hitCount;
                     }
                 }
@@ -100,63 +100,95 @@ void MotionGrid::build(Scene* scene)
         }
     }
 
-    /*
-    struct CellAdjustment
-    {
-        i32 index;
-        u8 layerIndex;
-        CellType cellType;
-    };
-    std::vector<CellAdjustment> cellAdjustments;
-    cellAdjustments.reserve(1000);
-    for (i32 x = 0; x<width; ++x)
-    {
-        for (i32 y = 0; y<width; ++y)
-        {
-            auto& contents = grid[y * width + x].contents;
-            for (u32 layer = 0; layer < contents.size(); ++layer)
-            {
-                f32 z = contents[layer].z;
-                CellType cellType = contents[layer].staticCellType;
-                cellType = getCellBleed(x + 1, y, z, cellType);
-                cellType = getCellBleed(x - 1, y, z, cellType);
-                cellType = getCellBleed(x, y + 1, z, cellType);
-                cellType = getCellBleed(x, y - 1, z, cellType);
-                cellType = getCellBleed(x + 1, y + 1, z, cellType);
-                cellType = getCellBleed(x + 1, y - 1, z, cellType);
-                cellType = getCellBleed(x - 1, y + 1, z, cellType);
-                cellType = getCellBleed(x - 1, y - 1, z, cellType);
-                cellAdjustments.push_back({ y * width + x, (u8)layer, cellType });
-            }
-        }
-    }
-
-    for (auto& c : cellAdjustments)
-    {
-        grid[c.index].contents[c.layerIndex].staticCellType = c.cellType;
-    }
-    */
-
     print("Built motion grid: ", count, " (", hitCount, ")\n");
     print("Num layers: ", highestLayerCount, '\n');
 }
 
-MotionGrid::CellType MotionGrid::getCellBleed(i32 x, i32 y, f32 z, CellType cellType)
+void MotionGrid::setCell(glm::vec3 p, CellType cellType, bool permanent)
 {
-    for (auto& layer : grid[y * width + x].contents)
+    p.x = clamp(p.x, x1, x2);
+    p.y = clamp(p.y, y1, y2);
+
+    i32 x = (i32)((p.x - x1) / CELL_SIZE);
+    i32 y = (i32)((p.y - y1) / CELL_SIZE);
+    i32 z = -1;
+    auto& contents = grid[y * width + x].contents;
+    for (u32 i=0; i<contents.size(); ++i)
     {
-        if (glm::abs(z - layer.z) < 10.f)
+        CellContents& cell = contents[i];
+        if (glm::abs(cell.z - p.z) < 4.f)
         {
-            CellType otherCellType = layer.staticCellType;
-            return otherCellType < cellType ? otherCellType : cellType;
+            z = (i32)i;
+            break;
         }
     }
-    return CellType::BLOCKED;
+    if (z == -1)
+    {
+        return;
+    }
+    if (grid[y * width + x].contents[z].staticCellType != CellType::BLOCKED)
+    {
+        if (permanent)
+        {
+            grid[y * width + x].contents[z].staticCellType = cellType;
+        }
+        else
+        {
+            grid[y * width + x].contents[z].dynamicCellType = cellType;
+            grid[y * width + x].contents[z].generation = (u32)g_game.frameCount;
+        }
+    }
+}
+
+void MotionGrid::setCells(glm::vec3 p, f32 radius, CellType cellType, bool permanent)
+{
+    p.x = clamp(p.x, x1, x2);
+    p.y = clamp(p.y, y1, y2);
+    glm::vec3 v1(p.x - radius, p.y - radius, p.z);
+    glm::vec3 v2(p.x + radius, p.y + radius, p.z);
+    i32 v1x = (i32)((v1.x - x1) / CELL_SIZE);
+    i32 v1y = (i32)((v1.y - y1) / CELL_SIZE);
+    i32 v2x = (i32)((v2.x - x1) / CELL_SIZE);
+    i32 v2y = (i32)((v2.y - y1) / CELL_SIZE);
+    for (i32 x = v1x; x <= v2x; ++x)
+    {
+        for (i32 y = v1y; y <= v2y; ++y)
+        {
+            i32 z = -1;
+            auto& contents = grid[y * width + x].contents;
+            for (u32 i=0; i<contents.size(); ++i)
+            {
+                CellContents& cell = contents[i];
+                if (glm::abs(cell.z - p.z) < 4.f)
+                {
+                    z = (i32)i;
+                    break;
+                }
+            }
+            if (z == -1)
+            {
+                continue;
+            }
+            if (grid[y * width + x].contents[z].staticCellType != CellType::BLOCKED)
+            {
+                if (permanent)
+                {
+                    grid[y * width + x].contents[z].staticCellType = cellType;
+                }
+                else
+                {
+                    grid[y * width + x].contents[z].dynamicCellType = cellType;
+                    grid[y * width + x].contents[z].generation = (u32)g_game.frameCount;
+                }
+            }
+        }
+    }
 }
 
 void MotionGrid::debugDraw(class RenderWorld* rw)
 {
     Mesh* mesh = g_res.getMesh("world.Sphere");
+    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
     for (i32 x = 0; x<width; ++x)
     {
         for (i32 y = 0; y<height; ++y)
@@ -166,23 +198,48 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
 
             for (auto& cell : grid[y * width + x].contents)
             {
-                if (cell.staticCellType != CellType::NONE)
+                auto cellType = cell.staticCellType;
+                if (cellType != CellType::NONE)
                 {
                     glm::vec3 color;
-                    if (cell.staticCellType == CellType::TRACK)
+                    if (cellType == CellType::TRACK)
                     {
                         color = glm::vec3(0, 1, 0);
                     }
-                    else if (cell.staticCellType == CellType::OFFROAD)
+                    else if (cellType == CellType::OFFROAD)
                     {
                         color = glm::vec3(0, 0, 1);
                     }
-                    else if (cell.staticCellType == CellType::BLOCKED)
+                    else if (cellType == CellType::BLOCKED)
                     {
                         color = glm::vec3(1, 0, 0);
                     }
 
                     rw->push(LitRenderable(mesh, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, cell.z)),
+                                nullptr, color));
+                }
+                cellType = cell.dynamicCellType;
+                if (cellType != CellType::NONE && cell.generation == (u32)g_game.frameCount)
+                {
+                    glm::vec3 color;
+                    if (cellType == CellType::VEHICLE)
+                    {
+                        color = glm::vec3(0, 1, 1);
+                    }
+                    else if (cellType == CellType::TRACK)
+                    {
+                        color = glm::vec3(0, 1, 0);
+                    }
+                    else if (cellType == CellType::OFFROAD)
+                    {
+                        color = glm::vec3(0, 0, 1);
+                    }
+                    else if (cellType == CellType::BLOCKED)
+                    {
+                        color = glm::vec3(1, 0, 0);
+                    }
+
+                    rw->push(LitRenderable(mesh, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, cell.z+4.f)) * scale,
                                 nullptr, color));
                 }
             }
@@ -206,7 +263,8 @@ i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
     return 0;
 }
 
-void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>& outPath)
+void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::vec2 forward,
+        std::vector<PathNode>& outPath)
 {
     outPath.clear();
 
@@ -223,6 +281,7 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>&
     open.push_back(startNode);
 
     const u32 MAX_ITERATIONS = 700;
+    u32 gen = (u32)g_game.frameCount;
 
     ++pathGeneration;
     u32 iterations = 0;
@@ -302,13 +361,18 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>&
             for (u32 i=0; i<contents.size(); ++i)
             {
                 CellContents& cell = contents[i];
+                if (cell.generation != gen)
+                {
+                    cell.dynamicCellType = CellType::NONE;
+                }
                 if (grid[currentNode->y * width + currentNode->x].contents.empty())
                 {
                     break;
                 }
                 if (glm::abs(cell.z - grid[currentNode->y * width + currentNode->x].contents[currentNode->z].z) < 4.f)
                 {
-                    if (cell.staticCellType > CellType::BLOCKED)
+                    if (cell.staticCellType > CellType::BLOCKED &&
+                        cell.dynamicCellType != CellType::BLOCKED)
                     {
                         targetCell = &cell;
                         tz = (i32)i;
@@ -337,13 +401,16 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, std::vector<PathNode>&
             {
                 costMultiplier = 2.f;
             }
-            newNode.g = currentNode->g + glm::distance(
-                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE),
-                    glm::vec2(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE))
-                * costMultiplier;
-            newNode.h = glm::distance(
-                    glm::vec2(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE), glm::vec2(to))
-                * 1.5f;
+            glm::vec2 currentCellWorldPosition(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE);
+            glm::vec2 targetCellWorldPosition(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE);
+            glm::vec2 diff = targetCellWorldPosition - currentCellWorldPosition;
+            f32 length = glm::length(diff);
+            if (isBlocking && glm::dot(diff / length, forward) > 0.8f)
+            {
+                costMultiplier = 4.f;
+            }
+            newNode.g = currentNode->g + length * costMultiplier;
+            newNode.h = glm::distance(targetCellWorldPosition, glm::vec2(to)) * 1.5f;
             newNode.f = newNode.g + newNode.h;
 
             bool isOnOpen = false;
