@@ -4,6 +4,9 @@
 #include "mesh_renderables.h"
 #include "game.h"
 
+constexpr f32 D = 1.f;
+constexpr f32 D2 = 1.41421356f * D;
+
 void MotionGrid::build(Scene* scene)
 {
     f32 x1 = scene->terrain->x1;
@@ -263,6 +266,13 @@ i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
     return 0;
 }
 
+static f32 octileDistance(i32 x1, i32 y1, i32 x2, i32 y2)
+{
+    f32 dx = abs(x1 - x2);
+    f32 dy = abs(y1 - y2);
+    return D * (dx + dy) + (D2 - 2 * D) * glm::min(dx, dy);
+}
+
 void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::vec2 forward,
         std::vector<PathNode>& outPath)
 {
@@ -345,8 +355,10 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
             { 1, -1 },
             { 1, 1 },
         };
-        for (auto& offset : offsets)
+        f32 costs[] = { D, D, D, D, D2, D2, D2, D2 };
+        for (u32 i=0; i<ARRAY_SIZE(offsets); ++i)
         {
+            auto offset = offsets[i];
             i32 tx = currentNode->x + offset.x;
             i32 ty = currentNode->y + offset.y;
             i32 tz = 0;
@@ -399,18 +411,18 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
             f32 costMultiplier = 1.f;
             if (targetCell->staticCellType == CellType::OFFROAD)
             {
-                costMultiplier = 2.f;
+                costMultiplier = 1.75f;
             }
             glm::vec2 currentCellWorldPosition(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE);
             glm::vec2 targetCellWorldPosition(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE);
             glm::vec2 diff = targetCellWorldPosition - currentCellWorldPosition;
             f32 length = glm::length(diff);
-            if (isBlocking && glm::dot(diff / length, forward) > 0.8f)
+            if (isBlocking && length < 20.f && glm::dot(diff / length, forward) > 0.85f)
             {
-                costMultiplier = 4.f;
+                costMultiplier = 3.f;
             }
-            newNode.g = currentNode->g + length * costMultiplier;
-            newNode.h = glm::distance(targetCellWorldPosition, glm::vec2(to)) * 1.5f;
+            newNode.g = currentNode->g + costs[i] * costMultiplier;
+            newNode.h = octileDistance(currentNode->x, currentNode->y, endNode.x, endNode.y) * 1.001f;
             newNode.f = newNode.g + newNode.h;
 
             bool isOnOpen = false;
