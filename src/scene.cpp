@@ -157,9 +157,10 @@ void Scene::startRace()
             [](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
 
 #if 1
-    if (createOrder.size() > 2)
+    u32 numVehicles = 2;
+    if (createOrder.size() > numVehicles)
     {
-        createOrder.resize(2);
+        createOrder.resize(numVehicles);
     }
 #endif
 

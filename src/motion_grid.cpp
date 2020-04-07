@@ -191,6 +191,22 @@ void MotionGrid::setCells(glm::vec3 p, f32 radius, CellType cellType, bool perma
 void MotionGrid::debugDraw(class RenderWorld* rw)
 {
     Mesh* mesh = g_res.getMesh("world.Sphere");
+#if DEBUG_INFO
+    for (auto& node : debugInfo)
+    {
+        f32 rx = x1 + node.x * CELL_SIZE;
+        f32 ry = y1 + node.y * CELL_SIZE;
+        glm::vec3 color(0.f, 0.f, 1.f);
+        f32 rz = grid[node.y * width + node.x].contents[node.z].z;
+        if (node.isBlocked)
+        {
+            rz += 2.f;
+            color = glm::vec3(1.f, 0.f, 0.f);
+        }
+        rw->push(LitRenderable(mesh, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, rz)),
+                    nullptr, color));
+    }
+#else
     glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
     for (i32 x = 0; x<width; ++x)
     {
@@ -248,6 +264,7 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
             }
         }
     }
+#endif
 }
 
 i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
@@ -283,14 +300,19 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
     to.x = clamp(to.x, x1, x2);
     to.y = clamp(to.y, y1, y2);
 
+    // TODO: if the start or end cell is blocked, search the area for a valid cell
     Node* startNode = g_game.tempMem.bump<Node>();
     *startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), getCellLayerIndex(from) };
     Node endNode = { (i32)((to.x - x1) / CELL_SIZE), (i32)((to.y - y1) / CELL_SIZE), getCellLayerIndex(to) };
 
+#if DEBUG_INFO
+    debugInfo.clear();
+#endif
+
     open.clear();
     open.push_back(startNode);
 
-    const u32 MAX_ITERATIONS = 700;
+    const u32 MAX_ITERATIONS = 800;
     u32 gen = (u32)g_game.frameCount;
 
     ++pathGeneration;
@@ -307,6 +329,11 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
         }
 
         Node* currentNode = *currentNodeIt;
+
+#if DEBUG_INFO
+        debugInfo.push_back(*currentNode);
+#endif
+
         open.erase(currentNodeIt);
         pathFindingBuffer[currentNode->y * width + currentNode->x].pathGeneration[currentNode->z] = pathGeneration;
 
@@ -415,14 +442,19 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
             }
             glm::vec2 currentCellWorldPosition(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE);
             glm::vec2 targetCellWorldPosition(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE);
-            glm::vec2 diff = targetCellWorldPosition - currentCellWorldPosition;
+            glm::vec2 diff = targetCellWorldPosition - glm::vec2(from);
             f32 length = glm::length(diff);
-            if (isBlocking && length < 20.f && glm::dot(diff / length, forward) > 0.85f)
+            if (isBlocking && length < 20.f && glm::dot(diff / length, forward) > 0.9f)
             {
                 costMultiplier = 3.f;
+#if DEBUG_INFO
+                Node debugInfoNode = newNode;
+                debugInfoNode.isBlocked = true;
+                debugInfo.push_back(debugInfoNode);
+#endif
             }
             newNode.g = currentNode->g + costs[i] * costMultiplier;
-            newNode.h = octileDistance(currentNode->x, currentNode->y, endNode.x, endNode.y) * 1.001f;
+            newNode.h = octileDistance(currentNode->x, currentNode->y, endNode.x, endNode.y) * 1.05f;
             newNode.f = newNode.g + newNode.h;
 
             bool isOnOpen = false;

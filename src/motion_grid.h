@@ -4,6 +4,8 @@
 #include "smallvec.h"
 #include <vector>
 
+#define DEBUG_INFO 0
+
 class MotionGrid
 {
 public:
@@ -62,8 +64,15 @@ private:
         f32 h = 0.f;
         f32 f = 0.f;
         Node* parent = nullptr;
+#if DEBUG_INFO
+        bool isBlocked = false;
+#endif
     };
     std::vector<Node*> open;
+
+#if DEBUG_INFO
+    std::vector<Node> debugInfo;
+#endif
 
 public:
     MotionGrid()
