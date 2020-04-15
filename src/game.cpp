@@ -8,6 +8,9 @@
 #include "audio.h"
 #include "gui.h"
 #include "weapon.h"
+#include <imgui/imgui.h>
+#include <imgui/examples/imgui_impl_sdl.h>
+#include <imgui/examples/imgui_impl_opengl3.h>
 #include <chrono>
 #include <iostream>
 
@@ -133,6 +136,25 @@ void Game::run()
     renderer.reset(new Renderer());
     renderer->init();
 
+    // init Dear ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGui::StyleColorsDark();
+    ImGui_ImplSDL2_InitForOpenGL(window, context);
+    ImGui_ImplOpenGL3_Init("#version 130");
+    io.Fonts->AddFontFromFileTTF("font.ttf", 16.f);
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowBorderSize = 1.f;
+    style.FrameBorderSize = 0.f;
+    style.PopupBorderSize = 1.f;
+    style.WindowRounding = 2.f;
+    style.FrameRounding = 2.f;
+    style.TabRounding = 6.f;
+    style.Colors[2] = { 0.02f, 0.02f, 0.02f, 0.92f };
+
     g_input.init(window);
     g_audio.init();
     initPhysX();
@@ -152,6 +174,7 @@ void Game::run()
         while (SDL_PollEvent(&event) != 0)
         {
             g_input.handleEvent(event);
+            ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
             {
                 shouldExit = true;
@@ -188,6 +211,13 @@ void Game::run()
             currentScene->onStart();
         }
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame(window);
+        ImGui::NewFrame();
+        static bool showDemoWindow = true;
+        ImGui::ShowDemoWindow(&showDemoWindow);
+        ImGui::Render();
+
         g_gui.beginFrame();
         currentScene->onUpdate(renderer.get(), deltaTime);
         menu.onUpdate(renderer.get(), deltaTime);
@@ -198,6 +228,9 @@ void Game::run()
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;
         ++frameCount;
+
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        SDL_GL_SwapWindow(g_game.window);
 
         using seconds = std::chrono::duration<f64, std::ratio<1>>;
         if (!config.graphics.vsync)
@@ -221,6 +254,13 @@ void Game::run()
     }
 
     g_audio.close();
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
+    SDL_GL_DeleteContext(context);
+    SDL_DestroyWindow(window);
     SDL_Quit();
 }
 

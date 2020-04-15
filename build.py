@@ -88,6 +88,17 @@ def fetch_dependencies():
         if fetch('https://www.libsdl.org/release/SDL2-devel-2.0.9-VC.zip', 'sdl2'):
             os.rename(os.path.join('external/sdl2/include'), 'external/sdl2/SDL2')
 
+    # Dear ImGui
+    if fetch('https://github.com/ocornut/imgui.git', 'imgui'):
+        fixfilename = 'external/imgui/examples/imgui_impl_sdl.cpp'
+        f = open(fixfilename, 'r')
+        cpp = f.read()
+        f.close()
+        newcpp = cpp.replace("#include <SDL.h>", "#include <SDL2/SDL.h>")
+        f = open(fixfilename, 'w')
+        f.write(newcpp)
+        f.close()
+
 
 def build_assets(force):
     timestampCacheFilename = os.path.join('build', 'asset_timestamps')

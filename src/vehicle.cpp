@@ -1574,8 +1574,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     offsetChangeTimer += deltaTime;
     if (offsetChangeTimer > offsetChangeInterval)
     {
-        targetOffset.x = clamp(targetOffset.x + random(scene->randomSeries, -1.f, 1.f), -4.5f, 4.5f);
-        targetOffset.y = clamp(targetOffset.y + random(scene->randomSeries, -1.f, 1.f), -4.5f, 4.5f);
+        //targetOffset.x = clamp(targetOffset.x + random(scene->randomSeries, -1.f, 1.f), -4.5f, 4.5f);
+        //targetOffset.y = clamp(targetOffset.y + random(scene->randomSeries, -1.f, 1.f), -4.5f, 4.5f);
+        targetOffset.x = random(scene->randomSeries, -2.5f, 2.5f);
+        targetOffset.y = random(scene->randomSeries, -2.5f, 2.5f);
         offsetChangeTimer = 0.f;
         offsetChangeInterval = random(scene->randomSeries, 6.f, 16.f);
     }

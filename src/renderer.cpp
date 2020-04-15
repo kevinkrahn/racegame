@@ -372,8 +372,6 @@ void Renderer::render(f32 deltaTime)
 	glPopDebugGroup();
 	glPopDebugGroup();
 
-    SDL_GL_SwapWindow(g_game.window);
-
     renderables2D.clear();
     renderWorlds.clear();
 }

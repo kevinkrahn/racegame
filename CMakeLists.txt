@@ -11,12 +11,13 @@ include_directories(
     external/physx/physx/include
     external/physx/pxshared/include
     external/stb
+    external/imgui
 )
 if(WIN32)
     link_directories(game external/sdl2/lib/x64/)
 endif()
 project(game)
-add_executable(game src/main.cpp src/vorbis_decode.cpp external/glad/glad.c)
+add_executable(game src/main.cpp src/vorbis_decode.cpp src/imgui.cpp external/glad/glad.c)
 target_compile_definitions(game PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>")
 if(UNIX)
     target_link_libraries(game general SDL2 GL dl pthread)
