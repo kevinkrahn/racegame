@@ -126,7 +126,7 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
 void TextRenderable::on2DPass(Renderer* renderer)
 {
     char* str = (char*)text;
-    glm::vec2 p = glm::vec2(glm::floor(pos.x), glm::floor(pos.y));
+    glm::vec2 p = pos;
     f32 startX = p.x;
 
     if (halign != HorizontalAlign::LEFT)
@@ -186,10 +186,14 @@ void TextRenderable::on2DPass(Renderer* renderer)
 
         auto &g = font->glyphs[(u32)(*str - font->startingChar)];
 
-        f32 x0 = p.x + g.xOff * scale;
-        f32 y0 = p.y + g.yOff * scale;
-        f32 x1 = x0 + g.width * scale;
-        f32 y1 = y0 + g.height * scale;
+        f32 x0 = glm::floor(p.x + g.xOff * scale);
+        f32 y0 = glm::floor(p.y + g.yOff * scale);
+        //f32 x1 = glm::floor(x0 + (g.x1 - g.x0) * font->textureAtlas.width * scale);
+        //f32 y1 = glm::floor(y0 + (g.y1 - g.y0) * font->textureAtlas.height * scale);
+        //f32 x1 = x0 + g.width * scale;
+        //f32 y1 = y0 + g.height * scale;
+        f32 x1 = glm::floor(x0 + g.width * scale);
+        f32 y1 = glm::floor(y0 + g.height * scale);
 
         struct QuadPoint
         {
