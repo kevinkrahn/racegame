@@ -23,12 +23,14 @@ struct RaceBonus
     u32 amount;
 };
 
-const u32 ATTACK_BONUS_AMOUNT = 110;
-const u32 LAPPING_BONUS_AMOUNT = 300;
-const u32 PICKUP_BONUS_AMOUNT = 150;
-const u32 AIR_BONUS_AMOUNT = 200;
-const u32 BIG_AIR_BONUS_AMOUNT = 350;
-const u32 VICTIM_BONUS_AMOUNT = 400;
+enum Bonuses {
+    ATTACK_BONUS_AMOUNT = 110,
+    LAPPING_BONUS_AMOUNT = 300,
+    PICKUP_BONUS_AMOUNT = 150,
+    AIR_BONUS_AMOUNT = 200,
+    BIG_AIR_BONUS_AMOUNT = 350,
+    VICTIM_BONUS_AMOUNT = 400,
+};
 
 struct RaceStatistics
 {
@@ -80,7 +82,6 @@ private:
     std::vector<u32> placements;
     std::vector<RaceResult> raceResults;
 
-    bool debugCamera = false;
     glm::vec3 debugCameraPosition;
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
@@ -112,11 +113,16 @@ private:
 public:
     std::string name;
     std::string filename;
+    std::string notes;
 
+    bool isImGuiDemoWindowOpen = false;
+    bool isImGuiMetricsWindowOpen = false;
+    bool isDebugCameraEnabled = false;
     bool isDebugOverlayEnabled = false;
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isMotionGridDebugVisualizationEnabled = false;
+
     bool isRaceInProgress = false;
     bool isPaused = false;
     bool isCameraTourEnabled = true;

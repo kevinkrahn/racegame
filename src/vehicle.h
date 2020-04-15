@@ -202,6 +202,7 @@ public:
         hitPoints = this->tuning.maxHitPoints;
         addNotification("FIXUP!", 2.f, glm::vec3(1.f));
     }
+    void showDebugInfo();
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

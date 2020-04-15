@@ -53,6 +53,12 @@ public:
     bool shouldExit = false;
     bool isEditing = false;
 
+    f32 recentHighestDeltaTime = FLT_MIN;
+    f32 allTimeHighestDeltaTime = FLT_MIN;
+    f32 allTimeLowestDeltaTime = FLT_MAX;
+    f32 averageDeltaTime = 0.f;
+    f32 deltaTimeHistory[300] = { 0 };
+
     SDL_Window* window = nullptr;
     std::unique_ptr<class Scene> currentScene;
     std::unique_ptr<class Scene> nextScene;

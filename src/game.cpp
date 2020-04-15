@@ -8,7 +8,7 @@
 #include "audio.h"
 #include "gui.h"
 #include "weapon.h"
-#include <imgui/imgui.h>
+#include "imgui.h"
 #include <imgui/examples/imgui_impl_sdl.h>
 #include <imgui/examples/imgui_impl_opengl3.h>
 #include <chrono>
@@ -214,14 +214,12 @@ void Game::run()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
-        static bool showDemoWindow = true;
-        ImGui::ShowDemoWindow(&showDemoWindow);
-        ImGui::Render();
 
         g_gui.beginFrame();
         currentScene->onUpdate(renderer.get(), deltaTime);
         menu.onUpdate(renderer.get(), deltaTime);
         g_gui.endFrame();
+        ImGui::Render();
         renderer->render(deltaTime);
         currentScene->onEndUpdate();
         g_input.onFrameEnd();
@@ -251,6 +249,29 @@ void Game::run()
         realDeltaTime = (f32)delta;
         deltaTime = (f32)(delta * timeDilation);
         currentTime += delta * timeDilation;
+
+        if (realDeltaTime > allTimeHighestDeltaTime)
+        {
+            allTimeHighestDeltaTime = realDeltaTime;
+        }
+        if (realDeltaTime < allTimeLowestDeltaTime)
+        {
+            allTimeLowestDeltaTime = realDeltaTime;
+        }
+        recentHighestDeltaTime = FLT_MIN;
+        averageDeltaTime = 0.f;
+        for (u32 i=0; i<ARRAY_SIZE(deltaTimeHistory)-1; ++i)
+        {
+            deltaTimeHistory[i] = deltaTimeHistory[i+1];
+            averageDeltaTime += deltaTimeHistory[i];
+            if (deltaTimeHistory[i] > recentHighestDeltaTime)
+            {
+                recentHighestDeltaTime = deltaTimeHistory[i];
+            }
+        }
+        deltaTimeHistory[ARRAY_SIZE(deltaTimeHistory)-1] = realDeltaTime;
+        averageDeltaTime += realDeltaTime;
+        averageDeltaTime /= ARRAY_SIZE(deltaTimeHistory);
     }
 
     g_audio.close();

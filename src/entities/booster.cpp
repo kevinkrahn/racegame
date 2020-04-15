@@ -2,9 +2,9 @@
 #include "../renderer.h"
 #include "../scene.h"
 #include "../game.h"
-#include "../gui.h"
 #include "../vehicle.h"
 #include "../billboard.h"
+#include "../imgui.h"
 
 Booster::Booster()
 {
@@ -105,5 +105,5 @@ void Booster::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 
 void Booster::showDetails(Scene* scene)
 {
-    g_gui.toggle("Backwards", this->backwards);
+    ImGui::Checkbox("Backwards", &this->backwards);
 }

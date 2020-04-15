@@ -7,7 +7,7 @@
 #include "terrain.h"
 #include "mesh_renderables.h"
 #include "track.h"
-#include "gui.h"
+#include "imgui.h"
 
 struct EntityItem
 {
@@ -59,221 +59,33 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         return;
     }
 
+    bool isMouseClickHandled = ImGui::GetIO().WantCaptureMouse;
+    bool isKeyboardHandled = ImGui::GetIO().WantCaptureKeyboard;
+
     Texture* white = &g_res.textures->white;
     EditMode previousEditMode = editMode;
 
-    if (g_input.isKeyPressed(KEY_TAB))
+    if (isKeyboardHandled && g_input.isKeyPressed(KEY_TAB))
     {
         editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
     }
 
-    g_gui.beginPanel("Track Editor", { 0.f, 0.f },
-            0.f, true, false, false, 28, 4, 180);
-
-    g_gui.label("Track Name", false);
-    g_gui.textEdit("Name", scene->name);
-
-    g_gui.beginSelect("Edit Mode", (i32*)&editMode, true);
-    g_gui.option("Terrain", (i32)EditMode::TERRAIN, &g_res.textures->icon_terrain);
-    g_gui.option("Track", (i32)EditMode::TRACK, &g_res.textures->icon_track);
-    g_gui.option("Decoration", (i32)EditMode::DECORATION, &g_res.textures->icon_decoration);
-    g_gui.end();
-
-    if (editMode == EditMode::TERRAIN)
+    ImGui::Begin("Editor");
+    if (ImGui::Button("New"))
     {
-        g_gui.beginSelect("Terrain Type", (i32*)&scene->terrain->terrainType);
-        for (i32 i=0; i<(i32)ARRAY_SIZE(scene->terrain->surfaceMaterials); ++i)
+        g_game.changeScene(nullptr);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load"))
+    {
+        std::string filename = chooseFile("tracks/track1.dat", true);
+        if (!filename.empty())
         {
-            g_gui.option(scene->terrain->surfaceMaterials[i].name, i);
-        }
-        g_gui.end();
-
-        g_gui.beginSelect("Terrain Tool", (i32*)&terrainTool);
-        g_gui.option("Raise / Lower", (i32)TerrainTool::RAISE, &g_res.textures->icon_terrain);
-        g_gui.option("Perturb", (i32)TerrainTool::PERTURB, &g_res.textures->icon_terrain);
-        g_gui.option("Flatten", (i32)TerrainTool::FLATTEN, &g_res.textures->icon_terrain);
-        g_gui.option("Smooth", (i32)TerrainTool::SMOOTH, &g_res.textures->icon_terrain);
-        g_gui.option("Erode", (i32)TerrainTool::ERODE, &g_res.textures->icon_terrain);
-        g_gui.option("Match Track", (i32)TerrainTool::MATCH_TRACK, &g_res.textures->icon_terrain);
-        g_gui.option("Paint", (i32)TerrainTool::PAINT, &g_res.textures->icon_terrain);
-        g_gui.option("Resize", (i32)TerrainTool::RESIZE, &g_res.textures->icon_terrain);
-        g_gui.end();
-
-        if ((i32)terrainTool < (i32)TerrainTool::RESIZE)
-        {
-            g_gui.label("Brush Settings", false);
-            g_gui.slider("Brush Radius", 2.f, 40.f, brushRadius);
-            g_gui.slider("Brush Falloff", 0.2f, 10.f, brushFalloff);
-            g_gui.slider("Brush Strength", -30.f, 30.f, brushStrength);
-        }
-
-        if (terrainTool == TerrainTool::PAINT)
-        {
-            auto& m = scene->terrain->getSurfaceMaterial();
-            g_gui.beginSelect("Paint Material", &paintMaterialIndex);
-            g_gui.option(m.textureNames[0], 0);
-            g_gui.option(m.textureNames[1], 1);
-            g_gui.option(m.textureNames[2], 2);
-            g_gui.option(m.textureNames[3], 3);
-            g_gui.end();
-        }
-
-        // TODO: make a better terrain resize tool
-        if (terrainTool == TerrainTool::RESIZE)
-        {
-            Terrain* t = scene->terrain;
-            f32 s = t->tileSize * 4.f;
-            if (g_gui.button("X1+"))
-            {
-                t->resize(t->x1 + s, t->y1, t->x2, t->y2, true);
-            }
-            if (g_gui.button("X1-"))
-            {
-                t->resize(t->x1 - s, t->y1, t->x2, t->y2, true);
-            }
-            if (g_gui.button("Y1+"))
-            {
-                t->resize(t->x1, t->y1 + s, t->x2, t->y2, true);
-            }
-            if (g_gui.button("Y1-"))
-            {
-                t->resize(t->x1, t->y1 - s, t->x2, t->y2, true);
-            }
-            if (g_gui.button("X2+"))
-            {
-                t->resize(t->x1, t->y1, t->x2 + s, t->y2, true);
-            }
-            if (g_gui.button("X2-"))
-            {
-                t->resize(t->x1, t->y1, t->x2 - s, t->y2, true);
-            }
-            if (g_gui.button("Y2+"))
-            {
-                t->resize(t->x1, t->y1, t->x2, t->y2 + s, true);
-            }
-            if (g_gui.button("Y2-"))
-            {
-                t->resize(t->x1, t->y1, t->x2, t->y2 - s, true);
-            }
+            g_game.changeScene(filename.c_str());
         }
     }
-    else if (editMode == EditMode::TRACK)
-    {
-        g_gui.label("Grid Settings", false);
-        g_gui.toggle("Show Grid", gridSettings.show);
-        g_gui.toggle("Snap to Grid", gridSettings.snap);
-
-        g_gui.label("Operations", false);
-        if (g_gui.button("Connect Points [c]", scene->track->canConnect()) ||
-                (g_input.isKeyPressed(KEY_C) && scene->track->canConnect()))
-        {
-            scene->track->connectPoints();
-        }
-
-        if (g_gui.button("Connect Railings [c]", scene->track->canConnectRailings()) ||
-                (g_input.isKeyPressed(KEY_C) && scene->track->canConnectRailings()))
-        {
-            scene->track->connectRailings();
-        }
-
-        if (g_gui.button("Subdivide [n]", scene->track->canSubdivide()) ||
-                (g_input.isKeyPressed(KEY_N) && scene->track->canSubdivide()))
-        {
-            scene->track->subdividePoints();
-        }
-
-        if (g_gui.button("Split [t]", scene->track->canSplit()) ||
-                (g_input.isKeyPressed(KEY_T) && scene->track->canSubdivide()))
-        {
-            scene->track->split();
-        }
-
-        if (g_gui.button("Match Highest Z [m]"))
-        {
-            scene->track->matchZ(false);
-        }
-
-        if (g_gui.button("Match Lowest Z [m]"))
-        {
-            scene->track->matchZ(true);
-        }
-
-        std::string splineNames[ARRAY_SIZE(Track::railingMeshTypes)];
-        for (u32 i=0; i<ARRAY_SIZE(Track::railingMeshTypes); ++i)
-        {
-            splineNames[i] = scene->track->railingMeshTypes[i].name;
-        }
-        g_gui.select("Spline", splineNames, ARRAY_SIZE(splineNames), selectedSplineTypeIndex);
-
-        if (g_gui.button("New Spline"))
-        {
-            placeMode = PlaceMode::NEW_SPLINE;
-        }
-    }
-    else if (editMode == EditMode::DECORATION)
-    {
-        TransformMode previousTransformMode = transformMode;
-
-        if (g_input.isKeyPressed(KEY_SPACE))
-        {
-            transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
-        }
-
-        g_gui.beginSelect("Transform Mode", (i32*)&transformMode);
-        g_gui.option("Translate [g]", (i32)TransformMode::TRANSLATE);
-        g_gui.option("Rotate [r]", (i32)TransformMode::ROTATE);
-        g_gui.option("Scale [f]", (i32)TransformMode::SCALE);
-        g_gui.end();
-
-        if (transformMode != previousTransformMode)
-        {
-            entityDragAxis = DragAxis::NONE;
-        }
-
-        g_gui.label("Operations", false);
-        if (g_gui.button("Duplicate [b]", selectedEntities.size() > 0)
-                || (selectedEntities.size() > 0 && g_input.isKeyPressed(KEY_B)))
-        {
-            std::vector<PlaceableEntity*> newEntities;
-            for (auto e : selectedEntities)
-            {
-                auto data = e->serialize();
-                PlaceableEntity* newEntity = (PlaceableEntity*)scene->deserializeEntity(data);
-                newEntity->setPersistent(true);
-                newEntities.push_back(newEntity);
-            }
-            selectedEntities.clear();
-            for (auto e : newEntities)
-            {
-                selectedEntities.push_back(e);
-            }
-        }
-
-        if (g_gui.button("Delete [DELETE]", !entityDragAxis && selectedEntities.size() > 0) ||
-                (!entityDragAxis && g_input.isKeyPressed(KEY_DELETE)))
-        {
-            for (PlaceableEntity* e : selectedEntities)
-            {
-                e->destroy();
-            }
-            selectedEntities.clear();
-        }
-
-        g_gui.beginSelect("Entities", &selectedEntityCategory);
-        for (i32 i=1; i<(i32)ARRAY_SIZE(editorCategoryNames); ++i)
-        {
-            g_gui.option(editorCategoryNames[i], i);
-        }
-        g_gui.end();
-
-        // TODO: add scatter tools
-        // TODO: add settings for randomizing rotation and scale of placed entities
-    }
-
-    // TODO: make this better by not having 3 panels for 3 buttons
-    g_gui.beginPanel("Task1", { g_gui.convertSize(200), 0.f },
-                0.f, true, false, false, 28, 0, 100);
-    if ((g_gui.button("Save Track [F9]") || g_input.isKeyPressed(KEY_F9)))
+    ImGui::SameLine();
+    if (ImGui::Button("Save"))
     {
         std::string filename = scene->filename;
         if (filename.empty())
@@ -287,23 +99,19 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             scene->filename = filename;
         }
     }
-    g_gui.end();
-
-    g_gui.beginPanel("Task2", { g_gui.convertSize(300), 0.f },
-                0.f, true, false, false, 28, 0, 100);
-    if (g_gui.button("Load Track [F10]") || g_input.isKeyPressed(KEY_F10))
+    ImGui::SameLine();
+    if (ImGui::Button("Save As"))
     {
-        std::string filename = chooseFile("tracks/track1.dat", true);
+        std::string filename = chooseFile("tracks/untitled.dat", false);
         if (!filename.empty())
         {
-            g_game.changeScene(filename.c_str());
+            print("Saving scene to file: ", scene->filename, '\n');
+            DataFile::save(scene->serialize(), filename.c_str());
+            scene->filename = filename;
         }
     }
-    g_gui.end();
-
-    g_gui.beginPanel("Task3", { g_gui.convertSize(400), 0.f },
-                0.f, true, false, false, 28, 0, 100);
-    if (g_gui.button("Test Track [F5]") || g_input.isKeyPressed(KEY_F5))
+    ImGui::SameLine();
+    if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
     {
         serializedTransientEntities = scene->serializeTransientEntities();
         g_game.state.drivers.clear();
@@ -318,23 +126,219 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         scene->startRace();
         entityDragAxis = DragAxis::NONE;
     }
-    g_gui.end();
+
+    ImGui::Gap();
+    ImGui::InputText("Track Name", &scene->name);
+    ImGui::InputTextMultiline("Notes", &scene->notes, {0, 100});
+    ImGui::Checkbox("Show Grid", &gridSettings.show);
+    ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
+    ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
+    gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
+
+    ImGui::Gap();
+    if (ImGui::BeginTabBar("Edit Mode"))
+    {
+        if (ImGui::BeginTabItem("Terrain Mode"))
+        {
+            editMode = EditMode::TERRAIN;
+
+            ImGui::Spacing();
+            if (ImGui::BeginCombo("Terrain Type", scene->terrain->surfaceMaterials[(i32)scene->terrain->terrainType].name))
+            {
+                for (i32 i=0; i<(i32)ARRAY_SIZE(scene->terrain->surfaceMaterials); ++i)
+                {
+                    if (ImGui::Selectable(scene->terrain->surfaceMaterials[i].name))
+                    {
+                        scene->terrain->terrainType = (Terrain::TerrainType)i;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            glm::vec2 terrainMin(scene->terrain->x1, scene->terrain->y1);
+            glm::vec2 terrainMax(scene->terrain->x2, scene->terrain->y2);
+            if (ImGui::InputFloat2("Terrain Min", (f32*)&terrainMin))
+            {
+                scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y);
+            }
+            if (ImGui::InputFloat2("Terrain Max", (f32*)&terrainMax))
+            {
+                scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y);
+            }
+
+            ImGui::Gap();
+            ImGui::ListBoxHeader("Terrain Tool", {0, 145});
+            const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track", "Paint" };
+            for (i32 i=0; i<(i32)TerrainTool::MAX; ++i)
+            {
+                if (ImGui::Selectable(toolNames[i], i == (i32)terrainTool))
+                {
+                    terrainTool = (TerrainTool)i;
+                }
+            }
+            ImGui::ListBoxFooter();
+
+            ImGui::Gap();
+            ImGui::SliderFloat("Brush Radius", &brushRadius, 2.f, 40.f);
+            ImGui::SliderFloat("Brush Falloff", &brushFalloff, 0.2f, 10.f);
+            ImGui::SliderFloat("Brush Strength", &brushStrength, -30.f, 30.f);
+
+            if (terrainTool == TerrainTool::PAINT)
+            {
+                ImGui::ListBoxHeader("Paint Material", {0, 85});
+                auto& m = scene->terrain->getSurfaceMaterial();
+                for (i32 i=0; i<4; ++i)
+                {
+                    if (ImGui::Selectable(m.textureNames[i], i == paintMaterialIndex))
+                    {
+                        paintMaterialIndex = i;
+                    }
+                }
+                ImGui::ListBoxFooter();
+            }
+
+            ImGui::EndTabItem();
+        }
+
+        auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
+        if (ImGui::BeginTabItem("Track Mode"))
+        {
+            editMode = EditMode::TRACK;
+
+            ImGui::Spacing();
+            if (ImGui::Button("Connect Points [c]", buttonSize) || g_input.isKeyPressed(KEY_C))
+            {
+                scene->track->connectPoints();
+            }
+
+            if (ImGui::Button("Connect Railings [c]", buttonSize) || g_input.isKeyPressed(KEY_C))
+            {
+                scene->track->connectRailings();
+            }
+
+            if (ImGui::Button("Subdivide [n]", buttonSize) || g_input.isKeyPressed(KEY_N))
+            {
+                scene->track->subdividePoints();
+            }
+
+            if (ImGui::Button("Split [t]", buttonSize) || g_input.isKeyPressed(KEY_T))
+            {
+                scene->track->split();
+            }
+
+            if (ImGui::Button("Match Highest Z", buttonSize))
+            {
+                scene->track->matchZ(false);
+            }
+
+            if (ImGui::Button("Match Lowest Z", buttonSize))
+            {
+                scene->track->matchZ(true);
+            }
+
+            ImGui::Gap();
+            ImGui::ListBoxHeader("Spline Type", {0,85});
+            for (i32 i=0; i<(i32)ARRAY_SIZE(Track::railingMeshTypes); ++i)
+            {
+                if (ImGui::Selectable(scene->track->railingMeshTypes[i].name, i == selectedSplineTypeIndex))
+                {
+                    selectedSplineTypeIndex = i;
+                }
+            }
+            ImGui::ListBoxFooter();
+
+            if (ImGui::Button("New Spline", buttonSize))
+            {
+                placeMode = PlaceMode::NEW_SPLINE;
+            }
+
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Decoration Mode"))
+        {
+            editMode = EditMode::DECORATION;
+
+            ImGui::Spacing();
+
+            TransformMode previousTransformMode = transformMode;
+
+            if (g_input.isKeyPressed(KEY_SPACE))
+            {
+                transformMode = (TransformMode)(((u32)transformMode + 1) % (u32)TransformMode::MAX);
+            }
+
+            ImGui::ListBoxHeader("Transform Mode", {0,70});
+            if (ImGui::Selectable("Translate [g]", transformMode == TransformMode::TRANSLATE))
+            {
+                transformMode = TransformMode::TRANSLATE;
+            }
+            if (ImGui::Selectable("Rotate [r]", transformMode == TransformMode::ROTATE))
+            {
+                transformMode = TransformMode::ROTATE;
+            }
+            if (ImGui::Selectable("Scale [f]", transformMode == TransformMode::SCALE))
+            {
+                transformMode = TransformMode::SCALE;
+            }
+            ImGui::ListBoxFooter();
+
+            if (transformMode != previousTransformMode)
+            {
+                entityDragAxis = DragAxis::NONE;
+            }
+
+            ImGui::Gap();
+
+            if (ImGui::Button("Duplicate [b]", buttonSize) > 0 || g_input.isKeyPressed(KEY_B))
+            {
+                std::vector<PlaceableEntity*> newEntities;
+                for (auto e : selectedEntities)
+                {
+                    auto data = e->serialize();
+                    PlaceableEntity* newEntity = (PlaceableEntity*)scene->deserializeEntity(data);
+                    newEntity->setPersistent(true);
+                    newEntities.push_back(newEntity);
+                }
+                selectedEntities.clear();
+                for (auto e : newEntities)
+                {
+                    selectedEntities.push_back(e);
+                }
+            }
+
+            if (ImGui::Button("Delete [DELETE]", buttonSize) || g_input.isKeyPressed(KEY_DELETE))
+            {
+                for (PlaceableEntity* e : selectedEntities)
+                {
+                    e->destroy();
+                }
+                selectedEntities.clear();
+            }
+
+            ImGui::Gap();
+
+            ImGui::BeginChild("Entites");
+            showEntityIcons();
+            ImGui::EndChild();
+
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+
+    ImGui::End();
 
     if (selectedEntities.size() > 0)
     {
-        g_gui.beginPanel("Entity Properties", { g_game.windowWidth, 0.f },
-                1.f, true, false, false, 30, 4);
-        g_gui.label(tstr(selectedEntities.front()->getName(), " Properties"));
+        ImGui::Begin("Entity Properties");
+        ImGui::Text("%s", selectedEntities.front()->getName());
+        ImGui::Gap();
         selectedEntities.front()->showDetails(scene);
-        g_gui.end();
+        ImGui::End();
     }
 
-    g_gui.end();
-
-    bool isMouseClickHandled = g_gui.isMouseOverUI || g_gui.isMouseCaptured;
-
-    bool keyboardHandled = g_gui.isKeyboardInputCaptured || g_gui.isKeyboardInputHandled;
-    if (!keyboardHandled)
+    if (!isKeyboardHandled)
     {
         f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);
         f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
@@ -363,7 +367,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     f32 height = (f32)g_game.windowHeight;
     glm::vec2 mousePos = g_input.getMousePosition();
 
-    if (!keyboardHandled && g_input.isKeyPressed(KEY_SPACE))
+    if (!isKeyboardHandled && g_input.isKeyPressed(KEY_SPACE))
     {
         terrainTool = TerrainTool(((u32)terrainTool + 1) % (u32)TerrainTool::MAX);
     }
@@ -417,8 +421,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
 
-    if (editMode == EditMode::TERRAIN
-            && (i32)terrainTool < (i32)TerrainTool::RESIZE)
+    if (editMode == EditMode::TERRAIN)
     {
         const f32 step = 0.01f;
         glm::vec3 p = cam.position;
@@ -539,83 +542,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
     else if (editMode == EditMode::DECORATION)
     {
-        u32 count = (u32)editorEntityItems.size();
-        u32 itemSize = (u32)g_gui.convertSizei(48);
-        u32 iconSize = (u32)g_gui.convertSizei(44);
-        u32 gap = (u32)g_gui.convertSizei(4);
-        f32 yoffset = (u32)(height * 0.02f);
-
-        static RenderWorld renderWorld;
-        static i32 lastEntityIconRendered = -1;
-        if (lastEntityIconRendered != -1)
-        {
-            editorEntityItems[lastEntityIconRendered].icon = renderWorld.releaseTexture();
-            editorEntityItems[lastEntityIconRendered].hasIcon = true;
-            lastEntityIconRendered = -1;
-        }
-
-        for (u32 i=0, itemIndex = 0; itemIndex<count; ++itemIndex)
-        {
-            if ((i32)editorEntityItems[itemIndex].category != selectedEntityCategory)
-            {
-                continue;
-            }
-
-            bool isHovering = false;
-            if (pointInRectangle(g_input.getMousePosition(),
-                { yoffset + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
-                (f32)itemSize, (f32)itemSize))
-            {
-                isMouseClickHandled = true;
-                isHovering = true;
-                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-                {
-                    clickHandledUntilRelease = true;
-                    selectedEntityTypeIndex = (i32)itemIndex;
-                }
-            }
-
-            glm::vec2 bp(yoffset + ((itemSize + gap) * i),
-                    g_game.windowHeight - itemSize - yoffset);
-            if (isHovering)
-            {
-                renderer->push2D(QuadRenderable(white,
-                    bp, itemSize, itemSize));
-            }
-            else if ((i32)itemIndex == selectedEntityTypeIndex)
-            {
-                renderer->push2D(QuadRenderable(white,
-                    bp, itemSize, itemSize, glm::vec3(1, 1, 0)));
-            }
-
-            if (editorEntityItems[itemIndex].hasIcon)
-            {
-                renderer->push2D(QuadRenderable(&editorEntityItems[itemIndex].icon,
-                    bp + glm::vec2((f32)(itemSize - iconSize)) * 0.5f, iconSize, iconSize,
-                    glm::vec3(1.f), 1.f, false, true));
-            }
-            else if (lastEntityIconRendered == -1)
-            {
-                renderWorld.setName("Entity Icon");
-                renderWorld.setSize(128, 128);
-                Mesh* quadMesh = g_res.getMesh("world.Quad");
-                renderWorld.push(LitRenderable(quadMesh,
-                            glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));
-                renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
-                renderWorld.setViewportCount(1);
-                renderWorld.updateWorldTime(30.f);
-                renderWorld.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
-                        glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
-                static std::unique_ptr<PlaceableEntity> ptr;
-                ptr.reset((PlaceableEntity*)
-                        g_entities[editorEntityItems[itemIndex].entityIndex].create());
-                ptr->setVariationIndex(editorEntityItems[itemIndex].variationIndex);
-                ptr->onPreview(&renderWorld);
-                g_game.renderer->addRenderWorld(&renderWorld);
-                lastEntityIconRendered = (i32)itemIndex;
-            }
-            ++i;
-        }
 
         glm::vec3 minP(FLT_MAX);
         glm::vec3 maxP(-FLT_MAX);
@@ -1186,17 +1112,17 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     if (gridSettings.show && editMode != EditMode::TERRAIN)
     {
-        f32 gridSize = 40.f;
+        i32 count = (i32)(40.f / gridSettings.cellSize);
+        f32 gridSize = count * gridSettings.cellSize;
         glm::vec4 color = { 1.f, 1.f, 1.f, 0.2f };
-        for (f32 x=-gridSize; x<=gridSize; x+=gridSettings.cellSize)
+        for (i32 i=-count; i<=count; i++)
         {
+            f32 x = i * gridSettings.cellSize;
+            f32 y = i * gridSettings.cellSize;
             scene->debugDraw.line(
                 { snap(cameraTarget.x + x, gridSettings.cellSize), snap(cameraTarget.y - gridSize, gridSettings.cellSize), gridSettings.z },
                 { snap(cameraTarget.x + x, gridSettings.cellSize), snap(cameraTarget.y + gridSize, gridSettings.cellSize), gridSettings.z },
                 color, color);
-        }
-        for (f32 y=-gridSize; y<=gridSize; y+=gridSettings.cellSize)
-        {
             scene->debugDraw.line(
                 { snap(cameraTarget.x - gridSize, gridSettings.cellSize), snap(cameraTarget.y + y, gridSettings.cellSize), gridSettings.z },
                 { snap(cameraTarget.x + gridSize, gridSettings.cellSize), snap(cameraTarget.y + y, gridSettings.cellSize), gridSettings.z },
@@ -1275,4 +1201,73 @@ std::string chooseFile(const char* defaultSelection, bool open)
     }
     return file;
 #endif
+}
+
+void Editor::showEntityIcons()
+{
+    u32 count = (u32)editorEntityItems.size();
+    u32 iconSize = 48;
+
+    static RenderWorld renderWorld;
+    static i32 lastEntityIconRendered = -1;
+
+    if (lastEntityIconRendered != -1)
+    {
+        editorEntityItems[lastEntityIconRendered].icon = renderWorld.releaseTexture();
+        editorEntityItems[lastEntityIconRendered].hasIcon = true;
+        lastEntityIconRendered = -1;
+    }
+    for (u32 categoryIndex=0; categoryIndex<ARRAY_SIZE(editorCategoryNames); ++categoryIndex)
+    {
+        if (!ImGui::CollapsingHeader(editorCategoryNames[categoryIndex]))
+        {
+            continue;
+        }
+
+        u32 buttonCount = 0;
+        for (u32 i=0, itemIndex = 0; itemIndex<count; ++itemIndex)
+        {
+            if ((u32)editorEntityItems[itemIndex].category != categoryIndex)
+            {
+                continue;
+            }
+
+            if (editorEntityItems[itemIndex].hasIcon)
+            {
+                if (buttonCount % 5 != 0)
+                {
+                    ImGui::SameLine();
+                }
+                ImGui::PushID(itemIndex);
+                if (ImGui::ImageButton((void*)(u64)editorEntityItems[itemIndex].icon.handle,
+                            ImVec2(iconSize, iconSize), {1,1}, {0,0}))
+                {
+                    selectedEntityTypeIndex = (i32)itemIndex;
+                }
+                ImGui::PopID();
+                ++buttonCount;
+            }
+            else if (lastEntityIconRendered == -1)
+            {
+                renderWorld.setName("Entity Icon");
+                renderWorld.setSize(128, 128);
+                Mesh* quadMesh = g_res.getMesh("world.Quad");
+                renderWorld.push(LitRenderable(quadMesh,
+                            glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));
+                renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
+                renderWorld.setViewportCount(1);
+                renderWorld.updateWorldTime(30.f);
+                renderWorld.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
+                        glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
+                static std::unique_ptr<PlaceableEntity> ptr;
+                ptr.reset((PlaceableEntity*)
+                        g_entities[editorEntityItems[itemIndex].entityIndex].create());
+                ptr->setVariationIndex(editorEntityItems[itemIndex].variationIndex);
+                ptr->onPreview(&renderWorld);
+                g_game.renderer->addRenderWorld(&renderWorld);
+                lastEntityIconRendered = (i32)itemIndex;
+            }
+            ++i;
+        }
+    }
 }

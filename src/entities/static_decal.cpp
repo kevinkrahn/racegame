@@ -4,6 +4,7 @@
 #include "../game.h"
 #include "../gui.h"
 #include "../billboard.h"
+#include "../imgui.h"
 
 const char* textureNames[] = {
     "Arrow Forward",
@@ -142,15 +143,15 @@ void StaticDecal::showDetails(Scene* scene)
     u32 prevDecalFilter = decalFilter;
 
     bool affectsTrack = decalFilter & DECAL_TRACK;
-    g_gui.toggle("Affects Track", affectsTrack);
+    ImGui::Checkbox("Affects Track", &affectsTrack);
     bool affectsTerrain = decalFilter & DECAL_TERRAIN;
-    g_gui.toggle("Affects Terrain", affectsTerrain);
+    ImGui::Checkbox("Affects Terrain", &affectsTerrain);
     bool affectsSigns = decalFilter & DECAL_SIGN;
-    g_gui.toggle("Affects Signs", affectsSigns);
+    ImGui::Checkbox("Affects Signs", &affectsSigns);
     bool affectsRailings = decalFilter & DECAL_RAILING;
-    g_gui.toggle("Affects Railings", affectsRailings);
+    ImGui::Checkbox("Affects Railings", &affectsRailings);
     bool affectsGround = decalFilter & DECAL_GROUND;
-    g_gui.toggle("Affects Ground", affectsGround);
+    ImGui::Checkbox("Affects Ground", &affectsGround);
 
     decalFilter = DECAL_PLACEHOLDER;
     if (affectsTrack)    decalFilter |= DECAL_TRACK;
@@ -164,7 +165,7 @@ void StaticDecal::showDetails(Scene* scene)
         updateTransform(scene);
     }
 
-    if (g_gui.toggle("Before Marking", beforeMarking))
+    if (ImGui::Checkbox("Before Marking", &beforeMarking))
     {
         updateTransform(scene);
     }

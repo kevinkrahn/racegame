@@ -8,6 +8,7 @@
 #include "mesh_renderables.h"
 #include "billboard.h"
 #include "weapon.h"
+#include "imgui.h"
 
 #include <vehicle/PxVehicleUtil.h>
 #include <iomanip>
@@ -909,24 +910,6 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
                 continue;
             }
             ++it;
-        }
-
-        // vehicle debug info
-        if (scene->isDebugOverlayEnabled)
-        {
-            Font* f = &g_res.getFont("font", 18);
-            const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
-            char* debugText = tstr(
-                "Engine RPM: ", getEngineRPM(),
-                "\nSpeed: ", getForwardSpeed(),// * 3.6f,
-                "\nGear: ", gearNames[vehicle4W->mDriveDynData.mCurrentGear],
-                "\nProgress: ", graphResult.currentLapDistance,
-                "\nLow Mark: ", graphResult.lapDistanceLowMark);
-            renderer->push2D(QuadRenderable(white, { 220 + 10, g_game.windowHeight - 10 },
-                        { 220 + 220, g_game.windowHeight - (30 + f->stringDimensions(debugText).y) },
-                        {}, {}, { 0, 0, 0 }, 0.6f));
-            renderer->push2D(TextRenderable(f, debugText,
-                { 220 + 20, g_game.windowHeight - 20 }, glm::vec3(1), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM));
         }
     }
 }
@@ -2158,4 +2141,14 @@ void Vehicle::checkGroundSpots()
                             glm::abs(userData->placeableEntity->scale.z))) * 0.48f });
         }
     }
+}
+
+void Vehicle::showDebugInfo()
+{
+    ImGui::Text("Engine RPM: %f", getEngineRPM());
+    ImGui::Text("Speed: %f", getForwardSpeed());
+    const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
+    ImGui::Text("Speed: %s", gearNames[vehicle4W->mDriveDynData.mCurrentGear]);
+    ImGui::Text("Lap Progress: %f", graphResult.currentLapDistance);
+    ImGui::Text("Lap Low Mark: %f", graphResult.lapDistanceLowMark);
 }

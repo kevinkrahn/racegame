@@ -6,7 +6,7 @@
 #include "../mesh_renderables.h"
 #include "../scene.h"
 #include "../game.h"
-#include "../gui.h"
+#include "../imgui.h"
 
 class Billboard : public PlaceableEntity
 {
@@ -144,12 +144,16 @@ public:
             "Don't Look",
         };
 
-        g_gui.beginSelect("Billboard", &billboardIndex, true);
+        // TODO: Show preview of each billboard
+        ImGui::ListBoxHeader("Billboard");
         for (i32 i=0; i<(i32)ARRAY_SIZE(billboardNames); ++i)
         {
-            g_gui.option(billboardNames[i], i, nullptr);
+            if (ImGui::Selectable(billboardNames[i], billboardIndex == i))
+            {
+                billboardIndex = i;
+            }
         }
-        g_gui.end();
+        ImGui::ListBoxFooter();
     }
 
     DataFile::Value serializeState() override

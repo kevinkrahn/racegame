@@ -57,7 +57,6 @@ class Editor
         ERODE,
         MATCH_TRACK,
         PAINT,
-        RESIZE,
         MAX
     } terrainTool = TerrainTool::RAISE;
     i32 paintMaterialIndex = 2;
@@ -89,10 +88,11 @@ class Editor
     glm::vec3 entityDragOffset;
     glm::vec3 rotatePivot;
     i32 selectedEntityTypeIndex = 0;
-    i32 selectedEntityCategory = 0;
     i32 selectedSplineTypeIndex = 0;
 
     std::vector<PlaceableEntity*> selectedEntities;
+
+    void showEntityIcons();
 
 public:
     Editor();

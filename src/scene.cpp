@@ -12,6 +12,7 @@
 #include "entities/flash.h"
 #include "entities/booster.h"
 #include "gui.h"
+#include "imgui.h"
 #include <algorithm>
 
 PxFilterFlags vehicleFilterShader(
@@ -401,19 +402,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     if (g_input.isKeyPressed(KEY_F2))
     {
         isPhysicsDebugVisualizationEnabled = !isPhysicsDebugVisualizationEnabled;
-        if (isPhysicsDebugVisualizationEnabled)
-        {
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
-            //physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 2.0f);
-            //physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 2.0f);
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
-        }
-        else
-        {
-            physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
-        }
     }
 
     // handle newly created entities
@@ -430,6 +418,13 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (isPhysicsDebugVisualizationEnabled)
     {
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
+        //physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 2.0f);
+        //physicsScene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 2.0f);
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
+
         Camera const& cam = rw->getCamera(0);
         BoundingBox bb = computeCameraFrustumBoundingBox(cam.viewProjection);
         debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
@@ -443,16 +438,20 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             debugDraw.line(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
         }
     }
+    else
+    {
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
+    }
 
     if (g_input.isKeyPressed(KEY_F8))
     {
-        debugCamera = !debugCamera;
-        if (debugCamera)
+        isDebugCameraEnabled = !isDebugCameraEnabled;
+        if (isDebugCameraEnabled)
         {
             debugCameraPosition = rw->getCamera(0).position;
         }
     }
-    if (debugCamera)
+    if (isDebugCameraEnabled)
     {
         f32 up = (f32)g_input.isKeyDown(KEY_W) - (f32)g_input.isKeyDown(KEY_S);
         f32 right = (f32)g_input.isKeyDown(KEY_A) - (f32)g_input.isKeyDown(KEY_D);
@@ -588,28 +587,69 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (isDebugOverlayEnabled)
     {
-        Font* font1 = &g_res.getFont("font", 20);
-        Font* font2 = &g_res.getFont("font", 18);
-        char* debugText = tstr(
-            "FPS: ", 1.f / g_game.realDeltaTime,
-            "\nDelta: ", g_game.realDeltaTime * 1000.f, "ms",
-            "\nDilation: ", g_game.timeDilation,
-            "\nResolution: ", g_game.config.graphics.resolutionX, "x", g_game.config.graphics.resolutionY,
-            "\nTmpRenderMem: ", std::fixed, std::setprecision(2), renderer->getTempRenderBufferSize() / 1024.f, "kb");
+        if (isImGuiMetricsWindowOpen)
+        {
+            ImGui::ShowMetricsWindow(&isImGuiMetricsWindowOpen);
+        }
+        if (isImGuiDemoWindowOpen)
+        {
+            ImGui::ShowDemoWindow(&isImGuiDemoWindowOpen);
+        }
 
-        renderer->push2D(QuadRenderable(&g_res.textures->white, { 10, g_game.windowHeight - 10 },
-                    { 220, g_game.windowHeight - (30 + font1->stringDimensions(debugText).y) },
-                    {}, {}, { 0, 0, 0 }, 0.6f), 10);
-        renderer->push2D(TextRenderable(font1, debugText,
-            { 20, g_game.windowHeight - 20 }, glm::vec3(1),
-            1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::BOTTOM), 10);
+        ImGui::Begin("Debug", &isDebugOverlayEnabled);
 
+        if (ImGui::Button("ImGui Metrics"))
+        {
+            isImGuiMetricsWindowOpen = !isImGuiMetricsWindowOpen;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("ImGui Demo"))
+        {
+            isImGuiDemoWindowOpen = !isImGuiDemoWindowOpen;
+        }
+
+        ImGui::Text("FPS: %f", 1.f / g_game.realDeltaTime);
+        ImGui::Text("Average FPS: %fms", 1.f / g_game.averageDeltaTime);
+        ImGui::Text("Frame Time: %fms", g_game.realDeltaTime * 1000);
+        ImGui::Text("Average Frame Time: %fms", g_game.averageDeltaTime * 1000);
+        ImGui::Text("Highest Frame Time: %fms", g_game.allTimeHighestDeltaTime * 1000);
+        ImGui::Text("Lowest Frame Time: %fms", g_game.allTimeLowestDeltaTime * 1000);
+        ImGui::PlotLines("Frame Times", g_game.deltaTimeHistory, ARRAY_SIZE(g_game.deltaTimeHistory),
+                0, nullptr, 0.f, 0.04f, { 0, 80 });
+        ImGui::Text("Temp Render Memory: %fkb", renderer->getTempRenderBufferSize() / 1024.f);
+        ImGui::Text("Resolution: %ix%i", g_game.config.graphics.resolutionX, g_game.config.graphics.resolutionY);
+        ImGui::Text("Time Dilation: %f", g_game.timeDilation);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Checkbox("Debug Camera", &isDebugCameraEnabled);
+        ImGui::Checkbox("Physics Visualization", &isPhysicsDebugVisualizationEnabled);
+        ImGui::Checkbox("Track Graph Visualization", &isTrackGraphDebugVisualizationEnabled);
+        ImGui::Checkbox("Motion Grid Visualization", &isMotionGridDebugVisualizationEnabled);
+
+        auto playerVehicle = std::find_if(vehicles.begin(), vehicles.end(), [](auto& v) {
+            return v->driver->isPlayer;
+        });
+        if (playerVehicle != vehicles.end())
+        {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            (*playerVehicle)->showDebugInfo();
+        }
+
+        ImGui::End();
+
+        /*
         char* debugRenderListText = tstr(renderer->getDebugRenderList());
         auto dim = font2->stringDimensions(debugRenderListText);
         renderer->push2D(QuadRenderable(&g_res.textures->white, { 10, 10 },
                     { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f), 10);
         renderer->push2D(TextRenderable(font2, debugRenderListText,
             { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f), 10);
+        */
     }
 
     if (backgroundSound)
@@ -1036,6 +1076,7 @@ DataFile::Value Scene::serialize()
 {
     DataFile::Value dict = DataFile::makeDict();
     dict["name"] = DataFile::makeString(name);
+    dict["notes"] = DataFile::makeString(notes);
     dict["version"] = DataFile::makeInteger(0);
     dict["entities"] = DataFile::makeArray();
     DataFile::Value::Array& entityArray = dict["entities"].array();
@@ -1063,6 +1104,7 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
 void Scene::deserialize(DataFile::Value& data)
 {
     name = data["name"].string("");
+    notes = data["notes"].string("");
     u32 version = (u32)data["version"].integer(0);
     auto& entityArray = data["entities"].array();
     if (version == 0)
