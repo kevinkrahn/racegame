@@ -670,7 +670,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     // handle dragging of points
     if (dragConnectionHandle == -1
         && (selectedPoints.size() > 0 || hasRailingPointSelected)
-        && g_input.isMouseButtonDown(MOUSE_LEFT)
+        && (g_input.isMouseButtonDown(MOUSE_LEFT) && !isMouseHandled)
         && glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
     {
         f32 t = 0.f;
@@ -850,7 +850,10 @@ void Track::extendTrack(i32 prefabCurveIndex)
 // TODO: something is still wrong with this
 void Track::connectPoints()
 {
-    assert(canConnect());
+    if (selectedPoints.size() != 2)
+    {
+        return;
+    }
 
     i32 index1 = selectedPoints[0].pointIndex;
     i32 index2 = selectedPoints[1].pointIndex;

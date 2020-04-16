@@ -67,7 +67,7 @@ class Editor
         TRACK,
         DECORATION,
         MAX
-    } editMode = EditMode::TERRAIN;
+    } editMode = EditMode::TRACK;
 
     enum struct PlaceMode
     {
@@ -89,6 +89,8 @@ class Editor
     glm::vec3 rotatePivot;
     i32 selectedEntityTypeIndex = 0;
     i32 selectedSplineTypeIndex = 0;
+
+    bool canUseTerrainTool = false;
 
     std::vector<PlaceableEntity*> selectedEntities;
 

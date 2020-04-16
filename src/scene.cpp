@@ -157,7 +157,7 @@ void Scene::startRace()
     std::sort(createOrder.begin(), createOrder.end(),
             [](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
 
-#if 1
+#if 0
     u32 numVehicles = 2;
     if (createOrder.size() > numVehicles)
     {

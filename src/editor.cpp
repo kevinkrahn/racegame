@@ -62,7 +62,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     bool isMouseClickHandled = ImGui::GetIO().WantCaptureMouse;
     bool isKeyboardHandled = ImGui::GetIO().WantCaptureKeyboard;
 
-    Texture* white = &g_res.textures->white;
+    if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
+    {
+        canUseTerrainTool = true;
+    }
+
     EditMode previousEditMode = editMode;
 
     if (isKeyboardHandled && g_input.isKeyPressed(KEY_TAB))
@@ -135,10 +139,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
     gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
 
+    auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
+
     ImGui::Gap();
     if (ImGui::BeginTabBar("Edit Mode"))
     {
-        if (ImGui::BeginTabItem("Terrain Mode"))
+        if (ImGui::BeginTabItem("Terrain"))
         {
             editMode = EditMode::TERRAIN;
 
@@ -204,8 +210,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             ImGui::EndTabItem();
         }
 
-        auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
-        if (ImGui::BeginTabItem("Track Mode"))
+        if (ImGui::BeginTabItem("Track"))
         {
             editMode = EditMode::TRACK;
 
@@ -213,10 +218,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             if (ImGui::Button("Connect Points [c]", buttonSize) || g_input.isKeyPressed(KEY_C))
             {
                 scene->track->connectPoints();
-            }
-
-            if (ImGui::Button("Connect Railings [c]", buttonSize) || g_input.isKeyPressed(KEY_C))
-            {
                 scene->track->connectRailings();
             }
 
@@ -256,9 +257,31 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 placeMode = PlaceMode::NEW_SPLINE;
             }
 
+            ImGui::Gap();
+            if (scene->track->hasSelection())
+            {
+                if (scene->track->canExtendTrack())
+                {
+                    for (u32 i=0; i<ARRAY_SIZE(Track::prefabTrackItems); ++i)
+                    {
+                        if (i > 0)
+                        {
+                            ImGui::SameLine();
+                        }
+                        if (ImGui::ImageButton((void*)(uintptr_t)scene->track->prefabTrackItems[i].icon.handle,
+                                    { 64, 64 }))
+                        {
+                            scene->track->extendTrack(i);
+                        }
+                    }
+                }
+            }
+
+
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Decoration Mode"))
+
+        if (ImGui::BeginTabItem("Decoration"))
         {
             editMode = EditMode::DECORATION;
 
@@ -368,7 +391,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     cameraAngle += cameraRotateSpeed * deltaTime;
     cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
 
-    f32 height = (f32)g_game.windowHeight;
     glm::vec2 mousePos = g_input.getMousePosition();
 
     if (!isKeyboardHandled && g_input.isKeyPressed(KEY_SPACE))
@@ -446,7 +468,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                     brushStartZ = glm::max(brushStartZ, hit.block.position.z - 0.06f);
                 }
             }
-            if (g_input.isMouseButtonDown(MOUSE_LEFT))
+            if (g_input.isMouseButtonDown(MOUSE_LEFT) && canUseTerrainTool)
             {
                 switch (terrainTool)
                 {
@@ -497,45 +519,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             if (g_input.isKeyPressed(KEY_ESCAPE))
             {
                 placeMode = PlaceMode::NONE;
-            }
-        }
-
-        if (scene->track->hasSelection())
-        {
-            if (scene->track->canExtendTrack())
-            {
-                u32 itemSize = (u32)(height * 0.08f);
-                u32 iconSize = (u32)(height * 0.08f);
-                u32 gap = (u32)(height * 0.015f);
-                f32 totalWidth = (f32)(itemSize * ARRAY_SIZE(Track::prefabTrackItems) + gap * (ARRAY_SIZE(Track::prefabTrackItems) - 2));
-                f32 cx = g_game.windowWidth * 0.5f;
-                f32 yoffset = height * 0.02f;
-
-                for (u32 i=0; i<ARRAY_SIZE(Track::prefabTrackItems); ++i)
-                {
-                    f32 alpha = 0.8f;
-                    glm::vec3 color(0.f);
-                    if (pointInRectangle(g_input.getMousePosition(),
-                        { cx - totalWidth * 0.5f + ((itemSize + gap) * i), g_game.windowHeight - itemSize - yoffset},
-                        (f32)itemSize, (f32)itemSize))
-                    {
-                        alpha = 0.9f;
-                        color = glm::vec3(0.08f);
-                        isMouseClickHandled = true;
-                        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-                        {
-                            clickHandledUntilRelease = true;
-                            scene->track->extendTrack(i);
-                        }
-                    }
-
-                    glm::vec2 bp(cx - totalWidth * 0.5f + ((itemSize + gap) * i),
-                            g_game.windowHeight - itemSize - yoffset);
-                    renderer->push2D(QuadRenderable(white,
-                        bp, (f32)itemSize, (f32)itemSize, color, alpha));
-                    renderer->push2D(QuadRenderable(&scene->track->prefabTrackItems[i].icon,
-                        bp + glm::vec2((f32)(itemSize - iconSize)) * 0.5f, (f32)iconSize, (f32)iconSize));
-                }
             }
         }
 
@@ -1243,7 +1226,7 @@ void Editor::showEntityIcons()
                     ImGui::SameLine();
                 }
                 ImGui::PushID(itemIndex);
-                if (ImGui::ImageButton((void*)(u64)editorEntityItems[itemIndex].icon.handle,
+                if (ImGui::ImageButton((void*)(uintptr_t)editorEntityItems[itemIndex].icon.handle,
                             ImVec2(iconSize, iconSize), {1,1}, {0,0}))
                 {
                     selectedEntityTypeIndex = (i32)itemIndex;

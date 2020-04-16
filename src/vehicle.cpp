@@ -417,7 +417,7 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
     engine.mDampingRateZeroThrottleClutchEngaged = tuning.engineDampingZeroThrottleClutchEngaged;
     engine.mDampingRateZeroThrottleClutchDisengaged = tuning.engineDampingZeroThrottleClutchDisengaged;
 
-#if 1
+#if 0
     if (driver->isPlayer)
     {
         engine.mPeakTorque += 1400.f;
@@ -498,7 +498,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->startOffset = startOffset;
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
-    this->offsetChangeInterval = random(scene->randomSeries, 5.f, 15.f);
+    this->offsetChangeInterval = random(scene->randomSeries, 6.f, 15.f);
 	if (driver->aiIndex != -1)
 	{
 		auto& ai = g_ais[driver->aiIndex];
@@ -940,6 +940,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             *driver->getVehicleConfig());
 
     // visualize path finding
+#if 0
     if (motionPath.size() > 0)
     {
         Mesh* sphere = g_res.getMesh("world.Sphere");
@@ -962,6 +963,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             */
         }
     }
+#endif
 }
 
 void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
@@ -1146,7 +1148,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     PxForceMode::eVELOCITY_CHANGE);
         }
 
-#if 1
+#if 0
         // test path finding
         if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
         {
@@ -1221,10 +1223,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             previousIndex = (i32)currentPath->size() - 1;
         }
 
+        glm::vec3 forwardVector = getForwardVector();
         TrackGraph::Node* nextPathNode = (*currentPath)[targetPointIndex];
         glm::vec3 previousP = (*currentPath)[previousIndex]->position;
         glm::vec2 diff = glm::vec2(nextPathNode->position) - glm::vec2(previousP);
-        glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(1.f, 0.f);
+        glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(forwardVector);
         glm::vec3 targetP = nextPathNode->position -
             glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
         glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
@@ -1233,11 +1236,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         accel = 1.f;
         brake = 0.f;
 
-        if (!target)
+        bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
+                forwardVector, 15.f + ai.awareness * 5.f);
+        if (!target && isSomethingBlockingMe && scene->getWorldTime() > 4.f - ai.awareness)
         {
-            glm::vec3 forwardVector = getForwardVector();
-            bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
-                    forwardVector, 20.f);
             scene->getMotionGrid().findPath(currentPosition, targetP, isSomethingBlockingMe,
                     forwardVector, motionPath);
             if (motionPath.size() > 2)
@@ -1249,7 +1251,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
         steer = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
 
-#if 1
+#if 0
         rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
                     glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
 #endif
@@ -1258,7 +1260,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 ai.aggression);
 
         // get behind target
-#if 0
+#if 1
         if (!isInAir && aggression > 0.f)
         {
             if (!target && frontWeapons.size() > 0
@@ -1345,63 +1347,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             */
         }
 
-        // obsolete raycast avoidance
-#if 0
-        f32 forwardTestDist = 14.f;
-        f32 sideTestDist = 9.f;
-        f32 testAngle = 0.65f;
-        glm::vec3 testDir1(glm::rotate(glm::mat4(1.f), testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
-        glm::vec3 testDir2(glm::rotate(glm::mat4(1.f), -testAngle, { 0, 0, 1 }) * glm::vec4(getForwardVector(), 1.0));
-
-        // TODO: make AI racers that are ahead of the player driver slower
-        /*
-        if (placement == 0)
-        {
-            accel = 0.8f;
-        }
-        else if (placement == 1)
-        {
-            accel = 0.9f;
-        }
-        */
-
-        bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
-                getForwardVector(), forwardTestDist);
-        if (isSomethingBlockingMe && !target
-                && glm::dot(glm::vec2(getForwardVector()), -dirToTargetP) > 0.8f)
-        {
-            const f32 avoidSteerAmount = 0.5f;
-            bool left = isBlocking(0.5f, testDir1, sideTestDist);
-            bool right = isBlocking(0.5f, testDir2, sideTestDist);
-            if (!left && !right)
-            {
-                glm::vec3 d = glm::normalize(targetP - currentPosition);
-                f32 diff1 = glm::dot(d, testDir1);
-                f32 diff2 = glm::dot(d, testDir2);
-                steer = diff1 < diff2 ?
-                    glm::min(steer, -avoidSteerAmount) : glm::max(steer, avoidSteerAmount);
-            }
-            else if (!left)
-            {
-                steer = glm::min(steer, -avoidSteerAmount);
-            }
-            else if (!right)
-            {
-                steer = glm::max(steer, avoidSteerAmount);
-            }
-            else
-            {
-                targetP = nextPathNode->position;
-                steer = glm::dot(glm::vec2(getRightVector()),
-                        glm::normalize(glm::vec2(currentPosition - targetP)));
-                if (getForwardSpeed() > 18.f)
-                {
-                    brake = 0.8f;
-                }
-            }
-        }
-
-#endif
         if (canGo)
         {
             backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
