@@ -159,10 +159,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             glm::vec2 terrainMax(scene->terrain->x2, scene->terrain->y2);
             if (ImGui::InputFloat2("Terrain Min", (f32*)&terrainMin))
             {
+                terrainMin = glm::min(terrainMin, terrainMax - 10.f);
+                terrainMin = glm::max(terrainMin, -400.f);
                 scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y);
             }
             if (ImGui::InputFloat2("Terrain Max", (f32*)&terrainMax))
             {
+                terrainMax = glm::max(terrainMax, terrainMin + 10.f);
+                terrainMax = glm::min(terrainMin, 400.f);
                 scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y);
             }
 
