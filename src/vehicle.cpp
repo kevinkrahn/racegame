@@ -418,7 +418,7 @@ void Vehicle::setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
     engine.mDampingRateZeroThrottleClutchDisengaged = tuning.engineDampingZeroThrottleClutchDisengaged;
 
 #if 0
-    if (driver->isPlayer)
+    if (!driver->isPlayer)
     {
         engine.mPeakTorque += 1400.f;
         engine.mMaxOmega += 300.f;
@@ -642,6 +642,7 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
                 }
                 if (digital) inputs.setDigitalAccel(true);
                 else inputs.setAnalogAccel(accel);
+                //inputs.setAnalogAccel(driver->isPlayer ? 0.9f : 1.f);
             }
             if (brake > 0.f)
             {
@@ -729,34 +730,10 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
     }
 }
 
-bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist)
+bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist, u32 flags, PxSweepBuffer* hit)
 {
-    PxSweepBuffer hit;
-    return scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit,
-            getRigidBody(), COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBJECT);
-    /*
-    PxSweepBuffer hit;
-    if (!scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, &hit, getRigidBody()))
-    {
-        return false;
-    }
-    if (hit.block.actor->getType() == PxActorType::eRIGID_STATIC)
-    {
-        return true;
-    }
-
-    glm::vec3 otherVelocity = convert(((PxRigidDynamic*)hit.block.actor)->getLinearVelocity());
-    glm::vec3 myVelocity = convert(getRigidBody()->getLinearVelocity());
-    if (glm::dot(glm::normalize(otherVelocity), glm::normalize(myVelocity)) > 0.5f)
-    {
-        if (glm::length(myVelocity) - glm::length(otherVelocity) > 1.f)
-        {
-            return true;
-        }
-    }
-
-    return false;
-    */
+    return scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, hit,
+            getRigidBody(), flags);
 }
 
 void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
@@ -940,7 +917,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             *driver->getVehicleConfig());
 
     // visualize path finding
-#if 0
+#if 1
     if (motionPath.size() > 0)
     {
         Mesh* sphere = g_res.getMesh("world.Sphere");
@@ -1236,12 +1213,29 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         accel = 1.f;
         brake = 0.f;
 
-        bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
-                forwardVector, 15.f + ai.awareness * 5.f);
-        if (!target && isSomethingBlockingMe && scene->getWorldTime() > 4.f - ai.awareness)
+        PxSweepBuffer* hit = nullptr;
+        PxSweepBuffer hit1;
+        PxSweepBuffer hit2;
+        PxSweepBuffer hit3;
+        bool isVehicleBlockingMe = !target
+            && isBlocking(tuning.collisionWidth / 2 + 0.05f,
+                forwardVector, 15.f + ai.awareness * 5.f,
+                COLLISION_FLAG_CHASSIS, &hit1)
+            && scene->getWorldTime() > 4.f - ai.awareness;
+        if (isVehicleBlockingMe) hit = &hit1;
+        bool isObjectBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.15f,
+                forwardVector, 16.f + ai.awareness * 5.f, COLLISION_FLAG_OBJECT, &hit2);
+        if (isObjectBlockingMe) hit = &hit2;
+        bool isHazardBlockingMe = isBlocking(tuning.collisionWidth / 2 + 1.f,
+                //forwardVector, 10.f + ai.awareness * 10.f,
+                forwardVector, 25.f,
+                COLLISION_FLAG_OIL | COLLISION_FLAG_GLUE, &hit3);
+        if (isHazardBlockingMe) hit = &hit3;
+        if (hit)
         {
-            scene->getMotionGrid().findPath(currentPosition, targetP, isSomethingBlockingMe,
-                    forwardVector, motionPath);
+            glm::vec3 dir = glm::normalize(convert(hit->block.position) - currentPosition);
+            scene->getMotionGrid().findPath(currentPosition, targetP, !!hit,
+                    dir, motionPath);
             if (motionPath.size() > 2)
             {
                 glm::vec3 to = motionPath[2].p;
@@ -1324,6 +1318,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         // fear
         if (ai.fear > 0.f)
         {
+            // TODO: shouldn't this use fear rather than aggression?
             f32 fearRayLength = aggression * 35.f + 10.f;
             if (scene->sweep(0.5f, currentPosition, -getForwardVector(),
                         fearRayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))

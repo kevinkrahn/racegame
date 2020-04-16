@@ -15,6 +15,7 @@
 #include "datafile.h"
 #include "entities/start.h"
 #include "collision_flags.h"
+#include "editor_camera.h"
 #include <vector>
 
 struct RaceBonus
@@ -82,7 +83,7 @@ private:
     std::vector<u32> placements;
     std::vector<RaceResult> raceResults;
 
-    glm::vec3 debugCameraPosition;
+    EditorCamera editorCamera;
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
     u32 totalLaps = 4;
@@ -170,6 +171,7 @@ public:
     void drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 pos);
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
     std::vector<RaceResult>& getRaceResults() { return raceResults; }
+    EditorCamera& getEditorCamera() { return editorCamera; }
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }

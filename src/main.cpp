@@ -19,6 +19,7 @@
 #include "driver.cpp"
 #include "mesh.cpp"
 #include "editor.cpp"
+#include "editor_camera.cpp"
 #include "terrain.cpp"
 #include "track.cpp"
 #include "dynamic_buffer.cpp"

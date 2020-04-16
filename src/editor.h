@@ -30,14 +30,6 @@ class Editor
 {
     std::vector<DataFile::Value> serializedTransientEntities;
 
-    f32 cameraDistance = 90.f;
-    f32 zoomSpeed = 0.f;
-    f32 cameraAngle = 0.f;
-    f32 cameraRotateSpeed = 0.f;
-    glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
-    glm::vec2 lastMousePosition;
-    glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
-
     bool clickHandledUntilRelease = false;
 
     GridSettings gridSettings;
@@ -66,6 +58,7 @@ class Editor
         TERRAIN,
         TRACK,
         DECORATION,
+        PATHS,
         MAX
     } editMode = EditMode::TRACK;
 
@@ -98,7 +91,6 @@ class Editor
 
 public:
     Editor();
-    glm::vec3 getCameraTarget() const { return cameraTarget; }
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
 };
 

@@ -259,11 +259,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         g_audio.setPaused(isPaused);
     }
 
-    if (g_game.isEditing && !isPaused)
-    {
-        editor.onUpdate(this, renderer, deltaTime);
-    }
-
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     rw->setViewportCount(viewportCount);
@@ -273,6 +268,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         worldTime += deltaTime;
         rw->updateWorldTime(worldTime);
+
+        if (g_game.isEditing)
+        {
+            editor.onUpdate(this, renderer, deltaTime);
+        }
 
         if (worldTime >= 3.f)
         {
@@ -371,6 +371,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                 g_game.menu.showRaceResults();
             }
         }
+
+        if ((g_game.isEditing && !isRaceInProgress) || isDebugCameraEnabled)
+        {
+            editorCamera.update(deltaTime, rw);
+        }
     }
 
     // render vehicles
@@ -446,30 +451,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     if (g_input.isKeyPressed(KEY_F8))
     {
         isDebugCameraEnabled = !isDebugCameraEnabled;
-        if (isDebugCameraEnabled)
-        {
-            debugCameraPosition = rw->getCamera(0).position;
-        }
-    }
-    if (isDebugCameraEnabled)
-    {
-        f32 up = (f32)g_input.isKeyDown(KEY_W) - (f32)g_input.isKeyDown(KEY_S);
-        f32 right = (f32)g_input.isKeyDown(KEY_A) - (f32)g_input.isKeyDown(KEY_D);
-        f32 vertical = (f32)g_input.isKeyDown(KEY_SPACE) - (f32)g_input.isKeyDown(KEY_LCTRL);
-
-        glm::vec2 move(up, right);
-        f32 speed = glm::length2(move);
-        if (speed > 0)
-        {
-            move = glm::normalize(move);
-        }
-        glm::vec3 movement = glm::vec3(-move, vertical);
-
-        debugCameraPosition += glm::vec3(movement) * deltaTime * 80.f;
-        f32 camDistance = 20.f;
-        glm::vec3 cameraFrom = debugCameraPosition + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-        glm::vec3 cameraTarget = debugCameraPosition;
-        rw->setViewportCamera(0, cameraFrom, cameraTarget, 15.f, 900.f);
     }
 
     if (g_input.isKeyPressed(KEY_F3))
@@ -570,7 +551,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             if (g_gui.button("Main Menu"))
             {
-                trackPreviewCameraTarget = editor.getCameraTarget();
+                trackPreviewCameraTarget = editorCamera.getCameraTarget();
                 trackPreviewCameraFrom = rw->getCamera(0).position;
                 stopRace();
                 isPaused = false;

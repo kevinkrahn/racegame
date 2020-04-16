@@ -69,7 +69,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     EditMode previousEditMode = editMode;
 
-    if (isKeyboardHandled && g_input.isKeyPressed(KEY_TAB))
+    if (!isKeyboardHandled && g_input.isKeyPressed(KEY_TAB))
     {
         editMode = EditMode(((u32)editMode + 1) % (u32)EditMode::MAX);
     }
@@ -351,6 +351,15 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             ImGui::EndTabItem();
         }
 
+        if (ImGui::BeginTabItem("Paths"))
+        {
+            editMode = EditMode::PATHS;
+
+            ImGui::Spacing();
+
+            ImGui::EndTabItem();
+        }
+
         ImGui::EndTabBar();
     }
 
@@ -364,34 +373,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         selectedEntities.front()->showDetails(scene);
         ImGui::End();
     }
-
-    if (!isKeyboardHandled)
-    {
-        f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);
-        f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
-        glm::vec3 moveDir = (right != 0.f || up != 0.f) ? glm::normalize(glm::vec3(right, up, 0.f)) : glm::vec3(0, 0, 0);
-        glm::vec3 forward(lengthdir(cameraAngle, 1.f), 0.f);
-        glm::vec3 sideways(lengthdir(cameraAngle + PI / 2.f, 1.f), 0.f);
-
-        cameraVelocity += (((forward * moveDir.y) + (sideways * moveDir.x)) * (deltaTime * (120.f + cameraDistance * 1.5f)));
-    }
-    cameraTarget += cameraVelocity * deltaTime;
-    cameraVelocity = smoothMove(cameraVelocity, glm::vec3(0, 0, 0), 7.f, deltaTime);
-
-    if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
-    {
-        lastMousePosition = g_input.getMousePosition();
-    }
-    else if (g_input.isMouseButtonDown(MOUSE_RIGHT))
-    {
-        cameraRotateSpeed = (((lastMousePosition.x) - g_input.getMousePosition().x) / g_game.windowWidth * 2.f) * (1.f / deltaTime);
-        lastMousePosition = g_input.getMousePosition();
-    }
-
-    cameraAngle += cameraRotateSpeed * deltaTime;
-    cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
-
-    glm::vec2 mousePos = g_input.getMousePosition();
 
     if (!isKeyboardHandled && g_input.isKeyPressed(KEY_SPACE))
     {
@@ -432,20 +413,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     {
         brushRadius = clamp(brushRadius + g_input.getMouseScroll(), 2.0f, 40.f);
     }
-    else if (g_input.getMouseScroll() != 0)
-    {
-        zoomSpeed = g_input.getMouseScroll() * 1.1f;
-    }
-    cameraDistance = clamp(cameraDistance - zoomSpeed, 10.f, 200.f);
-    zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
     RenderWorld* rw = renderer->getRenderWorld();
-    glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(lengthdir(cameraAngle, 1.f), 1.25f)) * cameraDistance;
-    rw->setViewportCamera(0, cameraFrom, cameraTarget, 5.f, 400.f);
-
-    Camera const& cam = rw->getCamera(0);
-    glm::vec3 rayDir = screenToWorldRay(mousePos,
-            glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
+    glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
+    Camera const& cam = scene->getEditorCamera().getCamera();
 
     if (editMode == EditMode::TERRAIN)
     {
@@ -556,6 +527,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
                 transformMode = TransformMode::ROTATE;
                 entityDragAxis = DragAxis::Z;
                 rotatePivot = p;
+                glm::vec2 mousePos = g_input.getMousePosition();
                 entityDragOffset.x = pointDirection(mousePos, project(rotatePivot, viewProj) * windowSize);
             }
 
@@ -1097,6 +1069,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         }
     }
 
+    glm::vec3 cameraTarget = scene->getEditorCamera().getCameraTarget();
     if (gridSettings.show && editMode != EditMode::TERRAIN)
     {
         i32 count = (i32)(40.f / gridSettings.cellSize);
