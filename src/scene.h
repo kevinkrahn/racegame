@@ -16,6 +16,7 @@
 #include "entities/start.h"
 #include "collision_flags.h"
 #include "editor_camera.h"
+#include "racing_line.h"
 #include <vector>
 
 struct RaceBonus
@@ -75,6 +76,9 @@ class Scene : public PxSimulationEventCallback
 private:
     Editor editor;
 
+    std::vector<RacingLine> paths;
+    bool hasGeneratedPaths = false;
+
     std::vector<std::unique_ptr<Entity>> entities;
     std::vector<std::unique_ptr<Entity>> newEntities;
 
@@ -97,6 +101,7 @@ private:
     u32 numHumanDrivers = 0;
     TrackGraph trackGraph;
     MotionGrid motionGrid;
+    PxDistanceJoint* dragJoint = nullptr;
 
     bool allPlayersFinished = false;
     f32 finishTimer = 0.f;
@@ -110,6 +115,7 @@ private:
     void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
 
     void buildRaceResults();
+    void physicsMouseDrag(Renderer* renderer);
 
 public:
     std::string name;
@@ -123,6 +129,7 @@ public:
     bool isPhysicsDebugVisualizationEnabled = false;
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isMotionGridDebugVisualizationEnabled = false;
+    bool isPathVisualizationEnabled = false;
 
     bool isRaceInProgress = false;
     bool isPaused = false;
@@ -172,6 +179,7 @@ public:
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
     std::vector<RaceResult>& getRaceResults() { return raceResults; }
     EditorCamera& getEditorCamera() { return editorCamera; }
+    decltype(paths) getPaths() const { return paths; }
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }

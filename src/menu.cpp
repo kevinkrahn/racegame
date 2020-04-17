@@ -103,7 +103,7 @@ void Menu::mainMenu()
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
 #if 0
-        Scene* scene = g_game.changeScene("tracks/track2.dat");
+        Scene* scene = g_game.changeScene("tracks/track4.dat");
 #else
         Scene* scene = g_game.changeScene(
                 championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);

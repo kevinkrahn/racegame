@@ -138,7 +138,30 @@ void Scene::startRace()
     i32 cameraIndex = 0;
 
     track->buildTrackGraph(&trackGraph, start);
-    motionGrid.build(this);
+
+    // if no racing lines have been defined for the track generate them from the track graph
+    if (paths.empty())
+    {
+        hasGeneratedPaths = true;
+        paths.reserve(trackGraph.getPaths().size());
+        for (auto& path : trackGraph.getPaths())
+        {
+            RacingLine racingLine;
+            racingLine.points.reserve(path.size());
+            for (TrackGraph::Node* p : path)
+            {
+                RacingLine::Point point;
+                point.position = p->position;
+                racingLine.points.push_back(point);
+            }
+            paths.push_back(std::move(racingLine));
+        }
+    }
+    for (auto& p : paths)
+    {
+        p.build(trackGraph);
+    }
+    //motionGrid.build(this);
 
     struct OrderedDriver
     {
@@ -220,6 +243,18 @@ void Scene::stopRace()
     allPlayersFinished = false;
     finishTimer = 0.f;
     smoke.clear();
+
+    if (hasGeneratedPaths)
+    {
+        hasGeneratedPaths = false;
+        paths.clear();
+    }
+
+    if (dragJoint)
+    {
+        dragJoint->release();
+        dragJoint = nullptr;
+    }
 
     for (auto& e : entities)
     {
@@ -315,6 +350,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         // TODO: Use PhysX scratch buffer to reduce allocations
         if (isRaceInProgress)
         {
+            physicsMouseDrag(renderer);
             physicsScene->simulate(deltaTime);
             physicsScene->fetchResults(true);
         }
@@ -470,7 +506,25 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (isMotionGridDebugVisualizationEnabled)
     {
-        motionGrid.debugDraw(rw);
+        //motionGrid.debugDraw(rw);
+    }
+
+    if (g_input.isKeyPressed(KEY_F7))
+    {
+        isPathVisualizationEnabled = !isPathVisualizationEnabled;
+    }
+
+    if (isPathVisualizationEnabled)
+    {
+        for (auto& path : paths)
+        {
+            glm::vec4 color(1.f, 1.f, 0.f, 1.f);
+            for (u32 i=1; i<path.points.size(); ++i)
+            {
+                debugDraw.line(path.points[i-1].position, path.points[i].position, color, color);
+            }
+            debugDraw.line(path.points.back().position, path.points.front().position, color, color);
+        }
     }
 
     if (g_input.isKeyPressed(KEY_F1))
@@ -609,6 +663,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::Checkbox("Physics Visualization", &isPhysicsDebugVisualizationEnabled);
         ImGui::Checkbox("Track Graph Visualization", &isTrackGraphDebugVisualizationEnabled);
         ImGui::Checkbox("Motion Grid Visualization", &isMotionGridDebugVisualizationEnabled);
+        ImGui::Checkbox("Path Visualization", &isPathVisualizationEnabled);
 
         auto playerVehicle = std::find_if(vehicles.begin(), vehicles.end(), [](auto& v) {
             return v->driver->isPlayer;
@@ -637,6 +692,98 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         f32 volume = (g_game.isEditing && !isRaceInProgress) ? 0.f : 1.f;
         g_audio.setSoundVolume(backgroundSound, volume);
+    }
+}
+
+void Scene::physicsMouseDrag(Renderer* renderer)
+{
+    static glm::vec3 dragPlaneOffset;
+    static Vehicle* dragVehicle = nullptr;
+    static f32 previousLinearDamping;
+    static f32 previousAngularDamping;
+    static PxRigidDynamic* dragActor = nullptr;
+    static PxVec3 dragActorVelocity;
+
+    // drag objects around with mouse when debug camera is enabled
+    if (isDebugCameraEnabled && isRaceInProgress)
+    {
+        if (dragJoint && dragVehicle)
+        {
+            if (dragVehicle->isDead())
+            {
+                dragActor->setLinearDamping(previousLinearDamping);
+                dragActor->setAngularDamping(previousAngularDamping);
+                dragJoint->release();
+                dragJoint = nullptr;
+                dragVehicle = nullptr;
+            }
+            else
+            {
+                dragVehicle->restoreHitPoints();
+            }
+        }
+
+        glm::vec3 rayDir = editorCamera.getMouseRay(renderer->getRenderWorld());
+        if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+        {
+            PxRaycastBuffer hit;
+            if (raycast(editorCamera.getCameraFrom(), rayDir, 1000.f, &hit))
+            {
+                if (hit.block.actor->getType() == PxActorType::eRIGID_DYNAMIC)
+                {
+                    dragPlaneOffset = convert(hit.block.position) - editorCamera.getCameraFrom();
+                    PxTransform localFrame(PxIdentity);
+                    localFrame.p = hit.block.actor->getGlobalPose().transformInv(hit.block.position);
+                    PxTransform globalFrame(PxIdentity);
+                    globalFrame.p = hit.block.position;
+                    dragJoint = PxDistanceJointCreate(*g_game.physx.physics, hit.block.actor,
+                            localFrame, nullptr, globalFrame);
+                    dragJoint->setMaxDistance(0.5f);
+                    dragActor = (PxRigidDynamic*)hit.block.actor;
+                    previousLinearDamping = dragActor->getLinearDamping();
+                    previousAngularDamping = dragActor->getAngularDamping();
+                    dragActorVelocity = dragActor->getLinearVelocity();
+                    dragActor->setLinearDamping(5.f);
+                    dragActor->setAngularDamping(5.f);
+                    dragActor->wakeUp();
+                    ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
+                    if (userData && userData->entityType == ActorUserData::VEHICLE)
+                    {
+                        dragVehicle = userData->vehicle;
+                    }
+                }
+            }
+        }
+
+        if (g_input.isMouseButtonDown(MOUSE_LEFT))
+        {
+            if (dragJoint)
+            {
+                f32 hitDist = rayPlaneIntersection(editorCamera.getCameraFrom(), rayDir,
+                        -rayDir, editorCamera.getCameraFrom() + dragPlaneOffset);
+                glm::vec3 hitPoint = editorCamera.getCameraFrom() + rayDir * hitDist;
+                PxTransform globalFrame(PxIdentity);
+                globalFrame.p = convert(hitPoint);
+                dragJoint->setLocalPose(PxJointActorIndex::eACTOR1, globalFrame);
+            }
+        }
+
+        if (g_input.isMouseButtonReleased(MOUSE_LEFT))
+        {
+            if (dragJoint)
+            {
+                dragJoint->release();
+                dragJoint = nullptr;
+                dragActor->setLinearVelocity(dragActorVelocity);
+                dragActor->setLinearDamping(previousLinearDamping);
+                dragActor->setAngularDamping(previousAngularDamping);
+            }
+        }
+    }
+
+    if (dragActor)
+    {
+        dragActorVelocity = dragActor->getLinearVelocity();
     }
 }
 
@@ -859,8 +1006,8 @@ bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRay
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
     filter.flags |= PxQueryFlag::eDYNAMIC;
-    filter.data = PxFilterData(
-            COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS, 0, 0, 0);
+    filter.data = PxFilterData(COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT
+            | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_DYNAMIC, 0, 0, 0);
     if (hit)
     {
         return physicsScene->raycast(convert(from), convert(dir), dist, *hit, PxHitFlags(PxHitFlag::eDEFAULT), filter);

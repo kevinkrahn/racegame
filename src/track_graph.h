@@ -54,6 +54,7 @@ public:
         f32 lapDistanceLowMark = 0.f;
     };
 
+    f32 findTrackProgressAtPoint(glm::vec3 const& p, f32 referenceValue) const;
     void findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const;
 
     std::vector<std::vector<Node*>> const& getPaths() const { return paths; }

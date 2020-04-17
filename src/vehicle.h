@@ -57,11 +57,13 @@ public:
     glm::vec3 cameraTarget;
     glm::vec3 cameraFrom;
     f32 hitPoints = 0.f;
-    u32 currentLap = 0;
+    i32 currentLap = 0;
 	i32 placement = 1;
     TrackGraph::QueryResult graphResult;
-    u32 followPathIndex = 0;
-    u32 targetPointIndex = 0;
+    u32 preferredFollowPathIndex = 0;
+    u32 currentFollowPathIndex = 0;
+    f32 distanceAlongPath = 2.f;
+    glm::vec3 previousTargetPosition;
     glm::vec3 startOffset = glm::vec3(0);
     glm::mat4 startTransform;
 	f32 flipTimer = 0.f;
@@ -203,6 +205,10 @@ public:
         addNotification("FIXUP!", 2.f, glm::vec3(1.f));
     }
     void showDebugInfo();
+    void restoreHitPoints()
+    {
+        hitPoints = this->tuning.maxHitPoints;
+    }
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

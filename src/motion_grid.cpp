@@ -103,8 +103,8 @@ void MotionGrid::build(Scene* scene)
         }
     }
 
-    print("Built motion grid: ", count, " (", hitCount, ")\n");
-    print("Num layers: ", highestLayerCount, '\n');
+    print("Built motion grid. Cells checked: ", count, ", Cells used: ", hitCount,
+            ", Layers: ", highestLayerCount, '\n');
 }
 
 void MotionGrid::setCell(glm::vec3 p, CellType cellType, bool permanent)

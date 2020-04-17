@@ -206,14 +206,6 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
         }
     }
 
-#if 0
-    // if there are lots of paths, remove the longest ones
-    if (nodeIndexPaths.size() > 8)
-    {
-        nodeIndexPaths.erase(nodeIndexPaths.begin() + 8, nodeIndexPaths.end());
-    }
-#endif
-
     end.angle = start.angle;
     end.direction = start.direction;
 
@@ -334,4 +326,49 @@ void TrackGraph::findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f
     }
 
     queryResult.lapDistanceLowMark = glm::min(queryResult.lapDistanceLowMark, queryResult.currentLapDistance);
+}
+
+f32 TrackGraph::findTrackProgressAtPoint(glm::vec3 const& p, f32 referenceValue) const
+{
+    f32 minDistance = FLT_MAX;
+    f32 currentDistance = 0.f;
+    for (Node const& node : nodes)
+    {
+        for (u32 i=0; i<node.connections.size(); ++i)
+        {
+            u32 connectionNodeIndex = node.connections[i];
+            const Node* nodeA = &node;
+            const Node* nodeB = &nodes[connectionNodeIndex];
+            if (nodeA->t > nodeB->t)
+            {
+                nodeA = nodeB;
+                nodeB = &node;
+            }
+
+            glm::vec3 a = nodeA->position;
+            glm::vec3 b = nodeB->position;
+
+            glm::vec3 ap = p - a;
+            glm::vec3 ab = b - a;
+            f32 distanceAlongLine = glm::clamp(glm::dot(ap, ab) / glm::length2(ab), 0.f, 1.f);
+            f32 t = nodeA->t + distanceAlongLine * (nodeB->t - nodeA->t);
+
+            if (referenceValue - t < 150.f)
+            {
+                glm::vec3 result = a + distanceAlongLine * ab;
+                f32 distance = glm::length2(p - result);
+                // prioritize points that don't loose progress
+                if (referenceValue - t < 0.f)
+                {
+                    distance += 800.f;
+                }
+                if (minDistance > distance && distance < square(35))
+                {
+                    minDistance = distance;
+                    currentDistance = t;
+                }
+            }
+        }
+    }
+    return currentDistance;
 }

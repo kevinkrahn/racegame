@@ -504,9 +504,9 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 		auto& ai = g_ais[driver->aiIndex];
 		f32 skill = clamp(1.f - ai.drivingSkill
 				+ random(scene->randomSeries, -0.1f, 0.1f), 0.f, 1.f);
-		this->followPathIndex = scene->getTrackGraph().getPaths().size() > 0 ?
-			irandom(scene->randomSeries, 0,
-					(u32)(scene->getTrackGraph().getPaths().size() * skill)) : 0;
+		this->preferredFollowPathIndex = (u32)((scene->getPaths().size() - 1) * (1.f - skill));
+		this->currentFollowPathIndex = this->preferredFollowPathIndex;
+		// TODO: change preferredFollowPathIndex per lap?
 	}
     this->driver = driver;
     this->scene = scene;
@@ -514,6 +514,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->cameraIndex = cameraIndex;
     this->tuning = std::move(tuning);
     this->hitPoints = this->tuning.maxHitPoints;
+    this->previousTargetPosition = translationOf(transform);
 
     engineSound = g_audio.playSound3D(&g_res.sounds->engine2,
             SoundType::VEHICLE, translationOf(transform), true);
@@ -811,7 +812,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         f32 o25 = (f32)g_game.windowHeight * 0.03f;
         f32 o200 = (f32)g_game.windowHeight * 0.21f;
 
-        char* p = tstr(glm::min(currentLap, scene->getTotalLaps()));
+        char* p = tstr(glm::min((u32)currentLap, scene->getTotalLaps()));
         const char* lapStr = "LAP";
         f32 lapWidth = font1.stringDimensions(lapStr).x;
         renderer->push2D(TextRenderable(&font1, lapStr,
@@ -1126,6 +1127,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 
 #if 0
+        auto testPoint = scene->getPaths()[currentFollowPathIndex].getNearestPoint(currentPosition);
+        rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
+                    glm::translate(glm::mat4(1.f), testPoint.position), nullptr, glm::vec3(0, 1, 0)));
+#endif
+
+#if 0
         // test path finding
         if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
         {
@@ -1146,73 +1153,88 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
 #endif
     }
-    else if (scene->getTrackGraph().getPaths().size() > 0)
+    else if (scene->getPaths().size() > 0)
     {
         auto& ai = g_ais[driver->aiIndex];
-        auto const& paths = scene->getTrackGraph().getPaths();
-
-        std::vector<TrackGraph::Node*> const* currentPath = &paths[followPathIndex];
-        bool pathHasLastNode = false;
-        for (size_t i=0; i<currentPath->size(); ++i)
-        {
-            if ((*currentPath)[i] == graphResult.lastNode)
-            {
-                targetPointIndex = (u32)i + 2;
-                if (targetPointIndex >= (u32)currentPath->size())
-                {
-                    targetPointIndex = 0;
-                }
-                pathHasLastNode = true;
-                break;
-            }
-        }
-
-        // switch path if too far off course
-        if (!pathHasLastNode)
-        {
-            for (auto& path : paths)
-            {
-                bool found = false;
-                for (size_t i=0; i<path.size(); ++i)
-                {
-                    if (path[i] == graphResult.lastNode)
-                    {
-                        currentPath = &path;
-                        targetPointIndex = (u32)i + 2;
-                        if (targetPointIndex >= (u32)currentPath->size())
-                        {
-                            targetPointIndex = 0;
-                        }
-                        found = true;
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    break;
-                }
-            }
-        }
-
-        i32 previousIndex = targetPointIndex - 1;
-        if (previousIndex < 0)
-        {
-            previousIndex = (i32)currentPath->size() - 1;
-        }
 
         glm::vec3 forwardVector = getForwardVector();
-        TrackGraph::Node* nextPathNode = (*currentPath)[targetPointIndex];
-        glm::vec3 previousP = (*currentPath)[previousIndex]->position;
-        glm::vec2 diff = glm::vec2(nextPathNode->position) - glm::vec2(previousP);
+
+        RacingLine::Point targetPathPoint =
+            scene->getPaths()[currentFollowPathIndex].getPointAt(distanceAlongPath);
+
+        // look for other paths if too far off course
+        const f32 pathStepSize = 12.f;
+        f32 facingBias = glm::dot(forwardVector, glm::normalize(targetPathPoint.position - currentPosition)) * 10.f;
+        if (currentFollowPathIndex != preferredFollowPathIndex ||
+                glm::distance(currentPosition, targetPathPoint.position) - facingBias > 25.f)
+        {
+            f32 minPathScore = FLT_MAX;
+            for (u32 i=0; i<scene->getPaths().size(); ++i)
+            {
+                RacingLine::Point testPoint =
+                    scene->getPaths()[i].getNearestPoint(currentPosition + forwardVector * 8.f,
+                            graphResult.currentLapDistance);
+                f32 pathScore = glm::distance(testPoint.position, currentPosition);
+
+                // prioritize the preferred path
+                if (i == preferredFollowPathIndex)
+                {
+                    pathScore -= 15.f;
+                }
+
+                // prioritize this path if the vehicle is facing the targeted point
+                pathScore -= glm::dot(forwardVector, glm::normalize(testPoint.position - currentPosition))
+                    * 18.f;
+
+                if (minPathScore > pathScore)
+                {
+                    minPathScore = pathScore;
+                    currentFollowPathIndex = i;
+                    targetPathPoint = testPoint;
+                }
+            }
+            f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
+            distanceAlongPath = targetPathPoint.distanceToHere
+                + (pathLength * glm::max(0, currentLap - 1)) + pathStepSize * 2.f;
+        }
+        else
+        {
+            if (glm::distance2(currentPosition, targetPathPoint.position) < square(10.f))
+            {
+                distanceAlongPath += pathStepSize;
+            }
+            else
+            {
+                f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
+                f32 distanceToHere = scene->getPaths()[currentFollowPathIndex]
+                        .getNearestPoint(currentPosition, graphResult.currentLapDistance).distanceToHere
+                        + (pathLength * glm::max(0, currentLap - 1));
+                if (distanceToHere > distanceAlongPath)
+                {
+                    distanceAlongPath = distanceToHere + pathStepSize;
+                }
+            }
+
+            // TODO: check if we have line of site to the path point
+        }
+
+        glm::vec2 diff = glm::vec2(previousTargetPosition) - glm::vec2(targetPathPoint.position);
         glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(forwardVector);
-        glm::vec3 targetP = nextPathNode->position -
+        glm::vec3 targetP = targetPathPoint.position -
             glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
-        glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition - targetP));
+        glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition) - glm::vec2(targetP));
+        previousTargetPosition = targetPathPoint.position;
+
+#if 0
+        rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
+                    glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
+#endif
 
         // motion planning
         accel = 1.f;
         brake = 0.f;
 
+#if 0
         PxSweepBuffer* hit = nullptr;
         PxSweepBuffer hit1;
         PxSweepBuffer hit2;
@@ -1242,13 +1264,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 dirToTargetP = glm::normalize(glm::vec2(motionPath[0].p - to));
             }
         }
+#endif
 
         steer = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
-
-#if 0
-        rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
-                    glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
-#endif
 
         f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
                 ai.aggression);
@@ -1361,19 +1379,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             steer = 0.f;
         }
-
-        /*
-        if (glm::length2(nextPathNode->position - currentPosition) < square(22.f)
-                || (graphResult.currentLapDistance < nextPathNode->t &&
-                nextPathNode->t - graphResult.currentLapDistance < 120.f))
-        {
-            ++targetPointIndex;
-            if (targetPointIndex >= (*currentPath).size())
-            {
-                targetPointIndex = 0;
-            }
-        }
-        */
 
         // front weapons
         if (aggression > 0.f && frontWeapons.size() > 0
@@ -1519,7 +1524,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         if (glm::dot(xAxisOf(scene->getStart()), dir) > 0.f
                 && glm::length2(currentPosition - finishLinePosition) < square(40.f))
         {
-            if (!finishedRace && currentLap >= scene->getTotalLaps())
+            if (!finishedRace && (u32)currentLap >= scene->getTotalLaps())
             {
                 finishedRace = true;
                 scene->vehicleFinish(vehicleIndex);
@@ -1529,7 +1534,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 g_audio.playSound3D(&g_res.sounds->lap, SoundType::GAME_SFX, currentPosition);
             }
             ++currentLap;
-            if (currentLap == scene->getTotalLaps())
+            if ((u32)currentLap == scene->getTotalLaps())
             {
                 addNotification("LAST LAP!", 2.f, glm::vec3(1, 0, 0));
             }
