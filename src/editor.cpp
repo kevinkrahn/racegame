@@ -357,6 +357,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
             ImGui::Spacing();
 
+            ImGui::ListBoxHeader("AI Paths");
+            for (auto& path : scene->getPaths())
+            {
+            }
+            ImGui::ListBoxFooter();
+            ImGui::HelpMarker("Paths that the AI drivers will follow. The most optimal paths should be first in the list.");
+
+            ImGui::Button("New Path", buttonSize);
+            ImGui::Button("Delete Path", buttonSize);
+
             ImGui::EndTabItem();
         }
 

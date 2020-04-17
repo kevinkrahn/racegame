@@ -42,13 +42,19 @@ struct ActorUserData
 {
     enum
     {
+        NONE,
         TRACK,
         SCENERY,
         VEHICLE,
         ENTITY,
         SELECTABLE_ENTITY,
     };
-    u32 entityType;
+    u32 entityType = NONE;
+    enum
+    {
+        BOOSTER = 1 << 0
+    };
+    u32 flags = 0;
     union
     {
         class Vehicle* vehicle;

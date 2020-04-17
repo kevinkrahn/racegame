@@ -741,13 +741,6 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
         bool showAmmo, bool selected)
 {
     f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
-    /*
-    if (showAmmo)
-    {
-        renderer->push2D(QuadRenderable(iconbg, pos + glm::vec2(iconSize * 0.5f, 0.f),
-                    iconSize, iconSize, glm::vec3(0.35f)));
-    }
-    */
     if (showAmmo)
     {
         Texture* iconbg = &g_res.textures->weapon_iconbg;
@@ -918,7 +911,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             *driver->getVehicleConfig());
 
     // visualize path finding
-#if 1
+#if 0
     if (motionPath.size() > 0)
     {
         Mesh* sphere = g_res.getMesh("world.Sphere");
@@ -1037,437 +1030,43 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         return;
     }
 
-    glm::vec3 currentPosition = getPosition();
-    glm::mat4 transform = getTransform();
-    bool canGo = scene->canGo();
-    f32 accel = 0.f;
-    f32 brake = 0.f;
-    f32 steer = 0.f;
-    bool digital = false;
-    bool beginShoot = false;
-    bool holdShoot = false;
-    bool beginShootRear = false;
-    bool holdShootRear = false;
-    bool switchFrontWeapon = false;
-    bool switchRearWeapon = false;
+    input = {};
     if (isPlayerControlled)
     {
-        if (driver->useKeyboard || scene->getNumHumanDrivers() == 1)
-        {
-            digital = true;
-            accel = g_input.isKeyDown(KEY_UP);
-            brake = g_input.isKeyDown(KEY_DOWN);
-            steer = (f32)g_input.isKeyDown(KEY_LEFT) - (f32)g_input.isKeyDown(KEY_RIGHT);
-            beginShoot = g_input.isKeyPressed(KEY_C);
-            holdShoot = g_input.isKeyDown(KEY_C);
-            beginShootRear = g_input.isKeyPressed(KEY_V);
-            holdShootRear = g_input.isKeyDown(KEY_V);
-            switchFrontWeapon = g_input.isKeyPressed(KEY_X);
-            switchRearWeapon = g_input.isKeyPressed(KEY_B);
-        }
-        else if (!driver->controllerGuid.empty())
-        {
-            Controller* controller = g_input.getController(driver->controllerID);
-            if (!controller)
-            {
-                driver->controllerID = g_input.getControllerId(driver->controllerGuid);
-                controller = g_input.getController(driver->controllerID);
-            }
-            if (controller)
-            {
-                accel = controller->getAxis(AXIS_TRIGGER_RIGHT);
-                brake = controller->getAxis(AXIS_TRIGGER_LEFT);
-                steer = -controller->getAxis(AXIS_LEFT_X);
-                beginShoot = controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
-                holdShoot = controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
-                beginShootRear = controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
-                holdShootRear = controller->isButtonDown(BUTTON_LEFT_SHOULDER);
-                switchFrontWeapon = controller->isButtonPressed(BUTTON_X);
-                switchRearWeapon = controller->isButtonPressed(BUTTON_Y);
-            }
-        }
-        if (scene->getNumHumanDrivers() == 1)
-        {
-            for (auto& c : g_input.getControllers())
-            {
-                const Controller* controller = &c.second;
-                f32 val = controller->getAxis(AXIS_TRIGGER_RIGHT);
-                if (glm::abs(val) > 0.f)
-                {
-                    accel = val;
-                    digital = false;
-                }
-                val = controller->getAxis(AXIS_TRIGGER_LEFT);
-                if (glm::abs(val) > 0.f)
-                {
-                    brake = val;
-                    digital = false;
-                }
-                val = -controller->getAxis(AXIS_LEFT_X);
-                if (glm::abs(val) > 0.f)
-                {
-                    steer = val;
-                    digital = false;
-                }
-                beginShoot = beginShoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
-                holdShoot = holdShoot || controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
-                beginShootRear = beginShootRear || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
-                holdShootRear = holdShootRear || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
-                switchFrontWeapon = switchFrontWeapon || controller->isButtonPressed(BUTTON_X);
-                switchRearWeapon = switchRearWeapon || controller->isButtonPressed(BUTTON_Y);
-            }
-        }
-
-        if (g_input.isKeyPressed(KEY_F))
-        {
-            getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
-            getRigidBody()->addTorque(
-                    getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
-                    PxForceMode::eVELOCITY_CHANGE);
-        }
-
-#if 0
-        auto testPoint = scene->getPaths()[currentFollowPathIndex].getNearestPoint(currentPosition);
-        rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
-                    glm::translate(glm::mat4(1.f), testPoint.position), nullptr, glm::vec3(0, 1, 0)));
-#endif
-
-#if 0
-        // test path finding
-        if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
-        {
-            Camera const& cam = rw->getCamera(0);
-            glm::vec2 mousePos = g_input.getMousePosition();
-            glm::vec3 rayDir = screenToWorldRay(mousePos,
-                    glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
-            PxRaycastBuffer hit;
-            if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
-            {
-                glm::vec3 hitPoint = convert(hit.block.position);
-                glm::vec3 forwardVector = getForwardVector();
-                bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
-                        forwardVector, 20.f);
-                scene->getMotionGrid().findPath(currentPosition, hitPoint, isSomethingBlockingMe,
-                        forwardVector, motionPath);
-            }
-        }
-#endif
+        updatePlayerInput(deltaTime, rw);
     }
     else if (scene->getPaths().size() > 0)
     {
-        auto& ai = g_ais[driver->aiIndex];
-
-        glm::vec3 forwardVector = getForwardVector();
-
-        RacingLine::Point targetPathPoint =
-            scene->getPaths()[currentFollowPathIndex].getPointAt(distanceAlongPath);
-
-        // look for other paths if too far off course
-        const f32 pathStepSize = 12.f;
-        f32 facingBias = glm::dot(forwardVector, glm::normalize(targetPathPoint.position - currentPosition)) * 10.f;
-        if (currentFollowPathIndex != preferredFollowPathIndex ||
-                glm::distance(currentPosition, targetPathPoint.position) - facingBias > 25.f)
-        {
-            f32 minPathScore = FLT_MAX;
-            for (u32 i=0; i<scene->getPaths().size(); ++i)
-            {
-                RacingLine::Point testPoint =
-                    scene->getPaths()[i].getNearestPoint(currentPosition + forwardVector * 8.f,
-                            graphResult.currentLapDistance);
-                f32 pathScore = glm::distance(testPoint.position, currentPosition);
-
-                // prioritize the preferred path
-                if (i == preferredFollowPathIndex)
-                {
-                    pathScore -= 15.f;
-                }
-
-                // prioritize this path if the vehicle is facing the targeted point
-                pathScore -= glm::dot(forwardVector, glm::normalize(testPoint.position - currentPosition))
-                    * 18.f;
-
-                if (minPathScore > pathScore)
-                {
-                    minPathScore = pathScore;
-                    currentFollowPathIndex = i;
-                    targetPathPoint = testPoint;
-                }
-            }
-            f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
-            distanceAlongPath = targetPathPoint.distanceToHere
-                + (pathLength * glm::max(0, currentLap - 1)) + pathStepSize * 2.f;
-        }
-        else
-        {
-            if (glm::distance2(currentPosition, targetPathPoint.position) < square(10.f))
-            {
-                distanceAlongPath += pathStepSize;
-            }
-            else
-            {
-                f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
-                f32 distanceToHere = scene->getPaths()[currentFollowPathIndex]
-                        .getNearestPoint(currentPosition, graphResult.currentLapDistance).distanceToHere
-                        + (pathLength * glm::max(0, currentLap - 1));
-                if (distanceToHere > distanceAlongPath)
-                {
-                    distanceAlongPath = distanceToHere + pathStepSize;
-                }
-            }
-
-            // TODO: check if we have line of site to the path point
-        }
-
-        glm::vec2 diff = glm::vec2(previousTargetPosition) - glm::vec2(targetPathPoint.position);
-        glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(forwardVector);
-        glm::vec3 targetP = targetPathPoint.position -
-            glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
-        glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition) - glm::vec2(targetP));
-        previousTargetPosition = targetPathPoint.position;
-
-#if 0
-        rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
-                    glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
-#endif
-
-        // motion planning
-        accel = 1.f;
-        brake = 0.f;
-
-#if 0
-        PxSweepBuffer* hit = nullptr;
-        PxSweepBuffer hit1;
-        PxSweepBuffer hit2;
-        PxSweepBuffer hit3;
-        bool isVehicleBlockingMe = !target
-            && isBlocking(tuning.collisionWidth / 2 + 0.05f,
-                forwardVector, 15.f + ai.awareness * 5.f,
-                COLLISION_FLAG_CHASSIS, &hit1)
-            && scene->getWorldTime() > 4.f - ai.awareness;
-        if (isVehicleBlockingMe) hit = &hit1;
-        bool isObjectBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.15f,
-                forwardVector, 16.f + ai.awareness * 5.f, COLLISION_FLAG_OBJECT, &hit2);
-        if (isObjectBlockingMe) hit = &hit2;
-        bool isHazardBlockingMe = isBlocking(tuning.collisionWidth / 2 + 1.f,
-                //forwardVector, 10.f + ai.awareness * 10.f,
-                forwardVector, 25.f,
-                COLLISION_FLAG_OIL | COLLISION_FLAG_GLUE, &hit3);
-        if (isHazardBlockingMe) hit = &hit3;
-        if (hit)
-        {
-            glm::vec3 dir = glm::normalize(convert(hit->block.position) - currentPosition);
-            scene->getMotionGrid().findPath(currentPosition, targetP, !!hit,
-                    dir, motionPath);
-            if (motionPath.size() > 2)
-            {
-                glm::vec3 to = motionPath[2].p;
-                dirToTargetP = glm::normalize(glm::vec2(motionPath[0].p - to));
-            }
-        }
-#endif
-
-        steer = glm::dot(glm::vec2(getRightVector()), dirToTargetP);
-
-        f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
-                ai.aggression);
-
-        // get behind target
-#if 1
-        if (!isInAir && aggression > 0.f)
-        {
-            if (!target && frontWeapons.size() > 0
-                    && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
-            {
-                f32 maxTargetDist = aggression * 25.f + 15.f;
-                f32 lowestTargetPriority = FLT_MAX;
-                for (auto& v : scene->getVehicles())
-                {
-                    if (v.get() == this)
-                    {
-                        continue;
-                    }
-
-                    glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
-                    glm::vec2 targetDiff = glm::normalize(-diff);
-                    f32 d = glm::length2(diff);
-                    f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
-                    f32 targetPriority = d + dot * 4.f;
-                    if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
-                    {
-                        target = v.get();
-                        lowestTargetPriority = targetPriority;
-                    }
-                }
-            }
-
-            if (target && !target->isDead())
-            {
-                targetTimer += deltaTime;
-                if (targetTimer > (1.f - aggression) * 2.f)
-                {
-                    glm::vec2 targetDiff = currentPosition - target->getPosition();
-                    // only steer toward the target if doing so would not result in veering off course
-                    if (glm::dot(targetDiff, dirToTargetP) >
-                            0.8f - (aggression * 0.2f))
-                    {
-                        f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.4f;
-                        steer = clamp(targetSteerAngle, -0.5f, 0.5f);
-                    }
-                    else
-                    {
-                        targetTimer = 0.f;
-                        target = nullptr;
-                    }
-                }
-                if (targetTimer > 3.f + aggression)
-                {
-                    targetTimer = 0.f;
-                    target = nullptr;
-                }
-            }
-            else
-            {
-                targetTimer = 0.f;
-                target = nullptr;
-            }
-        }
-#endif
-
-        // fear
-        if (ai.fear > 0.f)
-        {
-            // TODO: shouldn't this use fear rather than aggression?
-            f32 fearRayLength = aggression * 35.f + 10.f;
-            if (scene->sweep(0.5f, currentPosition, -getForwardVector(),
-                        fearRayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
-            {
-                fearTimer += deltaTime;
-                if (fearTimer > 1.f * (1.f - ai.fear) + 0.5f)
-                {
-                    steer += glm::sin((f32)scene->getWorldTime() * 3.f)
-                        * (ai.fear * 0.25f);
-                }
-            }
-            else
-            {
-                fearTimer = 0.f;
-            }
-            /*
-            scene->debugDraw.line(
-                    currentPosition,
-                    currentPosition-getForwardVector()*fearRayLength,
-                    glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
-            */
-        }
-
-        if (canGo)
-        {
-            backupTimer = (getForwardSpeed() < 2.5f) ? backupTimer + deltaTime : 0.f;
-            if (backupTimer > 1.75f)
-            {
-                accel = 0.f;
-                brake = 1.f;
-                steer *= -1.f;
-                if (backupTimer > 5.f || getForwardSpeed() < -9.f)
-                {
-                    backupTimer = 0.f;
-                }
-            }
-        }
-
-        if (std::isnan(steer))
-        {
-            steer = 0.f;
-        }
-
-        // front weapons
-        if (aggression > 0.f && frontWeapons.size() > 0
-                && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
-        {
-            f32 rayLength = aggression * 50.f + 10.f;
-            /*
-            scene->debugDraw.line(
-                    currentPosition,
-                    currentPosition+getForwardVector()*rayLength,
-                    glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
-            */
-            if (scene->sweep(0.5f, currentPosition,
-                        getForwardVector(),
-                        rayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
-            {
-                attackTimer += deltaTime;
-            }
-            else
-            {
-                attackTimer = 0.f;
-            }
-
-            if (frontWeapons[currentFrontWeaponIndex]->fireMode == Weapon::CONTINUOUS)
-            {
-                if (attackTimer > 2.f * (1.f - aggression) + 0.4f)
-                {
-                    holdShoot = true;
-                }
-            }
-            else
-            {
-                if (attackTimer > 2.5f * (1.f - aggression) + 0.7f)
-                {
-                    attackTimer = 0.f;
-                    beginShoot = true;
-                }
-            }
-        }
-        else
-        {
-            attackTimer = 0.f;
-        }
-
-        // rear weapons
-        if (rearWeapons.size() > 0)
-        {
-            if (!isInAir
-                    && aggression > 0.f
-                    && rearWeapons[currentRearWeaponIndex]->ammo > 0
-                    && getForwardSpeed() > 10.f)
-            {
-                if (random(scene->randomSeries, 0.f, 2.5f * (1.f - aggression) + 1.f) < 0.001f)
-                {
-                    beginShootRear = true;
-                }
-            }
-        }
-
-        steer *= -1.f;
+        updateAiInput(deltaTime, rw);
     }
 
     // update weapons
     for (i32 i=0; i<(i32)frontWeapons.size(); ++i)
     {
         auto& w = frontWeapons[i];
-        w->update(scene, this, currentFrontWeaponIndex == i ? beginShoot : false,
-                currentFrontWeaponIndex == i ? holdShoot : false, deltaTime);
+        w->update(scene, this, currentFrontWeaponIndex == i ? input.beginShoot : false,
+                currentFrontWeaponIndex == i ? input.holdShoot : false, deltaTime);
         if (w->ammo == 0 && currentFrontWeaponIndex == i)
         {
-            switchFrontWeapon = true;
+            input.switchFrontWeapon = true;
         }
     }
     for (i32 i=0; i<(i32)rearWeapons.size(); ++i)
     {
         auto& w = rearWeapons[i];
-        w->update(scene, this, currentRearWeaponIndex == i ? beginShootRear : false,
-                currentRearWeaponIndex == i ? holdShootRear : false, deltaTime);
+        w->update(scene, this, currentRearWeaponIndex == i ? input.beginShootRear : false,
+                currentRearWeaponIndex == i ? input.holdShootRear : false, deltaTime);
         if (w->ammo == 0 && currentRearWeaponIndex == i)
         {
-            switchRearWeapon = true;
+            input.switchRearWeapon = true;
         }
     }
 
-    if (switchFrontWeapon)
+    if (input.switchFrontWeapon)
     {
         currentFrontWeaponIndex = (currentFrontWeaponIndex + 1) % frontWeapons.size();
     }
-    if (switchRearWeapon)
+    if (input.switchRearWeapon)
     {
         currentRearWeaponIndex = (currentRearWeaponIndex + 1) % rearWeapons.size();
     }
@@ -1481,7 +1080,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (!finishedRace)
     {
         updatePhysics(scene->getPhysicsScene(), deltaTime,
-                digital, accel, brake, steer, false, canGo, false);
+                input.digital, input.accel, input.brake, input.steer, false, scene->canGo(), false);
     }
     else
     {
@@ -1496,6 +1095,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             controlledBrakingTimer = glm::max(controlledBrakingTimer - deltaTime, 0.f);
         }
     }
+
+    glm::vec3 currentPosition = getPosition();
+    glm::mat4 transform = getTransform();
     lastValidPosition = currentPosition;
 
     // periodically choose random offset
@@ -1511,7 +1113,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
 
     const f32 maxSkippableDistance = 250.f;
-    if (canGo)
+    if (scene->canGo())
     {
         scene->getTrackGraph().findLapDistance(currentPosition, graphResult, maxSkippableDistance);
     }
@@ -2096,4 +1698,469 @@ void Vehicle::showDebugInfo()
     ImGui::Text("Speed: %s", gearNames[vehicle4W->mDriveDynData.mCurrentGear]);
     ImGui::Text("Lap Progress: %f", graphResult.currentLapDistance);
     ImGui::Text("Lap Low Mark: %f", graphResult.lapDistanceLowMark);
+}
+
+void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
+{
+    if (driver->useKeyboard || scene->getNumHumanDrivers() == 1)
+    {
+        input.digital = true;
+        input.accel = g_input.isKeyDown(KEY_UP);
+        input.brake = g_input.isKeyDown(KEY_DOWN);
+        input.steer = (f32)g_input.isKeyDown(KEY_LEFT) - (f32)g_input.isKeyDown(KEY_RIGHT);
+        input.beginShoot = g_input.isKeyPressed(KEY_C);
+        input.holdShoot = g_input.isKeyDown(KEY_C);
+        input.beginShootRear = g_input.isKeyPressed(KEY_V);
+        input.holdShootRear = g_input.isKeyDown(KEY_V);
+        input.switchFrontWeapon = g_input.isKeyPressed(KEY_X);
+        input.switchRearWeapon = g_input.isKeyPressed(KEY_B);
+    }
+    else if (!driver->controllerGuid.empty())
+    {
+        Controller* controller = g_input.getController(driver->controllerID);
+        if (!controller)
+        {
+            driver->controllerID = g_input.getControllerId(driver->controllerGuid);
+            controller = g_input.getController(driver->controllerID);
+        }
+        if (controller)
+        {
+            input.accel = controller->getAxis(AXIS_TRIGGER_RIGHT);
+            input.brake = controller->getAxis(AXIS_TRIGGER_LEFT);
+            input.steer = -controller->getAxis(AXIS_LEFT_X);
+            input.beginShoot = controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+            input.holdShoot = controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
+            input.beginShootRear = controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+            input.holdShootRear = controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+            input.switchFrontWeapon = controller->isButtonPressed(BUTTON_X);
+            input.switchRearWeapon = controller->isButtonPressed(BUTTON_Y);
+        }
+    }
+    if (scene->getNumHumanDrivers() == 1)
+    {
+        for (auto& c : g_input.getControllers())
+        {
+            const Controller* controller = &c.second;
+            f32 val = controller->getAxis(AXIS_TRIGGER_RIGHT);
+            if (glm::abs(val) > 0.f)
+            {
+                input.accel = val;
+                input.digital = false;
+            }
+            val = controller->getAxis(AXIS_TRIGGER_LEFT);
+            if (glm::abs(val) > 0.f)
+            {
+                input.brake = val;
+                input.digital = false;
+            }
+            val = -controller->getAxis(AXIS_LEFT_X);
+            if (glm::abs(val) > 0.f)
+            {
+                input.steer = val;
+                input.digital = false;
+            }
+            input.beginShoot = input.beginShoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+            input.holdShoot = input.holdShoot || controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
+            input.beginShootRear = input.beginShootRear || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
+            input.holdShootRear = input.holdShootRear || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
+            input.switchFrontWeapon = input.switchFrontWeapon || controller->isButtonPressed(BUTTON_X);
+            input.switchRearWeapon = input.switchRearWeapon || controller->isButtonPressed(BUTTON_Y);
+        }
+    }
+
+    if (g_input.isKeyPressed(KEY_F))
+    {
+        getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
+        getRigidBody()->addTorque(
+                getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
+                PxForceMode::eVELOCITY_CHANGE);
+    }
+
+#if 0
+    // test path finding
+    if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
+    {
+        Camera const& cam = rw->getCamera(0);
+        glm::vec2 mousePos = g_input.getMousePosition();
+        glm::vec3 rayDir = screenToWorldRay(mousePos,
+                glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
+        PxRaycastBuffer hit;
+        if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+        {
+            glm::vec3 hitPoint = convert(hit.block.position);
+            glm::vec3 forwardVector = getForwardVector();
+            bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
+                    forwardVector, 20.f);
+            scene->getMotionGrid().findPath(currentPosition, hitPoint, isSomethingBlockingMe,
+                    forwardVector, motionPath);
+        }
+    }
+#endif
+}
+
+void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
+{
+    auto& ai = g_ais[driver->aiIndex];
+
+    glm::vec3 currentPosition = getPosition();
+    glm::vec3 forwardVector = getForwardVector();
+
+    RacingLine::Point targetPathPoint =
+        scene->getPaths()[currentFollowPathIndex].getPointAt(distanceAlongPath);
+
+    // look for other paths if too far off course
+    const f32 pathStepSize = 14.f;
+    f32 facingBias = glm::dot(forwardVector, glm::normalize(targetPathPoint.position - currentPosition)) * 5.f;
+    if (currentFollowPathIndex != preferredFollowPathIndex ||
+            glm::distance(currentPosition, targetPathPoint.position) - facingBias > 26.f)
+    {
+        f32 minPathScore = FLT_MAX;
+        for (u32 i=0; i<scene->getPaths().size(); ++i)
+        {
+            RacingLine::Point testPoint =
+                scene->getPaths()[i].getNearestPoint(currentPosition, graphResult.currentLapDistance);
+            f32 pathScore = glm::distance(testPoint.position, currentPosition);
+
+            // prioritize the preferred path
+            if (i == preferredFollowPathIndex)
+            {
+                pathScore -= 15.f;
+            }
+
+            // prioritize this path if the vehicle is facing the targeted point
+            pathScore -= glm::dot(forwardVector, glm::normalize(testPoint.position - currentPosition))
+                * 18.f;
+
+            if (minPathScore > pathScore)
+            {
+                minPathScore = pathScore;
+                currentFollowPathIndex = i;
+                targetPathPoint = testPoint;
+            }
+        }
+        f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
+        distanceAlongPath = targetPathPoint.distanceToHere
+            + (pathLength * glm::max(0, currentLap - 1)) + pathStepSize;
+        targetPathPoint = scene->getPaths()[currentFollowPathIndex].getPointAt(distanceAlongPath);
+    }
+    else
+    {
+        if (glm::distance2(currentPosition, targetPathPoint.position) < square(16.f))
+        {
+            distanceAlongPath += pathStepSize;
+        }
+        else
+        {
+            f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
+            f32 distanceToHere = scene->getPaths()[currentFollowPathIndex]
+                    .getNearestPoint(currentPosition, graphResult.currentLapDistance).distanceToHere
+                    + (pathLength * glm::max(0, currentLap - 1));
+            if (distanceToHere > distanceAlongPath)
+            {
+                distanceAlongPath = distanceToHere + pathStepSize;
+            }
+        }
+
+        // TODO: check if we have line of site to the path point
+    }
+
+    glm::vec2 diff = glm::vec2(previousTargetPosition) - glm::vec2(targetPathPoint.position);
+    glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(forwardVector);
+    glm::vec3 targetP = targetPathPoint.position -
+        glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
+    glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition) - glm::vec2(targetP));
+    previousTargetPosition = targetPathPoint.position;
+#if 0
+    rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
+                glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
+#endif
+
+    input.accel = 1.f;
+    input.brake = 0.f;
+    input.steer = clamp(glm::dot(glm::vec2(getRightVector()), dirToTargetP) * 1.2f, -1.f, 1.f);
+    f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
+            ai.aggression);
+
+    // obstacle avoidance
+#if 1
+    u32 flags = COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_OIL  |
+                COLLISION_FLAG_GLUE    | COLLISION_FLAG_MINE |
+                COLLISION_FLAG_CHASSIS | COLLISION_FLAG_BOOSTER;
+    PxSweepBuffer hit;
+    f32 sweepLength = 15.f + ai.awareness * 6.f;
+    PxRigidBody* ignoreBody = getRigidBody();
+    bool blocking = false;
+    f32 mySpeed = getRigidBody()->getLinearVelocity().magnitude();
+    if (mySpeed < 35.f && scene->sweep(tuning.collisionWidth * 0.5f + 0.05f,
+            currentPosition + glm::vec3(0, 0, 0.25f), forwardVector, sweepLength,
+            &hit, ignoreBody, flags))
+    {
+        blocking = true;
+        bool shouldAvoid = true;
+
+        // if the object is moving away then don't attempt to avoid it
+        if (hit.block.actor->getType() == PxActorType::eRIGID_DYNAMIC)
+        {
+            f32 mySpeed = this->getForwardSpeed();
+            f32 dot = ((PxRigidDynamic*)hit.block.actor)->getLinearVelocity().dot(
+                    getRigidBody()->getLinearVelocity());
+            if (mySpeed > 5.f && glm::abs(dot - mySpeed) < 5.f)
+            {
+                shouldAvoid = false;
+            }
+        }
+
+        // if chasing a target, don't try to avoid opponent vehicles
+        ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
+        if (target && userData && userData->entityType == ActorUserData::VEHICLE)
+        {
+            shouldAvoid = false;
+        }
+
+        // avoid booster pads that are facing the wrong way
+        if (userData && userData->flags & ActorUserData::BOOSTER)
+        {
+            if (glm::dot(-dirToTargetP,
+                    glm::normalize(glm::vec2(yAxisOf(userData->placeableEntity->transform)))) > 0.5f)
+            {
+                shouldAvoid = false;
+            }
+        }
+
+        if (shouldAvoid)
+        {
+            bool foundOpening = false;
+            for (u32 sweepOffsetCount = 1; sweepOffsetCount <= 3; ++sweepOffsetCount)
+            {
+                for (i32 sweepSide = -1; sweepSide < 2; sweepSide += 1)
+                {
+                    if (sweepSide == 0)
+                    {
+                        continue;
+                    }
+                    glm::vec3 rightVector = getRightVector();
+                    f32 cw = tuning.collisionWidth * 0.25f;
+                    glm::vec3 sweepFrom = currentPosition
+                        + rightVector * (f32)sweepSide * (sweepOffsetCount * tuning.collisionWidth * 0.6f);
+                    u32 collisionFlags = COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_OIL  |
+                                         COLLISION_FLAG_GLUE    | COLLISION_FLAG_MINE |
+                                         COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBJECT;
+                    if (!scene->sweep(cw, sweepFrom, forwardVector, sweepLength * 0.7f, nullptr,
+                            ignoreBody, collisionFlags))
+                    {
+                        input.steer = -(0.4f + sweepOffsetCount * 0.1f) * sweepSide;
+                        foundOpening = true;
+                        break;
+                    }
+                }
+                if (foundOpening)
+                {
+                    break;
+                }
+            }
+        }
+    }
+    /*
+    glm::vec4 c = blocking ? glm::vec4(1, 0, 0, 1) : glm::vec4(0, 1, 0, 1);
+    scene->debugDraw.line(currentPosition, currentPosition + forwardVector * sweepLength, c, c);
+    */
+#endif
+
+    // get behind target
+#if 1
+    if (!isInAir && aggression > 0.f)
+    {
+        if (!target && frontWeapons.size() > 0
+                && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
+        {
+            f32 maxTargetDist = aggression * 25.f + 15.f;
+            f32 lowestTargetPriority = FLT_MAX;
+            for (auto& v : scene->getVehicles())
+            {
+                if (v.get() == this)
+                {
+                    continue;
+                }
+
+                glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
+                glm::vec2 targetDiff = glm::normalize(-diff);
+                f32 d = glm::length2(diff);
+                f32 dot = glm::dot(glm::vec2(getForwardVector()), targetDiff);
+                f32 targetPriority = d + dot * 4.f;
+                if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
+                {
+                    target = v.get();
+                    lowestTargetPriority = targetPriority;
+                }
+            }
+        }
+
+        if (target && !target->isDead())
+        {
+            targetTimer += deltaTime;
+            if (targetTimer > (1.f - aggression) * 2.f)
+            {
+                glm::vec2 targetDiff = currentPosition - target->getPosition();
+                // only steer toward the target if doing so would not result in veering off course
+                if (glm::dot(targetDiff, dirToTargetP) > 0.8f - (aggression * 0.2f))
+                {
+                    f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.4f;
+                    input.steer = clamp(targetSteerAngle, -0.5f, 0.5f);
+                }
+                else
+                {
+                    targetTimer = 0.f;
+                    target = nullptr;
+                }
+            }
+            if (targetTimer > 3.f + aggression)
+            {
+                targetTimer = 0.f;
+                target = nullptr;
+            }
+        }
+        else
+        {
+            targetTimer = 0.f;
+            target = nullptr;
+        }
+    }
+#endif
+
+    // fear
+#if 1
+    if (ai.fear > 0.f)
+    {
+        // TODO: shouldn't this use fear rather than aggression?
+        f32 fearRayLength = aggression * 35.f + 10.f;
+        if (scene->sweep(0.5f, currentPosition, -getForwardVector(),
+                    fearRayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
+        {
+            fearTimer += deltaTime;
+            if (fearTimer > 1.f * (1.f - ai.fear) + 0.5f)
+            {
+                input.steer += glm::sin((f32)scene->getWorldTime() * 3.f)
+                    * (ai.fear * 0.25f);
+            }
+        }
+        else
+        {
+            fearTimer = 0.f;
+        }
+        /*
+        scene->debugDraw.line(
+                currentPosition,
+                currentPosition-getForwardVector()*fearRayLength,
+                glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+        */
+    }
+#endif
+
+    if (scene->canGo())
+    {
+        if (isBackingUp)
+        {
+            isBackingUp = true;
+            input.accel = 0.f;
+            input.brake = 1.f;
+            input.steer *= -1.f;
+            backupTimer += deltaTime;
+            if (backupTimer > 4.5f || getForwardSpeed() < -9.f)
+            {
+                backupTimer = 0.f;
+                isBackingUp = false;
+            }
+            else if (backupTimer > 1.f &&
+                !scene->sweep(tuning.collisionWidth * 0.3f, currentPosition, forwardVector,
+                    6.f, nullptr, getRigidBody(), COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS))
+            {
+                backupTimer = 0.f;
+                isBackingUp = false;
+            }
+        }
+        else
+        {
+            if (getForwardSpeed() < 2.5f &&
+                scene->sweep(tuning.collisionWidth * 0.3f, currentPosition, forwardVector,
+                    4.2f, nullptr, getRigidBody(), COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS))
+            {
+                backupTimer += deltaTime;
+            }
+            else
+            {
+                backupTimer = 0.f;
+            }
+            if (backupTimer > 0.6f)
+            {
+                isBackingUp = true;
+                backupTimer = 0.f;
+            }
+
+            if (getForwardSpeed() < -0.25f)
+            {
+                input.steer *= -1;
+            }
+        }
+    }
+
+    // front weapons
+    if (aggression > 0.f && frontWeapons.size() > 0
+            && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
+    {
+        f32 rayLength = aggression * 50.f + 10.f;
+        /*
+        scene->debugDraw.line(
+                currentPosition,
+                currentPosition+getForwardVector()*rayLength,
+                glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+        */
+        if (scene->sweep(0.5f, currentPosition,
+                    getForwardVector(),
+                    rayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
+        {
+            attackTimer += deltaTime;
+        }
+        else
+        {
+            attackTimer = 0.f;
+        }
+
+        if (frontWeapons[currentFrontWeaponIndex]->fireMode == Weapon::CONTINUOUS)
+        {
+            if (attackTimer > 2.f * (1.f - aggression) + 0.4f)
+            {
+                input.holdShoot = true;
+            }
+        }
+        else
+        {
+            if (attackTimer > 2.5f * (1.f - aggression) + 0.7f)
+            {
+                attackTimer = 0.f;
+                input.beginShoot = true;
+            }
+        }
+    }
+    else
+    {
+        attackTimer = 0.f;
+    }
+
+    // rear weapons
+    if (rearWeapons.size() > 0)
+    {
+        if (!isInAir
+                && aggression > 0.f
+                && rearWeapons[currentRearWeaponIndex]->ammo > 0
+                && getForwardSpeed() > 10.f)
+        {
+            if (random(scene->randomSeries, 0.f, 2.5f * (1.f - aggression) + 1.f) < 0.001f)
+            {
+                input.beginShootRear = true;
+            }
+        }
+    }
+
+    // TODO: make the sign correct in the first place
+    input.steer *= -1.f;
 }

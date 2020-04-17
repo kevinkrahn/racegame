@@ -100,6 +100,7 @@ public:
     f32 targetTimer = 0.f;
     Vehicle* target = nullptr;
     f32 fearTimer = 0.f;
+	bool isBackingUp = false;
 
     // weapons
     SmallVec<std::unique_ptr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
@@ -192,6 +193,7 @@ public:
             notifications.erase(notifications.begin());
         }
         notifications.push_back({ str, time, color });
+        // TODO: animate the notification (maybe start big and shrink)
     }
     void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
     void addBonus(const char* name, u32 amount, glm::vec3 const& color = glm::vec3(0.9f, 0.9f, 0.01f))
@@ -209,6 +211,23 @@ public:
     {
         hitPoints = this->tuning.maxHitPoints;
     }
+
+    struct Input
+    {
+        f32 accel = 0.f;
+        f32 brake = 0.f;
+        f32 steer = 0.f;
+        bool digital = false;
+        bool beginShoot = false;
+        bool holdShoot = false;
+        bool beginShootRear = false;
+        bool holdShootRear = false;
+        bool switchFrontWeapon = false;
+        bool switchRearWeapon = false;
+    } input;
+
+    void updateAiInput(f32 deltaTime, RenderWorld* rw);
+    void updatePlayerInput(f32 deltaTime, RenderWorld* rw);
 
     void onUpdate(RenderWorld* rw, f32 deltaTime);
     void onRender(RenderWorld* rw, f32 deltaTime);

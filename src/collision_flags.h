@@ -12,8 +12,10 @@ enum
     COLLISION_FLAG_DUST       = 1 << 7,
     COLLISION_FLAG_OIL        = 1 << 8,
     COLLISION_FLAG_GLUE       = 1 << 9,
-    COLLISION_FLAG_DYNAMIC    = 1 << 10,
-    COLLISION_FLAG_PICKUP     = 1 << 11,
+    COLLISION_FLAG_MINE       = 1 << 10,
+    COLLISION_FLAG_DYNAMIC    = 1 << 11,
+    COLLISION_FLAG_PICKUP     = 1 << 12,
+    COLLISION_FLAG_BOOSTER    = 1 << 13,
 };
 
 enum

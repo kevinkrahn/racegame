@@ -16,6 +16,7 @@ public:
         : transform(transform), instigator(instigator)
     {
         mesh = g_res.getMesh("mine.Mine");
+        // TODO: add collision mesh so that AI can avoid it
     }
 
     void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
