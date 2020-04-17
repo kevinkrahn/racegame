@@ -75,6 +75,8 @@ void TrackGraph::addConnection(u32 fromIndex, u32 toIndex)
 
 void TrackGraph::rebuild(glm::mat4 const& startTransform)
 {
+    valid = true;
+
     u32 startIndex = 0;
     f32 minDist = FLT_MAX;
     for (u32 i=0; i<nodes.size(); ++i)
@@ -91,6 +93,7 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     if (minDist > square(50.f))
     {
         error("There is no track graph vertex close enough to the finish line.\n");
+        valid = false;
     }
 
     nodes[startIndex].position = glm::vec3(glm::vec2(translationOf(startTransform)), nodes[startIndex].position.z) + xAxisOf(startTransform) * 2.f;
@@ -126,6 +129,7 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     if (end.connections.empty())
     {
         error("Invalid track graph: cannot find any connections to end node.\n");
+        valid = false;
     }
 
     end.t = 0.f;

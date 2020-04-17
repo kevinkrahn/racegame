@@ -1,7 +1,7 @@
 #include "editor_camera.h"
-#include "input.h"
-#include "game.h"
-#include "imgui.h"
+#include "../input.h"
+#include "../game.h"
+#include "../imgui.h"
 
 void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
 {

@@ -1932,6 +1932,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             bool foundOpening = false;
             for (u32 sweepOffsetCount = 1; sweepOffsetCount <= 3; ++sweepOffsetCount)
             {
+                // TODO: prefer to swerve to the side that is closer to the angle the AI wanted to steer to anyways
                 for (i32 sweepSide = -1; sweepSide < 2; sweepSide += 1)
                 {
                     if (sweepSide == 0)

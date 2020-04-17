@@ -731,6 +731,9 @@ void Terrain::onLitPass(class Renderer* renderer)
     glUniform4fv(5, 1, m.texScale);
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+
+    // reset the brush settings every frame
+    setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
 }
 
 DataFile::Value Terrain::serializeState()

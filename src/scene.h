@@ -8,14 +8,14 @@
 #include "smoke_particles.h"
 #include "debug_draw.h"
 #include "driver.h"
-#include "editor.h"
+#include "editor/editor.h"
+#include "editor/editor_camera.h"
 #include "2d.h"
 #include "terrain.h"
 #include "track.h"
 #include "datafile.h"
 #include "entities/start.h"
 #include "collision_flags.h"
-#include "editor_camera.h"
 #include "racing_line.h"
 #include <vector>
 
@@ -75,6 +75,7 @@ class Scene : public PxSimulationEventCallback
 {
 private:
     Editor editor;
+    EditorCamera editorCamera;
 
     std::vector<RacingLine> paths;
     bool hasGeneratedPaths = false;
@@ -87,7 +88,6 @@ private:
     std::vector<u32> placements;
     std::vector<RaceResult> raceResults;
 
-    EditorCamera editorCamera;
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
     u32 totalLaps = 4;

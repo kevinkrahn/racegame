@@ -33,6 +33,7 @@
 - Add ability to create holes in the terrain (for tunnels, caves, .etc)
 - Add sound effect when driving on sand
 - Add ability to snap spline to edge of track in editor 
+- Improve AI when slipping on oil (counter-steer)
 
 - Ideas:
     - Grenade launcher weapon

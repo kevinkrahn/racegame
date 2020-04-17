@@ -1,7 +1,7 @@
 #pragma once
 
-#include "math.h"
-#include "renderer.h"
+#include "../math.h"
+#include "../renderer.h"
 
 class EditorCamera
 {
