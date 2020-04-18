@@ -1861,6 +1861,8 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         // TODO: check if we have line of site to the path point
     }
 
+    // TODO: Use targetSpeed of the racingLine to modulate throttle
+
     glm::vec2 diff = glm::vec2(previousTargetPosition) - glm::vec2(targetPathPoint.position);
     glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(forwardVector);
     glm::vec3 targetP = targetPathPoint.position -

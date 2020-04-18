@@ -37,6 +37,23 @@ class PathMode : public EditorMode, public TransformGizmoHandler
 
     void subdividePath(Scene* scene)
     {
+        if (selectedPoints.size() != 2)
+        {
+            return;
+        }
+        u32 pointIndexA = selectedPoints[0];
+        u32 pointIndexB = selectedPoints[1];
+        if (pointIndexB < pointIndexA)
+        {
+            std::swap(pointIndexA, pointIndexB);
+        }
+        auto& path = scene->getPaths()[selectedPathIndex];
+        RacingLine::Point newPoint;
+        newPoint.position =
+            (path.points[pointIndexA].position + path.points[pointIndexB].position) * 0.5f;
+        newPoint.targetSpeed =
+            (path.points[pointIndexA].targetSpeed + path.points[pointIndexB].targetSpeed) * 0.5f;
+        path.points.insert(path.points.begin() + pointIndexB, newPoint);
     }
 
     void deletePoints(Scene* scene)
@@ -91,7 +108,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
         if (scene->getPaths().size() > 0)
         {
             scene->getPaths().erase(scene->getPaths().begin() + selectedPathIndex);
-            --selectedPathIndex;
+            selectedPathIndex = 0;
         }
     }
 
@@ -190,6 +207,10 @@ public:
 
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
+                if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+                {
+                    selectedPoints.clear();
+                }
                 bool hit = false;
                 for (u32 i=0; i<path.points.size(); ++i)
                 {
@@ -200,11 +221,15 @@ public:
                         raySphereIntersection(cam.position, rayDir, path.points[i].position, size) > 0.f)
                     {
                         bool alreadySelected = false;
-                        for (u16 si : selectedPoints)
+                        for (u32 j=0; j<selectedPoints.size(); ++j)
                         {
-                            if ((u32)si == i)
+                            if ((u32)selectedPoints[j] == i)
                             {
                                 alreadySelected = true;
+                                if (g_input.isKeyDown(KEY_LSHIFT))
+                                {
+                                    selectedPoints.erase(selectedPoints.begin() + j);
+                                }
                                 break;
                             }
                         }
@@ -213,6 +238,7 @@ public:
                             selectedPoints.push_back((u16)i);
                         }
                         hit = true;
+                        break;
                     }
                 }
                 if (!hit)
@@ -367,6 +393,7 @@ public:
     void gizmoScale(f32 scaleFactor, i32 entityDragAxis, glm::vec3 const& scaleCenter,
             glm::vec3 const& dragOffset, glm::vec3 const& hitPos, glm::vec3& hitPosZ) override
     {
+        // TODO: Scale along the axis chosen, not all of them
         if (selectedPoints.size() > 1)
         {
             auto& path = scene->getPaths()[selectedPathIndex];
