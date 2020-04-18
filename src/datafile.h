@@ -362,8 +362,12 @@ namespace DataFile
             new (&bytearray_) ByteArray(val);
         }
 
-        Array& array()
+        Array& array(bool emptyArrayIfNone=false)
         {
+            if (emptyArrayIfNone && dataType == DataType::NONE)
+            {
+                setArray(Array());
+            }
             CHECK_TYPE(DataType::ARRAY);
             return array_;
         }

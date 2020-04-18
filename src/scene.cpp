@@ -1207,6 +1207,11 @@ DataFile::Value Scene::serialize()
     dict["notes"] = DataFile::makeString(notes);
     dict["version"] = DataFile::makeInteger(0);
     dict["entities"] = DataFile::makeArray();
+    dict["paths"] = DataFile::makeArray();
+    for(auto& p : paths)
+    {
+        dict["paths"].array().push_back(p.serialize());
+    }
     DataFile::Value::Array& entityArray = dict["entities"].array();
 
     for (auto& entity : this->entities)
@@ -1234,6 +1239,12 @@ void Scene::deserialize(DataFile::Value& data)
     name = data["name"].string("");
     notes = data["notes"].string("");
     u32 version = (u32)data["version"].integer(0);
+    for (auto& p : data["paths"].array(true))
+    {
+        RacingLine l;
+        l.deserialize(p);
+        paths.push_back(std::move(l));
+    }
     auto& entityArray = data["entities"].array();
     if (version == 0)
     {

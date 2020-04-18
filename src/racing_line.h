@@ -116,4 +116,30 @@ public:
 
         return nearestPoint;
     }
+
+    DataFile::Value serialize()
+    {
+        auto array = DataFile::makeArray();
+        for (auto& p : points)
+        {
+            auto d = DataFile::makeDict();
+            d["position"] = DataFile::makeVec3(p.position);
+            d["targetSpeed"] = DataFile::makeReal(p.targetSpeed);
+            array.array().push_back(std::move(d));
+        }
+        return array;
+    }
+
+    void deserialize(DataFile::Value& val)
+    {
+        points.clear();
+        auto& array = val.array();
+        for (auto& d : array)
+        {
+            Point p;
+            p.position = d["position"].vec3();
+            p.targetSpeed = d["targetSpeed"].real();
+            points.push_back(p);
+        }
+    }
 };
