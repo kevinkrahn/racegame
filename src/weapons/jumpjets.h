@@ -58,4 +58,10 @@ public:
         ammo -= 1;
         t = 0.1f;
     }
+
+    bool shouldUse(Scene* scene, Vehicle* vehicle) override
+    {
+        return !vehicle->isInAir && ammo > 0 && vehicle->getForwardSpeed() > 13.f
+                && vehicle->isNearHazard && irandom(scene->randomSeries, 0, 8) < 2;
+    }
 };

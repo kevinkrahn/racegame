@@ -218,6 +218,7 @@ void Game::run()
         g_gui.beginFrame();
         currentScene->onUpdate(renderer.get(), deltaTime);
         menu.onUpdate(renderer.get(), deltaTime);
+        checkDebugKeys();
         g_gui.endFrame();
         ImGui::Render();
         renderer->render(deltaTime);
@@ -324,5 +325,92 @@ void Game::loadGame()
         Driver driver;
         driver.deserialize(d);
         state.drivers.push_back(std::move(driver));
+    }
+}
+
+void Game::checkDebugKeys()
+{
+    if (g_input.isKeyPressed(KEY_F1))
+    {
+        isDebugOverlayEnabled = !isDebugOverlayEnabled;
+    }
+
+    if (g_input.isKeyPressed(KEY_F2))
+    {
+        isPhysicsDebugVisualizationEnabled = !isPhysicsDebugVisualizationEnabled;
+    }
+
+    if (g_input.isKeyPressed(KEY_F3))
+    {
+        isTrackGraphDebugVisualizationEnabled = !isTrackGraphDebugVisualizationEnabled;
+    }
+
+    if (g_input.isKeyPressed(KEY_F6))
+    {
+        isMotionGridDebugVisualizationEnabled = !isMotionGridDebugVisualizationEnabled;
+    }
+
+    if (g_input.isKeyPressed(KEY_F7))
+    {
+        isPathVisualizationEnabled = !isPathVisualizationEnabled;
+    }
+
+    if (g_input.isKeyPressed(KEY_F8))
+    {
+        isDebugCameraEnabled = !isDebugCameraEnabled;
+    }
+
+    if (isDebugOverlayEnabled)
+    {
+        if (isImGuiMetricsWindowOpen)
+        {
+            ImGui::ShowMetricsWindow(&isImGuiMetricsWindowOpen);
+        }
+        if (isImGuiDemoWindowOpen)
+        {
+            ImGui::ShowDemoWindow(&isImGuiDemoWindowOpen);
+        }
+
+        ImGui::Begin("Debug", &isDebugOverlayEnabled);
+
+        if (ImGui::Button("ImGui Metrics"))
+        {
+            isImGuiMetricsWindowOpen = !isImGuiMetricsWindowOpen;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("ImGui Demo"))
+        {
+            isImGuiDemoWindowOpen = !isImGuiDemoWindowOpen;
+        }
+
+        ImGui::Text("FPS: %.3f", 1.f / g_game.realDeltaTime);
+        ImGui::Text("Average FPS: %.3fms", 1.f / g_game.averageDeltaTime);
+        ImGui::Text("Frame Time: %.3fms", g_game.realDeltaTime * 1000);
+        ImGui::Text("Average Frame Time: %.3fms", g_game.averageDeltaTime * 1000);
+        ImGui::Text("Highest Frame Time: %.3fms", g_game.allTimeHighestDeltaTime * 1000);
+        ImGui::Text("Lowest Frame Time: %.3fms", g_game.allTimeLowestDeltaTime * 1000);
+        ImGui::PlotLines("Frame Times", g_game.deltaTimeHistory, ARRAY_SIZE(g_game.deltaTimeHistory),
+                0, nullptr, 0.f, 0.04f, { 0, 80 });
+        ImGui::Text("Temp Render Memory: %.3fkb", renderer->getTempRenderBufferSize() / 1024.f);
+        ImGui::Text("Resolution: %ix%i", g_game.config.graphics.resolutionX, g_game.config.graphics.resolutionY);
+        ImGui::Text("Time Dilation: %f", g_game.timeDilation);
+        ImGui::Text("Renderables: %i", renderer->getRenderablesCount());
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Checkbox("Debug Camera", &isDebugCameraEnabled);
+        ImGui::Checkbox("Physics Visualization", &isPhysicsDebugVisualizationEnabled);
+        ImGui::Checkbox("Track Graph Visualization", &isTrackGraphDebugVisualizationEnabled);
+        ImGui::Checkbox("Motion Grid Visualization", &isMotionGridDebugVisualizationEnabled);
+        ImGui::Checkbox("Path Visualization", &isPathVisualizationEnabled);
+
+        if (currentScene)
+        {
+            currentScene->showDebugInfo();
+        }
+
+        ImGui::End();
     }
 }

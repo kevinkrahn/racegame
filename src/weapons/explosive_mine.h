@@ -54,4 +54,11 @@ public:
 
         ammo -= 1;
     }
+
+    bool shouldUse(Scene* scene, Vehicle* vehicle) override
+    {
+        return vehicle->isOnTrack && vehicle->getAI()->aggression > 0.f
+                && ammo > 0 && vehicle->getForwardSpeed() > 10.f
+                && irandom(scene->randomSeries, 0, 100 + (i32)((1.f - vehicle->getAI()->aggression) * 100)) < 2;
+    }
 };

@@ -106,6 +106,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
 
     void generatePaths(Scene* scene)
     {
+        // TODO: add confirmation dialog (because this will delete all the current paths)
         scene->getPaths().clear();
         scene->getPaths().reserve(scene->getTrackGraph().getPaths().size());
         for (auto& path : scene->getTrackGraph().getPaths())
@@ -232,6 +233,7 @@ public:
             if (ImGui::Selectable(tstr("Path ", i + 1), i == selectedPathIndex))
             {
                 selectedPathIndex = i;
+                selectedPoints.clear();
             }
         }
         ImGui::ListBoxFooter();
@@ -314,7 +316,7 @@ public:
     void gizmoDrag(glm::vec3 const& dragCenter, glm::vec3 const& dragDest, glm::vec3 const& dragDestZ,
             glm::vec3 dragOffset, i32 dragAxis) override
     {
-        auto& path = scene->getPaths()[selectedGraphPathIndex];
+        auto& path = scene->getPaths()[selectedPathIndex];
         for (u16 pointIndex : selectedPoints)
         {
             if (dragAxis & DragAxis::X)
@@ -339,7 +341,7 @@ public:
 
     void gizmoRotate(f32 angleDiff, glm::vec3 const& rotatePivot, i32 dragAxis) override
     {
-        auto& path = scene->getPaths()[selectedGraphPathIndex];
+        auto& path = scene->getPaths()[selectedPathIndex];
         glm::vec3 rotationAxis(1, 0, 0);
         if (dragAxis & DragAxis::X)
         {
@@ -367,7 +369,7 @@ public:
     {
         if (selectedPoints.size() > 1)
         {
-            auto& path = scene->getPaths()[selectedGraphPathIndex];
+            auto& path = scene->getPaths()[selectedPathIndex];
             glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(scaleFactor))
                 * glm::translate(glm::mat4(1.f), -scaleCenter);
             for (u16 pointIndex : selectedPoints)

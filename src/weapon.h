@@ -28,9 +28,9 @@ public:
         ONE_SHOT,
         CONTINUOUS,
     };
+    FireMode fireMode = FireMode::ONE_SHOT;
 
     WeaponInfo info;
-    FireMode fireMode = FireMode::ONE_SHOT;
     u32 ammo = 0;
     u32 ammoUnitCount = 1;
     u32 upgradeLevel;
@@ -49,5 +49,6 @@ public:
             struct VehicleConfiguration const& config, struct VehicleData const& vehicleData) {}
     virtual void reset() {}
     virtual f32 onDamage(f32 damage, class Vehicle* vehicle) { return damage; }
+    virtual bool shouldUse(class Scene* scene, class Vehicle* vehicle) { return false; }
 };
 

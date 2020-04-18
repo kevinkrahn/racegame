@@ -6,6 +6,7 @@
 #include "config.h"
 #include "buffer.h"
 #include <memory>
+#include <vector>
 
 enum struct GameMode
 {
@@ -21,6 +22,7 @@ class Game
 public:
     std::unique_ptr<class Renderer> renderer;
 
+    // TODO: split game state out into its own thing
     struct
     {
         std::vector<Driver> drivers;
@@ -65,6 +67,27 @@ public:
     Menu menu;
     Buffer tempMem = Buffer(megabytes(4), 16);
 
+    // debug
+    bool isImGuiDemoWindowOpen = false;
+    bool isImGuiMetricsWindowOpen = false;
+    bool isDebugCameraEnabled = false;
+    bool isDebugOverlayEnabled = false;
+    bool isPhysicsDebugVisualizationEnabled = false;
+    bool isTrackGraphDebugVisualizationEnabled = false;
+    bool isMotionGridDebugVisualizationEnabled = false;
+    bool isPathVisualizationEnabled = false;
+    /*
+    std::vector<std::string> debugLogs;
+    template <typename T, typename... Args>
+    void log(Args const& ...args)
+    {
+        std::string s = str(args...);
+        std::cout << s << std::endl;
+        debugLogs.push_back(s);
+    }
+    */
+    void checkDebugKeys();
+
     void run();
     Scene* changeScene(const char* sceneName);
 
@@ -75,6 +98,7 @@ public:
 template <typename... Args>
 char* tstr(Args const&... args)
 {
+    // TODO: This could allocate memory. It shouldn't ever allocate memory
     std::string s = str(args...);
     u8* mem = g_game.tempMem.writeBytes((void*)s.data(), s.size() + 1);
     return reinterpret_cast<char*>(mem);

@@ -503,8 +503,8 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 	{
 		auto& ai = g_ais[driver->aiIndex];
 		f32 skill = clamp(1.f - ai.drivingSkill
-				+ random(scene->randomSeries, -0.1f, 0.1f), 0.f, 1.f);
-		this->preferredFollowPathIndex = (u32)((scene->getPaths().size() - 1) * (1.f - skill));
+				+ random(scene->randomSeries, -0.2f, 0.2f), 0.f, 0.99999f);
+		this->preferredFollowPathIndex = (u32)(glm::max(0, (i32)scene->getPaths().size()) * skill);
 		this->currentFollowPathIndex = this->preferredFollowPathIndex;
 		// TODO: change preferredFollowPathIndex per lap?
 	}
@@ -729,12 +729,6 @@ void Vehicle::updatePhysics(PxScene* scene, f32 timestep, bool digital,
         PxVec3 boostDir = getRigidBody()->getLinearVelocity().getNormalized();
         getRigidBody()->addForce(boostDir * driftBoost, PxForceMode::eACCELERATION);
     }
-}
-
-bool Vehicle::isBlocking(f32 radius, glm::vec3 const& dir, f32 dist, u32 flags, PxSweepBuffer* hit)
-{
-    return scene->sweep(radius, getPosition() + glm::vec3(0, 0, 0.25f), dir, dist, hit,
-            getRigidBody(), flags);
 }
 
 void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
@@ -1284,7 +1278,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     const f32 smokeInterval = 0.015f;
     bool smoked = false;
     u32 numWheelsOnTrack = 0;
-    bool anyWheelOnRoad = false;
+    isOnTrack = false;
     bool isTouchingAnyGlue = false;
     f32 maxSlip = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -1318,7 +1312,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 }
 
                 d.mDampingRate = tuning.wheelDampingRate;
-                anyWheelOnRoad = true;
+                isOnTrack = true;
 
                 // cover wheels with oil if driving over oil
                 for (auto& d : groundSpots)
@@ -1465,10 +1459,13 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
 
     g_audio.setSoundVolume(tireSound,
-            anyWheelOnRoad ? glm::min(1.f, glm::min(maxSlip * 1.2f,
+            isOnTrack ? glm::min(1.f, glm::min(maxSlip * 1.2f,
                     getRigidBody()->getLinearVelocity().magnitude() * 0.1f)) : 0.f);
 
-    if (smoked) smokeTimer = smokeInterval;
+    if (smoked)
+    {
+        smokeTimer = smokeInterval;
+    }
 
     // destroy vehicle if it is flipped and unable to move
     if (onGround && numWheelsOnTrack <= 2
@@ -1885,17 +1882,17 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 #if 1
     u32 flags = COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_OIL  |
                 COLLISION_FLAG_GLUE    | COLLISION_FLAG_MINE |
-                COLLISION_FLAG_CHASSIS | COLLISION_FLAG_BOOSTER;
+                COLLISION_FLAG_CHASSIS;// | COLLISION_FLAG_BOOSTER;
     PxSweepBuffer hit;
-    f32 sweepLength = 15.f + ai.awareness * 6.f;
+    f32 sweepLength = 13.f + ai.awareness * 8.f;
     PxRigidBody* ignoreBody = getRigidBody();
-    bool blocking = false;
+    isBlocked = false;
+    isNearHazard = false;
     f32 mySpeed = getRigidBody()->getLinearVelocity().magnitude();
     if (mySpeed < 35.f && scene->sweep(tuning.collisionWidth * 0.5f + 0.05f,
             currentPosition + glm::vec3(0, 0, 0.25f), forwardVector, sweepLength,
             &hit, ignoreBody, flags))
     {
-        blocking = true;
         bool shouldAvoid = true;
 
         // if the object is moving away then don't attempt to avoid it
@@ -1918,6 +1915,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
 
         // avoid booster pads that are facing the wrong way
+        // TODO: fix this (it seems to have the wrong effect; the ai drive toward the backwards boosters)
         if (userData && userData->flags & ActorUserData::BOOSTER)
         {
             if (glm::dot(-dirToTargetP,
@@ -1929,6 +1927,8 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 
         if (shouldAvoid)
         {
+            isBlocked = true;
+            isNearHazard = true;
             bool foundOpening = false;
             for (u32 sweepOffsetCount = 1; sweepOffsetCount <= 3; ++sweepOffsetCount)
             {
@@ -1962,7 +1962,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
     }
     /*
-    glm::vec4 c = blocking ? glm::vec4(1, 0, 0, 1) : glm::vec4(0, 1, 0, 1);
+    glm::vec4 c = isBlocked ? glm::vec4(1, 0, 0, 1) : glm::vec4(0, 1, 0, 1);
     scene->debugDraw.line(currentPosition, currentPosition + forwardVector * sweepLength, c, c);
     */
 #endif
@@ -2043,10 +2043,12 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                 input.steer += glm::sin((f32)scene->getWorldTime() * 3.f)
                     * (ai.fear * 0.25f);
             }
+            isFollowed = true;
         }
         else
         {
             fearTimer = 0.f;
+            isFollowed = false;
         }
         /*
         scene->debugDraw.line(
@@ -2150,15 +2152,14 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     // rear weapons
     if (rearWeapons.size() > 0)
     {
-        if (!isInAir
-                && aggression > 0.f
-                && rearWeapons[currentRearWeaponIndex]->ammo > 0
-                && getForwardSpeed() > 10.f)
+        rearWeaponTimer += deltaTime;
+        if (rearWeaponTimer > 0.2f)
         {
-            if (random(scene->randomSeries, 0.f, 2.5f * (1.f - aggression) + 1.f) < 0.001f)
+            if (rearWeapons[currentRearWeaponIndex]->shouldUse(scene, this))
             {
                 input.beginShootRear = true;
             }
+            rearWeaponTimer = 0.f;
         }
     }
 

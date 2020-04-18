@@ -193,6 +193,7 @@ private:
     FullscreenFramebuffers fsfb = { 0 };
     RenderWorld renderWorld;
 
+    u32 renderablesCount = 0;
     u32 currentRenderingCameraIndex = 0;
 
     u32 fullscreenBlurDivisor = 4;
@@ -248,42 +249,6 @@ public:
     }
 
     size_t getTempRenderBufferSize() const { return renderWorld.tempRenderBuffer.pos; }
-    std::string getDebugRenderList()
-    {
-        std::sort(renderWorld.renderables.begin(), renderWorld.renderables.end(), [&](auto& a, auto& b) {
-            return a.priority < b.priority;
-        });
-
-        std::string result;
-        std::string prev = str(renderWorld.renderables.front().priority, " - ",
-                renderWorld.renderables.front().renderable->getDebugString());
-        u32 count = 0;
-        u32 items = 0;
-        for (auto it = renderWorld.renderables.begin(); it != renderWorld.renderables.end(); ++it)
-        {
-            std::string t = str(it->priority, " - ", it->renderable->getDebugString());
-            if (t != prev)
-            {
-                if (items != 0)
-                {
-                    result += '\n';
-                }
-                result += prev + " x " + std::to_string(count);
-                prev = std::move(t);
-                count = 1;
-                ++items;
-            }
-            else
-            {
-                ++count;
-            }
-
-            if (it + 1 == renderWorld.renderables.end())
-            {
-                result += "\n" + prev + " x " + std::to_string(count);
-            }
-        }
-        return result;
-    }
+    u32 getRenderablesCount() { return renderablesCount; }
 };
 

@@ -107,4 +107,10 @@ public:
         }
         rw->push(Flames(exhausts, mesh, glm::min(boostTimer * 7.f, 1.f)));
     }
+
+    bool shouldUse(Scene* scene, Vehicle* vehicle) override
+    {
+        return !vehicle->isInAir && ammo > 0 && vehicle->getForwardSpeed() > 5.f
+                && irandom(scene->randomSeries, 0, 100 - (i32)vehicle->isFollowed * 50) < 2;
+    }
 };

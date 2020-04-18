@@ -408,7 +408,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             }
         }
 
-        if ((g_game.isEditing && !isRaceInProgress) || isDebugCameraEnabled)
+        if ((g_game.isEditing && !isRaceInProgress) || g_game.isDebugCameraEnabled)
         {
             editorCamera.update(deltaTime, rw);
         }
@@ -440,11 +440,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         e->onRender(rw, this, deltaTime);
     }
 
-    if (g_input.isKeyPressed(KEY_F2))
-    {
-        isPhysicsDebugVisualizationEnabled = !isPhysicsDebugVisualizationEnabled;
-    }
-
     // handle newly created entities
     for (auto& e : newEntities)
     {
@@ -457,7 +452,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     newEntities.clear();
 
-    if (isPhysicsDebugVisualizationEnabled)
+    if (g_game.isPhysicsDebugVisualizationEnabled)
     {
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
@@ -484,37 +479,17 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
     }
 
-    if (g_input.isKeyPressed(KEY_F8))
-    {
-        isDebugCameraEnabled = !isDebugCameraEnabled;
-    }
-
-    if (g_input.isKeyPressed(KEY_F3))
-    {
-        isTrackGraphDebugVisualizationEnabled = !isTrackGraphDebugVisualizationEnabled;
-    }
-
-    if (isTrackGraphDebugVisualizationEnabled)
+    if (g_game.isTrackGraphDebugVisualizationEnabled)
     {
         trackGraph.debugDraw(&debugDraw, renderer);
     }
 
-    if (g_input.isKeyPressed(KEY_F6))
-    {
-        isMotionGridDebugVisualizationEnabled = !isMotionGridDebugVisualizationEnabled;
-    }
-
-    if (isMotionGridDebugVisualizationEnabled)
+    if (g_game.isMotionGridDebugVisualizationEnabled)
     {
         //motionGrid.debugDraw(rw);
     }
 
-    if (g_input.isKeyPressed(KEY_F7))
-    {
-        isPathVisualizationEnabled = !isPathVisualizationEnabled;
-    }
-
-    if (isPathVisualizationEnabled)
+    if (g_game.isPathVisualizationEnabled)
     {
         for (auto& path : paths)
         {
@@ -525,11 +500,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             }
             debugDraw.line(path.points.back().position, path.points.front().position, color, color);
         }
-    }
-
-    if (g_input.isKeyPressed(KEY_F1))
-    {
-        isDebugOverlayEnabled = !isDebugOverlayEnabled;
     }
 
     rw->add(&ribbons);
@@ -620,74 +590,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         g_gui.end();
     }
 
-    if (isDebugOverlayEnabled)
-    {
-        if (isImGuiMetricsWindowOpen)
-        {
-            ImGui::ShowMetricsWindow(&isImGuiMetricsWindowOpen);
-        }
-        if (isImGuiDemoWindowOpen)
-        {
-            ImGui::ShowDemoWindow(&isImGuiDemoWindowOpen);
-        }
-
-        ImGui::Begin("Debug", &isDebugOverlayEnabled);
-
-        if (ImGui::Button("ImGui Metrics"))
-        {
-            isImGuiMetricsWindowOpen = !isImGuiMetricsWindowOpen;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("ImGui Demo"))
-        {
-            isImGuiDemoWindowOpen = !isImGuiDemoWindowOpen;
-        }
-
-        ImGui::Text("FPS: %f", 1.f / g_game.realDeltaTime);
-        ImGui::Text("Average FPS: %fms", 1.f / g_game.averageDeltaTime);
-        ImGui::Text("Frame Time: %fms", g_game.realDeltaTime * 1000);
-        ImGui::Text("Average Frame Time: %fms", g_game.averageDeltaTime * 1000);
-        ImGui::Text("Highest Frame Time: %fms", g_game.allTimeHighestDeltaTime * 1000);
-        ImGui::Text("Lowest Frame Time: %fms", g_game.allTimeLowestDeltaTime * 1000);
-        ImGui::PlotLines("Frame Times", g_game.deltaTimeHistory, ARRAY_SIZE(g_game.deltaTimeHistory),
-                0, nullptr, 0.f, 0.04f, { 0, 80 });
-        ImGui::Text("Temp Render Memory: %fkb", renderer->getTempRenderBufferSize() / 1024.f);
-        ImGui::Text("Resolution: %ix%i", g_game.config.graphics.resolutionX, g_game.config.graphics.resolutionY);
-        ImGui::Text("Time Dilation: %f", g_game.timeDilation);
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-        ImGui::Checkbox("Debug Camera", &isDebugCameraEnabled);
-        ImGui::Checkbox("Physics Visualization", &isPhysicsDebugVisualizationEnabled);
-        ImGui::Checkbox("Track Graph Visualization", &isTrackGraphDebugVisualizationEnabled);
-        ImGui::Checkbox("Motion Grid Visualization", &isMotionGridDebugVisualizationEnabled);
-        ImGui::Checkbox("Path Visualization", &isPathVisualizationEnabled);
-
-        auto playerVehicle = std::find_if(vehicles.begin(), vehicles.end(), [](auto& v) {
-            return v->driver->isPlayer;
-        });
-        if (playerVehicle != vehicles.end())
-        {
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-            (*playerVehicle)->showDebugInfo();
-        }
-
-        ImGui::End();
-
-        /*
-        char* debugRenderListText = tstr(renderer->getDebugRenderList());
-        auto dim = font2->stringDimensions(debugRenderListText);
-        renderer->push2D(QuadRenderable(&g_res.textures->white, { 10, 10 },
-                    { 30 + dim.x, 30 + dim.y }, {}, {}, { 0, 0, 0 }, 0.6f), 10);
-        renderer->push2D(TextRenderable(font2, debugRenderListText,
-            { 20, 20 }, glm::vec3(0.1f, 1.f, 0.1f), 1.f, 1.f), 10);
-        */
-    }
-
     if (backgroundSound)
     {
         f32 volume = (g_game.isEditing && !isRaceInProgress) ? 0.f : 1.f;
@@ -705,7 +607,7 @@ void Scene::physicsMouseDrag(Renderer* renderer)
     static PxVec3 dragActorVelocity;
 
     // drag objects around with mouse when debug camera is enabled
-    if (isDebugCameraEnabled && isRaceInProgress)
+    if (g_game.isDebugCameraEnabled && isRaceInProgress)
     {
         if (dragJoint && dragVehicle)
         {
@@ -1296,5 +1198,22 @@ void Scene::deserializeTransientEntities(std::vector<DataFile::Value>& entities)
     for (auto& e : entities)
     {
         deserializeEntity(e)->setPersistent(true);
+    }
+}
+
+void Scene::showDebugInfo()
+{
+    ImGui::Gap();
+    ImGui::Text("Scene Name: %s", name.c_str());
+    ImGui::Text("Entities: %i", entities.size());
+    ImGui::Text("Generated Paths: %s", hasGeneratedPaths ? "true" : "false");
+    ImGui::Text("World Time: %.4f", worldTime);
+    auto playerVehicle = std::find_if(vehicles.begin(), vehicles.end(), [](auto& v) {
+        return v->driver->isPlayer;
+    });
+    if (playerVehicle != vehicles.end())
+    {
+        ImGui::Gap();
+        (*playerVehicle)->showDebugInfo();
     }
 }

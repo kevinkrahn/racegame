@@ -86,12 +86,23 @@ void Menu::mainMenu()
         RandomSeries series = randomSeed();
         i32 driverCredits = irandom(series, 10000, 50000);
         print("Starting quick race with driver budget: ", driverCredits, '\n');
-        for (u32 i=0; i<10; ++i)
+        std::vector<Driver> drivers;
+        const u32 driverCount = 10;
+        for (u32 i=0; i<driverCount; ++i)
         {
-            g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
+            drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
                         0, i==0 ? irandom(series, 0, (i32)g_ais.size()) : -1 + i));
-            g_game.state.drivers.back().credits = driverCredits;
-            g_game.state.drivers.back().aiUpgrades(series);
+            drivers.back().credits = driverCredits;
+            drivers.back().aiUpgrades(series);
+        }
+
+        // shuffle
+        for (u32 i=0; i<driverCount; ++i)
+        {
+            i32 index = irandom(series, 0, (i32)drivers.size());
+            Driver driver = std::move(drivers[index]);
+            drivers.erase(drivers.begin() + index);
+            g_game.state.drivers.push_back(std::move(driver));
         }
 #if 0
         g_game.state.drivers[0].hasCamera = true;
@@ -103,7 +114,7 @@ void Menu::mainMenu()
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
 #if 0
-        Scene* scene = g_game.changeScene("tracks/track3.dat");
+        Scene* scene = g_game.changeScene("tracks/track4.dat");
 #else
         Scene* scene = g_game.changeScene(
                 championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);

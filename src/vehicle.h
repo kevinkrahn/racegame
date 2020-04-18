@@ -41,9 +41,16 @@ public:
 	Decal testDecal;
 	i32 cameraIndex = -1;
 
-    // physics data
+    // states
     bool isInAir = true;
+    bool isOnTrack = false;
     bool isBraking = false;
+	bool isBackingUp = false;
+	bool isBlocked = false;
+	bool isFollowed = false;
+	bool isNearHazard = false;
+
+    // physics data
     PxVehicleDrive4W* vehicle4W;
     ActorUserData actorUserData;
     VehicleSceneQueryData* sceneQueryData;
@@ -100,7 +107,7 @@ public:
     f32 targetTimer = 0.f;
     Vehicle* target = nullptr;
     f32 fearTimer = 0.f;
-	bool isBackingUp = false;
+    f32 rearWeaponTimer = 0.f;
 
     // weapons
     SmallVec<std::unique_ptr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
@@ -177,6 +184,8 @@ public:
     glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
     glm::vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
     Driver* getDriver() const { return driver; }
+    ComputerDriverData* getAI() const { return &g_ais[driver->aiIndex]; }
+
     bool hasAbility(const char* name) const
     {
         return specialAbility && specialAbility->info.name == name;

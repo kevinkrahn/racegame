@@ -122,15 +122,6 @@ public:
     std::string filename;
     std::string notes;
 
-    bool isImGuiDemoWindowOpen = false;
-    bool isImGuiMetricsWindowOpen = false;
-    bool isDebugCameraEnabled = false;
-    bool isDebugOverlayEnabled = false;
-    bool isPhysicsDebugVisualizationEnabled = false;
-    bool isTrackGraphDebugVisualizationEnabled = false;
-    bool isMotionGridDebugVisualizationEnabled = false;
-    bool isPathVisualizationEnabled = false;
-
     bool isRaceInProgress = false;
     bool isPaused = false;
     bool isCameraTourEnabled = true;
@@ -180,7 +171,7 @@ public:
     std::vector<RaceResult>& getRaceResults() { return raceResults; }
     EditorCamera& getEditorCamera() { return editorCamera; }
     std::vector<RacingLine>& getPaths() { return paths; }
-
+    void showDebugInfo();
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph& getTrackGraph() { return trackGraph; }

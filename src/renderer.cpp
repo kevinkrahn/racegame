@@ -274,6 +274,7 @@ void Renderer::init()
 
 void Renderer::render(f32 deltaTime)
 {
+    renderablesCount = 0;
     for (RenderWorld* rw : renderWorlds)
     {
         if (rw->settingsVersion != settingsVersion)
@@ -282,10 +283,12 @@ void Renderer::render(f32 deltaTime)
             rw->createFramebuffers();
         }
         rw->render(this, deltaTime);
+        renderablesCount += rw->renderables.size();
         rw->clear();
     }
 
     renderWorld.render(this, deltaTime);
+    renderablesCount += renderWorld.renderables.size();
     renderWorld.clear();
 
     // render to fullscreen texture
