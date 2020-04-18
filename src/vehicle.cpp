@@ -2090,14 +2090,23 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                     4.2f, nullptr, getRigidBody(), COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS))
             {
                 backupTimer += deltaTime;
+                if (backupTimer > 0.6f)
+                {
+                    isBackingUp = true;
+                    backupTimer = 0.f;
+                }
+            }
+            else if (getForwardSpeed() < 2.f)
+            {
+                backupTimer += deltaTime;
+                if (backupTimer > 2.f)
+                {
+                    isBackingUp = true;
+                    backupTimer = 0.f;
+                }
             }
             else
             {
-                backupTimer = 0.f;
-            }
-            if (backupTimer > 0.6f)
-            {
-                isBackingUp = true;
                 backupTimer = 0.f;
             }
 
