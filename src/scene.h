@@ -179,11 +179,11 @@ public:
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
     std::vector<RaceResult>& getRaceResults() { return raceResults; }
     EditorCamera& getEditorCamera() { return editorCamera; }
-    decltype(paths) getPaths() const { return paths; }
+    std::vector<RacingLine>& getPaths() { return paths; }
 
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
-    TrackGraph const& getTrackGraph() const { return trackGraph; }
+    TrackGraph& getTrackGraph() { return trackGraph; }
     MotionGrid& getMotionGrid() { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
     bool canGo() const { return readyToGo; }

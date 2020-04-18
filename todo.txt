@@ -34,6 +34,7 @@
 - Add sound effect when driving on sand
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
+- Undo/Redo in editor
 
 - Ideas:
     - Grenade launcher weapon

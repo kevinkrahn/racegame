@@ -15,18 +15,6 @@ struct GridSettings
     f32 z = 2.f;
 };
 
-namespace DragAxis
-{
-    enum
-    {
-        NONE = 0,
-        X = 1 << 0,
-        Y = 1 << 1,
-        Z = 1 << 2,
-        ALL = X | Y,
-    };
-}
-
 class Editor
 {
     std::vector<std::unique_ptr<EditorMode>> modes;

@@ -33,7 +33,8 @@ void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
     cameraAngle += cameraRotateSpeed * deltaTime;
     cameraRotateSpeed = smoothMove(cameraRotateSpeed, 0, 8.f, deltaTime);
 
-    if (!g_input.isKeyDown(KEY_LCTRL) && g_input.getMouseScroll() != 0)
+    if (!ImGui::GetIO().WantCaptureMouse && !g_input.isKeyDown(KEY_LCTRL)
+            && g_input.getMouseScroll() != 0)
     {
         zoomSpeed = g_input.getMouseScroll() * 1.1f;
     }
