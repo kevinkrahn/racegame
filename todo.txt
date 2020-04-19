@@ -1,4 +1,5 @@
 - Export mesh tangents and add normal maps
+- Distance field to show wear marks near center of track
 - Automatically place decals on track (e.g. patch work, dirt, grunge, tire marks)
 - Moving parts on vehicles (e.g. bouncing/swaying antenna)
 - Add grass placement system (auto-stick to terrain, overlapping objects automatically destroy it)
@@ -7,8 +8,8 @@
 - Add force-feedback for collisions, offroad, etc.
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
-- Use time dilation for some effect (maybe when last person crosses finish line?)
-- Allow setting the number of laps for a race in the editor
+- Use time dilation for some effect (maybe when last person crosses finish line? A power up?)
+- Allow setting the number of laps for a race in the editor (can make a short track with many laps, or a long track with few laps)
 - Get rid of GLM because it makes compile times so long
 - Add motion blur when using rocket booster
 - Add muzzle flash for minigun

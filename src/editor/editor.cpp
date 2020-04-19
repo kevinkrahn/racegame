@@ -128,7 +128,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     ImGui::Gap();
     ImGui::InputText("Track Name", &scene->name);
-    ImGui::InputTextMultiline("Notes", &scene->notes, {0, 100});
+    ImGui::InputTextMultiline("Notes", &scene->notes, {0, 70});
+    i32 totalLaps = (i32)scene->totalLaps;
+    ImGui::InputInt("Laps", &totalLaps);
+    scene->totalLaps = (u32)glm::clamp(totalLaps, 1, 10);
+    ImGui::Gap();
     ImGui::Checkbox("Show Grid", &gridSettings.show);
     ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
     ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");

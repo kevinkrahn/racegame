@@ -1110,6 +1110,7 @@ DataFile::Value Scene::serialize()
     DataFile::Value dict = DataFile::makeDict();
     dict["name"] = DataFile::makeString(name);
     dict["notes"] = DataFile::makeString(notes);
+    dict["totalLaps"] = DataFile::makeInteger(totalLaps);
     dict["version"] = DataFile::makeInteger(0);
     dict["entities"] = DataFile::makeArray();
     dict["paths"] = DataFile::makeArray();
@@ -1143,6 +1144,7 @@ void Scene::deserialize(DataFile::Value& data)
 {
     name = data["name"].string("");
     notes = data["notes"].string("");
+    totalLaps = (u32)data["totalLaps"].integer(totalLaps);
     u32 version = (u32)data["version"].integer(0);
     for (auto& p : data["paths"].array(true))
     {

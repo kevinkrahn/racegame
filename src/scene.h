@@ -90,7 +90,6 @@ private:
 
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
-    u32 totalLaps = 4;
     glm::vec3 trackPreviewCameraFrom = { 0, 0, 0 };
     glm::vec3 trackPreviewCameraTarget = { 0, 0, 0 };
     glm::vec3 trackPreviewPosition = { 0, 0, 0 };
@@ -121,6 +120,7 @@ public:
     std::string name;
     std::string filename;
     std::string notes;
+    u32 totalLaps = 4;
 
     bool isRaceInProgress = false;
     bool isPaused = false;
