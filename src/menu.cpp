@@ -95,6 +95,12 @@ void Menu::mainMenu()
             drivers.back().credits = driverCredits;
             drivers.back().aiUpgrades(series);
         }
+#if 0
+        drivers[0].hasCamera = true;
+        drivers[1].hasCamera = true;
+        //drivers[2].hasCamera = true;
+        //drivers[3].hasCamera = true;
+#endif
 
         // shuffle
         for (u32 i=0; i<driverCount; ++i)
@@ -104,12 +110,6 @@ void Menu::mainMenu()
             drivers.erase(drivers.begin() + index);
             g_game.state.drivers.push_back(std::move(driver));
         }
-#if 0
-        g_game.state.drivers[0].hasCamera = true;
-        g_game.state.drivers[1].hasCamera = true;
-        g_game.state.drivers[2].hasCamera = true;
-        g_game.state.drivers[3].hasCamera = true;
-#endif
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;

@@ -399,10 +399,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (allPlayersFinished && isRaceInProgress)
         {
             finishTimer += deltaTime;
-            if (finishTimer >= 8.f)
+            if (finishTimer >= 9.f)
             {
                 buildRaceResults();
                 stopRace();
+                // TODO: Should the use press a key to end the race? That way you can continue to watch the carnage if you so desire.
                 //isCameraTourEnabled = false;
                 g_game.menu.showRaceResults();
             }
@@ -515,16 +516,18 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             hudTrackPos = glm::vec2(size * 0.5f + 50.f) + glm::vec2(0, 30);
         }
+        /*
         else if (viewportCount == 2)
         {
             hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
         }
+        */
         else if (viewportCount == 3)
         {
             hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
             size = (u32)(g_game.windowHeight * 0.36f);
         }
-        else if (viewportCount == 4)
+        else if (viewportCount == 4 || viewportCount == 2)
         {
             hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         }
