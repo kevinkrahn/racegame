@@ -13,7 +13,7 @@ public:
         info.description = "Force your opponents to slow down!";
         info.icon = &g_res.textures->icon_glue;
         info.price = 1000;
-        info.maxUpgradeLevel = 5;
+        info.maxUpgradeLevel = 4;
         info.weaponType = WeaponInfo::REAR_WEAPON;
     }
 

@@ -13,7 +13,7 @@ public:
         info.description = "Causes vehicles to loose traction.";
         info.icon = &g_res.textures->icon_oil;
         info.price = 1000;
-        info.maxUpgradeLevel = 5;
+        info.maxUpgradeLevel = 4;
         info.weaponType = WeaponInfo::REAR_WEAPON;
     }
 

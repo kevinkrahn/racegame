@@ -57,7 +57,7 @@ public:
         info.description = "It's like nitrous, but better!";
         info.icon = &g_res.textures->icon_rocketbooster;
         info.price = 1000;
-        info.maxUpgradeLevel = 5;
+        info.maxUpgradeLevel = 4;
         info.weaponType = WeaponInfo::REAR_WEAPON;
 
         mesh = g_res.getMesh("world.Cone");
