@@ -2,11 +2,69 @@
 #include "renderer.h"
 #include "game.h"
 #include "driver.h"
+#include <dirent.h>
+
+std::vector<std::string> loadFiles(const char* folder, const char* extension)
+{
+    std::vector<std::string> files;
+
+#if _WIN32
+    WIN32_FIND_DATA fileData;
+    HANDLE handle = FindFirstFileA(folder, &fileData);
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        FATAL_ERROR("Failed to read directory: ", folder);
+    }
+    do
+    {
+        if (!(fileData & FILE_ATTRIBUTE_DIRECTORY))
+        {
+            std::string name = fileData.cFileName;
+            auto index = name.find_last_of('.');
+            if (index != std::string::npos && name.substr(index) == extension)
+            {
+                files.push_back(name);
+            }
+        }
+    }
+    while (FindNextFileA(handle, &fileData) != 0);
+    FindClose(handle);
+#else
+    DIR* dirp = opendir(folder);
+    if (!dirp)
+    {
+        FATAL_ERROR("Failed to read directory: ", folder);
+    }
+    dirent* dp;
+    while ((dp = readdir(dirp)))
+    {
+        if (dp->d_type == DT_REG)
+        {
+            std::string name = dp->d_name;
+            auto index = name.find_last_of('.');
+            if (index != std::string::npos && name.substr(index) == extension)
+            {
+                files.push_back(name);
+            }
+        }
+    }
+    closedir(dirp);
+#endif
+
+    return files;
+}
 
 void Resources::load()
 {
     textures.reset(new Textures);
     sounds.reset(new Sounds);
+
+    /*
+    auto files = loadFiles("./assets", ".dat");
+    for (auto& file : files)
+    {
+    }
+    */
 
     for (const char* filename : dataFiles)
     {
