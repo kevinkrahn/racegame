@@ -713,14 +713,9 @@ void Scene::vehicleFinish(u32 n)
         allPlayersFinished = true;
     }
 
-    if (numHumanDrivers == 1 || !allPlayersFinished)
-    {
-        g_audio.playSound(&g_res.sounds->cheer, SoundType::GAME_SFX);
-    }
-    else
-    {
-        g_audio.playSound(&g_res.sounds->clapping, SoundType::GAME_SFX);
-    }
+    auto& v = vehicles[n];
+    g_audio.playSound3D(v->placement < 5 ? &g_res.sounds->cheer : &g_res.sounds->clapping,
+            SoundType::GAME_SFX, translationOf(getStart()), false, 1.f, 1.f, 0.f, 120.f);
 }
 
 void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos)

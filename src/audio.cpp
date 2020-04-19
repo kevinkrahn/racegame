@@ -229,13 +229,12 @@ void Audio::audioCallback(u8* buf, i32 len)
             f32 attenuation = 1.f;
             if (s->is3D)
             {
-                const f32 maxDistance = 90.f;
                 attenuation = 0.f;
                 for (glm::vec3 const& camPos : listeners)
                 {
                     f32 distance = glm::length(s->position - camPos);
                     attenuation = glm::max(attenuation,
-                        glm::clamp(1.f - (distance / maxDistance), 0.f, 1.f));
+                        glm::clamp(1.f - (distance / s->falloffDistance), 0.f, 1.f));
                 }
                 //attenuation = glm::pow(attenuation, 2.f);
                 attenuation *= attenuation;
@@ -322,7 +321,7 @@ SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
 }
 
 SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
-        glm::vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
+        glm::vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan, f32 falloffDistance)
 {
     PlayingSound ps;
     ps.sound = sound;
@@ -334,6 +333,7 @@ SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
     ps.position = position;
     ps.handle = ++nextSoundHandle;
     ps.soundType = soundType;
+    ps.falloffDistance = falloffDistance;
 
     if (loop)
     {

@@ -41,11 +41,13 @@ class Audio
         f32 pan = 1.f;
         f32 targetPitch = 1.f;
         f32 playPosition = 0.f;
+        // TODO: these could be combined into a single bitfield
         bool isLooping = false;
         bool isPaused = false;
         bool is3D = false;
         SoundHandle handle = 0;
         glm::vec3 position = {};
+        f32 falloffDistance = 90.f;
         SoundType soundType;
     };
 
@@ -95,7 +97,8 @@ public:
     SoundHandle playSound(Sound* sound, SoundType soundType,
             bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
     SoundHandle playSound3D(Sound* sound, SoundType soundType,
-            glm::vec3 const& position, bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
+            glm::vec3 const& position, bool loop = false, f32 pitch = 1.f,
+            f32 volume = 1.f, f32 pan = 0.f, f32 falloffDistance=90.f);
     void stopSound(SoundHandle handle);
     void setSoundPitch(SoundHandle handle, f32 pitch);
     void setSoundVolume(SoundHandle handle, f32 volume);
