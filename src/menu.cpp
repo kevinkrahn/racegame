@@ -129,10 +129,10 @@ void Menu::mainMenu()
         g_gui.pushSelection();
     }
 
-    if (g_gui.button("Track Editor"))
+    if (g_gui.button("Editor"))
     {
         g_game.isEditing = true;
-        g_game.changeScene(nullptr);
+        g_game.unloadScene();
         menuMode = HIDDEN;
     }
 

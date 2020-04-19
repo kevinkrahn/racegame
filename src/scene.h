@@ -8,7 +8,6 @@
 #include "smoke_particles.h"
 #include "debug_draw.h"
 #include "driver.h"
-#include "editor/editor.h"
 #include "editor/editor_camera.h"
 #include "2d.h"
 #include "terrain.h"
@@ -74,7 +73,6 @@ struct RaceResult
 class Scene : public PxSimulationEventCallback
 {
 private:
-    Editor editor;
     EditorCamera editorCamera;
 
     std::vector<RacingLine> paths;
@@ -177,7 +175,7 @@ public:
     TrackGraph& getTrackGraph() { return trackGraph; }
     MotionGrid& getMotionGrid() { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
-    bool canGo() const { return readyToGo; }
+    bool canGo() const;
     glm::vec3 findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f32 checkRadius=10.f);
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,

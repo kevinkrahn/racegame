@@ -45,7 +45,7 @@ void Start::updateTransform(Scene* scene)
 
 void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    if (scene->isRaceInProgress)
+    if (scene->isRaceInProgress && !g_game.isEditing)
     {
         if (scene->getWorldTime() > 3.f)
         {

@@ -5,6 +5,7 @@
 #include "menu.h"
 #include "config.h"
 #include "buffer.h"
+#include "editor/resource_manager.h"
 #include <memory>
 #include <vector>
 
@@ -66,6 +67,7 @@ public:
     std::unique_ptr<class Scene> nextScene;
     Menu menu;
     Buffer tempMem = Buffer(megabytes(4), 16);
+    ResourceManager resourceManager;
 
     // debug
     bool isImGuiDemoWindowOpen = false;
@@ -90,6 +92,8 @@ public:
 
     void run();
     Scene* changeScene(const char* sceneName);
+    bool shouldUnloadScene = false;
+    void unloadScene() { shouldUnloadScene = true; }
 
     void saveGame();
     void loadGame();

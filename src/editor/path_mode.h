@@ -318,7 +318,7 @@ public:
             }
         }
 
-        if (ImGui::BeginPopupModal("Confirm", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        if (ImGui::BeginPopupModal("Confirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
             ImGui::Text("This will delete all existing paths. Do you want to continue?");
             ImGui::Gap();

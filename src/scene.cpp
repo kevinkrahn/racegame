@@ -233,6 +233,10 @@ void Scene::startRace()
 
 void Scene::stopRace()
 {
+    trackPreviewCameraFrom = g_game.renderer->getRenderWorld()->getCamera(0).position;
+    trackPreviewCameraTarget = (*std::find_if(vehicles.begin(), vehicles.end(),
+            [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
+
     finishOrder.clear();
     placements.clear();
     vehicles.clear();
@@ -274,6 +278,11 @@ void Scene::onStart()
     backgroundSound = g_audio.playSound(&g_res.sounds->evironment, SoundType::MUSIC, true, 1.f, 0.f);
 }
 
+bool Scene::canGo() const
+{
+    return readyToGo || g_game.isEditing;
+}
+
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     RenderWorld* rw = renderer->getRenderWorld();
@@ -287,8 +296,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             break;
         }
     }
-    if (((g_game.isEditing && !isRaceInProgress)
-        || (!g_game.isEditing && isRaceInProgress)) && showPauseMenu)
+    if ((!g_game.isEditing && isRaceInProgress) && showPauseMenu)
     {
         isPaused = !isPaused;
         g_audio.setPaused(isPaused);
@@ -303,11 +311,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         worldTime += deltaTime;
         rw->updateWorldTime(worldTime);
-
-        if (g_game.isEditing)
-        {
-            editor.onUpdate(this, renderer, deltaTime);
-        }
 
         if (worldTime >= 3.f)
         {
@@ -399,7 +402,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (allPlayersFinished && isRaceInProgress)
         {
             finishTimer += deltaTime;
-            if (finishTimer >= 9.f)
+            if (finishTimer >= 9.f && !g_game.isEditing)
             {
                 buildRaceResults();
                 stopRace();
@@ -551,38 +554,19 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             isPaused = false;
             g_audio.setPaused(false);
         }
-        if (isRaceInProgress)
+        if (g_gui.button("Forfeit Race"))
         {
-            if (g_gui.button("Forfeit Race"))
+            isPaused = false;
+            g_game.isEditing = false;
+            if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
             {
-                isPaused = false;
-                trackPreviewCameraFrom = rw->getCamera(0).position;
-                trackPreviewCameraTarget = (*std::find_if(vehicles.begin(), vehicles.end(),
-                        [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
-                g_game.isEditing = false;
-                if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
-                {
-                    buildRaceResults();
-                    stopRace();
-                    //isCameraTourEnabled = false;
-                    g_game.menu.showRaceResults();
-                }
-                else
-                {
-                    stopRace();
-                    g_game.menu.showMainMenu();
-                }
-            }
-        }
-        else
-        {
-            if (g_gui.button("Main Menu"))
-            {
-                trackPreviewCameraTarget = editorCamera.getCameraTarget();
-                trackPreviewCameraFrom = rw->getCamera(0).position;
+                buildRaceResults();
                 stopRace();
-                isPaused = false;
-                g_game.isEditing = false;
+                g_game.menu.showRaceResults();
+            }
+            else
+            {
+                stopRace();
                 g_game.menu.showMainMenu();
             }
         }

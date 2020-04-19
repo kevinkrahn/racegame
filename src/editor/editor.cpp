@@ -9,8 +9,9 @@
 #include "decoration_mode.h"
 #include "path_mode.h"
 
-Editor::Editor()
+void Editor::reset()
 {
+    modes.clear();
     modes.push_back(std::make_unique<TerrainMode>());
     modes.push_back(std::make_unique<TrackMode>());
     modes.push_back(std::make_unique<DecorationMode>());
@@ -20,30 +21,24 @@ Editor::Editor()
     {
         mode->setEditor(this);
     }
+}
 
-    activeMode = modes.front().get();
+Editor::Editor()
+{
+    reset();
+}
+
+void Editor::onEndTestDrive(Scene* scene)
+{
+    for (auto& mode : modes)
+    {
+        mode->onEndTest(scene);
+    }
 }
 
 void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
-    if (g_input.isKeyPressed(KEY_ESCAPE))
-    {
-        if (scene->isRaceInProgress)
-        {
-            scene->stopRace();
-            for (auto& mode : modes)
-            {
-                mode->onEndTest(scene);
-            }
-        }
-    }
-
-    if (scene->isRaceInProgress)
-    {
-        return;
-    }
-
-    activeMode->onUpdate(scene, renderer, deltaTime);
+    modes[activeModeIndex]->onUpdate(scene, renderer, deltaTime);
 
     glm::vec3 cameraTarget = scene->getEditorCamera().getCameraTarget();
     if (gridSettings.show)
@@ -109,6 +104,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     ImGui::SameLine();
     if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
     {
+        // TODO: Add options to include AI drivers and configure player vehicle
+
         g_game.state.drivers.clear();
         g_game.state.drivers.push_back(Driver(true, true, true, 0, 0));
         auto conf = g_game.state.drivers.back().getVehicleConfig();
@@ -140,16 +137,16 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 
-    EditorMode* previousMode = activeMode;
+    u32 previousModeIndex = activeModeIndex;
     ImGui::Gap();
     if (ImGui::BeginTabBar("Edit Mode"))
     {
-        for (auto& mode : modes)
+        for (u32 i=0; i<modes.size(); ++i)
         {
-            if (ImGui::BeginTabItem(mode->getName().c_str()))
+            if (ImGui::BeginTabItem(modes[i]->getName().c_str()))
             {
-                activeMode = mode.get();
-                mode->onEditorTabGui(scene, renderer, deltaTime);
+                activeModeIndex = i;
+                modes[i]->onEditorTabGui(scene, renderer, deltaTime);
                 ImGui::EndTabItem();
             }
         }
@@ -157,16 +154,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         ImGui::EndTabBar();
     }
 
-    if (activeMode != previousMode)
+    if (activeModeIndex != previousModeIndex)
     {
-        previousMode->onSwitchFrom(scene);
-        for (auto& mode : modes)
-        {
-            if (activeMode == mode.get())
-            {
-                activeMode->onSwitchTo(scene);
-            }
-        }
+        modes[previousModeIndex]->onSwitchFrom(scene);
+        modes[activeModeIndex]->onSwitchTo(scene);
     }
 
     ImGui::End();

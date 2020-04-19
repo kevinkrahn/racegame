@@ -201,6 +201,15 @@ void Game::run()
             renderer->updateFullscreenFramebuffers();
         }
 
+        if (shouldUnloadScene)
+        {
+            if (currentScene)
+            {
+                currentScene->onEnd();
+                currentScene.reset(nullptr);
+            }
+            shouldUnloadScene = false;
+        }
         if (nextScene)
         {
             if (currentScene)
@@ -216,13 +225,23 @@ void Game::run()
         ImGui::NewFrame();
 
         g_gui.beginFrame();
-        currentScene->onUpdate(renderer.get(), deltaTime);
+        if (currentScene)
+        {
+            currentScene->onUpdate(renderer.get(), deltaTime);
+        }
+        if (isEditing)
+        {
+            resourceManager.onUpdate(renderer.get(), deltaTime);
+        }
         menu.onUpdate(renderer.get(), deltaTime);
         checkDebugKeys();
         g_gui.endFrame();
         ImGui::Render();
         renderer->render(deltaTime);
-        currentScene->onEndUpdate();
+        if (currentScene)
+        {
+            currentScene->onEndUpdate();
+        }
         g_input.onFrameEnd();
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;

@@ -7,6 +7,7 @@
 #include "../renderer.h"
 #include "editor_mode.h"
 
+// TODO: Implement grid snapping in all edit modes
 struct GridSettings
 {
     bool show = false;
@@ -18,13 +19,15 @@ struct GridSettings
 class Editor
 {
     std::vector<std::unique_ptr<EditorMode>> modes;
-    EditorMode* activeMode = nullptr;
+    u32 activeModeIndex = 0;
     GridSettings gridSettings;
 
 public:
     Editor();
     void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
     GridSettings& getGridSettings() { return gridSettings; }
+    void onEndTestDrive(Scene* scene);
+    void reset();
 };
 
 std::string chooseFile(const char* defaultSelection, bool open);

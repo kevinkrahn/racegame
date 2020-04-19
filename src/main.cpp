@@ -20,6 +20,7 @@
 #include "mesh.cpp"
 #include "editor/editor.cpp"
 #include "editor/editor_camera.cpp"
+#include "editor/resource_manager.cpp"
 #include "terrain.cpp"
 #include "track.cpp"
 #include "dynamic_buffer.cpp"
