@@ -779,6 +779,12 @@ void Scene::attackCredit(u32 instigator, u32 victim)
             ++vehicles[victim]->raceStatistics.destroyed;
             ++vehicles[instigator]->raceStatistics.frags;
             vehicles[instigator]->addBonus("ATTACK BONUS", ATTACK_BONUS_AMOUNT, glm::vec3(1.f));
+            std::string instigatorName = vehicles[instigator]->driver->playerName;
+            for (auto& ch : instigatorName)
+            {
+                ch = toupper(ch);
+            }
+            vehicles[victim]->addNotification("DESTROYED", 2.f, glm::vec3(1.f, 0.3f, 0.02f));
         }
     }
 }

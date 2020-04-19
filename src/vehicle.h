@@ -152,8 +152,9 @@ public:
 
 	struct Notification
 	{
-        const char* str;
-        f32 timeLeft;
+        const char* text;
+        f32 secondsToKeepOnScreen;
+        f32 time;
         glm::vec3 color;
 	};
 	SmallVec<Notification> notifications;
@@ -193,14 +194,13 @@ public:
     void blowUp();
     void reset(glm::mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator);
-    void addNotification(const char* str, f32 time=2.f, glm::vec3 const& color=glm::vec3(1.f))
+    void addNotification(const char* text, f32 time=2.f, glm::vec3 const& color=glm::vec3(1.f))
     {
         if (notifications.size() == notifications.capacity())
         {
             notifications.erase(notifications.begin());
         }
-        notifications.push_back({ str, time, color });
-        // TODO: animate the notification (maybe start big and shrink)
+        notifications.push_back({ text, time, 0.f, color });
     }
     void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
     void addBonus(const char* name, u32 amount, glm::vec3 const& color = glm::vec3(0.9f, 0.9f, 0.01f))

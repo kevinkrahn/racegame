@@ -864,12 +864,13 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             glm::vec2 p = glm::floor(layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
                     glm::vec2(0, layout.scale.y * dim.y * 0.3f) + glm::vec2(0, count * dim.y * 0.04f));
-            renderer->push2D(TextRenderable(&font3, it->str, p,
-                it->color, (glm::sin((f32)scene->getWorldTime()*6.f) + 1.f) * 0.25f + 0.5f,
-                1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+            renderer->push2D(TextRenderable(&font3, it->text, p,
+                it->color, (glm::sin(it->time * 6.f) + 1.f) * 0.3f + 0.5f,
+                glm::max(1.7f - it->time * 3.f, 1.f),
+                HorizontalAlign::CENTER, VerticalAlign::CENTER));
             ++count;
-            it->timeLeft -= deltaTime;
-            if (it->timeLeft <= 0.f)
+            it->time += deltaTime;
+            if (it->time > it->secondsToKeepOnScreen)
             {
                 notifications.erase(it);
                 continue;
