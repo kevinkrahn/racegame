@@ -124,7 +124,6 @@ class PathMode : public EditorMode, public TransformGizmoHandler
 
     void generatePaths(Scene* scene)
     {
-        // TODO: add confirmation dialog (because this will delete all the current paths)
         scene->getPaths().clear();
         scene->getPaths().reserve(scene->getTrackGraph().getPaths().size());
         for (auto& path : scene->getTrackGraph().getPaths())
@@ -309,7 +308,32 @@ public:
 
         if (ImGui::Button("Generate Paths", buttonSize))
         {
-            generatePaths(scene);
+            if (scene->getPaths().size() > 0)
+            {
+                ImGui::OpenPopup("Confirm");
+            }
+            else
+            {
+                generatePaths(scene);
+            }
+        }
+
+        if (ImGui::BeginPopupModal("Confirm", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("This will delete all existing paths. Do you want to continue?");
+            ImGui::Gap();
+            if (ImGui::Button("Yes", {120, 0}))
+            {
+                ImGui::CloseCurrentPopup();
+                generatePaths(scene);
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", {120, 0}))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
 
         ImGui::Gap();

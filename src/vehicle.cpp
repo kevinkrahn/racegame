@@ -2107,7 +2107,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
         else
         {
-            if (getForwardSpeed() < 2.5f &&
+            if (!isInAir && getForwardSpeed() < 2.5f &&
                 scene->sweep(tuning.collisionWidth * 0.3f, currentPosition, forwardVector,
                     4.2f, nullptr, getRigidBody(), COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS))
             {
@@ -2118,7 +2118,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                     backupTimer = 0.f;
                 }
             }
-            else if (getForwardSpeed() < 2.f)
+            else if (!isInAir && getForwardSpeed() < 2.f)
             {
                 backupTimer += deltaTime;
                 if (backupTimer > 2.f)
