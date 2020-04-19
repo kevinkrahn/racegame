@@ -363,7 +363,7 @@ f32 TrackGraph::findTrackProgressAtPoint(glm::vec3 const& p, f32 referenceValue)
                 glm::vec3 result = a + distanceAlongLine * ab;
                 f32 distance = glm::length2(p - result);
                 // prioritize points that don't loose progress
-                if (referenceValue - t < 0.f)
+                if (referenceValue - t < -10.f)
                 {
                     distance += 800.f;
                 }

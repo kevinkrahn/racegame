@@ -13,6 +13,7 @@
 - Get rid of GLM because it makes compile times so long
 - Add motion blur when using rocket booster
 - Add muzzle flash for minigun
+- Make minigun bullets look more like bullets (streak instead of glowing orbs)
 - Add testing zone where you can drive around an open area
 - Add rippling flag
 - Add wind motion for plants and trees

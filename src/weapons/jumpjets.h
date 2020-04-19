@@ -4,7 +4,6 @@
 #include "../vehicle.h"
 #include "../entities/projectile.h"
 
-// TODO: make AI drivers use this more intelligently
 class WJumpJets : public Weapon
 {
     f32 t = 0.f;

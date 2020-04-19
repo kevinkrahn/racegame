@@ -13,6 +13,7 @@ class TerrainMode : public EditorMode
     f32 brushFalloff = 1.f;
     f32 brushStrength = 15.f;
     f32 brushStartZ = 0.f;
+    glm::vec3 mousePosition;
 
     enum struct TerrainTool : i32
     {
@@ -60,6 +61,7 @@ public:
         {
             p += rayDir * step;
         }
+        mousePosition = p;
 
         if (!isMouseClickHandled)
         {
@@ -123,17 +125,15 @@ public:
 
         glm::vec2 terrainMin(scene->terrain->x1, scene->terrain->y1);
         glm::vec2 terrainMax(scene->terrain->x2, scene->terrain->y2);
-        if (ImGui::InputFloat2("Terrain Min", (f32*)&terrainMin))
+        if (ImGui::InputFloat2("Terrain Min", (f32*)&terrainMin, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            terrainMin = glm::min(terrainMin, terrainMax - 10.f);
-            terrainMin = glm::max(terrainMin, -400.f);
-            scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y);
+            terrainMin = glm::max(glm::min(terrainMin, terrainMax - 10.f), -400.f);
+            scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y, true);
         }
-        if (ImGui::InputFloat2("Terrain Max", (f32*)&terrainMax))
+        if (ImGui::InputFloat2("Terrain Max", (f32*)&terrainMax, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            terrainMax = glm::max(terrainMax, terrainMin + 10.f);
-            terrainMax = glm::min(terrainMin, 400.f);
-            scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y);
+            terrainMax = glm::min(glm::max(terrainMax, terrainMin + 10.f), 400.f);
+            scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y, true);
         }
 
         ImGui::Gap();
@@ -166,6 +166,9 @@ public:
             }
             ImGui::ListBoxFooter();
         }
+
+        ImGui::Gap();
+        ImGui::Text("Mouse Position: %.3f, %.3f, %.3f", mousePosition.x, mousePosition.y, mousePosition.z);
     }
 
     void onBeginTest(Scene* scene) override

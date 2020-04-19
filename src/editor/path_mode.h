@@ -109,6 +109,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
         {
             scene->getPaths().erase(scene->getPaths().begin() + selectedPathIndex);
             selectedPathIndex = 0;
+            selectedPoints.clear();
         }
     }
 
