@@ -224,7 +224,7 @@ inline glm::vec3 snapXY(glm::vec3 const& val, f32 multiple)
 
 inline glm::vec2 lengthdir(f32 angle, f32 len)
 {
-    return glm::vec2(cosf(angle), sinf(angle)) * len;
+    return glm::vec2(glm::cos(angle), glm::sin(angle)) * len;
 }
 
 template <typename T>

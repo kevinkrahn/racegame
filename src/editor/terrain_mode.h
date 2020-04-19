@@ -57,13 +57,14 @@ public:
 
         const f32 step = 0.01f;
         glm::vec3 p = cam.position;
-        while (p.z > scene->terrain->getZ(glm::vec2(p)))
+        u32 count = 50000;
+        while (p.z > scene->terrain->getZ(glm::vec2(p)) && --count > 0)
         {
             p += rayDir * step;
         }
         mousePosition = p;
 
-        if (!isMouseClickHandled)
+        if (!isMouseClickHandled && count > 0)
         {
             scene->terrain->setBrushSettings(brushRadius, brushFalloff, brushStrength, p);
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))

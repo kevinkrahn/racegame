@@ -7,8 +7,10 @@ class EditorCamera
 {
     f32 cameraDistance = 90.f;
     f32 zoomSpeed = 0.f;
-    f32 cameraAngle = 0.f;
-    f32 cameraRotateSpeed = 0.f;
+    f32 cameraYaw = 3.14f;
+    f32 cameraPitch = -1.f;
+    f32 cameraYawSpeed = 0.f;
+    f32 cameraPitchSpeed = 0.f;
     glm::vec3 cameraTarget = glm::vec3(0, 0, 0);
     glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
     glm::vec2 lastMousePosition;
