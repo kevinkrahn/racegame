@@ -1217,3 +1217,57 @@ void Scene::showDebugInfo()
         (*playerVehicle)->showDebugInfo();
     }
 }
+
+glm::vec3 Scene::findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f32 checkRadius)
+{
+    PxTransform transform(PxIdentity);
+    transform.p = convert(pos);
+    PxSphereGeometry geometry(collisionRadius);
+
+    PxOverlapBuffer overlapHit;
+    PxRaycastBuffer raycastHit;
+
+    PxQueryFilterData filterObstacles;
+    filterObstacles.flags |= PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC;
+    filterObstacles.data = PxFilterData(
+            COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_MINE, 0, 0, 0);
+
+    PxQueryFilterData filterTrack;
+    filterTrack.flags |= PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC;
+    filterTrack.data = PxFilterData(COLLISION_FLAG_TRACK, 0, 0, 0);
+
+    PxVec3 offsets[] = {
+        PxVec3(1, 0, 0),
+        PxVec3(-1, 0, 0),
+        PxVec3(0, 1, 0),
+        PxVec3(0, -1, 0)
+    };
+
+    for (u32 i=0; i<10; ++i)
+    {
+        if (!physicsScene->overlap(geometry, transform, overlapHit, filterObstacles))
+        {
+            bool onTrack = true;
+            for (PxVec3& offset : offsets)
+            {
+                if (!physicsScene->raycast(convert(pos) + offset + PxVec3(0, 0, 5.f), PxVec3(0, 0, -1), 10.f, raycastHit,
+                        PxHitFlags(PxHitFlag::eMESH_ANY), filterTrack))
+                {
+                    onTrack = false;
+                    break;
+                }
+            }
+            if (onTrack)
+            {
+                return convert(transform.p);
+            }
+        }
+
+        glm::vec3 offset(
+                random(randomSeries, -checkRadius, checkRadius),
+                random(randomSeries, -checkRadius, checkRadius), 0.f);
+        transform.p = convert(pos + offset);
+    }
+
+    return pos;
+}

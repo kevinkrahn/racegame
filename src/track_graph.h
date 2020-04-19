@@ -53,6 +53,7 @@ public:
         const Node* lastNode = nullptr;
         f32 currentLapDistance = 0.f;
         f32 lapDistanceLowMark = 0.f;
+        glm::vec3 position = { 0, 0, 0 };
     };
 
     f32 findTrackProgressAtPoint(glm::vec3 const& p, f32 referenceValue) const;

@@ -315,7 +315,7 @@ void TrackGraph::findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f
                 glm::vec3 result = a + distanceAlongLine * ab;
                 f32 distance = glm::length2(p - result);
                 // prioritize points that don't loose progress
-                if (queryResult.lapDistanceLowMark - t < 0.f)
+                if (queryResult.lapDistanceLowMark - t < -10.f)
                 {
                     distance += 800.f;
                 }
@@ -323,7 +323,8 @@ void TrackGraph::findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f
                 {
                     minDistance = distance;
                     queryResult.currentLapDistance = t;
-                    queryResult.lastNode = nodeA;
+                    queryResult.lastNode = nodeB;
+                    queryResult.position = result;
                 }
             }
         }

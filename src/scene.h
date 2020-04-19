@@ -178,6 +178,7 @@ public:
     MotionGrid& getMotionGrid() { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
     bool canGo() const { return readyToGo; }
+    glm::vec3 findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f32 checkRadius=10.f);
 
     bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
             PxRaycastBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK) const;

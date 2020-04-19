@@ -166,8 +166,6 @@ public:
     void updatePhysics(PxScene* scene, f32 timestep, bool digital,
             f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
 
-    bool isBlocking(f32 radius, glm::vec3 const& dir, f32 dist, u32 flags, PxSweepBuffer* hit);
-
 public:
 	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
 	        Driver* driver, VehicleTuning&& tuning, PxMaterial* material, const PxMaterial** surfaceMaterials,

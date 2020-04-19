@@ -996,24 +996,31 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (deadTimer > 0.f)
     {
         deadTimer -= deltaTime;
-        if (engineSound) g_audio.setSoundVolume(engineSound, 0.f);
-        if (tireSound) g_audio.setSoundVolume(tireSound, 0.f);
+        if (engineSound)
+        {
+            g_audio.setSoundVolume(engineSound, 0.f);
+        }
+        if (tireSound)
+        {
+            g_audio.setSoundVolume(tireSound, 0.f);
+        }
         if (deadTimer <= 0.f)
         {
             backupTimer = 0.f;
             deadTimer = 0.f;
             hitPoints = tuning.maxHitPoints;
 
+            glm::vec3 pos = graphResult.position;
             const TrackGraph::Node* node = graphResult.lastNode;
-            if (!node)
+            if (!graphResult.lastNode)
             {
                 node = scene->getTrackGraph().getEndNode();
             }
-            glm::vec2 dir(node->direction);
-            glm::vec3 pos = node->position -
-                glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0) * 0.35f;
+            pos += glm::vec3(random(scene->randomSeries, -5.f, 5.f),
+                    random(scene->randomSeries, -5.f, 5.f), 0.f);
+            pos = scene->findValidPosition(pos, 5.f);
 
-            reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 7)) *
+            reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 6.5f)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
         }
         if (cameraIndex >= 0)
@@ -1601,7 +1608,7 @@ void Vehicle::blowUp()
             random(scene->randomSeries, 5.f, 6.f)
         });
     }
-    deadTimer = 1.f;
+    deadTimer = 0.8f;
     engineRPM = 0.f;
     scene->createExplosion(translationOf(transform), previousVelocity, 10.f);
     if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.5)

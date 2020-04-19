@@ -20,8 +20,6 @@
 - Create general-purpose particle system
 - Make better explosion effect
 - Add more cosmetic options (decals)
-- Fix respawning (don't spawn on top of other vehicles, or add temporary invulnerability)
-- Don't respawn so far ahead
 - Allow vehicles to move before race starts?
 - Add armor icon beside healthbar
 - Add sound (clapping?) when any vehicle crosses the finish line, not just at the end of the race
