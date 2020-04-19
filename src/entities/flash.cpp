@@ -10,7 +10,17 @@ void Flash::onCreate(Scene* scene)
 
 void Flash::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    position += velocity * deltaTime;
+    glm::vec3 newPosition = position + velocity * deltaTime;
+    f32 dist = glm::distance(position, newPosition);
+    f32 collisionRadius = 1.f;
+    if (dist > 0.f && scene->raycastStatic(position, glm::normalize(velocity), dist + collisionRadius))
+    {
+        velocity = { 0, 0, 0 };
+    }
+    else
+    {
+        position = newPosition;
+    }
     life += deltaTime * 2.f;
     if (life >= 1.f)
     {

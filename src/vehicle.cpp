@@ -1773,13 +1773,27 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
         }
     }
 
+#if 1
     if (g_input.isKeyPressed(KEY_F))
     {
-        getRigidBody()->addForce(PxVec3(0, 0, 10), PxForceMode::eVELOCITY_CHANGE);
+        getRigidBody()->addForce(PxVec3(0, 0, 15), PxForceMode::eVELOCITY_CHANGE);
+        /*
         getRigidBody()->addTorque(
                 getRigidBody()->getGlobalPose().q.rotate(PxVec3(5, 0, 0)),
                 PxForceMode::eVELOCITY_CHANGE);
+        */
     }
+
+    if (g_input.isKeyPressed(KEY_G))
+    {
+        getRigidBody()->addForce(PxVec3(0, 0, -50), PxForceMode::eVELOCITY_CHANGE);
+    }
+
+    if (g_input.isKeyPressed(KEY_H))
+    {
+        getRigidBody()->addForce(convert(getForwardVector() * 30.f), PxForceMode::eVELOCITY_CHANGE);
+    }
+#endif
 
 #if 0
     // test path finding
