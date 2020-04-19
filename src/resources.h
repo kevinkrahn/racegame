@@ -149,6 +149,7 @@ struct Sounds
     Sound airdrill = Sound("sounds/airdrill.wav");
     Sound kinetic_armor = Sound("sounds/kinetic_armor.wav");
     Sound jumpjet = Sound("sounds/jumpjet.wav");
+    Sound cheer = Sound("sounds/cheer.wav");
 
     Sound bullet_impact1 = Sound("sounds/impacts/bullet_impact1.wav");
     Sound bullet_impact2 = Sound("sounds/impacts/bullet_impact2.wav");

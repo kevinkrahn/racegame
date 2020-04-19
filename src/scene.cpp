@@ -711,6 +711,14 @@ void Scene::vehicleFinish(u32 n)
     if (numHumanDrivers == playerFinishCount && !allPlayersFinished)
     {
         allPlayersFinished = true;
+    }
+
+    if (numHumanDrivers == 1 || !allPlayersFinished)
+    {
+        g_audio.playSound(&g_res.sounds->cheer, SoundType::GAME_SFX);
+    }
+    else
+    {
         g_audio.playSound(&g_res.sounds->clapping, SoundType::GAME_SFX);
     }
 }
