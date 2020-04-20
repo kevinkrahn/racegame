@@ -22,8 +22,11 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onPreview(RenderWorld* rw) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    DataFile::Value serializeState() override;
-    void deserializeState(DataFile::Value& data) override;
+    void serializeState(Serializer& s) override
+    {
+        PlaceableEntity::serializeState(s);
+        s.field(meshIndex);
+    }
     void updateTransform(class Scene* scene) override;
     u32 getVariationCount() const override;
     void setVariationIndex(u32 variationIndex) override { meshIndex = variationIndex; }

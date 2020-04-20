@@ -22,6 +22,8 @@ public:
     struct Point
     {
         glm::vec3 position;
+
+        void serialize(Serializer& s) { s.field(position); }
     };
 
     BoundingBox boundingBox;
@@ -88,11 +90,15 @@ private:
         BoundingBox boundingBox;
         Track* track;
 
-        BezierSegment(Track* track) : track(track) { }
-        BezierSegment(BezierSegment const& other) = delete;
-        BezierSegment(BezierSegment&& other) = default;
-        BezierSegment& operator = (BezierSegment const& other) = delete;
-        BezierSegment& operator = (BezierSegment && other) = default;
+        void serialize(Serializer& s)
+        {
+            s.field(handleOffsetA);
+            s.field(pointIndexA);
+            s.field(handleOffsetB);
+            s.field(pointIndexB);
+            s.field(widthA);
+            s.field(widthB);
+        }
 
         ~BezierSegment()
         {
@@ -152,13 +158,24 @@ private:
         glm::vec3 position;
         glm::vec3 handleOffsetA;
         glm::vec3 handleOffsetB;
+
+        void serialize(Serializer& s)
+        {
+            s.field(position);
+            s.field(handleOffsetA);
+            s.field(handleOffsetB);
+        }
     };
 
     // TODO: allow decals to affect railings
-    // TODO: make railings a seperate entity
+    // TODO: make railings a seperate entity (or make a dedicated spline mode in the editor)
     struct Railing : public Renderable
     {
+        // serialized
         std::vector<RailingPoint> points;
+        f32 scale = 1.f;
+        u32 meshTypeIndex = 0;
+
         Mesh mesh;
         Mesh collisionMesh;
         std::vector<Selection> selectedPoints;
@@ -167,15 +184,8 @@ private:
         Track* track = nullptr;
         ActorUserData physicsUserData;
         PxShape* collisionShape = nullptr;
-        f32 scale = 1.f;
-        u32 meshTypeIndex = 0;
         Texture* tex;
 
-        Railing(Track* track) : track(track) {}
-        Railing(Railing const& other) = delete;
-        Railing(Railing&& other) = default;
-        Railing& operator = (Railing const& other) = delete;
-        Railing& operator = (Railing && other) = default;
         ~Railing() override
         {
             if (actor)
@@ -184,6 +194,13 @@ private:
             }
             mesh.destroy();
             collisionMesh.destroy();
+        }
+
+        void serialize(Serializer& s)
+        {
+            s.field(points);
+            s.field(meshTypeIndex);
+            s.field(scale);
         }
 
         struct PolyLinePoint
@@ -230,7 +247,8 @@ public:
     {
         points.push_back(Point{ glm::vec3(50, 0, 0.05f) });
         points.push_back(Point{ glm::vec3(-50, 0, 0.05f) });
-        auto segment = std::make_unique<BezierSegment>(this);
+        auto segment = std::make_unique<BezierSegment>();
+        segment->track = this;
         segment->handleOffsetA = glm::vec3(-10, 0, 0);
         segment->pointIndexA = 0;
         segment->handleOffsetB = glm::vec3(10, 0, 0);
@@ -325,8 +343,24 @@ public:
     // entity
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
-    DataFile::Value serializeState() override;
-    void deserializeState(DataFile::Value& data) override;
+    void serializeState(Serializer& s) override
+    {
+        s.field(points);
+        s.field(connections);
+        s.field(railings);
+
+        if (s.deserialize)
+        {
+            for (auto& c : connections)
+            {
+                c->track = this;
+            }
+            for (auto& r : railings)
+            {
+                r->track = this;
+            }
+        }
+    }
 
     // renderable
     std::string getDebugString() const override { return "Track"; }

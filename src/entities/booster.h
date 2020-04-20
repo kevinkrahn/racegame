@@ -19,16 +19,10 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onPreview(RenderWorld* rw) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    DataFile::Value serializeState() override
+    void serializeState(Serializer& s) override
     {
-        auto val = PlaceableEntity::serializeState();
-        val["backwards"] = DataFile::makeBool(backwards);
-        return val;
-    }
-    void deserializeState(DataFile::Value& data) override
-    {
-        backwards = data["backwards"].boolean();
-        PlaceableEntity::deserializeState(data);
+        PlaceableEntity::serializeState(s);
+        s.field(backwards);
     }
     void showDetails(Scene* scene) override;
     EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::MISC; }

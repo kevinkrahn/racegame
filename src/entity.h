@@ -63,10 +63,11 @@ struct ActorUserData
     };
 };
 
+#define UNSET_ENTITY_ID 0xF0F0F0F0
 class Entity
 {
 public:
-    u32 entityID = 0xF0F0F0F0;
+    u32 entityID = UNSET_ENTITY_ID;
     enum EntityFlags
     {
         NONE = 0,
@@ -86,14 +87,12 @@ public:
     bool isPersistent() const { return (entityFlags & PERSISTENT) == PERSISTENT; }
 
     virtual ~Entity() {}
-    virtual DataFile::Value serializeState() { return {}; }
-    virtual void deserializeState(DataFile::Value& data) {}
-    DataFile::Value serialize()
+    virtual void serializeState(Serializer& s) {}
+    void serialize(Serializer& s)
     {
-        assert(entityID != 0xF0F0F0F0);
-        auto val = serializeState();
-        val["entityID"] = DataFile::makeInteger(entityID);
-        return val;
+        assert(entityID != UNSET_ENTITY_ID);
+        s.field(entityID);
+        serializeState(s);
     }
     virtual void onTrigger(ActorUserData* userData) {}
 
@@ -122,21 +121,11 @@ public:
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
 
-    virtual DataFile::Value serializeState() override
+    virtual void serializeState(Serializer& s) override
     {
-        DataFile::Value dict = DataFile::makeDict();
-        dict["position"] = DataFile::makeVec3(position);
-        dict["rotation"] = DataFile::makeVec4({ rotation.x, rotation.y, rotation.z, rotation.w });
-        dict["scale"] = DataFile::makeVec3(scale);
-        return dict;
-    }
-
-    virtual void deserializeState(DataFile::Value& data) override
-    {
-        position = data["position"].vec3();
-        glm::vec4 r = data["rotation"].vec4();
-        rotation = glm::quat(r.w, r.x, r.y, r.z);
-        scale = data["scale"].vec3();
+        s.field(position);
+        s.field(rotation);
+        s.field(scale);
     }
 
     virtual void updateTransform(class Scene* scene)

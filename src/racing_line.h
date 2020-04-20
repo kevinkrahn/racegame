@@ -16,15 +16,26 @@ public:
         // not serialized
         f32 distanceToHere;
         f32 trackProgress;
+
+        void serialize(Serializer& s)
+        {
+            s.field(position);
+            s.field(targetSpeed);
+        }
     };
 
-    f32 length = 0.f;
     std::vector<Point> points;
+    f32 length = 0.f;
     Point endPoint;
+
+    void serialize(Serializer& s)
+    {
+        s.field(points);
+    }
 
     void build(TrackGraph const& trackGraph)
     {
-        assert(points.size() > 1);
+        assert(points.size() > 2);
 
         length = 0.f;
         points[0].distanceToHere = 0.f;
@@ -51,7 +62,7 @@ public:
 
     Point getPointAt(f32 distance) const
     {
-        assert(points.size() > 1);
+        assert(points.size() > 2);
 
         // if the distance exceeds the length then wrap around
         distance -= (length * glm::floor(distance / length));
@@ -81,7 +92,7 @@ public:
 
     Point getNearestPoint(glm::vec3 const& position, f32 currentTrackProgress) const
     {
-        assert(points.size() > 1);
+        assert(points.size() > 2);
 
         f32 minDistance = FLT_MAX;
         Point nearestPoint;
@@ -115,31 +126,5 @@ public:
         }
 
         return nearestPoint;
-    }
-
-    DataFile::Value serialize()
-    {
-        auto array = DataFile::makeArray();
-        for (auto& p : points)
-        {
-            auto d = DataFile::makeDict();
-            d["position"] = DataFile::makeVec3(p.position);
-            d["targetSpeed"] = DataFile::makeReal(p.targetSpeed);
-            array.array().push_back(std::move(d));
-        }
-        return array;
-    }
-
-    void deserialize(DataFile::Value& val)
-    {
-        points.clear();
-        auto& array = val.array();
-        for (auto& d : array)
-        {
-            Point p;
-            p.position = d["position"].vec3();
-            p.targetSpeed = d["targetSpeed"].real();
-            points.push_back(p);
-        }
     }
 };

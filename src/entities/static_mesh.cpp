@@ -67,14 +67,15 @@ void StaticMesh::loadMeshes()
     };
 
     DataFile::Value::Dict& sceneData = g_res.getScene(meshScenes[meshIndex].sceneName);
-    for (auto& e : sceneData["entities"].array())
+    for (auto& entityData : sceneData["entities"].array().val())
     {
-        std::string name = e["name"].string();
+        auto& e = entityData.dict().val();
+        std::string name = e["name"].string().val();
         name = name.substr(0, name.find('.'));
-        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
+        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>().val();
 
         LitSettings s = materials[name];
-        std::string const& meshName = e["data_name"].string();
+        std::string const& meshName = e["data_name"].string().val();
         s.mesh = g_res.getMesh(meshName.c_str());
 
         meshes.push_back({ s, transform, nullptr });
@@ -137,19 +138,6 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
             rw->push(WireframeRenderable(m.s.settings.mesh, transform * m.transform));
         }
     }
-}
-
-DataFile::Value StaticMesh::serializeState()
-{
-    DataFile::Value dict = PlaceableEntity::serializeState();
-    dict["meshIndex"] = DataFile::makeInteger(meshIndex);
-    return dict;
-}
-
-void StaticMesh::deserializeState(DataFile::Value& data)
-{
-    PlaceableEntity::deserializeState(data);
-    meshIndex = (u32)data["meshIndex"].integer(0);
 }
 
 void StaticMesh::applyDecal(Decal& decal)

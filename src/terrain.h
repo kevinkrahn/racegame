@@ -86,7 +86,7 @@ public:
 
     i32 getPriority() const override { return 5; }
 
-    enum struct TerrainType : i32
+    enum TerrainType
     {
         GRASS,
         SAND,
@@ -94,7 +94,7 @@ public:
         LAVA,
         MAX
     };
-    TerrainType terrainType = TerrainType::GRASS;
+    i32 terrainType = TerrainType::GRASS;
 
     struct SurfaceMaterial
     {
@@ -102,17 +102,16 @@ public:
         const char* textureNames[4];
         struct Texture* textures[4];
         f32 texScale[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
-    } surfaceMaterials[(u32)TerrainType::MAX];
+    } surfaceMaterials[TerrainType::MAX];
 
-    SurfaceMaterial const& getSurfaceMaterial() const { return surfaceMaterials[(u32)terrainType]; }
+    SurfaceMaterial const& getSurfaceMaterial() const { return surfaceMaterials[terrainType]; }
 
     bool isOffroadAt(f32 x, f32 y) const;
 
     // entity
     void onCreate(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
-    DataFile::Value serializeState() override;
-    void deserializeState(DataFile::Value& data) override;
+    void serializeState(Serializer& s) override;
     void applyDecal(class Decal& decal) override;
 
     // renderable

@@ -119,6 +119,7 @@ public:
     std::string filename;
     std::string notes;
     u32 totalLaps = 4;
+    u32 version = 0;
 
     bool isRaceInProgress = false;
     bool isPaused = false;
@@ -146,8 +147,7 @@ public:
     void startRace();
     void stopRace();
 
-    DataFile::Value serialize();
-    void deserialize(DataFile::Value& data);
+    void serialize(Serializer& s);
     Entity* deserializeEntity(DataFile::Value& data);
 
     std::vector<DataFile::Value> serializeTransientEntities();

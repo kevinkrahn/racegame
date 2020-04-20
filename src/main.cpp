@@ -47,8 +47,95 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#if 1
 int main(int argc, char** argv)
 {
     g_game.run();
     return EXIT_SUCCESS;
 }
+
+#else
+int main(int argc, char** argv)
+{
+    int hello = 123;
+    std::string yo = "bro";
+    glm::vec2 p{1, 2};
+    std::vector<i64> numbers = { 1, 2, 3, 4 };
+
+    struct Thing
+    {
+        f32 a;
+        f32 b;
+
+        void serialize(Serializer& s)
+        {
+            s.field(a);
+            s.field(b);
+        }
+    } thing = { 123.123f, 3.1415926535f };
+    std::vector<Thing> things = { {1,2}, {3,4}, {5,6} };
+    std::unique_ptr<f32> heapNumber(new f32(4444.55555f));
+    std::unique_ptr<i32> heapNumber2(new i32(42));
+    std::vector<std::unique_ptr<int>> heapNumbers;
+    heapNumbers.push_back(std::make_unique<int>(0));
+    heapNumbers.push_back(std::make_unique<int>(2));
+    heapNumbers.push_back(std::make_unique<int>(4));
+    heapNumbers.push_back(std::make_unique<int>(6));
+    heapNumbers.push_back(std::make_unique<int>(8));
+
+    auto dict = DataFile::makeDict();
+
+    Serializer s(dict, false);
+    s.field(hello);
+    s.value("yo", yo);
+    s.field(p);
+    s.field(thing);
+    s.field(numbers);
+    s.field(things);
+    s.field(heapNumber);
+    s.field(heapNumber2);
+    s.field(heapNumbers);
+
+    print(dict);
+
+    hello = 0;
+    yo = "yo";
+    p = { 0, 0 };
+    thing = { 0, 0 };
+    numbers = {};
+    things = {};
+    Serializer s2(dict, true);
+    s2.field(hello);
+    s2.field(yo);
+    s2.field(p);
+    s2.field(thing);
+    s2.field(numbers);
+    s2.field(things);
+    s2.field(heapNumbers);
+
+    print("hello: ", hello, '\n');
+    print("yo: ", yo, '\n');
+    print("p: ", p, '\n');
+    print("thing: ", thing.a, ", ", thing.b, '\n');
+    print("numbers: ");
+    for (auto& n : numbers)
+    {
+        print(n, ", ");
+    }
+    print('\n');
+    print("things: ");
+    for (auto& t : things)
+    {
+        print("{ ", t.a, ", ", t.b, " }, ");
+    }
+    print('\n');
+    print("heapNumbers: ");
+    for (auto& t : heapNumbers)
+    {
+        print(*t, ", ");
+    }
+    print('\n');
+
+    return EXIT_SUCCESS;
+}
+#endif

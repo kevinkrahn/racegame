@@ -26,6 +26,50 @@ namespace DataFile
         BOOL,
     };
 
+    template <typename T>
+    class OptionalRef
+    {
+        T& val_;
+        bool hasValue_;
+    public:
+        OptionalRef(T& val_, bool hasValue_) : val_(val_), hasValue_(hasValue_) {}
+        T& val()
+        {
+            if (!hasValue())
+            {
+                FATAL_ERROR("Attempt to read invalid datafile value.");
+            }
+            return val_;
+        }
+        bool hasValue()
+        {
+            return hasValue_;
+        }
+    };
+
+    template <typename T>
+    class OptionalVal
+    {
+        T val_;
+        bool hasValue_;
+    public:
+        OptionalVal(T val_, bool hasValue_) : val_(val_), hasValue_(hasValue_) {}
+        T& val()
+        {
+            if (!hasValue())
+            {
+                FATAL_ERROR("Attempt to read invalid datafile value.");
+            }
+            return val_;
+        }
+        bool hasValue()
+        {
+            return hasValue_;
+        }
+
+        operator bool() { return hasValue(); }
+    };
+
     class Value
     {
     public:
@@ -48,24 +92,6 @@ namespace DataFile
             Dict dict_;
             bool bool_;
         };
-
-#ifndef NDEBUG
-        std::string keyName;
-#define CHECK_TYPE(...) {\
-    DataType types[] = { __VA_ARGS__ };\
-    bool found = false;\
-    for (auto& t : types) {\
-        if (dataType == t) found = true;\
-    }\
-    if (!found) {\
-        std::string typesStr = "";\
-        for (u32 i=0; i<ARRAY_SIZE(types); ++i) typesStr += str(types[i]) + ((i < ARRAY_SIZE(types) - 1) ? ", " : "");\
-        FATAL_ERROR("Failed to read value with key '", keyName, "'. Expected data type to be one of [", typesStr, "], but it is ", dataType, '.');\
-    }\
-}
-#else
-#define CHECK_TYPE(...)
-#endif
 
     public:
         static Value readValue(std::ifstream& stream);
@@ -197,17 +223,15 @@ namespace DataFile
         }
 
         bool hasValue() const { return this->dataType != DataType::NONE; }
-        bool hasKey(std::string const& key) const { return this->dataType == DataType::DICT && dict_.count(key) > 0; }
 
-        std::string& string()
+        OptionalRef<String> string()
         {
-            CHECK_TYPE(DataType::STRING);
-            return str_;
+            return OptionalRef<String>(str_, dataType == DataType::STRING);
         }
 
         std::string string(std::string const& defaultVal)
         {
-            return dataType == DataType::NONE ? defaultVal : str_;
+            return string().val();
         }
 
         void setString(std::string const& val)
@@ -218,24 +242,15 @@ namespace DataFile
             *this = std::move(v);
         }
 
-        i64 integer()
+        OptionalRef<i64> integer()
         {
-            CHECK_TYPE(DataType::I64, DataType::F32);
-            if (dataType == F32) return (i64)real_;
-            return integer_;
+            return OptionalRef<i64>(integer_, dataType == DataType::I64);
         }
 
         i64 integer(i64 defaultVal)
         {
             if(dataType == DataType::NONE) return defaultVal;
-            return integer();
-        }
-
-        f32 real()
-        {
-            CHECK_TYPE(DataType::I64, DataType::F32);
-            if (dataType == I64) return (f32)integer_;
-            return real_;
+            return integer().val();
         }
 
         void setInteger(i64 val)
@@ -245,10 +260,14 @@ namespace DataFile
             integer_ = val;
         }
 
+        OptionalRef<f32> real()
+        {
+            return OptionalRef<f32>(real_, dataType == DataType::F32);
+        }
+
         f32 real(f32 defaultVal)
         {
-            if(dataType == DataType::NONE) return defaultVal;
-            return real();
+            return real().val();
         }
 
         void setReal(f32 val)
@@ -258,16 +277,22 @@ namespace DataFile
             real_ = val;
         }
 
-        glm::vec2 vec2()
+        OptionalVal<glm::vec2> vec2()
         {
-            CHECK_TYPE(DataType::ARRAY);
-            assert(array_.size() >= 2);
-            return glm::vec2(array_[0].real(), array_[1].real());
+            if (dataType == DataType::ARRAY && array_.size() >= 2
+                    && array_[0].dataType == DataType::F32 && array_[1].dataType == DataType::F32)
+            {
+                return OptionalVal<glm::vec2>({ array_[0].real().val(), array_[1].real().val() }, true);
+            }
+            else
+            {
+                return OptionalVal<glm::vec2>({}, false);
+            }
         }
 
         glm::vec2 vec2(glm::vec2 defaultVal)
         {
-            return dataType == DataType::NONE ? defaultVal : vec2();
+            return vec2().val();
         }
 
         void setVec2(glm::vec2 val)
@@ -279,16 +304,25 @@ namespace DataFile
             array_[1].setReal(val.y);
         }
 
-        glm::vec3 vec3()
+        OptionalVal<glm::vec3> vec3()
         {
-            CHECK_TYPE(DataType::ARRAY);
-            assert(array_.size() >= 3);
-            return glm::vec3(array_[0].real(), array_[1].real(), array_[2].real());
+            if (dataType == DataType::ARRAY && array_.size() >= 3
+                    && array_[0].dataType == DataType::F32
+                    && array_[1].dataType == DataType::F32
+                    && array_[2].dataType == DataType::F32)
+            {
+                return OptionalVal<glm::vec3>({
+                        array_[0].real().val(), array_[1].real().val(), array_[2].real().val() }, true);
+            }
+            else
+            {
+                return OptionalVal<glm::vec3>({}, false);
+            }
         }
 
         glm::vec3 vec3(glm::vec3 const& defaultVal)
         {
-            return dataType == DataType::NONE ? defaultVal : vec3();
+            return vec3().val();
         }
 
         void setVec3(glm::vec3 const& val)
@@ -301,16 +335,26 @@ namespace DataFile
             array_[2].setReal(val.z);
         }
 
-        glm::vec4 vec4()
+        OptionalVal<glm::vec4> vec4()
         {
-            CHECK_TYPE(DataType::ARRAY);
-            assert(array_.size() >= 4);
-            return glm::vec4(array_[0].real(), array_[1].real(), array_[2].real(), array_[3].real());
+            if (dataType == DataType::ARRAY && array_.size() >= 3
+                    && array_[0].dataType == DataType::F32
+                    && array_[1].dataType == DataType::F32
+                    && array_[2].dataType == DataType::F32)
+            {
+                return OptionalVal<glm::vec4>({
+                        array_[0].real().val(), array_[1].real().val(),
+                        array_[2].real().val(), array_[3].real().val() }, true);
+            }
+            else
+            {
+                return OptionalVal<glm::vec4>({}, false);
+            }
         }
 
         glm::vec4 vec4(glm::vec4 const& defaultVal)
         {
-            return dataType == DataType::NONE ? defaultVal : vec4();
+            return vec4().val();
         }
 
         void setVec4(glm::vec4 const& val)
@@ -324,15 +368,14 @@ namespace DataFile
             array_[3].setReal(val.w);
         }
 
-        bool boolean()
+        OptionalRef<bool> boolean()
         {
-            CHECK_TYPE(DataType::BOOL);
-            return bool_;
+            return OptionalRef<bool>(bool_, dataType == DataType::BOOL);
         }
 
         bool boolean(bool defaultVal)
         {
-            return dataType == DataType::NONE ? defaultVal : boolean();
+            return dataType == DataType::NONE ? defaultVal : boolean().val();
         }
 
         void setBoolean(bool val)
@@ -342,10 +385,13 @@ namespace DataFile
             bool_ = val;
         }
 
-        ByteArray& bytearray()
+        OptionalRef<ByteArray> bytearray(bool emptyArrayIfNone=false)
         {
-            CHECK_TYPE(DataType::BYTE_ARRAY);
-            return bytearray_;
+            if (emptyArrayIfNone && dataType == DataType::NONE)
+            {
+                setBytearray(ByteArray());
+            }
+            return OptionalRef<ByteArray>(bytearray_, dataType == DataType::BYTE_ARRAY);
         }
 
         void setBytearray(ByteArray && val)
@@ -362,14 +408,13 @@ namespace DataFile
             new (&bytearray_) ByteArray(val);
         }
 
-        Array& array(bool emptyArrayIfNone=false)
+        OptionalRef<Array> array(bool emptyArrayIfNone=false)
         {
             if (emptyArrayIfNone && dataType == DataType::NONE)
             {
                 setArray(Array());
             }
-            CHECK_TYPE(DataType::ARRAY);
-            return array_;
+            return OptionalRef<Array>(array_, dataType == DataType::ARRAY);
         }
 
         void setArray(Array const& val)
@@ -386,10 +431,13 @@ namespace DataFile
             new (&array_) Array(std::move(val));
         }
 
-        Dict& dict()
+        OptionalRef<Dict> dict(bool emptyDictIfNone=false)
         {
-            CHECK_TYPE(DataType::DICT);
-            return dict_;
+            if (emptyDictIfNone && dataType == DataType::NONE)
+            {
+                setDict(Dict());
+            }
+            return OptionalRef<Dict>(dict_, dataType == DataType::DICT);
         }
 
         void setDict(Dict && val)
@@ -399,14 +447,10 @@ namespace DataFile
             new (&dict_) Dict(std::move(val));
         }
 
+        /*
         Value& operator [] (std::string key)
         {
             CHECK_TYPE(DataType::DICT);
-/*
-#ifndef NDEBUG
-            if (dict_.count(key) == 0) { FATAL_ERROR("Key '", key, "' does not exist."); }
-#endif
-*/
             return dict_[key];
         }
 
@@ -415,18 +459,27 @@ namespace DataFile
             CHECK_TYPE(DataType::ARRAY);
             return array_[index];
         }
+        */
 
         template <typename T>
-        T convertBytes()
+        OptionalVal<T> convertBytes()
         {
-            CHECK_TYPE(DataType::BYTE_ARRAY);
-            assert(dataType == DataType::BYTE_ARRAY);
+            if (dataType != DataType::BYTE_ARRAY)
+            {
+                return OptionalVal<T>({}, false);
+            }
             T val;
             memcpy(&val, bytearray_.data(), bytearray_.size());
-            return val;
+            return OptionalVal<T>(std::move(val), true);
         }
 
         void debugOutput(std::ostream& os, u32 indent, bool newline) const;
+
+        Value& operator=(std::string const& val) { setString(val); return *this; }
+        Value& operator=(const char* val) { setString(val); return *this; }
+        Value& operator=(i64 val) { setInteger(val); return *this; }
+        Value& operator=(f32 val) { setReal(val); return *this; }
+        Value& operator=(bool val) { setBoolean(val); return *this; }
     };
 
     Value makeString(std::string const& val)
@@ -553,3 +606,271 @@ namespace DataFile
         return os;
     }
 };
+
+#define DESERIALIZE_ERROR(...) { error(__VA_ARGS__, '\n'); return; }
+
+class Serializer
+{
+public:
+    DataFile::Value::Dict& dict;
+    bool deserialize;
+
+    Serializer(DataFile::Value& val, bool deserialize) : dict(val.dict(true).val()),
+        deserialize(deserialize) {}
+
+    template<typename T>
+    void value(const char* name, T& field)
+    {
+        if (deserialize)
+        {
+            element(name, dict[name], field);
+        }
+        else
+        {
+            element(name, dict[name], field);
+        }
+    }
+
+    template<typename T>
+    void element(const char* name, DataFile::Value& val, T& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.dict();
+            if (!v.hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read value as DICT: \"", name, "\"");
+            }
+            Serializer childSerializer(val, true);
+            dest.serialize(childSerializer);
+        }
+        else
+        {
+            auto childDict = DataFile::makeDict();
+            Serializer childSerializer(childDict, false);
+            dest.serialize(childSerializer);
+            val = childDict;
+        }
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, i64& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.integer();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as INTEGER: \"", name, "\"");
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, i32& dest)
+    {
+        i64 d = dest;
+        element(name, val, d);
+        if (deserialize) dest = (i64)d;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, u32& dest)
+    {
+        i64 d = dest;
+        element(name, val, d);
+        if (deserialize) dest = (i64)d;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, i16& dest)
+    {
+        i64 d = dest;
+        element(name, val, d);
+        if (deserialize) dest = (i64)d;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, u16& dest)
+    {
+        i64 d = dest;
+        element(name, val, d);
+        if (deserialize) dest = (i64)d;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, std::string& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.string();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"", name, "\"");
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, bool& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.boolean();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as BOOL: \"", name, "\"");
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, f32& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.real();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as REAL: \"", name, "\"");
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, glm::vec2& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.array();
+            if (!v.hasValue() || v.val().size() < 2
+                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read ARRAY (vec2) field: \"", name, "\"");
+            }
+            dest = { v.val()[0].real().val(), v.val()[1].real().val() };
+        }
+        else
+        {
+            val = DataFile::makeArray(DataFile::Value::Array(
+                        { DataFile::makeReal(dest.x), DataFile::makeReal(dest.y) }));
+        }
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, glm::vec3& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.array();
+            if (!v.hasValue() || v.val().size() < 3
+                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue()
+                    || !v.val()[2].real().hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read ARRAY (vec3) field: \"", name, "\"");
+            }
+            dest = { v.val()[0].real().val(), v.val()[1].real().val(), v.val()[2].real().val() };
+        }
+        else
+        {
+            val = DataFile::makeArray(DataFile::Value::Array({
+                        DataFile::makeReal(dest.x),
+                        DataFile::makeReal(dest.y),
+                        DataFile::makeReal(dest.z),
+                    }));
+        }
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, glm::vec4& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.array();
+            if (!v.hasValue() || v.val().size() < 4
+                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue()
+                    || !v.val()[2].real().hasValue() || !v.val()[3].real().hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read ARRAY (vec4) field: \"", name, "\"");
+            }
+            dest = {
+                v.val()[0].real().val(),
+                v.val()[1].real().val(),
+                v.val()[2].real().val(),
+                v.val()[3].real().val()
+            };
+        }
+        else
+        {
+            val = DataFile::makeArray(DataFile::Value::Array({
+                        DataFile::makeReal(dest.x),
+                        DataFile::makeReal(dest.y),
+                        DataFile::makeReal(dest.z),
+                        DataFile::makeReal(dest.w)
+                    }));
+        }
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, glm::quat& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.array();
+            if (!v.hasValue() || v.val().size() < 4
+                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue()
+                    || !v.val()[2].real().hasValue() || !v.val()[3].real().hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read ARRAY (quat) field: \"", name, "\"");
+            }
+            dest = {
+                v.val()[3].real().val(),
+                v.val()[0].real().val(),
+                v.val()[1].real().val(),
+                v.val()[2].real().val()
+            };
+        }
+        else
+        {
+            val = DataFile::makeArray(DataFile::Value::Array({
+                        DataFile::makeReal(dest.x),
+                        DataFile::makeReal(dest.y),
+                        DataFile::makeReal(dest.z),
+                        DataFile::makeReal(dest.w)
+                    }));
+        }
+    }
+
+    template<typename T> void element(const char* name, DataFile::Value& val, std::vector<T>& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.array();
+            if (!v.hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+            }
+            dest.clear();
+            dest.reserve(v.val().size());
+            for (auto& item : v.val())
+            {
+                T el;
+                element(name, item, el);
+                dest.push_back(std::move(el));
+            }
+        }
+        else
+        {
+            DataFile::Value::Array array;
+            array.reserve(dest.size());
+            for (auto& item : dest)
+            {
+                DataFile::Value el;
+                element(name, el, item);
+                array.push_back(std::move(el));
+            }
+            val.setArray(std::move(array));
+        }
+    }
+
+    template<typename T> void element(const char* name, DataFile::Value& val, std::unique_ptr<T>& dest)
+    {
+        if (deserialize)
+        {
+            dest.reset(new T);
+            element(name, val, *dest);
+        }
+        else
+        {
+            element(name, val, *dest);
+        }
+    }
+};
+
+#undef DESERIALIZE_ERROR
+
+#define field(FIELD) value(#FIELD, FIELD)

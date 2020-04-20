@@ -6,27 +6,30 @@
 
 struct Driver
 {
+    std::string playerName = "no-name";
+    std::string controllerGuid;
     u32 leaguePoints = 0;
     i32 credits = 10000;
-
+    i32 aiIndex = -1;
+    i32 controllerID = -1;
+    i32 vehicleIndex = -1;
+    u32 lastPlacement = 0;
     bool isPlayer = false;
     bool hasCamera = false;
-    std::string playerName = "no-name";
-    i32 aiIndex = -1;
     bool useKeyboard = false;
-    i32 controllerID = -1;
-    std::string controllerGuid;
 
     struct OwnedVehicle
     {
         i32 vehicleIndex;
         VehicleConfiguration vehicleConfig;
+
+        void serialize(Serializer& s)
+        {
+            s.field(vehicleIndex);
+            s.field(vehicleConfig);
+        }
     };
     std::vector<OwnedVehicle> ownedVehicles;
-
-    i32 vehicleIndex = -1;
-
-    u32 lastPlacement = 0;
 
     VehicleConfiguration* getVehicleConfig()
     {
@@ -52,8 +55,6 @@ struct Driver
     }
 
 
-
-
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
             i32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0, i32 aiIndex=-1);
 
@@ -63,49 +64,18 @@ struct Driver
 
     void aiUpgrades(RandomSeries& series);
 
-    DataFile::Value serialize()
+    void serialize(Serializer& s)
     {
-        DataFile::Value data = DataFile::makeDict();
-        data["leaguePoints"] = DataFile::makeInteger(leaguePoints);
-        data["credits"] = DataFile::makeInteger(credits);
-        data["isPlayer"] = DataFile::makeBool(isPlayer);
-        data["aiIndex"] = DataFile::makeInteger(aiIndex);
-        data["hasCamera"] = DataFile::makeBool(hasCamera);
-        data["playerName"] = DataFile::makeString(playerName);
-        data["useKeyboard"] = DataFile::makeBool(useKeyboard);
-        data["controllerGuid"] = DataFile::makeString(controllerGuid);
-        data["ownedVehicles"] = DataFile::makeArray();
-        for (auto& v : ownedVehicles)
-        {
-            DataFile::Value vehicleData = DataFile::makeDict();
-            vehicleData["vehicleIndex"] = DataFile::makeInteger(vehicleIndex);
-            vehicleData["vehicleConfig"] = v.vehicleConfig.serialize();
-            data["ownedVehicles"].array().push_back(std::move(vehicleData));
-        }
-        data["vehicleIndex"] = DataFile::makeInteger(vehicleIndex);
-        data["lastPlacement"] = DataFile::makeInteger(lastPlacement);
-        return data;
-    }
-
-    void deserialize(DataFile::Value& data)
-    {
-        leaguePoints = (u32)data["leaguePoints"].integer();
-        credits = (i32)data["credits"].integer();
-        isPlayer = data["isPlayer"].boolean();
-        aiIndex = (i32)data["aiIndex"].integer();
-        hasCamera = data["hasCamera"].boolean();
-        playerName = data["playerName"].string();
-        useKeyboard = data["useKeyboard"].boolean();
-        controllerGuid = data["controllerGuid"].string();
-        auto& vehicles = data["ownedVehicles"].array();
-        for(auto& v : vehicles)
-        {
-            OwnedVehicle ov;
-            ov.vehicleIndex = (i32)v["vehicleIndex"].integer();
-            ov.vehicleConfig.deserialize(v["vehicleConfig"]);
-            ownedVehicles.push_back(std::move(ov));
-        }
-        vehicleIndex = (i32)data["vehicleIndex"].integer();
-        lastPlacement = (u32)data["lastPlacement"].integer();
+        s.field(playerName);
+        s.field(controllerGuid);
+        s.field(leaguePoints);
+        s.field(credits);
+        s.field(aiIndex);
+        s.field(vehicleIndex);
+        s.field(lastPlacement);
+        s.field(isPlayer);
+        s.field(hasCamera);
+        s.field(useKeyboard);
+        s.field(ownedVehicles);
     }
 };

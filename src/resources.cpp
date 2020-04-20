@@ -21,22 +21,22 @@ void Resources::load()
         DataFile::Value val = DataFile::load(filename);
 
         // meshes
-        if (val.hasKey("meshes"))
+        if (val.dict().hasValue())
         {
-            for (auto& val : val["meshes"].array())
+            for (auto& val : val.dict().val()["meshes"].array().val())
             {
-                auto& meshInfo = val.dict();
-                u32 elementSize = (u32)meshInfo["element_size"].integer();
+                auto& meshInfo = val.dict().val();
+                u32 elementSize = (u32)meshInfo["element_size"].integer().val();
                 if (elementSize == 3)
                 {
-                    auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
-                    auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
+                    auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray().val();
+                    auto const& indexBuffer = meshInfo["index_buffer"].bytearray().val();
                     std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
                     std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
-                    u32 numVertices = (u32)meshInfo["num_vertices"].integer();
-                    u32 numIndices = (u32)meshInfo["num_indices"].integer();
-                    u32 numColors = (u32)meshInfo["num_colors"].integer();
-                    u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer();
+                    u32 numVertices = (u32)meshInfo["num_vertices"].integer().val();
+                    u32 numIndices = (u32)meshInfo["num_indices"].integer().val();
+                    u32 numColors = (u32)meshInfo["num_colors"].integer().val();
+                    u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer().val();
                     u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
                     //print("Mesh: ", meshInfo["name"].string(), '\n');
@@ -48,7 +48,7 @@ void Resources::load()
                         VertexAttribute::FLOAT2, // uv
                     };
                     Mesh mesh = {
-                        meshInfo["name"].string(),
+                        meshInfo["name"].string().val(),
                         std::move(vertices),
                         std::move(indices),
                         numVertices,
@@ -58,26 +58,27 @@ void Resources::load()
                         elementSize,
                         stride,
                         BoundingBox{
-                            meshInfo["aabb_min"].convertBytes<glm::vec3>(),
-                            meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                            meshInfo["aabb_min"].convertBytes<glm::vec3>().val(),
+                            meshInfo["aabb_max"].convertBytes<glm::vec3>().val(),
                         },
                         vertexFormat
                     };
                     mesh.createVAO();
-                    meshes[meshInfo["name"].string()] = std::move(mesh);
+                    meshes[mesh.name] = std::move(mesh);
                 }
+                // TODO: This path is never used, should it be removed?
                 else
                 {
-                    auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray();
-                    auto const& indexBuffer = meshInfo["index_buffer"].bytearray();
+                    auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray().val();
+                    auto const& indexBuffer = meshInfo["index_buffer"].bytearray().val();
                     std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
                     std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
-                    u32 numVertices = (u32)meshInfo["num_vertices"].integer();
-                    u32 numIndices = (u32)meshInfo["num_indices"].integer();
+                    u32 numVertices = (u32)meshInfo["num_vertices"].integer().val();
+                    u32 numIndices = (u32)meshInfo["num_indices"].integer().val();
 
                     u32 stride = elementSize * sizeof(f32);
                     Mesh mesh = {
-                        meshInfo["name"].string(),
+                        meshInfo["name"].string().val(),
                         std::move(vertices),
                         std::move(indices),
                         numVertices,
@@ -87,21 +88,22 @@ void Resources::load()
                         elementSize,
                         stride,
                         BoundingBox{
-                            meshInfo["aabb_min"].convertBytes<glm::vec3>(),
-                            meshInfo["aabb_max"].convertBytes<glm::vec3>(),
+                            meshInfo["aabb_min"].convertBytes<glm::vec3>().val(),
+                            meshInfo["aabb_max"].convertBytes<glm::vec3>().val(),
                         }
                     };
-                    meshes[meshInfo["name"].string()] = std::move(mesh);
+                    meshes[mesh.name] = std::move(mesh);
                 }
             }
         }
 
         // scenes
-        if (val.hasKey("scenes"))
+        if (val.dict().hasValue())
         {
-            for (auto& val : val["scenes"].array())
+            // this really sucks
+            for (auto& val : val.dict().val()["scenes"].array().val())
             {
-                scenes[val["name"].string()] = std::move(val.dict());
+                scenes[val.dict().val()["name"].string().val()] = std::move(val.dict().val());
             }
         }
     }

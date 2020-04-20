@@ -269,7 +269,9 @@ public:
             std::vector<PlaceableEntity*> newEntities;
             for (auto e : selectedEntities)
             {
-                auto data = e->serialize();
+                auto data = DataFile::makeDict();
+                Serializer s(data, false);
+                e->serialize(s);
                 PlaceableEntity* newEntity = (PlaceableEntity*)scene->deserializeEntity(data);
                 newEntity->setPersistent(true);
                 newEntities.push_back(newEntity);

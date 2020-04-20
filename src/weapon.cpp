@@ -14,10 +14,11 @@ void Weapon::outOfAmmo(Vehicle* vehicle)
 void Weapon::loadSceneData(const char* sceneName)
 {
     DataFile::Value::Dict& scene = g_res.getScene(sceneName);
-    for (auto& e : scene["entities"].array())
+    for (auto& entityData : scene["entities"].array().val())
     {
-        std::string name = e["name"].string();
-        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
+        auto& e = entityData.dict().val();
+        std::string name = e["name"].string().val();
+        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>().val();
         if (name.find("SpawnPoint") != std::string::npos)
         {
             projectileSpawnPoints.push_back(translationOf(transform));

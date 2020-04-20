@@ -82,7 +82,8 @@ Scene::Scene(const char* name)
     else
     {
         auto data = DataFile::load(name);
-        deserialize(data);
+        Serializer s(data, true);
+        serialize(s);
         this->filename = name;
     }
 
@@ -142,6 +143,7 @@ void Scene::startRace()
     // if no racing lines have been defined for the track generate them from the track graph
     if (paths.empty())
     {
+        print("Scene has no paths defined. Generating paths.\n");
         hasGeneratedPaths = true;
         paths.reserve(trackGraph.getPaths().size());
         for (auto& path : trackGraph.getPaths())
@@ -1098,73 +1100,77 @@ void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
     }
 }
 
-DataFile::Value Scene::serialize()
+void Scene::serialize(Serializer& s)
 {
-    DataFile::Value dict = DataFile::makeDict();
-    dict["name"] = DataFile::makeString(name);
-    dict["notes"] = DataFile::makeString(notes);
-    dict["totalLaps"] = DataFile::makeInteger(totalLaps);
-    dict["version"] = DataFile::makeInteger(0);
-    dict["entities"] = DataFile::makeArray();
-    dict["paths"] = DataFile::makeArray();
-    for(auto& p : paths)
-    {
-        dict["paths"].array().push_back(p.serialize());
-    }
-    DataFile::Value::Array& entityArray = dict["entities"].array();
+    s.field(name);
+    s.field(notes);
+    s.field(totalLaps);
+    s.field(version);
 
-    for (auto& entity : this->entities)
+    // compatibility with old scenes
+    if (s.deserialize && s.dict["paths"].array().hasValue()
+            && s.dict["paths"].array().val().size() > 0
+            && s.dict["paths"].array().val()[0].array().hasValue())
     {
-        if (entity->entityFlags & Entity::PERSISTENT)
+        auto& pathsData = s.dict["paths"].array().val();
+        paths.clear();
+        for (auto& pathData : pathsData)
         {
-            entityArray.push_back(entity->serialize());
+            paths.push_back({});
+            RacingLine& path = paths.back();
+            for (auto& p : pathData.array().val())
+            {
+                path.points.push_back({
+                    p.dict().val()["position"].vec3().val(),
+                    p.dict().val()["targetSpeed"].real().val()
+                });
+            }
         }
     }
-
-    return dict;
-}
-
-Entity* Scene::deserializeEntity(DataFile::Value& val)
-{
-    i32 entityID = (i32)val["entityID"].integer();
-    Entity* entity = g_entities[entityID].create();
-    entity->deserializeState(val);
-    this->addEntity(entity);
-    return entity;
-}
-
-void Scene::deserialize(DataFile::Value& data)
-{
-    name = data["name"].string("");
-    notes = data["notes"].string("");
-    totalLaps = (u32)data["totalLaps"].integer(totalLaps);
-    u32 version = (u32)data["version"].integer(0);
-    for (auto& p : data["paths"].array(true))
+    else
     {
-        RacingLine l;
-        l.deserialize(p);
-        paths.push_back(std::move(l));
+        s.field(paths);
     }
-    auto& entityArray = data["entities"].array();
-    if (version == 0)
+
+    if (s.deserialize)
     {
+        auto& entityArray = s.dict["entities"].array(true).val();
+        /*
+        if (version == 0)
+        {
+            // do something different
+        }
+        */
         for (auto& val : entityArray)
         {
-            i32 entityID = (i32)val["entityID"].integer();
-            if (entityID == 2)
-            {
-
-            }
             deserializeEntity(val);
         }
     }
     else
     {
-        for (auto& val : entityArray)
+        s.dict["entities"] = DataFile::makeArray();
+        auto& entityArray = s.dict["entities"].array().val();
+        for (auto& entity : this->entities)
         {
-            deserializeEntity(val);
+            if (entity->entityFlags & Entity::PERSISTENT)
+            {
+                auto dict = DataFile::makeDict();
+                Serializer s(dict, false);
+                entity->serialize(s);
+                entityArray.push_back(std::move(dict));
+            }
         }
     }
+}
+
+Entity* Scene::deserializeEntity(DataFile::Value& val)
+{
+    i32 entityID = (i32)val.dict(true).val()["entityID"].integer().val();
+    Entity* entity = g_entities[entityID].create();
+    Serializer s(val, true);
+    entity->serializeState(s);
+    this->addEntity(entity);
+    return entity;
 }
 
 std::vector<DataFile::Value> Scene::serializeTransientEntities()
@@ -1174,7 +1180,10 @@ std::vector<DataFile::Value> Scene::serializeTransientEntities()
     {
         if (entity->entityFlags & Entity::TRANSIENT)
         {
-            transientEntities.push_back(entity->serialize());
+            auto dict = DataFile::makeDict();
+            Serializer s(dict, false);
+            entity->serialize(s);
+            transientEntities.push_back(std::move(dict));
         }
     }
     return transientEntities;

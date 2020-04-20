@@ -19,8 +19,17 @@ public:
     void onRender(class RenderWorld* rw, class Scene* scene, f32 deltaTime) override;
     void onPreview(RenderWorld* rw) override;
     void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    DataFile::Value serializeState() override;
-    void deserializeState(DataFile::Value& data) override;
+    void serializeState(Serializer& s) override
+    {
+        PlaceableEntity::serializeState(s);
+        s.field(texIndex);
+        s.field(decalFilter);
+        s.field(beforeMarking);
+        if (s.deserialize)
+        {
+            this->setVariationIndex((u32)texIndex);
+        }
+    }
     void showDetails(Scene* scene) override;
     u32 getVariationCount() const override;
     void setVariationIndex(u32 variationIndex) override;

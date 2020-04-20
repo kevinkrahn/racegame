@@ -3,6 +3,7 @@
 #include "math.h"
 #include "gl.h"
 #include "smallvec.h"
+#include "datafile.h"
 #include <stb_image.h>
 
 struct Texture
@@ -134,3 +135,39 @@ struct Texture
     }
 };
 
+struct TextureResource
+{
+    i64 guid = 0;
+    std::string name;
+    std::string sourceFile;
+    bool usedForDecal = false;
+    bool usedForBillboard = false;
+    bool srgb = true;
+    bool repeat = true;
+    bool generateMipMaps = true;
+    f32 lodBias = 0.f;
+    u32 anisotropy = 8;
+
+    enum Filter
+    {
+        CLOSEST = 0,
+        BILINEAR = 1,
+        TRILINEAR = 2
+    };
+    u32 filter = Filter::CLOSEST;
+
+    void serialize(Serializer& s)
+    {
+        s.field(guid);
+        s.field(name);
+        s.field(sourceFile);
+        s.field(usedForBillboard);
+        s.field(usedForBillboard);
+        s.field(srgb);
+        s.field(repeat);
+        s.field(generateMipMaps);
+        s.field(lodBias);
+        s.field(anisotropy);
+        s.field(filter);
+    }
+};

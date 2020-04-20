@@ -156,17 +156,10 @@ public:
         ImGui::ListBoxFooter();
     }
 
-    DataFile::Value serializeState() override
+    void serializeState(Serializer& s) override
     {
-        DataFile::Value dict = PlaceableEntity::serializeState();
-        dict["billboardIndex"] = DataFile::makeInteger(billboardIndex);
-        return dict;
-    }
-
-    void deserializeState(DataFile::Value& data) override
-    {
-        PlaceableEntity::deserializeState(data);
-        billboardIndex = (i32)data["billboardIndex"].integer(0);
+        PlaceableEntity::serializeState(s);
+        s.field(billboardIndex);
     }
 
     EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::ROADSIDE; }

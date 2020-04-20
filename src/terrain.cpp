@@ -736,40 +736,35 @@ void Terrain::onLitPass(class Renderer* renderer)
     setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
 }
 
-DataFile::Value Terrain::serializeState()
+void Terrain::serializeState(Serializer& s)
 {
-    DataFile::Value dict = DataFile::makeDict();
-    dict["tileSize"] = DataFile::makeReal(tileSize);
-    dict["x1"] = DataFile::makeReal(x1);
-    dict["y1"] = DataFile::makeReal(y1);
-    dict["x2"] = DataFile::makeReal(x2);
-    dict["y2"] = DataFile::makeReal(y2);
-    dict["heightBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
-                        (u8*)heightBuffer.get(),
-                        (u8*)(heightBuffer.get() + heightBufferSize)));
-    dict["blendBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
-                        (u8*)blend.get(),
-                        (u8*)(blend.get() + heightBufferSize)));
-    dict["terrainType"] = DataFile::makeInteger((i64)terrainType);
-    return dict;
-}
+    s.field(tileSize);
+    s.field(x1);
+    s.field(y1);
+    s.field(x2);
+    s.field(y2);
+    s.field(terrainType);
 
-void Terrain::deserializeState(DataFile::Value& data)
-{
-    tileSize = (f32)data["tileSize"].real();
-    x1 = (f32)data["x1"].real();
-    y1 = (f32)data["y1"].real();
-    x2 = (f32)data["x2"].real();
-    y2 = (f32)data["y2"].real();
-	resize(x1, y1, x2, y2);
-    auto& heightBufferBytes = data["heightBuffer"].bytearray();
-	memcpy(heightBuffer.get(), heightBufferBytes.data(), heightBufferBytes.size());
-    if (data.hasKey("blendBuffer"))
+    if (s.deserialize)
     {
-        auto& blendBytes = data["blendBuffer"].bytearray();
-		memcpy(blend.get(), blendBytes.data(), blendBytes.size());
+	    resize(x1, y1, x2, y2);
+        auto& heightBufferBytes = s.dict["heightBuffer"].bytearray().val();
+	    memcpy(heightBuffer.get(), heightBufferBytes.data(), heightBufferBytes.size());
+        if (s.dict["blendBuffer"].hasValue())
+        {
+            auto& blendBytes = s.dict["blendBuffer"].bytearray().val();
+		    memcpy(blend.get(), blendBytes.data(), blendBytes.size());
+        }
     }
-    terrainType = (TerrainType)data["terrainType"].integer((i64)TerrainType::GRASS);
+    else
+    {
+        s.dict["heightBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
+                            (u8*)heightBuffer.get(),
+                            (u8*)(heightBuffer.get() + heightBufferSize)));
+        s.dict["blendBuffer"] = DataFile::makeBytearray(DataFile::Value::ByteArray(
+                            (u8*)blend.get(),
+                            (u8*)(blend.get() + heightBufferSize)));
+    }
 }
 
 void Terrain::applyDecal(Decal& decal)

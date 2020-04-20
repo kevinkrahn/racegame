@@ -86,7 +86,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         if (!filename.empty())
         {
             print("Saving scene to file: ", scene->filename, '\n');
-            DataFile::save(scene->serialize(), filename.c_str());
+            auto data = DataFile::makeDict();
+            Serializer s(data, false);
+            scene->serialize(s);
+            DataFile::save(data, filename.c_str());
             scene->filename = filename;
         }
     }
@@ -97,7 +100,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         if (!filename.empty())
         {
             print("Saving scene to file: ", scene->filename, '\n');
-            DataFile::save(scene->serialize(), filename.c_str());
+            auto data = DataFile::makeDict();
+            Serializer s(data, false);
+            scene->serialize(s);
+            DataFile::save(data, filename.c_str());
             scene->filename = filename;
         }
     }

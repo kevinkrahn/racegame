@@ -832,7 +832,8 @@ void Track::extendTrack(i32 prefabCurveIndex)
         points.push_back({ p });
         glm::vec3 h(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
 
-        auto segment = std::make_unique<BezierSegment>(this);
+        auto segment = std::make_unique<BezierSegment>();
+        segment->track = this;
         segment->handleOffsetA = -fromHandleOffset;
         segment->pointIndexA = pIndex;
         segment->handleOffsetB = h;
@@ -889,7 +890,8 @@ void Track::connectPoints()
         handle2 = c2->pointIndexA == index2 ? c2->handleOffsetA : c2->handleOffsetB;
     }
 
-    auto segment = std::make_unique<BezierSegment>(this);
+    auto segment = std::make_unique<BezierSegment>();
+    segment->track = this;
     segment->handleOffsetA = -handle1;
     segment->pointIndexA = index1;
     if (BezierSegment* s = getPointConnection(index1))
@@ -1019,7 +1021,8 @@ void Track::split()
             {
                 continue;
             }
-            auto newRailing = std::make_unique<Railing>(this);
+            auto newRailing = std::make_unique<Railing>();
+            newRailing->track = this;
             newRailing->points = std::vector<RailingPoint>(
                     railing->points.begin() + railing->selectedPoints.front().pointIndex,
                     railing->points.end());
@@ -1056,7 +1059,8 @@ void Track::placeSpline(glm::vec3 const& p, u32 index)
     {
         r->selectedPoints.clear();
     }
-    auto railing = std::make_unique<Railing>(this);
+    auto railing = std::make_unique<Railing>();
+    railing->track = this;
     railing->meshTypeIndex = index;
     railing->points.push_back({ p, glm::vec3(10, 0, 0), glm::vec3(-10, 0, 0) });
     railing->selectedPoints.push_back({ 0, {} });
@@ -1296,102 +1300,6 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
         trackGraph->addConnection(nodeIndex - 1, c->pointIndexB);
     }
     trackGraph->rebuild(startTransform);
-}
-
-DataFile::Value Track::serializeState()
-{
-    DataFile::Value dict = DataFile::makeDict();
-    dict["points"] = DataFile::makeArray();
-    auto& pointsArray = dict["points"].array();
-    for (auto& point : points)
-    {
-        auto pointData = DataFile::makeDict();
-        pointData["position"] = DataFile::makeVec3(point.position);
-        pointsArray.push_back(std::move(pointData));
-    }
-
-    dict["connections"] = DataFile::makeArray();
-    auto& connectionArray = dict["connections"].array();
-    for (auto& connection : connections)
-    {
-        auto connectionData = DataFile::makeDict();
-        connectionData["handleOffsetA"] = DataFile::makeVec3(connection->handleOffsetA);
-        connectionData["pointIndexA"] = DataFile::makeInteger(connection->pointIndexA);
-        connectionData["handleOffsetB"] = DataFile::makeVec3(connection->handleOffsetB);
-        connectionData["pointIndexB"] = DataFile::makeInteger(connection->pointIndexB);
-        connectionData["widthA"] = DataFile::makeReal(connection->widthA);
-        connectionData["widthB"] = DataFile::makeReal(connection->widthB);
-        connectionArray.push_back(std::move(connectionData));
-    }
-
-    dict["railings"] = DataFile::makeArray();
-    auto& railingArray = dict["railings"].array();
-    for (auto& railing : railings)
-    {
-        auto railingData = DataFile::makeDict();
-        railingData["points"] = DataFile::makeArray();
-        railingData["meshTypeIndex"] = DataFile::makeInteger(railing->meshTypeIndex);
-        railingData["scale"] = DataFile::makeReal(railing->scale);
-        auto& railingPointsArray = railingData["points"].array();
-        for (auto& point : railing->points)
-        {
-            auto pointData = DataFile::makeDict();
-            pointData["position"] = DataFile::makeVec3(point.position);
-            pointData["handleOffsetA"] = DataFile::makeVec3(point.handleOffsetA);
-            pointData["handleOffsetB"] = DataFile::makeVec3(point.handleOffsetB);
-            railingPointsArray.push_back(std::move(pointData));
-        }
-
-        railingArray.push_back(std::move(railingData));
-    }
-
-    return dict;
-}
-
-void Track::deserializeState(DataFile::Value& data)
-{
-    points.clear();
-    connections.clear();
-    railings.clear();
-
-    auto& pointArray = data["points"].array();
-    for (auto& p : pointArray)
-    {
-        points.push_back({
-            p["position"].vec3()
-        });
-    }
-
-    auto& connectionArray = data["connections"].array();
-    for (auto& c : connectionArray)
-    {
-        auto segment = std::make_unique<BezierSegment>(this);
-        segment->handleOffsetA = c["handleOffsetA"].vec3();
-        segment->pointIndexA = (i32)c["pointIndexA"].integer();
-        segment->handleOffsetB = c["handleOffsetB"].vec3();
-        segment->pointIndexB = (i32)c["pointIndexB"].integer();
-        segment->widthA = (f32)c["widthA"].real();
-        segment->widthB = (f32)c["widthB"].real();
-        connections.push_back(std::move(segment));
-    }
-
-    auto& railingArray = data["railings"].array();
-    for (auto& r : railingArray)
-    {
-        auto& pointsArray = r["points"].array();
-        auto railing = std::make_unique<Railing>(this);
-        railing->meshTypeIndex = (u32)r["meshTypeIndex"].integer(0);
-        railing->scale = r["scale"].real(1.f);
-        for (auto& point : pointsArray)
-        {
-            railing->points.push_back({
-                point["position"].vec3(),
-                point["handleOffsetA"].vec3(),
-                point["handleOffsetB"].vec3(),
-            });
-        }
-        railings.push_back(std::move(railing));
-    }
 }
 
 void Track::computeBoundingBox()

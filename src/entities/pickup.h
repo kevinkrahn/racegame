@@ -8,15 +8,18 @@
 #include "../vehicle.h"
 #include "../mesh_renderables.h"
 
-enum struct PickupType : u32
+namespace PickupType
 {
-    MONEY,
-    ARMOR,
+    enum
+    {
+        MONEY = 0,
+        ARMOR = 1,
+    };
 };
 
 class Pickup : public PlaceableEntity
 {
-    PickupType pickupType = PickupType::MONEY;
+    u32 pickupType = PickupType::MONEY;
 
 public:
     void onCreate(Scene* scene) override
@@ -116,20 +119,13 @@ public:
         rw->push(LitRenderable(s));
     }
 
-    DataFile::Value serializeState() override
+    void serializeState(Serializer& s) override
     {
-        DataFile::Value dict = PlaceableEntity::serializeState();
-        dict["pickupType"] = DataFile::makeInteger((i64)pickupType);
-        return dict;
-    }
-
-    void deserializeState(DataFile::Value& data) override
-    {
-        PlaceableEntity::deserializeState(data);
-        pickupType = (PickupType)data["pickupType"].integer(0);
+        PlaceableEntity::serializeState(s);
+        s.field(pickupType);
     }
 
     u32 getVariationCount() const override { return 2; }
-    void setVariationIndex(u32 variationIndex) override { pickupType = (PickupType)variationIndex; }
+    void setVariationIndex(u32 variationIndex) override { pickupType = variationIndex; }
     EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::PICKUPS; }
 };

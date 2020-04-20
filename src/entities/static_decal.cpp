@@ -118,26 +118,6 @@ void StaticDecal::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelecte
     }
 }
 
-DataFile::Value StaticDecal::serializeState()
-{
-    DataFile::Value dict = PlaceableEntity::serializeState();
-    dict["texIndex"] = DataFile::makeInteger(texIndex);
-    dict["decalFilter"] = DataFile::makeInteger(decalFilter);
-    dict["beforeMarking"] = DataFile::makeBool(beforeMarking);
-    return dict;
-}
-
-void StaticDecal::deserializeState(DataFile::Value& data)
-{
-    PlaceableEntity::deserializeState(data);
-    scale = data["scale"].vec3();
-    texIndex = (i32)data["texIndex"].integer(0);
-    decalFilter = (u32)data["decalFilter"].integer(DECAL_TRACK);
-    beforeMarking = data["beforeMarking"].boolean(false);
-
-    this->setVariationIndex((u32)texIndex);
-}
-
 void StaticDecal::showDetails(Scene* scene)
 {
     u32 prevDecalFilter = decalFilter;

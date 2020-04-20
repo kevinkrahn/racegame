@@ -100,10 +100,11 @@ u32 meshtype(std::string const& meshName)
 void VehicleData::loadSceneData(const char* sceneName)
 {
     DataFile::Value::Dict& scene = g_res.getScene(sceneName);
-    for (auto& e : scene["entities"].array())
+    for (auto& entityData : scene["entities"].array().val())
     {
-        std::string name = e["name"].string();
-        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>();
+        auto& e = entityData.dict().val();
+        std::string name = e["name"].string().val();
+        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>().val();
         if (name.find("debris") != std::string::npos ||
             name.find("Debris") != std::string::npos ||
             name.find("FL") != std::string::npos ||
@@ -111,7 +112,7 @@ void VehicleData::loadSceneData(const char* sceneName)
             name.find("RL") != std::string::npos ||
             name.find("RR") != std::string::npos)
         {
-            std::string const& meshName = e["data_name"].string();
+            std::string const& meshName = e["data_name"].string().val();
             Mesh* mesh = g_res.getMesh(meshName.c_str());
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
@@ -130,7 +131,7 @@ void VehicleData::loadSceneData(const char* sceneName)
         else if (name.find("Chassis") != std::string::npos)
         {
             chassisMeshes.push_back({
-                g_res.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().val().c_str()),
                 transform,
                 nullptr,
                 meshtype(name)
@@ -139,31 +140,31 @@ void VehicleData::loadSceneData(const char* sceneName)
         if (name.find("FL") != std::string::npos)
         {
             wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
-                g_res.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().val().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform)),
                 nullptr,
                 meshtype(name)
             });
-            frontWheelMeshRadius = glm::max(frontWheelMeshRadius, e["bound_z"].real() * 0.5f);
-            frontWheelMeshWidth = glm::max(frontWheelMeshWidth, e["bound_y"].real());
+            frontWheelMeshRadius = glm::max(frontWheelMeshRadius, e["bound_z"].real().val() * 0.5f);
+            frontWheelMeshWidth = glm::max(frontWheelMeshWidth, e["bound_y"].real().val());
             wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name.find("RL") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_RIGHT].push_back({
-                g_res.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().val().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform)),
                 nullptr,
                 meshtype(name)
             });
-            rearWheelMeshRadius = glm::max(rearWheelMeshRadius, e["bound_z"].real() * 0.5f);
-            rearWheelMeshWidth = glm::max(rearWheelMeshWidth, e["bound_y"].real());
+            rearWheelMeshRadius = glm::max(rearWheelMeshRadius, e["bound_z"].real().val() * 0.5f);
+            rearWheelMeshWidth = glm::max(rearWheelMeshWidth, e["bound_y"].real().val());
             wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name.find("FR") != std::string::npos)
         {
             wheelMeshes[WHEEL_FRONT_LEFT].push_back({
-                g_res.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().val().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform)),
                 nullptr,
                 meshtype(name)
@@ -173,7 +174,7 @@ void VehicleData::loadSceneData(const char* sceneName)
         else if (name.find("RR") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_LEFT].push_back({
-                g_res.getMesh(e["data_name"].string().c_str()),
+                g_res.getMesh(e["data_name"].string().val().c_str()),
                 glm::scale(glm::mat4(1.f), scaleOf(transform)),
                 nullptr,
                 meshtype(name)
@@ -183,11 +184,10 @@ void VehicleData::loadSceneData(const char* sceneName)
         else if (name.find("Collision") != std::string::npos)
         {
             collisionMeshes.push_back({
-                g_res.getMesh(e["data_name"].string().c_str())->getConvexCollisionMesh(),
+                g_res.getMesh(e["data_name"].string().val().c_str())->getConvexCollisionMesh(),
                 transform
             });
-            collisionWidth =
-                glm::max(collisionWidth, (f32)e["bound_y"].real());
+            collisionWidth = glm::max(collisionWidth, e["bound_y"].real().val());
         }
         else if (name.find("COM") != std::string::npos)
         {
@@ -451,16 +451,16 @@ void initializeVehicleData()
     //registerVehicle<VTruck>();
     //registerVehicle<VRacecar>();
 
-    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f, "Red", "Station Wagon");
-    registerAI("Dumb Dumb",       0.f,   0.f, 0.f,  0.f, "Light Brown", "Muscle Car");
-    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, "Orange", "Cool Car");
-    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f, "Yellow", "Cool Car");
-    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, "Blue", "Muscle Car");
-    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f, "Dark Blue", "Muscle Car");
-    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f, "Aruba", "Station Wagon");
-    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f, "White", "Cool Car");
-    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f, "Black", "Station Wagon");
-    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f, "Green", "Muscle Car");
-    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f, "Maroon", "Cool Car");
-    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f, "Dark Brown", "Station Wagon");
+    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   "Red",         "Station Wagon");
+    registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   "Light Brown", "Muscle Car");
+    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, "Orange",      "Cool Car");
+    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  "Yellow",      "Cool Car");
+    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, "Blue",        "Muscle Car");
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   "Dark Blue",   "Muscle Car");
+    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   "Aruba",       "Station Wagon");
+    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  "White",       "Cool Car");
+    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  "Black",       "Station Wagon");
+    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  "Green",       "Muscle Car");
+    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  "Maroon",      "Cool Car");
+    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f,  "Dark Brown",  "Station Wagon");
 }

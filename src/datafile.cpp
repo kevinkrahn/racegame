@@ -38,9 +38,6 @@ Value DataFile::load(const char* filename)
 
         auto begin = str.cbegin();
         Value val = Value::readValue(begin, str.cend());
-#ifndef NDEBUG
-        val.keyName = "root";
-#endif
         return val;
     }
 
@@ -63,9 +60,6 @@ Value DataFile::load(const char* filename)
     }
 
     Value val = Value::readValue(file);
-#ifndef NDEBUG
-    val.keyName = "root";
-#endif
     return val;
 }
 
@@ -98,6 +92,7 @@ void DataFile::save(DataFile::Value const& val, const char* filename)
     val.write(file);
 }
 
+// TODO: Add line numbers and more descriptive messages to parser errors
 Value Value::readValue(std::string::const_iterator& ch, std::string::const_iterator end)
 {
     auto eatSpace = [&](std::string::const_iterator& ch) {
@@ -116,8 +111,6 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
         }
         return true;
     };
-
-    // TODO: add support for math expressions
 
     eatSpace(ch);
 
@@ -244,9 +237,6 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
                 ++ch;
 
                 val.dict_[identifier] = readValue(ch, end);
-#ifndef NDEBUG
-                val.dict_[identifier].keyName = identifier;
-#endif
 
                 eatSpace(ch);
                 if (ch == end)
@@ -306,9 +296,6 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
             if (foundValue)
             {
                 val.array_.emplace_back(std::move(v));
-#ifndef NDEBUG
-                val.array_.back().keyName = std::to_string(val.array_.size() - 1);
-#endif
             }
 
             eatSpace(ch);
@@ -371,9 +358,6 @@ Value Value::readValue(std::ifstream& stream)
             for (u32 i=0; i<len; ++i)
             {
                 value.array_[i] = readValue(stream);
-#ifndef NDEBUG
-                value.array_[i].keyName = std::to_string(i);
-#endif
             }
         } break;
         case DataType::DICT:
@@ -388,9 +372,6 @@ Value Value::readValue(std::ifstream& stream)
                 std::string key(keyLen, ' ');
                 stream.read(&key[0], keyLen);
                 value.dict_[key] = readValue(stream);
-#ifndef NDEBUG
-                value.dict_[key].keyName = key;
-#endif
             }
         } break;
         case DataType::BOOL:

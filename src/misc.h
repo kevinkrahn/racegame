@@ -70,7 +70,7 @@ std::string str(Args const&... args)
     return _ss_.str();
 }
 
-#define FATAL_ERROR(...) error("Error: ", __VA_ARGS__, '\n'); {\
+#define FATAL_ERROR(...) { error("Error: ", __VA_ARGS__, '\n'); \
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", str(__VA_ARGS__).c_str(), nullptr); \
     abort(); }\
 
