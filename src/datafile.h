@@ -607,23 +607,29 @@ namespace DataFile
     }
 };
 
+#ifndef NDEBUG
+#define DESERIALIZE_ERROR(...) { error(context, ": ", __VA_ARGS__, '\n'); return; }
+#else
 #define DESERIALIZE_ERROR(...) { error(__VA_ARGS__, '\n'); return; }
+#endif
 
 class Serializer
 {
 public:
     DataFile::Value::Dict& dict;
     bool deserialize;
+    const char* context;
 
     Serializer(DataFile::Value& val, bool deserialize) : dict(val.dict(true).val()),
         deserialize(deserialize) {}
 
     template<typename T>
-    void value(const char* name, T& field)
+    void _value(const char* name, T& field, const char* context="")
     {
         if (deserialize)
         {
             element(name, dict[name], field);
+            this->context = context;
         }
         else
         {
@@ -873,4 +879,10 @@ public:
 
 #undef DESERIALIZE_ERROR
 
-#define field(FIELD) value(#FIELD, FIELD)
+#ifndef NDEBUG
+#define field(FIELD) _value(#FIELD, FIELD, str(__FILE__, ": ", __LINE__).c_str())
+#define value(NAME, FIELD) _value(NAME, FIELD, str(__FILE__, ": ", __LINE__).c_str())
+#else
+#define field(FIELD) _value(#FIELD, FIELD)
+#define value(NAME, FIELD) _value(NAME, FIELD)
+#endif
