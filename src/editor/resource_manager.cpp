@@ -12,6 +12,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     {
         files = readDirectory("../assets");
         filesStale = false;
+
+        textures.push_back(Texture("textures/billboard_1.jpg"));
     }
 
     if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
@@ -34,6 +36,35 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Resources"))
+        {
+            if (ImGui::MenuItem("Import..."))
+            {
+                std::string filename = chooseFile(".", true, "Resources",
+                        { "*.png", "*.jpg", "*.bmp", "*.wav", "*.ogg" });
+                if (!filename.empty())
+                {
+                    // do something
+                }
+            }
+            if (ImGui::MenuItem("New Texture"))
+            {
+                textureViewIndex = textures.size();
+                textures.push_back(Texture());
+                textures.back().name = str("Texture ", textures.size());
+                isTextureWindowOpen = true;
+            }
+            if (ImGui::MenuItem("New Material"))
+            {
+            }
+            if (ImGui::MenuItem("New Sound"))
+            {
+            }
+            if (ImGui::MenuItem("New Track"))
+            {
+            }
+            ImGui::EndMenu();
+        }
         ImGui::EndMainMenuBar();
     }
 
@@ -41,10 +72,12 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     {
         ImGui::Begin("Resources", &isResourceWindowOpen);
 
+        /*
         for (auto& file : files)
         {
             drawFile(file);
         }
+        */
 
         /*
         if (ImGui::Selectable(file.path.c_str()))
@@ -55,10 +88,33 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         }
         */
 
+        if (ImGui::TreeNode("Textures"))
+        {
+            for (u32 i=0; i<textures.size(); ++i)
+            {
+                if (ImGui::Selectable(textures[i].name.c_str()))
+                {
+                    textureViewIndex = i;
+                    isTextureWindowOpen = true;
+                }
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::MenuItem("New Texture"))
+                    {
+                    }
+                    if (ImGui::MenuItem("Duplicate"))
+                    {
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+            ImGui::TreePop();
+        }
+
         ImGui::End();
     }
 
-    //showTextureWindow(renderer, deltaTime);
+    showTextureWindow(renderer, deltaTime);
 
     if (ImGui::BeginPopupModal("Exit Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -102,7 +158,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 }
 
-#if 0
 void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
 {
     if (isTextureWindowOpen)
@@ -111,13 +166,22 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
 
         ImGui::Begin("Texture Properties", &isTextureWindowOpen);
 
-        if (ImGui::Button("Open File"))
+        if (ImGui::Button("Load Image"))
         {
+            std::string filename = chooseFile(".", true, "Image Files", { "*.png", "*.jpg", "*.bmp" });
+            if (!filename.empty())
+            {
+                tex.sourceFile = filename;
+                tex.reload();
+            }
         }
         ImGui::SameLine();
-        if (ImGui::Button("Reload File"))
+        if (ImGui::Button("Reload Image"))
         {
+            tex.reload();
         }
+
+        ImGui::Gap();
 
         if (tex.handle)
         {
@@ -156,7 +220,6 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
         }
     }
 }
-#endif
 
 void ResourceManager::drawFile(FileItem& file)
 {

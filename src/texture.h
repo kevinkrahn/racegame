@@ -30,8 +30,8 @@ struct Texture
     bool generateMipMaps = true;
     f32 lodBias = -0.2f;
     i32 anisotropy = 8;
-
     i32 filter = TextureFilter::TRILINEAR;
+    std::vector<u8> data;
 
     void serialize(Serializer& s)
     {
@@ -46,6 +46,15 @@ struct Texture
         s.field(lodBias);
         s.field(anisotropy);
         s.field(filter);
+
+        if (s.deserialize)
+        {
+            data = std::move(s.dict["data"].bytearray().val());
+        }
+        else
+        {
+            s.dict["data"] = DataFile::makeBytearray(data);
+        }
     }
 
     // not serialized
@@ -70,20 +79,33 @@ struct Texture
     Texture(const char* filename, bool repeat=true, Format format = Format::SRGBA8)
         : name(filename), format(format)
     {
+        sourceFile = filename;
+        load();
+    }
+
+    void load()
+    {
         i32 width, height, channels;
-        u8* data = (u8*)stbi_load(filename, &width, &height, &channels, 4);
+        u8* data = (u8*)stbi_load(sourceFile.c_str(), &width, &height, &channels, 4);
         if (!data)
         {
-            error("Failed to load image: ", filename, " (", stbi_failure_reason(), ")\n");
+            error("Failed to load image: ", sourceFile, " (", stbi_failure_reason(), ")\n");
         }
         this->width = (u32)width;
         this->height = (u32)height;
         initGLTexture(data, repeat);
+        this->data = std::vector<u8>(data, data + width*height*channels);
         stbi_image_free(data);
     }
 
     void reload()
     {
+        if (handle)
+        {
+            print("Reloading texture: ", sourceFile, '\n');
+            glDeleteTextures(1, &handle);
+        }
+        load();
     }
 
     void initGLTexture(u8* data, bool repeat=true)
@@ -109,7 +131,7 @@ struct Texture
                 break;
         }
 
-        u32 mipLevels = 1 + (u32)(glm::log2((f32)glm::max(width, height)));
+        u32 mipLevels = generateMipMaps ? 1 + (u32)(glm::log2((f32)glm::max(width, height))) : 1;
 
         glCreateTextures(GL_TEXTURE_2D, 1, &handle);
         glTextureStorage2D(handle, mipLevels, internalFormat, width, height);
@@ -124,11 +146,27 @@ struct Texture
             glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(handle, GL_TEXTURE_MAX_ANISOTROPY, 8);
-        glTextureParameterf(handle, GL_TEXTURE_LOD_BIAS, -0.2f);
-        glGenerateTextureMipmap(handle);
+        if (filter == TextureFilter::NEAREST)
+        {
+            glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
+        else if (filter == TextureFilter::BILINEAR)
+        {
+            glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        else if (filter == TextureFilter::TRILINEAR)
+        {
+            glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        glTextureParameteri(handle, GL_TEXTURE_MAX_ANISOTROPY, anisotropy);
+        glTextureParameterf(handle, GL_TEXTURE_LOD_BIAS, lodBias);
+        if (generateMipMaps)
+        {
+            glGenerateTextureMipmap(handle);
+        }
 
 #ifndef NDEBUG
         glObjectLabel(GL_TEXTURE, handle, name.length(), name.c_str());

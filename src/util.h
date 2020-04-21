@@ -135,13 +135,14 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
             fileFilter += ext;
             fileFilter += ' ';
         }
-        cmd += fileFilter;
+        cmd += " --file-filter \"" + fileFilter + '"';
     }
     else
     {
         cmd += " --title 'Save Track' --file-selection --save --confirm-overwrite --filename ";
         cmd += defaultSelection;
     }
+    print(cmd, '\n');
     FILE *f = popen(cmd.c_str(), "r");
     if (!f || !fgets(filename, sizeof(filename) - 1, f))
     {

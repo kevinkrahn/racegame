@@ -14,6 +14,7 @@ class ResourceManager
 
     bool isResourceWindowOpen = true;
     bool isTextureWindowOpen = false;
+    std::vector<Texture> textures;
     u32 textureViewIndex = 0;
     Editor editor;
 
