@@ -2,22 +2,73 @@
 #include "renderer.h"
 #include "game.h"
 #include "driver.h"
+#include "util.h"
+#include <filesystem>
+
+void Resources::loadResource(DataFile::Value& data)
+{
+    if (data.dict().hasValue())
+    {
+        auto& dict = data.dict().val();
+        auto resourceType = (u32)dict["type"].integer().val();
+        auto guid = dict["guid"].integer().val();
+        switch ((ResourceType)resourceType)
+        {
+            case ResourceType::TEXTURE:
+            {
+                auto tex = std::make_unique<Texture>();
+                ::loadResource(data, *tex);
+                textureNameMap[tex->name] = tex.get();
+                textures[guid] = std::move(tex);
+            } break;
+            case ResourceType::MESH_SCENE:
+            {
+            } break;
+            case ResourceType::SOUND:
+            {
+            } break;
+            case ResourceType::FONT:
+            {
+            } break;
+            case ResourceType::TRACK:
+            {
+            } break;
+        }
+    }
+}
 
 void Resources::load()
 {
-    textures.reset(new Textures);
     sounds.reset(new Sounds);
 
-    /*
-    auto files = loadFiles("./assets", ".dat");
-    for (auto& file : files)
+    constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
+    constexpr u8 identityNormalBytes[] = { 128, 128, 255, 255 };
+    white = Texture("white", 1, 1, (u8*)whiteBytes, TextureType::COLOR);
+    identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes, TextureType::NORMAL_MAP);
+
+    std::vector<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
+    for (auto& file : resourceFiles)
     {
+        if (std::filesystem::path(file.path).extension() == ".dat")
+        {
+            print("Loading data file: ", file.path, '\n');
+            auto data = DataFile::load(str(DATA_DIRECTORY, "/", file.path));
+            if (data.array().hasValue())
+            {
+                for (auto& el : data.array().val())
+                {
+                    loadResource(el);
+                }
+            }
+            else
+            {
+                loadResource(data);
+            }
+        }
     }
-    */
 
     for (const char* filename : dataFiles)
     {
-        print("Loading data file: ", filename, '\n');
         DataFile::Value val = DataFile::load(filename);
 
         // meshes

@@ -1262,7 +1262,7 @@ void Track::onLitPass(class Renderer* renderer)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_EQUAL);
     glEnable(GL_CULL_FACE);
-    glBindTextureUnit(0, g_res.textures->tarmac.handle);
+    glBindTextureUnit(0, g_res.getTexture("tarmac")->handle);
     glUseProgram(renderer->getShaderProgram("track"));
     for (auto& c : connections)
     {
@@ -1338,7 +1338,7 @@ void Track::Railing::updateMesh()
     }
 
     bool flat = track->railingMeshTypes[meshTypeIndex].flat;
-    tex = track->railingMeshTypes[meshTypeIndex].texture;
+    tex = g_res.getTexture(track->railingMeshTypes[meshTypeIndex].texture);
 
     if (!actor && !flat)
     {

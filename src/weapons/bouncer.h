@@ -16,7 +16,7 @@ public:
     {
         info.name = "Bouncer";
         info.description = "Medium damage.\nBounces off obstacles and follows slopes.";
-        info.icon = &g_res.textures->icon_bouncer;
+        info.icon = g_res.getTexture("icon_bouncer");
         info.price = 800;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
@@ -69,7 +69,7 @@ public:
         rw->push(LitRenderable(mesh, vehicleTransform * mountTransform));
         glm::vec3 pos = vehicleTransform * mountTransform *
             glm::vec4(projectileSpawnPoints[0] + glm::vec3(0.01f, 0.f, 0.05f), 1.f);
-        rw->push(BillboardRenderable(&g_res.textures->bouncer_projectile,
+        rw->push(BillboardRenderable(g_res.getTexture("bouncer_projectile"),
                     pos, glm::vec4(1.f), 0.7f * glow, 0.f, false));
     }
 };

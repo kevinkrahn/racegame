@@ -24,7 +24,7 @@ public:
         glow.settings.color = glm::vec3(1.f);
         glow.settings.emit = glm::vec3(3.f);
         glow.settings.specularStrength = 0.1f;
-        glow.settings.texture = &g_res.textures->white;
+        glow.settings.texture = &g_res.white;
 
         lights.settings.mesh = g_res.getMesh("billboard.BillboardLights");
         lights.settings.color = glm::vec3(0.05f);
@@ -32,7 +32,7 @@ public:
         lights.settings.specularPower = 500.f;
         lights.settings.reflectionLod = 3.f;
         lights.settings.reflectionStrength = 0.8f;
-        lights.settings.texture = &g_res.textures->white;
+        lights.settings.texture = &g_res.white;
 
         metal.settings.mesh = g_res.getMesh("billboard.BillboardMetal");
         metal.settings.color = glm::vec3(0.05f);
@@ -40,7 +40,7 @@ public:
         metal.settings.specularPower = 1000.f;
         metal.settings.reflectionLod = 2.f;
         metal.settings.reflectionStrength = 0.9f;
-        metal.settings.texture = &g_res.textures->white;
+        metal.settings.texture = &g_res.white;
 
         sign.settings.mesh = g_res.getMesh("billboard.BillboardSign");
         sign.settings.color = glm::vec3(1.f);
@@ -49,7 +49,7 @@ public:
         wood.settings.color = glm::vec3(1.f);
         wood.settings.specularStrength = 0.05f;
         wood.settings.specularPower = 10.f;
-        wood.settings.texture = &g_res.textures->wood;
+        wood.settings.texture = g_res.getTexture("wood");
     }
 
     void applyDecal(class Decal& decal) override
@@ -98,10 +98,10 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
         static Texture* billboardTextures[] = {
-            &g_res.textures->billboard_1,
-            &g_res.textures->billboard_2,
-            &g_res.textures->billboard_3,
-            &g_res.textures->billboard_4,
+            g_res.getTexture("billboard_1"),
+            g_res.getTexture("billboard_2"),
+            g_res.getTexture("billboard_3"),
+            g_res.getTexture("billboard_4"),
         };
 
         glow.settings.worldTransform = transform;

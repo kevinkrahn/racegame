@@ -3,7 +3,7 @@
 #include "math.h"
 #include "datafile.h"
 
-const char* CONFIG_FILE = "config.txt";
+const char* CONFIG_FILE_PATH = "config.txt";
 
 struct Config
 {
@@ -72,22 +72,7 @@ struct Config
         s.field(gameplay);
     }
 
-    void save()
-    {
-        auto data = DataFile::makeDict();
-        Serializer s(data, false);
-        serialize(s);
-        DataFile::save(data, CONFIG_FILE);
-    }
-
-    void load()
-    {
-        auto data = DataFile::load(CONFIG_FILE);
-        if (data.hasValue())
-        {
-            Serializer s(data, true);
-            serialize(s);
-        }
-    }
+    void save() { Serializer::toFile(*this, CONFIG_FILE_PATH); }
+    void load() { Serializer::fromFile(*this, CONFIG_FILE_PATH); }
 };
 

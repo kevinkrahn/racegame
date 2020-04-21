@@ -9,8 +9,8 @@ Tree::Tree()
 {
     this->meshTrunk = g_res.getMesh("tree.Trunk");
     this->meshLeaves = g_res.getMesh("tree.Leaves");
-    this->texTrunk = &g_res.textures->bark;
-    this->texLeaves = &g_res.textures->leaves;
+    this->texTrunk = g_res.getTexture("bark");
+    this->texLeaves = g_res.getTexture("leaves");
 }
 
 void Tree::onCreate(Scene* scene)

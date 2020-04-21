@@ -45,6 +45,7 @@ void Renderer::loadShader(std::string filename, SmallVec<std::string> defines, s
     std::string shaderStr = stream.str();
 
     // add support for #include to glsl files
+    // TODO: investigate using stb_include
     while (true)
     {
         std::string identifier = "#include";
@@ -1053,8 +1054,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     // color pass
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Main Color Pass");
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-    glBindTextureUnit(1, g_res.textures->sky_cubemap.handle);
-    glBindTextureUnit(3, g_res.textures->cloud_shadow.handle);
+    glBindTextureUnit(1, g_res.getTexture("sky_cubemap")->handle);
+    glBindTextureUnit(3, g_res.getTexture("cloud_shadow")->handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     if (clearColorEnabled)
     {

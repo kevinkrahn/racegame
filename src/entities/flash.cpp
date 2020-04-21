@@ -32,7 +32,7 @@ void Flash::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     f32 t = 1.f - life;
     f32 tt = t * t;
-    Texture* tex = &g_res.textures->flash;
+    Texture* tex = g_res.getTexture("flash");
     rw->push(BillboardRenderable(tex, position,
                 glm::vec4(glm::vec3(1, 0.5f, 0.f), tt * 0.4f), scale * 1.1f * life * 2.f, angle));
     rw->push(BillboardRenderable(tex, position,

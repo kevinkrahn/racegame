@@ -35,21 +35,21 @@ public:
         const char* meshName;
         const char* collisionMeshName;
         f32 scale;
-        Texture* texture;
+        const char* texture;
     };
 
     // I hate this
     RailingMeshType railingMeshTypes[4] = {
-        { "Concrete Barrier", false, "world.Rail", "world.RailCollision", 1.f, &g_res.textures->concrete },
-        { "Rumble Stip", true, "world.RumbleStrip", nullptr, 0.5f, &g_res.textures->rumble },
-        { "Metal Railing", false, "railing.Rail", "railing.RailCollision", 1.f, &g_res.textures->white },
-        { "Tall Metal Railing", false, "railing2.Rail", "railing2.RailCollision", 1.5f, &g_res.textures->white },
+        { "Concrete Barrier", false, "world.Rail", "world.RailCollision", 1.f, "concrete" },
+        { "Rumble Stip", true, "world.RumbleStrip", nullptr, 0.5f, "rumble" },
+        { "Metal Railing", false, "railing.Rail", "railing.RailCollision", 1.f, "white" },
+        { "Tall Metal Railing", false, "railing2.Rail", "railing2.RailCollision", 1.5f, "white" },
     };
 
     struct TrackItem
     {
         const char* name;
-        Texture& icon;
+        const char* icon;
         struct Curve
         {
             glm::vec3 offset;
@@ -58,14 +58,14 @@ public:
         SmallVec<Curve> curves;
     };
     TrackItem prefabTrackItems[3] = {
-        { "Straight", g_res.textures->icon_straight_track, {
+        { "Straight", "straight_track_icon", {
             { { 50.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
         }},
-        { "Left Turn", g_res.textures->icon_left_turn_track, {
+        { "Left Turn", "left_turn_track_icon", {
             { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
             { { 20.f, -20.f, 0.f }, { 0.f, 10.f, 0.f } },
         }},
-        { "Right Turn", g_res.textures->icon_right_turn_track, {
+        { "Right Turn", "right_turn_track_icon", {
             { { 20.f, 0.f, 0.f }, { -10.f, 0.f, 0.f } },
             { { 20.f, 20.f, 0.f }, { 0.f, -10.f, 0.f } },
         }},

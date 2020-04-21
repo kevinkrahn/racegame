@@ -40,7 +40,7 @@ void Booster::updateTransform(Scene* scene)
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
     }
-    tex = &g_res.textures->booster;
+    tex = g_res.getTexture("booster");
     decal.setTexture(tex);
     decal.begin(transform);
     scene->track->applyDecal(decal);
@@ -88,7 +88,7 @@ void Booster::onPreview(RenderWorld* rw)
     rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
             glm::vec3(0.f), 1.f, 200.f, 50.f);
     glm::vec3 color = backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f);
-    rw->push(BillboardRenderable(&g_res.textures->booster, glm::vec3(0, 0, 2.f),
+    rw->push(BillboardRenderable(g_res.getTexture("booster"), glm::vec3(0, 0, 2.f),
                 glm::vec4(color, 1.f), 8.f, 0.f, false));
 }
 

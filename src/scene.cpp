@@ -1148,6 +1148,7 @@ void Scene::serialize(Serializer& s)
     }
     else
     {
+        s.dict["type"] = DataFile::makeInteger((i64)ResourceType::TRACK);
         s.dict["entities"] = DataFile::makeArray();
         auto& entityArray = s.dict["entities"].array().val();
         for (auto& entity : this->entities)

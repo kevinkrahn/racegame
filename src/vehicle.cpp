@@ -737,12 +737,12 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
     f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
     if (showAmmo)
     {
-        Texture* iconbg = &g_res.textures->weapon_iconbg;
+        Texture* iconbg = g_res.getTexture("weapon_iconbg");
         renderer->push2D(QuadRenderable(iconbg, pos, iconSize * 1.5f, iconSize));
     }
     else
     {
-        Texture* iconbg = &g_res.textures->iconbg;
+        Texture* iconbg = g_res.getTexture("iconbg");
         renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
     }
 
@@ -750,7 +750,7 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
                 pos, iconSize, iconSize));
     if (selected)
     {
-        Texture* selectedTex = &g_res.textures->weapon_iconbg_selected;
+        Texture* selectedTex = g_res.getTexture("weapon_iconbg_selected");
         renderer->push2D(QuadRenderable(selectedTex, pos, iconSize * 1.5f, iconSize));
     }
     if (showAmmo)
@@ -759,7 +759,7 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
         u32 ammoTickCount = (weapon->ammo + weapon->ammoUnitCount - 1) / weapon->ammoUnitCount;
         f32 ammoTickMargin = iconSize * 0.025f;
         f32 ammoTickHeight = (f32)(iconSize - iconSize * 0.2f) / (f32)ammoTickCountMax;
-        Texture* ammoTickTex = &g_res.textures->ammotick;
+        Texture* ammoTickTex = g_res.getTexture("ammotick");
         for (u32 i=0; i<ammoTickCount; ++i)
         {
             renderer->push2D(QuadRenderable(ammoTickTex,
@@ -847,7 +847,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         }
 
         // healthbar
-        Texture* white = &g_res.textures->white;
+        Texture* white = &g_res.white;
         const f32 healthPercentage = glm::clamp(hitPoints / tuning.maxHitPoints, 0.f, 1.f);
         const f32 maxHealthbarWidth = g_game.windowHeight * 0.14f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;

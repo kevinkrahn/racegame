@@ -11,7 +11,7 @@ public:
     {
         info.name = "Underplating";
         info.description = "Provides immunity to damage from mines.";
-        info.icon = &g_res.textures->icon_underplating;
+        info.icon = g_res.getTexture("icon_underplating");
         info.price = 2000;
         info.maxUpgradeLevel = 1;
         info.weaponType = WeaponInfo::SPECIAL_ABILITY;

@@ -10,103 +10,32 @@
 #include <map>
 #include <string>
 
-constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
-constexpr u8 identityNormalBytes[] = { 128, 128, 255, 255 };
-struct Textures
+const char* DATA_DIRECTORY = "../editor_data";
+const char* ASSET_DIRECTORY = "../assets";
+
+template<typename T>
+void saveResource(T& val)
 {
-    Texture white = Texture("white", 1, 1, (u8*)whiteBytes, Texture::Format::RGBA8);
-    Texture identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes, Texture::Format::RGBA8);
-    Texture ammotick = Texture("textures/ammotick.png", false);
-    Texture bark = Texture("textures/bark.png");
-    Texture booster = Texture("textures/booster.png", false);
-    Texture bouncer_projectile = Texture("textures/bouncer_projectile.png", false);
-    Texture cactus = Texture("textures/cactus.png");
-    Texture checkers = Texture("textures/checkers.png", false);
-    Texture checkers_fade = Texture("textures/checkers_fade.png");
-    Texture cheveron = Texture("textures/cheveron.png", false);
-    Texture circle = Texture("textures/circle.png", false);
-    Texture cloud_shadow = Texture("textures/cloud_shadow.png");
-    Texture concrete = Texture("textures/concrete.jpg");
-    Texture desert = Texture("textures/desert.jpg");
-    Texture desert_stone = Texture("textures/desert_stone.jpg");
-    Texture flare = Texture("textures/flare.png", false);
-    Texture flash = Texture("textures/flash.png", false);
-    Texture wood = Texture("textures/wood.jpg");
-    Texture grass = Texture("textures/grass.jpg");
-    Texture iconbg = Texture("textures/iconbg.png", false);
-    Texture lava = Texture("textures/lava.jpg");
-    Texture leaves = Texture("textures/leaves.png");
-    Texture plant1 = Texture("textures/plant1.png");
-    Texture plant2 = Texture("textures/plant2.png");
-    Texture rock = Texture("textures/rock.jpg");
-    Texture rock_moss = Texture("textures/rock_moss.jpg");
-    Texture rumble = Texture("textures/rumble.png");
-    Texture sand = Texture("textures/sand.jpg");
-    Texture smoke = Texture("textures/smoke.png", false);
-    Texture snow = Texture("textures/snow.jpg");
-    Texture tarmac = Texture("textures/tarmac.jpg");
-    Texture tiremarks = Texture("textures/tiremarks.png");
-    Texture weapon_iconbg = Texture("textures/weapon_iconbg.png", false);
-    Texture weapon_iconbg_selected = Texture("textures/weapon_iconbg_selected.png", false);
-    Texture billboard_1 = Texture("textures/billboard_1.jpg");
-    Texture billboard_2 = Texture("textures/billboard_2.jpg");
-    Texture billboard_3 = Texture("textures/billboard_3.jpg");
-    Texture billboard_4 = Texture("textures/billboard_4.jpg");
-    Texture oil_normal = Texture("textures/oil_normal.png", false, Texture::Format::RGBA8);
-    Texture flames = Texture("textures/flames.png");
-    Texture windmill_base = Texture("textures/windmill_base.jpg");
-    Texture windmill_blades = Texture("textures/windmill_blades.jpg");
+    std::string filename = str(DATA_DIRECTORY, "/", std::hex, val.guid, ".dat");
+    print("Saving resource ", filename, '\n');
+    Serializer::toFile(val, filename);
+}
 
-    Texture icon_decoration = Texture("textures/decoration_icon.png", false);
-    Texture icon_blaster = Texture("textures/icons/blaster_icon.png", false);
-    Texture icon_bouncer = Texture("textures/icons/bouncer_icon.png", false);
-    Texture icon_glow = Texture("textures/icons/glow_icon.png", false);
-    Texture icon_armor = Texture("textures/icons/icon_armor.png", false);
-    Texture icon_kinetic_armor = Texture("textures/icons/icon_kinetic_armor.png", false);
-    Texture icon_underplating = Texture("textures/icons/icon_underplating.png", false);
-    Texture icon_drivetrain = Texture("textures/icons/icon_drivetrain.png", false);
-    Texture icon_engine = Texture("textures/icons/icon_engine.png", false);
-    Texture icon_flag = Texture("textures/icons/icon_flag.png", false);
-    Texture icon_pistons = Texture("textures/icons/icon_pistons.png", false);
-    Texture icon_spikes = Texture("textures/icons/icon_spikes.png", false);
-    Texture icon_spraycan = Texture("textures/icons/icon_spraycan.png", false);
-    Texture icon_stats = Texture("textures/icons/icon_stats.png", false);
-    Texture icon_stats2 = Texture("textures/icons/icon_stats2.png", false);
-    Texture icon_suspension = Texture("textures/icons/icon_suspension.png", false);
-    Texture icon_weight = Texture("textures/icons/icon_weight.png", false);
-    Texture icon_wheel = Texture("textures/icons/icon_wheel.png", false);
-    Texture icon_jumpjet = Texture("textures/icons/jumpjet_icon.png", false);
-    Texture icon_left_turn_track = Texture("textures/icons/left_turn_track_icon.png", false);
-    Texture icon_right_turn_track = Texture("textures/icons/right_turn_track_icon.png", false);
-    Texture icon_mg = Texture("textures/icons/mg_icon.png", false);
-    Texture icon_mine = Texture("textures/icons/mine_icon.png", false);
-    Texture icon_missile = Texture("textures/icons/missile_icon.png", false);
-    Texture icon_oil = Texture("textures/icons/oil.png", false);
-    Texture icon_glue = Texture("textures/icons/glue.png", false);
-    Texture icon_rocketbooster = Texture("textures/icons/rocketbooster_icon.png", false);
-    Texture icon_straight_track = Texture("textures/icons/straight_track_icon.png", false);
-    Texture icon_terrain = Texture("textures/icons/terrain_icon.png", false);
-    Texture icon_track = Texture("textures/icons/track_icon.png", false);
-    Texture icon_sell = Texture("textures/icons/icon_sell.png", false);
+template<typename T>
+void loadResource(DataFile::Value& data, T& val)
+{
+    //Serializer::fromFile(val, str(DATA_DIRECTORY, "/", std::hex, val.guid, ".dat"));
+    Serializer s(data, true);
+    val.serialize(s);
+}
 
-    Texture decal_arrow = Texture("textures/decals/arrow.png");
-    Texture decal_arrow_left = Texture("textures/decals/arrow_left.png");
-    Texture decal_arrow_right = Texture("textures/decals/arrow_right.png");
-    Texture decal_crack = Texture("textures/decals/crack.png");
-    Texture decal_grunge1 = Texture("textures/decals/grunge1.png");
-    Texture decal_grunge2 = Texture("textures/decals/grunge2.png");
-    Texture decal_grunge3 = Texture("textures/decals/grunge3.png");
-    Texture decal_patch1 = Texture("textures/decals/patch1.png");
-    Texture decal_sand = Texture("textures/decals/sand.png");
-
-    Texture sky_cubemap = Texture({
-        "textures/sky/sky_ft.png",
-        "textures/sky/sky_bk.png",
-        "textures/sky/sky_lf.png",
-        "textures/sky/sky_rt.png",
-        "textures/sky/sky_up.png",
-        "textures/sky/sky_dn.png"
-    });
+enum struct ResourceType
+{
+    TEXTURE = 1,
+    MESH_SCENE = 2,
+    SOUND = 3,
+    FONT = 4,
+    TRACK = 5,
 };
 
 struct Sounds
@@ -197,11 +126,25 @@ private:
     std::map<std::string, DataFile::Value::Dict> scenes;
     std::map<const char*, std::map<u32, Font>> fonts;
 
+    RandomSeries series = randomSeed();
+
 public:
-    std::unique_ptr<Textures> textures;
+    std::map<i64, std::unique_ptr<Texture>> textures;
+    std::map<std::string, Texture*> textureNameMap;
     std::unique_ptr<Sounds> sounds;
 
+    Texture white;
+    Texture identityNormal;
+
+    i64 generateGUID()
+    {
+        // TODO: check for collisions
+        u32 guid[2] = { xorshift32(series), xorshift32(series) };
+        return *((i64*)guid);
+    }
+
     void load();
+    void loadResource(DataFile::Value& data);
 
     Mesh* getMesh(const char* name)
     {
@@ -238,6 +181,28 @@ public:
         }
 
         return iter2->second;
+    }
+
+    Texture* getTexture(i64 guid)
+    {
+        auto iter = textures.find(guid);
+        if (iter == textures.end())
+        {
+            FATAL_ERROR("Texture not found: ", guid);
+        }
+        return iter->second.get();
+    }
+
+    Texture* getTexture(const char* name)
+    {
+        auto iter = textureNameMap.find(name);
+        if (iter == textureNameMap.end())
+        {
+            //FATAL_ERROR("Texture not found: ", name);
+            print("Texture not found: ", name, '\n');
+            return &white;
+        }
+        return iter->second;
     }
 } g_res;
 

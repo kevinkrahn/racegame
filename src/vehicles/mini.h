@@ -20,7 +20,7 @@ public:
         availableUpgrades.push_back({
             "AWD Conversion",
             "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
-            &g_res.textures->icon_drivetrain,
+            g_res.getTexture("icon_drivetrain"),
             PerformanceUpgradeType::ALL_WHEEL_DRIVE,
             1,
             6000,

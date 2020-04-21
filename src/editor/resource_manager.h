@@ -9,14 +9,15 @@
 
 class ResourceManager
 {
-    std::vector<FileItem> files;
-    bool filesStale = true;
-
     bool isResourceWindowOpen = true;
     bool isTextureWindowOpen = false;
-    std::vector<Texture> textures;
-    u32 textureViewIndex = 0;
+    Texture* selectedTexture;
     Editor editor;
+
+    std::string editName;
+
+    std::vector<Texture*> textures;
+    bool texturesStale = true;
 
     enum struct EditorType
     {
@@ -24,6 +25,7 @@ class ResourceManager
         SCENE,
     } activeEditor = EditorType::NONE;
 
+    void newTexture(std::string const& filename="");
     void showTextureWindow(Renderer* renderer, f32 deltaTime);
 
     void drawFile(FileItem& file);

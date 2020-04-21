@@ -159,16 +159,16 @@ u32 StaticDecal::getVariationCount() const
 void StaticDecal::setVariationIndex(u32 variationIndex)
 {
     this->texIndex = variationIndex;
-    Texture* textures[] = {
-        &g_res.textures->decal_arrow,
-        &g_res.textures->decal_arrow_left,
-        &g_res.textures->decal_arrow_right,
-        &g_res.textures->decal_crack,
-        &g_res.textures->decal_patch1,
-        &g_res.textures->decal_grunge1,
-        &g_res.textures->decal_grunge2,
-        &g_res.textures->decal_grunge3,
-        &g_res.textures->decal_sand,
+    static Texture* textures[] = {
+        g_res.getTexture("decal_arrow"),
+        g_res.getTexture("decal_arrow_left"),
+        g_res.getTexture("decal_arrow_right"),
+        g_res.getTexture("decal_crack"),
+        g_res.getTexture("decal_patch1"),
+        g_res.getTexture("decal_grunge1"),
+        g_res.getTexture("decal_grunge2"),
+        g_res.getTexture("decal_grunge3"),
+        g_res.getTexture("decal_sand"),
     };
     tex = textures[texIndex];
     decal.setTexture(tex);

@@ -9,6 +9,7 @@
 #include "renderer.cpp"
 #include "datafile.cpp"
 #include "resources.cpp"
+#include "texture.cpp"
 #include "vehicle.cpp"
 #include "vehicle_data.cpp"
 #include "font.cpp"

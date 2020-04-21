@@ -11,7 +11,7 @@ void Decal::begin(glm::mat4 const& transform)
 void Decal::setTexture(Texture* tex, Texture* texNormal)
 {
     this->tex = tex;
-    this->texNormal = texNormal ? texNormal : &g_res.textures->identityNormal;
+    this->texNormal = texNormal ? texNormal : &g_res.identityNormal;
 }
 
 void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform)

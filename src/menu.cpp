@@ -323,19 +323,19 @@ void Menu::championshipMenu()
     }
 
     g_gui.gap(10);
-    if (g_gui.button("Begin Race", playerIndex == vehicleCount, &g_res.textures->icon_flag, false))
+    if (g_gui.button("Begin Race", playerIndex == vehicleCount, g_res.getTexture("icon_flag"), false))
     {
         Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
         menuMode = HIDDEN;
         g_gui.clearSelectionStack();
     }
-    if (g_gui.button("Championship Standings", true, &g_res.textures->icon_stats, false))
+    if (g_gui.button("Championship Standings", true, g_res.getTexture("icon_stats"), false))
     {
         menuMode = CHAMPIONSHIP_STANDINGS;
         g_gui.pushSelection();
     }
-    g_gui.button("Player Stats", true, &g_res.textures->icon_stats2, false);
+    g_gui.button("Player Stats", true, g_res.getTexture("icon_stats2"), false);
     g_gui.gap(10);
 
     if (g_gui.button("Quit"))
@@ -370,7 +370,7 @@ void Menu::championshipGarage()
     f32 o = glm::floor(g_gui.convertSize(32));
     f32 oy = glm::floor(g_gui.convertSize(48));
 
-    Texture* white = &g_res.textures->white;
+    Texture* white = &g_res.white;
     u32 vehicleIconWidth = (u32)g_gui.convertSize(290);
     u32 vehicleIconHeight = (u32)g_gui.convertSize(256);
     Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
@@ -410,13 +410,13 @@ void Menu::championshipGarage()
             g_gui.forceSelection(0);
         }
         g_gui.label("Vehicle Upgrades");
-        if (g_gui.button("Performance", driver.vehicleIndex != -1, &g_res.textures->icon_engine, false))
+        if (g_gui.button("Performance", driver.vehicleIndex != -1, g_res.getTexture("icon_engine"), false))
         {
             mode = 2;
             g_gui.pushSelection();
             g_gui.forceSelection(0);
         }
-        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, &g_res.textures->icon_spraycan, false))
+        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, g_res.getTexture("icon_spraycan"), false))
         {
             mode = 3;
             g_gui.pushSelection();
@@ -427,7 +427,7 @@ void Menu::championshipGarage()
         {
             i32 weaponIndex = vehicleConfig.frontWeaponIndices[i];
             if (g_gui.button(tstr("Front Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? &g_res.textures->iconbg : g_weapons[weaponIndex].info.icon))
+                        weaponIndex == -1 ? g_res.getTexture("iconbg") : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 4;
                 g_gui.pushSelection();
@@ -438,7 +438,7 @@ void Menu::championshipGarage()
         {
             i32 weaponIndex = vehicleConfig.rearWeaponIndices[i];
             if (g_gui.button(tstr("Rear Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? &g_res.textures->iconbg : g_weapons[weaponIndex].info.icon))
+                        weaponIndex == -1 ? g_res.getTexture("iconbg") : g_weapons[weaponIndex].info.icon))
             {
                 mode = i + 7;
                 g_gui.pushSelection();
@@ -446,7 +446,7 @@ void Menu::championshipGarage()
             }
         }
         if (g_gui.button("Passive Ability", driver.vehicleIndex != -1,
-                    vehicleConfig.specialAbilityIndex == -1 ? &g_res.textures->iconbg
+                    vehicleConfig.specialAbilityIndex == -1 ? g_res.getTexture("iconbg")
                     : g_weapons[vehicleConfig.specialAbilityIndex].info.icon))
         {
             mode = 9;
@@ -632,7 +632,7 @@ void Menu::championshipGarage()
             u32 upgradeLevel = driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber];
             if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
                         tstr("Value: ", weapon.info.price * upgradeLevel / 2), nullptr, true,
-                        &g_res.textures->icon_sell, nullptr, false))
+                        g_res.getTexture("icon_sell"), nullptr, false))
             {
                 driver.credits += weapon.info.price * upgradeLevel / 2;
                 driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] = -1;
@@ -693,7 +693,7 @@ void Menu::championshipGarage()
             u32 upgradeLevel = driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber];
             if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
                         tstr("Value: ", weapon.info.price * upgradeLevel / 2), nullptr, true,
-                        &g_res.textures->icon_sell, nullptr, false))
+                        g_res.getTexture("icon_sell"), nullptr, false))
             {
                 driver.credits += weapon.info.price * upgradeLevel / 2;
                 driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] = -1;
@@ -742,7 +742,7 @@ void Menu::championshipGarage()
             auto& weapon = g_weapons[driver.getVehicleConfig()->specialAbilityIndex];
             if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
                         tstr("Value: ", weapon.info.price / 2), nullptr, true,
-                        &g_res.textures->icon_sell, nullptr, false))
+                        g_res.getTexture("icon_sell"), nullptr, false))
             {
                 driver.credits += weapon.info.price / 2;
                 driver.getVehicleConfig()->specialAbilityIndex = -1;
@@ -1012,7 +1012,7 @@ void Menu::raceResults()
                 glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
                 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
 
-    Texture* white = &g_res.textures->white;
+    Texture* white = &g_res.white;
     g_game.renderer->push2D(QuadRenderable(white,
                 menuPos + glm::vec2(g_gui.convertSize(8), g_gui.convertSize(64)),
                 w - g_gui.convertSize(16), g_gui.convertSize(19), glm::vec3(0.f), 0.6f));
@@ -1325,7 +1325,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (menuMode != MenuMode::HIDDEN)
     {
-        Texture* tex = &g_res.textures->checkers_fade;
+        Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
         f32 h = g_gui.convertSize(tex->height * 0.5f);
         renderer->push2D(QuadRenderable(tex, glm::vec2(0), w, h, glm::vec2(0.f, 0.999f),
@@ -1375,9 +1375,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 {
     f32 border = glm::floor(g_gui.convertSize(3));
-    g_game.renderer->push2D(QuadRenderable(&g_res.textures->white,
+    g_game.renderer->push2D(QuadRenderable(&g_res.white,
                 pos - border, size.x + border * 2, size.y + border * 2,
                 glm::vec3(1.f), 0.4f, false));
-    g_game.renderer->push2D(QuadRenderable(&g_res.textures->white,
+    g_game.renderer->push2D(QuadRenderable(&g_res.white,
                 pos, size.x, size.y, glm::vec3(0.f), 0.8f, true));
 }

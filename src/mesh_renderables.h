@@ -51,7 +51,7 @@ public:
         settings.color = color;
         if (!texture)
         {
-            texture = &g_res.textures->white;
+            texture = &g_res.white;
         }
         settings.texture = texture;
         settings.worldTransform = worldTransform;
@@ -60,7 +60,7 @@ public:
     {
         if (!this->settings.texture)
         {
-            this->settings.texture = &g_res.textures->white;
+            this->settings.texture = &g_res.white;
         }
     }
 

@@ -75,7 +75,7 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     height = f.height;
     lineHeight = ((ascent - descent) + lineGap) * scale;
 
-    textureAtlas = Texture(filename.c_str(), w, h, texData.data(), Texture::Format::R8);
+    textureAtlas = Texture(filename.c_str(), w, h, texData.data(), TextureType::GRAYSCALE);
 }
 
 glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const

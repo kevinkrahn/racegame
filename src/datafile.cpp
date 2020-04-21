@@ -4,11 +4,10 @@
 
 using namespace DataFile;
 
-Value DataFile::load(const char* filename)
+Value DataFile::load(std::string const& filename)
 {
     // text format
-    std::string fname(filename);
-    if (fname.substr(fname.size()-4) == ".txt")
+    if (filename.substr(filename.size()-4) == ".txt")
     {
         std::ifstream file(filename);
         if (!file)
@@ -63,11 +62,10 @@ Value DataFile::load(const char* filename)
     return val;
 }
 
-void DataFile::save(DataFile::Value const& val, const char* filename)
+void DataFile::save(DataFile::Value const& val, std::string const& filename)
 {
     // text format
-    std::string fname(filename);
-    if (fname.substr(fname.size()-4) == ".txt")
+    if (filename.substr(filename.size()-4) == ".txt")
     {
         std::ofstream file(filename);
         if (!file)

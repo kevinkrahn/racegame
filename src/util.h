@@ -11,7 +11,7 @@ struct FileItem
     std::vector<FileItem> children;
 };
 
-std::vector<FileItem> readDirectory(std::string const& dir)
+std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
 {
     std::vector<FileItem> files;
 
@@ -30,7 +30,10 @@ std::vector<FileItem> readDirectory(std::string const& dir)
             {
                 files.push_back({ fileData.cFileName, true });
                 std::string childDirectory = dir + '/' + fileData.cFileName;
-                files.back().children = readDirectory(childDirectory);
+                if (recursive)
+                {
+                    files.back().children = readDirectory(childDirectory, recursive);
+                }
             }
             else
             {
@@ -57,7 +60,10 @@ std::vector<FileItem> readDirectory(std::string const& dir)
                 {
                     files.push_back({ dp->d_name, true });
                     std::string childDirectory = dir + '/' + dp->d_name;
-                    files.back().children = readDirectory(childDirectory);
+                    if (recursive)
+                    {
+                        files.back().children = readDirectory(childDirectory, recursive);
+                    }
                 }
             }
             else if (dp->d_type == DT_REG)
@@ -127,7 +133,7 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
     std::string cmd = "zenity";
     if (open)
     {
-        cmd += " --title 'Open Track' --file-selection --filename ";
+        cmd += " --title 'Open File' --file-selection --filename ";
         cmd += defaultSelection;
         std::string fileFilter = fileType + " | ";
         for (auto& ext : extensions)
@@ -139,7 +145,7 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
     }
     else
     {
-        cmd += " --title 'Save Track' --file-selection --save --confirm-overwrite --filename ";
+        cmd += " --title 'Save File' --file-selection --save --confirm-overwrite --filename ";
         cmd += defaultSelection;
     }
     print(cmd, '\n');

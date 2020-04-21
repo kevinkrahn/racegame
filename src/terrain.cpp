@@ -4,6 +4,8 @@
 #include "debug_draw.h"
 #include "scene.h"
 #include "mesh_renderables.h"
+
+// TODO: switch to STB perlin
 #include <glm/gtc/noise.hpp>
 
 void Terrain::createBuffers()
@@ -117,10 +119,10 @@ void Terrain::onCreate(Scene* scene)
             "Grass 2"
         },
         {
-            &g_res.textures->grass,
-            &g_res.textures->rock_moss,
-            &g_res.textures->sand,
-            &g_res.textures->grass,
+            g_res.getTexture("grass"),
+            g_res.getTexture("rock_moss"),
+            g_res.getTexture("sand"),
+            g_res.getTexture("grass"),
         },
         { 0.1f, 0.05f, 0.12f, 0.1f }
     };
@@ -134,10 +136,10 @@ void Terrain::onCreate(Scene* scene)
             "Dirt"
         },
         {
-            &g_res.textures->desert,
-            &g_res.textures->desert_stone,
-            &g_res.textures->sand,
-            &g_res.textures->sand,
+            g_res.getTexture("desert"),
+            g_res.getTexture("desert_stone"),
+            g_res.getTexture("sand"),
+            g_res.getTexture("sand"),
         },
         { 0.1f, 0.1f, 0.12f, 0.1f }
     };
@@ -151,10 +153,10 @@ void Terrain::onCreate(Scene* scene)
             "Snow"
         },
         {
-            &g_res.textures->snow,
-            &g_res.textures->rock,
-            &g_res.textures->sand,
-            &g_res.textures->snow,
+            g_res.getTexture("snow"),
+            g_res.getTexture("rock"),
+            g_res.getTexture("sand"),
+            g_res.getTexture("snow"),
         },
         { 0.1f, 0.05f, 0.12f, 0.1f }
     };
@@ -168,10 +170,10 @@ void Terrain::onCreate(Scene* scene)
             "Dirt"
         },
         {
-            &g_res.textures->lava,
-            &g_res.textures->lava,
-            &g_res.textures->sand,
-            &g_res.textures->lava,
+            g_res.getTexture("lava"),
+            g_res.getTexture("lava"),
+            g_res.getTexture("sand"),
+            g_res.getTexture("lava"),
         },
         { 0.05f, 0.1f, 0.12f, 0.1f }
     };

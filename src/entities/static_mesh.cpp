@@ -55,15 +55,15 @@ void StaticMesh::onCreate(Scene* scene)
 void StaticMesh::loadMeshes()
 {
     static std::map<std::string, LitSettings> materials = {
-        { "Rock", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, &g_res.textures->rock) },
-        { "Concrete", LitSettings(glm::vec3(1.f), 0.2f, 50.f, 0.f, 2.f, -0.2f, &g_res.textures->concrete) },
+        { "Rock", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, g_res.getTexture("rock")) },
+        { "Concrete", LitSettings(glm::vec3(1.f), 0.2f, 50.f, 0.f, 2.f, -0.2f, g_res.getTexture("concrete")) },
         { "Plastic", LitSettings(glm::vec3(1.f), 0.2f, 50.f, 0.1f, 2.f, -0.2f, nullptr, true, false, 0.f, 0.1f, 3.f) },
-        { "Cactus", LitSettings(glm::vec3(1.f), 0.06f, 5.f, 0.1f, 2.f, -0.2f, &g_res.textures->cactus, true, false, 0.5f) },
-        { "Plant1", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, &g_res.textures->plant1, true, false, 0.5f) },
-        { "Plant2", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, &g_res.textures->plant2, true, false, 0.5f) },
+        { "Cactus", LitSettings(glm::vec3(1.f), 0.06f, 5.f, 0.1f, 2.f, -0.2f, g_res.getTexture("cactus"), true, false, 0.5f) },
+        { "Plant1", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, g_res.getTexture("plant1"), true, false, 0.5f) },
+        { "Plant2", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, g_res.getTexture("plant2"), true, false, 0.5f) },
         { "Metal", LitSettings(glm::vec3(0.01f), 0.2f, 120.f, 0.f, 0.f, 0.f, nullptr, true, false, 0.f, 0.4f, 4.f) },
-        { "WindmillBlades", LitSettings(glm::vec3(1.f), 0.2f, 120.f, 0.f, 0.f, 0.f, &g_res.textures->windmill_blades, true, false, 0.f, 0.4f, 4.f) },
-        { "WindmillBase", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, &g_res.textures->windmill_base) },
+        { "WindmillBlades", LitSettings(glm::vec3(1.f), 0.2f, 120.f, 0.f, 0.f, 0.f, g_res.getTexture("windmill_blades"), true, false, 0.f, 0.4f, 4.f) },
+        { "WindmillBase", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, g_res.getTexture("windmill_base")) },
     };
 
     DataFile::Value::Dict& sceneData = g_res.getScene(meshScenes[meshIndex].sceneName);

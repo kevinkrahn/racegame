@@ -15,7 +15,7 @@ public:
     {
         info.name = "Missiles";
         info.description = "Deals high damage and follows slopes!";
-        info.icon = &g_res.textures->icon_missile;
+        info.icon = g_res.getTexture("icon_missile");
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;

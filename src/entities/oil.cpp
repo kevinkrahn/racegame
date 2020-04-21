@@ -44,7 +44,7 @@ void Oil::updateTransform(Scene* scene)
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
     }
-    decal.setTexture(&g_res.textures->icon_oil, &g_res.textures->oil_normal);
+    decal.setTexture(g_res.getTexture("icon_oil"), g_res.getTexture("oil_normal"));
     decal.setPriority(9001);
     decal.begin(transform);
     scene->track->applyDecal(decal);
@@ -60,7 +60,7 @@ void Oil::onPreview(RenderWorld* rw)
 {
     rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
             glm::vec3(0.f), 1.f, 200.f, 50.f);
-    rw->push(BillboardRenderable(&g_res.textures->icon_oil, glm::vec3(0, 0, 2.f),
+    rw->push(BillboardRenderable(g_res.getTexture("icon_oil"), glm::vec3(0, 0, 2.f),
                 glm::vec4(1.f), 8.f, 0.f, false));
 }
 

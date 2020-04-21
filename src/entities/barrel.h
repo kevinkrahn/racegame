@@ -16,12 +16,12 @@ public:
     {
         lit.settings.mesh = g_res.getMesh("barrel.Barrel");
         lit.settings.color = { 1, 1, 1 };
-        lit.settings.texture = &g_res.textures->white;
+        lit.settings.texture = &g_res.white;
         lit.settings.fresnelScale = 0.2f;
         lit.settings.fresnelPower = 1.7f;
         lit.settings.fresnelBias = -0.2f;
         lit.settings.specularStrength = 0.1f;
-        lit.settings.texture = &g_res.textures->white;
+        lit.settings.texture = &g_res.white;
         lit.settings.worldTransform = transform;
     }
 

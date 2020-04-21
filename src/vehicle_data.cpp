@@ -11,7 +11,7 @@ void VehicleData::initStandardUpgrades()
         {
             "Engine",
             "Upgrades the engine to improve\nacceleration and top speed.",
-            &g_res.textures->icon_pistons,
+            g_res.getTexture("icon_pistons"),
             PerformanceUpgradeType::ENGINE,
             5,
             1500,
@@ -19,7 +19,7 @@ void VehicleData::initStandardUpgrades()
         {
             "Tires",
             "Equips better tires for improved traction\nand overall handling.",
-            &g_res.textures->icon_wheel,
+            g_res.getTexture("icon_wheel"),
             PerformanceUpgradeType::TIRES,
             5,
             1000,
@@ -27,7 +27,7 @@ void VehicleData::initStandardUpgrades()
         {
             "Armor",
             "Adds additional armor to improve\nresistance against all forms of damage.",
-            &g_res.textures->icon_armor,
+            g_res.getTexture("icon_armor"),
             PerformanceUpgradeType::ARMOR,
             5,
             1000,
@@ -35,7 +35,7 @@ void VehicleData::initStandardUpgrades()
         {
             "Suspension",
             "Upgrades the suspension to be stiffer\nand more stable around corners.",
-            &g_res.textures->icon_suspension,
+            g_res.getTexture("icon_suspension"),
             PerformanceUpgradeType::SUSPENSION,
             2,
             1250,
@@ -43,7 +43,7 @@ void VehicleData::initStandardUpgrades()
         {
             "Weight Reduction",
             "Strips out unnecessary parts of the vehicle.\nThe reduced weight will improve acceleration and handling.",
-            &g_res.textures->icon_weight,
+            g_res.getTexture("icon_weight"),
             PerformanceUpgradeType::WEIGHT_REDUCTION,
             2,
             1500,

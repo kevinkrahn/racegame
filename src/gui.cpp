@@ -11,7 +11,7 @@ void Gui::beginFrame()
     fontTiny = &g_res.getFont("font", (u32)convertSize(13));
     fontSmall = &g_res.getFont("font", (u32)convertSize(16));
     fontBig = &g_res.getFont("font_bold", (u32)convertSize(26));
-    white = &g_res.textures->white;
+    white = &g_res.white;
     renderer = g_game.renderer.get();
     isMouseOverUI = false;
     isMouseClickHandled = false;
@@ -402,7 +402,7 @@ bool Gui::button(const char* text, bool active, Texture* icon, bool iconbg)
         f32 iconSize = glm::floor(bh * 0.8f);
         if (iconbg)
         {
-            renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
+            renderer->push2D(QuadRenderable(g_res.getTexture("iconbg"),
                         pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
         }
         renderer->push2D(QuadRenderable(icon,
@@ -467,7 +467,7 @@ bool Gui::itemButton(const char* text, const char* smallText, const char* extraT
     f32 iconSize = glm::floor(bh * 0.8f);
     if (showIconBackground)
     {
-        renderer->push2D(QuadRenderable(&g_res.textures->iconbg,
+        renderer->push2D(QuadRenderable(g_res.getTexture("iconbg"),
                     pos + glm::vec2(bh * 0.1f), iconSize, iconSize));
     }
     if (icon)
@@ -756,7 +756,7 @@ i32 Gui::select(const char* text, std::string* firstValue,
 
     if (widgetState->hoverIntensity > 0.f)
     {
-        Texture* cheveron = &g_res.textures->cheveron;
+        Texture* cheveron = g_res.getTexture("cheveron");
         if (currentIndex > 0)
         {
             renderer->push2D(QuadRenderable(cheveron, pos + glm::vec2(bh*0.25f), bh*0.5f, bh*0.5f,

@@ -14,6 +14,7 @@
 
 namespace DataFile
 {
+    // TODO: Add typed array data type
     enum DataType : u32
     {
         NONE,
@@ -249,7 +250,7 @@ namespace DataFile
 
         i64 integer(i64 defaultVal)
         {
-            if(dataType == DataType::NONE) return defaultVal;
+            if(dataType != DataType::I64) return defaultVal;
             return integer().val();
         }
 
@@ -267,6 +268,7 @@ namespace DataFile
 
         f32 real(f32 defaultVal)
         {
+            if(dataType != DataType::F32) return defaultVal;
             return real().val();
         }
 
@@ -375,7 +377,7 @@ namespace DataFile
 
         bool boolean(bool defaultVal)
         {
-            return dataType == DataType::NONE ? defaultVal : boolean().val();
+            return dataType == DataType::BOOL ? defaultVal : boolean().val();
         }
 
         void setBoolean(bool val)
@@ -573,8 +575,8 @@ namespace DataFile
         return v;
     }
 
-    Value load(const char* filename);
-    void save(Value const& val, const char* filename);
+    Value load(std::string const& filename);
+    void save(Value const& val, std::string const& filename);
 
     inline std::ostream& operator << (std::ostream& os, Value const& rhs)
     {
@@ -640,22 +642,46 @@ public:
     template<typename T>
     void element(const char* name, DataFile::Value& val, T& dest)
     {
-        if (deserialize)
+        if constexpr (std::is_enum<T>::value)
         {
-            auto v = val.dict();
-            if (!v.hasValue())
+            using EnumBaseType = typename std::underlying_type<T>::type;
+            element(name, val, static_cast<EnumBaseType&>(dest));
+            /*
+            if (deserialize)
             {
-                DESERIALIZE_ERROR("Failed to read value as DICT: \"", name, "\"");
+#if 0
+                EnumBaseType tempDest;
+                element(name, val, tempDest);
+                dest = static_cast<T>(tempDest);
+#else
+                element(name, val, static_cast<EnumBaseType&>(dest));
+#endif
             }
-            Serializer childSerializer(val, true);
-            dest.serialize(childSerializer);
+            else
+            {
+                element(name, val, static_cast<EnumBaseType&>(dest));
+            }
+            */
         }
         else
         {
-            auto childDict = DataFile::makeDict();
-            Serializer childSerializer(childDict, false);
-            dest.serialize(childSerializer);
-            val = childDict;
+            if (deserialize)
+            {
+                auto v = val.dict();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read value as DICT: \"", name, "\"");
+                }
+                Serializer childSerializer(val, true);
+                dest.serialize(childSerializer);
+            }
+            else
+            {
+                auto childDict = DataFile::makeDict();
+                Serializer childSerializer(childDict, false);
+                dest.serialize(childSerializer);
+                val = childDict;
+            }
         }
     }
 
@@ -863,6 +889,24 @@ public:
         }
     }
 
+    template<> void element(const char* name, DataFile::Value& val, std::vector<u8>& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.bytearray();
+            if (!v.hasValue())
+            {
+                DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"", name, "\"");
+            }
+            dest.clear();
+            dest.assign(v.val().begin(), v.val().end());
+        }
+        else
+        {
+            val.setBytearray(DataFile::Value::ByteArray(dest.begin(), dest.end()));
+        }
+    }
+
     template<typename T> void element(const char* name, DataFile::Value& val, std::unique_ptr<T>& dest)
     {
         if (deserialize)
@@ -873,6 +917,26 @@ public:
         else
         {
             element(name, val, *dest);
+        }
+    }
+
+    template<typename T>
+    static void toFile(T& val, std::string const& filename)
+    {
+        auto data = DataFile::makeDict();
+        Serializer s(data, false);
+        val.serialize(s);
+        DataFile::save(data, filename);
+    }
+
+    template<typename T>
+    static void fromFile(T& val, std::string const& filename)
+    {
+        auto data = DataFile::load(filename);
+        if (data.hasValue())
+        {
+            Serializer s(data, true);
+            val.serialize(s);
         }
     }
 };

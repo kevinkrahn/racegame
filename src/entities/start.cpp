@@ -27,7 +27,7 @@ void Start::onCreateEnd(Scene* scene)
     collisionShape->setSimulationFilterData(PxFilterData(
                 COLLISION_FLAG_OBJECT, -1, 0, 0));
     scene->getPhysicsScene()->addActor(*actor);
-    finishLineDecal.setTexture(&g_res.textures->checkers);
+    finishLineDecal.setTexture(g_res.getTexture("checkers"));
     updateTransform(scene);
 }
 
@@ -98,7 +98,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             glm::vec3 p8 = glm::vec3(-p2.x, -p2.y, p2.z);
             glm::vec3 positions[] = { p1, p2, p3, p4, p5, p6, p7, p8 };
 
-            Texture* flare = &g_res.textures->flare;
+            Texture* flare = g_res.getTexture("flare");
             glm::vec4 col = countIndex == 2
                 ? glm::vec4(0.01f, 1.f, 0.01f, 0.6f) : glm::vec4(1.f, 0.01f, 0.01f, 0.6f);
 
@@ -117,7 +117,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     settings.fresnelBias = -0.15f;
     settings.specularPower = 60.f;
     settings.specularStrength = 0.3f;
-    settings.texture = &g_res.textures->white;
+    settings.texture = &g_res.white;
     settings.worldTransform = transform;
     rw->push(LitRenderable(settings));
 
@@ -142,7 +142,7 @@ void Start::onPreview(RenderWorld* rw)
     settings.fresnelBias = -0.15f;
     settings.specularPower = 60.f;
     settings.specularStrength = 0.3f;
-    settings.texture = &g_res.textures->white;
+    settings.texture = &g_res.white;
     settings.worldTransform = glm::translate(glm::mat4(1.f), { 0, 0, 3 });
     rw->push(LitRenderable(settings));
 

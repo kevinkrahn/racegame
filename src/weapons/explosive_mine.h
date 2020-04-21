@@ -11,7 +11,7 @@ public:
     {
         info.name = "Exploding Mine";
         info.description = "It explodes";
-        info.icon = &g_res.textures->icon_mine;
+        info.icon = g_res.getTexture("icon_mine");
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::REAR_WEAPON;

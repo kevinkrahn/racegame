@@ -306,8 +306,8 @@ inline bool lineIntersection(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2
     }
     f32 pre = (x1*y2 - y1*x2);
     f32 post = (x3*y4 - y3*x4);
-    f32 x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
-    f32 y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
+    f32 x = (pre * (x3 - x4) - (x1 - x2) * post) / d;
+    f32 y = (pre * (y3 - y4) - (y1 - y2) * post) / d;
     if (x < glm::min(x1, x2) || x > glm::max(x1, x2) ||
         x < glm::min(x3, x4) || x > glm::max(x3, x4))
     {

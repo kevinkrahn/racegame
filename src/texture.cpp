@@ -1,0 +1,226 @@
+#include "texture.h"
+#include "resources.h"
+#include <filesystem>
+
+void Texture::serialize(Serializer& s)
+{
+    s.field(guid);
+    s.field(name);
+    s.field(textureType);
+    s.field(usedForBillboard);
+    s.field(usedForBillboard);
+    s.field(repeat);
+    s.field(generateMipMaps);
+    s.field(lodBias);
+    s.field(anisotropy);
+    s.field(filter);
+    s.field(sourceFiles);
+
+    if (s.deserialize)
+    {
+        regenerate();
+    }
+    else
+    {
+        s.dict["type"] = DataFile::makeInteger((u32)ResourceType::TEXTURE);
+    }
+}
+
+void Texture::loadSourceFile(u32 index)
+{
+    i32 w, h, channels;
+    u8* data = (u8*)stbi_load(sourceFiles[index].path.c_str(), &w, &h, &channels, 4);
+    if (!data)
+    {
+        error("Failed to load image: ", sourceFiles[index].path, " (", stbi_failure_reason(), ")\n");
+    }
+    this->width = w;
+    this->height = h;
+    sourceFiles[index].width = width;
+    sourceFiles[index].height = height;
+    sourceFiles[index].data.assign(data, data + width * height * 4);
+    stbi_image_free(data);
+}
+
+void Texture::reloadSourceFiles()
+{
+    for (u32 i=0; i<sourceFiles.size(); ++i)
+    {
+        loadSourceFile(i);
+    }
+    regenerate();
+}
+
+void Texture::setTextureType(u32 textureType)
+{
+    for (u32 i=0; i<sourceFiles.size(); ++i)
+    {
+        if (sourceFiles[i].previewHandle)
+        {
+            glDeleteTextures(1, &sourceFiles[i].previewHandle);
+            sourceFiles[i].previewHandle = 0;
+        }
+    }
+    if (cubemapHandle)
+    {
+        glDeleteTextures(1, &cubemapHandle);
+        cubemapHandle = 0;
+    }
+    handle = 0;
+    this->textureType = textureType;
+    if (textureType == TextureType::CUBE_MAP)
+    {
+        sourceFiles.resize(6);
+    }
+    else
+    {
+        sourceFiles.resize(1);
+    }
+}
+
+void Texture::setSourceFile(u32 index, std::string const& path)
+{
+    assert(index < sourceFiles.size());
+    sourceFiles[index].path = path;
+}
+
+void Texture::regenerate()
+{
+    for (u32 i=0; i<sourceFiles.size(); ++i)
+    {
+        if (sourceFiles[i].previewHandle)
+        {
+            glDeleteTextures(1, &sourceFiles[i].previewHandle);
+            sourceFiles[i].previewHandle = 0;
+        }
+    }
+    if (cubemapHandle)
+    {
+        glDeleteTextures(1, &cubemapHandle);
+        cubemapHandle = 0;
+    }
+    if (!sourceFiles.empty())
+    {
+        for (u32 i=0; i<sourceFiles.size(); ++i)
+        {
+            initGLTexture(i);
+        }
+        width = sourceFiles[0].width;
+        height = sourceFiles[0].height;
+        if (textureType == TextureType::CUBE_MAP)
+        {
+            initCubemap();
+            handle = cubemapHandle;
+        }
+        else
+        {
+            handle = sourceFiles[0].previewHandle;
+        }
+    }
+}
+
+void Texture::initGLTexture(u32 index)
+{
+    if (sourceFiles[index].data.empty())
+    {
+        return;
+    }
+
+    GLuint internalFormat, baseFormat;
+    switch (textureType)
+    {
+        case TextureType::NORMAL_MAP:
+            internalFormat = GL_RGBA8;
+            baseFormat = GL_RGBA;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            break;
+        case TextureType::GRAYSCALE:
+            internalFormat = GL_R8;
+            //internalFormat = GL_SR8_EXT;
+            baseFormat = GL_RED;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            break;
+        case TextureType::COLOR:
+        default:
+            internalFormat = GL_SRGB8_ALPHA8;
+            baseFormat = GL_RGBA;
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            break;
+    }
+
+    SourceFile& s = sourceFiles[index];
+    u32 mipLevels = generateMipMaps ? 1 + (u32)(glm::log2((f32)glm::max(s.width, s.height))) : 1;
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &s.previewHandle);
+    glTextureStorage2D(s.previewHandle, mipLevels, internalFormat, s.width, s.height);
+    glTextureSubImage2D(s.previewHandle, 0, 0, 0, s.width, s.height, baseFormat,
+            GL_UNSIGNED_BYTE, s.data.data());
+    if (repeat)
+    {
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+    if (filter == TextureFilter::NEAREST)
+    {
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
+    else if (filter == TextureFilter::BILINEAR)
+    {
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else if (filter == TextureFilter::TRILINEAR)
+    {
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTextureParameteri(s.previewHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    glTextureParameteri(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, anisotropy);
+    glTextureParameterf(s.previewHandle, GL_TEXTURE_LOD_BIAS, lodBias);
+    if (generateMipMaps)
+    {
+        glGenerateTextureMipmap(s.previewHandle);
+    }
+
+#ifndef NDEBUG
+    glObjectLabel(GL_TEXTURE, s.previewHandle, name.length(), name.c_str());
+#endif
+}
+
+void Texture::initCubemap()
+{
+    for (u32 i=0; i<6; ++i)
+    {
+        if (sourceFiles[i].data.empty())
+        {
+            return;
+        }
+    }
+
+    u32 mipLevels = generateMipMaps ? 1 + (u32)(glm::log2((f32)glm::max(width, height))) : 1;
+    GLuint internalFormat = GL_SRGB8;
+    GLuint baseFormat = GL_RGBA;
+
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapHandle);
+    glTextureStorage2D(cubemapHandle, mipLevels, internalFormat, width, height);
+    for (u32 i=0; i<6; ++i)
+    {
+        glTextureSubImage3D(cubemapHandle, 0, 0, 0, i, width, height, 1,
+                baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].data.data());
+    }
+    glTextureParameteri(cubemapHandle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(cubemapHandle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(cubemapHandle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(cubemapHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(cubemapHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(cubemapHandle, GL_TEXTURE_MAX_ANISOTROPY, anisotropy);
+    if (generateMipMaps)
+    {
+        glGenerateTextureMipmap(cubemapHandle);
+    }
+}

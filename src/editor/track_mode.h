@@ -131,8 +131,9 @@ public:
                     {
                         ImGui::SameLine();
                     }
-                    if (ImGui::ImageButton((void*)(uintptr_t)scene->track->prefabTrackItems[i].icon.handle,
-                                { 64, 64 }))
+                    if (ImGui::ImageButton(
+                        (void*)(uintptr_t)g_res.getTexture(scene->track->prefabTrackItems[i].icon)->handle,
+                        { 64, 64 }))
                     {
                         scene->track->extendTrack(i);
                     }

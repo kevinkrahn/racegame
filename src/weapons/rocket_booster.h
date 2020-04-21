@@ -23,7 +23,7 @@ public:
         glDepthFunc(GL_LEQUAL);
         glUseProgram(renderer->getShaderProgram("flames"));
         glEnable(GL_CULL_FACE);
-        glBindTextureUnit(0, g_res.textures->flames.handle);
+        glBindTextureUnit(0, g_res.getTexture("flames")->handle);
         glBindVertexArray(mesh->vao);
     }
 
@@ -55,7 +55,7 @@ public:
     {
         info.name = "Rocket Booster";
         info.description = "It's like nitrous, but better!";
-        info.icon = &g_res.textures->icon_rocketbooster;
+        info.icon = g_res.getTexture("icon_rocketbooster");
         info.price = 1000;
         info.maxUpgradeLevel = 4;
         info.weaponType = WeaponInfo::REAR_WEAPON;

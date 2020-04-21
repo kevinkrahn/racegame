@@ -18,7 +18,7 @@ public:
     {
         info.name = "Machine Gun";
         info.description = "Low damage but high rate of fire.";
-        info.icon = &g_res.textures->icon_mg;
+        info.icon = g_res.getTexture("icon_mg");
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
