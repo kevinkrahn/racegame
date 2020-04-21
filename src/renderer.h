@@ -102,6 +102,8 @@ class RenderWorld
 
     u32 width = 0, height = 0;
     u32 settingsVersion = 0;
+    glm::vec4 clearColor = { 0.15f, 0.35f, 0.9f, 1.f };
+    bool clearColorEnabled = false;
 
     const char* name = "";
     WorldInfo worldInfo;
@@ -177,6 +179,11 @@ public:
             this->height = height;
             createFramebuffers();
         }
+    }
+    void setClearColor(bool enabled, glm::vec4 const& color={ 0.15f, 0.35f, 0.9f, 1.f })
+    {
+        clearColorEnabled = enabled;
+        clearColor = color;
     }
 
     //void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);

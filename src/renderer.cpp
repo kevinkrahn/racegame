@@ -1056,13 +1056,11 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glBindTextureUnit(1, g_res.textures->sky_cubemap.handle);
     glBindTextureUnit(3, g_res.textures->cloud_shadow.handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-#if 1
-    if (g_game.isEditing || g_game.isDebugCameraEnabled)
+    if (clearColorEnabled)
     {
-        glClearColor(0.15f, 0.35f, 0.9f, 1.f);
+        glClearColor(clearColor.x, clearColor.y, clearColor.y, clearColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
     }
-#endif
     glDepthFunc(GL_EQUAL);
     prevPriority = INT32_MIN;
     for (auto const& r : renderables)

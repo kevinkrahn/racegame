@@ -6,8 +6,49 @@
 #include "datafile.h"
 #include <stb_image.h>
 
+namespace TextureFilter
+{
+    enum
+    {
+        NEAREST = 0,
+        BILINEAR = 1,
+        TRILINEAR = 2,
+        MAX
+    };
+}
+
 struct Texture
 {
+    // serialized
+    i64 guid = 0;
+    std::string name;
+    std::string sourceFile;
+    bool usedForDecal = false;
+    bool usedForBillboard = false;
+    bool srgb = true;
+    bool repeat = true;
+    bool generateMipMaps = true;
+    f32 lodBias = -0.2f;
+    i32 anisotropy = 8;
+
+    i32 filter = TextureFilter::TRILINEAR;
+
+    void serialize(Serializer& s)
+    {
+        s.field(guid);
+        s.field(name);
+        s.field(sourceFile);
+        s.field(usedForBillboard);
+        s.field(usedForBillboard);
+        s.field(srgb);
+        s.field(repeat);
+        s.field(generateMipMaps);
+        s.field(lodBias);
+        s.field(anisotropy);
+        s.field(filter);
+    }
+
+    // not serialized
     enum struct Format
     {
         SRGBA8,
@@ -17,18 +58,17 @@ struct Texture
     Format format = Format::SRGBA8;
     u32 width = 0;
     u32 height = 0;
-    const char* name = "";
-
     GLuint handle = 0;
 
     Texture() {}
     Texture(const char* name, u32 width, u32 height, u8* data, Format format = Format::SRGBA8)
-        : format(format), width(width), height(height), name(name)
+        : name(name), format(format), width(width), height(height)
     {
         initGLTexture(data);
     }
 
-    Texture(const char* filename, bool repeat=true, Format format = Format::SRGBA8) : format(format), name(filename)
+    Texture(const char* filename, bool repeat=true, Format format = Format::SRGBA8)
+        : name(filename), format(format)
     {
         i32 width, height, channels;
         u8* data = (u8*)stbi_load(filename, &width, &height, &channels, 4);
@@ -40,6 +80,10 @@ struct Texture
         this->height = (u32)height;
         initGLTexture(data, repeat);
         stbi_image_free(data);
+    }
+
+    void reload()
+    {
     }
 
     void initGLTexture(u8* data, bool repeat=true)
@@ -87,7 +131,7 @@ struct Texture
         glGenerateTextureMipmap(handle);
 
 #ifndef NDEBUG
-        glObjectLabel(GL_TEXTURE, handle, strlen(name), name);
+        glObjectLabel(GL_TEXTURE, handle, name.length(), name.c_str());
 #endif
     }
 
@@ -135,39 +179,3 @@ struct Texture
     }
 };
 
-struct TextureResource
-{
-    i64 guid = 0;
-    std::string name;
-    std::string sourceFile;
-    bool usedForDecal = false;
-    bool usedForBillboard = false;
-    bool srgb = true;
-    bool repeat = true;
-    bool generateMipMaps = true;
-    f32 lodBias = 0.f;
-    u32 anisotropy = 8;
-
-    enum Filter
-    {
-        CLOSEST = 0,
-        BILINEAR = 1,
-        TRILINEAR = 2
-    };
-    u32 filter = Filter::CLOSEST;
-
-    void serialize(Serializer& s)
-    {
-        s.field(guid);
-        s.field(name);
-        s.field(sourceFile);
-        s.field(usedForBillboard);
-        s.field(usedForBillboard);
-        s.field(srgb);
-        s.field(repeat);
-        s.field(generateMipMaps);
-        s.field(lodBias);
-        s.field(anisotropy);
-        s.field(filter);
-    }
-};
