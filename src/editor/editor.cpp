@@ -61,7 +61,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         }
     }
 
-    ImGui::Begin("Editor");
+    ImGui::Begin("Track Editor");
     if (ImGui::Button("New"))
     {
         g_game.changeScene(nullptr);

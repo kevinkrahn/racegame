@@ -138,6 +138,8 @@ class PathMode : public EditorMode, public TransformGizmoHandler
             }
             scene->getPaths().push_back(std::move(racingLine));
         }
+        selectedPoints.clear();
+        selectedPathIndex = 0;
     }
 
 public:
@@ -253,17 +255,19 @@ public:
     {
         ImGui::Spacing();
 
-        ImGui::ListBoxHeader("AI Paths");
-        for (u32 i=0; i<scene->getPaths().size(); ++i)
+        if (ImGui::ListBoxHeader("AI Paths"))
         {
-            if (ImGui::Selectable(tstr("Path ", i + 1), i == selectedPathIndex))
+            for (u32 i=0; i<scene->getPaths().size(); ++i)
             {
-                selectedPathIndex = i;
-                selectedPoints.clear();
+                if (ImGui::Selectable(tstr("Path ", i + 1), i == selectedPathIndex))
+                {
+                    selectedPathIndex = i;
+                    selectedPoints.clear();
+                }
             }
+            ImGui::ListBoxFooter();
+            ImGui::HelpMarker("Paths that the AI drivers will follow. The most optimal paths should be first in the list.");
         }
-        ImGui::ListBoxFooter();
-        ImGui::HelpMarker("Paths that the AI drivers will follow. The most optimal paths should be first in the list.");
 
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 

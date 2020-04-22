@@ -138,16 +138,18 @@ public:
         }
 
         ImGui::Gap();
-        ImGui::ListBoxHeader("Terrain Tool", {0, 145});
-        const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track", "Paint" };
-        for (i32 i=0; i<(i32)TerrainTool::MAX; ++i)
+        if (ImGui::ListBoxHeader("Terrain Tool", {0, 145}))
         {
-            if (ImGui::Selectable(toolNames[i], i == (i32)terrainTool))
+            const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track", "Paint" };
+            for (i32 i=0; i<(i32)TerrainTool::MAX; ++i)
             {
-                terrainTool = (TerrainTool)i;
+                if (ImGui::Selectable(toolNames[i], i == (i32)terrainTool))
+                {
+                    terrainTool = (TerrainTool)i;
+                }
             }
+            ImGui::ListBoxFooter();
         }
-        ImGui::ListBoxFooter();
 
         ImGui::Gap();
         ImGui::SliderFloat("Brush Radius", &brushRadius, 2.f, 40.f);
@@ -156,16 +158,18 @@ public:
 
         if (terrainTool == TerrainTool::PAINT)
         {
-            ImGui::ListBoxHeader("Paint Material", {0, 85});
-            auto& m = scene->terrain->getSurfaceMaterial();
-            for (i32 i=0; i<4; ++i)
+            if (ImGui::ListBoxHeader("Paint Material", {0, 85}))
             {
-                if (ImGui::Selectable(m.textureNames[i], i == paintMaterialIndex))
+                auto& m = scene->terrain->getSurfaceMaterial();
+                for (i32 i=0; i<4; ++i)
                 {
-                    paintMaterialIndex = i;
+                    if (ImGui::Selectable(m.textureNames[i], i == paintMaterialIndex))
+                    {
+                        paintMaterialIndex = i;
+                    }
                 }
+                ImGui::ListBoxFooter();
             }
-            ImGui::ListBoxFooter();
         }
 
         ImGui::Gap();
