@@ -6,29 +6,30 @@
 #include "../input.h"
 #include "../util.h"
 #include "editor.h"
+#include "model_editor.h"
 
 class ResourceManager
 {
     bool isResourceWindowOpen = true;
-    bool isTextureWindowOpen = false;
-    Texture* selectedTexture;
-    Editor editor;
-
     std::string editName;
+    ResourceType activeEditor;
+
+    Editor trackEditor;
+    ModelEditor modelEditor;
 
     std::vector<Texture*> textures;
     bool texturesStale = true;
+    Texture* selectedTexture = nullptr;
+    bool isTextureWindowOpen = false;
 
     std::vector<DataFile::Value*> tracks;
     bool tracksStale = true;
 
-    enum struct EditorType
-    {
-        NONE,
-        SCENE,
-    } activeEditor = EditorType::NONE;
+    std::vector<Model*> models;
+    bool modelsStale = true;
 
-    void newTexture(std::string const& filename="");
+    void newModel();
+    void newTexture();
     void showTextureWindow(Renderer* renderer, f32 deltaTime);
 
 public:

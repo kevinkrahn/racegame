@@ -1105,36 +1105,13 @@ void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 
 void Scene::serialize(Serializer& s)
 {
+    s.write("type", ResourceType::TRACK);
     s.field(guid);
     s.field(name);
     s.field(notes);
     s.field(totalLaps);
     s.field(version);
-
-    // compatibility with old scenes
-    if (s.deserialize && s.dict["paths"].array().hasValue()
-            && s.dict["paths"].array().val().size() > 0
-            && s.dict["paths"].array().val()[0].array().hasValue())
-    {
-        auto& pathsData = s.dict["paths"].array().val();
-        paths.clear();
-        for (auto& pathData : pathsData)
-        {
-            paths.push_back({});
-            RacingLine& path = paths.back();
-            for (auto& p : pathData.array().val())
-            {
-                path.points.push_back({
-                    p.dict().val()["position"].vec3().val(),
-                    p.dict().val()["targetSpeed"].real().val()
-                });
-            }
-        }
-    }
-    else
-    {
-        s.field(paths);
-    }
+    s.field(paths);
 
     if (s.deserialize)
     {
@@ -1152,7 +1129,6 @@ void Scene::serialize(Serializer& s)
     }
     else
     {
-        s.dict["type"] = DataFile::makeInteger((i64)ResourceType::TRACK);
         s.dict["entities"] = DataFile::makeArray();
         auto& entityArray = s.dict["entities"].array().val();
         for (auto& entity : this->entities)

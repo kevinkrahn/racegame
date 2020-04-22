@@ -14,7 +14,6 @@
 
 namespace DataFile
 {
-    // TODO: Add typed array data type
     enum DataType : u32
     {
         NONE,
@@ -25,6 +24,7 @@ namespace DataFile
         ARRAY,
         DICT,
         BOOL,
+        //PRIMITIVE_ARRAY,
     };
 
     template <typename T>
@@ -626,6 +626,15 @@ public:
         deserialize(deserialize) {}
 
     template<typename T>
+    void write(const char* name, T field)
+    {
+        if (!deserialize)
+        {
+            element(name, dict[name], field);
+        }
+    }
+
+    template<typename T>
     void _value(const char* name, T& field, const char* context="")
     {
         if (deserialize)
@@ -645,7 +654,7 @@ public:
         if constexpr (std::is_enum<T>::value)
         {
             using EnumBaseType = typename std::underlying_type<T>::type;
-            element(name, val, static_cast<EnumBaseType&>(dest));
+            element(name, val, (EnumBaseType&)(dest));
             /*
             if (deserialize)
             {

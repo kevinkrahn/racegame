@@ -5,6 +5,7 @@
 #include "smallvec.h"
 #include "bounding_box.h"
 #include "gl.h"
+#include "datafile.h"
 #include <vector>
 
 enum VertexAttribute
@@ -30,6 +31,12 @@ struct Mesh
 
     SmallVec<VertexAttribute> vertexFormat;
     u32 formatStride;
+
+    void serialize(Serializer& s)
+    {
+        s.field(name);
+    }
+
     GLuint vao = 0, vbo = 0, ebo = 0;
 
     struct OctreeNode

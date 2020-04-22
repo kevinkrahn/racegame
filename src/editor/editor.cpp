@@ -70,6 +70,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     // TODO: Add keyboard shortcut
     if (ImGui::Button("Save"))
     {
+        // TODO: mark resource_manager tracksStale = true
         saveResource(*scene);
     }
     ImGui::SameLine();

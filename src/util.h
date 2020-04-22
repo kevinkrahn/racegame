@@ -164,3 +164,87 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
     return file;
 #endif
 }
+
+struct CommandResult
+{
+    i32 exitCode;
+    std::string output;
+};
+
+CommandResult runShellCommand(std::string const& command)
+{
+#if _WIN32
+    SECURITY_ATTRIBUTES attr;
+    attr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    attr.bInheritHandle = TRUE;
+    attr.lpSecurityDescriptor = NULL;
+
+    HANDLE hChildStdoutRead, hChildStdoutWrite;
+    if (!CreatePipe(&hChildStdoutRead, &hChildStdoutWrite, &attr, 0))
+    {
+        return { -1000 };
+    }
+
+    HANDLE hChildStdinRead, hChildStdinWrite;
+    if (!CreatePipe(&hChildStdinRead, &hChildStdinWrite, &attr, 0))
+    {
+        return { -1002 };
+    }
+
+    PROCESS_INFORMATION procInfo = {};
+
+    STARTUPINFO startInfo = {};
+    startInfo.cb = sizeof(startInfo);
+    startInfo.hStdError = hChildStdoutWrite;
+    startInfo.hStdOutput = hChildStdoutWrite;
+    startInfo.hStdInput = hChildStdinRead;
+    startInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+    if (!CreateProcess(NULL, (LPSTR)command.c_str(), NULL, NULL, TRUE, 0,
+                NULL, NULL, &startInfo, &procInfo))
+    {
+        return { -1004 };
+    }
+
+    char buf[4096];
+    DWORD read = 0;
+    ReadFile(hChildStdoutRead, buf, sizeof(buf), &read, NULL);
+
+    DWORD exitCode;
+    GetExitCodeProcess(procInfo.hProcess, &exitCode);
+    CommandResult result;
+    result.exitCode = exitCode;
+    result.output = buf;
+
+    CloseHandle(procInfo.hProcess);
+    CloseHandle(procInfo.hThread);
+    CloseHandle(hChildStdoutRead);
+    CloseHandle(hChildStdoutWrite);
+    CloseHandle(hChildStdinRead);
+    CloseHandle(hChildStdinWrite);
+
+    return result;
+#else
+    std::string cmd = command + " 2>&1";
+
+    FILE* stream = popen(cmd.c_str(), "r");
+    if (!stream)
+    {
+        return { -1, "" };
+    }
+
+    std::string output;
+    char* line = NULL;
+    size_t memSize = 0;
+    ssize_t r;
+    while ((r = getline(&line, &memSize, stream)) != -1)
+    {
+        output += std::string(line, r);
+    }
+    free(line);
+
+    i32 code = pclose(stream);
+
+    return { code, output };
+#endif
+}

@@ -11,6 +11,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 {
     if (texturesStale)
     {
+        textures.clear();
         for (auto& tex : g_res.textures)
         {
             textures.push_back(tex.second.get());
@@ -23,6 +24,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     if (tracksStale)
     {
+        tracks.clear();
         for (auto& track : g_res.tracks)
         {
             tracks.push_back(&track.second);
@@ -33,12 +35,25 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         tracksStale = false;
     }
 
+    if (modelsStale)
+    {
+        models.clear();
+        for (auto& model : g_res.models)
+        {
+            models.push_back(model.second.get());
+        }
+        std::sort(models.begin(), models.end(), [](auto& a, auto& b) {
+            return a->name < b->name;
+        });
+        modelsStale = false;
+    }
+
     if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
     {
         if (g_input.isKeyPressed(KEY_ESCAPE) || g_input.isKeyPressed(KEY_F5))
         {
             g_game.currentScene->stopRace();
-            editor.onEndTestDrive(g_game.currentScene.get());
+            trackEditor.onEndTestDrive(g_game.currentScene.get());
         }
         return;
     }
@@ -65,11 +80,15 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             if (ImGui::MenuItem("New Sound"))
             {
             }
+            if (ImGui::MenuItem("New Model"))
+            {
+                newModel();
+            }
             if (ImGui::MenuItem("New Track"))
             {
                 g_game.changeScene(nullptr);
-                activeEditor = EditorType::SCENE;
-                editor.reset();
+                activeEditor = ResourceType::TRACK;
+                trackEditor.reset();
             }
             ImGui::EndMenu();
         }
@@ -101,7 +120,25 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     {
                         // TODO
                     }
+                    if (ImGui::MenuItem("Delete"))
+                    {
+                        // TODO
+                    }
                     ImGui::EndPopup();
+                }
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Models"))
+        {
+            for (auto& model : models)
+            {
+                if (ImGui::Selectable(model->name.c_str(), activeEditor == ResourceType::MODEL
+                            && model == modelEditor.getCurrentModel()))
+                {
+                    activeEditor = ResourceType::MODEL;
+                    g_game.unloadScene();
+                    modelEditor.setModel(model);
                 }
             }
         }
@@ -114,9 +151,25 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                         g_game.currentScene &&
                         g_game.currentScene->guid == track->dict().val()["guid"].integer().val()))
                 {
-                    activeEditor = EditorType::SCENE;
+                    activeEditor = ResourceType::TRACK;
                     g_game.changeScene(track->dict().val()["guid"].integer().val());
-                    editor.reset();
+                    trackEditor.reset();
+                }
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::MenuItem("New Track"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Duplicate"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Delete"))
+                    {
+                        // TODO
+                    }
+                    ImGui::EndPopup();
                 }
             }
         }
@@ -154,12 +207,14 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         ImGui::OpenPopup("Exit Editor");
     }
 
-    if (activeEditor == EditorType::SCENE)
+    if (activeEditor == ResourceType::TRACK && g_game.currentScene)
     {
-        if (g_game.currentScene)
-        {
-            editor.onUpdate(g_game.currentScene.get(), renderer, deltaTime);
-        }
+        trackEditor.onUpdate(g_game.currentScene.get(), renderer, deltaTime);
+        renderer->getRenderWorld()->setClearColor(true);
+    }
+    else if (activeEditor == ResourceType::MODEL)
+    {
+        modelEditor.onUpdate(renderer, deltaTime);
         renderer->getRenderWorld()->setClearColor(true);
     }
     else
@@ -168,23 +223,28 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 }
 
-void ResourceManager::newTexture(std::string const& filename)
+void ResourceManager::newModel()
+{
+    activeEditor = ResourceType::MODEL;
+    auto model = std::make_unique<Model>();
+    model->guid = g_res.generateGUID();
+    model->name = str("Model ", models.size());
+    modelEditor.setModel(model.get());
+    saveResource(*model);
+    g_res.modelNameMap[model->name] = model.get();
+    g_res.models[model->guid] = std::move(model);
+    modelsStale = true;
+    g_game.unloadScene();
+}
+
+void ResourceManager::newTexture()
 {
     auto tex = std::make_unique<Texture>();
     tex->setTextureType(TextureType::COLOR);
     tex->guid = g_res.generateGUID();
     selectedTexture = tex.get();
     isTextureWindowOpen = true;
-    if (filename.empty())
-    {
-        tex->name = str("Texture ", g_res.textures.size());
-    }
-    else
-    {
-        tex->name = std::filesystem::path(filename).stem().string();
-        tex->setSourceFile(0, std::filesystem::relative(filename));
-        tex->regenerate();
-    }
+    tex->name = str("Texture ", g_res.textures.size());
     editName = tex->name;
     saveResource(*tex);
     g_res.textureNameMap[tex->name] = selectedTexture;
@@ -317,4 +377,3 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
         saveResource(tex);
     }
 }
-

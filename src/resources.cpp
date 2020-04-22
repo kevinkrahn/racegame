@@ -21,8 +21,12 @@ void Resources::loadResource(DataFile::Value& data)
                 textureNameMap[tex->name] = tex.get();
                 textures[guid] = std::move(tex);
             } break;
-            case ResourceType::MESH_SCENE:
+            case ResourceType::MODEL:
             {
+                auto model = std::make_unique<Model>();
+                ::loadResource(data, *model);
+                modelNameMap[model->name] = model.get();
+                models[model->guid] = std::move(model);
             } break;
             case ResourceType::SOUND:
             {

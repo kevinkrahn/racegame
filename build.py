@@ -122,40 +122,41 @@ def build_assets(force):
         ensureDir(os.path.dirname(dest))
         shutil.copy2(file, dest)
 
-    modified = False
-    for file in glob.glob('assets/**/*', recursive=True):
-        if not os.path.isfile(file):
-            continue
+    if False:
+        modified = False
+        for file in glob.glob('assets/**/*', recursive=True):
+            if not os.path.isfile(file):
+                continue
 
-        timestamp = os.path.getmtime(file)
-        #print(file, ':', timestamp)
-        if timestampCache.get(file, 0) < timestamp:
-            if file.endswith(".blend"):
-                print('Exporting', file)
-                if exportFile(file):
+            timestamp = os.path.getmtime(file)
+            #print(file, ':', timestamp)
+            if timestampCache.get(file, 0) < timestamp:
+                if file.endswith(".blend"):
+                    print('Exporting', file)
+                    if exportFile(file):
+                        modified = True
+                        timestampCache[file] = timestamp
+                else:
+                    print('Copying', file)
+                    copyFile(file, os.path.join('bin', os.path.relpath(file, 'assets')))
                     modified = True
                     timestampCache[file] = timestamp
-            else:
-                print('Copying', file)
-                copyFile(file, os.path.join('bin', os.path.relpath(file, 'assets')))
-                modified = True
-                timestampCache[file] = timestamp
 
-    for file in glob.glob('shaders/**/*', recursive=True):
-        if not os.path.isfile(file):
-            continue
-        #if timestampCache.get(file, 0) < timestamp:
-        #print('Copying', file)
-        copyFile(file, os.path.join('bin', file))
-        modified = True
-        timestampCache[file] = timestamp
+        for file in glob.glob('shaders/**/*', recursive=True):
+            if not os.path.isfile(file):
+                continue
+            #if timestampCache.get(file, 0) < timestamp:
+            #print('Copying', file)
+            copyFile(file, os.path.join('bin', file))
+            modified = True
+            timestampCache[file] = timestamp
 
-    if modified:
-        ensureDir('build')
-        with open(timestampCacheFilename, 'wb') as file:
-            pickle.dump(timestampCache, file)
-    else:
-        print('No assets to save')
+        if modified:
+            ensureDir('build')
+            with open(timestampCacheFilename, 'wb') as file:
+                pickle.dump(timestampCache, file)
+        else:
+            print('No assets to save')
 
 def build(build_type):
     job_count = str(os.cpu_count())

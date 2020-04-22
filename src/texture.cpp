@@ -4,6 +4,7 @@
 
 void Texture::serialize(Serializer& s)
 {
+    s.write("type", ResourceType::TEXTURE);
     s.field(guid);
     s.field(name);
     s.field(textureType);
@@ -19,10 +20,6 @@ void Texture::serialize(Serializer& s)
     if (s.deserialize)
     {
         regenerate();
-    }
-    else
-    {
-        s.dict["type"] = DataFile::makeInteger((u32)ResourceType::TEXTURE);
     }
 }
 

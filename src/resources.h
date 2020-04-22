@@ -6,6 +6,7 @@
 #include "audio.h"
 #include "mesh.h"
 #include "texture.h"
+#include "model.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -32,7 +33,7 @@ void loadResource(DataFile::Value& data, T& val)
 enum struct ResourceType
 {
     TEXTURE = 1,
-    MESH_SCENE = 2,
+    MODEL = 2,
     SOUND = 3,
     FONT = 4,
     TRACK = 5,
@@ -133,6 +134,9 @@ public:
     std::map<std::string, Texture*> textureNameMap;
     std::map<i64, DataFile::Value> tracks;
     std::map<std::string, i64> trackNameMap;
+    std::map<i64, std::unique_ptr<Model>> models;
+    std::map<std::string, Model*> modelNameMap;
+
     std::unique_ptr<Sounds> sounds;
 
     Texture white;
@@ -203,6 +207,26 @@ public:
             //FATAL_ERROR("Texture not found: ", name);
             print("Texture not found: ", name, '\n');
             return &white;
+        }
+        return iter->second;
+    }
+
+    Model* getModel(i64 guid)
+    {
+        auto iter = models.find(guid);
+        if (iter == models.end())
+        {
+            FATAL_ERROR("Model not found: ", guid);
+        }
+        return iter->second.get();
+    }
+
+    Model* getModel(const char* name)
+    {
+        auto iter = modelNameMap.find(name);
+        if (iter == modelNameMap.end())
+        {
+            FATAL_ERROR("Model not found: ", name);
         }
         return iter->second;
     }

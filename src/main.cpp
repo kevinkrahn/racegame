@@ -19,9 +19,7 @@
 #include "audio.cpp"
 #include "driver.cpp"
 #include "mesh.cpp"
-#include "editor/editor.cpp"
-#include "editor/editor_camera.cpp"
-#include "editor/resource_manager.cpp"
+#include "model.cpp"
 #include "terrain.cpp"
 #include "track.cpp"
 #include "dynamic_buffer.cpp"
@@ -40,6 +38,11 @@
 #include "entities/oil.cpp"
 #include "entities/glue.cpp"
 #include "entities/entities.cpp"
+
+#include "editor/editor_camera.cpp"
+#include "editor/resource_manager.cpp"
+#include "editor/editor.cpp"
+#include "editor/model_editor.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb_rect_pack.h>
