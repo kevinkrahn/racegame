@@ -4,6 +4,31 @@
 #include "datafile.h"
 #include "mesh.h"
 
+enum struct CollisionType
+{
+    NONE,
+    CONVEX_HULL,
+    CUBE,
+    SPHERE,
+    CAPSULE
+};
+
+struct CollisionShape
+{
+    CollisionType collisionType;
+    glm::quat rotation;
+    glm::vec3 offset;
+    glm::vec3 scale;
+
+    void serialize(Serializer& s)
+    {
+        s.field(collisionType);
+        s.field(rotation);
+        s.field(offset);
+        s.field(scale);
+    }
+};
+
 class ModelObject
 {
 public:
@@ -11,6 +36,8 @@ public:
     glm::quat rotation;
     glm::vec3 position;
     glm::vec3 scale;
+    u32 meshIndex;
+    CollisionShape collisionShape;
 
     void serialize(Serializer& s)
     {
@@ -18,6 +45,8 @@ public:
         s.field(rotation);
         s.field(position);
         s.field(scale);
+        s.field(meshIndex);
+        s.field(collisionShape);
     }
 };
 

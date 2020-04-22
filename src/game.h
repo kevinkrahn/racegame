@@ -78,7 +78,7 @@ public:
     std::unique_ptr<class Scene> nextScene;
     Menu menu;
     Buffer tempMem = Buffer(megabytes(4), 16);
-    ResourceManager resourceManager;
+    std::unique_ptr<ResourceManager> resourceManager;
 
     // debug
     bool isImGuiDemoWindowOpen = false;

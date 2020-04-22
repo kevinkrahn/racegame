@@ -9,4 +9,5 @@ void Model::serialize(Serializer &s)
     s.field(sourceFilePath);
     s.field(sourceSceneName);
     s.field(meshes);
+    s.field(objects);
 }

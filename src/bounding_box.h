@@ -2,11 +2,18 @@
 
 #include "misc.h"
 #include "math.h"
+#include "datafile.h"
 
 struct BoundingBox
 {
     glm::vec3 min;
     glm::vec3 max;
+
+    void serialize(Serializer& s)
+    {
+        s.field(min);
+        s.field(max);
+    }
 
     bool contains(BoundingBox const& bb) const
     {

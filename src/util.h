@@ -173,6 +173,8 @@ struct CommandResult
 
 CommandResult runShellCommand(std::string const& command)
 {
+    print(command, '\n');
+
 #if _WIN32
     SECURITY_ATTRIBUTES attr;
     attr.nLength = sizeof(SECURITY_ATTRIBUTES);

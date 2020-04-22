@@ -215,7 +215,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     else if (activeEditor == ResourceType::MODEL)
     {
         modelEditor.onUpdate(renderer, deltaTime);
-        renderer->getRenderWorld()->setClearColor(true);
+        renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
     }
     else
     {

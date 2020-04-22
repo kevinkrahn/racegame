@@ -1,6 +1,9 @@
 #include "model_editor.h"
 #include "../imgui.h"
 #include "../renderer.h"
+#include "../game.h"
+#include "../mesh_renderables.h"
+#include <filesystem>
 
 ModelEditor::ModelEditor()
 {
@@ -44,7 +47,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         std::string path = chooseFile("", true, "Model Files", { "*.blend" });
         if (!path.empty())
         {
-            model->sourceFilePath = path;
+            model->sourceFilePath = std::filesystem::relative(path);
             model->sourceSceneName = "";
             loadBlenderFile(model->sourceFilePath);
         }
@@ -59,9 +62,75 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     }
 
     ImGui::Gap();
+    if (!model->sourceFilePath.empty())
+    {
+        ImGui::Text(model->sourceFilePath.c_str());
+        ImGui::Text(tstr("Scene: ", model->sourceSceneName.c_str()));
+    }
     ImGui::InputText("Name", &model->name);
+    ImGui::Checkbox("Show Grid", &showGrid);
+
+    ImGui::Gap();
+
+    if (ImGui::BeginChild("Objects", {0,0}, true))
+    {
+        for (u32 i=0; i<model->objects.size(); ++i)
+        {
+            auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
+                    [&](u32 index){ return index == i; });
+            if (ImGui::Selectable(model->objects[i].name.c_str(), it != selectedObjects.end()))
+            {
+                if (it == selectedObjects.end())
+                {
+                    selectedObjects.push_back(i);
+                }
+                else
+                {
+                    selectedObjects.erase(it);
+                }
+            }
+        }
+        ImGui::EndChild();
+    }
 
     ImGui::End();
+
+    camera.update(deltaTime, renderer->getRenderWorld());
+
+    // draw grid
+    if (showGrid)
+    {
+        f32 cellSize = 4.f;
+        i32 count = (i32)(40.f / cellSize);
+        f32 gridSize = count * cellSize;
+        glm::vec4 color = { 1.f, 1.f, 1.f, 0.2f };
+        glm::vec3 gridPos = { 0, 0, 0 };
+        for (i32 i=-count; i<=count; i++)
+        {
+            f32 x = i * cellSize;
+            f32 y = i * cellSize;
+            debugDraw.line(
+                { snap(gridPos.x + x, cellSize), snap(gridPos.y - gridSize, cellSize), gridPos.z },
+                { snap(gridPos.x + x, cellSize), snap(gridPos.y + gridSize, cellSize), gridPos.z },
+                color, color);
+            debugDraw.line(
+                { snap(gridPos.x - gridSize, cellSize), snap(gridPos.y + y, cellSize), gridPos.z },
+                { snap(gridPos.x + gridSize, cellSize), snap(gridPos.y + y, cellSize), gridPos.z },
+                color, color);
+        }
+    }
+
+    RenderWorld* rw = renderer->getRenderWorld();
+    rw->add(&debugDraw);
+
+    for (u32 i=0; i<(u32)model->objects.size(); ++i)
+    {
+        auto& obj = model->objects[i];
+        glm::mat4 transform = glm::translate(glm::mat4(1.f), obj.position)
+            * glm::mat4_cast(obj.rotation)
+            * glm::scale(glm::mat4(1.f), obj.scale);
+        rw->push(LitRenderable(&model->meshes[obj.meshIndex], transform));
+    }
 }
 
 void ModelEditor::loadBlenderFile(std::string const& filename)
@@ -106,60 +175,87 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     }
 
     blenderData = std::move(val);
-    if (model->sourceSceneName.empty() || blenderData.dict().val()["scenes"].array().val().size() > 1)
+    if (model->sourceSceneName.empty() && blenderData.dict().val()["scenes"].array().val().size() > 1)
     {
+        print("Blender file contains multiple scenes. There are choices.\n");
         ImGui::OpenPopup("Blender Import");
     }
     else
     {
+        if (model->sourceSceneName.empty())
+        {
+            model->sourceSceneName =
+                blenderData.dict().val()["scenes"].array().val().front().dict().val()["name"].string().val();
+        }
         processBlenderData();
     }
 }
 
 void ModelEditor::processBlenderData()
 {
-    for (auto& val : blenderData.dict().val()["meshes"].array().val())
+    auto& dict = blenderData.dict().val();
+    auto& scenes = dict["scenes"].array().val();
+    DataFile::Value::Dict* scenePtr = nullptr;
+    for (auto& sceneData : scenes)
     {
-        auto& meshInfo = val.dict().val();
-        u32 elementSize = (u32)meshInfo["element_size"].integer().val();
-        if (elementSize == 3)
+        if (sceneData.dict().val()["name"].string().val() == model->sourceSceneName)
         {
-            auto const& vertexBuffer = meshInfo["vertex_buffer"].bytearray().val();
-            auto const& indexBuffer = meshInfo["index_buffer"].bytearray().val();
-            std::vector<f32> vertices((f32*)vertexBuffer.data(), (f32*)(vertexBuffer.data() + vertexBuffer.size()));
-            std::vector<u32> indices((u32*)indexBuffer.data(), (u32*)(indexBuffer.data() + indexBuffer.size()));
-            u32 numVertices = (u32)meshInfo["num_vertices"].integer().val();
-            u32 numIndices = (u32)meshInfo["num_indices"].integer().val();
-            u32 numColors = (u32)meshInfo["num_colors"].integer().val();
-            u32 numTexCoords = (u32)meshInfo["num_texcoords"].integer().val();
-            u32 stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
-
-            //print("Mesh: ", meshInfo["name"].string(), '\n');
-
-            SmallVec<VertexAttribute> vertexFormat = {
-                VertexAttribute::FLOAT3, // position
-                VertexAttribute::FLOAT3, // normal
-                VertexAttribute::FLOAT3, // color
-                VertexAttribute::FLOAT2, // uv
-            };
-            Mesh mesh = {
-                meshInfo["name"].string().val(),
-                std::move(vertices),
-                std::move(indices),
-                numVertices,
-                numIndices,
-                numColors,
-                numTexCoords,
-                elementSize,
-                stride,
-                BoundingBox{
-                    meshInfo["aabb_min"].convertBytes<glm::vec3>().val(),
-                    meshInfo["aabb_max"].convertBytes<glm::vec3>().val(),
-                },
-                vertexFormat
-            };
-            //mesh.createVAO();
-            //meshes[mesh.name] = std::move(mesh);
+            scenePtr = &sceneData.dict().val();
+            break;
         }
+    }
+    auto& scene = *scenePtr;
+
+    if (model->name.empty() || model->name.substr(0, strlen("Model")) == "Model")
+    {
+        model->name = scene["name"].string().val();
+    }
+
+    u32 meshCount = 0;
+    std::map<std::string, u32> meshesToLoad;
+    auto& objects = scene["objects"].array().val();
+    for (auto& mesh : model->meshes)
+    {
+        mesh.destroy();
+    }
+    model->meshes.clear();
+    std::vector<ModelObject> oldObjects = std::move(model->objects);
+    model->objects.clear();
+    auto& meshDict = dict["meshes"].dict().val();
+    for (auto& object : objects)
+    {
+        auto& obj = object.dict().val();
+        auto& meshName = obj["data_name"].string().val();
+        auto meshIt = meshesToLoad.find(meshName);
+        if (meshIt == meshesToLoad.end())
+        {
+            meshesToLoad[meshName] = meshCount++;
+            meshIt = meshesToLoad.find(meshName);
+            Mesh mesh;
+            Serializer s(meshDict[meshName], true);
+            mesh.serialize(s);
+            model->meshes.push_back(std::move(mesh));
+        }
+
+        ModelObject newObj;
+        // handle reimport
+        ModelObject* modelObj = &newObj;
+        for (auto& oldObj : oldObjects)
+        {
+            if (oldObj.name == obj["name"].string().val())
+            {
+                modelObj = &oldObj;
+                break;
+            }
+        }
+
+        modelObj->meshIndex = meshIt->second;
+        modelObj->name = std::move(obj["name"]).string().val();
+        glm::mat4 matrix = obj["matrix"].convertBytes<glm::mat4>().val();
+        modelObj->position = translationOf(matrix);
+        modelObj->rotation = glm::quat_cast(glm::mat3(rotationOf(matrix)));
+        modelObj->scale = scaleOf(matrix);
+
+        model->objects.push_back(std::move(*modelObj));
     }
 }

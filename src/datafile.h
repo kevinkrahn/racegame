@@ -24,7 +24,6 @@ namespace DataFile
         ARRAY,
         DICT,
         BOOL,
-        //PRIMITIVE_ARRAY,
     };
 
     template <typename T>
@@ -449,6 +448,13 @@ namespace DataFile
             new (&dict_) Dict(std::move(val));
         }
 
+        void setDict(Dict const& val)
+        {
+            this->~Value();
+            dataType = DataType::DICT;
+            new (&dict_) Dict(val);
+        }
+
         /*
         Value& operator [] (std::string key)
         {
@@ -561,10 +567,17 @@ namespace DataFile
         return v;
     }
 
-    Value makeDict()
+    Value makeDict(Value::Dict const& val = {})
     {
         Value v;
-        v.setDict({});
+        v.setDict(val);
+        return v;
+    }
+
+    Value makeDict(Value::Dict&& val)
+    {
+        Value v;
+        v.setDict(val);
         return v;
     }
 
@@ -653,24 +666,33 @@ public:
     {
         if constexpr (std::is_enum<T>::value)
         {
-            using EnumBaseType = typename std::underlying_type<T>::type;
-            element(name, val, (EnumBaseType&)(dest));
-            /*
             if (deserialize)
             {
-#if 0
-                EnumBaseType tempDest;
-                element(name, val, tempDest);
-                dest = static_cast<T>(tempDest);
-#else
-                element(name, val, static_cast<EnumBaseType&>(dest));
-#endif
+                auto v = val.integer();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"", name, "\"");
+                }
+                dest = (T)v.val();
             }
-            else
+            else val = (i64)dest;
+        }
+        else if constexpr (std::is_integral<T>::value)
+        {
+            if (deserialize)
             {
-                element(name, val, static_cast<EnumBaseType&>(dest));
+                auto v = val.integer();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read value as INTEGER: \"", name, "\"");
+                }
+                dest = (T)v.val();
+                if (v.val() > std::numeric_limits<T>::max())
+                {
+                    error(context, ": deserialized integer overflow");
+                }
             }
-            */
+            else val = (i64)dest;
         }
         else
         {
@@ -692,45 +714,6 @@ public:
                 val = childDict;
             }
         }
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, i64& dest)
-    {
-        if (deserialize)
-        {
-            auto v = val.integer();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as INTEGER: \"", name, "\"");
-            dest = v.val();
-        }
-        else val = dest;
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, i32& dest)
-    {
-        i64 d = dest;
-        element(name, val, d);
-        if (deserialize) dest = (i64)d;
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, u32& dest)
-    {
-        i64 d = dest;
-        element(name, val, d);
-        if (deserialize) dest = (i64)d;
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, i16& dest)
-    {
-        i64 d = dest;
-        element(name, val, d);
-        if (deserialize) dest = (i64)d;
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, u16& dest)
-    {
-        i64 d = dest;
-        element(name, val, d);
-        if (deserialize) dest = (i64)d;
     }
 
     template<> void element(const char* name, DataFile::Value& val, std::string& dest)
@@ -868,33 +851,60 @@ public:
 
     template<typename T> void element(const char* name, DataFile::Value& val, std::vector<T>& dest)
     {
-        if (deserialize)
+        if constexpr (std::is_arithmetic<T>::value)
         {
-            auto v = val.array();
-            if (!v.hasValue())
+            if (deserialize)
             {
-                DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                auto v = val.bytearray();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"", name, "\"");
+                }
+                if (v.val().size() % sizeof(T) != 0)
+                {
+                    DESERIALIZE_ERROR("Cannot convert BYTEARRAY field: \"", name, "\"");
+                }
+                dest.assign(reinterpret_cast<T*>(v.val().data()),
+                        reinterpret_cast<T*>(v.val().data() + v.val().size()));
             }
-            dest.clear();
-            dest.reserve(v.val().size());
-            for (auto& item : v.val())
+            else
             {
-                T el;
-                element(name, item, el);
-                dest.push_back(std::move(el));
+                DataFile::Value::ByteArray bytes;
+                bytes.assign(reinterpret_cast<u8*>(dest.data()),
+                             reinterpret_cast<u8*>(dest.data() + dest.size()));
+                val.setBytearray(std::move(bytes));
             }
         }
         else
         {
-            DataFile::Value::Array array;
-            array.reserve(dest.size());
-            for (auto& item : dest)
+            if (deserialize)
             {
-                DataFile::Value el;
-                element(name, el, item);
-                array.push_back(std::move(el));
+                auto v = val.array();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                }
+                dest.clear();
+                dest.reserve(v.val().size());
+                for (auto& item : v.val())
+                {
+                    T el;
+                    element(name, item, el);
+                    dest.push_back(std::move(el));
+                }
             }
-            val.setArray(std::move(array));
+            else
+            {
+                DataFile::Value::Array array;
+                array.reserve(dest.size());
+                for (auto& item : dest)
+                {
+                    DataFile::Value el;
+                    element(name, el, item);
+                    array.push_back(std::move(el));
+                }
+                val.setArray(std::move(array));
+            }
         }
     }
 
@@ -956,6 +966,6 @@ public:
 #define field(FIELD) _value(#FIELD, FIELD, str(__FILE__, ": ", __LINE__).c_str())
 #define value(NAME, FIELD) _value(NAME, FIELD, str(__FILE__, ": ", __LINE__).c_str())
 #else
-#define field(FIELD) _value(#FIELD, FIELD)
-#define value(NAME, FIELD) _value(NAME, FIELD)
+#define field(FIELD) _value(#FIELD, FIELD, "WARNING")
+#define value(NAME, FIELD) _value(NAME, FIELD, "WARNING")
 #endif

@@ -29,12 +29,31 @@ struct Mesh
     u32 stride = 0;
     BoundingBox aabb;
 
-    SmallVec<VertexAttribute> vertexFormat;
+    SmallVec<VertexAttribute> vertexFormat = {
+        VertexAttribute::FLOAT3, // position
+        VertexAttribute::FLOAT3, // normal
+        VertexAttribute::FLOAT3, // color
+        VertexAttribute::FLOAT2, // uv
+    };
     u32 formatStride;
 
     void serialize(Serializer& s)
     {
         s.field(name);
+        s.field(vertices);
+        s.field(indices);
+        s.field(numVertices);
+        s.field(numIndices);
+        s.field(numColors);
+        s.field(numTexCoords);
+        s.field(elementSize);
+        s.field(aabb);
+
+        if (s.deserialize)
+        {
+            stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
+            createVAO();
+        }
     }
 
     GLuint vao = 0, vbo = 0, ebo = 0;

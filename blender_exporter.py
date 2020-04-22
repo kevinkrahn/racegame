@@ -196,16 +196,15 @@ def save_mesh(obj, mesh_map):
 
     mesh_map[mesh_name] = {
         'name': mesh_name,
-        'num_colors': max(1, len(mesh_copy.vertex_colors)),
-        'num_texcoords': max(1, len(mesh_copy.uv_layers)),
-        'element_size': element_size,
-        'vertex_buffer': vertex_buffer,
-        'num_vertices': vertex_count,
-        'index_buffer': index_buffer,
-        'num_indices': len(indices),
+        'numColors': max(1, len(mesh_copy.vertex_colors)),
+        'numTexCoords': max(1, len(mesh_copy.uv_layers)),
+        'elementSize': element_size,
+        'vertices': vertex_buffer,
+        'numVertices': vertex_count,
+        'indices': index_buffer,
+        'numIndices': len(indices),
         'properties': get_props(obj.data),
-        'aabb_min': struct.pack("<3f", minP[0], minP[1], minP[2]),
-        'aabb_max': struct.pack("<3f", maxP[0], maxP[1], maxP[2]),
+        'aabb': { 'min': [minP[0], minP[1], minP[2]], 'max': [maxP[0], maxP[1], maxP[2]] }
     }
     return (True, mesh_name)
 
@@ -233,22 +232,21 @@ def save_blender_data():
 
     for scene in bpy.data.scenes:
         bpy.context.window.scene = scene
-        entities = []
+        objects = []
 
-        def save_object(obj, entityType, matrix, data_name='NONE'):
-            entities.append({
-                'type': entityType,
+        def save_object(obj, objectType, matrix, data_name='NONE'):
+            objects.append({
+                'type': objectType,
                 'name': obj.name,
                 'data_name': data_name,
+                'collection': obj.users_collection,
                 'matrix': struct.pack("<16f",
                     matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
                     matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
                     matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
                     matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]),
                 'properties': get_props(obj),
-                'bound_x': obj.dimensions.x,
-                'bound_y': obj.dimensions.y,
-                'bound_z': obj.dimensions.z,
+                'bounds': [obj.dimensions.x, obj.dimensions.y, obj.dimensions.z],
             })
 
         for obj in scene.objects:
@@ -274,7 +272,7 @@ def save_blender_data():
                     #save_object(obj, 'EMPTY', obj.matrix_world)
 
             #elif obj.type == 'CURVE':
-                #entities.append({
+                #objects.append({
                     #'type': 'PATH',
                     #'name': obj.name,
                     #'properties': get_props(obj),
@@ -284,24 +282,15 @@ def save_blender_data():
         scenes.append({
             'type': 'scene',
             'name': namePrefix() + scene.name,
-            'entities': entities,
+            'objects': objects,
             'properties': get_props(scene)
         })
 
-    out_file = os.path.join('bin', os.path.relpath(bpy.data.filepath, 'assets').replace('.blend', '.dat'))
-    try:
-        os.makedirs(os.path.dirname(out_file))
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
-    meshes = []
-    for mesh in mesh_map.values():
-        meshes.append(mesh)
+    out_file = 'blender_output.dat'
     with open(out_file, 'bw') as file:
         file.write(struct.pack('<I', 0x00001111))
         file.write(pack_value({
-            'meshes': meshes,
+            'meshes': mesh_map,
             'scenes': scenes
         }))
         print('Saved to file:', out_file)

@@ -161,6 +161,7 @@ void Game::run()
     g_res.load();
     initializeVehicleData();
     registerEntities();
+    resourceManager.reset(new ResourceManager());
 
     changeScene("race1");
 
@@ -231,7 +232,7 @@ void Game::run()
         }
         if (isEditing)
         {
-            resourceManager.onUpdate(renderer.get(), deltaTime);
+            resourceManager->onUpdate(renderer.get(), deltaTime);
         }
         menu.onUpdate(renderer.get(), deltaTime);
         checkDebugKeys();

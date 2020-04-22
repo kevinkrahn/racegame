@@ -4,14 +4,19 @@
 #include "../datafile.h"
 #include "../util.h"
 #include "../model.h"
+#include "../debug_draw.h"
+#include "editor_camera.h"
 
 class ModelEditor
 {
     Model* model;
     void loadBlenderFile(std::string const& filename);
     void processBlenderData();
-    std::vector<std::string> sceneChoices;
     DataFile::Value blenderData;
+    std::vector<u32> selectedObjects;
+    EditorCamera camera;
+    bool showGrid = true;
+    DebugDraw debugDraw;
 
 public:
     ModelEditor();
