@@ -32,6 +32,11 @@ void Resources::loadResource(DataFile::Value& data)
             } break;
             case ResourceType::TRACK:
             {
+                if (dict["name"].string().hasValue())
+                {
+                    trackNameMap[dict["name"].string().val()] = guid;
+                }
+                tracks[guid] = std::move(data);
             } break;
         }
     }

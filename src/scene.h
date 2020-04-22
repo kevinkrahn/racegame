@@ -115,8 +115,8 @@ private:
     void physicsMouseDrag(Renderer* renderer);
 
 public:
+    i64 guid = 0;
     std::string name;
-    std::string filename;
     std::string notes;
     u32 totalLaps = 4;
     u32 version = 0;
@@ -139,7 +139,7 @@ public:
     Start* start = nullptr;
     SoundHandle backgroundSound = 0;
 
-    Scene(const char* name);
+    Scene(DataFile::Value* data=nullptr);
     ~Scene();
 
     f64 getWorldTime() const { return worldTime; }

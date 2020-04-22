@@ -29,5 +29,3 @@ public:
     void onEndTestDrive(Scene* scene);
     void reset();
 };
-
-std::string chooseFile(const char* defaultSelection, bool open);

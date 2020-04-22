@@ -44,8 +44,13 @@ PxFilterFlags vehicleFilterShader(
     return PxFilterFlags();
 }
 
-Scene::Scene(const char* name)
+Scene::Scene(DataFile::Value* data)
 {
+    if (guid == 0)
+    {
+        guid = g_res.generateGUID();
+    }
+
     // create PhysX scene
     PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f);
@@ -72,7 +77,7 @@ Scene::Scene(const char* name)
     genericMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
     railingMaterial = g_game.physx.physics->createMaterial(0.2f, 0.2f, 0.3f);
 
-    if (!name)
+    if (!data)
     {
         // loading empty scene, so add default terrain, track, and start
         addEntity(g_entities[0].create());
@@ -81,10 +86,8 @@ Scene::Scene(const char* name)
     }
     else
     {
-        auto data = DataFile::load(name);
-        Serializer s(data, true);
+        Serializer s(*data, true);
         serialize(s);
-        this->filename = name;
     }
 
     while (newEntities.size() > 0)
@@ -1102,6 +1105,7 @@ void Scene::onTrigger(PxTriggerPair* pairs, PxU32 count)
 
 void Scene::serialize(Serializer& s)
 {
+    s.field(guid);
     s.field(name);
     s.field(notes);
     s.field(totalLaps);

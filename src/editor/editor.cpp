@@ -67,45 +67,10 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         g_game.changeScene(nullptr);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Load"))
-    {
-        std::string filename = chooseFile("tracks/track1.dat", true);
-        if (!filename.empty())
-        {
-            g_game.changeScene(filename.c_str());
-        }
-    }
-    ImGui::SameLine();
+    // TODO: Add keyboard shortcut
     if (ImGui::Button("Save"))
     {
-        std::string filename = scene->filename;
-        if (filename.empty())
-        {
-            filename = chooseFile("tracks/untitled.dat", false);
-        }
-        if (!filename.empty())
-        {
-            print("Saving scene to file: ", scene->filename, '\n');
-            auto data = DataFile::makeDict();
-            Serializer s(data, false);
-            scene->serialize(s);
-            DataFile::save(data, filename.c_str());
-            scene->filename = filename;
-        }
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Save As"))
-    {
-        std::string filename = chooseFile("tracks/untitled.dat", false);
-        if (!filename.empty())
-        {
-            print("Saving scene to file: ", scene->filename, '\n');
-            auto data = DataFile::makeDict();
-            Serializer s(data, false);
-            scene->serialize(s);
-            DataFile::save(data, filename.c_str());
-            scene->filename = filename;
-        }
+        saveResource(*scene);
     }
     ImGui::SameLine();
     if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
@@ -167,76 +132,4 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
     }
 
     ImGui::End();
-}
-
-std::string chooseFile(const char* defaultSelection, bool open)
-{
-#if _WIN32
-    char szFile[260];
-
-    OPENFILENAME ofn = { 0 };
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = NULL;
-    ofn.lpstrFile = szFile;
-    ofn.lpstrFile[0] = '\0';
-    ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = "All\0*.*\0Tracks\0*.dat\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    if (open)
-    {
-        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-    }
-
-    if (open)
-    {
-        if (GetOpenFileName(&ofn) == TRUE)
-        {
-            return std::string(szFile);
-        }
-        else
-        {
-            return {};
-        }
-    }
-    else
-    {
-        if (GetSaveFileName(&ofn) == TRUE)
-        {
-            return std::string(szFile);
-        }
-        else
-        {
-            return {};
-        }
-    }
-#else
-    char filename[1024] = { 0 };
-    std::string cmd = "zenity";
-    if (open)
-    {
-        cmd += " --title 'Open Track' --file-selection --filename ";
-        cmd += defaultSelection;
-    }
-    else
-    {
-        cmd += " --title 'Save Track' --file-selection --save --confirm-overwrite --filename ";
-        cmd += defaultSelection;
-    }
-    FILE *f = popen(cmd.c_str(), "r");
-    if (!f || !fgets(filename, sizeof(filename) - 1, f))
-    {
-        error("Unable to create file dialog\n");
-        return {};
-    }
-    pclose(f);
-    std::string file(filename);
-    if (!file.empty())
-    {
-        file.pop_back();
-    }
-    return file;
-#endif
 }

@@ -162,7 +162,7 @@ void Game::run()
     initializeVehicleData();
     registerEntities();
 
-    changeScene("tracks/track1.dat");
+    changeScene("race1");
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;
@@ -310,10 +310,31 @@ Scene* Game::changeScene(const char* sceneName)
     if (sceneName)
     {
         print("Loading scene: ", sceneName, '\n');
+        i64 guid = g_res.getTrackGuid(sceneName);
+        return changeScene(guid);
     }
-    Scene* scene = new Scene(sceneName);
-    nextScene.reset(scene);
-    return scene;
+    else
+    {
+        i64 emptyGuid = 0;
+        return changeScene(emptyGuid);
+    }
+}
+
+Scene* Game::changeScene(i64 guid)
+{
+    if (guid != 0)
+    {
+        auto trackData = g_res.getTrackData(guid);
+        Scene* scene = new Scene(&trackData);
+        nextScene.reset(scene);
+        return scene;
+    }
+    else
+    {
+        Scene* scene = new Scene(nullptr);
+        nextScene.reset(scene);
+        return scene;
+    }
 }
 
 void Game::saveGame()

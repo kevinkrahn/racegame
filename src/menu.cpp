@@ -11,55 +11,35 @@
 #include "vehicle.h"
 
 const char* championshipTracks[] = {
-    "tracks/track1.dat",
-    "tracks/track2.dat",
-    "tracks/track3.dat",
-    "tracks/track4.dat",
-    "tracks/track5.dat",
-    "tracks/track6.dat",
-    "tracks/track7.dat",
-    "tracks/track8.dat",
-    "tracks/track9.dat",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
 
-    "tracks/track1.dat",
-    "tracks/track2.dat",
-    "tracks/track3.dat",
-    "tracks/track4.dat",
-    "tracks/track5.dat",
-    "tracks/track6.dat",
-    "tracks/track7.dat",
-    "tracks/track8.dat",
-    "tracks/track9.dat",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
 
-    "tracks/track1.dat",
-    "tracks/track2.dat",
-    "tracks/track3.dat",
-    "tracks/track4.dat",
-    "tracks/track5.dat",
-    "tracks/track6.dat",
-    "tracks/track7.dat",
-    "tracks/track8.dat",
-    "tracks/track9.dat",
-
-    "tracks/track1.dat",
-    "tracks/track2.dat",
-    "tracks/track3.dat",
-    "tracks/track4.dat",
-    "tracks/track5.dat",
-    "tracks/track6.dat",
-    "tracks/track7.dat",
-    "tracks/track8.dat",
-    "tracks/track9.dat",
-
-    "tracks/track1.dat",
-    "tracks/track2.dat",
-    "tracks/track3.dat",
-    "tracks/track4.dat",
-    "tracks/track5.dat",
-    "tracks/track6.dat",
-    "tracks/track7.dat",
-    "tracks/track8.dat",
-    "tracks/track9.dat",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
 };
 
 void Menu::mainMenu()
@@ -979,7 +959,7 @@ void Menu::championshipStandings()
         g_audio.playSound(&g_res.sounds->close, SoundType::MENU_SFX);
         menuMode = CHAMPIONSHIP_MENU;
         RandomSeries series = randomSeed();
-        if (g_game.currentScene->filename != championshipTracks[g_game.state.currentRace])
+        if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
         {
             for (auto& driver : g_game.state.drivers)
             {

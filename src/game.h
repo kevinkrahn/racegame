@@ -103,6 +103,7 @@ public:
 
     void run();
     Scene* changeScene(const char* sceneName);
+    Scene* changeScene(i64 guid);
     bool shouldUnloadScene = false;
     void unloadScene() { shouldUnloadScene = true; }
 

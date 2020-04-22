@@ -19,6 +19,9 @@ class ResourceManager
     std::vector<Texture*> textures;
     bool texturesStale = true;
 
+    std::vector<DataFile::Value*> tracks;
+    bool tracksStale = true;
+
     enum struct EditorType
     {
         NONE,
@@ -27,8 +30,6 @@ class ResourceManager
 
     void newTexture(std::string const& filename="");
     void showTextureWindow(Renderer* renderer, f32 deltaTime);
-
-    void drawFile(FileItem& file);
 
 public:
     ResourceManager();

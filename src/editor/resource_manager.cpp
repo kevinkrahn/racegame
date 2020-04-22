@@ -21,6 +21,18 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         texturesStale = false;
     }
 
+    if (tracksStale)
+    {
+        for (auto& track : g_res.tracks)
+        {
+            tracks.push_back(&track.second);
+        }
+        std::sort(tracks.begin(), tracks.end(), [](auto& a, auto& b) {
+            return a->dict().val()["name"].string().val() < b->dict().val()["name"].string().val();
+        });
+        tracksStale = false;
+    }
+
     if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
     {
         if (g_input.isKeyPressed(KEY_ESCAPE) || g_input.isKeyPressed(KEY_F5))
@@ -55,6 +67,9 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
             if (ImGui::MenuItem("New Track"))
             {
+                g_game.changeScene(nullptr);
+                activeEditor = EditorType::SCENE;
+                editor.reset();
             }
             ImGui::EndMenu();
         }
@@ -65,16 +80,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     {
         ImGui::Begin("Resources", &isResourceWindowOpen);
 
-        /*
-        if (ImGui::Selectable(file.path.c_str()))
-        {
-            activeEditor = EditorType::SCENE;
-            g_game.changeScene(file.path.c_str());
-            editor.reset();
-        }
-        */
-
-        if (ImGui::TreeNode("Textures"))
+        if (ImGui::CollapsingHeader("Textures"))
         {
             for (auto tex : textures)
             {
@@ -98,7 +104,21 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     ImGui::EndPopup();
                 }
             }
-            ImGui::TreePop();
+        }
+
+        if (ImGui::CollapsingHeader("Tracks"))
+        {
+            for (auto& track : tracks)
+            {
+                if (ImGui::Selectable(track->dict().val()["name"].string().val().c_str(),
+                        g_game.currentScene &&
+                        g_game.currentScene->guid == track->dict().val()["guid"].integer().val()))
+                {
+                    activeEditor = EditorType::SCENE;
+                    g_game.changeScene(track->dict().val()["guid"].integer().val());
+                    editor.reset();
+                }
+            }
         }
 
         ImGui::End();
@@ -169,6 +189,7 @@ void ResourceManager::newTexture(std::string const& filename)
     saveResource(*tex);
     g_res.textureNameMap[tex->name] = selectedTexture;
     g_res.textures[tex->guid] = std::move(tex);
+    texturesStale = true;
 }
 
 void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
@@ -297,32 +318,3 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
     }
 }
 
-void ResourceManager::drawFile(FileItem& file)
-{
-    if (file.isDirectory)
-    {
-        if (ImGui::TreeNodeEx(file.path.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth))
-        {
-            for (auto& file : file.children)
-            {
-                drawFile(file);
-            }
-            ImGui::TreePop();
-        }
-    }
-    else
-    {
-        ImGui::TreeNodeEx(file.path.c_str(),
-                ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-        if (ImGui::IsItemClicked())
-        {
-            auto index = file.path.find_last_of('.');
-            if (index != std::string::npos && file.path.substr(index) == ".dat")
-            {
-                activeEditor = EditorType::SCENE;
-                g_game.changeScene(tstr("tracks/", file.path));
-                editor.reset();
-            }
-        }
-    }
-}

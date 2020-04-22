@@ -131,6 +131,8 @@ private:
 public:
     std::map<i64, std::unique_ptr<Texture>> textures;
     std::map<std::string, Texture*> textureNameMap;
+    std::map<i64, DataFile::Value> tracks;
+    std::map<std::string, i64> trackNameMap;
     std::unique_ptr<Sounds> sounds;
 
     Texture white;
@@ -201,6 +203,26 @@ public:
             //FATAL_ERROR("Texture not found: ", name);
             print("Texture not found: ", name, '\n');
             return &white;
+        }
+        return iter->second;
+    }
+
+    DataFile::Value& getTrackData(i64 guid)
+    {
+        auto iter = tracks.find(guid);
+        if (iter == tracks.end())
+        {
+            FATAL_ERROR("Track not found: ", guid);
+        }
+        return iter->second;
+    }
+
+    i64 getTrackGuid(const char* name)
+    {
+        auto iter = trackNameMap.find(name);
+        if (iter == trackNameMap.end())
+        {
+            FATAL_ERROR("Track not found: ", name);
         }
         return iter->second;
     }
