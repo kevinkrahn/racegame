@@ -42,6 +42,13 @@ void Resources::loadResource(DataFile::Value& data)
                 }
                 tracks[guid] = std::move(data);
             } break;
+            case ResourceType::MATERIAL:
+            {
+                auto material = std::make_unique<Material>();
+                ::loadResource(data, *material);
+                materialNameMap[material->name] = material.get();
+                materials[guid] = std::move(material);
+            }
         }
     }
 }

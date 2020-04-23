@@ -22,6 +22,19 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         texturesStale = false;
     }
 
+    if (materialsStale)
+    {
+        materials.clear();
+        for (auto& mat : g_res.materials)
+        {
+            materials.push_back(mat.second.get());
+        }
+        std::sort(materials.begin(), materials.end(), [](auto& a, auto& b) {
+            return a->name < b->name;
+        });
+        materialsStale = false;
+    }
+
     if (tracksStale)
     {
         tracks.clear();
@@ -76,6 +89,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
             if (ImGui::MenuItem("New Material"))
             {
+                newMaterial();
             }
             if (ImGui::MenuItem("New Sound"))
             {
@@ -129,6 +143,36 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
         }
 
+        if (ImGui::CollapsingHeader("Materials"))
+        {
+            for (auto mat : materials)
+            {
+                if (ImGui::Selectable(mat->name.c_str(),
+                            selectedMaterial == mat && isMaterialWindowOpen))
+                {
+                    selectedMaterial = mat;
+                    editName = selectedMaterial->name;
+                    isMaterialWindowOpen = true;
+                }
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::MenuItem("New Material"))
+                    {
+                        newMaterial();
+                    }
+                    if (ImGui::MenuItem("Duplicate"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Delete"))
+                    {
+                        // TODO
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+        }
+
         if (ImGui::CollapsingHeader("Models"))
         {
             for (auto& model : models)
@@ -139,6 +183,22 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     activeEditor = ResourceType::MODEL;
                     g_game.unloadScene();
                     modelEditor.setModel(model);
+                }
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::MenuItem("New Model"))
+                    {
+                        newModel();
+                    }
+                    if (ImGui::MenuItem("Duplicate"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Delete"))
+                    {
+                        // TODO
+                    }
+                    ImGui::EndPopup();
                 }
             }
         }
@@ -178,6 +238,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 
     showTextureWindow(renderer, deltaTime);
+    showMaterialWindow(renderer, deltaTime);
 
     if (ImGui::BeginPopupModal("Exit Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -250,6 +311,20 @@ void ResourceManager::newTexture()
     g_res.textureNameMap[tex->name] = selectedTexture;
     g_res.textures[tex->guid] = std::move(tex);
     texturesStale = true;
+}
+
+void ResourceManager::newMaterial()
+{
+    auto mat = std::make_unique<Material>();
+    mat->guid = g_res.generateGUID();
+    selectedMaterial = mat.get();
+    isMaterialWindowOpen = true;
+    mat->name = str("Material ", g_res.materials.size());
+    editName = mat->name;
+    saveResource(*mat);
+    g_res.materialNameMap[mat->name] = selectedMaterial;
+    g_res.materials[mat->guid] = std::move(mat);
+    materialsStale = true;
 }
 
 void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
@@ -375,5 +450,43 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
     if (dirty)
     {
         saveResource(tex);
+    }
+}
+
+void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
+{
+    if (!isMaterialWindowOpen)
+    {
+        return;
+    }
+
+    bool dirty = false;
+    Material& mat = *selectedMaterial;
+
+    ImGui::Begin("Material Properties", &isMaterialWindowOpen);
+
+    if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        mat.name = editName;
+        g_res.materialNameMap[mat.name] = selectedMaterial;
+        dirty = true;
+    }
+    if (!ImGui::IsItemFocused())
+    {
+        editName = mat.name;
+    }
+
+    bool changed = false;
+
+    ImGui::End();
+
+    if (changed)
+    {
+        dirty = true;
+    }
+
+    if (dirty)
+    {
+        saveResource(mat);
     }
 }

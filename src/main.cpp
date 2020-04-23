@@ -10,6 +10,7 @@
 #include "datafile.cpp"
 #include "resources.cpp"
 #include "texture.cpp"
+#include "material.cpp"
 #include "vehicle.cpp"
 #include "vehicle_data.cpp"
 #include "font.cpp"

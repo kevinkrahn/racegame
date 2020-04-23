@@ -22,6 +22,11 @@ class ResourceManager
     Texture* selectedTexture = nullptr;
     bool isTextureWindowOpen = false;
 
+    std::vector<Material*> materials;
+    bool materialsStale = true;
+    Material* selectedMaterial = nullptr;
+    bool isMaterialWindowOpen = false;
+
     std::vector<DataFile::Value*> tracks;
     bool tracksStale = true;
 
@@ -30,7 +35,9 @@ class ResourceManager
 
     void newModel();
     void newTexture();
+    void newMaterial();
     void showTextureWindow(Renderer* renderer, f32 deltaTime);
+    void showMaterialWindow(Renderer* renderer, f32 deltaTime);
 
 public:
     ResourceManager();

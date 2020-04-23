@@ -7,6 +7,7 @@
 #include "mesh.h"
 #include "texture.h"
 #include "model.h"
+#include "material.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -37,6 +38,7 @@ enum struct ResourceType
     SOUND = 3,
     FONT = 4,
     TRACK = 5,
+    MATERIAL = 6,
 };
 
 struct Sounds
@@ -136,6 +138,8 @@ public:
     std::map<std::string, i64> trackNameMap;
     std::map<i64, std::unique_ptr<Model>> models;
     std::map<std::string, Model*> modelNameMap;
+    std::map<i64, std::unique_ptr<Material>> materials;
+    std::map<std::string, Material*> materialNameMap;
 
     std::unique_ptr<Sounds> sounds;
 
