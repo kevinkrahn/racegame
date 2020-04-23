@@ -1023,6 +1023,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 6.5f)) *
                   glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
+
+            if (!finishedRace)
+            {
+                getRigidBody()->addForce(convert(getForwardVector() * 9.f),
+                        PxForceMode::eVELOCITY_CHANGE);
+            }
         }
         if (cameraIndex >= 0)
         {

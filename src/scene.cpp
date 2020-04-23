@@ -1238,7 +1238,7 @@ glm::vec3 Scene::findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f3
             bool onTrack = true;
             for (PxVec3& offset : offsets)
             {
-                if (!physicsScene->raycast(convert(pos) + offset + PxVec3(0, 0, 5.f), PxVec3(0, 0, -1), 10.f, raycastHit,
+                if (!physicsScene->raycast(transform.p + offset + PxVec3(0, 0, 5.f), PxVec3(0, 0, -1), 10.f, raycastHit,
                         PxHitFlags(PxHitFlag::eMESH_ANY), filterTrack))
                 {
                     onTrack = false;
