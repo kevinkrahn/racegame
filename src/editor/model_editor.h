@@ -17,10 +17,12 @@ class ModelEditor
     EditorCamera camera;
     bool showGrid = true;
     DebugDraw debugDraw;
+    PxScene* physicsScene = nullptr;
+    PxRigidStatic* body = nullptr;
 
 public:
     ModelEditor();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
-    void setModel(Model* model) { this->model = model; }
+    void setModel(Model* model);
     Model* getCurrentModel() const { return model; }
 };

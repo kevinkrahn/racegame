@@ -52,6 +52,7 @@ public:
         PxDefaultCpuDispatcher* dispatcher;
         PxPvd* pvd;
         PxCooking* cooking;
+        PxMaterial* defaultMaterial;
     } physx;
 
     Config config;

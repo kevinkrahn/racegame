@@ -3,10 +3,43 @@
 #include "../renderer.h"
 #include "../game.h"
 #include "../mesh_renderables.h"
+#include "../collision_flags.h"
 #include <filesystem>
 
 ModelEditor::ModelEditor()
 {
+}
+
+PxFilterFlags physxFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{ return PxFilterFlags(0); }
+
+void ModelEditor::setModel(Model* model)
+{
+    this->model = model;
+    if (physicsScene)
+    {
+        physicsScene->release();
+        body->release();
+    }
+
+    PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
+    sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f);
+    sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
+    sceneDesc.filterShader = physxFilterShader;
+    sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+    sceneDesc.solverType = PxSolverType::eTGS;
+    physicsScene = g_game.physx.physics->createScene(sceneDesc);
+    body = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
+
+    for (auto& obj : model->objects)
+    {
+        body->attachShape(*obj.mousePickShape);
+    }
+
+    physicsScene->addActor(*body);
 }
 
 void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
@@ -71,6 +104,13 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     ImGui::Checkbox("Show Grid", &showGrid);
 
     ImGui::Gap();
+    ImGui::Checkbox("Dynamic", &model->isDynamic);
+    if (model->isDynamic)
+    {
+        ImGui::InputFloat("Density", &model->density);
+    }
+
+    ImGui::Gap();
 
     if (ImGui::BeginChild("Objects", {0,0}, true))
     {
@@ -80,13 +120,21 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     [&](u32 index){ return index == i; });
             if (ImGui::Selectable(model->objects[i].name.c_str(), it != selectedObjects.end()))
             {
-                if (it == selectedObjects.end())
+                if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                 {
+                    selectedObjects.clear();
                     selectedObjects.push_back(i);
                 }
                 else
                 {
-                    selectedObjects.erase(it);
+                    if (it == selectedObjects.end() && !g_input.isKeyDown(KEY_LSHIFT))
+                    {
+                        selectedObjects.push_back(i);
+                    }
+                    if (it != selectedObjects.end() && !g_input.isKeyDown(KEY_LCTRL))
+                    {
+                        selectedObjects.erase(it);
+                    }
                 }
             }
         }
@@ -94,6 +142,22 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     }
 
     ImGui::End();
+
+    if (selectedObjects.size() > 0)
+    {
+        ModelObject& obj = model->objects[selectedObjects[0]];
+        if (ImGui::Begin("Object Properties"))
+        {
+            ImGui::Checkbox("Is Collider", &obj.isCollider);
+            ImGui::End();
+        }
+    }
+
+    // end gui
+
+    // this seems to be necessary for debug visualization
+    physicsScene->simulate(deltaTime);
+    physicsScene->fetchResults(true);
 
     camera.update(deltaTime, renderer->getRenderWorld());
 
@@ -120,17 +184,83 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
+    if (g_game.isPhysicsDebugVisualizationEnabled)
+    {
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 2.0f);
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
+        physicsScene->setVisualizationCullingBox(PxBounds3({-1000, -1000, -1000}, {1000, 1000, 1000}));
+        const PxRenderBuffer& rb = physicsScene->getRenderBuffer();
+        for(PxU32 i=0; i < rb.getNbLines(); ++i)
+        {
+            const PxDebugLine& line = rb.getLines()[i];
+            debugDraw.line(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
+        }
+    }
+    else
+    {
+        physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
+    }
+
     RenderWorld* rw = renderer->getRenderWorld();
-    rw->add(&debugDraw);
+    glm::vec3 rayDir = camera.getMouseRay(rw);
+    Camera const& cam = camera.getCamera();
+
+    if (!ImGui::GetIO().WantCaptureMouse && g_input.isMouseButtonPressed(MOUSE_LEFT))
+    {
+        if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+        {
+            selectedObjects.clear();
+        }
+
+        PxRaycastBuffer hit;
+        PxQueryFilterData filter;
+        filter.data = PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0);
+        if (physicsScene->raycast(convert(cam.position), convert(rayDir), 10000.f, hit,
+                PxHitFlags(PxHitFlag::eDEFAULT), filter))
+        {
+            assert(hit.block.actor == body);
+            for (u32 i=0; i<model->objects.size(); ++i)
+            {
+                if (model->objects[i].mousePickShape == hit.block.shape)
+                {
+                    auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
+                            [&](u32 index){ return index == i; });
+                    if (it == selectedObjects.end())
+                    {
+                        selectedObjects.push_back(i);
+                    }
+                    else if (g_input.isKeyDown(KEY_LSHIFT))
+                    {
+                        selectedObjects.erase(it);
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
     for (u32 i=0; i<(u32)model->objects.size(); ++i)
     {
         auto& obj = model->objects[i];
-        glm::mat4 transform = glm::translate(glm::mat4(1.f), obj.position)
-            * glm::mat4_cast(obj.rotation)
-            * glm::scale(glm::mat4(1.f), obj.scale);
-        rw->push(LitRenderable(&model->meshes[obj.meshIndex], transform));
+        if (obj.isCollider)
+        {
+            rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                        { 1.f, 1.f, 0.1f, 1.f }));
+        }
+        else
+        {
+            rw->push(LitRenderable(&model->meshes[obj.meshIndex], obj.getTransform()));
+        }
     }
+    for (u32 selectedIndex : selectedObjects)
+    {
+        auto& obj = model->objects[selectedIndex];
+        rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform()));
+    }
+
+    rw->add(&debugDraw);
 }
 
 void ModelEditor::loadBlenderFile(std::string const& filename)
@@ -255,7 +385,17 @@ void ModelEditor::processBlenderData()
         modelObj->position = translationOf(matrix);
         modelObj->rotation = glm::quat_cast(glm::mat3(rotationOf(matrix)));
         modelObj->scale = scaleOf(matrix);
+        if (modelObj->name.find("Collision") != std::string::npos
+            || modelObj->name.find("collision") != std::string::npos)
+        {
+            modelObj->isCollider = true;
+        }
 
         model->objects.push_back(std::move(*modelObj));
+    }
+    for (auto& obj : model->objects)
+    {
+        obj.createMousePickCollisionShape(model);
+        body->attachShape(*obj.mousePickShape);
     }
 }

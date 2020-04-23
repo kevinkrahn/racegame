@@ -4,6 +4,7 @@
 #include "datafile.h"
 #include "mesh.h"
 
+// TODO: implement these collision shapes
 enum struct CollisionType
 {
     NONE,
@@ -13,31 +14,18 @@ enum struct CollisionType
     CAPSULE
 };
 
-struct CollisionShape
-{
-    CollisionType collisionType;
-    glm::quat rotation;
-    glm::vec3 offset;
-    glm::vec3 scale;
-
-    void serialize(Serializer& s)
-    {
-        s.field(collisionType);
-        s.field(rotation);
-        s.field(offset);
-        s.field(scale);
-    }
-};
-
 class ModelObject
 {
 public:
+    // serialized
     std::string name;
     glm::quat rotation;
     glm::vec3 position;
     glm::vec3 scale;
     u32 meshIndex;
-    CollisionShape collisionShape;
+    bool isCollider = false;
+
+    PxShape* mousePickShape = nullptr;
 
     void serialize(Serializer& s)
     {
@@ -46,19 +34,31 @@ public:
         s.field(position);
         s.field(scale);
         s.field(meshIndex);
-        s.field(collisionShape);
+        s.field(isCollider);
+    }
+
+    void createMousePickCollisionShape(class Model* model);
+    glm::mat4 getTransform() const
+    {
+        glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
+            * glm::mat4_cast(rotation)
+            * glm::scale(glm::mat4(1.f), scale);
+        return transform;
     }
 };
 
 class Model
 {
 public:
+    // serialized
     i64 guid;
     std::string name;
     std::string sourceFilePath;
     std::string sourceSceneName;
     std::vector<Mesh> meshes;
     std::vector<ModelObject> objects;
+    bool isDynamic = false;
+    f32 density = 150.f;
 
     void serialize(Serializer& s);
 };

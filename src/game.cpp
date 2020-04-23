@@ -56,6 +56,8 @@ void Game::initPhysX()
     const f32 NORMAL_REJECT_ANGLE = PxPi / 4.0f;
     PxVehicleSetSweepHitRejectionAngles(POINT_REJECT_ANGLE, NORMAL_REJECT_ANGLE);
     PxVehicleSetMaxHitActorAcceleration(80.f);
+
+    physx.defaultMaterial = physx.physics->createMaterial(1.f, 1.f, 0.f);
 }
 
 #ifndef NDEBUG
@@ -67,7 +69,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
     {
         return;
     }
-    // useless intel warning
+    // Useless intel warning
     if (id == 8)
     {
         return;
