@@ -515,6 +515,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->tuning = std::move(tuning);
     this->hitPoints = this->tuning.maxHitPoints;
     this->previousTargetPosition = translationOf(transform);
+    this->rearWeaponTimer = 0.f + vehicleIndex * 0.2f;
 
     engineSound = g_audio.playSound3D(&g_res.sounds->engine2,
             SoundType::VEHICLE, translationOf(transform), true);

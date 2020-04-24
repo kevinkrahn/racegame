@@ -1,6 +1,7 @@
 #include "resource_manager.h"
 #include "../game.h"
 #include "../scene.h"
+#include "../mesh_renderables.h"
 #include <filesystem>
 
 ResourceManager::ResourceManager()
@@ -469,6 +470,23 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         return;
     }
 
+    static RenderWorld rw;
+    static i32 previewMeshIndex = 0;
+
+    rw.setName("Material Preview");
+    rw.setSize(200, 200);
+    const char* previewMeshes[] = { "world.Sphere", "world.Cube", "world.Quad" };
+    Mesh* previewMesh = g_res.getMesh(previewMeshes[previewMeshIndex]);
+    rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
+    rw.setViewportCount(1);
+    rw.updateWorldTime(30.f);
+    rw.setClearColor(true, { 0.05f, 0.05f, 0.05f, 1.f });
+    rw.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
+            glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
+    rw.push(LitRenderable(previewMesh,
+                glm::scale(glm::mat4(1.f), glm::vec3(3.5f)), nullptr, glm::vec3(1.f)));
+    renderer->addRenderWorld(&rw);
+
     Material& mat = *selectedMaterial;
 
     ImGui::Begin("Material Properties", &isMaterialWindowOpen);
@@ -478,8 +496,13 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     {
         saveResource(mat);
     }
-    ImGui::SameLine();
+    //ImGui::SameLine();
     ImGui::Gap();
+
+    ImGui::Columns(2, nullptr, false);
+    ImGui::SetColumnWidth(0, 208);
+    ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
+    ImGui::NextColumn();
 
     if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -492,7 +515,13 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     }
 
     const char* materialTypeNames = "Lit\0Unlit\0";
-    ImGui::Combo("Material Type", (i32*)&mat.materialType, materialTypeNames);
+    ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
+
+    const char* previewMeshNames = "Sphere\0Box\0Plane\0";
+    ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
+
+    ImGui::Columns(1);
+    ImGui::Gap();
 
     ImGui::Image((void*)(uintptr_t)g_res.getTexture(mat.colorTexture)->getPreviewHandle(), { 48, 48 });
     ImGui::SameLine();
@@ -515,17 +544,19 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::EndCombo();
     }
 
+    ImGui::Columns(2, nullptr, false);
     ImGui::Checkbox("Culling", &mat.isCullingEnabled);
     ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
-    ImGui::Checkbox("Visible", &mat.isVisible);
-    ImGui::Checkbox("Wireframe", &mat.displayWireframe);
-
-    ImGui::Checkbox("Transparent", &mat.isTransparent);
-    ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
-    ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
-
     ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
     ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
+    ImGui::NextColumn();
+    ImGui::Checkbox("Visible", &mat.isVisible);
+    ImGui::Checkbox("Wireframe", &mat.displayWireframe);
+    ImGui::Checkbox("Transparent", &mat.isTransparent);
+    ImGui::Columns(1);
+
+    ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
+    ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
     ImGui::InputFloat("Depth Offset", &mat.depthOffset);
 
     ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
