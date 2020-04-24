@@ -1921,7 +1921,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     f32 mySpeed = getRigidBody()->getLinearVelocity().magnitude();
     if (mySpeed < 35.f && scene->sweep(tuning.collisionWidth * 0.5f + 0.05f,
             currentPosition + glm::vec3(0, 0, 0.25f), forwardVector, sweepLength,
-            &hit, ignoreBody, flags))
+            &hit, ignoreBody, flags) && scene->getWorldTime() > 5.f)
     {
         bool shouldAvoid = true;
 
@@ -1997,10 +1997,10 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     */
 #endif
 
-    // get behind target
 #if 1
     if (!isInAir && aggression > 0.f)
     {
+        // search for target if there is none
         if (!target && frontWeapons.size() > 0
                 && frontWeapons[currentFrontWeaponIndex]->ammo > 0)
         {
@@ -2026,22 +2026,28 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             }
         }
 
+        // get behind target
         if (target && !target->isDead())
         {
             targetTimer += deltaTime;
-            if (targetTimer > (1.f - aggression) * 2.f)
+            glm::vec3 diff = target->getPosition() - currentPosition;
+            f32 dist = glm::length(diff);
+            if (!scene->raycastStatic(currentPosition, diff / dist, dist))
             {
-                glm::vec2 targetDiff = currentPosition - target->getPosition();
-                // only steer toward the target if doing so would not result in veering off course
-                if (glm::dot(targetDiff, dirToTargetP) > 0.8f - (aggression * 0.2f))
+                if (targetTimer > (1.f - aggression) * 2.f)
                 {
-                    f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), targetDiff) * 0.4f;
-                    input.steer = clamp(targetSteerAngle, -0.5f, 0.5f);
-                }
-                else
-                {
-                    targetTimer = 0.f;
-                    target = nullptr;
+                    glm::vec2 dirToTarget = glm::normalize(currentPosition - target->getPosition());
+                    // only steer toward the target if doing so would not result in veering off course
+                    if (glm::dot(dirToTarget, dirToTargetP) > 0.6f - (aggression * 0.4f))
+                    {
+                        f32 targetSteerAngle = glm::dot(glm::vec2(getRightVector()), dirToTarget) * 0.4f;
+                        input.steer = clamp(targetSteerAngle, -0.5f, 0.5f);
+                    }
+                    else
+                    {
+                        targetTimer = 0.f;
+                        target = nullptr;
+                    }
                 }
             }
             if (targetTimer > 3.f + aggression)
@@ -2089,7 +2095,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     }
 #endif
 
-    if (scene->canGo())
+    if (scene->canGo() && scene->getWorldTime() > 5.f)
     {
         if (isBackingUp)
         {
@@ -2114,7 +2120,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         else
         {
             if (!isInAir && getForwardSpeed() < 2.5f &&
-                scene->sweep(tuning.collisionWidth * 0.3f, currentPosition, forwardVector,
+                scene->sweep(tuning.collisionWidth * 0.35f, currentPosition, forwardVector,
                     4.2f, nullptr, getRigidBody(), COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS))
             {
                 backupTimer += deltaTime;
@@ -2156,15 +2162,18 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                 currentPosition+getForwardVector()*rayLength,
                 glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
         */
+        PxSweepBuffer hit;
         if (scene->sweep(0.5f, currentPosition,
                     getForwardVector(),
-                    rayLength, nullptr, getRigidBody(), COLLISION_FLAG_CHASSIS))
+                    rayLength, &hit, getRigidBody(), COLLISION_FLAG_CHASSIS | COLLISION_FLAG_OBJECT)
+                && hit.block.actor->userData
+                && ((ActorUserData*)(hit.block.actor->userData))->entityType == ActorUserData::VEHICLE)
         {
             attackTimer += deltaTime;
         }
         else
         {
-            attackTimer = 0.f;
+            attackTimer = glm::max(attackTimer - deltaTime * 4.f, 0.f);
         }
 
         if (frontWeapons[currentFrontWeaponIndex]->fireMode == Weapon::CONTINUOUS)
