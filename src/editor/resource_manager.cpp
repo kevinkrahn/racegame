@@ -115,10 +115,18 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
         if (ImGui::CollapsingHeader("Textures"))
         {
+            ImGui::PushStyleColor(ImGuiCol_Header, 0xAAAA22FF);
             for (auto tex : textures)
             {
-                if (ImGui::Selectable(tex->name.c_str(),
-                            selectedTexture == tex && isTextureWindowOpen))
+                u32 flags = ImGuiTreeNodeFlags_Leaf
+                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                    | ImGuiTreeNodeFlags_SpanAvailWidth;
+                if (selectedTexture == tex && isTextureWindowOpen)
+                {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+                ImGui::TreeNodeEx(tex->name.c_str(), flags);
+                if (ImGui::IsItemClicked())
                 {
                     selectedTexture = tex;
                     editName = selectedTexture->name;
@@ -141,6 +149,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     ImGui::EndPopup();
                 }
             }
+            ImGui::PopStyleColor();
         }
 
         if (ImGui::CollapsingHeader("Materials"))
@@ -460,33 +469,79 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         return;
     }
 
-    bool dirty = false;
     Material& mat = *selectedMaterial;
 
     ImGui::Begin("Material Properties", &isMaterialWindowOpen);
+
+    // TODO: Add keyboard shortcut
+    if (ImGui::Button("Save"))
+    {
+        saveResource(mat);
+    }
+    ImGui::SameLine();
+    ImGui::Gap();
 
     if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
     {
         mat.name = editName;
         g_res.materialNameMap[mat.name] = selectedMaterial;
-        dirty = true;
     }
     if (!ImGui::IsItemFocused())
     {
         editName = mat.name;
     }
 
-    bool changed = false;
+    const char* materialTypeNames = "Lit\0Unlit\0";
+    ImGui::Combo("Material Type", (i32*)&mat.materialType, materialTypeNames);
+
+    ImGui::Image((void*)(uintptr_t)g_res.getTexture(mat.colorTexture)->getPreviewHandle(), { 48, 48 });
+    ImGui::SameLine();
+    ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
+    if (ImGui::BeginCombo("Color Texture",
+                mat.colorTexture == 0 ? "None" : g_res.getTexture(mat.colorTexture)->name.c_str()))
+    {
+        for (auto& tex : g_res.textures)
+        {
+            if (tex.second->getTextureType() == TextureType::COLOR)
+            {
+                ImGui::Image((void*)(uintptr_t)tex.second->getPreviewHandle(), { 16, 16 });
+                ImGui::SameLine();
+                if (ImGui::Selectable(tex.second->name.c_str()))
+                {
+                    mat.colorTexture = tex.first;
+                }
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::Checkbox("Culling", &mat.isCullingEnabled);
+    ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
+    ImGui::Checkbox("Visible", &mat.isVisible);
+    ImGui::Checkbox("Wireframe", &mat.displayWireframe);
+
+    ImGui::Checkbox("Transparent", &mat.isTransparent);
+    ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
+    ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
+
+    ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
+    ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
+    ImGui::InputFloat("Depth Offset", &mat.depthOffset);
+
+    ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
+    ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
+    ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.02f, 0.f, 100.f);
+    ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
+    ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
+    ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
+
+    ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
+    ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.05f, 0.f, 1000.f);
+    ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
+
+    ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength);
+    ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod);
+    ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias);
 
     ImGui::End();
-
-    if (changed)
-    {
-        dirty = true;
-    }
-
-    if (dirty)
-    {
-        saveResource(mat);
-    }
 }

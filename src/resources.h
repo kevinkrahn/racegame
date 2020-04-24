@@ -198,7 +198,9 @@ public:
         auto iter = textures.find(guid);
         if (iter == textures.end())
         {
-            FATAL_ERROR("Texture not found: ", guid);
+            //FATAL_ERROR("Texture not found: ", guid);
+            print("Texture not found: ", guid, '\n');
+            return &white;
         }
         return iter->second.get();
     }
