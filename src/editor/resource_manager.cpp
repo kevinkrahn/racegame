@@ -112,7 +112,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     if (isResourceWindowOpen)
     {
-        const u32 selectedColor = 0xAA22AAFF;
+        const u32 selectedColor = 0x992299EE;
 
         ImGui::Begin("Resources", &isResourceWindowOpen);
 
@@ -600,6 +600,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
     ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
     ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
+    ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
 
     ImGui::End();
 }

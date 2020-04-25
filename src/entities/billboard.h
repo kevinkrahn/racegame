@@ -7,58 +7,27 @@
 #include "../scene.h"
 #include "../game.h"
 #include "../imgui.h"
+#include "../model.h"
 
 class Billboard : public PlaceableEntity
 {
-    LitRenderable glow;
-    LitRenderable lights;
-    LitRenderable metal;
-    LitRenderable sign;
-    LitRenderable wood;
-    i32 billboardIndex = 0;
+    Model* model = nullptr;
+    ModelObject* billboardObject = nullptr;
+    //Texture* billboardTexture = nullptr;
 
 public:
     Billboard()
     {
-        glow.settings.mesh = g_res.getMesh("billboard.BillboardGlow");
-        glow.settings.color = glm::vec3(1.f);
-        glow.settings.emit = glm::vec3(3.f);
-        glow.settings.specularStrength = 0.1f;
-        glow.settings.texture = &g_res.white;
-
-        lights.settings.mesh = g_res.getMesh("billboard.BillboardLights");
-        lights.settings.color = glm::vec3(0.05f);
-        lights.settings.specularStrength = 0.2f;
-        lights.settings.specularPower = 500.f;
-        lights.settings.reflectionLod = 3.f;
-        lights.settings.reflectionStrength = 0.8f;
-        lights.settings.texture = &g_res.white;
-
-        metal.settings.mesh = g_res.getMesh("billboard.BillboardMetal");
-        metal.settings.color = glm::vec3(0.05f);
-        metal.settings.specularStrength = 0.2f;
-        metal.settings.specularPower = 1000.f;
-        metal.settings.reflectionLod = 2.f;
-        metal.settings.reflectionStrength = 0.9f;
-        metal.settings.texture = &g_res.white;
-
-        sign.settings.mesh = g_res.getMesh("billboard.BillboardSign");
-        sign.settings.color = glm::vec3(1.f);
-
-        wood.settings.mesh = g_res.getMesh("billboard.BillboardWood");
-        wood.settings.color = glm::vec3(1.f);
-        wood.settings.specularStrength = 0.05f;
-        wood.settings.specularPower = 10.f;
-        wood.settings.texture = g_res.getTexture("wood");
+        model = g_res.getModel("billboard");
+        billboardObject = model->getObjByName("BillboardSign");
     }
 
     void applyDecal(class Decal& decal) override
     {
-        decal.addMesh(lights.settings.mesh, transform);
-        decal.addMesh(metal.settings.mesh, transform);
-        decal.addMesh(sign.settings.mesh, transform);
-        decal.addMesh(sign.settings.mesh, transform);
-        decal.addMesh(wood.settings.mesh, transform);
+        for (auto& obj : model->objects)
+        {
+            decal.addMesh(&model->meshes[obj.meshIndex], obj.getTransform() * transform);
+        }
     }
 
     void onCreate(class Scene* scene) override
@@ -71,50 +40,27 @@ public:
         physicsUserData.entity = this;
         actor->userData = &physicsUserData;
 
-        PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(g_res.getMesh("billboard.BillboardMetal")->getCollisionMesh(), PxMeshScale(convert(scale))),
-                *scene->genericMaterial);
-        collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
-
-        collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(g_res.getMesh("billboard.BillboardWood")->getCollisionMesh(), PxMeshScale(convert(scale))),
-                *scene->genericMaterial);
-        collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
-
-        collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(g_res.getMesh("billboard.BillboardSign")->getCollisionMesh(), PxMeshScale(convert(scale))),
-                *scene->genericMaterial);
-        collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
+        for (auto& obj : model->objects)
+        {
+            PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
+                    PxTriangleMeshGeometry(model->meshes[obj.meshIndex].getCollisionMesh(),
+                        PxMeshScale(convert(scale * obj.scale))), *scene->genericMaterial);
+            collisionShape->setQueryFilterData(PxFilterData(
+                        COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
+            collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
+            collisionShape->setLocalPose(convert(obj.getTransform()));
+        }
 
         scene->getPhysicsScene()->addActor(*actor);
     }
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
-        static Texture* billboardTextures[] = {
-            g_res.getTexture("billboard_1"),
-            g_res.getTexture("billboard_2"),
-            g_res.getTexture("billboard_3"),
-            g_res.getTexture("billboard_4"),
-        };
-
-        glow.settings.worldTransform = transform;
-        lights.settings.worldTransform = transform;
-        metal.settings.worldTransform = transform;
-        sign.settings.worldTransform = transform;
-        wood.settings.worldTransform = transform;
-        sign.settings.texture = billboardTextures[billboardIndex];
-        rw->add(&glow);
-        rw->add(&lights);
-        rw->add(&metal);
-        rw->add(&sign);
-        rw->add(&wood);
+        for (auto& obj : model->objects)
+        {
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                        obj.getTransform() * transform, g_res.getMaterial(obj.materialGuid)));
+        }
     }
 
     void onPreview(RenderWorld* rw) override
@@ -129,37 +75,21 @@ public:
     {
         if (isSelected)
         {
-            rw->push(WireframeRenderable(lights.settings.mesh, transform));
-            rw->push(WireframeRenderable(metal.settings.mesh, transform));
-            rw->push(WireframeRenderable(wood.settings.mesh, transform));
+            for (auto& obj : model->objects)
+            {
+                rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform() * transform));
+            }
         }
     }
 
     void showDetails(Scene* scene) override
     {
-        const char* billboardNames[] = {
-            "Ramifications",
-            "You Want This Car",
-            "Your ad here",
-            "Don't Look",
-        };
-
-        // TODO: Show preview of each billboard
-        ImGui::ListBoxHeader("Billboard");
-        for (i32 i=0; i<(i32)ARRAY_SIZE(billboardNames); ++i)
-        {
-            if (ImGui::Selectable(billboardNames[i], billboardIndex == i))
-            {
-                billboardIndex = i;
-            }
-        }
-        ImGui::ListBoxFooter();
+        // TODO
     }
 
     void serializeState(Serializer& s) override
     {
         PlaceableEntity::serializeState(s);
-        s.field(billboardIndex);
     }
 
     EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::ROADSIDE; }

@@ -16,6 +16,7 @@ class ModelEditor
     std::vector<u32> selectedObjects;
     EditorCamera camera;
     bool showGrid = true;
+    bool showFloor = false;
     DebugDraw debugDraw;
     PxScene* physicsScene = nullptr;
     PxRigidStatic* body = nullptr;

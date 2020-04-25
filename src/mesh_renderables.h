@@ -28,8 +28,8 @@ public:
 
     i32 getPriority() const override
     {
-        //return 20 + material->isCullingEnabled + (material->isTransparent ? 11000 : 0) + (material->alphaCutoff > 0.f);
-        return 20;
+        return 20 + material->isCullingEnabled
+            + (material->isTransparent ? 11000 : 0) + (material->alphaCutoff > 0.f);
     }
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override
@@ -46,6 +46,7 @@ public:
         }
         if (material->isDepthWriteEnabled)
         {
+            glUniform1f(8, material->windAmount);
             if (material->alphaCutoff > 0.f)
             {
                 glUniform1f(5, material->alphaCutoff);
@@ -70,6 +71,7 @@ public:
     {
         if (material->castsShadow)
         {
+            glUniform1f(8, material->windAmount);
             if (material->shadowAlphaCutoff > 0.f)
             {
                 glUniform1f(5, material->shadowAlphaCutoff);
@@ -136,6 +138,7 @@ public:
         glm::vec3 emission = material->emit * material->emitPower;
         glUniform3fv(6, 1, (GLfloat*)&emission);
         glUniform3f(7, material->reflectionStrength, material->reflectionLod, material->reflectionBias);
+        glUniform1f(8, material->windAmount);
 
         glBindVertexArray(mesh->vao);
         glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);

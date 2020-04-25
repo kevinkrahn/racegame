@@ -19,6 +19,8 @@ PxFilterFlags physxFilterShader(
 void ModelEditor::setModel(Model* model)
 {
     this->model = model;
+    selectedObjects.clear();
+
     if (physicsScene)
     {
         physicsScene->release();
@@ -107,11 +109,12 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     ImGui::InputText("Name", &model->name);
     ImGui::Checkbox("Show Grid", &showGrid);
+    ImGui::Checkbox("Show Floor", &showFloor);
 
     ImGui::Gap();
-    ImGui::Checkbox("Placeable in Editor", &model->isPlaceableObject);
-    ImGui::Checkbox("Dynamic", &model->isDynamic);
-    if (model->isDynamic)
+    ImGui::Combo("Usage", (i32*)&model->modelUsage,
+            "Internal\0Static Prop\0Dynamic Prop\0Spline\0Vehicle\0");
+    if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
     {
         ImGui::InputFloat("Density", &model->density);
     }
@@ -155,6 +158,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         if (ImGui::Begin("Object Properties"))
         {
             ImGui::Checkbox("Is Collider", &obj.isCollider);
+            ImGui::Checkbox("Is Visible", &obj.isVisible);
 
             if (ImGui::BeginCombo("Material",
                     obj.materialGuid? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
@@ -226,6 +230,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     RenderWorld* rw = renderer->getRenderWorld();
     glm::vec3 rayDir = camera.getMouseRay(rw);
     Camera const& cam = camera.getCamera();
+    rw->updateWorldTime(g_game.currentTime);
 
     if (!ImGui::GetIO().WantCaptureMouse && g_input.isMouseButtonPressed(MOUSE_LEFT))
     {
@@ -261,18 +266,24 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
+    if (showFloor)
+    {
+        rw->push(LitRenderable(g_res.getMesh("world.Quad"),
+                    glm::scale(glm::mat4(1.f), glm::vec3(40.f)), nullptr, glm::vec3(0.1f)));
+    }
+
     for (u32 i=0; i<(u32)model->objects.size(); ++i)
     {
         auto& obj = model->objects[i];
-        if (obj.isCollider)
-        {
-            rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                        { 1.f, 1.f, 0.1f, 1.f }));
-        }
-        else
+        if (obj.isVisible)
         {
             rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
                         g_res.getMaterial(obj.materialGuid)));
+        }
+        if (obj.isCollider)
+        {
+            rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                        { 1.f, 1.f, 0.1f, 0.5f }));
         }
     }
     for (u32 selectedIndex : selectedObjects)
@@ -410,6 +421,7 @@ void ModelEditor::processBlenderData()
             || modelObj->name.find("collision") != std::string::npos)
         {
             modelObj->isCollider = true;
+            modelObj->isVisible = false;
         }
 
         model->objects.push_back(std::move(*modelObj));

@@ -200,7 +200,7 @@ public:
         if (iter == textures.end())
         {
             //FATAL_ERROR("Texture not found: ", guid);
-            print("Texture not found: ", guid, '\n');
+            //print("Texture not found: ", guid, '\n');
             return &white;
         }
         return iter->second.get();
@@ -212,7 +212,7 @@ public:
         if (iter == textureNameMap.end())
         {
             //FATAL_ERROR("Texture not found: ", name);
-            print("Texture not found: ", name, '\n');
+            //print("Texture not found: ", name, '\n');
             return &white;
         }
         return iter->second;
@@ -244,7 +244,7 @@ public:
         if (iter == materials.end())
         {
             //FATAL_ERROR("Material not found: ", guid);
-            print("Material not found: ", guid, '\n');
+            //print("Material not found: ", guid, '\n');
             return &defaultMaterial;
         }
         return iter->second.get();
@@ -256,7 +256,7 @@ public:
         if (iter == materialNameMap.end())
         {
             //FATAL_ERROR("Material not found: ", name);
-            print("Material not found: ", name, '\n');
+            //print("Material not found: ", name, '\n');
             return &defaultMaterial;
         }
         return iter->second;

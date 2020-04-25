@@ -24,6 +24,7 @@ public:
     glm::vec3 scale;
     u32 meshIndex;
     bool isCollider = false;
+    bool isVisible = true;
     i64 materialGuid = 0;
 
     PxShape* mousePickShape = nullptr;
@@ -36,6 +37,7 @@ public:
         s.field(scale);
         s.field(meshIndex);
         s.field(isCollider);
+        s.field(isVisible);
         s.field(materialGuid);
     }
 
@@ -49,6 +51,15 @@ public:
     }
 };
 
+enum struct ModelUsage
+{
+    INTERNAL = 0,
+    STATIC_PROP = 1,
+    DYNAMIC_PROP = 2,
+    SPLINE = 3,
+    VEHICLE = 4,
+};
+
 class Model
 {
 public:
@@ -59,9 +70,19 @@ public:
     std::string sourceSceneName;
     std::vector<Mesh> meshes;
     std::vector<ModelObject> objects;
-    bool isPlaceableObject = true;
-    bool isDynamic = false;
+    ModelUsage modelUsage = ModelUsage::STATIC_PROP;
     f32 density = 150.f;
 
     void serialize(Serializer& s);
+    ModelObject* getObjByName(const char* name)
+    {
+        for (auto& obj : objects)
+        {
+            if (obj.name == name)
+            {
+                return &obj;
+            }
+        }
+        FATAL_ERROR("Cannot find object with name \"", name, "\" in model \"", this->name, "\"");
+    }
 };

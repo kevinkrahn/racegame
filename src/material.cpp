@@ -18,6 +18,8 @@ void Material::serialize(Serializer& s)
 
     s.field(isTransparent);
     s.field(alphaCutoff);
+    s.field(shadowAlphaCutoff);
+    s.field(windAmount);
 
     s.field(color);
     s.field(emit);

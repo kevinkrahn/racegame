@@ -12,8 +12,7 @@ void Model::serialize(Serializer &s)
     s.field(sourceSceneName);
     s.field(meshes);
     s.field(objects);
-    s.field(isPlaceableObject);
-    s.field(isDynamic);
+    s.field(modelUsage);
     s.field(density);
 
     if (s.deserialize)

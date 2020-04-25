@@ -31,6 +31,7 @@ public:
     bool isDepthWriteEnabled = true;
     bool displayWireframe = false;
     f32 depthOffset = 0.f;
+    f32 windAmount = 0.f;
 
     bool isTransparent = false;
     f32 contactFadeDistance = 0.f;
