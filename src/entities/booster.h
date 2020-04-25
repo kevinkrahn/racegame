@@ -25,5 +25,4 @@ public:
         s.field(backwards);
     }
     void showDetails(Scene* scene) override;
-    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::MISC; }
 };

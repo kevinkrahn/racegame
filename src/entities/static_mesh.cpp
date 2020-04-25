@@ -5,81 +5,61 @@
 #include "../mesh_renderables.h"
 #include "../game.h"
 
-struct MeshScene
-{
-    const char* sceneName;
-    glm::vec3 previewCameraFrom;
-    glm::vec3 previewCameraTo;
-    EditorCategory category;
-};
-
-MeshScene meshScenes[] = {
-    { "rock.Scene", glm::vec3(8.f, 8.f, 10.f) * 2.5f, glm::vec3(0, 0, 3), EditorCategory::ROCKS },
-    { "world.Tunnel", glm::vec3(8.f, 8.f, 10.f) * 3.f, glm::vec3(0, 0, 3), EditorCategory::ROADSIDE },
-    { "world.Sign", glm::vec3(8.f, 8.f, 10.f) * 1.5f, glm::vec3(0, 0, 4), EditorCategory::ROADSIDE },
-    { "cactus.Scene", glm::vec3(8.f, 8.f, 10.f) * 2.1f, glm::vec3(0, 0, 7), EditorCategory::VEGETATION },
-    { "world.Cube", glm::vec3(8.f, 8.f, 10.f) * 0.5f, glm::vec3(0, 0, 1), EditorCategory::MISC },
-    { "plants.Plant1", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1), EditorCategory::VEGETATION },
-    { "plants.Plant2", glm::vec3(8.f, 8.f, 10.f) * 0.4f, glm::vec3(0, 0, 1), EditorCategory::VEGETATION },
-    { "ctvpole.CTVPole", glm::vec3(8.f, 8.f, 10.f), glm::vec3(0, 0, 3), EditorCategory::ROADSIDE },
-    { "windmill.Windmill", glm::vec3(14.f, 14.f, 26.f), glm::vec3(0, 0, 12), EditorCategory::ROADSIDE },
-};
-
 void StaticMesh::onCreate(Scene* scene)
 {
     updateTransform(scene);
-    actor = g_game.physx.physics->createRigidStatic(
-            PxTransform(convert(position), convert(rotation)));
+
+    model = g_res.getModel(modelGuid);
+    if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
+    {
+        actor = g_game.physx.physics->createRigidDynamic(
+                PxTransform(convert(position), convert(rotation)));
+
+        for (auto& obj : model->objects)
+        {
+            PxShape* shape = nullptr;
+            if (obj.isCollider)
+            {
+                Mesh& mesh = model->meshes[obj.meshIndex];
+                shape = PxRigidActorExt::createExclusiveShape(*actor,
+                    PxConvexMeshGeometry(mesh.getConvexCollisionMesh(),
+                        PxMeshScale(convert(scale * obj.scale))), *scene->genericMaterial);
+                shape->setQueryFilterData(PxFilterData(
+                            COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_SELECTABLE, DECAL_NONE,
+                            0, UNDRIVABLE_SURFACE));
+                shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DYNAMIC, -1, 0, 0));
+            }
+            objects.push_back({ &obj, shape });
+        }
+        PxRigidBodyExt::updateMassAndInertia(*((PxRigidDynamic*)actor), model->density);
+    }
+    else if (model->modelUsage == ModelUsage::STATIC_PROP)
+    {
+        actor = g_game.physx.physics->createRigidStatic(
+                PxTransform(convert(position), convert(rotation)));
+
+        for (auto& obj : model->objects)
+        {
+            PxShape* shape = nullptr;
+            if (obj.isCollider)
+            {
+                Mesh& mesh = model->meshes[obj.meshIndex];
+                shape = PxRigidActorExt::createExclusiveShape(*actor,
+                    PxTriangleMeshGeometry(mesh.getCollisionMesh(),
+                        PxMeshScale(convert(scale * obj.scale))), *scene->genericMaterial);
+                shape->setQueryFilterData(PxFilterData(
+                            COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
+                shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
+            }
+            objects.push_back({ &obj, shape });
+        }
+    }
+
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
-
-    loadMeshes();
-    for (auto& m : meshes)
-    {
-        PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxTriangleMeshGeometry(m.s.settings.mesh->getCollisionMesh(), PxMeshScale(convert(scale * scaleOf(transform)))),
-                *scene->genericMaterial);
-        collisionShape->setLocalPose(convert(transform));
-        //collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, UNDRIVABLE_SURFACE));
-        collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
-        m.shape = collisionShape;
-    }
-
     scene->getPhysicsScene()->addActor(*actor);
     updateTransform(scene);
-}
-
-void StaticMesh::loadMeshes()
-{
-    static std::map<std::string, LitSettings> materials = {
-        { "Rock", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, g_res.getTexture("rock")) },
-        { "Concrete", LitSettings(glm::vec3(1.f), 0.2f, 50.f, 0.f, 2.f, -0.2f, g_res.getTexture("concrete")) },
-        { "Plastic", LitSettings(glm::vec3(1.f), 0.2f, 50.f, 0.1f, 2.f, -0.2f, nullptr, true, false, 0.f, 0.1f, 3.f) },
-        { "Cactus", LitSettings(glm::vec3(1.f), 0.06f, 5.f, 0.1f, 2.f, -0.2f, g_res.getTexture("cactus"), true, false, 0.5f) },
-        { "Plant1", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, g_res.getTexture("plant1"), true, false, 0.5f) },
-        { "Plant2", LitSettings(glm::vec3(1.f), 0.0001f, 0.0001f, 0.f, 0.f, 0.f, g_res.getTexture("plant2"), true, false, 0.5f) },
-        { "Metal", LitSettings(glm::vec3(0.01f), 0.2f, 120.f, 0.f, 0.f, 0.f, nullptr, true, false, 0.f, 0.4f, 4.f) },
-        { "WindmillBlades", LitSettings(glm::vec3(1.f), 0.2f, 120.f, 0.f, 0.f, 0.f, g_res.getTexture("windmill_blades"), true, false, 0.f, 0.4f, 4.f) },
-        { "WindmillBase", LitSettings(glm::vec3(1.f), 0.1f, 50.f, 0.1f, 2.f, -0.2f, g_res.getTexture("windmill_base")) },
-    };
-
-    DataFile::Value::Dict& sceneData = g_res.getScene(meshScenes[meshIndex].sceneName);
-    for (auto& entityData : sceneData["entities"].array().val())
-    {
-        auto& e = entityData.dict().val();
-        std::string name = e["name"].string().val();
-        name = name.substr(0, name.find('.'));
-        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>().val();
-
-        LitSettings s = materials[name];
-        std::string const& meshName = e["data_name"].string().val();
-        s.mesh = g_res.getMesh(meshName.c_str());
-
-        meshes.push_back({ s, transform, nullptr });
-    }
 }
 
 void StaticMesh::updateTransform(Scene* scene)
@@ -91,17 +71,31 @@ void StaticMesh::updateTransform(Scene* scene)
     if (actor)
     {
         actor->setGlobalPose(PxTransform(convert(position), convert(rotation)));
-        for (auto& m : meshes)
+        for (auto& o : objects)
         {
-            if (m.shape)
+            if (o.shape)
             {
-                PxTriangleMeshGeometry geom;
-                if (m.shape->getTriangleMeshGeometry(geom))
+                if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
                 {
-                    glm::mat4 t = glm::scale(glm::mat4(1.f), scale) * m.transform;
-                    m.shape->setLocalPose(convert(t));
-                    geom.scale = convert(scale * scaleOf(m.transform));
-                    m.shape->setGeometry(geom);
+                    PxConvexMeshGeometry geom;
+                    if (o.shape->getConvexMeshGeometry(geom))
+                    {
+                        glm::mat4 t = glm::scale(glm::mat4(1.f), scale) * o.modelObject->getTransform();
+                        o.shape->setLocalPose(convert(t));
+                        geom.scale = convert(scale * o.modelObject->scale);
+                        o.shape->setGeometry(geom);
+                    }
+                }
+                else
+                {
+                    PxTriangleMeshGeometry geom;
+                    if (o.shape->getTriangleMeshGeometry(geom))
+                    {
+                        glm::mat4 t = glm::scale(glm::mat4(1.f), scale) * o.modelObject->getTransform();
+                        o.shape->setLocalPose(convert(t));
+                        geom.scale = convert(scale * o.modelObject->scale);
+                        o.shape->setGeometry(geom);
+                    }
                 }
             }
         }
@@ -110,22 +104,37 @@ void StaticMesh::updateTransform(Scene* scene)
 
 void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    for (auto& m : meshes)
+    glm::mat4 t = transform;
+    if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
     {
-        m.s.settings.worldTransform = transform * m.transform;
-        rw->add(&m.s);
+        t = convert(actor->getGlobalPose());
+    }
+    for (auto& o : objects)
+    {
+        if (o.modelObject->isVisible)
+        {
+            rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
+                        t * o.modelObject->getTransform(),
+                        g_res.getMaterial(o.modelObject->materialGuid)));
+
+        }
     }
 }
 
 void StaticMesh::onPreview(RenderWorld* rw)
 {
-    loadMeshes();
-    rw->setViewportCamera(0, meshScenes[meshIndex].previewCameraFrom,
-            meshScenes[meshIndex].previewCameraTo, 1.f, 200.f, 40.f);
-    for (auto& m : meshes)
+    rw->setViewportCamera(0, glm::vec3(3.f, 1.f, 4.f) * 4.5f,
+            glm::vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
+    // TODO: automatically compute camera for optimal view of model
+    for (auto& o : objects)
     {
-        m.s.settings.worldTransform = m.transform;
-        rw->add(&m.s);
+        if (o.modelObject->isVisible)
+        {
+            rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
+                        transform * o.modelObject->getTransform(),
+                        g_res.getMaterial(o.modelObject->materialGuid)));
+
+        }
     }
 }
 
@@ -133,24 +142,73 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
 {
     if (isSelected)
     {
-        for (auto& m : meshes)
+        for (auto& o : objects)
         {
-            rw->push(WireframeRenderable(m.s.settings.mesh, transform * m.transform));
+            if (o.modelObject->isVisible)
+            {
+                rw->push(WireframeRenderable(&model->meshes[o.modelObject->meshIndex],
+                            transform * o.modelObject->getTransform()));
+            }
         }
     }
 }
 
 void StaticMesh::applyDecal(Decal& decal)
 {
-    for (auto& m : meshes)
+    for (auto& o : objects)
     {
-        decal.addMesh(m.s.settings.mesh, transform * m.transform);
+        if (o.modelObject->isVisible)
+        {
+            decal.addMesh(&model->meshes[o.modelObject->meshIndex],
+                    transform * o.modelObject->getTransform());
+        }
     }
 }
 
-u32 StaticMesh::getVariationCount() const { return ARRAY_SIZE(meshScenes); }
-
-EditorCategory StaticMesh::getEditorCategory(u32 variationIndex) const
+void StaticMesh::serializeState(Serializer& s)
 {
-    return meshScenes[variationIndex].category;
+    PlaceableEntity::serializeState(s);
+    s.field(modelGuid);
+    if (s.deserialize && modelGuid == 0)
+    {
+        const char* meshIndexToMeshNameMap[] = {
+            "rock",
+            "tunnel",
+            "sign",
+            "cactus",
+            "concrete_cube",
+            "plant1",
+            "plant2",
+            "CTVPole",
+            "windmill",
+        };
+        u32 meshIndex;
+        s.field(meshIndex);
+        assert(meshIndex < ARRAY_SIZE(meshIndexToMeshNameMap));
+        modelGuid = g_res.getModel(meshIndexToMeshNameMap[meshIndex])->guid;
+    }
+}
+
+std::vector<PropPrefabData> StaticMesh::generatePrefabProps()
+{
+    std::vector<PropPrefabData> result;
+
+    for (auto& model : g_res.models)
+    {
+        if (model.second->modelUsage == ModelUsage::DYNAMIC_PROP
+                || model.second->modelUsage == ModelUsage::STATIC_PROP)
+        {
+            i64 guid = model.first;
+            result.push_back({
+                model.second->category,
+                model.second->name,
+                [guid](PlaceableEntity* e) {
+                    ((StaticMesh*)e)->modelGuid = guid;
+                    ((StaticMesh*)e)->model = g_res.getModel(guid);
+                }
+            });
+        }
+    }
+
+    return result;
 }

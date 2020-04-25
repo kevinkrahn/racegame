@@ -9,15 +9,14 @@
 #include "../mesh_renderables.h"
 #include "transform_gizmo.h"
 
-struct EntityItem
+struct PropPrefab
 {
     Texture icon;
     bool hasIcon;
-    u32 variationIndex;
     u32 entityIndex;
-    EditorCategory category;
+    PropPrefabData prefabData;
 };
-std::vector<EntityItem> editorEntityItems;
+std::vector<PropPrefab> propPrefabs;
 
 // TODO: Add scene graph window
 
@@ -30,7 +29,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
 
     void showEntityIcons()
     {
-        u32 count = (u32)editorEntityItems.size();
+        u32 count = (u32)propPrefabs.size();
         u32 iconSize = 48;
 
         static RenderWorld renderWorld;
@@ -38,13 +37,13 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
 
         if (lastEntityIconRendered != -1)
         {
-            editorEntityItems[lastEntityIconRendered].icon = renderWorld.releaseTexture();
-            editorEntityItems[lastEntityIconRendered].hasIcon = true;
+            propPrefabs[lastEntityIconRendered].icon = renderWorld.releaseTexture();
+            propPrefabs[lastEntityIconRendered].hasIcon = true;
             lastEntityIconRendered = -1;
         }
-        for (u32 categoryIndex=0; categoryIndex<ARRAY_SIZE(editorCategoryNames); ++categoryIndex)
+        for (u32 categoryIndex=0; categoryIndex<ARRAY_SIZE(propCategoryNames); ++categoryIndex)
         {
-            if (!ImGui::CollapsingHeader(editorCategoryNames[categoryIndex]))
+            if (!ImGui::CollapsingHeader(propCategoryNames[categoryIndex]))
             {
                 continue;
             }
@@ -52,22 +51,30 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
             u32 buttonCount = 0;
             for (u32 i=0, itemIndex = 0; itemIndex<count; ++itemIndex)
             {
-                if ((u32)editorEntityItems[itemIndex].category != categoryIndex)
+                if ((u32)propPrefabs[itemIndex].prefabData.category != categoryIndex)
                 {
                     continue;
                 }
 
-                if (editorEntityItems[itemIndex].hasIcon)
+                if (propPrefabs[itemIndex].hasIcon)
                 {
                     if (buttonCount % 5 != 0)
                     {
                         ImGui::SameLine();
                     }
                     ImGui::PushID(itemIndex);
-                    if (ImGui::ImageButton((void*)(uintptr_t)editorEntityItems[itemIndex].icon.handle,
+                    if (ImGui::ImageButton((void*)(uintptr_t)propPrefabs[itemIndex].icon.handle,
                                 ImVec2(iconSize, iconSize), {1,1}, {0,0}))
                     {
                         selectedEntityTypeIndex = (i32)itemIndex;
+                    }
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                        ImGui::TextUnformatted(propPrefabs[itemIndex].prefabData.name.c_str());
+                        ImGui::PopTextWrapPos();
+                        ImGui::EndTooltip();
                     }
                     ImGui::PopID();
                     ++buttonCount;
@@ -86,8 +93,8 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                             glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
                     static std::unique_ptr<PlaceableEntity> ptr;
                     ptr.reset((PlaceableEntity*)
-                            g_entities[editorEntityItems[itemIndex].entityIndex].create());
-                    ptr->setVariationIndex(editorEntityItems[itemIndex].variationIndex);
+                            g_entities[propPrefabs[itemIndex].entityIndex].create());
+                    propPrefabs[itemIndex].prefabData.doThing(ptr.get());
                     ptr->onPreview(&renderWorld);
                     g_game.renderer->addRenderWorld(&renderWorld);
                     lastEntityIconRendered = (i32)itemIndex;
@@ -103,7 +110,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
 public:
     DecorationMode() : EditorMode("Props")
     {
-        if (editorEntityItems.empty())
+        if (propPrefabs.empty())
         {
             for (u32 entityIndex = 0; entityIndex < (u32)g_entities.size(); ++entityIndex)
             {
@@ -111,11 +118,10 @@ public:
                 if (e.isPlaceableInEditor)
                 {
                     std::unique_ptr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
-                    u32 variationCount = ptr->getVariationCount();
-                    for (u32 i=0; i<variationCount; ++i)
+                    std::vector<PropPrefabData> data = ptr->generatePrefabProps();
+                    for (auto& d : data)
                     {
-                        editorEntityItems.push_back({
-                                {}, false, i, entityIndex, ptr->getEditorCategory(i) });
+                        propPrefabs.push_back({ {}, false, entityIndex, std::move(d) });
                     }
                 }
             }
@@ -185,8 +191,8 @@ public:
                     {
                         glm::vec3 hitPoint = convert(hit.block.position);
                         PlaceableEntity* newEntity =
-                            (PlaceableEntity*)g_entities[editorEntityItems[selectedEntityTypeIndex].entityIndex].create();
-                        newEntity->setVariationIndex(editorEntityItems[selectedEntityTypeIndex].variationIndex);
+                            (PlaceableEntity*)g_entities[propPrefabs[selectedEntityTypeIndex].entityIndex].create();
+                        propPrefabs[selectedEntityTypeIndex].prefabData.doThing(newEntity);
                         newEntity->position = hitPoint;
                         newEntity->updateTransform(scene);
                         newEntity->setPersistent(true);

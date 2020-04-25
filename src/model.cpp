@@ -14,6 +14,7 @@ void Model::serialize(Serializer &s)
     s.field(objects);
     s.field(modelUsage);
     s.field(density);
+    s.field(category);
 
     if (s.deserialize)
     {

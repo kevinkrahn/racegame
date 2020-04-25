@@ -124,8 +124,4 @@ public:
         PlaceableEntity::serializeState(s);
         s.field(pickupType);
     }
-
-    u32 getVariationCount() const override { return 2; }
-    void setVariationIndex(u32 variationIndex) override { pickupType = variationIndex; }
-    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::PICKUPS; }
 };

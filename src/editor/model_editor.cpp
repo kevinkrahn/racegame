@@ -118,6 +118,19 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         ImGui::InputFloat("Density", &model->density);
     }
+    if (model->modelUsage == ModelUsage::STATIC_PROP || model->modelUsage == ModelUsage::DYNAMIC_PROP)
+    {
+        if (ImGui::BeginCombo("Category", propCategoryNames[(u32)model->category]))
+        {
+            for (u32 i=0; i<ARRAY_SIZE(propCategoryNames); ++i)
+            {
+                if (ImGui::Selectable(propCategoryNames[i]))
+                {
+                    model->category = (PropCategory)i;
+                }
+            }
+        }
+    }
 
     ImGui::Gap();
 

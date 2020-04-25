@@ -2,41 +2,8 @@
 
 #include "math.h"
 #include "datafile.h"
+#include "model.h"
 #include <functional>
-
-enum struct EditorCategory
-{
-    NONE,
-    ROCKS,
-    VEGETATION,
-    ROADSIDE,
-    OBSTACLES,
-    DECALS,
-    PICKUPS,
-    MISC,
-
-    MAX
-};
-
-const char* editorCategoryNames[] = {
-    "Uncategorized",
-    "Rocks",
-    "Vegetation",
-    "Roadside",
-    "Obstacles",
-    "Decals",
-    "Pickups",
-    "Misc",
-};
-
-struct RegisteredEntity
-{
-    u32 entityID;
-    std::function<class Entity*()> create;
-    bool isPlaceableInEditor;
-};
-
-std::vector<RegisteredEntity> g_entities;
 
 struct ActorUserData
 {
@@ -100,15 +67,17 @@ public:
     virtual void onCreateEnd(class Scene* scene) {}
     virtual void onUpdate(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
     virtual void onRender(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
-    virtual void onPreview(class RenderWorld* rw) {}
 
     virtual void applyDecal(class Decal& decal) {}
 
     virtual void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected) {}
+};
 
-    virtual u32 getVariationCount() const { return 1; }
-    virtual void setVariationIndex(u32 variationIndex) {}
-    virtual EditorCategory getEditorCategory(u32 variationIndex) const { return EditorCategory::MISC; }
+struct PropPrefabData
+{
+    PropCategory category;
+    std::string name;
+    std::function<void(PlaceableEntity*)> doThing = [](auto){};
 };
 
 class PlaceableEntity : public Entity
@@ -161,6 +130,9 @@ public:
     }
     virtual const char* getName() const { return "Entity"; }
     virtual void showDetails(Scene* scene) {}
+    virtual std::vector<PropPrefabData> generatePrefabProps() { return {}; }
+
+    virtual void onPreview(class RenderWorld* rw) {}
 
     ~PlaceableEntity()
     {
@@ -170,6 +142,15 @@ public:
         }
     }
 };
+
+struct RegisteredEntity
+{
+    u32 entityID;
+    std::function<class Entity*()> create;
+    bool isPlaceableInEditor;
+};
+
+std::vector<RegisteredEntity> g_entities;
 
 template<typename T>
 void registerEntity()

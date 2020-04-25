@@ -92,5 +92,13 @@ public:
         PlaceableEntity::serializeState(s);
     }
 
-    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::ROADSIDE; }
+    std::vector<PropPrefabData> generatePrefabProps() override
+    {
+        std::vector<PropPrefabData> result = {
+            { PropCategory::NOT_NATURE, "Billboard" }
+        };
+        return result;
+    }
+
+    const char* getName() const override { return "Billboard"; }
 };

@@ -27,11 +27,20 @@ public:
         s.field(beforeMarking);
         if (s.deserialize)
         {
-            this->setVariationIndex((u32)texIndex);
+            static Texture* textures[] = {
+                g_res.getTexture("decal_arrow"),
+                g_res.getTexture("decal_arrow_left"),
+                g_res.getTexture("decal_arrow_right"),
+                g_res.getTexture("decal_crack"),
+                g_res.getTexture("decal_patch1"),
+                g_res.getTexture("decal_grunge1"),
+                g_res.getTexture("decal_grunge2"),
+                g_res.getTexture("decal_grunge3"),
+                g_res.getTexture("decal_sand"),
+            };
+            tex = textures[texIndex];
+            decal.setTexture(tex);
         }
     }
     void showDetails(Scene* scene) override;
-    u32 getVariationCount() const override;
-    void setVariationIndex(u32 variationIndex) override;
-    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::DECALS; }
 };

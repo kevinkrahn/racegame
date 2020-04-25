@@ -8,7 +8,6 @@
 #include "track.h"
 #include "entities/static_mesh.h"
 #include "entities/static_decal.h"
-#include "entities/tree.h"
 #include "entities/flash.h"
 #include "entities/booster.h"
 #include "gui.h"
@@ -1147,8 +1146,18 @@ void Scene::serialize(Serializer& s)
 Entity* Scene::deserializeEntity(DataFile::Value& val)
 {
     i32 entityID = (i32)val.dict(true).val()["entityID"].integer().val();
-    Entity* entity = g_entities[entityID].create();
     Serializer s(val, true);
+    if (entityID == 5)
+    {
+        val.dict().val()["modelGuid"] = g_res.getModel("tree")->guid;
+        entityID = 2;
+    }
+    else if (entityID == 8)
+    {
+        val.dict().val()["modelGuid"] = g_res.getModel("barrel")->guid;
+        entityID = 2;
+    }
+    Entity* entity = g_entities[entityID].create();
     entity->serializeState(s);
     this->addEntity(entity);
     return entity;

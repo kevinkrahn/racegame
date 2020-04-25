@@ -60,6 +60,26 @@ enum struct ModelUsage
     VEHICLE = 4,
 };
 
+enum struct PropCategory
+{
+    NATURE,
+    NOT_NATURE,
+    SIGNS,
+    OBSTACLES,
+    DECALS,
+    PICKUPS,
+    MAX
+};
+
+const char* propCategoryNames[] = {
+    "Nature",
+    "Not Nature",
+    "Signs",
+    "Obstacles",
+    "Decals",
+    "Pickups",
+};
+
 class Model
 {
 public:
@@ -72,6 +92,7 @@ public:
     std::vector<ModelObject> objects;
     ModelUsage modelUsage = ModelUsage::STATIC_PROP;
     f32 density = 150.f;
+    PropCategory category = PropCategory::NOT_NATURE;
 
     void serialize(Serializer& s);
     ModelObject* getObjByName(const char* name)

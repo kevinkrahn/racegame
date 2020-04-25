@@ -7,14 +7,16 @@
 
 class StaticMesh : public PlaceableEntity
 {
-    struct MeshItem
+    i64 modelGuid = 0;
+    Model* model = nullptr;
+
+    struct Object
     {
-        LitRenderable s;
-        glm::mat4 transform;
-        PxShape* shape;
+        ModelObject* modelObject = nullptr;
+        PxShape* shape = nullptr;
     };
-    SmallVec<MeshItem> meshes;
-    u32 meshIndex = 0;
+
+    std::vector<Object> objects;
 
 public:
     void applyDecal(class Decal& decal) override;
@@ -22,14 +24,8 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onPreview(RenderWorld* rw) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
-    void serializeState(Serializer& s) override
-    {
-        PlaceableEntity::serializeState(s);
-        s.field(meshIndex);
-    }
+    void serializeState(Serializer& s) override;
     void updateTransform(class Scene* scene) override;
-    u32 getVariationCount() const override;
-    void setVariationIndex(u32 variationIndex) override { meshIndex = variationIndex; }
-    EditorCategory getEditorCategory(u32 variationIndex) const override;
-    void loadMeshes();
+    std::vector<PropPrefabData> generatePrefabProps() override;
+    const char* getName() const override { return model->name.c_str(); }
 };

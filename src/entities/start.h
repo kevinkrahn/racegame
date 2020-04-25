@@ -28,5 +28,4 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
     void onPreview(RenderWorld* rw) override;
-    EditorCategory getEditorCategory(u32 variationIndex) const override { return EditorCategory::MISC; }
 };
