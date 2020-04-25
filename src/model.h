@@ -24,6 +24,7 @@ public:
     glm::vec3 scale;
     u32 meshIndex;
     bool isCollider = false;
+    i64 materialGuid = 0;
 
     PxShape* mousePickShape = nullptr;
 
@@ -35,6 +36,7 @@ public:
         s.field(scale);
         s.field(meshIndex);
         s.field(isCollider);
+        s.field(materialGuid);
     }
 
     void createMousePickCollisionShape(class Model* model);
@@ -57,6 +59,7 @@ public:
     std::string sourceSceneName;
     std::vector<Mesh> meshes;
     std::vector<ModelObject> objects;
+    bool isPlaceableObject = true;
     bool isDynamic = false;
     f32 density = 150.f;
 

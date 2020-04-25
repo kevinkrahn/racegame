@@ -12,6 +12,7 @@ void Model::serialize(Serializer &s)
     s.field(sourceSceneName);
     s.field(meshes);
     s.field(objects);
+    s.field(isPlaceableObject);
     s.field(isDynamic);
     s.field(density);
 
@@ -31,7 +32,8 @@ void ModelObject::createMousePickCollisionShape(Model* model)
         mousePickShape->release();
     }
     PxTriangleMesh* collisionGeometry = model->meshes[meshIndex].getCollisionMesh();
-    mousePickShape = g_game.physx.physics->createShape(PxTriangleMeshGeometry(collisionGeometry),
+    mousePickShape = g_game.physx.physics->createShape(
+            PxTriangleMeshGeometry(collisionGeometry, convert(scale)),
             *g_game.physx.defaultMaterial);
     mousePickShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0));
     mousePickShape->setLocalPose(convert(getTransform()));

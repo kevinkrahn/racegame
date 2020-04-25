@@ -42,7 +42,7 @@ void ModelEditor::setModel(Model* model)
     physicsScene->addActor(*body);
 }
 
-void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
+void ModelEditor::showSceneSelection()
 {
     if (ImGui::BeginPopupModal("Blender Import", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -65,8 +65,12 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             ImGui::CloseCurrentPopup();
         }
+        ImGui::EndPopup();
     }
+}
 
+void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
+{
     ImGui::Begin("Model Editor");
     // TODO: Add keyboard shortcut
     if (ImGui::Button("Save"))
@@ -85,6 +89,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             loadBlenderFile(model->sourceFilePath);
         }
     }
+    showSceneSelection();
     ImGui::SameLine();
     if (ImGui::Button("Reimport"))
     {
@@ -104,6 +109,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     ImGui::Checkbox("Show Grid", &showGrid);
 
     ImGui::Gap();
+    ImGui::Checkbox("Placeable in Editor", &model->isPlaceableObject);
     ImGui::Checkbox("Dynamic", &model->isDynamic);
     if (model->isDynamic)
     {
@@ -149,6 +155,20 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         if (ImGui::Begin("Object Properties"))
         {
             ImGui::Checkbox("Is Collider", &obj.isCollider);
+
+            if (ImGui::BeginCombo("Material",
+                    obj.materialGuid? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
+            {
+                for (auto& mat : g_res.materials)
+                {
+                    if (ImGui::Selectable(mat.second->name.c_str()))
+                    {
+                        obj.materialGuid = mat.first;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
             ImGui::End();
         }
     }
@@ -251,7 +271,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         }
         else
         {
-            rw->push(LitRenderable(&model->meshes[obj.meshIndex], obj.getTransform()));
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                        g_res.getMaterial(obj.materialGuid)));
         }
     }
     for (u32 selectedIndex : selectedObjects)

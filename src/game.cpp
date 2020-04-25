@@ -387,6 +387,11 @@ void Game::checkDebugKeys()
         isDebugCameraEnabled = !isDebugCameraEnabled;
     }
 
+    if (g_input.isKeyPressed(KEY_F9))
+    {
+        renderer->initShaders();
+    }
+
     if (isDebugOverlayEnabled)
     {
         if (isImGuiMetricsWindowOpen)

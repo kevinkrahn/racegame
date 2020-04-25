@@ -145,6 +145,7 @@ public:
 
     Texture white;
     Texture identityNormal;
+    Material defaultMaterial;
 
     i64 generateGUID()
     {
@@ -233,6 +234,30 @@ public:
         if (iter == modelNameMap.end())
         {
             FATAL_ERROR("Model not found: ", name);
+        }
+        return iter->second;
+    }
+
+    Material* getMaterial(i64 guid)
+    {
+        auto iter = materials.find(guid);
+        if (iter == materials.end())
+        {
+            //FATAL_ERROR("Material not found: ", guid);
+            print("Material not found: ", guid, '\n');
+            return &defaultMaterial;
+        }
+        return iter->second.get();
+    }
+
+    Material* getMaterial(const char* name)
+    {
+        auto iter = materialNameMap.find(name);
+        if (iter == materialNameMap.end())
+        {
+            //FATAL_ERROR("Material not found: ", name);
+            print("Material not found: ", name, '\n');
+            return &defaultMaterial;
         }
         return iter->second;
     }

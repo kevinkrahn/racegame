@@ -20,6 +20,8 @@ class ModelEditor
     PxScene* physicsScene = nullptr;
     PxRigidStatic* body = nullptr;
 
+    void showSceneSelection();
+
 public:
     ModelEditor();
     void onUpdate(class Renderer* renderer, f32 deltaTime);

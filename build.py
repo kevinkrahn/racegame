@@ -158,6 +158,11 @@ def build_assets(force):
         else:
             print('No assets to save')
 
+    for file in glob.glob('shaders/**/*', recursive=True):
+        if not os.path.isfile(file):
+            continue
+        copyFile(file, os.path.join('bin', file))
+
 def build(build_type):
     job_count = str(os.cpu_count())
 

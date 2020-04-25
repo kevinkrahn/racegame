@@ -21,6 +21,7 @@ void Material::serialize(Serializer& s)
 
     s.field(color);
     s.field(emit);
+    s.field(emitPower);
 
     s.field(specularPower);
     s.field(specularStrength);

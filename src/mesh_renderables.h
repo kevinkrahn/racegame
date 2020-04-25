@@ -3,6 +3,149 @@
 #include "renderable.h"
 #include "resources.h"
 #include "renderer.h"
+#include "material.h"
+
+class LitMaterialRenderable : public Renderable
+{
+public:
+    Material* material;
+    glm::mat4 transform;
+    Mesh* mesh;
+    GLuint texture;
+
+    LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material)
+        : material(material), transform(worldTransform), mesh(mesh)
+    {
+        if (material->colorTexture)
+        {
+            texture = g_res.getTexture(material->colorTexture)->handle;
+        }
+        else
+        {
+            texture = g_res.white.handle;
+        }
+    }
+
+    i32 getPriority() const override
+    {
+        //return 20 + material->isCullingEnabled + (material->isTransparent ? 11000 : 0) + (material->alphaCutoff > 0.f);
+        return 20;
+    }
+
+    void onDepthPrepassPriorityTransition(Renderer* renderer) override
+    {
+        glUseProgram(renderer->getShaderProgram(
+            (material->alphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
+    }
+
+    void onDepthPrepass(Renderer* renderer) override
+    {
+        if (material->isTransparent)
+        {
+            return;
+        }
+        if (material->isDepthWriteEnabled)
+        {
+            if (material->alphaCutoff > 0.f)
+            {
+                glUniform1f(5, material->alphaCutoff);
+            }
+            glBindTextureUnit(0, texture);
+            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
+            glBindVertexArray(mesh->vao);
+            glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    void onShadowPassPriorityTransition(Renderer* renderer) override
+    {
+        if (material->castsShadow)
+        {
+            glUseProgram(renderer->getShaderProgram(
+                (material->shadowAlphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
+        }
+    }
+
+    void onShadowPass(Renderer* renderer) override
+    {
+        if (material->castsShadow)
+        {
+            if (material->shadowAlphaCutoff > 0.f)
+            {
+                glUniform1f(5, material->shadowAlphaCutoff);
+            }
+            glBindTextureUnit(0, texture);
+            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
+            glBindVertexArray(mesh->vao);
+            glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    void onLitPassPriorityTransition(Renderer* renderer) override
+    {
+        glDepthFunc(GL_LEQUAL);
+
+        if (material->isCullingEnabled)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
+        else
+        {
+            glDisable(GL_CULL_FACE);
+        }
+
+        if (material->isDepthReadEnabled)
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+
+
+        if (material->isTransparent)
+        {
+            glEnable(GL_BLEND);
+            glDepthMask(material->isDepthWriteEnabled ? GL_TRUE : GL_FALSE);
+        }
+        else
+        {
+            glDepthMask(GL_FALSE);
+            glDisable(GL_BLEND);
+        }
+        glUseProgram(renderer->getShaderProgram(
+                    material->alphaCutoff > 0.f ? "lit_discard" : "lit"));
+    }
+
+    void onLitPass(Renderer* renderer) override
+    {
+        glBindTextureUnit(0, texture);
+
+        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+        glUniform3fv(2, 1, (GLfloat*)&material->color);
+        glUniform3f(3, material->fresnelBias, material->fresnelScale, material->fresnelPower);
+        glUniform3f(4, material->specularPower, material->specularStrength, 0.f);
+        if (material->alphaCutoff > 0.f)
+        {
+            glUniform1f(5, material->alphaCutoff);
+        }
+        glm::vec3 emission = material->emit * material->emitPower;
+        glUniform3fv(6, 1, (GLfloat*)&emission);
+        glUniform3f(7, material->reflectionStrength, material->reflectionLod, material->reflectionBias);
+
+        glBindVertexArray(mesh->vao);
+        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    std::string getDebugString() const override
+    {
+        return "LitMaterialRenderable";
+    }
+};
 
 struct LitSettings
 {

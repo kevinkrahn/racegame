@@ -34,8 +34,6 @@ struct Texture
 public:
     i64 guid = 0;
     std::string name;
-    bool usedForDecal = false;
-    bool usedForBillboard = false;
     bool repeat = true;
     bool generateMipMaps = true;
     f32 lodBias = -0.2f;

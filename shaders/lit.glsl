@@ -52,11 +52,10 @@ void main()
     vec4 tex = texture(texSampler, inTexCoord);
 #if defined ALPHA_DISCARD
     if (tex.a < minAlpha) { discard; }
-#else
+#endif
     outColor = lighting(tex * vec4(inColor * color, 1.0),
             normalize(inNormal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
             fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
-#endif
 }
 
 #endif

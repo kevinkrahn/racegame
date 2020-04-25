@@ -8,8 +8,6 @@ void Texture::serialize(Serializer& s)
     s.field(guid);
     s.field(name);
     s.field(textureType);
-    s.field(usedForBillboard);
-    s.field(usedForBillboard);
     s.field(repeat);
     s.field(generateMipMaps);
     s.field(lodBias);

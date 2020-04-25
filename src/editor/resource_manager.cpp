@@ -112,11 +112,13 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     if (isResourceWindowOpen)
     {
+        const u32 selectedColor = 0xAA22AAFF;
+
         ImGui::Begin("Resources", &isResourceWindowOpen);
 
         if (ImGui::CollapsingHeader("Textures"))
         {
-            ImGui::PushStyleColor(ImGuiCol_Header, 0xAAAA22FF);
+            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
             for (auto tex : textures)
             {
                 u32 flags = ImGuiTreeNodeFlags_Leaf
@@ -155,10 +157,18 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
         if (ImGui::CollapsingHeader("Materials"))
         {
+            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
             for (auto mat : materials)
             {
-                if (ImGui::Selectable(mat->name.c_str(),
-                            selectedMaterial == mat && isMaterialWindowOpen))
+                u32 flags = ImGuiTreeNodeFlags_Leaf
+                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                    | ImGuiTreeNodeFlags_SpanAvailWidth;
+                if (selectedMaterial == mat && isMaterialWindowOpen)
+                {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+                ImGui::TreeNodeEx(mat->name.c_str(), flags);
+                if (ImGui::IsItemClicked())
                 {
                     selectedMaterial = mat;
                     editName = selectedMaterial->name;
@@ -181,14 +191,23 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     ImGui::EndPopup();
                 }
             }
+            ImGui::PopStyleColor();
         }
 
         if (ImGui::CollapsingHeader("Models"))
         {
+            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
             for (auto& model : models)
             {
-                if (ImGui::Selectable(model->name.c_str(), activeEditor == ResourceType::MODEL
-                            && model == modelEditor.getCurrentModel()))
+                u32 flags = ImGuiTreeNodeFlags_Leaf
+                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                    | ImGuiTreeNodeFlags_SpanAvailWidth;
+                if (activeEditor == ResourceType::MODEL && model == modelEditor.getCurrentModel())
+                {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+                ImGui::TreeNodeEx(model->name.c_str(), flags);
+                if (ImGui::IsItemClicked())
                 {
                     activeEditor = ResourceType::MODEL;
                     g_game.unloadScene();
@@ -211,15 +230,24 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     ImGui::EndPopup();
                 }
             }
+            ImGui::PopStyleColor();
         }
 
         if (ImGui::CollapsingHeader("Tracks"))
         {
+            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
             for (auto& track : tracks)
             {
-                if (ImGui::Selectable(track->dict().val()["name"].string().val().c_str(),
-                        g_game.currentScene &&
-                        g_game.currentScene->guid == track->dict().val()["guid"].integer().val()))
+                u32 flags = ImGuiTreeNodeFlags_Leaf
+                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                    | ImGuiTreeNodeFlags_SpanAvailWidth;
+                if (g_game.currentScene &&
+                        g_game.currentScene->guid == track->dict().val()["guid"].integer().val())
+                {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+                ImGui::TreeNodeEx(track->dict().val()["name"].string().val().c_str(), flags);
+                if (ImGui::IsItemClicked())
                 {
                     activeEditor = ResourceType::TRACK;
                     g_game.changeScene(track->dict().val()["guid"].integer().val());
@@ -242,6 +270,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     ImGui::EndPopup();
                 }
             }
+            ImGui::PopStyleColor();
         }
 
         ImGui::End();
@@ -436,9 +465,6 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
         tex.setTextureType(textureType);
     }
 
-    dirty |= ImGui::Checkbox("Used For Decal", &tex.usedForDecal);
-    dirty |= ImGui::Checkbox("Used For Billboard", &tex.usedForBillboard);
-
     changed |= ImGui::Checkbox("Repeat", &tex.repeat);
     changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
     changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);
@@ -470,6 +496,8 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         return;
     }
 
+    Material& mat = *selectedMaterial;
+
     static RenderWorld rw;
     static i32 previewMeshIndex = 0;
 
@@ -483,11 +511,10 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     rw.setClearColor(true, { 0.05f, 0.05f, 0.05f, 1.f });
     rw.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
             glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
-    rw.push(LitRenderable(previewMesh,
-                glm::scale(glm::mat4(1.f), glm::vec3(3.5f)), nullptr, glm::vec3(1.f)));
-    renderer->addRenderWorld(&rw);
+    glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(3.5f));
+    rw.push(LitMaterialRenderable(previewMesh, transform, selectedMaterial));
 
-    Material& mat = *selectedMaterial;
+    renderer->addRenderWorld(&rw);
 
     ImGui::Begin("Material Properties", &isMaterialWindowOpen);
 
@@ -561,18 +588,18 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
 
     ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
     ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
-    ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.02f, 0.f, 100.f);
+    ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
     ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
     ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
     ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
 
     ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
-    ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.05f, 0.f, 1000.f);
+    ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
     ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
 
-    ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength);
-    ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod);
-    ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias);
+    ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
+    ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
+    ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
 
     ImGui::End();
 }
