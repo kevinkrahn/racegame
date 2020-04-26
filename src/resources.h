@@ -149,9 +149,23 @@ public:
 
     i64 generateGUID()
     {
-        // TODO: check for collisions
-        u32 guid[2] = { xorshift32(series), xorshift32(series) };
-        return *((i64*)guid);
+        i64 guid = 0;
+        for(;;)
+        {
+            u32 guidHalf[2] = { xorshift32(series), xorshift32(series) };
+            guid = *((i64*)guidHalf);
+
+            if (textures.find(guid) == textures.end() &&
+                tracks.find(guid) == tracks.end() &&
+                models.find(guid) == models.end() &&
+                materials.find(guid) == materials.end())
+            {
+                break;
+            }
+            print("GUID collision: ", guid, '\n');
+        }
+
+        return guid;
     }
 
     void load();
