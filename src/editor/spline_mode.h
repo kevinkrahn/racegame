@@ -49,6 +49,197 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         return false;
     }
 
+    void connectSplines()
+    {
+        Spline* splineA = nullptr;
+        Spline* splineB = nullptr;
+        u32 pointIndexA = 0;
+        u32 pointIndexB = 0;
+        if (selectedPoints.size() != 2)
+        {
+            return;
+        }
+        for (auto& selection : selectedPoints)
+        {
+            if (!splineA)
+            {
+                splineA = selection.spline;
+                pointIndexA = selection.pointIndex;
+            }
+            else
+            {
+                splineB = selection.spline;
+                pointIndexB = selection.pointIndex;
+                break;
+            }
+        }
+        if (!splineA || !splineB)
+        {
+            return;
+        }
+
+        if (pointIndexA == splineA->points.size() - 1 &&
+            pointIndexB == splineB->points.size() - 1)
+        {
+            for (auto it = splineB->points.rbegin(); it != splineB->points.rend(); ++it)
+            {
+                SplinePoint point = *it;
+                std::swap(point.handleOffsetA, point.handleOffsetB);
+                splineA->points.push_back(point);
+            }
+        }
+        else if (pointIndexA == splineA->points.size() - 1 &&
+            pointIndexB == 0)
+        {
+            for (auto it = splineB->points.begin(); it!=splineB->points.end(); ++it)
+            {
+                splineA->points.push_back(*it);
+            }
+        }
+        else if (pointIndexA == 0 &&
+            pointIndexB == splineB->points.size() - 1)
+        {
+            for (auto it = splineB->points.rbegin(); it != splineB->points.rend(); ++it)
+            {
+                splineA->points.insert(splineA->points.begin(), *it);
+            }
+        }
+        else if (pointIndexA == 0 &&
+            pointIndexB == 0)
+        {
+            for (auto it = splineB->points.begin(); it!=splineB->points.end(); ++it)
+            {
+                SplinePoint point = *it;
+                std::swap(point.handleOffsetA, point.handleOffsetB);
+                splineA->points.insert(splineA->points.begin(), point);
+            }
+        }
+        else
+        {
+            return;
+        }
+        selectedPoints.clear();
+        splineA->isDirty = true;
+        splineB->destroy();
+    }
+
+    void subdividePoints()
+    {
+        if (selectedPoints.size() != 2
+                || selectedPoints[0].spline != selectedPoints[1].spline)
+        {
+            return;
+        }
+
+        if (glm::abs((i32)selectedPoints[0].pointIndex - (i32)selectedPoints[1].pointIndex) != 1)
+        {
+            return;
+        }
+
+        Spline* spline = selectedPoints[0].spline;
+
+        u32 pointIndexA = selectedPoints[0].pointIndex;
+        u32 pointIndexB = selectedPoints[1].pointIndex;
+        if (pointIndexB < pointIndexA)
+        {
+            std::swap(pointIndexA, pointIndexB);
+        }
+        SplinePoint& p1 = spline->points[pointIndexA];
+        SplinePoint& p2 = spline->points[pointIndexB];
+        glm::vec3 midPoint = pointOnBezierCurve(p1.position, p1.position + p1.handleOffsetB,
+                p2.position + p2.handleOffsetA, p2.position, 0.5f);
+        glm::vec3 handleA = pointOnBezierCurve(p1.position, p1.position + p1.handleOffsetB,
+                p2.position + p2.handleOffsetA, p2.position, 0.4f) - midPoint;
+        glm::vec3 handleB = pointOnBezierCurve(p1.position, p1.position + p1.handleOffsetB,
+                p2.position + p2.handleOffsetA, p2.position, 0.6f) - midPoint;
+        spline->points.insert(spline->points.begin() + pointIndexB, {
+            midPoint,
+            handleA,
+            handleB
+        });
+        spline->isDirty = true;
+    }
+
+    void splitSpline(Scene* scene)
+    {
+        if (selectedPoints.empty())
+        {
+            return;
+        }
+
+        Spline* spline = selectedPoints[0].spline;
+        if (selectedPoints.front().pointIndex == 0 ||
+            selectedPoints.front().pointIndex == spline->points.size() - 1)
+        {
+            return;
+        }
+        Spline* newSpline = (Spline*)g_entities[5].create();
+
+        newSpline->points = std::vector<SplinePoint>(
+                spline->points.begin() + selectedPoints.front().pointIndex,
+                spline->points.end());
+        newSpline->scale = spline->scale;
+        newSpline->modelGuid = spline->modelGuid;
+        spline->points.erase(
+                spline->points.begin() + selectedPoints.front().pointIndex + 1,
+                spline->points.end());
+        selectedPoints.clear();
+
+        spline->isDirty = true;
+        newSpline->isDirty = true;
+
+        scene->addEntity(newSpline);
+    }
+
+    void deletePoints()
+    {
+        if (selectedPoints.empty())
+        {
+            return;
+        }
+
+        for (auto& selection : selectedPoints)
+        {
+            selection.spline->points.erase(selection.spline->points.begin() + selection.pointIndex);
+            if (selection.spline->points.empty())
+            {
+                selection.spline->destroy();
+            }
+        }
+        selectedPoints.clear();
+    }
+
+    void matchZ(bool lowest)
+    {
+        if (selectedPoints.empty())
+        {
+            return;
+        }
+
+        f32 z = selectedPoints[0].spline->points[0].position.z;
+        for (auto& selection : selectedPoints)
+        {
+            if (lowest)
+            {
+                if (selection.spline->points[selection.pointIndex].position.z < z)
+                {
+                    z = selection.spline->points[selection.pointIndex].position.z;
+                }
+            }
+            else
+            {
+                if (selection.spline->points[selection.pointIndex].position.z > z)
+                {
+                    z = selection.spline->points[selection.pointIndex].position.z;
+                }
+            }
+        }
+        for (auto& selection : selectedPoints)
+        {
+            selection.spline->points[selection.pointIndex].position.z = z;
+        }
+    }
+
 public:
     SplineMode() : EditorMode("Splines") {}
 
@@ -115,7 +306,7 @@ public:
             {
                 for (u32 i=0; i<spline->points.size(); ++i)
                 {
-                    if (raySphereIntersection(cam, rayDir, spline->points[i].position, 0.02f))
+                    if (raySphereIntersection(cam, rayDir, spline->points[i].position, 0.015f))
                     {
                         bool alreadySelected = false;
                         for (u32 j=0; j<selectedPoints.size(); ++j)
@@ -158,7 +349,7 @@ public:
                 {
                     // handle A
                     if (raySphereIntersection(cam, rayDir,
-                            spline->points[i].position + spline->points[i].handleOffsetA, 0.0125f))
+                            spline->points[i].position + spline->points[i].handleOffsetA, 0.012f))
                     {
                         bool alreadySelected = false;
                         for (u32 j=0; j<selectedPoints.size(); ++j)
@@ -185,7 +376,7 @@ public:
 
                     // handle B
                     if (raySphereIntersection(cam, rayDir,
-                            spline->points[i].position + spline->points[i].handleOffsetB, 0.0125f))
+                            spline->points[i].position + spline->points[i].handleOffsetB, 0.012f))
                     {
                         bool alreadySelected = false;
                         for (u32 j=0; j<selectedPoints.size(); ++j)
@@ -306,24 +497,35 @@ public:
         if (ImGui::Button("Connect Splines [c]", buttonSize)
                 || (!isKeyboardHandled && g_input.isKeyPressed(KEY_C)))
         {
+            connectSplines();
         }
 
         if (ImGui::Button("Subdivide [n]", buttonSize)
                 || (!isKeyboardHandled && g_input.isKeyPressed(KEY_N)))
         {
+            subdividePoints();
         }
 
-        if (ImGui::Button("Split [t]", buttonSize)
+        if (ImGui::Button("Split Spline [t]", buttonSize)
                 || (!isKeyboardHandled && g_input.isKeyPressed(KEY_T)))
         {
+            splitSpline(scene);
+        }
+
+        if (ImGui::Button("Delete Points [DELETE]", buttonSize)
+                || (!isKeyboardHandled && g_input.isKeyPressed(KEY_T)))
+        {
+            deletePoints();
         }
 
         if (ImGui::Button("Match Highest Z", buttonSize))
         {
+            matchZ(false);
         }
 
         if (ImGui::Button("Match Lowest Z", buttonSize))
         {
+            matchZ(true);
         }
     }
 
@@ -370,6 +572,9 @@ public:
             glm::vec3& sourceP = selection.firstHandle ?
                 selection.spline->points[selection.pointIndex].handleOffsetA :
                 selection.spline->points[selection.pointIndex].handleOffsetB;
+            glm::vec3 oppositeHandleP = selection.firstHandle ?
+                selection.spline->points[selection.pointIndex].handleOffsetB :
+                selection.spline->points[selection.pointIndex].handleOffsetA;
             glm::vec3 p = pointP + sourceP;
 
             if (dragAxis & DragAxis::X)
@@ -391,6 +596,7 @@ public:
             }
 
             sourceP = p - pointP;
+            oppositeHandleP = -sourceP;
         }
     }
 
