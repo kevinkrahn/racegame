@@ -178,7 +178,7 @@ public:
                 }
                 glm::vec3 gizmoPosition = minP + (maxP - minP) * 0.5f;
                 isMouseHandled = transformGizmo.update(gizmoPosition, scene, renderer->getRenderWorld(),
-                        deltaTime, glm::mat4(1.f), this);
+                        deltaTime, glm::mat4(1.f), this, false);
             }
 
             glm::vec3 offset(0, 0, 0.05f);

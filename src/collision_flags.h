@@ -16,6 +16,7 @@ enum
     COLLISION_FLAG_DYNAMIC    = 1 << 11,
     COLLISION_FLAG_PICKUP     = 1 << 12,
     COLLISION_FLAG_BOOSTER    = 1 << 13,
+    COLLISION_FLAG_SPLINE     = 1 << 14,
 };
 
 enum

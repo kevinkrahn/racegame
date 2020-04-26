@@ -35,6 +35,7 @@ class Spline : public Entity
         Material* material = nullptr;
         Mesh collisionMesh;
         PxShape* collisionShape = nullptr;
+        PxShape* collisionShapeForSelection = nullptr;
 
         MeshInfo() {}
         MeshInfo(MeshInfo&& other) = default;
@@ -103,4 +104,5 @@ public:
 
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onRenderWireframe(RenderWorld* rw, Scene* scene, f32 deltaTime);
 };

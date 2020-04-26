@@ -47,6 +47,17 @@ void Spline::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     }
 }
 
+void Spline::onRenderWireframe(RenderWorld* rw, Scene* scene, f32 deltaTime)
+{
+    for (auto& rm : meshes)
+    {
+        if (rm.material)
+        {
+            rw->push(WireframeRenderable(&rm.mesh, glm::mat4(1.f)));
+        }
+    }
+}
+
 void Spline::updateMesh(Scene* scene)
 {
     isDirty = false;
@@ -70,11 +81,11 @@ void Spline::updateMesh(Scene* scene)
 
     Model* model = g_res.getModel(modelGuid);
 
-    if (!actor && model->hasCollision())
+    if (!actor)
     {
         actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
         physicsUserData.entityType = ActorUserData::ENTITY;
-        physicsUserData.entity = nullptr;
+        physicsUserData.entity = this;
         actor->userData = &physicsUserData;
         scene->getPhysicsScene()->addActor(*actor);
     }
@@ -129,6 +140,7 @@ void Spline::updateMesh(Scene* scene)
     }
     polyLine.pop_back();
 
+    bool modelHasCollision = model->hasCollision();
     for (auto& obj : model->objects)
     {
         MeshInfo meshInfo;
@@ -142,12 +154,22 @@ void Spline::updateMesh(Scene* scene)
                     PxTriangleMeshGeometry(outputMesh->getCollisionMesh()),
                     *scene->railingMaterial);
             meshInfo.collisionShape->setQueryFilterData(PxFilterData(
-                        COLLISION_FLAG_OBJECT, DECAL_RAILING, 0, DRIVABLE_SURFACE));
+                        COLLISION_FLAG_OBJECT | COLLISION_FLAG_SPLINE, DECAL_RAILING, 0, DRIVABLE_SURFACE));
             meshInfo.collisionShape->setSimulationFilterData(PxFilterData(
-                        COLLISION_FLAG_OBJECT, -1, 0, 0));
+                        COLLISION_FLAG_OBJECT | COLLISION_FLAG_SPLINE, -1, 0, 0));
         }
         else
         {
+            if (!modelHasCollision)
+            {
+                meshInfo.collisionShapeForSelection = PxRigidActorExt::createExclusiveShape(*actor,
+                        PxTriangleMeshGeometry(outputMesh->getCollisionMesh()),
+                        *scene->railingMaterial);
+                meshInfo.collisionShapeForSelection->setQueryFilterData(
+                        PxFilterData(COLLISION_FLAG_SPLINE, 0, 0, 0));
+                meshInfo.collisionShapeForSelection->setSimulationFilterData(PxFilterData(0, 0, 0, 0));
+            }
+
             outputMesh->createVAO();
             meshInfo.material = g_res.getMaterial(obj.materialGuid);
         }

@@ -57,7 +57,7 @@ public:
     }
 
     bool update(glm::vec3 const& p, Scene* scene, RenderWorld* rw, f32 deltaTime,
-            glm::mat4 const& orientation, TransformGizmoHandler* handler)
+            glm::mat4 const& orientation, TransformGizmoHandler* handler, bool drawCenter=true)
     {
         bool isMouseClickHandled = ImGui::GetIO().WantCaptureMouse;
         bool isKeyboardHandled = ImGui::GetIO().WantCaptureKeyboard;
@@ -122,11 +122,11 @@ public:
 
         if (transformMode == TransformMode::TRANSLATE)
         {
-            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), p);
-            glm::vec3 hitPos = cam.position + rayDir * t;
-            t = rayPlaneIntersection(cam.position, rayDir,
+            f32 xyT = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), p);
+            glm::vec3 hitPos = cam.position + rayDir * xyT;
+            f32 zT = rayPlaneIntersection(cam.position, rayDir,
                     glm::normalize(glm::vec3(glm::vec2(-rayDir), 0.f)), p);
-            glm::vec3 hitPosZ = cam.position + rayDir * t;
+            glm::vec3 hitPosZ = cam.position + rayDir * zT;
 
             if (!isMouseClickHandled)
             {
@@ -188,28 +188,48 @@ public:
 
             if (entityDragAxis)
             {
-                handler->gizmoDrag(p, hitPos, hitPosZ, entityDragOffset, entityDragAxis);
+                bool valid = false;
 
                 if (entityDragAxis & DragAxis::X)
                 {
                     xCol = xColHighlight;
+                    if (xyT < 300.f)
+                    {
+                        valid = true;
+                    }
                 }
 
                 if (entityDragAxis & DragAxis::Y)
                 {
                     yCol = yColHighlight;
+                    if (xyT < 300.f)
+                    {
+                        valid = true;
+                    }
                 }
 
                 if (entityDragAxis & DragAxis::Z)
                 {
                     zCol = zColHighlight;
+                    if (zT < 300.f)
+                    {
+                        valid = true;
+                    }
+                }
+
+                if (valid)
+                {
+                    handler->gizmoDrag(p, hitPos, hitPosZ, entityDragOffset, entityDragAxis);
                 }
             }
 
             Mesh* arrowMesh = g_res.getMesh("world.TranslateArrow");
-            Mesh* centerMesh = g_res.getMesh("world.Sphere");
-            rw->push(OverlayRenderable(centerMesh, 0,
-                    glm::translate(glm::mat4(1.f), p), centerCol, -1));
+            if (drawCenter)
+            {
+                Mesh* centerMesh = g_res.getMesh("world.Sphere");
+                rw->push(OverlayRenderable(centerMesh, 0,
+                        glm::translate(glm::mat4(1.f), p), centerCol, -1));
+            }
 
             rw->push(OverlayRenderable(arrowMesh, 0,
                     glm::translate(glm::mat4(1.f), p), xCol));
@@ -438,9 +458,12 @@ public:
             }
 
             Mesh* arrowMesh = g_res.getMesh("world.ScaleArrow");
-            Mesh* centerMesh = g_res.getMesh("world.UnitCube");
-            rw->push(OverlayRenderable(centerMesh, 0,
-                    glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
+            if (drawCenter)
+            {
+                Mesh* centerMesh = g_res.getMesh("world.UnitCube");
+                rw->push(OverlayRenderable(centerMesh, 0,
+                        glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
+            }
 
             rw->push(OverlayRenderable(arrowMesh, 0,
                     glm::translate(glm::mat4(1.f), p) * orientation, xCol));

@@ -199,6 +199,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     physicsScene->simulate(deltaTime);
     physicsScene->fetchResults(true);
 
+    camera.setNearFar(1.f, 140.f);
     camera.update(deltaTime, renderer->getRenderWorld());
 
     // draw grid
