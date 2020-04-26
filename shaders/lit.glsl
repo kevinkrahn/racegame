@@ -20,7 +20,7 @@ layout(location = 4) out vec3 outShadowCoord;
 void main()
 {
     outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
-    outWorldPosition.x += sin(outWorldPosition.x + outWorldPosition.y * 0.5f + outWorldPosition.z + time * 0.8f) * windAmount * attrTexCoord.y;
+    outWorldPosition.x += sin(outWorldPosition.x + outWorldPosition.y * 0.5f + outWorldPosition.z * 0.2f + time * 0.8f) * windAmount * attrTexCoord.y;
     //outWorldPosition.x += sin(outWorldPosition.x * 0.5f + outWorldPosition.y * 0.1f + outWorldPosition.z * 0.25f + time * 0.2f) * 0.15f * windAmount * attrTexCoord.y;
     gl_Position = cameraViewProjection * vec4(outWorldPosition, 1.0);
     outColor = attrColor;

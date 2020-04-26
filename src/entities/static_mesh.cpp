@@ -5,11 +5,21 @@
 #include "../mesh_renderables.h"
 #include "../game.h"
 
+void StaticMesh::loadModel()
+{
+    model = g_res.getModel(modelGuid);
+    objects.clear();
+    for (auto& obj : model->objects)
+    {
+        objects.push_back({ &obj });
+    }
+}
+
 void StaticMesh::onCreate(Scene* scene)
 {
     updateTransform(scene);
+    loadModel();
 
-    model = g_res.getModel(modelGuid);
     if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
     {
         actor = g_game.physx.physics->createRigidDynamic(
@@ -123,9 +133,47 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void StaticMesh::onPreview(RenderWorld* rw)
 {
-    rw->setViewportCamera(0, glm::vec3(3.f, 1.f, 4.f) * 4.5f,
-            glm::vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
-    // TODO: automatically compute camera for optimal view of model
+    transform = glm::mat4(1.f);
+    BoundingBox bb = model->getBoundingbox(transform);
+    glm::vec3 dir = glm::normalize(glm::vec3(3.f, 1.f, 4.f));
+    f32 dist = 3.f;
+    for (u32 i=1; i<200; ++i)
+    {
+        rw->setViewportCamera(0, dir * dist, (bb.max + bb.min) * 0.5f, 1.f, 200.f, 32.f);
+
+        glm::vec3 points[] = {
+            { bb.min.x, bb.min.y, bb.min.z },
+            { bb.min.x, bb.max.y, bb.min.z },
+            { bb.max.x, bb.min.y, bb.min.z },
+            { bb.max.x, bb.max.y, bb.min.z },
+            { bb.min.x, bb.min.y, bb.max.z },
+            { bb.min.x, bb.max.y, bb.max.z },
+            { bb.max.x, bb.min.y, bb.max.z },
+            { bb.max.x, bb.max.y, bb.max.z },
+        };
+
+        bool allPointsVisible = true;
+        f32 margin = 0.01f;
+        for (auto& p : points)
+        {
+            glm::vec4 tp = rw->getCamera(0).viewProjection * glm::vec4(p, 1.f);
+            tp.x = (((tp.x / tp.w) + 1.f) / 2.f);
+            tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f);
+            if (tp.x < margin || tp.x > 1.f - margin || tp.y < margin || tp.y > 1.f - margin)
+            {
+                allPointsVisible = false;
+                break;
+            }
+        }
+
+        if (allPointsVisible)
+        {
+            break;
+        }
+
+        dist += 1.f;
+    }
+
     for (auto& o : objects)
     {
         if (o.modelObject->isVisible)
@@ -203,8 +251,9 @@ std::vector<PropPrefabData> StaticMesh::generatePrefabProps()
                 model.second->category,
                 model.second->name,
                 [guid](PlaceableEntity* e) {
-                    ((StaticMesh*)e)->modelGuid = guid;
-                    ((StaticMesh*)e)->model = g_res.getModel(guid);
+                    StaticMesh* sm = (StaticMesh*)e;
+                    sm->modelGuid = guid;
+                    sm->loadModel();
                 }
             });
         }

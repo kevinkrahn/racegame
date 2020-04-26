@@ -106,4 +106,28 @@ public:
         }
         FATAL_ERROR("Cannot find object with name \"", name, "\" in model \"", this->name, "\"");
     }
+    Mesh* getMeshByName(const char* name)
+    {
+        for (auto& mesh : meshes)
+        {
+            if (mesh.name == name)
+            {
+                return &mesh;
+            }
+        }
+        FATAL_ERROR("Cannot find mesh with name \"", name, "\" in model \"", this->name, "\"");
+    }
+    BoundingBox getBoundingbox(glm::mat4 const& m)
+    {
+        BoundingBox bb;
+        bb.min = { FLT_MAX, FLT_MAX, FLT_MAX };
+        bb.max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+        for (auto& obj : objects)
+        {
+            bb = bb.growToFit(meshes[obj.meshIndex].aabb.transform(m * obj.getTransform()));
+        }
+
+        return bb;
+    }
 };

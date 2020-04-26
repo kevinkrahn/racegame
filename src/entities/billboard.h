@@ -59,7 +59,7 @@ public:
         for (auto& obj : model->objects)
         {
             rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                        obj.getTransform() * transform, g_res.getMaterial(obj.materialGuid)));
+                        transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
         }
     }
 

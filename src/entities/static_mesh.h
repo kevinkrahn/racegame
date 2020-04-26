@@ -18,6 +18,8 @@ class StaticMesh : public PlaceableEntity
 
     std::vector<Object> objects;
 
+    void loadModel();
+
 public:
     void applyDecal(class Decal& decal) override;
     void onCreate(class Scene* scene) override;

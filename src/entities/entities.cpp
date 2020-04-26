@@ -19,10 +19,10 @@ void registerEntities()
     registerEntity<StaticMesh>();  // 2
     registerEntity<StaticDecal>(); // 3
     registerEntity<Start>();       // 4
-    registerEntity<Start>();            // 5
+    registerEntity<Start>();       // REMOVE
     registerEntity<Booster>();     // 6
     registerEntity<Oil>();         // 7
-    registerEntity<Start>();      // 8
+    registerEntity<Start>();       // REMOVE
     registerEntity<Billboard>();   // 9
     registerEntity<Pickup>();      // 10
     registerEntity<Glue>();        // 11

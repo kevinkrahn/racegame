@@ -1147,6 +1147,7 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
 {
     i32 entityID = (i32)val.dict(true).val()["entityID"].integer().val();
     Serializer s(val, true);
+#if 0
     if (entityID == 5)
     {
         val.dict().val()["modelGuid"] = g_res.getModel("tree")->guid;
@@ -1157,6 +1158,7 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
         val.dict().val()["modelGuid"] = g_res.getModel("barrel")->guid;
         entityID = 2;
     }
+#endif
     Entity* entity = g_entities[entityID].create();
     entity->serializeState(s);
     this->addEntity(entity);

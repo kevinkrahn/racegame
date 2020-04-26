@@ -110,6 +110,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     ImGui::InputText("Name", &model->name);
     ImGui::Checkbox("Show Grid", &showGrid);
     ImGui::Checkbox("Show Floor", &showFloor);
+    ImGui::Checkbox("Show Bounds", &showBoundingBox);
+    ImGui::Checkbox("Show Colliders", &showColliders);
 
     ImGui::Gap();
     ImGui::Combo("Usage", (i32*)&model->modelUsage,
@@ -129,6 +131,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     model->category = (PropCategory)i;
                 }
             }
+            ImGui::EndCombo();
         }
     }
 
@@ -293,7 +296,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
                         g_res.getMaterial(obj.materialGuid)));
         }
-        if (obj.isCollider)
+        if (obj.isCollider && showColliders)
         {
             rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
                         { 1.f, 1.f, 0.1f, 0.5f }));
@@ -303,6 +306,48 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         auto& obj = model->objects[selectedIndex];
         rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform()));
+    }
+
+    if (showBoundingBox)
+    {
+        BoundingBox bb = model->getBoundingbox(glm::mat4(1.f));
+
+#if 0
+        glm::vec3 points[] = {
+            { bb.min.x, bb.min.y, bb.min.z },
+            { bb.min.x, bb.max.y, bb.min.z },
+            { bb.max.x, bb.min.y, bb.min.z },
+            { bb.max.x, bb.max.y, bb.min.z },
+            { bb.min.x, bb.min.y, bb.max.z },
+            { bb.min.x, bb.max.y, bb.max.z },
+            { bb.max.x, bb.min.y, bb.max.z },
+            { bb.max.x, bb.max.y, bb.max.z },
+        };
+
+        bool allPointsVisible = true;
+        for (auto& p : points)
+        {
+            glm::vec4 tp = rw->getCamera(0).viewProjection * glm::vec4(p, 1.f);
+            tp.x = (((tp.x / tp.w) + 1.f) / 2.f);
+            tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f);
+            if (tp.x < 0.f || tp.x > 1.f || tp.y < 0.f || tp.y > 1.f)
+            {
+                allPointsVisible = false;
+                rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
+                            glm::translate(glm::mat4(1.f), p)));
+            }
+            else
+            {
+                rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
+                            glm::translate(glm::mat4(1.f), p), nullptr, glm::vec4(0, 1, 0, 1)));
+            }
+        }
+
+        debugDraw.boundingBox(bb, glm::mat4(1.f),
+                allPointsVisible ? glm::vec4(0, 1, 0, 1) : glm::vec4(1));
+#else
+        debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1));
+#endif
     }
 
     rw->add(&debugDraw);

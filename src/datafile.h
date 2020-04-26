@@ -633,7 +633,7 @@ class Serializer
 public:
     DataFile::Value::Dict& dict;
     bool deserialize;
-    const char* context;
+    const char* context = "";
 
     Serializer(DataFile::Value& val, bool deserialize) : dict(val.dict(true).val()),
         deserialize(deserialize) {}
