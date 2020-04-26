@@ -6,6 +6,7 @@
 #include "../imgui.h"
 #include "terrain_mode.h"
 #include "track_mode.h"
+#include "spline_mode.h"
 #include "decoration_mode.h"
 #include "path_mode.h"
 
@@ -14,6 +15,7 @@ void Editor::reset()
     modes.clear();
     modes.push_back(std::make_unique<TerrainMode>());
     modes.push_back(std::make_unique<TrackMode>());
+    modes.push_back(std::make_unique<SplineMode>());
     modes.push_back(std::make_unique<DecorationMode>());
     modes.push_back(std::make_unique<PathMode>());
 

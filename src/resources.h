@@ -93,20 +93,12 @@ struct Sounds
 };
 
 const char* dataFiles[] = {
-    "models/cactus.dat",
     "models/mine.dat",
-    "models/plants.dat",
     "models/railing.dat",
     "models/railing2.dat",
-    "models/rock.dat",
-    "models/tree.dat",
     "models/world.dat",
-    "models/barrel.dat",
-    "models/ctvpole.dat",
-    "models/billboard.dat",
     "models/money.dat",
     "models/wrench.dat",
-    "models/windmill.dat",
 
     "models/vehicles/mini.dat",
     "models/vehicles/coolcar.dat",

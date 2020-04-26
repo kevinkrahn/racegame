@@ -13,13 +13,14 @@ class Billboard : public PlaceableEntity
 {
     Model* model = nullptr;
     ModelObject* billboardObject = nullptr;
-    //Texture* billboardTexture = nullptr;
+    i64 billboardTextureGuid = 0;
 
 public:
     Billboard()
     {
         model = g_res.getModel("billboard");
         billboardObject = model->getObjByName("BillboardSign");
+        billboardTextureGuid = g_res.getTexture("billboard_1")->guid;
     }
 
     void applyDecal(class Decal& decal) override
@@ -61,6 +62,8 @@ public:
             rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
                         transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
         }
+        rw->push(LitRenderable(model->getMeshByName("billboard.BillboardSign"),
+                    transform, g_res.getTexture(billboardTextureGuid)));
     }
 
     void onPreview(RenderWorld* rw) override
@@ -84,11 +87,27 @@ public:
 
     void showDetails(Scene* scene) override
     {
-        // TODO
+        u32 buttonCount = 0;
+        for (auto& tex : g_res.textures)
+        {
+            if (tex.second->name.find("billboard") != std::string::npos)
+            {
+                f32 w = glm::min(ImGui::GetColumnWidth(), 200.f);
+                f32 h = w * 0.5f;
+                ImGui::PushID(tex.second->name.c_str());
+                if (ImGui::ImageButton((void*)(uintptr_t)tex.second->getPreviewHandle(), { w, h }))
+                {
+                    billboardTextureGuid = tex.first;
+                }
+                ImGui::PopID();
+                ++buttonCount;
+            }
+        }
     }
 
     void serializeState(Serializer& s) override
     {
+        s.field(billboardTextureGuid);
         PlaceableEntity::serializeState(s);
     }
 

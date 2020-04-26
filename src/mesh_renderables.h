@@ -29,22 +29,24 @@ public:
     i32 getPriority() const override
     {
         return 20 + material->isCullingEnabled
-            + (material->isTransparent ? 11000 : 0) + (material->alphaCutoff > 0.f);
+            + (material->isTransparent ? 11000 : 0)
+            + (material->depthOffset != 0.f ? 1 : 0)
+            + (!material->isDepthWriteEnabled ? 10 : 0)
+            + (material->alphaCutoff > 0.f ? 100 : 0);
     }
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override
     {
-        glUseProgram(renderer->getShaderProgram(
-            (material->alphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
+        if (material->isDepthWriteEnabled)
+        {
+            glUseProgram(renderer->getShaderProgram(
+                (material->alphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
+        }
     }
 
     void onDepthPrepass(Renderer* renderer) override
     {
-        if (material->isTransparent)
-        {
-            return;
-        }
-        if (material->isDepthWriteEnabled)
+        if (material->isDepthWriteEnabled && !material->isTransparent)
         {
             glUniform1f(8, material->windAmount);
             if (material->alphaCutoff > 0.f)
@@ -106,7 +108,6 @@ public:
             glDisable(GL_DEPTH_TEST);
         }
 
-
         if (material->isTransparent)
         {
             glEnable(GL_BLEND);
@@ -117,6 +118,17 @@ public:
             glDepthMask(GL_FALSE);
             glDisable(GL_BLEND);
         }
+
+        if (material->depthOffset != 0.f)
+        {
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glPolygonOffset(0.f, -100.f * material->depthOffset);
+        }
+        else
+        {
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }
+
         glUseProgram(renderer->getShaderProgram(
                     material->alphaCutoff > 0.f ? "lit_discard" : "lit"));
     }

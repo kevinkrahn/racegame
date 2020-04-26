@@ -126,6 +126,7 @@ public:
     bool isCameraTourEnabled = true;
 
     RandomSeries randomSeries;
+    SoundHandle backgroundSound = 0;
     PxMaterial* vehicleMaterial = nullptr;
     PxMaterial* trackMaterial = nullptr;
     PxMaterial* offroadMaterial = nullptr;
@@ -137,7 +138,6 @@ public:
     Terrain* terrain = nullptr;
     Track* track = nullptr;
     Start* start = nullptr;
-    SoundHandle backgroundSound = 0;
 
     Scene(DataFile::Value* data=nullptr);
     ~Scene();

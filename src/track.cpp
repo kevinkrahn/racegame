@@ -31,22 +31,24 @@ void Track::onCreate(Scene* scene)
             createSegmentMesh(*c, scene);
         }
     }
-    for (auto& railing : railings)
-    {
-        if (railing->isDirty)
-        {
-            railing->updateMesh();
-        }
-    }
     if (!scene->track)
     {
         scene->track = this;
+    }
+
+    if (railingData.hasValue())
+    {
+        for (auto& r : railingData.array().val())
+        {
+            r.dict().val()["entityID"] = DataFile::makeInteger(5);
+            scene->deserializeEntity(r);
+        }
+        railingData = DataFile::Value();
     }
 }
 
 void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    bool wasTrackUpdated = false;
     for (auto& c : connections)
     {
         /*
@@ -68,64 +70,6 @@ void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         if (c->isDirty || c->vertices.empty())
         {
             createSegmentMesh(*c, scene);
-            wasTrackUpdated = true;
-        }
-    }
-
-    if (wasTrackUpdated)
-    {
-    }
-
-    for (auto& railing : railings)
-    {
-        if (railing->isDirty)
-        {
-            railing->updateMesh();
-        }
-
-        /*
-        for (size_t i=1; i<railing.points.size(); ++i)
-        {
-            RailingPoint const& point = railing.points[i];
-            RailingPoint const& prevPoint = railing.points[i-1];
-            glm::vec3 prevP;
-            for (f32 t=0.f; t<=1.f; t+=0.01f)
-            {
-                glm::vec3 p = pointOnBezierCurve(
-                        prevPoint.position,
-                        prevPoint.position + prevPoint.handleOffsetB,
-                        point.position + point.handleOffsetA,
-                        point.position, t);
-                if (t > 0.f)
-                {
-                    scene->debugDraw.line(p, prevP, blue, blue);
-                }
-                prevP = p;
-            }
-        }
-        */
-
-        if (railing->mesh.vao)
-        {
-            if (railingMeshTypes[railing->meshTypeIndex].flat)
-            {
-                rw->add(railing.get());
-            }
-            else
-            {
-                LitRenderable l;
-                l.settings.mesh = &railing->mesh;
-                l.settings.worldTransform = glm::mat4(1.f);
-                l.settings.texture = railing->tex;
-                if (railing->meshTypeIndex == 3)
-                {
-                    l.settings.reflectionLod = 1.f;
-                    l.settings.reflectionBias = 0.2f;
-                    l.settings.reflectionStrength = 0.8f;
-                    l.settings.color = glm::vec3(0.2f);
-                }
-                rw->push(std::move(l));
-            }
         }
     }
 
@@ -135,10 +79,6 @@ void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 void Track::clearSelection()
 {
     selectedPoints.clear();
-    for (auto& railing : railings)
-    {
-        railing->selectedPoints.clear();
-    }
 }
 
 void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, GridSettings* gridSettings)
@@ -312,7 +252,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
             }
         }
-        if (dragRailingIndex == -1 && dragConnectionIndex == i && dragConnectionHandle == 0)
+        if (dragConnectionIndex == i && dragConnectionHandle == 0)
         {
             c->widthA += widthDiff;
             c->isDirty = true;
@@ -393,7 +333,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
             }
         }
-        if (dragRailingIndex == -1 && dragConnectionIndex == i && dragConnectionHandle == 1)
+        if (dragConnectionIndex == i && dragConnectionHandle == 1)
         {
             c->widthB += widthDiff;
             c->isDirty = true;
@@ -442,6 +382,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     }
 
     // railing points
+#if 0
     for (auto rit = railings.begin(); rit != railings.end();)
     {
         for (auto it = rit->get()->points.begin(); it != rit->get()->points.end();)
@@ -666,10 +607,11 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
         }
     }
+#endif
 
     // handle dragging of points
     if (dragConnectionHandle == -1
-        && (selectedPoints.size() > 0 || hasRailingPointSelected)
+        && selectedPoints.size() > 0
         && (g_input.isMouseButtonDown(MOUSE_LEFT) && !isMouseHandled)
         && glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
     {
@@ -680,16 +622,6 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1),
                     points[selectedPoints.back().pointIndex].position);
             startZ = points[selectedPoints.back().pointIndex].position.z;
-        }
-        for (auto& railing : railings)
-        {
-            if (railing->selectedPoints.size() > 0)
-            {
-                t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1),
-                        railing->points[railing->selectedPoints.back().pointIndex].position);
-                startZ = railing->points[railing->selectedPoints.back().pointIndex].position.z;
-                break;
-            }
         }
 
         glm::vec3 hitPoint = cam.position + rayDir * t;
@@ -714,31 +646,11 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             }
         }
 
-        for (auto& railing : railings)
-        {
-            for (auto& s : railing->selectedPoints)
-            {
-                if (!isDragging)
-                {
-                    s.dragStartPoint = railing->points[s.pointIndex].position;
-                    s.dragStartPoint.z = startZ;
-                }
-                railing->points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
-                railing->isDirty = true;
-                if (gridSettings->snap)
-                {
-                    glm::vec2 p = snapXY(railing->points[s.pointIndex].position, gridSettings->cellSize);
-                    railing->points[s.pointIndex].position =
-                        glm::vec3(p, railing->points[s.pointIndex].position.z);
-                }
-            }
-        }
         isDragging = true;
     }
 
     if (g_input.isMouseButtonReleased(MOUSE_LEFT))
     {
-        dragRailingIndex = -1;
         dragConnectionIndex = -1;
         dragConnectionHandle = -1;
         dragOppositeConnectionIndex = -1;
@@ -772,38 +684,6 @@ void Track::matchZ(bool lowest)
         for (auto& p : selectedPoints)
         {
             points[p.pointIndex].position.z = z;
-        }
-    }
-
-    bool firstPoint = false;
-    f32 z = FLT_MIN;
-    for (auto& r : railings)
-    {
-        for (auto& s : r->selectedPoints)
-        {
-            if (lowest)
-            {
-                if (r->points[s.pointIndex].position.z < z || firstPoint)
-                {
-                    z = r->points[s.pointIndex].position.z;
-                    firstPoint = false;
-                }
-            }
-            else
-            {
-                if (r->points[s.pointIndex].position.z > z || firstPoint)
-                {
-                    z = r->points[s.pointIndex].position.z;
-                    firstPoint = false;
-                }
-            }
-        }
-    }
-    for (auto& r : railings)
-    {
-        for (auto& s : r->selectedPoints)
-        {
-            r->points[s.pointIndex].position.z = z;
         }
     }
 }
@@ -846,6 +726,10 @@ void Track::extendTrack(i32 prefabCurveIndex)
         fromHandleOffset = h;
         selectedPoints.push_back({ (i32)points.size() - 1, {} });
     }
+}
+
+void Track::subdividePoints()
+{
 }
 
 // TODO: something is still wrong with this
@@ -907,6 +791,7 @@ void Track::connectPoints()
     connections.push_back(std::move(segment));
 }
 
+#if 0
 void Track::connectRailings()
 {
     Railing* railingA = nullptr;
@@ -1027,7 +912,7 @@ void Track::split()
                     railing->points.begin() + railing->selectedPoints.front().pointIndex,
                     railing->points.end());
             newRailing->scale = railing->scale;
-            newRailing->meshTypeIndex = railing->meshTypeIndex;
+            newRailing->modelGuid = railing->modelGuid;
             railing->points.erase(
                     railing->points.begin() + railing->selectedPoints.front().pointIndex + 1,
                     railing->points.end());
@@ -1066,6 +951,7 @@ void Track::placeSpline(glm::vec3 const& p, u32 index)
     railing->selectedPoints.push_back({ 0, {} });
     railings.push_back(std::move(railing));
 }
+#endif
 
 Track::BezierSegment* Track::getPointConnection(i32 pointIndex)
 {
@@ -1325,222 +1211,7 @@ void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orth
     }
 }
 
-void Track::Railing::updateMesh()
-{
-    isDirty = false;
-    if (this->points.size() < 2)
-    {
-        if (this->mesh.vao)
-        {
-            this->mesh.destroy();
-        }
-        return;
-    }
-
-    bool flat = track->railingMeshTypes[meshTypeIndex].flat;
-    tex = g_res.getTexture(track->railingMeshTypes[meshTypeIndex].texture);
-
-    if (!actor && !flat)
-    {
-        actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-        physicsUserData.entityType = ActorUserData::TRACK;
-        physicsUserData.entity = nullptr;
-        actor->userData = &physicsUserData;
-        track->scene->getPhysicsScene()->addActor(*actor);
-    }
-
-    u32 steps = 32;
-    std::vector<PolyLinePoint> polyLine;
-    f32 zGroundOffset = flat ? 0.01f : 0.f;
-    for (size_t i=0; i<points.size()-1; ++i)
-    {
-        RailingPoint const& point = points[i];
-        RailingPoint const& nextPoint = points[i+1];
-        for (u32 step=0; step<steps; ++step)
-        {
-            glm::vec3 pos = pointOnBezierCurve(
-                    point.position,
-                    point.position + point.handleOffsetB,
-                    nextPoint.position + nextPoint.handleOffsetA,
-                    nextPoint.position, step / (f32)steps);
-
-            PxRaycastBuffer hit;
-            if (track->scene->raycastStatic(pos + glm::vec3(0, 0, 3),
-                        glm::vec3(0, 0, -1), 6.f, &hit, COLLISION_FLAG_TRACK))
-            {
-                pos.z = hit.block.position.z + zGroundOffset;
-            }
-
-            polyLine.push_back({ pos });
-        }
-    }
-
-    glm::vec3 lastPos = points.back().position;
-    PxRaycastBuffer hit;
-    if (track->scene->raycastStatic(lastPos + glm::vec3(0, 0, 3),
-                glm::vec3(0, 0, -1), 6.f, &hit, COLLISION_FLAG_TRACK))
-    {
-        lastPos.z = hit.block.position.z;
-    }
-    polyLine.push_back({ lastPos });
-
-    f32 pathLength = 0;
-    for (size_t i=0; i<polyLine.size()-1; ++i)
-    {
-        glm::vec3 diff = polyLine[i+1].pos - polyLine[i].pos;
-        f32 thisPathLength = pathLength;
-        pathLength += glm::length(diff);
-        polyLine[i].distanceToHere = thisPathLength;
-        polyLine[i].distance = pathLength;
-        polyLine[i].dir = glm::normalize(diff);
-    }
-    polyLine.pop_back();
-
-    Mesh* railingMesh = g_res.getMesh(track->railingMeshTypes[meshTypeIndex].meshName);
-    Mesh* railingCollisionMesh = !flat
-        ? g_res.getMesh(track->railingMeshTypes[meshTypeIndex].collisionMeshName)
-        : nullptr;
-    f32 scale = this->scale * track->railingMeshTypes[meshTypeIndex].scale;
-    deformMeshAlongPath(railingMesh, &mesh, scale, polyLine, pathLength, flat);
-    if (!flat)
-    {
-        deformMeshAlongPath(railingCollisionMesh, &collisionMesh, scale, polyLine, pathLength, flat);
-    }
-
-    mesh.createVAO();
-    collisionMesh.destroy();
-
-    if (railingCollisionMesh)
-    {
-        if (!collisionShape)
-        {
-            collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                    PxTriangleMeshGeometry(collisionMesh.getCollisionMesh()),
-                    *track->scene->railingMaterial);
-            collisionShape->setQueryFilterData(PxFilterData(
-                        COLLISION_FLAG_OBJECT, DECAL_RAILING, 0, DRIVABLE_SURFACE));
-            collisionShape->setSimulationFilterData(PxFilterData(
-                        COLLISION_FLAG_OBJECT, -1, 0, 0));
-        }
-        else
-        {
-            collisionShape->setGeometry(PxTriangleMeshGeometry(collisionMesh.getCollisionMesh()));
-        }
-    }
-}
-
-void Track::Railing::deformMeshAlongPath(Mesh* railingMesh, Mesh* outputMesh, f32 scale,
-        std::vector<PolyLinePoint> const& polyLine, f32 pathLength, bool flat)
-{
-    f32 railingMeshLength = (railingMesh->aabb.max.x - railingMesh->aabb.min.x) * scale;
-    f32 fractionalRepeatCount = pathLength / railingMeshLength;
-    u32 totalRepeatCount = (u32)fractionalRepeatCount;
-    if (fractionalRepeatCount - (u32)fractionalRepeatCount < 0.5f)
-    {
-        ++totalRepeatCount;
-    }
-    f32 lengthPerMesh = pathLength / totalRepeatCount;
-    f32 railingMeshScaleFactor = lengthPerMesh / railingMeshLength;
-
-    outputMesh->vertices.resize(railingMesh->numVertices
-            * railingMesh->formatStride / sizeof(f32) * totalRepeatCount);
-    outputMesh->indices.resize(railingMesh->numIndices * totalRepeatCount);
-    outputMesh->vertexFormat.clear();
-    for (auto item : railingMesh->vertexFormat)
-    {
-        outputMesh->vertexFormat.push_back(item);
-    }
-    outputMesh->stride = railingMesh->formatStride;
-    outputMesh->elementSize = railingMesh->elementSize;
-    assert(outputMesh->elementSize == 3);
-
-    //f32 invMeshWidth = 1.f / ((railingMesh->aabb.max.y - railingMesh->aabb.min.y) * 8);
-    f32 distanceAlongPath = 0.f;
-    u32 lastPolyLinePointIndex = 0;
-    for (u32 repeatCount=0; repeatCount<totalRepeatCount; ++repeatCount)
-    {
-        for (u32 i=0; i<railingMesh->numVertices; ++i)
-        {
-            u32 j = i * railingMesh->stride / sizeof(f32);
-            glm::vec3 p(railingMesh->vertices[j+0], railingMesh->vertices[j+1], railingMesh->vertices[j+2]);
-            glm::vec3 n(railingMesh->vertices[j+3], railingMesh->vertices[j+4], railingMesh->vertices[j+5]);
-            glm::vec2 uv(railingMesh->vertices[j+9], railingMesh->vertices[j+10]);
-            p.x -= railingMesh->aabb.min.x;
-            p *= scale;
-            p.x *= railingMeshScaleFactor;
-            n.x *= railingMeshScaleFactor;
-
-            u32 pointIndex = lastPolyLinePointIndex;
-
-            while (distanceAlongPath + p.x >= polyLine[pointIndex].distance
-                    && pointIndex < polyLine.size() - 1)
-            {
-                ++pointIndex;
-            }
-            PolyLinePoint const& line = polyLine[pointIndex];
-
-            glm::vec3 xDir = line.dir;
-            glm::vec3 yDir = glm::normalize(glm::cross(glm::vec3(0, 0, 1), xDir));
-            glm::vec3 zDir = glm::normalize(glm::cross(xDir, yDir));
-
-            glm::mat3 m(1.f);
-            m[0] = xDir;
-            m[1] = yDir;
-            m[2] = zDir;
-
-            glm::vec3 dp = line.pos + line.dir *
-                (distanceAlongPath - line.distanceToHere) + m * p;
-
-            // TODO: there is a better way to bend the normal
-            //glm::mat3 nm = glm::inverseTranspose(m);
-            glm::mat3 nm = m;
-            glm::vec3 dn = glm::normalize(nm * n);
-
-            if (flat)
-            {
-                //uv.x = (distanceAlongPath + p.x) * invMeshWidth;
-            }
-
-            // copy over the remaining vertex attributes
-            u32 nj = (repeatCount * railingMesh->formatStride / sizeof(f32) * railingMesh->numVertices)
-                + i * railingMesh->formatStride / sizeof(f32);
-            outputMesh->vertices[nj+0] = dp.x;
-            outputMesh->vertices[nj+1] = dp.y;
-            outputMesh->vertices[nj+2] = dp.z;
-            outputMesh->vertices[nj+3] = dn.x;
-            outputMesh->vertices[nj+4] = dn.y;
-            outputMesh->vertices[nj+5] = dn.z;
-            for (u32 attrIndex = 6; attrIndex < railingMesh->formatStride / sizeof(f32); ++attrIndex)
-            {
-                outputMesh->vertices[nj+attrIndex] = railingMesh->vertices[j+attrIndex];
-            }
-            if (flat)
-            {
-                outputMesh->vertices[nj+6] = uv.x;
-                outputMesh->vertices[nj+7] = uv.y;
-            }
-        }
-
-        distanceAlongPath += lengthPerMesh;
-
-        while (distanceAlongPath >= polyLine[lastPolyLinePointIndex].distance
-                && lastPolyLinePointIndex < polyLine.size() - 1)
-        {
-            ++lastPolyLinePointIndex;
-        }
-
-        // copy over the indices
-        for (u32 i=0; i<railingMesh->numIndices; ++i)
-        {
-            outputMesh->indices[repeatCount * railingMesh->numIndices + i] =
-                railingMesh->indices[i] + (railingMesh->numVertices * repeatCount);
-        }
-    }
-    outputMesh->numVertices =
-        (u32)outputMesh->vertices.size() / (outputMesh->stride / sizeof(f32));
-    outputMesh->numIndices =(u32)outputMesh->indices.size();
-}
-
+#if 0
 void Track::Railing::onLitPassPriorityTransition(Renderer* renderer)
 {
     glEnable(GL_BLEND);
@@ -1565,4 +1236,21 @@ void Track::Railing::onLitPass(Renderer* renderer)
     glUniform3f(2, color.x, color.y, color.z);
     glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     glDisable(GL_POLYGON_OFFSET_FILL);
+}
+#endif
+
+void Track::serializeState(Serializer& s)
+{
+    s.field(points);
+    s.field(connections);
+
+    if (s.deserialize)
+    {
+        for (auto& c : connections)
+        {
+            c->track = this;
+        }
+
+        railingData = s.dict["railings"];
+    }
 }

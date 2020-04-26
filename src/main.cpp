@@ -23,6 +23,7 @@
 #include "model.cpp"
 #include "terrain.cpp"
 #include "track.cpp"
+#include "spline.cpp"
 #include "dynamic_buffer.cpp"
 #include "decal.cpp"
 #include "menu.cpp"

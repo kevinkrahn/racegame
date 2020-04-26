@@ -82,6 +82,7 @@ Scene::Scene(DataFile::Value* data)
         addEntity(g_entities[0].create());
         addEntity(g_entities[1].create());
         addEntity(g_entities[4].create());
+        addEntity(g_entities[5].create());
     }
     else
     {
@@ -91,17 +92,17 @@ Scene::Scene(DataFile::Value* data)
 
     while (newEntities.size() > 0)
     {
-        for (auto& e : newEntities)
+        std::vector<std::unique_ptr<Entity>> savedNewEntities = std::move(newEntities);
+        for (auto& e : savedNewEntities)
         {
             e->setPersistent(true);
             e->onCreate(this);
         }
-        for (auto& e : newEntities)
+        for (auto& e : savedNewEntities)
         {
             e->onCreateEnd(this);
             entities.push_back(std::move(e));
         }
-        newEntities.clear();
     }
 
     assert(track != nullptr);
@@ -1147,18 +1148,6 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
 {
     i32 entityID = (i32)val.dict(true).val()["entityID"].integer().val();
     Serializer s(val, true);
-#if 0
-    if (entityID == 5)
-    {
-        val.dict().val()["modelGuid"] = g_res.getModel("tree")->guid;
-        entityID = 2;
-    }
-    else if (entityID == 8)
-    {
-        val.dict().val()["modelGuid"] = g_res.getModel("barrel")->guid;
-        entityID = 2;
-    }
-#endif
     Entity* entity = g_entities[entityID].create();
     entity->serializeState(s);
     this->addEntity(entity);

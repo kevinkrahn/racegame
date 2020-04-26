@@ -130,4 +130,15 @@ public:
 
         return bb;
     }
+    bool hasCollision()
+    {
+        for (auto& obj : objects)
+        {
+            if (obj.isCollider)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 };

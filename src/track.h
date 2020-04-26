@@ -8,9 +8,12 @@
 #include "smallvec.h"
 #include "mesh.h"
 #include "decal.h"
+#include "spline.h"
 
 class Track : public Renderable, public Entity
 {
+    DataFile::Value railingData;
+
 public:
     struct Vertex
     {
@@ -27,24 +30,6 @@ public:
     };
 
     BoundingBox boundingBox;
-
-    struct RailingMeshType
-    {
-        const char* name;
-        bool flat;
-        const char* meshName;
-        const char* collisionMeshName;
-        f32 scale;
-        const char* texture;
-    };
-
-    // I hate this
-    RailingMeshType railingMeshTypes[4] = {
-        { "Concrete Barrier", false, "world.Rail", "world.RailCollision", 1.f, "concrete" },
-        { "Rumble Stip", true, "world.RumbleStrip", nullptr, 0.5f, "rumble" },
-        { "Metal Railing", false, "railing.Rail", "railing.RailCollision", 1.f, "white" },
-        { "Tall Metal Railing", false, "railing2.Rail", "railing2.RailCollision", 1.5f, "white" },
-    };
 
     struct TrackItem
     {
@@ -153,79 +138,8 @@ private:
         glm::vec3 dragStartPoint;
     };
 
-    struct RailingPoint
-    {
-        glm::vec3 position;
-        glm::vec3 handleOffsetA;
-        glm::vec3 handleOffsetB;
-
-        void serialize(Serializer& s)
-        {
-            s.field(position);
-            s.field(handleOffsetA);
-            s.field(handleOffsetB);
-        }
-    };
-
-    // TODO: allow decals to affect railings
-    // TODO: make railings a seperate entity (or make a dedicated spline mode in the editor)
-    struct Railing : public Renderable
-    {
-        // serialized
-        std::vector<RailingPoint> points;
-        f32 scale = 1.f;
-        u32 meshTypeIndex = 0;
-
-        Mesh mesh;
-        Mesh collisionMesh;
-        std::vector<Selection> selectedPoints;
-        bool isDirty = true;
-        PxRigidStatic* actor = nullptr;
-        Track* track = nullptr;
-        ActorUserData physicsUserData;
-        PxShape* collisionShape = nullptr;
-        Texture* tex;
-
-        ~Railing() override
-        {
-            if (actor)
-            {
-                actor->release();
-            }
-            mesh.destroy();
-            collisionMesh.destroy();
-        }
-
-        void serialize(Serializer& s)
-        {
-            s.field(points);
-            s.field(meshTypeIndex);
-            s.field(scale);
-        }
-
-        struct PolyLinePoint
-        {
-            glm::vec3 pos;
-            f32 distanceToHere;
-            glm::vec3 dir;
-            f32 distance; // distance at next point
-        };
-
-        void updateMesh();
-        void deformMeshAlongPath(Mesh* railingMesh, Mesh* outputMesh, f32 scale,
-                std::vector<PolyLinePoint> const& polyLine, f32 pathLength, bool flat);
-
-        i32 getPriority() const override { return 15; }
-        std::string getDebugString() const override { return "Track Marking"; }
-        void onLitPassPriorityTransition(class Renderer* renderer) override;
-        void onLitPass(class Renderer* renderer) override;
-    };
-
-    std::vector<std::unique_ptr<Railing>> railings;
-
     glm::vec2 selectMousePos;
     glm::vec3 dragStartPoint;
-    i32 dragRailingIndex = -1;
     i32 dragConnectionIndex = -1;
     i32 dragConnectionHandle = -1;
     i32 dragOppositeConnectionIndex = -1;
@@ -255,46 +169,9 @@ public:
         segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
     }
-    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, struct GridSettings* gridSettings);
-    glm::vec3 previewRailingPlacement(Scene* scene, Renderer* renderer, glm::vec3 const& camPos, glm::vec3 const& mouseRayDir);
-    void placeSpline(glm::vec3 const& p, u32 index);
+    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime,
+            bool& isMouseHandled, struct GridSettings* gridSettings);
     bool canConnect() const { return selectedPoints.size() == 2; }
-    bool canConnectRailings() const
-    {
-        u32 count = 0;
-        for (auto& railing : railings)
-        {
-            if (railing->selectedPoints.size() == 1)
-            {
-                ++count;
-            }
-        }
-        return count == 2;
-    }
-    bool canSubdivide() const
-    {
-        for (auto& railing : railings)
-        {
-            if (railing->selectedPoints.size() == 2 &&
-                (railing->selectedPoints[0].pointIndex - 1 == railing->selectedPoints[1].pointIndex
-                 || railing->selectedPoints[0].pointIndex + 1 == railing->selectedPoints[1].pointIndex))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool canSplit() const
-    {
-        for (auto& railing : railings)
-        {
-            if (railing->selectedPoints.size() == 1)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
     bool canExtendTrack() const
     {
         if (!hasSelection())
@@ -308,9 +185,7 @@ public:
     void matchZ(bool lowest);
     void extendTrack(i32 prefabCurveIndex);
     void connectPoints();
-    void connectRailings();
     void subdividePoints();
-    void split();
     bool hasSelection() const { return selectedPoints.size() > 0; }
     i32 getSelectedPointIndex()
     {
@@ -343,24 +218,7 @@ public:
     // entity
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
-    void serializeState(Serializer& s) override
-    {
-        s.field(points);
-        s.field(connections);
-        s.field(railings);
-
-        if (s.deserialize)
-        {
-            for (auto& c : connections)
-            {
-                c->track = this;
-            }
-            for (auto& r : railings)
-            {
-                r->track = this;
-            }
-        }
-    }
+    void serializeState(Serializer& s) override;
 
     // renderable
     std::string getDebugString() const override { return "Track"; }

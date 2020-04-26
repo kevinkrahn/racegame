@@ -1,5 +1,6 @@
 #include "../terrain.h"
 #include "../track.h"
+#include "../spline.h"
 #include "static_mesh.h"
 #include "static_decal.h"
 #include "start.h"
@@ -19,7 +20,7 @@ void registerEntities()
     registerEntity<StaticMesh>();  // 2
     registerEntity<StaticDecal>(); // 3
     registerEntity<Start>();       // 4
-    registerEntity<Start>();       // REMOVE
+    registerEntity<Spline>();      // 5
     registerEntity<Booster>();     // 6
     registerEntity<Oil>();         // 7
     registerEntity<Start>();       // REMOVE
