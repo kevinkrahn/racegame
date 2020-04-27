@@ -64,20 +64,20 @@ enum struct PropCategory
 {
     NATURE,
     NOT_NATURE,
-    SIGNS,
     OBSTACLES,
     DECALS,
     PICKUPS,
+    RACE,
     MAX
 };
 
 const char* propCategoryNames[] = {
     "Nature",
     "Not Nature",
-    "Signs",
     "Obstacles",
     "Decals",
     "Pickups",
+    "Race",
 };
 
 class Model

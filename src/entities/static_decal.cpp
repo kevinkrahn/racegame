@@ -71,7 +71,6 @@ void StaticDecal::updateTransform(Scene* scene)
     PxOverlapBuffer hit(hitBuffer, bufferSize);
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
-    //filter.flags |= PxQueryFlag::eDYNAMIC;
     filter.data = PxFilterData(0, decalFilter, 0, 0);
     decal.begin(transform);
     if (scene->getPhysicsScene()->overlap(PxBoxGeometry(convert(glm::abs(scale * 0.5f))),
@@ -149,4 +148,9 @@ void StaticDecal::showDetails(Scene* scene)
     {
         updateTransform(scene);
     }
+}
+
+std::vector<PropPrefabData> StaticDecal::generatePrefabProps()
+{
+    return {};
 }

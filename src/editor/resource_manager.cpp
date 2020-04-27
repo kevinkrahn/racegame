@@ -145,6 +145,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     {
                         // TODO
                     }
+                    if (ImGui::MenuItem("Rename"))
+                    {
+                        // TODO
+                    }
                     if (ImGui::MenuItem("Delete"))
                     {
                         // TODO
@@ -181,6 +185,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                         newMaterial();
                     }
                     if (ImGui::MenuItem("Duplicate"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Rename"))
                     {
                         // TODO
                     }
@@ -223,6 +231,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     {
                         // TODO
                     }
+                    if (ImGui::MenuItem("Rename"))
+                    {
+                        // TODO
+                    }
                     if (ImGui::MenuItem("Delete"))
                     {
                         // TODO
@@ -260,6 +272,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                         // TODO
                     }
                     if (ImGui::MenuItem("Duplicate"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Rename"))
                     {
                         // TODO
                     }

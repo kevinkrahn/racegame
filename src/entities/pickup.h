@@ -13,7 +13,7 @@ namespace PickupType
     enum
     {
         MONEY = 0,
-        ARMOR = 1,
+        FIXUP = 1,
     };
 };
 
@@ -123,5 +123,15 @@ public:
     {
         PlaceableEntity::serializeState(s);
         s.field(pickupType);
+    }
+
+    std::vector<PropPrefabData> generatePrefabProps() override
+    {
+        return {
+            { PropCategory::PICKUPS, "Money",
+                [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::MONEY; } },
+            { PropCategory::PICKUPS, "Fixup",
+                [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::FIXUP; } },
+        };
     }
 };

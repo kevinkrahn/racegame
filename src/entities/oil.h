@@ -20,4 +20,8 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
     void onPreview(RenderWorld* rw) override;
+    std::vector<PropPrefabData> generatePrefabProps() override
+    {
+        return {{ PropCategory::OBSTACLES, "Oil" }};
+    }
 };

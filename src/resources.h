@@ -150,7 +150,8 @@ public:
             if (textures.find(guid) == textures.end() &&
                 tracks.find(guid) == tracks.end() &&
                 models.find(guid) == models.end() &&
-                materials.find(guid) == materials.end())
+                materials.find(guid) == materials.end() &&
+                guid != 0)
             {
                 break;
             }

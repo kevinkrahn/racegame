@@ -43,4 +43,5 @@ public:
         }
     }
     void showDetails(Scene* scene) override;
+    std::vector<PropPrefabData> generatePrefabProps() override;
 };
