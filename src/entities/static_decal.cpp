@@ -6,18 +6,6 @@
 #include "../billboard.h"
 #include "../imgui.h"
 
-const char* textureNames[] = {
-    "Arrow Forward",
-    "Arrow Left",
-    "Arrow Right",
-    "Crack",
-    "Patch 1",
-    "Grunge 1",
-    "Grunge 2",
-    "Grunge 3",
-    "Dust",
-};
-
 StaticDecal::StaticDecal()
 {
     scale = glm::vec3(16.f);
@@ -53,7 +41,7 @@ void StaticDecal::updateTransform(Scene* scene)
         shape->setGeometry(PxBoxGeometry(convert(
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
 
-        if (texIndex == 8)
+        if (isDust)
         {
             shape->setQueryFilterData(PxFilterData(
                         COLLISION_FLAG_SELECTABLE | COLLISION_FLAG_DUST, 0, 0, 0));
@@ -148,9 +136,32 @@ void StaticDecal::showDetails(Scene* scene)
     {
         updateTransform(scene);
     }
+    if (ImGui::Checkbox("Dusty", &isDust))
+    {
+        updateTransform(scene);
+    }
 }
 
 std::vector<PropPrefabData> StaticDecal::generatePrefabProps()
 {
-    return {};
+    std::vector<PropPrefabData> results;
+
+    for (auto& tex : g_res.textures)
+    {
+        if (tex.second->name.find("decal_") != std::string::npos)
+        {
+            results.push_back({
+                PropCategory::DECALS,
+                tex.second->name,
+                [&](Entity* e) {
+                    ((StaticDecal*)e)->setTexture(tex.first);
+                    ((StaticDecal*)e)->isDust =
+                        tex.second->name.find("dust") != std::string::npos ||
+                        tex.second->name.find("sand") != std::string::npos;
+                }
+            });
+        }
+    }
+
+    return results;
 }

@@ -9,8 +9,9 @@ class StaticDecal : public PlaceableEntity
     struct Texture* tex;
     Decal decal;
     u32 decalFilter = DECAL_TRACK;
-    i32 texIndex = 0;
+    i64 textureGuid = 0;
     bool beforeMarking = false;
+    bool isDust = false;
 
 public:
     StaticDecal();
@@ -22,11 +23,16 @@ public:
     void serializeState(Serializer& s) override
     {
         PlaceableEntity::serializeState(s);
-        s.field(texIndex);
         s.field(decalFilter);
         s.field(beforeMarking);
-        if (s.deserialize)
+        s.field(textureGuid);
+        s.field(isDust);
+
+        if (s.deserialize && textureGuid == 0)
         {
+            // TODO: remove when scenes are updated
+            u32 texIndex = 0;
+            s.field(texIndex);
             static Texture* textures[] = {
                 g_res.getTexture("decal_arrow"),
                 g_res.getTexture("decal_arrow_left"),
@@ -38,10 +44,19 @@ public:
                 g_res.getTexture("decal_grunge3"),
                 g_res.getTexture("decal_sand"),
             };
-            tex = textures[texIndex];
-            decal.setTexture(tex);
+            setTexture(textures[texIndex]->guid);
+            if (tex->name.find("dust") != std::string::npos || tex->name.find("sand") != std::string::npos)
+            {
+                isDust = true;
+            }
         }
     }
     void showDetails(Scene* scene) override;
+    void setTexture(i64 guid)
+    {
+        textureGuid = guid;
+        tex = g_res.getTexture(guid);
+        decal.setTexture(tex);
+    }
     std::vector<PropPrefabData> generatePrefabProps() override;
 };
