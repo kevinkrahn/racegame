@@ -11,6 +11,16 @@
 
 class SplineMode : public EditorMode, public TransformGizmoHandler
 {
+    struct SplineMeshInfo
+    {
+        Model* model = nullptr;
+        Texture icon;
+        bool hasIcon = false;
+    };
+
+    std::vector<SplineMeshInfo> splineModels;
+    u32 selectedSplineModel = 0;
+
     struct PointSelection
     {
         Spline* spline;
@@ -174,6 +184,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
             return;
         }
         Spline* newSpline = (Spline*)g_entities[5].create();
+        newSpline->setPersistent(true);
 
         newSpline->points = std::vector<SplinePoint>(
                 spline->points.begin() + selectedPoints.front().pointIndex,
@@ -241,7 +252,16 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
     }
 
 public:
-    SplineMode() : EditorMode("Splines") {}
+    SplineMode() : EditorMode("Splines")
+    {
+        for (auto& model : g_res.models)
+        {
+            if (model.second->modelUsage == ModelUsage::SPLINE)
+            {
+                splineModels.push_back({ model.second.get() });
+            }
+        }
+    }
 
     void onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime) override
     {
@@ -278,8 +298,11 @@ public:
                 }
             }
             glm::vec3 gizmoPosition = minP + (maxP - minP) * 0.5f;
-            isMouseClickHandled = transformGizmo.update(gizmoPosition, scene, rw,
-                    deltaTime, glm::mat4(1.f), this, false);
+            if (transformGizmo.update(gizmoPosition, scene, rw,
+                    deltaTime, glm::mat4(1.f), this, false))
+            {
+                isMouseClickHandled = true;
+            }
         }
 
         splineEntities.clear();
@@ -291,6 +314,29 @@ public:
             }
         }
 
+        // create new splines
+        if (!isMouseClickHandled && g_input.isKeyDown(KEY_LCTRL) && g_input.isKeyDown(KEY_LSHIFT)
+                && g_input.isMouseButtonPressed(MOUSE_LEFT))
+        {
+            isMouseClickHandled = true;
+            PxRaycastBuffer hit;
+            if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+            {
+                glm::vec3 hitPoint = convert(hit.block.position);
+                Spline* newSpline = (Spline*)g_entities[5].create();
+                newSpline->modelGuid = splineModels[selectedSplineModel].model->guid;
+                newSpline->setPersistent(true);
+                glm::vec3 handleOffset(5, 0, 0);
+                newSpline->points.push_back(
+                        { hitPoint, -handleOffset, handleOffset });
+                newSpline->points.push_back(
+                        { hitPoint + glm::vec3(20, 0, 0), -handleOffset, handleOffset });
+                newSpline->isDirty = true;
+                scene->addEntity(newSpline);
+            }
+        }
+
+        // select things
         if (!isMouseClickHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
             selectedSpline = nullptr;
@@ -487,6 +533,72 @@ public:
         }
     }
 
+    void showSplineModelIcons()
+    {
+        static RenderWorld renderWorld;
+        static i32 lastSplineModelRenderered = -1;
+        u32 count = (u32)splineModels.size();
+        u32 iconSize = 64;
+
+        if (lastSplineModelRenderered != -1)
+        {
+            splineModels[lastSplineModelRenderered].icon = renderWorld.releaseTexture();
+            splineModels[lastSplineModelRenderered].hasIcon = true;
+            lastSplineModelRenderered = -1;
+        }
+        for (u32 i=0; i<count; ++i)
+        {
+            if (splineModels[i].hasIcon)
+            {
+                if (i % 4 != 0)
+                {
+                    ImGui::SameLine();
+                }
+                ImGui::PushID(i);
+                if (ImGui::ImageButton((void*)(uintptr_t)splineModels[i].icon.handle,
+                            ImVec2(iconSize, iconSize), {1,1}, {0,0}))
+                {
+                    selectedSplineModel = i;
+                }
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                    ImGui::TextUnformatted(splineModels[i].model->name.c_str());
+                    ImGui::PopTextWrapPos();
+                    ImGui::EndTooltip();
+                }
+                ImGui::PopID();
+            }
+            else if (lastSplineModelRenderered == -1)
+            {
+                renderWorld.setName("Spline Model Icon");
+                renderWorld.setSize(iconSize*2, iconSize*2);
+                renderWorld.setClearColor(true, glm::vec4(0.15f, 0.15f, 0.15f, 1.f));
+                Mesh* quadMesh = g_res.getMesh("world.Quad");
+                renderWorld.push(LitRenderable(quadMesh,
+                            glm::translate(glm::mat4(1.f), glm::vec3(0, 0, -0.01f)) *
+                            glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));
+                renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
+                renderWorld.setViewportCount(1);
+                renderWorld.updateWorldTime(30.f);
+                renderWorld.setViewportCamera(0, glm::vec3(7.f, 7.f, 7.f),
+                        glm::vec3(0.f, 0.f, 1.f), 3.f, 150.f, 35.f);
+                for (auto& obj : splineModels[i].model->objects)
+                {
+                    if (obj.isVisible)
+                    {
+                        renderWorld.push(LitMaterialRenderable(
+                                    &splineModels[i].model->meshes[obj.meshIndex], obj.getTransform(),
+                                    g_res.getMaterial(obj.materialGuid)));
+                    }
+                }
+                g_game.renderer->addRenderWorld(&renderWorld);
+                lastSplineModelRenderered = (i32)i;
+            }
+        }
+    }
+
     void onEditorTabGui(Scene* scene, Renderer* renderer, f32 deltaTime) override
     {
         bool isKeyboardHandled = ImGui::GetIO().WantCaptureKeyboard;
@@ -527,6 +639,10 @@ public:
         {
             matchZ(true);
         }
+
+        ImGui::Gap();
+
+        showSplineModelIcons();
     }
 
     void onSwitchTo(Scene* scene) override

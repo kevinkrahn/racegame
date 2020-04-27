@@ -27,7 +27,7 @@ class Spline : public Entity
     // serialized
     std::vector<SplinePoint> points;
     i64 modelGuid = 0;
-    f32 scale;
+    f32 scale = 1.f;
 
     struct MeshInfo
     {

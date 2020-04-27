@@ -82,15 +82,16 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                 else if (lastEntityIconRendered == -1)
                 {
                     renderWorld.setName("Entity Icon");
-                    renderWorld.setSize(128, 128);
+                    renderWorld.setSize(iconSize*2, iconSize*2);
+                    renderWorld.setClearColor(true, glm::vec4(0.15f, 0.15f, 0.15f, 1.f));
                     Mesh* quadMesh = g_res.getMesh("world.Quad");
                     renderWorld.push(LitRenderable(quadMesh,
-                                glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));
+                                glm::scale(glm::mat4(1.f), glm::vec3(200.f)), nullptr, glm::vec3(0.15f)));
                     renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
                     renderWorld.setViewportCount(1);
                     renderWorld.updateWorldTime(30.f);
                     renderWorld.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
-                            glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
+                            glm::vec3(0.f, 0.f, 1.f), 1.f, 220.f, 39.f);
                     static std::unique_ptr<PlaceableEntity> ptr;
                     ptr.reset((PlaceableEntity*)
                             g_entities[propPrefabs[itemIndex].entityIndex].create());

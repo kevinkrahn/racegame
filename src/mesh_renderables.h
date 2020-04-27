@@ -30,7 +30,7 @@ public:
     {
         return 20 + material->isCullingEnabled
             + (material->isTransparent ? 11000 : 0)
-            + (material->depthOffset != 0.f ? 1 : 0)
+            + (material->depthOffset != 0.f ? -1 : 0)
             + (!material->isDepthWriteEnabled ? 10 : 0)
             + (material->alphaCutoff > 0.f ? 100 : 0);
     }
