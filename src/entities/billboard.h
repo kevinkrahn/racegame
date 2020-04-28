@@ -65,8 +65,11 @@ public:
         }
         for (auto& obj : model->objects)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                        transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
+            if (obj.isVisible)
+            {
+                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                            transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
+            }
         }
     }
 
@@ -74,8 +77,11 @@ public:
     {
         for (auto& obj : model->objects)
         {
-            batcher.add(g_res.getMaterial(obj.materialGuid),
-                transform * obj.getTransform(), &model->meshes[obj.meshIndex]);
+            if (obj.isVisible)
+            {
+                batcher.add(g_res.getMaterial(obj.materialGuid),
+                    transform * obj.getTransform(), &model->meshes[obj.meshIndex]);
+            }
         }
     }
 

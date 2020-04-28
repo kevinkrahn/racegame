@@ -39,6 +39,7 @@
 - Audio volume distance falloff should be configured on the audio resource
 - Add texture compression
 - Add difficulty levels
+- Add passive ability that gives a bit of ammo when destroyed
 
 - Ideas:
     - Grenade launcher weapon

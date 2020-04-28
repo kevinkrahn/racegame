@@ -28,26 +28,30 @@ public:
         s.field(textureGuid);
         s.field(isDust);
 
-        if (s.deserialize && textureGuid == 0)
+        if (s.deserialize)
         {
-            // TODO: remove when scenes are updated
-            u32 texIndex = 0;
-            s.field(texIndex);
-            static Texture* textures[] = {
-                g_res.getTexture("decal_arrow"),
-                g_res.getTexture("decal_arrow_left"),
-                g_res.getTexture("decal_arrow_right"),
-                g_res.getTexture("decal_crack"),
-                g_res.getTexture("decal_patch1"),
-                g_res.getTexture("decal_grunge1"),
-                g_res.getTexture("decal_grunge2"),
-                g_res.getTexture("decal_grunge3"),
-                g_res.getTexture("decal_sand"),
-            };
-            setTexture(textures[texIndex]->guid);
-            if (tex->name.find("dust") != std::string::npos || tex->name.find("sand") != std::string::npos)
+            setTexture(textureGuid);
+            if (textureGuid == 0)
             {
-                isDust = true;
+                // TODO: remove when scenes are updated
+                u32 texIndex = 0;
+                s.field(texIndex);
+                static Texture* textures[] = {
+                    g_res.getTexture("decal_arrow"),
+                    g_res.getTexture("decal_arrow_left"),
+                    g_res.getTexture("decal_arrow_right"),
+                    g_res.getTexture("decal_crack"),
+                    g_res.getTexture("decal_patch1"),
+                    g_res.getTexture("decal_grunge1"),
+                    g_res.getTexture("decal_grunge2"),
+                    g_res.getTexture("decal_grunge3"),
+                    g_res.getTexture("decal_sand"),
+                };
+                setTexture(textures[texIndex]->guid);
+                if (tex->name.find("dust") != std::string::npos || tex->name.find("sand") != std::string::npos)
+                {
+                    isDust = true;
+                }
             }
         }
     }
