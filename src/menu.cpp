@@ -536,7 +536,7 @@ void Menu::championshipGarage()
                         ((upgradeLevel < upgrade.maxUpgradeLevel && isEquipped) || !isEquipped),
                     upgrade.icon, &isSelected))
             {
-                g_audio.playSound(&g_res.sounds->airdrill, SoundType::MENU_SFX);
+                g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
                 driver.credits -= price;
                 driver.getVehicleConfig()->addUpgrade(i);
             }
@@ -956,7 +956,7 @@ void Menu::championshipStandings()
 
     if (g_gui.didSelect())
     {
-        g_audio.playSound(&g_res.sounds->close, SoundType::MENU_SFX);
+        g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
         menuMode = CHAMPIONSHIP_MENU;
         RandomSeries series = randomSeed();
         if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
@@ -1057,7 +1057,7 @@ void Menu::raceResults()
             r.driver->lastPlacement = r.placement;
         }
 
-        g_audio.playSound(&g_res.sounds->close, SoundType::MENU_SFX);
+        g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
             menuMode = CHAMPIONSHIP_STANDINGS;

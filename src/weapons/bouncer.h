@@ -55,7 +55,7 @@ public:
         glm::vec3 pos = transform * mountTransform * glm::vec4(projectileSpawnPoints[0], 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BOUNCER));
-        g_audio.playSound3D(&g_res.sounds->bouncer_fire,
+        g_audio.playSound3D(g_res.getSound("bouncer_fire"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
 

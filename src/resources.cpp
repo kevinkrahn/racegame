@@ -30,6 +30,10 @@ void Resources::loadResource(DataFile::Value& data)
             } break;
             case ResourceType::SOUND:
             {
+                auto sound = std::make_unique<Sound>();
+                ::loadResource(data, *sound);
+                soundNameMap[sound->name] = sound.get();
+                sounds[sound->guid] = std::move(sound);
             } break;
             case ResourceType::FONT:
             {
@@ -55,8 +59,6 @@ void Resources::loadResource(DataFile::Value& data)
 
 void Resources::load()
 {
-    sounds.reset(new Sounds);
-
     constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
     constexpr u8 identityNormalBytes[] = { 128, 128, 255, 255 };
     white = Texture("white", 1, 1, (u8*)whiteBytes, TextureType::COLOR);

@@ -44,12 +44,12 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         scene->createExplosion(translationOf(transform), glm::vec3(0.f), 10.f);
         this->destroy();
-        Sound* sounds[] = {
-            &g_res.sounds->explosion2,
-            &g_res.sounds->explosion3,
+        const char* sounds[] = {
+            "explosion2",
+            "explosion3",
         };
         u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(sounds));
-        g_audio.playSound3D(sounds[index], SoundType::GAME_SFX,
+        g_audio.playSound3D(g_res.getSound(sounds[index]), SoundType::GAME_SFX,
                 translationOf(transform), false, 1.f, 0.95f);
 
         PxOverlapHit hitBuffer[8];

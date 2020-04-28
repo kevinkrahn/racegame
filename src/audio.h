@@ -3,19 +3,41 @@
 #include "misc.h"
 #include "smallvec.h"
 #include "math.h"
+#include "datafile.h"
 #include <mutex>
 #include <vector>
 
-struct Sound
+enum struct AudioFormat
 {
-    std::unique_ptr<i16[]> audioData;
-    u32 numSamples;
-    u32 numChannels;
-
-    Sound(const char* filename);
+    RAW,
+    VORBIS
 };
 
-int decodeVorbis(const char* filename, int* channels, int* sampleRate, short** data);
+struct Sound
+{
+    // serialized
+    i64 guid = 0;
+    std::string name;
+    std::string sourceFilePath;
+    std::vector<u8> rawAudioData;
+    u32 numSamples = 0;
+    u32 numChannels = 0;
+    AudioFormat format = AudioFormat::RAW;
+    f32 volume = 1.f;
+    f32 falloffDistance = 90.f;
+
+    i16* audioData;
+    std::vector<i16> decodedAudioData;
+
+    Sound() {}
+    Sound(const char* filename);
+
+    void loadFromFile(const char* filename);
+    void decodeVorbisData();
+    void serialize(Serializer& s);
+};
+
+int decodeVorbis(u8* oggData, int len, int* channels, int* sampleRate, short** data);
 
 enum struct SoundType
 {

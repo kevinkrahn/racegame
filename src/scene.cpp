@@ -300,7 +300,8 @@ void Scene::stopRace()
 
 void Scene::onStart()
 {
-    backgroundSound = g_audio.playSound(&g_res.sounds->evironment, SoundType::MUSIC, true, 1.f, 0.f);
+    backgroundSound = g_audio.playSound(
+            g_res.getSound("environment"), SoundType::MUSIC, true, 1.f, 0.f);
 }
 
 bool Scene::canGo() const
@@ -726,7 +727,7 @@ void Scene::vehicleFinish(u32 n)
     }
 
     auto& v = vehicles[n];
-    g_audio.playSound3D(v->placement < 5 ? &g_res.sounds->cheer : &g_res.sounds->clapping,
+    g_audio.playSound3D(v->placement < 5 ? g_res.getSound("cheer") : g_res.getSound("clapping"),
             SoundType::GAME_SFX, translationOf(getStart()), false, 1.f, 1.f, 0.f, 120.f);
 }
 
@@ -1081,7 +1082,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         }
                     }
 
-                    g_audio.playSound3D(&g_res.sounds->impact,
+                    g_audio.playSound3D(g_res.getSound("impact"),
                             SoundType::GAME_SFX, convert(contactPoints[j].position));
                     // TODO: create sparks at contactPoints[j].position
                 }

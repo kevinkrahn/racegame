@@ -89,7 +89,7 @@ public:
                 return;
             }
 
-            boostSound = g_audio.playSound3D(&g_res.sounds->rocketboost,
+            boostSound = g_audio.playSound3D(g_res.getSound("rocketboost"),
                     SoundType::GAME_SFX, vehicle->getPosition(), false, 1.f, 0.8f);
 
             boostTimer = 1.4f;

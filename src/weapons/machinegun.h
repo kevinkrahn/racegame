@@ -71,7 +71,7 @@ public:
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BULLET));
 
-        g_audio.playSound3D(&g_res.sounds->mg2,
+        g_audio.playSound3D(g_res.getSound("mg2"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 1.f,
                 random(scene->randomSeries, -0.05f, 0.05f));

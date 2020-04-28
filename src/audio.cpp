@@ -5,6 +5,61 @@
 
 Sound::Sound(const char* filename)
 {
+    loadFromFile(filename);
+}
+
+void Sound::serialize(Serializer& s)
+{
+    s.write("type", ResourceType::SOUND);
+    s.field(guid);
+    s.field(name);
+    s.field(sourceFilePath);
+    s.field(rawAudioData);
+    s.field(numSamples);
+    s.field(numChannels);
+    s.field(format);
+    s.field(volume);
+    s.field(falloffDistance);
+
+    if (s.deserialize)
+    {
+        if (format == AudioFormat::VORBIS)
+        {
+            decodeVorbisData();
+        }
+        else
+        {
+            audioData = (i16*)rawAudioData.data();
+        }
+    }
+}
+
+void Sound::decodeVorbisData()
+{
+    i16* buf;
+    i32 channels;
+    i32 rate;
+    i32 count = decodeVorbis(rawAudioData.data(), (i32)rawAudioData.size(), &channels, &rate, &buf);
+    if (count == -1)
+    {
+        error("Failed to decode vorbis: ", name);
+        return;
+    }
+    if (rate != 44100)
+    {
+        error("Unsupported sample rate: ", rate, " (", name, ")");
+        return;
+    }
+
+    numSamples = count;
+    numChannels = channels;
+    decodedAudioData.assign((i16*)buf, (i16*)(buf + count * numChannels));
+    audioData = decodedAudioData.data();
+    free(buf);
+}
+
+void Sound::loadFromFile(const char* filename)
+{
     std::string fname(filename);
     std::string ext = fname.substr(fname.size()-4);
     if (ext == ".wav")
@@ -32,33 +87,24 @@ Sound::Sound(const char* filename)
 
         numChannels = spec.channels;
         numSamples = (size / spec.channels) / sizeof(i16);
-        audioData.reset(new i16[size / sizeof(i16)]);
-        memcpy(audioData.get(), wavBuffer, size);
-
+        rawAudioData.assign(wavBuffer, wavBuffer + size);
+        audioData = (i16*)rawAudioData.data();
+        format = AudioFormat::RAW;
         SDL_FreeWAV(wavBuffer);
     }
     else if (ext == ".ogg")
     {
-        short* buf;
-        int channels;
-        int rate;
-        int count = decodeVorbis(filename, &channels, &rate, &buf);
-        if (count == -1)
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
+        if (!file)
         {
-            error("Failed to load audio file: ", filename);
-            return;
+            error("Failed to load ogg vorbis file: ", filename, '\n');
         }
-        if (rate != 44100)
-        {
-            error("Unsupported sample rate: ", rate, " (", filename, ")");
-            return;
-        }
-
-        numSamples = count;
-        numChannels = channels;
-        audioData.reset(new i16[count * numChannels]);
-        memcpy(audioData.get(), buf, count * numChannels * sizeof(i16));
-        free(buf);
+        auto pos = file.tellg();
+        file.seekg(0, std::ios::beg);
+        rawAudioData.resize(pos);
+        file.read((char*)rawAudioData.data(), pos);
+        decodeVorbisData();
+        format = AudioFormat::VORBIS;
     }
     else
     {

@@ -1,6 +1,6 @@
 #include <stb_vorbis.c>
 
-int decodeVorbis(const char* filename, int* channels, int* sampleRate, short** data)
+int decodeVorbis(uint8* oggData, int len, int* channels, int* sampleRate, short** data)
 {
-    return stb_vorbis_decode_filename(filename, channels, sampleRate, data);
+    return stb_vorbis_decode_memory(oggData, len, channels, sampleRate, data);
 }

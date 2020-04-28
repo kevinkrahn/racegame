@@ -226,7 +226,7 @@ void Gui::beginPanel(const char* text, glm::vec2 position, f32 halign,
         {
             if (move != 0)
             {
-                g_audio.playSound(&g_res.sounds->select, SoundType::MENU_SFX);
+                g_audio.playSound(g_res.getSound("select"), SoundType::MENU_SFX);
             }
             panelState->selectIndex += move;
             if (panelState->selectIndex < 0)
@@ -308,7 +308,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
         isMouseOverUI = true;
         if (!widgetState->isMouseOver)
         {
-            g_audio.playSound(&g_res.sounds->select, SoundType::MENU_SFX);
+            g_audio.playSound(g_res.getSound("select"), SoundType::MENU_SFX);
             widgetState->isMouseOver = true;
         }
         parent.widgetState->selectIndex = parent.widgetState->selectableChildCount;
@@ -320,7 +320,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
                 isMouseClickHandled = true;
                 isMouseCaptured = true;
                 clicked = true;
-                g_audio.playSound(&g_res.sounds->click, SoundType::MENU_SFX);
+                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
             }
         }
     }
@@ -338,7 +338,7 @@ bool Gui::buttonBase(WidgetStackItem& parent, WidgetState* widgetState, glm::vec
             {
                 clicked = true;
                 isKeyboardInputHandled = true;
-                g_audio.playSound(&g_res.sounds->click, SoundType::MENU_SFX);
+                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
             }
         }
     }

@@ -41,57 +41,6 @@ enum struct ResourceType
     MATERIAL = 6,
 };
 
-struct Sounds
-{
-    Sound evironment = Sound("sounds/environment.ogg");
-    Sound blaster = Sound("sounds/blaster.wav");
-    Sound blaster_hit = Sound("sounds/blaster_hit.wav");
-    Sound bouncer_bounce = Sound("sounds/bouncer_bounce.wav");
-    Sound bouncer_fire = Sound("sounds/bouncer_fire.wav");
-    Sound clapping = Sound("sounds/clapping.wav");
-    Sound click = Sound("sounds/click.wav");
-    Sound close = Sound("sounds/close.wav");
-    Sound countdown_a = Sound("sounds/countdown_a.wav");
-    Sound countdown_b = Sound("sounds/countdown_b.wav");
-    //Sound engine = Sound("sounds/engine.wav");
-    Sound engine2 = Sound("sounds/engine2.wav");
-    //Sound engine_overlay = Sound("sounds/engine_overlay.wav");
-    Sound explosion1 = Sound("sounds/explosion1.wav");
-    Sound explosion2 = Sound("sounds/explosion2.wav");
-    Sound explosion3 = Sound("sounds/explosion3.wav");
-    Sound explosion4 = Sound("sounds/explosion4.wav");
-    Sound explosion5 = Sound("sounds/explosion5.wav");
-    Sound explosion6 = Sound("sounds/explosion6.wav");
-    Sound explosion7 = Sound("sounds/explosion7.wav");
-    Sound impact = Sound("sounds/impact.wav");
-    Sound lap = Sound("sounds/lap.wav");
-    //Sound mg = Sound("sounds/mg.wav");
-    Sound mg2 = Sound("sounds/mg2.wav");
-    Sound missile = Sound("sounds/missile.wav");
-    Sound nono = Sound("sounds/nono.wav");
-    Sound oil = Sound("sounds/oil.wav");
-    Sound glue = Sound("sounds/glue.wav");
-    Sound sticky = Sound("sounds/sticky.wav");
-    Sound rocketboost = Sound("sounds/rocketboost.wav");
-    Sound select = Sound("sounds/select.wav");
-    Sound thunk = Sound("sounds/thunk.wav");
-    Sound tires = Sound("sounds/tires.wav");
-    Sound money = Sound("sounds/money.wav");
-    Sound fixup = Sound("sounds/fixup.wav");
-    Sound airdrill = Sound("sounds/airdrill.wav");
-    Sound kinetic_armor = Sound("sounds/kinetic_armor.wav");
-    Sound jumpjet = Sound("sounds/jumpjet.wav");
-    Sound cheer = Sound("sounds/cheer.wav");
-
-    Sound bullet_impact1 = Sound("sounds/impacts/bullet_impact1.wav");
-    Sound bullet_impact2 = Sound("sounds/impacts/bullet_impact2.wav");
-    Sound bullet_impact3 = Sound("sounds/impacts/bullet_impact3.wav");
-    Sound richochet1 = Sound("sounds/impacts/richochet1.wav");
-    Sound richochet2 = Sound("sounds/impacts/richochet2.wav");
-    Sound richochet3 = Sound("sounds/impacts/richochet3.wav");
-    Sound richochet4 = Sound("sounds/impacts/richochet4.wav");
-};
-
 const char* dataFiles[] = {
     "models/mine.dat",
     "models/world.dat",
@@ -130,8 +79,8 @@ public:
     std::map<std::string, Model*> modelNameMap;
     std::map<i64, std::unique_ptr<Material>> materials;
     std::map<std::string, Material*> materialNameMap;
-
-    std::unique_ptr<Sounds> sounds;
+    std::map<i64, std::unique_ptr<Sound>> sounds;
+    std::map<std::string, Sound*> soundNameMap;
 
     Texture white;
     Texture identityNormal;
@@ -148,6 +97,7 @@ public:
             if (textures.find(guid) == textures.end() &&
                 tracks.find(guid) == tracks.end() &&
                 models.find(guid) == models.end() &&
+                sounds.find(guid) == sounds.end() &&
                 materials.find(guid) == materials.end() &&
                 guid != 0)
             {
@@ -239,6 +189,26 @@ public:
         if (iter == modelNameMap.end())
         {
             FATAL_ERROR("Model not found: ", name);
+        }
+        return iter->second;
+    }
+
+    Sound* getSound(i64 guid)
+    {
+        auto iter = sounds.find(guid);
+        if (iter == sounds.end())
+        {
+            FATAL_ERROR("Sound not found: ", guid);
+        }
+        return iter->second.get();
+    }
+
+    Sound* getSound(const char* name)
+    {
+        auto iter = soundNameMap.find(name);
+        if (iter == soundNameMap.end())
+        {
+            FATAL_ERROR("Sound not found: ", name);
         }
         return iter->second;
     }

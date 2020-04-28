@@ -108,13 +108,13 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 } break;
                 case BULLET:
                 {
-                    Sound* impacts[] = {
-                        &g_res.sounds->bullet_impact1,
-                        &g_res.sounds->bullet_impact2,
-                        &g_res.sounds->bullet_impact3,
+                    const char* impacts[] = {
+                        "bullet_impact1",
+                        "bullet_impact2",
+                        "bullet_impact3",
                     };
                     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
-                    g_audio.playSound3D(impacts[index],
+                    g_audio.playSound3D(g_res.getSound(impacts[index]),
                             SoundType::GAME_SFX, hitPos, false,
                             random(scene->randomSeries, 0.8f, 1.2f),
                             random(scene->randomSeries, 0.8f, 1.f));
@@ -123,7 +123,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 case MISSILE:
                 {
                     scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
-                    g_audio.playSound3D(&g_res.sounds->explosion1,
+                    g_audio.playSound3D(g_res.getSound("explosion1"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
                     this->destroy();
                 } break;
@@ -141,20 +141,20 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             {
                 case BLASTER:
                 {
-                    g_audio.playSound3D(&g_res.sounds->blaster_hit,
+                    g_audio.playSound3D(g_res.getSound("blaster_hit"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
                     this->destroy();
                 } break;
                 case BULLET:
                 {
-                    Sound* impacts[] = {
-                        &g_res.sounds->richochet1,
-                        &g_res.sounds->richochet2,
-                        &g_res.sounds->richochet3,
-                        &g_res.sounds->richochet4,
+                    const char* impacts[] = {
+                        "richochet1",
+                        "richochet2",
+                        "richochet3",
+                        "richochet4",
                     };
                     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
-                    g_audio.playSound3D(impacts[index],
+                    g_audio.playSound3D(g_res.getSound(impacts[index]),
                             SoundType::GAME_SFX, hitPos, false, 0.9f,
                             random(scene->randomSeries, 0.75f, 0.9f));
                     this->destroy();
@@ -162,7 +162,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 case MISSILE:
                 {
                     scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
-                    g_audio.playSound3D(&g_res.sounds->explosion1,
+                    g_audio.playSound3D(g_res.getSound("explosion1"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
                     this->destroy();
                 } break;
@@ -171,7 +171,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     glm::vec3 n = convert(sweepHit.block.normal);
                     velocity = -2.f * glm::dot(velocity, n) * n + velocity;
                     position = (prevPosition + sweepHit.block.distance * sweepDir) + n * 0.1f;
-                    g_audio.playSound3D(&g_res.sounds->bouncer_bounce,
+                    g_audio.playSound3D(g_res.getSound("bouncer_bounce"),
                             SoundType::GAME_SFX, hitPos, false, 1.f, 0.4f);
                 } break;
             }

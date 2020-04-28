@@ -49,7 +49,7 @@ public:
         glm::vec3 pos = transform * mountTransform * glm::vec4(missileSpawnPoint(ammo), 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::MISSILE));
-        g_audio.playSound3D(&g_res.sounds->missile,
+        g_audio.playSound3D(g_res.getSound("missile"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
 

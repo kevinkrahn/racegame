@@ -517,9 +517,9 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->previousTargetPosition = translationOf(transform);
     this->rearWeaponTimer = 0.f + vehicleIndex * 0.2f;
 
-    engineSound = g_audio.playSound3D(&g_res.sounds->engine2,
+    engineSound = g_audio.playSound3D(g_res.getSound("engine2"),
             SoundType::VEHICLE, translationOf(transform), true);
-    tireSound = g_audio.playSound3D(&g_res.sounds->tires,
+    tireSound = g_audio.playSound3D(g_res.getSound("tires"),
             SoundType::VEHICLE, translationOf(transform), true, 1.f, 0.f);
 
     setupPhysics(scene->getPhysicsScene(), vehicleMaterial, surfaceMaterials, transform);
@@ -1142,7 +1142,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
             if (currentLap > 0)
             {
-                g_audio.playSound3D(&g_res.sounds->lap, SoundType::GAME_SFX, currentPosition);
+                g_audio.playSound3D(g_res.getSound("lap"), SoundType::GAME_SFX, currentPosition);
             }
             ++currentLap;
             if ((u32)currentLap == scene->getTotalLaps())
@@ -1355,7 +1355,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
                             if (!isStuckOnGlue)
                             {
-                                g_audio.playSound3D(&g_res.sounds->sticky, SoundType::GAME_SFX,
+                                g_audio.playSound3D(g_res.getSound("sticky"), SoundType::GAME_SFX,
                                         getPosition(), false, 1.f, 0.95f);
                                 isStuckOnGlue = true;
                             }
@@ -1627,14 +1627,14 @@ void Vehicle::blowUp()
     {
         scene->attackCredit(lastDamagedBy, vehicleIndex);
     }
-    Sound* sounds[] = {
-        &g_res.sounds->explosion4,
-        &g_res.sounds->explosion5,
-        &g_res.sounds->explosion6,
-        &g_res.sounds->explosion7,
+    const char* sounds[] = {
+        "explosion4",
+        "explosion5",
+        "explosion6",
+        "explosion7",
     };
     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(sounds));
-    g_audio.playSound3D(sounds[index], SoundType::GAME_SFX,
+    g_audio.playSound3D(g_res.getSound(sounds[index]), SoundType::GAME_SFX,
             getPosition(), false, 1.f, 0.95f);
     reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
     if (raceStatistics.destroyed + raceStatistics.accidents == 10)

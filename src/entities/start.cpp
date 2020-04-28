@@ -51,7 +51,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             if (countIndex != 2)
             {
-                g_audio.playSound(&g_res.sounds->countdown_b,
+                g_audio.playSound(g_res.getSound("countdown_b"),
                         SoundType::GAME_SFX, false, 1.f, 0.5f);
             }
             countIndex = 2;
@@ -60,7 +60,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             if (countIndex != 1)
             {
-                g_audio.playSound(&g_res.sounds->countdown_a,
+                g_audio.playSound(g_res.getSound("countdown_a"),
                         SoundType::GAME_SFX, false, 1.f, 0.5f);
             }
             countIndex = 1;
@@ -69,7 +69,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             if (countIndex != 0)
             {
-                g_audio.playSound(&g_res.sounds->countdown_a,
+                g_audio.playSound(g_res.getSound("countdown_a"),
                         SoundType::GAME_SFX, false, 1.f, 0.5f);
             }
             countIndex = 0;

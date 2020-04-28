@@ -65,11 +65,18 @@ class ResourceManager
     std::vector<Model*> models;
     bool modelsStale = true;
 
+    std::vector<Sound*> sounds;
+    bool soundsStale = true;
+    Sound* selectedSound = nullptr;
+    bool isSoundWindowOpen = false;
+
     void newModel();
     void newTexture();
     void newMaterial();
+    void newSound();
     void showTextureWindow(Renderer* renderer, f32 deltaTime);
     void showMaterialWindow(Renderer* renderer, f32 deltaTime);
+    void showSoundWindow(Renderer* renderer, f32 deltaTime);
 
 public:
     ResourceManager();

@@ -59,7 +59,7 @@ public:
                     Projectile::BLASTER));
         scene->addEntity(new Projectile(pos2, vel, zAxisOf(transform), vehicle->vehicleIndex,
                     Projectile::BLASTER));
-        g_audio.playSound3D(&g_res.sounds->blaster,
+        g_audio.playSound3D(g_res.getSound("blaster"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 1.f);
 

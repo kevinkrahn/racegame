@@ -35,7 +35,7 @@ public:
             if (damage > 8.f)
             {
                 ammo = 0;
-                g_audio.playSound3D(&g_res.sounds->kinetic_armor, SoundType::GAME_SFX, vehicle->getPosition());
+                g_audio.playSound3D(g_res.getSound("kinetic_armor"), SoundType::GAME_SFX, vehicle->getPosition());
             }
             return 0.f;
         }

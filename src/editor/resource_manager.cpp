@@ -62,6 +62,19 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         modelsStale = false;
     }
 
+    if (soundsStale)
+    {
+        sounds.clear();
+        for (auto& sound : g_res.sounds)
+        {
+            sounds.push_back(sound.second.get());
+        }
+        std::sort(sounds.begin(), sounds.end(), [](auto& a, auto& b) {
+            return a->name < b->name;
+        });
+        soundsStale = false;
+    }
+
     if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
     {
         if (g_input.isKeyPressed(KEY_ESCAPE) || g_input.isKeyPressed(KEY_F5))
@@ -94,6 +107,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
             if (ImGui::MenuItem("New Sound"))
             {
+                newSound();
             }
             if (ImGui::MenuItem("New Model"))
             {
@@ -245,6 +259,49 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             ImGui::PopStyleColor();
         }
 
+        if (ImGui::CollapsingHeader("Sounds"))
+        {
+            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
+            for (auto sound : sounds)
+            {
+                u32 flags = ImGuiTreeNodeFlags_Leaf
+                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                    | ImGuiTreeNodeFlags_SpanAvailWidth;
+                if (selectedSound == sound && isSoundWindowOpen)
+                {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+                ImGui::TreeNodeEx(sound->name.c_str(), flags);
+                if (ImGui::IsItemClicked())
+                {
+                    selectedSound = sound;
+                    editName = sound->name;
+                    isSoundWindowOpen = true;
+                }
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::MenuItem("New Sound"))
+                    {
+                        newSound();
+                    }
+                    if (ImGui::MenuItem("Duplicate"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Rename"))
+                    {
+                        // TODO
+                    }
+                    if (ImGui::MenuItem("Delete"))
+                    {
+                        // TODO
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+            ImGui::PopStyleColor();
+        }
+
         if (ImGui::CollapsingHeader("Tracks"))
         {
             ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
@@ -294,6 +351,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     showTextureWindow(renderer, deltaTime);
     showMaterialWindow(renderer, deltaTime);
+    showSoundWindow(renderer, deltaTime);
 
     if (ImGui::BeginPopupModal("Exit Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -380,6 +438,20 @@ void ResourceManager::newMaterial()
     g_res.materialNameMap[mat->name] = selectedMaterial;
     g_res.materials[mat->guid] = std::move(mat);
     materialsStale = true;
+}
+
+void ResourceManager::newSound()
+{
+    auto sound = std::make_unique<Sound>();
+    sound->guid = g_res.generateGUID();
+    selectedSound = sound.get();
+    isSoundWindowOpen = true;
+    sound->name = str("Sound ", g_res.sounds.size());
+    editName = sound->name;
+    saveResource(*sound);
+    g_res.soundNameMap[sound->name] = selectedSound;
+    g_res.sounds[sound->guid] = std::move(sound);
+    texturesStale = true;
 }
 
 void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
@@ -619,4 +691,71 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
 
     ImGui::End();
+}
+
+void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
+{
+    if (!isSoundWindowOpen)
+    {
+        return;
+    }
+
+    Sound& sound = *selectedSound;
+
+    if (ImGui::Begin("Sound Properties", &isSoundWindowOpen))
+    {
+        if (ImGui::Button("Save"))
+        {
+            saveResource(sound);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Load Sound"))
+        {
+            std::string filename = chooseFile(".", true, "Audio Files", { "*.wav", "*.ogg" });
+            if (!filename.empty())
+            {
+                sound.sourceFilePath = std::filesystem::relative(filename);
+                sound.loadFromFile(sound.sourceFilePath.c_str());
+            }
+        }
+        ImGui::SameLine();
+        if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
+        {
+            sound.loadFromFile(sound.sourceFilePath.c_str());
+        }
+
+        ImGui::Gap();
+
+        ImGui::Text(sound.sourceFilePath.c_str());
+        ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
+
+        if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            sound.name = editName;
+            g_res.soundNameMap[sound.name] = selectedSound;
+        }
+        if (!ImGui::IsItemFocused())
+        {
+            editName = sound.name;
+        }
+
+        ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
+        ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
+
+        ImGui::Gap();
+
+        static SoundHandle previewSoundHandle = 0;
+        if (ImGui::Button("Preview"))
+        {
+            g_audio.stopSound(previewSoundHandle);
+            previewSoundHandle = g_audio.playSound(&sound, SoundType::MENU_SFX);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop"))
+        {
+            g_audio.stopSound(previewSoundHandle);
+        }
+
+        ImGui::End();
+    }
 }
