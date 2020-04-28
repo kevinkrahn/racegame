@@ -67,6 +67,7 @@ public:
     virtual void onCreateEnd(class Scene* scene) {}
     virtual void onUpdate(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
     virtual void onRender(class RenderWorld* rw, class Scene* scene, f32 deltaTime) {}
+    virtual void onBatch(class Batcher& batcher) {}
 
     virtual void applyDecal(class Decal& decal) {}
 

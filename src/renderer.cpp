@@ -293,6 +293,7 @@ void Renderer::render(f32 deltaTime)
     renderWorld.clear();
 
     // render to fullscreen texture
+#if 0
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw to Fullscreen Framebuffer");
     glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenFramebuffer);
     glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
@@ -361,6 +362,33 @@ void Renderer::render(f32 deltaTime)
     glUseProgram(getShaderProgram("blit2"));
     glBindTextureUnit(1, fsfb.fullscreenTexture);
     glDrawArrays(GL_TRIANGLES, 0, 3);
+#else
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw to Backbuffer");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(getShaderProgram("post"));
+    glm::vec2 res(g_game.windowWidth, g_game.windowHeight);
+    glm::mat4 fullscreenOrtho = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
+    ViewportLayout& layout = viewportLayout[renderWorld.cameras.size() - 1];
+    glBindVertexArray(emptyVAO);
+    for (u32 i=0; i<renderWorld.cameras.size(); ++i)
+    {
+        glm::vec2 dir = layout.offsets[i];
+        dir.x = glm::sign(dir.x);
+        dir.y = glm::sign(dir.y);
+        glm::mat4 matrix = fullscreenOrtho *
+                           glm::translate(glm::mat4(1.f), glm::vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
+                           glm::scale(glm::mat4(1.f), glm::vec3(layout.scale * res -
+                                       glm::vec2(layout.scale.x < 1.f ? viewportGapPixels : 0,
+                                                 layout.scale.y < 1.f ? viewportGapPixels : 0), 1.0));
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(matrix));
+        glBindTextureUnit(0, renderWorld.getTexture(i)->handle);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+#endif
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "2D Pass");
     glEnable(GL_BLEND);

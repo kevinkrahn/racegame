@@ -104,5 +104,6 @@ public:
 
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
+    void onBatch(class Batcher& batcher) override;
     void onRenderWireframe(RenderWorld* rw, Scene* scene, f32 deltaTime);
 };

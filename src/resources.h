@@ -94,8 +94,6 @@ struct Sounds
 
 const char* dataFiles[] = {
     "models/mine.dat",
-    "models/railing.dat",
-    "models/railing2.dat",
     "models/world.dat",
     "models/money.dat",
     "models/wrench.dat",

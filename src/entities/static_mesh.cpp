@@ -114,6 +114,10 @@ void StaticMesh::updateTransform(Scene* scene)
 
 void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
+    if (scene->isBatched && model->modelUsage != ModelUsage::DYNAMIC_PROP)
+    {
+        return;
+    }
     glm::mat4 t = transform;
     if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
     {
@@ -127,6 +131,22 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                         t * o.modelObject->getTransform(),
                         g_res.getMaterial(o.modelObject->materialGuid)));
 
+        }
+    }
+}
+
+void StaticMesh::onBatch(Batcher& batcher)
+{
+    if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
+    {
+        return;
+    }
+    for (auto& o : objects)
+    {
+        if (o.modelObject->isVisible)
+        {
+            batcher.add(g_res.getMaterial(o.modelObject->materialGuid),
+                transform * o.modelObject->getTransform(), &model->meshes[o.modelObject->meshIndex]);
         }
     }
 }
@@ -219,6 +239,7 @@ void StaticMesh::serializeState(Serializer& s)
     s.field(modelGuid);
     if (s.deserialize && modelGuid == 0)
     {
+        // TODO: Remove this once scenes are updated
         const char* meshIndexToMeshNameMap[] = {
             "rock",
             "tunnel",

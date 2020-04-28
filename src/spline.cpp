@@ -38,11 +38,27 @@ void Spline::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     }
 #endif
 
+    if (scene->isBatched)
+    {
+        return;
+    }
+
     for (auto& rm : meshes)
     {
         if (rm.material)
         {
             rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material));
+        }
+    }
+}
+
+void Spline::onBatch(Batcher& batcher)
+{
+    for (auto& rm : meshes)
+    {
+        if (rm.material)
+        {
+            batcher.add(rm.material, glm::mat4(1.f), &rm.mesh);
         }
     }
 }

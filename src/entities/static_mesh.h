@@ -30,4 +30,5 @@ public:
     void updateTransform(class Scene* scene) override;
     std::vector<PropPrefabData> generatePrefabProps() override;
     const char* getName() const override { return model->name.c_str(); }
+    void onBatch(class Batcher& batcher) override;
 };

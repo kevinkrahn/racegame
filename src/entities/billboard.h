@@ -57,13 +57,26 @@ public:
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
+        rw->push(LitRenderable(model->getMeshByName("billboard.BillboardSign"),
+                    transform, g_res.getTexture(billboardTextureGuid)));
+        if (scene->isBatched)
+        {
+            return;
+        }
         for (auto& obj : model->objects)
         {
             rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
                         transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
         }
-        rw->push(LitRenderable(model->getMeshByName("billboard.BillboardSign"),
-                    transform, g_res.getTexture(billboardTextureGuid)));
+    }
+
+    void onBatch(Batcher& batcher) override
+    {
+        for (auto& obj : model->objects)
+        {
+            batcher.add(g_res.getMaterial(obj.materialGuid),
+                transform * obj.getTransform(), &model->meshes[obj.meshIndex]);
+        }
     }
 
     void onPreview(RenderWorld* rw) override

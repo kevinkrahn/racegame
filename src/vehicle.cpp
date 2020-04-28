@@ -1938,6 +1938,8 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             }
         }
 
+        // TODO: don't attempt avoid oil and glue if already way off course (this only messes up the AI even more)
+
         // if chasing a target, don't try to avoid opponent vehicles
         ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
         if (target && userData && userData->entityType == ActorUserData::VEHICLE)

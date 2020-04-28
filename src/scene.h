@@ -16,6 +16,7 @@
 #include "entities/start.h"
 #include "collision_flags.h"
 #include "racing_line.h"
+#include "batcher.h"
 #include <vector>
 
 struct RaceBonus
@@ -99,6 +100,7 @@ private:
     TrackGraph trackGraph;
     MotionGrid motionGrid;
     PxDistanceJoint* dragJoint = nullptr;
+    Batcher batcher;
 
     bool allPlayersFinished = false;
     f32 finishTimer = 0.f;
@@ -124,6 +126,7 @@ public:
     bool isRaceInProgress = false;
     bool isPaused = false;
     bool isCameraTourEnabled = true;
+    bool isBatched = false;
 
     RandomSeries randomSeries;
     SoundHandle backgroundSound = 0;
@@ -158,6 +161,7 @@ public:
     void onUpdate(class Renderer* renderer, f32 deltaTime);
     void onEndUpdate();
 
+    void buildBatches();
     void vehicleFinish(u32 n);
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
     void attackCredit(u32 instigator, u32 victim);

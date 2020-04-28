@@ -111,6 +111,11 @@ Scene::Scene(DataFile::Value* data)
     trackPreviewPosition = start->position;
     trackPreviewCameraTarget = trackPreviewPosition;
     trackPreviewCameraFrom = trackPreviewPosition + glm::vec3(0, 0, 5);
+
+    if (!g_game.isEditing)
+    {
+        buildBatches();
+    }
 }
 
 Scene::~Scene()
@@ -234,6 +239,21 @@ void Scene::startRace()
     }
 
     isRaceInProgress = true;
+}
+
+void Scene::buildBatches()
+{
+    print("Building batches...\n");
+    f64 t = getTime();
+    batcher.begin();
+    for (auto& e : entities)
+    {
+        e->onBatch(batcher);
+    }
+    batcher.end();
+    f64 timeTakenToBuildBatches = getTime() - t;
+    print("Batching took ", timeTakenToBuildBatches, " seconds\n");
+    isBatched = true;
 }
 
 void Scene::stopRace()
@@ -448,6 +468,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         e->onRender(rw, this, deltaTime);
     }
+
+    // render the batches
+    batcher.render(rw);
 
     // handle newly created entities
     for (auto& e : newEntities)

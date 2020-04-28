@@ -10,6 +10,7 @@
 #include "decal.h"
 #include "spline.h"
 
+// TODO: batch this
 class Track : public Renderable, public Entity
 {
     DataFile::Value railingData;

@@ -7,6 +7,7 @@
 #include "game.cpp"
 #include "scene.cpp"
 #include "renderer.cpp"
+#include "batcher.cpp"
 #include "datafile.cpp"
 #include "resources.cpp"
 #include "texture.cpp"
