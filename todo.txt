@@ -35,7 +35,6 @@
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
 - Undo/Redo in editor
-- Add little speed boost right after respawning in order to reduce the penalty for being destroyed
 - Audio volume distance falloff should be configured on the audio resource
 - Add texture compression
 - Add difficulty levels

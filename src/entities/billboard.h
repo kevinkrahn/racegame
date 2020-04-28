@@ -90,7 +90,16 @@ public:
         rw->setViewportCamera(0, glm::vec3(3.f, 1.f, 4.f) * 4.5f,
                 glm::vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
         transform = glm::mat4(1.f);
-        onRender(rw, nullptr, 0.f);
+        rw->push(LitRenderable(model->getMeshByName("billboard.BillboardSign"),
+                    transform, g_res.getTexture(billboardTextureGuid)));
+        for (auto& obj : model->objects)
+        {
+            if (obj.isVisible)
+            {
+                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                            transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
+            }
+        }
     }
 
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override

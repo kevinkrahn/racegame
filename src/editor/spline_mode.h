@@ -266,6 +266,7 @@ public:
     void onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime) override
     {
         bool isMouseClickHandled = ImGui::GetIO().WantCaptureMouse;
+        bool isKeyboardHandled = ImGui::GetIO().WantCaptureKeyboard;
 
         RenderWorld* rw = renderer->getRenderWorld();
         glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
@@ -333,6 +334,35 @@ public:
                         { hitPoint + glm::vec3(20, 0, 0), -handleOffset, handleOffset });
                 newSpline->isDirty = true;
                 scene->addEntity(newSpline);
+            }
+        }
+
+        // add point to spline
+        if (!isKeyboardHandled && selectedPoints.size() == 1 && g_input.isKeyPressed(KEY_E))
+        {
+            isMouseClickHandled = true;
+            PxRaycastBuffer hit;
+            if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
+            {
+                glm::vec3 hitPoint = convert(hit.block.position);
+                Spline* spline = selectedPoints.front().spline;
+                auto& point = spline->points[selectedPoints.front().pointIndex];
+                glm::vec3 handleP = glm::vec3(glm::normalize(
+                            glm::vec2(hitPoint) - glm::vec2(point.position)) * 4.f, 0.f);
+                u32 newSelectIndex = 0;
+                if (selectedPoints.front().pointIndex == spline->points.size() - 1)
+                {
+                    newSelectIndex = (u32)spline->points.size();
+                    spline->points.push_back({ hitPoint, -handleP, handleP });
+                }
+                else
+                {
+                    spline->points.insert(
+                            selectedPoints.front().spline->points.begin(), { hitPoint, handleP, -handleP });
+                }
+                selectedPoints.clear();
+                selectedPoints.push_back({ spline, newSelectIndex });
+                spline->isDirty = true;
             }
         }
 
@@ -688,7 +718,7 @@ public:
             glm::vec3& sourceP = selection.firstHandle ?
                 selection.spline->points[selection.pointIndex].handleOffsetA :
                 selection.spline->points[selection.pointIndex].handleOffsetB;
-            glm::vec3 oppositeHandleP = selection.firstHandle ?
+            glm::vec3& oppositeHandleP = selection.firstHandle ?
                 selection.spline->points[selection.pointIndex].handleOffsetB :
                 selection.spline->points[selection.pointIndex].handleOffsetA;
             glm::vec3 p = pointP + sourceP;
