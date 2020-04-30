@@ -10,7 +10,7 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
     : position(position), velocity(velocity), upVector(upVector),
         instigator(instigator), projectileType(projectileType)
 {
-    bulletMesh = g_res.getMesh("world.Bullet");
+    bulletMesh = g_res.getModel("misc")->getMeshByName("world.Bullet");
     switch(projectileType)
     {
         case BLASTER:
@@ -221,7 +221,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                         position, glm::vec4(settings.emit, 0.8f), 0.75f, 0.f, false));
             break;
         case MISSILE:
-            settings.mesh = g_res.getMesh("missile.Missile");
+            settings.mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
             settings.color = glm::vec3(1.f);
             settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
             rw->push(LitRenderable(settings));
@@ -229,7 +229,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                         glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false));
             break;
         case BOUNCER:
-            settings.mesh = g_res.getMesh("world.Sphere");
+            settings.mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
             settings.color = glm::vec3(1.f);
             settings.emit = glm::vec3(0.5f);
             settings.worldTransform = glm::translate(glm::mat4(1.f), position)

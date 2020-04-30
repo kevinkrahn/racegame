@@ -37,7 +37,7 @@ public:
     glm::mat4 mountTransform;
     SmallVec<glm::vec3, 3> projectileSpawnPoints;
 
-    void loadSceneData(const char* sceneName);
+    void loadModelData(const char* modelName);
     void outOfAmmo(class Vehicle* vehicle);
     virtual void initialize() {}
     virtual ~Weapon() {}

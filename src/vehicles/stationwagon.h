@@ -14,7 +14,7 @@ public:
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
-        loadSceneData("stationwagon.Vehicle");
+        loadModelData("vehicle_stationwagon");
         initStandardUpgrades();
     }
 

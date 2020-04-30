@@ -4,6 +4,7 @@
 #include "datafile.h"
 #include "mesh.h"
 #include "weapon.h"
+#include "batcher.h"
 #include <algorithm>
 #include <functional>
 
@@ -35,17 +36,7 @@ struct VehicleMesh
     Mesh* mesh;
     glm::mat4 transform;
     PxShape* collisionShape;
-    enum Material {
-        BODY,
-        WINDOW,
-        RUBBER,
-        CARBON_FIBER,
-        PLASTIC,
-        CHROME,
-        FRONT_LIGHTS,
-        REAR_LIGHTS,
-    };
-    u32 type;
+    Material* material;
 };
 
 struct VehicleDebris
@@ -300,6 +291,8 @@ struct VehicleData
     u32 frontWeaponCount = 1;
     u32 rearWeaponCount = 1;
 
+    Material coloredPaintMaterial;
+
     std::vector<VehicleMesh> debrisChunks;
 
     virtual ~VehicleData() {}
@@ -310,7 +303,7 @@ struct VehicleData
             std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
-    void loadSceneData(const char* sceneName);
+    void loadModelData(const char* modelName);
     void copySceneDataToTuning(VehicleTuning& tuning);
     void initStandardUpgrades();
 };

@@ -223,10 +223,10 @@ public:
                 }
             }
 
-            Mesh* arrowMesh = g_res.getMesh("world.TranslateArrow");
+            Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.ScaleArrow");
+            Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
             if (drawCenter)
             {
-                Mesh* centerMesh = g_res.getMesh("world.Sphere");
                 rw->push(OverlayRenderable(centerMesh, 0,
                         glm::translate(glm::mat4(1.f), p), centerCol, -1));
             }
@@ -322,8 +322,8 @@ public:
             }
             else
             {
-                Mesh* arrowMesh = g_res.getMesh("world.RotateArrow");
-                Mesh* sphereMesh = g_res.getMesh("world.Sphere");
+                Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.RotateArrow");
+                Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
                 rw->push(OverlayRenderable(sphereMesh, 0,
                         glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f))
                         , {0,0,0}, -1, true));
@@ -457,10 +457,10 @@ public:
                 }
             }
 
-            Mesh* arrowMesh = g_res.getMesh("world.ScaleArrow");
+            Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.ScaleArrow");
+            Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.UnitCube");
             if (drawCenter)
             {
-                Mesh* centerMesh = g_res.getMesh("world.UnitCube");
                 rw->push(OverlayRenderable(centerMesh, 0,
                         glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
             }

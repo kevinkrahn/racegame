@@ -183,7 +183,7 @@ public:
 
             glm::vec3 offset(0, 0, 0.05f);
             glm::vec4 color(1, 1, 0, 1);
-            Mesh* sphere = g_res.getMesh("world.Sphere");
+            Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
             glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(renderer->getRenderWorld());
             Camera const& cam = scene->getEditorCamera().getCamera();
             for (u32 i=0; i<path.points.size()-1; ++i)

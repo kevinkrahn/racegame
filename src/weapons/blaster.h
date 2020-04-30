@@ -22,9 +22,10 @@ public:
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
 
-        loadSceneData("blaster.Blaster");
-        mesh = g_res.getMesh("blaster.BlasterBase");
-        meshBarrel = g_res.getMesh("blaster.BlasterBarrel");
+        loadModelData("weapon_blaster");
+        Model* model = g_res.getModel("weapon_blaster");
+        mesh = model->getMeshByName("blaster.BlasterBase");
+        meshBarrel = model->getMeshByName("blaster.BlasterBarrel");
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

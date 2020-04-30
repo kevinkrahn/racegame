@@ -21,8 +21,8 @@ public:
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
 
-        loadSceneData("bouncer.Bouncer");
-        mesh = g_res.getMesh("bouncer.Bouncer");
+        loadModelData("weapon_bouncer");
+        mesh = g_res.getModel("weapon_bouncer")->getMeshByName("bouncer.Bouncer");
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

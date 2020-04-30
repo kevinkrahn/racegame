@@ -83,7 +83,7 @@ void Track::clearSelection()
 
 void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, GridSettings* gridSettings)
 {
-    Mesh* sphere = g_res.getMesh("world.Sphere");
+    Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
     glm::vec2 mousePos = g_input.getMousePosition();
     Camera const& cam = renderer->getRenderWorld()->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,

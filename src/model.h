@@ -19,13 +19,15 @@ class ModelObject
 public:
     // serialized
     std::string name;
+    i64 materialGuid = 0;
     glm::quat rotation;
     glm::vec3 position;
     glm::vec3 scale;
     u32 meshIndex;
     bool isCollider = false;
     bool isVisible = true;
-    i64 materialGuid = 0;
+    bool isPaint = false;
+    glm::vec3 bounds;
 
     PxShape* mousePickShape = nullptr;
 
@@ -38,7 +40,9 @@ public:
         s.field(meshIndex);
         s.field(isCollider);
         s.field(isVisible);
+        s.field(isPaint);
         s.field(materialGuid);
+        s.field(bounds);
     }
 
     void createMousePickCollisionShape(class Model* model);

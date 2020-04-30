@@ -892,8 +892,9 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 
     if (cameraIndex >= 0 && isHidden)
     {
-        rw->push(OverlayRenderable(g_res.getMesh("world.Arrow"),
-                cameraIndex, transform, g_vehicleColors[driver->getVehicleConfig()->colorIndex]));
+        Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.Arrow");
+        rw->push(OverlayRenderable(arrowMesh, cameraIndex,
+                    transform, g_vehicleColors[driver->getVehicleConfig()->colorIndex]));
     }
 
     glm::mat4 wheelTransforms[NUM_WHEELS];
@@ -910,7 +911,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 #if 0
     if (motionPath.size() > 0)
     {
-        Mesh* sphere = g_res.getMesh("world.Sphere");
+        Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
         //Font* font = &g_res.getFont("font", 18);
         for (auto& p : motionPath)
         {
@@ -1899,8 +1900,9 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition) - glm::vec2(targetP));
     previousTargetPosition = targetPathPoint.position;
 #if 0
-    rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
-                glm::translate(glm::mat4(1.f), targetP), nullptr, glm::vec3(1, 0, 0)));
+    Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
+    rw->push(LitRenderable(sphere, glm::translate(glm::mat4(1.f), targetP),
+                nullptr, glm::vec3(1, 0, 0)));
 #endif
 
     input.accel = 1.f;

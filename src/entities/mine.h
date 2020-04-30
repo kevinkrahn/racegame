@@ -8,14 +8,14 @@ class Mine : public Entity
 {
     glm::mat4 transform;
     u32 instigator;
-    Mesh* mesh;
+    Model* model;
     f32 aliveTime = 0.f;
 
 public:
     Mine(glm::mat4 const& transform, u32 instigator)
         : transform(transform), instigator(instigator)
     {
-        mesh = g_res.getMesh("mine.Mine");
+        model = g_res.getModel("mine");
         // TODO: add collision mesh so that AI can avoid it
     }
 

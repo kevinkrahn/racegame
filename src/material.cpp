@@ -14,6 +14,7 @@ void Material::serialize(Serializer& s)
     s.field(isVisible);
     s.field(isDepthReadEnabled);
     s.field(isDepthWriteEnabled);
+    s.field(useVertexColors);
     s.field(depthOffset);
 
     s.field(isTransparent);

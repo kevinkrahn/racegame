@@ -190,7 +190,7 @@ void MotionGrid::setCells(glm::vec3 p, f32 radius, CellType cellType, bool perma
 
 void MotionGrid::debugDraw(class RenderWorld* rw)
 {
-    Mesh* mesh = g_res.getMesh("world.Sphere");
+    Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
 #if DEBUG_INFO
     for (auto& node : debugInfo)
     {

@@ -41,33 +41,10 @@ enum struct ResourceType
     MATERIAL = 6,
 };
 
-const char* dataFiles[] = {
-    "models/mine.dat",
-    "models/world.dat",
-    "models/money.dat",
-    "models/wrench.dat",
-
-    "models/vehicles/mini.dat",
-    "models/vehicles/coolcar.dat",
-    "models/vehicles/muscle.dat",
-    "models/vehicles/racecar.dat",
-    "models/vehicles/sportscar.dat",
-    "models/vehicles/stationwagon.dat",
-    "models/vehicles/truck.dat",
-
-    "models/weapons/minigun.dat",
-    "models/weapons/blaster.dat",
-    "models/weapons/missile.dat",
-    "models/weapons/bouncer.dat",
-};
-
 class Resources
 {
 private:
-    std::map<std::string, Mesh> meshes;
-    std::map<std::string, DataFile::Value::Dict> scenes;
     std::map<const char*, std::map<u32, Font>> fonts;
-
     RandomSeries series = randomSeed();
 
 public:
@@ -111,26 +88,6 @@ public:
 
     void load();
     void loadResource(DataFile::Value& data);
-
-    Mesh* getMesh(const char* name)
-    {
-        auto iter = meshes.find(name);
-        if (iter == meshes.end())
-        {
-            FATAL_ERROR("Mesh not found: ", name);
-        }
-        return &iter->second;
-    }
-
-    DataFile::Value::Dict& getScene(const char* name)
-    {
-        auto iter = scenes.find(name);
-        if (iter == scenes.end())
-        {
-            FATAL_ERROR("Scene not found: ", name);
-        }
-        return iter->second;
-    }
 
     Font& getFont(const char* name, u32 height)
     {

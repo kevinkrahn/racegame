@@ -34,7 +34,7 @@ void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
 
     cameraYaw += cameraYawSpeed * deltaTime;
     cameraYawSpeed = smoothMove(cameraYawSpeed, 0, 8.f, deltaTime);
-    cameraPitch = clamp(cameraPitch + cameraPitchSpeed * deltaTime, -3.f, 3.f);
+    cameraPitch = clamp(cameraPitch + cameraPitchSpeed * deltaTime, -1.5f, 1.5f);
     cameraPitchSpeed = smoothMove(cameraPitchSpeed, 0, 8.f, deltaTime);
 
     if (!ImGui::GetIO().WantCaptureMouse && !g_input.isKeyDown(KEY_LCTRL)

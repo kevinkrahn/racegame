@@ -756,14 +756,14 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
 
     trackPreview2D.beginUpdate(renderer, size, size);
 
-    Mesh* quadMesh = g_res.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     trackPreview2D.drawItem(
         quadMesh->vao, quadMesh->numIndices,
         trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
             * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
     track->drawTrackPreview(&trackPreview2D, trackOrtho);
 
-    Mesh* arrowMesh = g_res.getMesh("world.TrackArrow");
+    Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.TrackArrow");
     for (auto const& v : vehicles)
     {
         glm::vec3 pos = v->getPosition();

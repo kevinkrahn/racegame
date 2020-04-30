@@ -26,9 +26,10 @@ public:
         ammoUnitCount = 12;
         fireMode = FireMode::CONTINUOUS;
 
-        loadSceneData("minigun.Minigun");
-        mesh = g_res.getMesh("minigun.Minigun");
-        meshBarrel = g_res.getMesh("minigun.MinigunBarrel");
+        loadModelData("weapon_minigun");
+        Model* model = g_res.getModel("weapon_minigun");
+        mesh = model->getMeshByName("minigun.Minigun");
+        meshBarrel = model->getMeshByName("minigun.MinigunBarrel");
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

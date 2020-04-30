@@ -85,26 +85,15 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
     }
 }
 
-u32 meshtype(std::string const& meshName)
+void VehicleData::loadModelData(const char* modelName)
 {
-    if (meshName.find("Body") != std::string::npos) return VehicleMesh::BODY;
-    if (meshName.find("Window") != std::string::npos) return VehicleMesh::WINDOW;
-    if (meshName.find("Rubber") != std::string::npos) return VehicleMesh::RUBBER;
-    if (meshName.find("CarbonFiber") != std::string::npos) return VehicleMesh::CARBON_FIBER;
-    if (meshName.find("Chrome") != std::string::npos) return VehicleMesh::CHROME;
-    if (meshName.find("FrontLights") != std::string::npos) return VehicleMesh::FRONT_LIGHTS;
-    if (meshName.find("RearLights") != std::string::npos) return VehicleMesh::REAR_LIGHTS;
-    return VehicleMesh::PLASTIC;
-}
+    Model* model = g_res.getModel(modelName);
 
-void VehicleData::loadSceneData(const char* sceneName)
-{
-    DataFile::Value::Dict& scene = g_res.getScene(sceneName);
-    for (auto& entityData : scene["entities"].array().val())
+    for (auto& obj : model->objects)
     {
-        auto& e = entityData.dict().val();
-        std::string name = e["name"].string().val();
-        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>().val();
+        glm::mat4 transform = obj.getTransform();
+        std::string const& name = obj.name;
+        Mesh* mesh = &model->meshes[obj.meshIndex];
         if (name.find("debris") != std::string::npos ||
             name.find("Debris") != std::string::npos ||
             name.find("FL") != std::string::npos ||
@@ -112,8 +101,6 @@ void VehicleData::loadSceneData(const char* sceneName)
             name.find("RL") != std::string::npos ||
             name.find("RR") != std::string::npos)
         {
-            std::string const& meshName = e["data_name"].string().val();
-            Mesh* mesh = g_res.getMesh(meshName.c_str());
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
             PxShape* shape = g_game.physx.physics->createShape(
@@ -125,89 +112,86 @@ void VehicleData::loadSceneData(const char* sceneName)
                 mesh,
                 transform,
                 shape,
-                meshtype(name)
+                g_res.getMaterial(obj.materialGuid),
             });
         }
         else if (name.find("Chassis") != std::string::npos)
         {
             chassisMeshes.push_back({
-                g_res.getMesh(e["data_name"].string().val().c_str()),
+                mesh,
                 transform,
                 nullptr,
-                meshtype(name)
+                g_res.getMaterial(obj.materialGuid),
             });
         }
         if (name.find("FL") != std::string::npos)
         {
             wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
-                g_res.getMesh(e["data_name"].string().val().c_str()),
-                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                mesh,
+                glm::scale(glm::mat4(1.f), obj.scale),
                 nullptr,
-                meshtype(name)
+                g_res.getMaterial(obj.materialGuid),
             });
-            frontWheelMeshRadius = glm::max(frontWheelMeshRadius, e["bound_z"].real().val() * 0.5f);
-            frontWheelMeshWidth = glm::max(frontWheelMeshWidth, e["bound_y"].real().val());
+            frontWheelMeshRadius = glm::max(frontWheelMeshRadius, obj.bounds.z * 0.5f);
+            frontWheelMeshWidth = glm::max(frontWheelMeshWidth, obj.bounds.y);
             wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name.find("RL") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_RIGHT].push_back({
-                g_res.getMesh(e["data_name"].string().val().c_str()),
+                mesh,
                 glm::scale(glm::mat4(1.f), scaleOf(transform)),
                 nullptr,
-                meshtype(name)
+                g_res.getMaterial(obj.materialGuid),
             });
-            rearWheelMeshRadius = glm::max(rearWheelMeshRadius, e["bound_z"].real().val() * 0.5f);
-            rearWheelMeshWidth = glm::max(rearWheelMeshWidth, e["bound_y"].real().val());
+            rearWheelMeshRadius = glm::max(rearWheelMeshRadius, obj.bounds.z * 0.5f);
+            rearWheelMeshWidth = glm::max(rearWheelMeshWidth, obj.bounds.y);
             wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name.find("FR") != std::string::npos)
         {
             wheelMeshes[WHEEL_FRONT_LEFT].push_back({
-                g_res.getMesh(e["data_name"].string().val().c_str()),
-                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                mesh,
+                glm::scale(glm::mat4(1.f), obj.scale),
                 nullptr,
-                meshtype(name)
+                g_res.getMaterial(obj.materialGuid),
             });
             wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
         }
         else if (name.find("RR") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_LEFT].push_back({
-                g_res.getMesh(e["data_name"].string().val().c_str()),
-                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                mesh,
+                glm::scale(glm::mat4(1.f), obj.scale),
                 nullptr,
-                meshtype(name)
+                g_res.getMaterial(obj.materialGuid),
             });
-            wheelPositions[WHEEL_REAR_LEFT] = transform[3];
+            wheelPositions[WHEEL_REAR_LEFT] = obj.position;
         }
         else if (name.find("Collision") != std::string::npos)
         {
-            collisionMeshes.push_back({
-                g_res.getMesh(e["data_name"].string().val().c_str())->getConvexCollisionMesh(),
-                transform
-            });
-            collisionWidth = glm::max(collisionWidth, e["bound_y"].real().val());
+            collisionMeshes.push_back({ mesh->getConvexCollisionMesh(), transform });
+            collisionWidth = glm::max(collisionWidth, obj.bounds.y);
         }
         else if (name.find("COM") != std::string::npos)
         {
-            sceneCenterOfMass = transform[3];
+            sceneCenterOfMass = obj.position;
         }
         else if (name.find("WeaponMount1") != std::string::npos)
         {
-            weaponMounts[0] = glm::translate(glm::mat4(1.f), translationOf(transform)) * rotationOf(transform);
+            weaponMounts[0] = glm::translate(glm::mat4(1.f), obj.position) * rotationOf(transform);
         }
         else if (name.find("WeaponMount2") != std::string::npos)
         {
-            weaponMounts[1] = glm::translate(glm::mat4(1.f), translationOf(transform)) * rotationOf(transform);
+            weaponMounts[1] = glm::translate(glm::mat4(1.f), obj.position) * rotationOf(transform);
         }
         else if (name.find("WeaponMount3") != std::string::npos)
         {
-            weaponMounts[2] = glm::translate(glm::mat4(1.f), translationOf(transform)) * rotationOf(transform);
+            weaponMounts[2] = glm::translate(glm::mat4(1.f), obj.position) * rotationOf(transform);
         }
         else if (name.find("ExhaustHole") != std::string::npos)
         {
-            exhaustHoles.push_back(translationOf(transform));
+            exhaustHoles.push_back(obj.position);
         }
     }
 }
@@ -227,96 +211,22 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
     tuning.collisionMeshes = collisionMeshes;
 }
 
-void meshMaterial(u32 type, LitSettings& s, VehicleConfiguration const& config, bool isBraking)
-{
-    switch (type)
-    {
-        case VehicleMesh::BODY:
-            s.color = g_vehicleColors[config.colorIndex];
-            if (config.paintTypeIndex == (i32)PaintType::METALLIC) {
-                s.specularStrength = 0.15f;
-                s.specularPower = 500.f;
-                s.reflectionStrength = 0.15f;
-                s.reflectionLod = 3.f;
-                s.reflectionBias = 0.3f;
-            }
-            else if (config.paintTypeIndex == (i32)PaintType::DULL) {
-                s.specularStrength = 0.15f;
-                s.specularPower = 60.f;
-                s.reflectionStrength = 0.15f;
-                s.reflectionLod = 6.f;
-                s.reflectionBias = 0.2f;
-            }
-            else {//if (config.paintTypeIndex == (i32)PaintType::MATTE) {
-                s.specularStrength = 0.012f;
-                s.specularPower = 20.f;
-                s.reflectionStrength = 0.15f;
-                s.reflectionLod = 8.f;
-                s.reflectionBias = 0.1f;
-            }
-            break;
-        case VehicleMesh::CARBON_FIBER:
-            s.color = { 0.1f, 0.1f, 0.1f };
-            break;
-        case VehicleMesh::CHROME:
-            s.specularStrength = 0.3f;
-            s.specularPower = 500.f;
-            s.reflectionStrength = 0.9f;
-            s.reflectionLod = 1.f;
-            s.color = glm::vec3(0.18f);
-            s.reflectionBias = 1.f;
-            break;
-        case VehicleMesh::FRONT_LIGHTS:
-            s.specularStrength = 0.f;
-            s.color = glm::vec3(1.f, 1.f, 0.9f);
-            s.emit = glm::vec3(2.f, 2.f, 1.f);
-            break;
-        case VehicleMesh::REAR_LIGHTS:
-            s.specularStrength = 0.f;
-            s.color = glm::vec3(0.5f, 0.f, 0.f);
-            s.emit = glm::vec3(1.f, 0.02f, 0.02f) * (isBraking ? 2.5f : 0.3f);
-            break;
-        case VehicleMesh::WINDOW:
-            s.color = { 0.f, 0.f, 0.f };
-            s.specularStrength = 0.3f;
-            s.specularPower = 1100.f;
-            s.reflectionStrength = 0.25f;
-            s.reflectionLod = 2.f;
-            s.reflectionBias = 0.3f;
-            break;
-        case VehicleMesh::RUBBER:
-            s.color = { 0.08f, 0.08f, 0.08f };
-            s.specularStrength = 0.1f;
-            s.specularPower = 20.f;
-            break;
-        case VehicleMesh::PLASTIC:
-            s.color = { 0.08f, 0.08f, 0.08f };
-            s.specularStrength = 0.1f;
-            s.specularPower = 120.f;
-            s.reflectionStrength = 0.1f;
-            s.reflectionLod = 4.f;
-            break;
-        default:
-            s.reflectionStrength = 0.f;
-            s.reflectionBias = 0.2f;
-            s.specularStrength = 0.15f;
-            s.specularPower = 100.f;
-            s.color = { 1.f, 1.f, 1.f };
-            break;
-    }
-}
-
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, VehicleConfiguration const& config, Vehicle* vehicle,
         bool isBraking)
 {
+    Material* originalPaintMaterial = g_res.getMaterial("paint_material");
+    coloredPaintMaterial = *originalPaintMaterial;
+    coloredPaintMaterial.color = g_vehicleColors[config.colorIndex];
+
     for (auto& m : chassisMeshes)
     {
-        LitSettings s;
-        s.mesh = m.mesh;
-        s.worldTransform = transform * m.transform;
-        meshMaterial(m.type, s, config, isBraking);
-        rw->push(LitRenderable(s));
+        Material* mat = m.material;
+        if (mat == originalPaintMaterial)
+        {
+            mat = &coloredPaintMaterial;
+        }
+        rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat));
     }
 
     glm::mat4 defaultWheelTransforms[NUM_WHEELS];
@@ -340,11 +250,12 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
 
         for (auto& m : wheelMeshes[i])
         {
-            LitSettings s;
-            s.mesh = m.mesh;
-            s.worldTransform = wheelTransform * m.transform;
-            meshMaterial(m.type, s, config, false);
-            rw->push(LitRenderable(s));
+            Material* mat = m.material;
+            if (mat == originalPaintMaterial)
+            {
+                mat = &coloredPaintMaterial;
+            }
+            rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat));
         }
     }
 
@@ -397,13 +308,15 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
 void VehicleData::renderDebris(RenderWorld* rw,
         std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config)
 {
+    Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     for (auto const& d : debris)
     {
-        LitSettings s;
-        s.mesh = d.meshInfo->mesh;
-        s.worldTransform = convert(d.rigidBody->getGlobalPose());
-        meshMaterial(d.meshInfo->type, s, config, false);
-        rw->push(LitRenderable(s));
+        Material* mat = d.meshInfo->material;
+        if (mat == originalPaintMaterial)
+        {
+            mat = &coloredPaintMaterial;
+        }
+        rw->push(LitMaterialRenderable(d.meshInfo->mesh, convert(d.rigidBody->getGlobalPose()), mat));
     }
 }
 

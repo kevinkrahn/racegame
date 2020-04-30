@@ -12,7 +12,7 @@ public:
     Glue(glm::vec3 const& pos)
     {
         setup(pos);
-        scale = glm::vec3(4.f);
+        scale = glm::vec3(3.25f);
     }
     Glue* setup(glm::vec3 const& pos={0,0,0});
     void onCreateEnd(class Scene* scene) override;

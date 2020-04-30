@@ -513,7 +513,7 @@ public:
             showSelectedSplineProperties();
         }
 
-        Mesh* sphereMesh = g_res.getMesh("world.Sphere");
+        Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
         for (auto spline : splineEntities)
         {
             glm::vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
@@ -559,6 +559,12 @@ public:
         {
             Model* model = g_res.getModel(selectedSpline->modelGuid);
             ImGui::Text(model->name.c_str());
+
+            if (ImGui::DragFloat("Scale", &selectedSpline->scale, 0.01f, 0.1f, 10.f))
+            {
+                selectedSpline->isDirty = true;
+            }
+
             ImGui::End();
         }
     }
@@ -605,7 +611,7 @@ public:
                 renderWorld.setName("Spline Model Icon");
                 renderWorld.setSize(iconSize*2, iconSize*2);
                 renderWorld.setClearColor(true, glm::vec4(0.15f, 0.15f, 0.15f, 1.f));
-                Mesh* quadMesh = g_res.getMesh("world.Quad");
+                Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
                 renderWorld.push(LitRenderable(quadMesh,
                             glm::translate(glm::mat4(1.f), glm::vec3(0, 0, -0.01f)) *
                             glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));

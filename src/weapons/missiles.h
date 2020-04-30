@@ -20,8 +20,9 @@ public:
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponInfo::FRONT_WEAPON;
 
-        mesh = g_res.getMesh("missile.Missile");
-        mountMesh = g_res.getMesh("missile.Mount");
+        Model* model = g_res.getModel("weapon_missile");
+        mesh = model->getMeshByName("missile.Missile");
+        mountMesh = model->getMeshByName("missile.Mount");
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

@@ -13,7 +13,7 @@ public:
         frontWeaponCount = 2;
         rearWeaponCount = 2;
 
-        loadSceneData("racecar.Vehicle");
+        loadModelData("vehicle_racecar");
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override

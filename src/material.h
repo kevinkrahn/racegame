@@ -30,6 +30,7 @@ public:
     bool isDepthReadEnabled = true;
     bool isDepthWriteEnabled = true;
     bool displayWireframe = false;
+    bool useVertexColors = false;
     f32 depthOffset = 0.f;
     f32 windAmount = 0.f;
 

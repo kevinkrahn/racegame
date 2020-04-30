@@ -107,6 +107,15 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::Text(model->sourceFilePath.c_str());
         ImGui::Text(tstr("Scene: ", model->sourceSceneName.c_str()));
     }
+    std::string guid = str("0x", std::hex, model->guid);
+    ImGui::TextDisabled("GUID: %s", guid.c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Copy"))
+    {
+        ImGui::LogToClipboard();
+        ImGui::LogText(guid.c_str());
+        ImGui::LogFinish();
+    }
     ImGui::InputText("Name", &model->name);
     ImGui::Checkbox("Show Grid", &showGrid);
     ImGui::Checkbox("Show Floor", &showFloor);
@@ -173,8 +182,32 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ModelObject& obj = model->objects[selectedObjects[0]];
         if (ImGui::Begin("Object Properties"))
         {
-            ImGui::Checkbox("Is Collider", &obj.isCollider);
-            ImGui::Checkbox("Is Visible", &obj.isVisible);
+            if (ImGui::Checkbox("Is Collider", &obj.isCollider))
+            {
+                for (u32 index : selectedObjects)
+                {
+                    model->objects[index].isCollider = obj.isCollider;
+                }
+            }
+
+            if (ImGui::Checkbox("Is Visible", &obj.isVisible))
+            {
+                for (u32 index : selectedObjects)
+                {
+                    model->objects[index].isVisible = obj.isVisible;
+                }
+            }
+
+            if (model->modelUsage == ModelUsage::VEHICLE)
+            {
+                if (ImGui::Checkbox("Is Paint", &obj.isPaint))
+                {
+                    for (u32 index : selectedObjects)
+                    {
+                        model->objects[index].isPaint = obj.isPaint;
+                    }
+                }
+            }
 
             if (ImGui::BeginCombo("Material",
                     obj.materialGuid? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
@@ -183,7 +216,10 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 {
                     if (ImGui::Selectable(mat.second->name.c_str()))
                     {
-                        obj.materialGuid = mat.first;
+                        for (u32 index : selectedObjects)
+                        {
+                            model->objects[index].materialGuid = mat.first;
+                        }
                     }
                 }
                 ImGui::EndCombo();
@@ -285,7 +321,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (showFloor)
     {
-        rw->push(LitRenderable(g_res.getMesh("world.Quad"),
+        rw->push(LitRenderable(g_res.getModel("misc")->getMeshByName("world.Quad"),
                     glm::scale(glm::mat4(1.f), glm::vec3(40.f)), nullptr, glm::vec3(0.1f)));
     }
 
@@ -476,11 +512,17 @@ void ModelEditor::processBlenderData()
         modelObj->position = translationOf(matrix);
         modelObj->rotation = glm::quat_cast(glm::mat3(rotationOf(matrix)));
         modelObj->scale = scaleOf(matrix);
+        modelObj->bounds = obj["bounds"].vec3().val();
         if (modelObj->name.find("Collision") != std::string::npos
             || modelObj->name.find("collision") != std::string::npos)
         {
             modelObj->isCollider = true;
             modelObj->isVisible = false;
+        }
+        else if (modelObj->name.find("Body") != std::string::npos)
+        {
+            modelObj->isPaint = true;
+            modelObj->materialGuid = g_res.getMaterial("paint_material")->guid;
         }
 
         model->objects.push_back(std::move(*modelObj));

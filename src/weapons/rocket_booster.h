@@ -29,7 +29,6 @@ public:
 
     void onLitPass(Renderer* renderer) override
     {
-        Mesh* mesh = g_res.getMesh("world.Cone");
         for (u32 i=0; i<exhausts.size(); ++i)
         {
             auto& m = exhausts[i];
@@ -60,7 +59,7 @@ public:
         info.maxUpgradeLevel = 4;
         info.weaponType = WeaponInfo::REAR_WEAPON;
 
-        mesh = g_res.getMesh("world.Cone");
+        mesh = g_res.getModel("exhaust_cone")->getMeshByName("world.Cone");
     }
 
     void reset() override

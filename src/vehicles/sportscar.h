@@ -14,7 +14,7 @@ public:
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
-        loadSceneData("sportscar.Vehicle");
+        loadModelData("vehicle_sportscar");
         initStandardUpgrades();
     }
 

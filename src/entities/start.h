@@ -7,8 +7,7 @@
 
 class Start : public PlaceableEntity
 {
-    Mesh* mesh;
-    Mesh* meshLights;
+    Model* model;
     Decal finishLineDecal;
     i32 countIndex = -1;
 
@@ -17,11 +16,9 @@ public:
     {
         position = glm::vec3(0, 0, 3);
         rotation = glm::rotate(glm::identity<glm::quat>(), glm::vec3(0, 0, PI));
-        mesh = g_res.getMesh("world.Start");
-        meshLights = g_res.getMesh("world.StartLights");
+        model = g_res.getModel("start");
     }
 
-    void applyDecal(class Decal& decal) override;
     void updateTransform(class Scene* scene) override;
     void onCreate(class Scene* scene) override;
     void onCreateEnd(class Scene* scene) override;

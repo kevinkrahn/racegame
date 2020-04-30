@@ -13,7 +13,7 @@ public:
         frontWeaponCount = 2;
         rearWeaponCount = 3;
 
-        loadSceneData("truck.Truck");
+        loadModelData("vehicle_truck");
 
         // TODO: add upgrade icons
         availableUpgrades = {

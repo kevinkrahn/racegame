@@ -124,6 +124,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         ImGui::EndMainMenuBar();
     }
 
+    bool beginRename = false;
     if (isResourceWindowOpen)
     {
         const u32 selectedColor = 0x992299EE;
@@ -161,7 +162,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     }
                     if (ImGui::MenuItem("Rename"))
                     {
-                        // TODO
+                        editName = tex->name;
+                        beginRename = true;
                     }
                     if (ImGui::MenuItem("Delete"))
                     {
@@ -204,6 +206,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     }
                     if (ImGui::MenuItem("Rename"))
                     {
+                        editName = mat->name;
+                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -247,6 +251,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     }
                     if (ImGui::MenuItem("Rename"))
                     {
+                        editName = model->name;
+                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -290,6 +296,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     }
                     if (ImGui::MenuItem("Rename"))
                     {
+                        editName = sound->name;
+                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -334,6 +342,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     }
                     if (ImGui::MenuItem("Rename"))
                     {
+                        editName = track->dict().val()["name"].string("");
+                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -347,6 +357,26 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         }
 
         ImGui::End();
+    }
+
+    static u32 renameID = 0;
+    if (beginRename)
+    {
+        renameID++;
+        ImGui::OpenPopup(tstr("Rename Popup ", renameID));
+    }
+
+    if (ImGui::BeginPopup(tstr("Rename Popup ", renameID)))
+    {
+        if (beginRename)
+        {
+            ImGui::SetKeyboardFocusHere();
+        }
+        if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 
     showTextureWindow(renderer, deltaTime);
@@ -592,7 +622,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     rw.setName("Material Preview");
     rw.setSize(200, 200);
     const char* previewMeshes[] = { "world.Sphere", "world.Cube", "world.Quad" };
-    Mesh* previewMesh = g_res.getMesh(previewMeshes[previewMeshIndex]);
+    Mesh* previewMesh = g_res.getModel("misc")->getMeshByName(previewMeshes[previewMeshIndex]);
     rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
     rw.setViewportCount(1);
     rw.updateWorldTime(30.f);
@@ -668,6 +698,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     ImGui::Checkbox("Visible", &mat.isVisible);
     ImGui::Checkbox("Wireframe", &mat.displayWireframe);
     ImGui::Checkbox("Transparent", &mat.isTransparent);
+    ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
     ImGui::Columns(1);
 
     ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);

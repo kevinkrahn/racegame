@@ -14,7 +14,7 @@ public:
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
-        loadSceneData("mini.Scene");
+        loadModelData("model_mini");
         initStandardUpgrades();
 
         availableUpgrades.push_back({

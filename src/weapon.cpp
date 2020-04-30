@@ -11,17 +11,14 @@ void Weapon::outOfAmmo(Vehicle* vehicle)
     }
 }
 
-void Weapon::loadSceneData(const char* sceneName)
+void Weapon::loadModelData(const char* modelName)
 {
-    DataFile::Value::Dict& scene = g_res.getScene(sceneName);
-    for (auto& entityData : scene["entities"].array().val())
+    Model* model = g_res.getModel(modelName);
+    for (auto const & obj : model->objects)
     {
-        auto& e = entityData.dict().val();
-        std::string name = e["name"].string().val();
-        glm::mat4 transform = e["matrix"].convertBytes<glm::mat4>().val();
-        if (name.find("SpawnPoint") != std::string::npos)
+        if (obj.name.find("SpawnPoint") != std::string::npos)
         {
-            projectileSpawnPoints.push_back(translationOf(transform));
+            projectileSpawnPoints.push_back(obj.position);
         }
     }
 }

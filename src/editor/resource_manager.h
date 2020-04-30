@@ -28,6 +28,7 @@ struct ResourceFolders
     ResourceFolder textures;
     ResourceFolder materials;
     ResourceFolder models;
+    ResourceFolder sounds;
     ResourceFolder tracks;
 
     void serialize(Serializer& s)
@@ -35,6 +36,7 @@ struct ResourceFolders
         s.field(textures);
         s.field(materials);
         s.field(models);
+        s.field(sounds);
         s.field(tracks);
     }
 };

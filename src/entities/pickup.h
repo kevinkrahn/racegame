@@ -66,11 +66,11 @@ public:
         }
     }
 
-    Mesh* getMesh()
+    Model* getModel()
     {
-        static Mesh* moneyMesh = g_res.getMesh("money.Money");
-        static Mesh* wrenchMesh = g_res.getMesh("wrench.Wrench");
-        return pickupType == PickupType::MONEY ? moneyMesh : wrenchMesh;
+        static Model* money = g_res.getModel("money");
+        static Model* wrench = g_res.getModel("wrench");
+        return pickupType == PickupType::MONEY ? money : wrench;
     }
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
@@ -78,45 +78,24 @@ public:
         glm::mat4 t =
             glm::translate(glm::mat4(1.f), glm::vec3(0, 0, glm::sin((f32)scene->getWorldTime()) * 0.2f)) *
             transform * glm::rotate(glm::mat4(1.f), (f32)scene->getWorldTime(), glm::vec3(0, 0, 1));
-        LitSettings s;
-        s.mesh = getMesh();
-        if (pickupType == PickupType::MONEY)
+        Model* model = getModel();
+        for (auto& obj : model->objects)
         {
-            s.color = glm::vec3(0.95f, 0.47f, 0.02f);
-            s.emit = s.color * 0.5f;
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], t * obj.getTransform(),
+                        g_res.getMaterial(obj.materialGuid)));
         }
-        else
-        {
-            s.color = glm::vec3(0.2f);
-            s.emit = glm::vec3(0.125f);
-            s.reflectionStrength = 0.9f;
-            s.reflectionBias = 0.8f;
-        }
-        s.worldTransform = t;
-        rw->push(LitRenderable(s));
     }
 
     void onPreview(RenderWorld* rw) override
     {
         rw->setViewportCamera(0, glm::vec3(3.f, 3.f, 4.f) * 1.25f,
                 glm::vec3(0.f, 0.f, 1.25f), 1.f, 200.f, 32.f);
-
-        LitSettings s;
-        s.mesh = getMesh();
-        if (pickupType == PickupType::MONEY)
+        Model* model = getModel();
+        for (auto& obj : model->objects)
         {
-            s.color = glm::vec3(0.95f, 0.47f, 0.02f);
-            s.emit = s.color * 0.5f;
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                        g_res.getMaterial(obj.materialGuid)));
         }
-        else
-        {
-            s.color = glm::vec3(0.2f);
-            s.emit = glm::vec3(0.125f);
-            s.reflectionStrength = 0.9f;
-            s.reflectionBias = 0.8f;
-        }
-        s.worldTransform = glm::mat4(1.f);
-        rw->push(LitRenderable(s));
     }
 
     void serializeState(Serializer& s) override

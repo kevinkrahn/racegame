@@ -13,7 +13,7 @@ public:
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
-        loadSceneData("muscle.Vehicle");
+        loadModelData("vehicle_muscle");
         initStandardUpgrades();
     }
 

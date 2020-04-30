@@ -20,12 +20,17 @@ void Start::onCreateEnd(Scene* scene)
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;
     physicsUserData.entity = this;
     actor->userData = &physicsUserData;
-    PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxTriangleMeshGeometry(mesh->getCollisionMesh(), PxMeshScale(convert(scale))), *scene->genericMaterial);
-    collisionShape->setQueryFilterData(PxFilterData(
-                COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
-    collisionShape->setSimulationFilterData(PxFilterData(
-                COLLISION_FLAG_OBJECT, -1, 0, 0));
+    for (auto& obj : model->objects)
+    {
+        PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
+                PxTriangleMeshGeometry(model->meshes[obj.meshIndex].getCollisionMesh(),
+                    PxMeshScale(convert(scale))), *scene->genericMaterial);
+        collisionShape->setQueryFilterData(PxFilterData(
+                    COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
+        collisionShape->setSimulationFilterData(PxFilterData(
+                    COLLISION_FLAG_OBJECT, -1, 0, 0));
+        collisionShape->setLocalPose(PxTransform(convert(obj.position), convert(obj.rotation)));
+    }
     scene->getPhysicsScene()->addActor(*actor);
     finishLineDecal.setTexture(g_res.getTexture("checkers"));
     updateTransform(scene);
@@ -110,22 +115,11 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         }
     }
 
-    LitSettings settings;
-    settings.mesh = mesh;
-    settings.fresnelScale = 0.3f;
-    settings.fresnelPower = 1.5f;
-    settings.fresnelBias = -0.15f;
-    settings.specularPower = 60.f;
-    settings.specularStrength = 0.3f;
-    settings.texture = &g_res.white;
-    settings.worldTransform = transform;
-    rw->push(LitRenderable(settings));
-
-    settings.mesh = meshLights;
-    settings.color = glm::vec3(0.8f);
-    settings.reflectionStrength = 0.4f;
-    settings.reflectionBias = 0.1f;
-    rw->push(LitRenderable(settings));
+    for (auto& obj : model->objects)
+    {
+        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
+                    g_res.getMaterial(obj.materialGuid)));
+    }
 
     rw->add(&finishLineDecal);
 }
@@ -134,38 +128,24 @@ void Start::onPreview(RenderWorld* rw)
 {
     rw->setViewportCamera(0, glm::vec3(3.f, 3.f, 3.5f) * 6.f,
             glm::vec3(0.f, 0.f, 2.f), 1.f, 200.f, 50.f);
-
-    LitSettings settings;
-    settings.mesh = mesh;
-    settings.fresnelScale = 0.3f;
-    settings.fresnelPower = 1.5f;
-    settings.fresnelBias = -0.15f;
-    settings.specularPower = 60.f;
-    settings.specularStrength = 0.3f;
-    settings.texture = &g_res.white;
-    settings.worldTransform = glm::translate(glm::mat4(1.f), { 0, 0, 3 });
-    rw->push(LitRenderable(settings));
-
-    settings.mesh = meshLights;
-    settings.color = glm::vec3(0.8f);
-    settings.reflectionStrength = 0.4f;
-    settings.reflectionBias = 0.1f;
-    rw->push(LitRenderable(settings));
+    for (auto& obj : model->objects)
+    {
+        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
+                    g_res.getMaterial(obj.materialGuid)));
+    }
 }
 
 void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
 {
     if (isSelected)
     {
-        rw->push(WireframeRenderable(mesh, transform));
-        rw->push(LitRenderable(g_res.getMesh("world.Arrow"),
+        for (auto& obj : model->objects)
+        {
+            rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform()));
+        }
+        rw->push(LitRenderable(g_res.getModel("misc")->getMeshByName("world.Arrow"),
                 transform *
                 glm::translate(glm::mat4(1.f), {10, 0, -2}) *
                 glm::scale(glm::mat4(1.f), glm::vec3(3.f))));
     }
-}
-
-void Start::applyDecal(Decal& decal)
-{
-    decal.addMesh(mesh, transform);
 }

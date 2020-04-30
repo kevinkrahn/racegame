@@ -14,7 +14,7 @@ public:
         frontWeaponCount = 1;
         rearWeaponCount = 1;
 
-        loadSceneData("coolcar.Vehicle");
+        loadModelData("vehicle_coolcar");
 
         initStandardUpgrades();
     }

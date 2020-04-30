@@ -267,7 +267,7 @@ void Menu::championshipMenu()
     i32 vehicleCount = 0;
     i32 playerIndex = 0;
     u32 vehicleIconSize = (u32)g_gui.convertSize(64);
-    Mesh* quadMesh = g_res.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     for (auto& driver : g_game.state.drivers)
     {
         if (driver.isPlayer)
@@ -752,7 +752,7 @@ void Menu::championshipGarage()
     g_gui.end();
 
     static RenderWorld renderWorld;
-    Mesh* quadMesh = g_res.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     renderWorld.setName("Garage");
     renderWorld.setSize(vehicleIconWidth, vehicleIconHeight);
     renderWorld.push(LitRenderable(quadMesh,
@@ -901,7 +901,7 @@ void Menu::championshipStandings()
     };
 
     u32 vehicleIconSize = (u32)g_gui.convertSize(48);
-    Mesh* quadMesh = g_res.getMesh("world.Quad");
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     SmallVec<Driver*, 20> sortedDrivers;
     for(auto& driver : g_game.state.drivers)
     {

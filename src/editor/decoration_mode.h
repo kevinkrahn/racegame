@@ -84,7 +84,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     renderWorld.setName("Entity Icon");
                     renderWorld.setSize(iconSize*2, iconSize*2);
                     renderWorld.setClearColor(true, glm::vec4(0.15f, 0.15f, 0.15f, 1.f));
-                    Mesh* quadMesh = g_res.getMesh("world.Quad");
+                    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
                     renderWorld.push(LitRenderable(quadMesh,
                                 glm::scale(glm::mat4(1.f), glm::vec3(200.f)), nullptr, glm::vec3(0.15f)));
                     renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
