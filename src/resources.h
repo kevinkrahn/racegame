@@ -18,7 +18,7 @@ const char* ASSET_DIRECTORY = "../assets";
 template<typename T>
 void saveResource(T& val)
 {
-    std::string filename = str(DATA_DIRECTORY, "/", std::hex, val.guid, ".dat");
+    std::string filename = str(DATA_DIRECTORY, "/", std::hex, val.guid, ".dat", std::dec);
     print("Saving resource ", filename, '\n');
     Serializer::toFile(val, filename);
 }

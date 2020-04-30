@@ -107,7 +107,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::Text(model->sourceFilePath.c_str());
         ImGui::Text(tstr("Scene: ", model->sourceSceneName.c_str()));
     }
-    std::string guid = str("0x", std::hex, model->guid);
+    std::string guid = str("0x", std::hex, model->guid, std::dec);
     ImGui::TextDisabled("GUID: %s", guid.c_str());
     ImGui::SameLine();
     if (ImGui::SmallButton("Copy"))
