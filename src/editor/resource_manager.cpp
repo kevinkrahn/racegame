@@ -124,7 +124,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         ImGui::EndMainMenuBar();
     }
 
-    bool beginRename = false;
     if (isResourceWindowOpen)
     {
         const u32 selectedColor = 0x992299EE;
@@ -136,40 +135,76 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
             for (auto tex : textures)
             {
-                u32 flags = ImGuiTreeNodeFlags_Leaf
-                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
-                    | ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (selectedTexture == tex && isTextureWindowOpen)
+                if (tex == renameTexture)
                 {
-                    flags |= ImGuiTreeNodeFlags_Selected;
+                    ImGui::PushID("Rename Node");
+                    ImGui::TreeNodeEx("", ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                    ImGui::PopID();
+                    ImGui::SameLine();
+                    static u32 renameID = 0;
+                    ImGui::PushID(tstr("Rename ", renameID));
+                    if (firstFrameRename)
+                    {
+                        renameID++;
+                        ImGui::SetKeyboardFocusHere();
+                    }
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
+                    if (ImGui::InputText("", &renameText,
+                            ImGuiInputTextFlags_EnterReturnsTrue))
+                    {
+                        renameTexture->name = renameText;
+                    }
+                    ImGui::PopStyleVar();
+                    if (!firstFrameRename && !ImGui::IsItemActive())
+                    {
+                        renameTexture = nullptr;
+                    }
+                    ImGui::PopID();
+                    firstFrameRename = false;
                 }
-                ImGui::TreeNodeEx(tex->name.c_str(), flags);
-                if (ImGui::IsItemClicked())
+                else
                 {
-                    selectedTexture = tex;
-                    editName = selectedTexture->name;
-                    isTextureWindowOpen = true;
-                }
-                if (ImGui::BeginPopupContextItem())
-                {
-                    if (ImGui::MenuItem("New Texture"))
+                    u32 flags = ImGuiTreeNodeFlags_Leaf
+                        | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                        | ImGuiTreeNodeFlags_SpanAvailWidth;
+                    if (selectedTexture == tex && isTextureWindowOpen)
                     {
-                        newTexture();
+                        flags |= ImGuiTreeNodeFlags_Selected;
                     }
-                    if (ImGui::MenuItem("Duplicate"))
+                    ImGui::PushID((void*)tex->guid);
+                    ImGui::TreeNodeEx(tex->name.c_str(), flags);
+                    if (ImGui::IsItemClicked())
                     {
-                        // TODO
+                        if (ImGui::IsMouseDoubleClicked(0))
+                        {
+                            selectedTexture = tex;
+                            editName = selectedTexture->name;
+                            isTextureWindowOpen = true;
+                        }
                     }
-                    if (ImGui::MenuItem("Rename"))
+                    ImGui::PopID();
+                    if (ImGui::BeginPopupContextItem())
                     {
-                        editName = tex->name;
-                        beginRename = true;
+                        if (ImGui::MenuItem("New Texture"))
+                        {
+                            newTexture();
+                        }
+                        if (ImGui::MenuItem("Duplicate"))
+                        {
+                            // TODO
+                        }
+                        if (ImGui::MenuItem("Rename"))
+                        {
+                            renameText = tex->name;
+                            renameTexture = tex;
+                            firstFrameRename = true;
+                        }
+                        if (ImGui::MenuItem("Delete"))
+                        {
+                            // TODO
+                        }
+                        ImGui::EndPopup();
                     }
-                    if (ImGui::MenuItem("Delete"))
-                    {
-                        // TODO
-                    }
-                    ImGui::EndPopup();
                 }
             }
             ImGui::PopStyleColor();
@@ -207,7 +242,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     if (ImGui::MenuItem("Rename"))
                     {
                         editName = mat->name;
-                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -252,7 +286,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     if (ImGui::MenuItem("Rename"))
                     {
                         editName = model->name;
-                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -297,7 +330,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     if (ImGui::MenuItem("Rename"))
                     {
                         editName = sound->name;
-                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -343,7 +375,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                     if (ImGui::MenuItem("Rename"))
                     {
                         editName = track->dict().val()["name"].string("");
-                        beginRename = true;
                         // TODO
                     }
                     if (ImGui::MenuItem("Delete"))
@@ -357,26 +388,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         }
 
         ImGui::End();
-    }
-
-    static u32 renameID = 0;
-    if (beginRename)
-    {
-        renameID++;
-        ImGui::OpenPopup(tstr("Rename Popup ", renameID));
-    }
-
-    if (ImGui::BeginPopup(tstr("Rename Popup ", renameID)))
-    {
-        if (beginRename)
-        {
-            ImGui::SetKeyboardFocusHere();
-        }
-        if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
     }
 
     showTextureWindow(renderer, deltaTime);
@@ -621,7 +632,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
 
     rw.setName("Material Preview");
     rw.setSize(200, 200);
-    const char* previewMeshes[] = { "world.Sphere", "world.Cube", "world.Quad" };
+    const char* previewMeshes[] = { "world.Sphere", "world.UnitCube", "world.Quad" };
     Mesh* previewMesh = g_res.getModel("misc")->getMeshByName(previewMeshes[previewMeshIndex]);
     rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
     rw.setViewportCount(1);

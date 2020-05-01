@@ -94,12 +94,15 @@ void VehicleData::loadModelData(const char* modelName)
         glm::mat4 transform = obj.getTransform();
         std::string const& name = obj.name;
         Mesh* mesh = &model->meshes[obj.meshIndex];
+        bool isInDebrisCollection =
+            std::find(obj.collections.begin(), obj.collections.end(), "Debris") != obj.collections.end();
         if (name.find("debris") != std::string::npos ||
             name.find("Debris") != std::string::npos ||
             name.find("FL") != std::string::npos ||
             name.find("FR") != std::string::npos ||
             name.find("RL") != std::string::npos ||
-            name.find("RR") != std::string::npos)
+            name.find("RR") != std::string::npos ||
+            isInDebrisCollection)
         {
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
@@ -115,7 +118,13 @@ void VehicleData::loadModelData(const char* modelName)
                 g_res.getMaterial(obj.materialGuid),
             });
         }
-        else if (name.find("Chassis") != std::string::npos)
+
+        bool isOnlyInDebrisCollections = isInDebrisCollection && obj.collections.size() == 1;
+        if (isOnlyInDebrisCollections)
+        {
+            return;
+        }
+        if (name.find("Chassis") != std::string::npos)
         {
             chassisMeshes.push_back({
                 mesh,
@@ -215,16 +224,24 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, VehicleConfiguration const& config, Vehicle* vehicle,
         bool isBraking)
 {
+    // TODO: find some better way to handle paint materials
+    if (lastFrameIndex != g_game.frameIndex)
+    {
+        lastFrameIndex = g_game.frameIndex;
+        paintMaterials.clear();
+    }
+
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
-    coloredPaintMaterial = *originalPaintMaterial;
-    coloredPaintMaterial.color = g_vehicleColors[config.colorIndex];
+    paintMaterials.push_back(*originalPaintMaterial);
+    Material* coloredPaintMaterial = &paintMaterials.back();
+    coloredPaintMaterial->color = g_vehicleColors[config.colorIndex];
 
     for (auto& m : chassisMeshes)
     {
         Material* mat = m.material;
         if (mat == originalPaintMaterial)
         {
-            mat = &coloredPaintMaterial;
+            mat = coloredPaintMaterial;
         }
         rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat));
     }
@@ -253,7 +270,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             Material* mat = m.material;
             if (mat == originalPaintMaterial)
             {
-                mat = &coloredPaintMaterial;
+                mat = coloredPaintMaterial;
             }
             rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat));
         }
@@ -309,12 +326,15 @@ void VehicleData::renderDebris(RenderWorld* rw,
         std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
+    paintMaterials.push_back(*originalPaintMaterial);
+    Material* coloredPaintMaterial = &paintMaterials.back();
+    coloredPaintMaterial->color = g_vehicleColors[config.colorIndex];
     for (auto const& d : debris)
     {
         Material* mat = d.meshInfo->material;
         if (mat == originalPaintMaterial)
         {
-            mat = &coloredPaintMaterial;
+            mat = coloredPaintMaterial;
         }
         rw->push(LitMaterialRenderable(d.meshInfo->mesh, convert(d.rigidBody->getGlobalPose()), mat));
     }

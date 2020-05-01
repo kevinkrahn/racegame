@@ -47,6 +47,8 @@ class ResourceManager
     bool isResourceWindowOpen = true;
     std::string editName;
     ResourceType activeEditor;
+    std::string renameText;
+    bool firstFrameRename = false;
 
     Editor trackEditor;
     ModelEditor modelEditor;
@@ -55,6 +57,7 @@ class ResourceManager
     bool texturesStale = true;
     Texture* selectedTexture = nullptr;
     bool isTextureWindowOpen = false;
+    Texture* renameTexture = nullptr;
 
     std::vector<Material*> materials;
     bool materialsStale = true;

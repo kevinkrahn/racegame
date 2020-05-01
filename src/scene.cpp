@@ -728,7 +728,7 @@ void Scene::vehicleFinish(u32 n)
 
     auto& v = vehicles[n];
     g_audio.playSound3D(v->placement < 5 ? g_res.getSound("cheer") : g_res.getSound("clapping"),
-            SoundType::GAME_SFX, translationOf(getStart()), false, 1.f, 1.f, 0.f, 120.f);
+            SoundType::GAME_SFX, translationOf(getStart()));
 }
 
 void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos)

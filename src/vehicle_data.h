@@ -291,9 +291,9 @@ struct VehicleData
     u32 frontWeaponCount = 1;
     u32 rearWeaponCount = 1;
 
-    Material coloredPaintMaterial;
-
     std::vector<VehicleMesh> debrisChunks;
+    std::vector<Material> paintMaterials;
+    u32 lastFrameIndex = 9999;
 
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,

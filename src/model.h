@@ -26,8 +26,8 @@ public:
     u32 meshIndex;
     bool isCollider = false;
     bool isVisible = true;
-    bool isPaint = false;
     glm::vec3 bounds;
+    std::vector<std::string> collections;
 
     PxShape* mousePickShape = nullptr;
 
@@ -40,9 +40,9 @@ public:
         s.field(meshIndex);
         s.field(isCollider);
         s.field(isVisible);
-        s.field(isPaint);
         s.field(materialGuid);
         s.field(bounds);
+        s.field(collections);
     }
 
     void createMousePickCollisionShape(class Model* model);

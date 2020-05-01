@@ -198,6 +198,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
             }
 
+            /*
             if (model->modelUsage == ModelUsage::VEHICLE)
             {
                 if (ImGui::Checkbox("Is Paint", &obj.isPaint))
@@ -208,6 +209,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     }
                 }
             }
+            */
 
             if (ImGui::BeginCombo("Material",
                     obj.materialGuid? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
@@ -468,7 +470,6 @@ void ModelEditor::processBlenderData()
         model->name = scene["name"].string().val();
     }
 
-    u32 meshCount = 0;
     std::map<std::string, u32> meshesToLoad;
     auto& objects = scene["objects"].array().val();
     for (auto& mesh : model->meshes)
@@ -486,7 +487,7 @@ void ModelEditor::processBlenderData()
         auto meshIt = meshesToLoad.find(meshName);
         if (meshIt == meshesToLoad.end())
         {
-            meshesToLoad[meshName] = meshCount++;
+            meshesToLoad[meshName] = model->meshes.size();
             meshIt = meshesToLoad.find(meshName);
             Mesh mesh;
             Serializer s(meshDict[meshName], true);
@@ -507,6 +508,9 @@ void ModelEditor::processBlenderData()
         }
 
         modelObj->meshIndex = meshIt->second;
+        print(modelObj->meshIndex, '\n');
+        print(meshName, '\n');
+
         modelObj->name = std::move(obj["name"]).string().val();
         glm::mat4 matrix = obj["matrix"].convertBytes<glm::mat4>().val();
         modelObj->position = translationOf(matrix);
@@ -521,7 +525,7 @@ void ModelEditor::processBlenderData()
         }
         else if (modelObj->name.find("Body") != std::string::npos)
         {
-            modelObj->isPaint = true;
+            //modelObj->isPaint = true;
             modelObj->materialGuid = g_res.getMaterial("paint_material")->guid;
         }
 
