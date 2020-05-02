@@ -3,6 +3,7 @@
 #include "smallvec.h"
 #include <vector>
 #include <algorithm>
+#include <filesystem>
 
 struct FileItem
 {
@@ -83,8 +84,8 @@ std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
     return files;
 }
 
-std::string chooseFile(const char* defaultSelection, bool open, std::string const& fileType,
-        SmallVec<const char*> extensions)
+std::string chooseFile(bool open, std::string const& fileType,
+        SmallVec<const char*> extensions, std::string const& defaultDir)
 {
 #if _WIN32
     char szFile[260];
@@ -100,6 +101,7 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
     ofn.nFilterIndex = 1;
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
+    // TODO: set this
     ofn.lpstrInitialDir = NULL;
     if (open)
     {
@@ -131,23 +133,22 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
 #else
     char filename[1024] = { 0 };
     std::string cmd = "zenity";
+    std::string fileFilter = fileType + " | ";
+    for (auto& ext : extensions)
+    {
+        fileFilter += ext;
+        fileFilter += ' ';
+    }
+    cmd += " --file-filter \"" + fileFilter + '"';
     if (open)
     {
         cmd += " --title 'Open File' --file-selection --filename ";
-        cmd += defaultSelection;
-        std::string fileFilter = fileType + " | ";
-        for (auto& ext : extensions)
-        {
-            fileFilter += ext;
-            fileFilter += ' ';
-        }
-        cmd += " --file-filter \"" + fileFilter + '"';
     }
     else
     {
         cmd += " --title 'Save File' --file-selection --save --confirm-overwrite --filename ";
-        cmd += defaultSelection;
     }
+    cmd += std::filesystem::absolute(defaultDir).string();
     print(cmd, '\n');
     FILE *f = popen(cmd.c_str(), "r");
     if (!f || !fgets(filename, sizeof(filename) - 1, f))
@@ -161,6 +162,7 @@ std::string chooseFile(const char* defaultSelection, bool open, std::string cons
     {
         file.pop_back();
     }
+
     return file;
 #endif
 }

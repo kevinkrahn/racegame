@@ -90,4 +90,9 @@ public:
     ResourceManager();
     void onUpdate(Renderer* renderer, f32 deltaTime);
     void markDirty(i64 guid) { resourcesModified[guid] = true; }
+    bool isResourceDirty(i64 guid) { return resourcesModified.find(guid) != resourcesModified.end(); }
+
+    Texture* getSelectedTexture() const { return selectedTexture; }
+    Material* getSelectedMaterial() const { return selectedMaterial; }
+    Sound* getSelectedSound() const { return selectedSound; }
 };

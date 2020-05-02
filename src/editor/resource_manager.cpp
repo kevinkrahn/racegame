@@ -319,6 +319,7 @@ void ResourceManager::openResource(Resource* resource)
         case ResourceType::TRACK:
             activeEditor = ResourceType::TRACK;
             g_game.changeScene(resource->guid);
+            markDirty(resource->guid);
             break;
         case ResourceType::FONT:
             break;
@@ -409,8 +410,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         if (ImGui::Begin("Resources", &isResourceWindowOpen))
         {
             showFolder(&resources);
-            ImGui::End();
         }
+        ImGui::End();
 
         if (folderMove.dropFolder)
         {
@@ -499,17 +500,15 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
     if (ImGui::Begin("Texture Properties", &isTextureWindowOpen))
     {
         ImGui::PushItemWidth(150);
-        if (ImGui::InputText("##Name", &tex.name))
-        {
-            markDirty(tex.guid);
-        }
+        dirty |= ImGui::InputText("##Name", &tex.name);
         ImGui::PopItemWidth();
         ImGui::SameLine();
         if (tex.getSourceFileCount() == 1)
         {
             if (ImGui::Button("Load Image"))
             {
-                std::string filename = chooseFile(".", true, "Image Files", { "*.png", "*.jpg", "*.bmp" });
+                std::string filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
+                        str(ASSET_DIRECTORY, "/textures"));
                 if (!filename.empty())
                 {
                     tex.setSourceFile(0, std::filesystem::relative(filename));
@@ -551,7 +550,8 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                 ImGui::NextColumn();
                 if (ImGui::Button("Load File"))
                 {
-                    std::string filename = chooseFile(".", true, "Image Files", { "*.png", "*.jpg", "*.bmp" });
+                    std::string filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
+                                str(ASSET_DIRECTORY, "/textures"));
                     if (!filename.empty())
                     {
                         tex.setSourceFile(i, std::filesystem::relative(filename));
@@ -634,13 +634,11 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
 
     renderer->addRenderWorld(&rw);
 
+    bool dirty = false;
     if (ImGui::Begin("Material Properties", &isMaterialWindowOpen))
     {
         ImGui::PushItemWidth(200);
-        if (ImGui::InputText("##Name", &mat.name))
-        {
-            markDirty(mat.guid);
-        }
+        dirty |= ImGui::InputText("##Name", &mat.name);
         ImGui::PopItemWidth();
         ImGui::Gap();
 
@@ -652,10 +650,10 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::Text(selectedMaterial->name.c_str());
 
         const char* materialTypeNames = "Lit\0Unlit\0";
-        ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
+        dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
 
         const char* previewMeshNames = "Sphere\0Box\0Plane\0";
-        ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
+        dirty |= ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
 
         ImGui::Columns(1);
         ImGui::Gap();
@@ -663,9 +661,35 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::Image((void*)(uintptr_t)g_res.getTexture(mat.colorTexture)->getPreviewHandle(), { 48, 48 });
         ImGui::SameLine();
         ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
+        ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 300.f };
+        ImGui::SetNextWindowSizeConstraints(size, size);
         if (ImGui::BeginCombo("Color Texture",
                     mat.colorTexture == 0 ? "None" : g_res.getTexture(mat.colorTexture)->name.c_str()))
         {
+            dirty = true;
+
+            static std::string searchString;
+            static std::vector<Texture*> searchResults;
+            searchResults.clear();
+
+            if (ImGui::IsWindowAppearing())
+            {
+                ImGui::SetKeyboardFocusHere();
+                searchString = "";
+            }
+            ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
+            bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+            if (ImGui::Button("!", ImVec2(16, 0)))
+            {
+                if (getSelectedTexture())
+                {
+                    mat.colorTexture = getSelectedTexture()->guid;
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
             for (auto& res : g_res.resources)
             {
                 if (res.second->type != ResourceType::TEXTURE)
@@ -675,50 +699,80 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
                 Texture* tex = (Texture*)res.second.get();
                 if (tex->getTextureType() == TextureType::COLOR)
                 {
-                    ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
-                    ImGui::SameLine();
-                    if (ImGui::Selectable(tex->name.c_str()))
+                    if (searchString.empty() || tex->name.find(searchString) != std::string::npos)
                     {
-                        mat.colorTexture = tex->guid;
+                        searchResults.push_back(tex);
                     }
                 }
             }
+            std::sort(searchResults.begin(), searchResults.end(), [](auto a, auto b) {
+                return a->name < b->name;
+            });
+
+            if (enterPressed)
+            {
+                mat.colorTexture = searchResults[0]->guid;
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::BeginChild("Search Results", { 0, 0 }))
+            {
+                for (Texture* tex : searchResults)
+                {
+                    ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
+                    ImGui::SameLine();
+                    ImGui::PushID(tex->guid);
+                    if (ImGui::Selectable(tex->name.c_str()))
+                    {
+                        mat.colorTexture = tex->guid;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::EndChild();
+            }
+
             ImGui::EndCombo();
         }
 
         ImGui::Columns(2, nullptr, false);
-        ImGui::Checkbox("Culling", &mat.isCullingEnabled);
-        ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
-        ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
-        ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
+        dirty |= ImGui::Checkbox("Culling", &mat.isCullingEnabled);
+        dirty |= ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
+        dirty |= ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
+        dirty |= ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
         ImGui::NextColumn();
-        ImGui::Checkbox("Visible", &mat.isVisible);
-        ImGui::Checkbox("Wireframe", &mat.displayWireframe);
-        ImGui::Checkbox("Transparent", &mat.isTransparent);
-        ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
+        dirty |= ImGui::Checkbox("Visible", &mat.isVisible);
+        dirty |= ImGui::Checkbox("Wireframe", &mat.displayWireframe);
+        dirty |= ImGui::Checkbox("Transparent", &mat.isTransparent);
+        dirty |= ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
         ImGui::Columns(1);
 
-        ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
-        ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
-        ImGui::InputFloat("Depth Offset", &mat.depthOffset);
+        dirty |= ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
+        dirty |= ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
+        dirty |= ImGui::InputFloat("Depth Offset", &mat.depthOffset);
 
-        ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
-        ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
-        ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
-        ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
-        ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
-        ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
+        dirty |= ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
+        dirty |= ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
+        dirty |= ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
+        dirty |= ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
+        dirty |= ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
+        dirty |= ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
 
-        ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
-        ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
-        ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
+        dirty |= ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
+        dirty |= ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
+        dirty |= ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
 
-        ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
-        ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
-        ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
-        ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
+        dirty |= ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
+        dirty |= ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
+        dirty |= ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
+        dirty |= ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
 
         ImGui::End();
+    }
+
+    if (dirty)
+    {
+        markDirty(mat.guid);
     }
 }
 
@@ -731,28 +785,29 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
 
     Sound& sound = *selectedSound;
 
+    bool dirty = false;
     if (ImGui::Begin("Sound Properties", &isSoundWindowOpen))
     {
         ImGui::PushItemWidth(150);
-        if (ImGui::InputText("##Name", &sound.name))
-        {
-            markDirty(sound.guid);
-        }
+        dirty |= ImGui::InputText("##Name", &sound.name);
         ImGui::PopItemWidth();
         ImGui::SameLine();
         if (ImGui::Button("Load Sound"))
         {
-            std::string filename = chooseFile(".", true, "Audio Files", { "*.wav", "*.ogg" });
+            std::string filename =
+                chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, str(ASSET_DIRECTORY, "/sounds"));
             if (!filename.empty())
             {
                 sound.sourceFilePath = std::filesystem::relative(filename);
                 sound.loadFromFile(sound.sourceFilePath.c_str());
             }
+            dirty = true;
         }
         ImGui::SameLine();
         if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
         {
             sound.loadFromFile(sound.sourceFilePath.c_str());
+            dirty = true;
         }
 
         ImGui::Gap();
@@ -760,8 +815,8 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
         ImGui::Text(sound.sourceFilePath.c_str());
         ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
 
-        ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
-        ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
+        dirty |= ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
+        dirty |= ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
 
         ImGui::Gap();
 
@@ -778,5 +833,9 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
         }
 
         ImGui::End();
+    }
+    if (dirty)
+    {
+        markDirty(sound.guid);
     }
 }

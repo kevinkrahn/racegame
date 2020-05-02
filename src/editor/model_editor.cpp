@@ -73,11 +73,13 @@ void ModelEditor::showSceneSelection()
 
 void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    bool dirty = false;
     if (ImGui::Begin("Model Editor"))
     {
         ImGui::PushItemWidth(150);
         if (ImGui::InputText("##Name", &model->name))
         {
+            dirty = true;
             g_game.resourceManager->markDirty(model->guid);
         }
         ImGui::PopItemWidth();
@@ -85,12 +87,14 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::SameLine();
         if (ImGui::Button("Load File"))
         {
-            std::string path = chooseFile("", true, "Model Files", { "*.blend" });
+            std::string path =
+                chooseFile( true, "Model Files", { "*.blend" }, str(ASSET_DIRECTORY, "/models"));
             if (!path.empty())
             {
                 model->sourceFilePath = std::filesystem::relative(path);
                 model->sourceSceneName = "";
                 loadBlenderFile(model->sourceFilePath);
+                dirty = true;
             }
         }
         showSceneSelection();
@@ -100,6 +104,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             if (!model->sourceFilePath.empty())
             {
                 loadBlenderFile(model->sourceFilePath);
+                dirty = true;
             }
         }
 
@@ -128,7 +133,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 "Internal\0Static Prop\0Dynamic Prop\0Spline\0Vehicle\0");
         if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
         {
-            ImGui::InputFloat("Density", &model->density);
+            dirty |= ImGui::InputFloat("Density", &model->density);
         }
         if (model->modelUsage == ModelUsage::STATIC_PROP || model->modelUsage == ModelUsage::DYNAMIC_PROP)
         {
@@ -139,6 +144,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     if (ImGui::Selectable(propCategoryNames[i]))
                     {
                         model->category = (PropCategory)i;
+                        dirty = true;
                     }
                 }
                 ImGui::EndCombo();
@@ -189,6 +195,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 {
                     model->objects[index].isCollider = obj.isCollider;
                 }
+                dirty = true;
             }
 
             if (ImGui::Checkbox("Is Visible", &obj.isVisible))
@@ -197,6 +204,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 {
                     model->objects[index].isVisible = obj.isVisible;
                 }
+                dirty = true;
             }
 
             /*
@@ -209,12 +217,44 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                         model->objects[index].isPaint = obj.isPaint;
                     }
                 }
+                dirty = true;
             }
             */
 
+            ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f);
+            ImVec2 size = { ImGui::GetWindowWidth() * 0.65f, 300.f };
+            ImGui::SetNextWindowSizeConstraints(size, size);
             if (ImGui::BeginCombo("Material",
                     obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
             {
+                dirty = true;
+
+                static std::string searchString;
+                static std::vector<Material*> searchResults;
+                searchResults.clear();
+
+                if (ImGui::IsWindowAppearing())
+                {
+                    ImGui::SetKeyboardFocusHere();
+                    searchString = "";
+                }
+                ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
+                bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
+                ImGui::PopItemWidth();
+                ImGui::SameLine();
+                if (ImGui::Button("!", ImVec2(16, 0)))
+                {
+                    if (g_game.resourceManager->getSelectedMaterial())
+                    {
+                        for (u32 index : selectedObjects)
+                        {
+                            model->objects[index].materialGuid =
+                                g_game.resourceManager->getSelectedMaterial()->guid;
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+
                 for (auto& res : g_res.resources)
                 {
                     if (res.second->type != ResourceType::MATERIAL)
@@ -222,19 +262,52 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                         continue;
                     }
                     Material* mat = (Material*)res.second.get();
-                    if (ImGui::Selectable(mat->name.c_str()))
+                    if (searchString.empty() || mat->name.find(searchString) != std::string::npos)
                     {
-                        for (u32 index : selectedObjects)
-                        {
-                            model->objects[index].materialGuid = mat->guid;
-                        }
+                        searchResults.push_back(mat);
                     }
                 }
+                std::sort(searchResults.begin(), searchResults.end(), [](auto a, auto b) {
+                    return a->name < b->name;
+                });
+
+                if (enterPressed)
+                {
+                    for (u32 index : selectedObjects)
+                    {
+                        model->objects[index].materialGuid = searchResults[0]->guid;
+                    }
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::BeginChild("Search Results", { 0, 0 }))
+                {
+                    for (Material* mat : searchResults)
+                    {
+                        ImGui::PushID(mat->guid);
+                        if (ImGui::Selectable(mat->name.c_str()))
+                        {
+                            for (u32 index : selectedObjects)
+                            {
+                                model->objects[index].materialGuid = mat->guid;
+                            }
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::PopID();
+                    }
+                    ImGui::EndChild();
+                }
+
                 ImGui::EndCombo();
             }
 
             ImGui::End();
         }
+    }
+
+    if (dirty)
+    {
+        g_game.resourceManager->markDirty(model->guid);
     }
 
     // end gui

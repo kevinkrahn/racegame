@@ -128,6 +128,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             modes[activeModeIndex]->onSwitchTo(scene);
         }
 
-        ImGui::End();
     }
+    ImGui::End();
 }
