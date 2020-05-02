@@ -262,15 +262,21 @@ std::vector<PropPrefabData> StaticMesh::generatePrefabProps()
 {
     std::vector<PropPrefabData> result;
 
-    for (auto& model : g_res.models)
+    for (auto& res : g_res.resources)
     {
-        if (model.second->modelUsage == ModelUsage::DYNAMIC_PROP
-                || model.second->modelUsage == ModelUsage::STATIC_PROP)
+        // TODO: make a better way to iterate over resources of a specific type
+        if (res.second->type != ResourceType::MODEL)
         {
-            i64 guid = model.first;
+            continue;
+        }
+        Model* model = (Model*)res.second.get();
+        if (model->modelUsage == ModelUsage::DYNAMIC_PROP
+                || model->modelUsage == ModelUsage::STATIC_PROP)
+        {
+            i64 guid = model->guid;
             result.push_back({
-                model.second->category,
-                model.second->name,
+                model->category,
+                model->name,
                 [guid](PlaceableEntity* e) {
                     StaticMesh* sm = (StaticMesh*)e;
                     sm->modelGuid = guid;

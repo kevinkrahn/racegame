@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "datafile.h"
+#include "resource.h"
 
 struct RenderItem
 {
@@ -16,12 +17,9 @@ enum struct MaterialType
     UNLIT = 1,
 };
 
-class Material
+class Material : public Resource
 {
 public:
-    i64 guid;
-    std::string name;
-
     MaterialType materialType;
 
     bool isCullingEnabled = true;
@@ -58,6 +56,42 @@ public:
     i64 colorTexture = 0;
     i64 normalMapTexture = 0;
 
-    void serialize(Serializer& s);
-    void showPropertiesGui(class Renderer* renderer, class ResourceManager* rm);
+    void serialize(Serializer& s) override
+    {
+        Resource::serialize(s);
+
+        s.field(materialType);
+
+        s.field(isCullingEnabled);
+        s.field(castsShadow);
+        s.field(isVisible);
+        s.field(isDepthReadEnabled);
+        s.field(isDepthWriteEnabled);
+        s.field(useVertexColors);
+        s.field(depthOffset);
+
+        s.field(isTransparent);
+        s.field(alphaCutoff);
+        s.field(shadowAlphaCutoff);
+        s.field(windAmount);
+
+        s.field(color);
+        s.field(emit);
+        s.field(emitPower);
+
+        s.field(specularPower);
+        s.field(specularStrength);
+        s.field(specularColor);
+
+        s.field(fresnelScale);
+        s.field(fresnelPower);
+        s.field(fresnelBias);
+
+        s.field(reflectionStrength);
+        s.field(reflectionLod);
+        s.field(reflectionBias);
+
+        s.field(colorTexture);
+        s.field(normalMapTexture);
+    }
 };

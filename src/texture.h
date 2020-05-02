@@ -3,7 +3,7 @@
 #include "math.h"
 #include "gl.h"
 #include "smallvec.h"
-#include "datafile.h"
+#include "resource.h"
 #include <stb_image.h>
 
 namespace TextureFilter
@@ -29,11 +29,9 @@ namespace TextureType
     };
 };
 
-struct Texture
+struct Texture : public Resource
 {
 public:
-    i64 guid = 0;
-    std::string name;
     bool repeat = true;
     bool generateMipMaps = true;
     f32 lodBias = -0.2f;
@@ -58,6 +56,24 @@ public:
         }
     };
 
+    void serialize(Serializer& s) override
+    {
+        Resource::serialize(s);
+
+        s.field(textureType);
+        s.field(repeat);
+        s.field(generateMipMaps);
+        s.field(lodBias);
+        s.field(anisotropy);
+        s.field(filter);
+        s.field(sourceFiles);
+
+        if (s.deserialize)
+        {
+            regenerate();
+        }
+    }
+
 private:
     i32 textureType = TextureType::COLOR;
 
@@ -76,15 +92,15 @@ public:
     // is the same as sourceFile's previewHandle or cubemap handle
     GLuint handle = 0;
 
-    Texture() {}
+    Texture() { setTextureType(TextureType::COLOR); }
     Texture(const char* name, u32 width, u32 height, u8* data, u32 textureType)
-        : name(name), textureType(textureType), width(width), height(height)
+        : textureType(textureType), width(width), height(height)
     {
+        this->name = name;
         sourceFiles.push_back({ "", std::vector<u8>(data, data+width*height*4), width, height });
         regenerate();
     }
 
-    void serialize(Serializer& s);
     void regenerate();
     void reloadSourceFiles();
     void setTextureType(u32 textureType);
@@ -93,6 +109,7 @@ public:
     SourceFile const& getSourceFile(u32 index) const { return sourceFiles[index]; }
     u32 getSourceFileCount() const { return (u32)sourceFiles.size(); }
     i32 getTextureType() const { return textureType; }
+    void destroy();
 
     ~Texture()
     {

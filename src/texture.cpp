@@ -1,25 +1,5 @@
 #include "texture.h"
 #include "resources.h"
-#include <filesystem>
-
-void Texture::serialize(Serializer& s)
-{
-    s.write("type", ResourceType::TEXTURE);
-    s.field(guid);
-    s.field(name);
-    s.field(textureType);
-    s.field(repeat);
-    s.field(generateMipMaps);
-    s.field(lodBias);
-    s.field(anisotropy);
-    s.field(filter);
-    s.field(sourceFiles);
-
-    if (s.deserialize)
-    {
-        regenerate();
-    }
-}
 
 void Texture::loadSourceFile(u32 index)
 {
@@ -46,7 +26,7 @@ void Texture::reloadSourceFiles()
     regenerate();
 }
 
-void Texture::setTextureType(u32 textureType)
+void Texture::destroy()
 {
     for (u32 i=0; i<sourceFiles.size(); ++i)
     {
@@ -62,6 +42,11 @@ void Texture::setTextureType(u32 textureType)
         cubemapHandle = 0;
     }
     handle = 0;
+}
+
+void Texture::setTextureType(u32 textureType)
+{
+    destroy();
     this->textureType = textureType;
     if (textureType == TextureType::CUBE_MAP)
     {
@@ -81,19 +66,7 @@ void Texture::setSourceFile(u32 index, std::string const& path)
 
 void Texture::regenerate()
 {
-    for (u32 i=0; i<sourceFiles.size(); ++i)
-    {
-        if (sourceFiles[i].previewHandle)
-        {
-            glDeleteTextures(1, &sourceFiles[i].previewHandle);
-            sourceFiles[i].previewHandle = 0;
-        }
-    }
-    if (cubemapHandle)
-    {
-        glDeleteTextures(1, &cubemapHandle);
-        cubemapHandle = 0;
-    }
+    destroy();
     if (!sourceFiles.empty())
     {
         for (u32 i=0; i<sourceFiles.size(); ++i)

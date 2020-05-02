@@ -1,7 +1,7 @@
 #pragma once
 
 #include "math.h"
-#include "datafile.h"
+#include "resource.h"
 #include "mesh.h"
 
 // TODO: implement these collision shapes
@@ -84,12 +84,10 @@ const char* propCategoryNames[] = {
     "Race",
 };
 
-class Model
+class Model : public Resource
 {
 public:
     // serialized
-    i64 guid;
-    std::string name;
     std::string sourceFilePath;
     std::string sourceSceneName;
     std::vector<Mesh> meshes;
@@ -98,7 +96,26 @@ public:
     f32 density = 150.f;
     PropCategory category = PropCategory::NOT_NATURE;
 
-    void serialize(Serializer& s);
+    void serialize(Serializer& s) override
+    {
+        Resource::serialize(s);
+
+        s.field(sourceFilePath);
+        s.field(sourceSceneName);
+        s.field(meshes);
+        s.field(objects);
+        s.field(modelUsage);
+        s.field(density);
+        s.field(category);
+
+        if (s.deserialize)
+        {
+            for (auto& obj : objects)
+            {
+                obj.createMousePickCollisionShape(this);
+            }
+        }
+    }
     ModelObject* getObjByName(const char* name)
     {
         for (auto& obj : objects)

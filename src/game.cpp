@@ -328,7 +328,7 @@ Scene* Game::changeScene(i64 guid)
     if (guid != 0)
     {
         auto trackData = g_res.getTrackData(guid);
-        Scene* scene = new Scene(&trackData);
+        Scene* scene = new Scene(trackData);
         nextScene.reset(scene);
         return scene;
     }

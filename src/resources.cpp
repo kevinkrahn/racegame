@@ -5,54 +5,45 @@
 #include "util.h"
 #include <filesystem>
 
+void Resources::addResource(std::unique_ptr<Resource>&& resource)
+{
+    i64 guid = resource->guid;
+    resourceNameMap[resource->name] = resource.get();
+    resources[guid] = std::move(resource);
+}
+
 void Resources::loadResource(DataFile::Value& data)
 {
     if (data.dict().hasValue())
     {
         auto& dict = data.dict().val();
         auto resourceType = (u32)dict["type"].integer().val();
-        auto guid = dict["guid"].integer().val();
+        Resource* resource = nullptr;
         switch ((ResourceType)resourceType)
         {
             case ResourceType::TEXTURE:
-            {
-                auto tex = std::make_unique<Texture>();
-                ::loadResource(data, *tex);
-                textureNameMap[tex->name] = tex.get();
-                textures[guid] = std::move(tex);
-            } break;
+                resource = new Texture();
+                break;
             case ResourceType::MODEL:
-            {
-                auto model = std::make_unique<Model>();
-                ::loadResource(data, *model);
-                modelNameMap[model->name] = model.get();
-                models[model->guid] = std::move(model);
-            } break;
+                resource = new Model();
+                break;
             case ResourceType::SOUND:
-            {
-                auto sound = std::make_unique<Sound>();
-                ::loadResource(data, *sound);
-                soundNameMap[sound->name] = sound.get();
-                sounds[sound->guid] = std::move(sound);
-            } break;
+                resource = new Sound();
+                break;
             case ResourceType::FONT:
-            {
-            } break;
+                break;
             case ResourceType::TRACK:
-            {
-                if (dict["name"].string().hasValue())
-                {
-                    trackNameMap[dict["name"].string().val()] = guid;
-                }
-                tracks[guid] = std::move(data);
-            } break;
+                resource = new TrackData();
+                break;
             case ResourceType::MATERIAL:
-            {
-                auto material = std::make_unique<Material>();
-                ::loadResource(data, *material);
-                materialNameMap[material->name] = material.get();
-                materials[guid] = std::move(material);
-            }
+                resource = new Material();
+                break;
+        }
+        if (resource != nullptr)
+        {
+            Serializer s(data, true);
+            resource->serialize(s);
+            addResource(std::unique_ptr<Resource>(resource));
         }
     }
 }
@@ -67,7 +58,8 @@ void Resources::load()
     std::vector<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
     for (auto& file : resourceFiles)
     {
-        if (std::filesystem::path(file.path).extension() == ".dat")
+        auto path = std::filesystem::path(file.path);
+        if (path.extension() == ".dat" && path.filename() != METADATA_FILE)
         {
             print("Loading data file: ", file.path, '\n');
             auto data = DataFile::load(str(DATA_DIRECTORY, "/", file.path));

@@ -142,7 +142,7 @@ public:
     Track* track = nullptr;
     Start* start = nullptr;
 
-    Scene(DataFile::Value* data=nullptr);
+    Scene(TrackData* data=nullptr);
     ~Scene();
 
     f64 getWorldTime() const { return worldTime; }

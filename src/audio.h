@@ -3,7 +3,7 @@
 #include "misc.h"
 #include "smallvec.h"
 #include "math.h"
-#include "datafile.h"
+#include "resource.h"
 #include <mutex>
 #include <vector>
 
@@ -13,11 +13,9 @@ enum struct AudioFormat
     VORBIS
 };
 
-struct Sound
+struct Sound : public Resource
 {
     // serialized
-    i64 guid = 0;
-    std::string name;
     std::string sourceFilePath;
     std::vector<u8> rawAudioData;
     u32 numSamples = 0;
@@ -25,6 +23,31 @@ struct Sound
     AudioFormat format = AudioFormat::RAW;
     f32 volume = 1.f;
     f32 falloffDistance = 90.f;
+
+    void serialize(Serializer& s) override
+    {
+        Resource::serialize(s);
+
+        s.field(sourceFilePath);
+        s.field(rawAudioData);
+        s.field(numSamples);
+        s.field(numChannels);
+        s.field(format);
+        s.field(volume);
+        s.field(falloffDistance);
+
+        if (s.deserialize)
+        {
+            if (format == AudioFormat::VORBIS)
+            {
+                decodeVorbisData();
+            }
+            else
+            {
+                audioData = (i16*)rawAudioData.data();
+            }
+        }
+    }
 
     i16* audioData;
     std::vector<i16> decodedAudioData;
@@ -34,7 +57,6 @@ struct Sound
 
     void loadFromFile(const char* filename);
     void decodeVorbisData();
-    void serialize(Serializer& s);
 };
 
 int decodeVorbis(u8* oggData, int len, int* channels, int* sampleRate, short** data);

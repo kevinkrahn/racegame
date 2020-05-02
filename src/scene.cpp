@@ -43,13 +43,8 @@ PxFilterFlags vehicleFilterShader(
     return PxFilterFlags();
 }
 
-Scene::Scene(DataFile::Value* data)
+Scene::Scene(TrackData* data)
 {
-    if (guid == 0)
-    {
-        guid = g_res.generateGUID();
-    }
-
     // create PhysX scene
     PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f);
@@ -86,7 +81,7 @@ Scene::Scene(DataFile::Value* data)
     }
     else
     {
-        Serializer s(*data, true);
+        Serializer s(data->data, true);
         serialize(s);
     }
 

@@ -3,28 +3,6 @@
 #include "game.h"
 #include "collision_flags.h"
 
-void Model::serialize(Serializer &s)
-{
-    s.write("type", ResourceType::MODEL);
-    s.field(guid);
-    s.field(name);
-    s.field(sourceFilePath);
-    s.field(sourceSceneName);
-    s.field(meshes);
-    s.field(objects);
-    s.field(modelUsage);
-    s.field(density);
-    s.field(category);
-
-    if (s.deserialize)
-    {
-        for (auto& obj : objects)
-        {
-            obj.createMousePickCollisionShape(this);
-        }
-    }
-}
-
 void ModelObject::createMousePickCollisionShape(Model* model)
 {
     if (mousePickShape)

@@ -63,76 +63,71 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         }
     }
 
-    ImGui::Begin("Track Editor");
-    if (ImGui::Button("New"))
+    if (ImGui::Begin("Track Editor"))
     {
-        g_game.changeScene(nullptr);
-    }
-    ImGui::SameLine();
-    // TODO: Add keyboard shortcut
-    if (ImGui::Button("Save"))
-    {
-        // TODO: mark resource_manager tracksStale = true
-        saveResource(*scene);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
-    {
-        // TODO: Add options to include AI drivers and configure player vehicle
-
-        g_game.state.drivers.clear();
-        g_game.state.drivers.push_back(Driver(true, true, true, 0, 0));
-        auto conf = g_game.state.drivers.back().getVehicleConfig();
-        conf->frontWeaponIndices[0] = 1;
-        conf->frontWeaponUpgradeLevel[0] = 5;
-        conf->rearWeaponIndices[0] = 4;
-        conf->rearWeaponUpgradeLevel[0] = 5;
-        conf->specialAbilityIndex = 11;
-
-        for (auto& mode : modes)
+        if (ImGui::InputText("##Name", &scene->name))
         {
-            mode->onBeginTest(scene);
+            g_game.resourceManager->markDirty(scene->guid);
         }
 
-        scene->startRace();
-    }
-
-    ImGui::Gap();
-    ImGui::InputText("Track Name", &scene->name);
-    ImGui::InputTextMultiline("Notes", &scene->notes, {0, 70});
-    i32 totalLaps = (i32)scene->totalLaps;
-    ImGui::InputInt("Laps", &totalLaps);
-    scene->totalLaps = (u32)glm::clamp(totalLaps, 1, 10);
-    ImGui::Gap();
-    ImGui::Checkbox("Show Grid", &gridSettings.show);
-    ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
-    ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
-    gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
-
-    auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
-
-    u32 previousModeIndex = activeModeIndex;
-    ImGui::Gap();
-    if (ImGui::BeginTabBar("Edit Mode"))
-    {
-        for (u32 i=0; i<modes.size(); ++i)
+        ImGui::SameLine();
+        if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
         {
-            if (ImGui::BeginTabItem(modes[i]->getName().c_str()))
+            // TODO: Add options to include AI drivers and configure player vehicle
+
+            g_game.state.drivers.clear();
+            g_game.state.drivers.push_back(Driver(true, true, true, 0, 0));
+            auto conf = g_game.state.drivers.back().getVehicleConfig();
+            conf->frontWeaponIndices[0] = 1;
+            conf->frontWeaponUpgradeLevel[0] = 5;
+            conf->rearWeaponIndices[0] = 4;
+            conf->rearWeaponUpgradeLevel[0] = 5;
+            conf->specialAbilityIndex = 11;
+
+            for (auto& mode : modes)
             {
-                activeModeIndex = i;
-                modes[i]->onEditorTabGui(scene, renderer, deltaTime);
-                ImGui::EndTabItem();
+                mode->onBeginTest(scene);
             }
+
+            scene->startRace();
         }
 
-        ImGui::EndTabBar();
-    }
+        ImGui::Gap();
+        ImGui::InputTextMultiline("Notes", &scene->notes, {0, 70});
+        i32 totalLaps = (i32)scene->totalLaps;
+        ImGui::InputInt("Laps", &totalLaps);
+        scene->totalLaps = (u32)glm::clamp(totalLaps, 1, 10);
+        ImGui::Gap();
+        ImGui::Checkbox("Show Grid", &gridSettings.show);
+        ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
+        ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
+        gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
 
-    if (activeModeIndex != previousModeIndex)
-    {
-        modes[previousModeIndex]->onSwitchFrom(scene);
-        modes[activeModeIndex]->onSwitchTo(scene);
-    }
+        auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 
-    ImGui::End();
+        u32 previousModeIndex = activeModeIndex;
+        ImGui::Gap();
+        if (ImGui::BeginTabBar("Edit Mode"))
+        {
+            for (u32 i=0; i<modes.size(); ++i)
+            {
+                if (ImGui::BeginTabItem(modes[i]->getName().c_str()))
+                {
+                    activeModeIndex = i;
+                    modes[i]->onEditorTabGui(scene, renderer, deltaTime);
+                    ImGui::EndTabItem();
+                }
+            }
+
+            ImGui::EndTabBar();
+        }
+
+        if (activeModeIndex != previousModeIndex)
+        {
+            modes[previousModeIndex]->onSwitchFrom(scene);
+            modes[activeModeIndex]->onSwitchTo(scene);
+        }
+
+        ImGui::End();
+    }
 }

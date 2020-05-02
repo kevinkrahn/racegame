@@ -9,19 +9,19 @@
 #include "../mesh_renderables.h"
 #include "transform_gizmo.h"
 
-struct PropPrefab
-{
-    Texture icon;
-    bool hasIcon;
-    u32 entityIndex;
-    PropPrefabData prefabData;
-};
-std::vector<PropPrefab> propPrefabs;
-
 // TODO: Add scene graph window
 
 class DecorationMode : public EditorMode, public TransformGizmoHandler
 {
+    struct PropPrefab
+    {
+        Texture icon;
+        bool hasIcon;
+        u32 entityIndex;
+        PropPrefabData prefabData;
+    };
+    std::vector<PropPrefab> propPrefabs;
+
     TransformGizmo transformGizmo;
     Scene* scene;
 
@@ -111,21 +111,25 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
 public:
     DecorationMode() : EditorMode("Props")
     {
-        if (propPrefabs.empty())
+        for (u32 entityIndex = 0; entityIndex < (u32)g_entities.size(); ++entityIndex)
         {
-            for (u32 entityIndex = 0; entityIndex < (u32)g_entities.size(); ++entityIndex)
+            auto& e = g_entities[entityIndex];
+            if (e.isPlaceableInEditor)
             {
-                auto& e = g_entities[entityIndex];
-                if (e.isPlaceableInEditor)
+                std::unique_ptr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
+                std::vector<PropPrefabData> data = ptr->generatePrefabProps();
+                for (auto& d : data)
                 {
-                    std::unique_ptr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
-                    std::vector<PropPrefabData> data = ptr->generatePrefabProps();
-                    for (auto& d : data)
-                    {
-                        propPrefabs.push_back({ {}, false, entityIndex, std::move(d) });
-                    }
+                    propPrefabs.push_back({ {}, false, entityIndex, std::move(d) });
                 }
             }
+        }
+    }
+    ~DecorationMode()
+    {
+        for (auto& pp : propPrefabs)
+        {
+            pp.icon.destroy();
         }
     }
 

@@ -3,61 +3,31 @@
 #include "datafile.h"
 #include "math.h"
 #include "font.h"
-#include "audio.h"
-#include "mesh.h"
+#include "resource.h"
+#include "material.h"
 #include "texture.h"
 #include "model.h"
-#include "material.h"
+#include "audio.h"
+#include "trackdata.h"
 #include <vector>
 #include <map>
 #include <string>
 
 const char* DATA_DIRECTORY = "../editor_data";
 const char* ASSET_DIRECTORY = "../assets";
-
-template<typename T>
-void saveResource(T& val)
-{
-    std::string filename = str(DATA_DIRECTORY, "/", std::hex, val.guid, ".dat", std::dec);
-    print("Saving resource ", filename, '\n');
-    Serializer::toFile(val, filename);
-}
-
-template<typename T>
-void loadResource(DataFile::Value& data, T& val)
-{
-    //Serializer::fromFile(val, str(DATA_DIRECTORY, "/", std::hex, val.guid, ".dat"));
-    Serializer s(data, true);
-    val.serialize(s);
-}
-
-enum struct ResourceType
-{
-    TEXTURE = 1,
-    MODEL = 2,
-    SOUND = 3,
-    FONT = 4,
-    TRACK = 5,
-    MATERIAL = 6,
-};
+const char* METADATA_FILE = "metadata.dat";
 
 class Resources
 {
 private:
+    // TODO: convert fonts into resource
     std::map<const char*, std::map<u32, Font>> fonts;
-    RandomSeries series = randomSeed();
 
 public:
-    std::map<i64, std::unique_ptr<Texture>> textures;
-    std::map<std::string, Texture*> textureNameMap;
-    std::map<i64, DataFile::Value> tracks;
-    std::map<std::string, i64> trackNameMap;
-    std::map<i64, std::unique_ptr<Model>> models;
-    std::map<std::string, Model*> modelNameMap;
-    std::map<i64, std::unique_ptr<Material>> materials;
-    std::map<std::string, Material*> materialNameMap;
-    std::map<i64, std::unique_ptr<Sound>> sounds;
-    std::map<std::string, Sound*> soundNameMap;
+    std::map<i64, std::unique_ptr<Resource>> resources;
+    std::map<std::string, Resource*> resourceNameMap;
+
+    void addResource(std::unique_ptr<Resource>&& resource);
 
     Texture white;
     Texture identityNormal;
@@ -65,24 +35,14 @@ public:
 
     i64 generateGUID()
     {
+        static RandomSeries series = randomSeed();
         i64 guid = 0;
-        for(;;)
+        do
         {
             u32 guidHalf[2] = { xorshift32(series), xorshift32(series) };
             guid = *((i64*)guidHalf);
-
-            if (textures.find(guid) == textures.end() &&
-                tracks.find(guid) == tracks.end() &&
-                models.find(guid) == models.end() &&
-                sounds.find(guid) == sounds.end() &&
-                materials.find(guid) == materials.end() &&
-                guid != 0)
-            {
-                break;
-            }
-            print("GUID collision: ", guid, '\n');
         }
-
+        while (guid == 0 || resources.find(guid) != resources.end());
         return guid;
     }
 
@@ -108,110 +68,110 @@ public:
 
     Texture* getTexture(i64 guid)
     {
-        auto iter = textures.find(guid);
-        if (iter == textures.end())
+        auto iter = resources.find(guid);
+        if (iter == resources.end() || iter->second->type != ResourceType::TEXTURE)
         {
             //FATAL_ERROR("Texture not found: ", guid);
             //print("Texture not found: ", guid, '\n');
             return &white;
         }
-        return iter->second.get();
+        return (Texture*)iter->second.get();
     }
 
     Texture* getTexture(const char* name)
     {
-        auto iter = textureNameMap.find(name);
-        if (iter == textureNameMap.end())
+        auto iter = resourceNameMap.find(name);
+        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::TEXTURE)
         {
-            //FATAL_ERROR("Texture not found: ", name);
-            //print("Texture not found: ", name, '\n');
+            //FATAL_ERROR("Texture not found: ", guid);
+            //print("Texture not found: ", guid, '\n');
             return &white;
         }
-        return iter->second;
+        return (Texture*)iter->second;
     }
 
     Model* getModel(i64 guid)
     {
-        auto iter = models.find(guid);
-        if (iter == models.end())
+        auto iter = resources.find(guid);
+        if (iter == resources.end() || iter->second->type != ResourceType::MODEL)
         {
             FATAL_ERROR("Model not found: ", guid);
         }
-        return iter->second.get();
+        return (Model*)iter->second.get();
     }
 
     Model* getModel(const char* name)
     {
-        auto iter = modelNameMap.find(name);
-        if (iter == modelNameMap.end())
+        auto iter = resourceNameMap.find(name);
+        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::MODEL)
         {
             FATAL_ERROR("Model not found: ", name);
         }
-        return iter->second;
+        return (Model*)iter->second;
     }
 
     Sound* getSound(i64 guid)
     {
-        auto iter = sounds.find(guid);
-        if (iter == sounds.end())
+        auto iter = resources.find(guid);
+        if (iter == resources.end() || iter->second->type != ResourceType::SOUND)
         {
             FATAL_ERROR("Sound not found: ", guid);
         }
-        return iter->second.get();
+        return (Sound*)iter->second.get();
     }
 
     Sound* getSound(const char* name)
     {
-        auto iter = soundNameMap.find(name);
-        if (iter == soundNameMap.end())
+        auto iter = resourceNameMap.find(name);
+        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::SOUND)
         {
             FATAL_ERROR("Sound not found: ", name);
         }
-        return iter->second;
+        return (Sound*)iter->second;
     }
 
     Material* getMaterial(i64 guid)
     {
-        auto iter = materials.find(guid);
-        if (iter == materials.end())
+        auto iter = resources.find(guid);
+        if (iter == resources.end() || iter->second->type != ResourceType::MATERIAL)
         {
             //FATAL_ERROR("Material not found: ", guid);
             //print("Material not found: ", guid, '\n');
             return &defaultMaterial;
         }
-        return iter->second.get();
+        return (Material*)iter->second.get();
     }
 
     Material* getMaterial(const char* name)
     {
-        auto iter = materialNameMap.find(name);
-        if (iter == materialNameMap.end())
+        auto iter = resourceNameMap.find(name);
+        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::MATERIAL)
         {
             //FATAL_ERROR("Material not found: ", name);
             //print("Material not found: ", name, '\n');
             return &defaultMaterial;
         }
-        return iter->second;
+        return (Material*)iter->second;
     }
 
-    DataFile::Value& getTrackData(i64 guid)
+    TrackData* getTrackData(i64 guid)
     {
-        auto iter = tracks.find(guid);
-        if (iter == tracks.end())
+        auto iter = resources.find(guid);
+        if (iter == resources.end() || iter->second->type != ResourceType::TRACK)
         {
             FATAL_ERROR("Track not found: ", guid);
         }
-        return iter->second;
+        return (TrackData*)iter->second.get();
     }
 
     i64 getTrackGuid(const char* name)
     {
-        auto iter = trackNameMap.find(name);
-        if (iter == trackNameMap.end())
+        auto iter = resourceNameMap.find(name);
+        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::TRACK)
         {
             FATAL_ERROR("Track not found: ", name);
         }
-        return iter->second;
+        return iter->second->guid;
     }
 } g_res;
 

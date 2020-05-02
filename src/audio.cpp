@@ -8,32 +8,6 @@ Sound::Sound(const char* filename)
     loadFromFile(filename);
 }
 
-void Sound::serialize(Serializer& s)
-{
-    s.write("type", ResourceType::SOUND);
-    s.field(guid);
-    s.field(name);
-    s.field(sourceFilePath);
-    s.field(rawAudioData);
-    s.field(numSamples);
-    s.field(numChannels);
-    s.field(format);
-    s.field(volume);
-    s.field(falloffDistance);
-
-    if (s.deserialize)
-    {
-        if (format == AudioFormat::VORBIS)
-        {
-            decodeVorbisData();
-        }
-        else
-        {
-            audioData = (i16*)rawAudioData.data();
-        }
-    }
-}
-
 void Sound::decodeVorbisData()
 {
     i16* buf;
@@ -42,12 +16,12 @@ void Sound::decodeVorbisData()
     i32 count = decodeVorbis(rawAudioData.data(), (i32)rawAudioData.size(), &channels, &rate, &buf);
     if (count == -1)
     {
-        error("Failed to decode vorbis: ", name);
+        error("Failed to decode vorbis: ", name, '\n');
         return;
     }
     if (rate != 44100)
     {
-        error("Unsupported sample rate: ", rate, " (", name, ")");
+        error("Unsupported sample rate: ", rate, " (", name, ")\n");
         return;
     }
 

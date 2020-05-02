@@ -146,18 +146,23 @@ std::vector<PropPrefabData> StaticDecal::generatePrefabProps()
 {
     std::vector<PropPrefabData> results;
 
-    for (auto& tex : g_res.textures)
+    for (auto& res : g_res.resources)
     {
-        if (tex.second->name.find("decal_") != std::string::npos)
+        if (res.second->type != ResourceType::TEXTURE)
+        {
+            continue;
+        }
+        Texture* tex = (Texture*)res.second.get();
+        if (tex->name.find("decal_") != std::string::npos)
         {
             results.push_back({
                 PropCategory::DECALS,
-                tex.second->name,
-                [&](Entity* e) {
-                    ((StaticDecal*)e)->setTexture(tex.first);
+                tex->name,
+                [tex](Entity* e) {
+                    ((StaticDecal*)e)->setTexture(tex->guid);
                     ((StaticDecal*)e)->isDust =
-                        tex.second->name.find("dust") != std::string::npos ||
-                        tex.second->name.find("sand") != std::string::npos;
+                        tex->name.find("dust") != std::string::npos ||
+                        tex->name.find("sand") != std::string::npos;
                 }
             });
         }

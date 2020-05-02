@@ -35,12 +35,14 @@
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
 - Undo/Redo in editor
-- Audio volume distance falloff should be configured on the audio resource
 - Add texture compression
 - Add difficulty levels
 - Add passive ability that gives a bit of ammo when destroyed
 - Fix stutter when race starts or hide it with black screen that fades out
 - Shoot out shell casings when minigun is fired
+- Fix transform gizmo
+- Calculate vehicle acceleration and handling by simulating a physics world
+- Vehicle respawn angles are awkward sometimes
 
 - Ideas:
     - Grenade launcher weapon

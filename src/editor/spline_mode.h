@@ -254,11 +254,16 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
 public:
     SplineMode() : EditorMode("Splines")
     {
-        for (auto& model : g_res.models)
+        for (auto& res : g_res.resources)
         {
-            if (model.second->modelUsage == ModelUsage::SPLINE)
+            if (res.second->type != ResourceType::MODEL)
             {
-                splineModels.push_back({ model.second.get() });
+                continue;
+            }
+            Model* model = (Model*)res.second.get();
+            if (model->modelUsage == ModelUsage::SPLINE)
+            {
+                splineModels.push_back({ model });
             }
         }
     }

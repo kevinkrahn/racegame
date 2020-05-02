@@ -4,77 +4,374 @@
 #include "../mesh_renderables.h"
 #include <filesystem>
 
+static void sortResources(ResourceFolder& folder)
+{
+    std::sort(folder.childResources.begin(), folder.childResources.end(), [](i64 a, i64 b) {
+        Resource* rA = g_res.resources.find(a)->second.get();
+        Resource* rB = g_res.resources.find(b)->second.get();
+        if (rA->type != rB->type) return (u32)rA->type < (u32)rB->type;
+        return rA->name < rB->name;
+    });
+    for (auto& childFolder : folder.childFolders)
+    {
+        sortResources(*childFolder);
+    }
+}
+
+void ResourceManager::saveResources()
+{
+    for (auto& r : resourcesModified)
+    {
+        auto res = g_res.resources.find(r.first);
+        if (res != g_res.resources.end())
+        {
+            std::string filename = str(DATA_DIRECTORY, "/", std::hex, r.first, ".dat", std::dec);
+            print("Saving resource ", filename, '\n');
+            Serializer::toFile(*res->second, filename);
+        }
+    }
+    resourcesModified.clear();
+    Serializer::toFile(resources, str(DATA_DIRECTORY, "/", METADATA_FILE));
+}
+
 ResourceManager::ResourceManager()
 {
+    Serializer::fromFile(resources, str(DATA_DIRECTORY, "/", METADATA_FILE));
+
+    std::map<i64, bool> resourceFolderMap;
+    std::vector<ResourceFolder*> folders = { &resources };
+    while (folders.size() > 0)
+    {
+        ResourceFolder* folder = folders.back();
+        folders.pop_back();
+        for (auto& childResource : folder->childResources)
+        {
+            resourceFolderMap[childResource] = true;
+        }
+        for (auto& childFolder : folder->childFolders)
+        {
+            folders.push_back(childFolder.get());
+        }
+    }
+
+    for (auto& res : g_res.resources)
+    {
+        if (resourceFolderMap.find(res.first) == resourceFolderMap.end())
+        {
+            resources.childResources.push_back(res.first);
+        }
+    }
+
+    sortResources(resources);
+}
+
+void ResourceManager::showFolder(ResourceFolder* folder)
+{
+    if (folder == renameFolder)
+    {
+        ImGui::PushID(folder->name.c_str());
+        bool isFolderOpen = ImGui::TreeNodeEx("");
+        ImGui::SameLine();
+        static u32 renameID = 0;
+        ImGui::PushID(tstr("Rename ", renameID));
+        if (firstFrameRename)
+        {
+            renameID++;
+            ImGui::SetKeyboardFocusHere();
+        }
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
+        if (ImGui::InputText("", &renameText, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            renameFolder->name = renameText;
+        }
+        ImGui::PopStyleVar();
+        if (!firstFrameRename && !ImGui::IsItemActive())
+        {
+            renameFolder = nullptr;
+        }
+        ImGui::PopID();
+        firstFrameRename = false;
+        if (isFolderOpen)
+        {
+            for (auto& childFolder : folder->childFolders)
+            {
+                showFolder(childFolder.get());
+            }
+            showFolderContents(folder);
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
+    }
+    else
+    {
+        ImGui::PushID((void*)folder);
+        bool isFolderOpen = ImGui::TreeNode(folder->name.c_str());
+        ImGui::PopID();
+        if (folder->parent && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+        {
+            DragDropPayload payload = {};
+            payload.isFolder = true;
+            payload.folderDragged = folder;
+            payload.sourceFolder = folder->parent;
+            ImGui::SetDragDropPayload("Drag Resource", &payload, sizeof(payload));
+            ImGui::Text(folder->name.c_str());
+            ImGui::EndDragDropSource();
+        }
+        if (ImGui::BeginDragDropTarget())
+        {
+            const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+            if (payload)
+            {
+                assert(payload->DataSize == sizeof(DragDropPayload));
+                DragDropPayload data = *(DragDropPayload*)payload->Data;
+                if (data.sourceFolder != folder && !(data.isFolder && folder->hasParent(data.folderDragged)))
+                {
+                    if (ImGui::AcceptDragDropPayload("Drag Resource"))
+                    {
+                        folderMove = { data, folder };
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("New Folder"))
+            {
+                static u32 folderCount = 0;
+                auto newFolder = std::make_unique<ResourceFolder>();
+                newFolder->name = str("New Folder ", folderCount++);
+                newFolder->parent = folder;
+                folder->childFolders.push_back(std::move(newFolder));
+            }
+            if (ImGui::MenuItem("New Texture"))
+            {
+                folder->childResources.push_back(newResource(ResourceType::TEXTURE)->guid);
+            }
+            if (ImGui::MenuItem("New Model"))
+            {
+                folder->childResources.push_back(newResource(ResourceType::MODEL)->guid);
+            }
+            if (ImGui::MenuItem("New Material"))
+            {
+                folder->childResources.push_back(newResource(ResourceType::MATERIAL)->guid);
+            }
+            if (ImGui::MenuItem("New Sound"))
+            {
+                folder->childResources.push_back(newResource(ResourceType::SOUND)->guid);
+            }
+            if (ImGui::MenuItem("New Track"))
+            {
+                folder->childResources.push_back(newResource(ResourceType::TRACK)->guid);
+            }
+            if (ImGui::MenuItem("Rename"))
+            {
+                renameText = folder->name;
+                renameFolder = folder;
+                firstFrameRename = true;
+            }
+            if (ImGui::MenuItem("Delete"))
+            {
+                // TODO
+            }
+            ImGui::EndPopup();
+        }
+        if (isFolderOpen)
+        {
+            for (auto& childFolder : folder->childFolders)
+            {
+                showFolder(childFolder.get());
+            }
+            showFolderContents(folder);
+            ImGui::TreePop();
+        }
+    }
+}
+
+void ResourceManager::showFolderContents(ResourceFolder* folder)
+{
+    const u32 selectedColor = 0x992299EE;
+    for (auto& childGUID : folder->childResources)
+    {
+        Resource* childResource = g_res.resources.find(childGUID)->second.get();
+        ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
+        if (childResource == renameResource)
+        {
+            ImGui::PushID("Rename Node");
+            ImGui::TreeNodeEx("", ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+            ImGui::PopID();
+            ImGui::SameLine();
+            static u32 renameID = 0;
+            ImGui::PushID(tstr("Rename ", renameID));
+            if (firstFrameRename)
+            {
+                renameID++;
+                ImGui::SetKeyboardFocusHere();
+            }
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
+            if (ImGui::InputText("", &renameText,
+                    ImGuiInputTextFlags_EnterReturnsTrue))
+            {
+                g_res.resourceNameMap.erase(renameText);
+                g_res.resourceNameMap[renameText] = renameResource;
+                renameResource->name = renameText;
+                markDirty(renameResource->guid);
+            }
+            ImGui::PopStyleVar();
+            if (!firstFrameRename && !ImGui::IsItemActive())
+            {
+                renameResource = nullptr;
+            }
+            ImGui::PopID();
+            firstFrameRename = false;
+        }
+        else
+        {
+            u32 flags = ImGuiTreeNodeFlags_Leaf
+                | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            /*
+            if (selectedTexture == tex && isTextureWindowOpen)
+            {
+                flags |= ImGuiTreeNodeFlags_Selected;
+            }
+            */
+            ImGui::PushID((void*)childResource->guid);
+            f32 cursorPos = ImGui::GetCursorPosX();
+            ImGui::TreeNodeEx("                                           ", flags);
+            if (ImGui::IsItemClicked())
+            {
+                if (ImGui::IsMouseDoubleClicked(0))
+                {
+                    openResource(childResource);
+                }
+            }
+            ImGui::PopID();
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+            {
+                DragDropPayload payload = {};
+                payload.isFolder = false;
+                payload.resourceDragged = childResource;
+                payload.sourceFolder = folder;
+                ImGui::SetDragDropPayload("Drag Resource", &payload, sizeof(payload));
+                ImGui::Text(childResource->name.c_str());
+                ImGui::EndDragDropSource();
+            }
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Duplicate"))
+                {
+                    // TODO
+                }
+                if (ImGui::MenuItem("Rename"))
+                {
+                    renameText = childResource->name;
+                    renameResource = childResource;
+                    firstFrameRename = true;
+                }
+                if (ImGui::MenuItem("Delete"))
+                {
+                    // TODO
+                }
+                ImGui::EndPopup();
+            }
+            ImGui::SameLine(0, 0);
+            ImGui::SetCursorPosX(cursorPos + 4.f);
+            const char* icons[] = {
+                "not_used",
+                "texture_icon",
+                "model_icon",
+                "sound_icon",
+                "icon_track",
+                "icon_track",
+                "material_icon",
+            };
+            ImGui::Image((void*)(uintptr_t)g_res.getTexture(
+                        icons[(u32)childResource->type])->getPreviewHandle(), { 16, 16 });
+            ImGui::SameLine(0, 0);
+            ImGui::SetCursorPosX(cursorPos + 24.f);
+            ImGui::Text(childResource->name.c_str());
+        }
+        ImGui::PopStyleColor();
+    }
+}
+
+void ResourceManager::openResource(Resource* resource)
+{
+    switch (resource->type)
+    {
+        case ResourceType::TEXTURE:
+            isTextureWindowOpen = true;
+            selectedTexture = (Texture*)resource;
+            break;
+        case ResourceType::SOUND:
+            isSoundWindowOpen = true;
+            selectedSound = (Sound*)resource;
+            break;
+        case ResourceType::MATERIAL:
+            isMaterialWindowOpen = true;
+            selectedMaterial = (Material*)resource;
+            break;
+        case ResourceType::MODEL:
+            activeEditor = ResourceType::MODEL;
+            g_game.unloadScene();
+            modelEditor.setModel((Model*)resource);
+            break;
+        case ResourceType::TRACK:
+            activeEditor = ResourceType::TRACK;
+            g_game.changeScene(resource->guid);
+            break;
+        case ResourceType::FONT:
+            break;
+    }
+}
+
+Resource* ResourceManager::newResource(ResourceType type)
+{
+    Resource* resource = nullptr;
+    const char* namePrefix = "";
+    switch (type)
+    {
+        case ResourceType::TEXTURE:
+        {
+            resource = new Texture();
+            namePrefix = "Texture";
+        } break;
+        case ResourceType::SOUND:
+        {
+            resource = new Sound();
+            namePrefix = "Sound";
+        } break;
+        case ResourceType::MATERIAL:
+        {
+            resource = new Material();
+            namePrefix = "Material";
+        } break;
+        case ResourceType::MODEL:
+        {
+            resource = new Model();
+            namePrefix = "Model";
+        } break;
+        case ResourceType::TRACK:
+        {
+            resource = new TrackData();
+            namePrefix = "Track";
+        } break;
+        case ResourceType::FONT:
+        {
+        } break;
+    }
+    if (resource)
+    {
+        resource->type = type;
+        resource->guid = g_res.generateGUID();
+        resource->name = str(namePrefix, ' ', g_res.resources.size());
+        g_res.addResource(std::unique_ptr<Resource>(resource));
+    }
+    return resource;
 }
 
 void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 {
-    if (texturesStale)
-    {
-        textures.clear();
-        for (auto& tex : g_res.textures)
-        {
-            textures.push_back(tex.second.get());
-        }
-        std::sort(textures.begin(), textures.end(), [](auto& a, auto& b) {
-            return a->name < b->name;
-        });
-        texturesStale = false;
-    }
-
-    if (materialsStale)
-    {
-        materials.clear();
-        for (auto& mat : g_res.materials)
-        {
-            materials.push_back(mat.second.get());
-        }
-        std::sort(materials.begin(), materials.end(), [](auto& a, auto& b) {
-            return a->name < b->name;
-        });
-        materialsStale = false;
-    }
-
-    if (tracksStale)
-    {
-        tracks.clear();
-        for (auto& track : g_res.tracks)
-        {
-            tracks.push_back(&track.second);
-        }
-        std::sort(tracks.begin(), tracks.end(), [](auto& a, auto& b) {
-            return a->dict().val()["name"].string().val() < b->dict().val()["name"].string().val();
-        });
-        tracksStale = false;
-    }
-
-    if (modelsStale)
-    {
-        models.clear();
-        for (auto& model : g_res.models)
-        {
-            models.push_back(model.second.get());
-        }
-        std::sort(models.begin(), models.end(), [](auto& a, auto& b) {
-            return a->name < b->name;
-        });
-        modelsStale = false;
-    }
-
-    if (soundsStale)
-    {
-        sounds.clear();
-        for (auto& sound : g_res.sounds)
-        {
-            sounds.push_back(sound.second.get());
-        }
-        std::sort(sounds.begin(), sounds.end(), [](auto& a, auto& b) {
-            return a->name < b->name;
-        });
-        soundsStale = false;
-    }
-
     if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
     {
         if (g_input.isKeyPressed(KEY_ESCAPE) || g_input.isKeyPressed(KEY_F5))
@@ -87,6 +384,15 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     if (ImGui::BeginMainMenuBar())
     {
+        if (ImGui::BeginMenu("File"))
+        {
+            // TODO: Make the shortcut actually work
+            if (ImGui::MenuItem("Save", "Ctrl+S"))
+            {
+                saveResources();
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Window"))
         {
             if (ImGui::MenuItem("Resources", "Alt+R", isResourceWindowOpen))
@@ -95,299 +401,39 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Resources"))
-        {
-            if (ImGui::MenuItem("New Texture"))
-            {
-                newTexture();
-            }
-            if (ImGui::MenuItem("New Material"))
-            {
-                newMaterial();
-            }
-            if (ImGui::MenuItem("New Sound"))
-            {
-                newSound();
-            }
-            if (ImGui::MenuItem("New Model"))
-            {
-                newModel();
-            }
-            if (ImGui::MenuItem("New Track"))
-            {
-                g_game.changeScene(nullptr);
-                activeEditor = ResourceType::TRACK;
-                trackEditor.reset();
-            }
-            ImGui::EndMenu();
-        }
         ImGui::EndMainMenuBar();
     }
 
     if (isResourceWindowOpen)
     {
-        const u32 selectedColor = 0x992299EE;
-
-        ImGui::Begin("Resources", &isResourceWindowOpen);
-
-        if (ImGui::CollapsingHeader("Textures"))
+        if (ImGui::Begin("Resources", &isResourceWindowOpen))
         {
-            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
-            for (auto tex : textures)
-            {
-                if (tex == renameTexture)
-                {
-                    ImGui::PushID("Rename Node");
-                    ImGui::TreeNodeEx("", ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-                    ImGui::PopID();
-                    ImGui::SameLine();
-                    static u32 renameID = 0;
-                    ImGui::PushID(tstr("Rename ", renameID));
-                    if (firstFrameRename)
-                    {
-                        renameID++;
-                        ImGui::SetKeyboardFocusHere();
-                    }
-                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
-                    if (ImGui::InputText("", &renameText,
-                            ImGuiInputTextFlags_EnterReturnsTrue))
-                    {
-                        renameTexture->name = renameText;
-                    }
-                    ImGui::PopStyleVar();
-                    if (!firstFrameRename && !ImGui::IsItemActive())
-                    {
-                        renameTexture = nullptr;
-                    }
-                    ImGui::PopID();
-                    firstFrameRename = false;
-                }
-                else
-                {
-                    u32 flags = ImGuiTreeNodeFlags_Leaf
-                        | ImGuiTreeNodeFlags_NoTreePushOnOpen
-                        | ImGuiTreeNodeFlags_SpanAvailWidth;
-                    if (selectedTexture == tex && isTextureWindowOpen)
-                    {
-                        flags |= ImGuiTreeNodeFlags_Selected;
-                    }
-                    ImGui::PushID((void*)tex->guid);
-                    ImGui::TreeNodeEx(tex->name.c_str(), flags);
-                    if (ImGui::IsItemClicked())
-                    {
-                        if (ImGui::IsMouseDoubleClicked(0))
-                        {
-                            selectedTexture = tex;
-                            editName = selectedTexture->name;
-                            isTextureWindowOpen = true;
-                        }
-                    }
-                    ImGui::PopID();
-                    if (ImGui::BeginPopupContextItem())
-                    {
-                        if (ImGui::MenuItem("New Texture"))
-                        {
-                            newTexture();
-                        }
-                        if (ImGui::MenuItem("Duplicate"))
-                        {
-                            // TODO
-                        }
-                        if (ImGui::MenuItem("Rename"))
-                        {
-                            renameText = tex->name;
-                            renameTexture = tex;
-                            firstFrameRename = true;
-                        }
-                        if (ImGui::MenuItem("Delete"))
-                        {
-                            // TODO
-                        }
-                        ImGui::EndPopup();
-                    }
-                }
-            }
-            ImGui::PopStyleColor();
+            showFolder(&resources);
+            ImGui::End();
         }
 
-        if (ImGui::CollapsingHeader("Materials"))
+        if (folderMove.dropFolder)
         {
-            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
-            for (auto mat : materials)
+            if (folderMove.payload.isFolder)
             {
-                u32 flags = ImGuiTreeNodeFlags_Leaf
-                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
-                    | ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (selectedMaterial == mat && isMaterialWindowOpen)
-                {
-                    flags |= ImGuiTreeNodeFlags_Selected;
-                }
-                ImGui::TreeNodeEx(mat->name.c_str(), flags);
-                if (ImGui::IsItemClicked())
-                {
-                    selectedMaterial = mat;
-                    editName = selectedMaterial->name;
-                    isMaterialWindowOpen = true;
-                }
-                if (ImGui::BeginPopupContextItem())
-                {
-                    if (ImGui::MenuItem("New Material"))
-                    {
-                        newMaterial();
-                    }
-                    if (ImGui::MenuItem("Duplicate"))
-                    {
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Rename"))
-                    {
-                        editName = mat->name;
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Delete"))
-                    {
-                        // TODO
-                    }
-                    ImGui::EndPopup();
-                }
+                auto removeIt = std::find_if(folderMove.payload.sourceFolder->childFolders.begin(),
+                                folderMove.payload.sourceFolder->childFolders.end(),
+                                [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
+                assert (removeIt != folderMove.payload.sourceFolder->childFolders.end());
+                folderMove.dropFolder->childFolders.push_back(std::move(*removeIt));
+                folderMove.dropFolder->childFolders.back()->parent = folderMove.dropFolder;
+                folderMove.payload.sourceFolder->childFolders.erase(removeIt);
             }
-            ImGui::PopStyleColor();
-        }
-
-        if (ImGui::CollapsingHeader("Models"))
-        {
-            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
-            for (auto& model : models)
+            else
             {
-                u32 flags = ImGuiTreeNodeFlags_Leaf
-                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
-                    | ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (activeEditor == ResourceType::MODEL && model == modelEditor.getCurrentModel())
-                {
-                    flags |= ImGuiTreeNodeFlags_Selected;
-                }
-                ImGui::TreeNodeEx(model->name.c_str(), flags);
-                if (ImGui::IsItemClicked())
-                {
-                    activeEditor = ResourceType::MODEL;
-                    g_game.unloadScene();
-                    modelEditor.setModel(model);
-                }
-                if (ImGui::BeginPopupContextItem())
-                {
-                    if (ImGui::MenuItem("New Model"))
-                    {
-                        newModel();
-                    }
-                    if (ImGui::MenuItem("Duplicate"))
-                    {
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Rename"))
-                    {
-                        editName = model->name;
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Delete"))
-                    {
-                        // TODO
-                    }
-                    ImGui::EndPopup();
-                }
+                folderMove.payload.sourceFolder->childResources.erase(
+                        std::find(folderMove.payload.sourceFolder->childResources.begin(),
+                                folderMove.payload.sourceFolder->childResources.end(),
+                                folderMove.payload.resourceDragged->guid));
+                folderMove.dropFolder->childResources.push_back(folderMove.payload.resourceDragged->guid);
             }
-            ImGui::PopStyleColor();
         }
-
-        if (ImGui::CollapsingHeader("Sounds"))
-        {
-            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
-            for (auto sound : sounds)
-            {
-                u32 flags = ImGuiTreeNodeFlags_Leaf
-                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
-                    | ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (selectedSound == sound && isSoundWindowOpen)
-                {
-                    flags |= ImGuiTreeNodeFlags_Selected;
-                }
-                ImGui::TreeNodeEx(sound->name.c_str(), flags);
-                if (ImGui::IsItemClicked())
-                {
-                    selectedSound = sound;
-                    editName = sound->name;
-                    isSoundWindowOpen = true;
-                }
-                if (ImGui::BeginPopupContextItem())
-                {
-                    if (ImGui::MenuItem("New Sound"))
-                    {
-                        newSound();
-                    }
-                    if (ImGui::MenuItem("Duplicate"))
-                    {
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Rename"))
-                    {
-                        editName = sound->name;
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Delete"))
-                    {
-                        // TODO
-                    }
-                    ImGui::EndPopup();
-                }
-            }
-            ImGui::PopStyleColor();
-        }
-
-        if (ImGui::CollapsingHeader("Tracks"))
-        {
-            ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
-            for (auto& track : tracks)
-            {
-                u32 flags = ImGuiTreeNodeFlags_Leaf
-                    | ImGuiTreeNodeFlags_NoTreePushOnOpen
-                    | ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (g_game.currentScene &&
-                        g_game.currentScene->guid == track->dict().val()["guid"].integer().val())
-                {
-                    flags |= ImGuiTreeNodeFlags_Selected;
-                }
-                ImGui::TreeNodeEx(track->dict().val()["name"].string().val().c_str(), flags);
-                if (ImGui::IsItemClicked())
-                {
-                    activeEditor = ResourceType::TRACK;
-                    g_game.changeScene(track->dict().val()["guid"].integer().val());
-                    trackEditor.reset();
-                }
-                if (ImGui::BeginPopupContextItem())
-                {
-                    if (ImGui::MenuItem("New Track"))
-                    {
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Duplicate"))
-                    {
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Rename"))
-                    {
-                        editName = track->dict().val()["name"].string("");
-                        // TODO
-                    }
-                    if (ImGui::MenuItem("Delete"))
-                    {
-                        // TODO
-                    }
-                    ImGui::EndPopup();
-                }
-            }
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::End();
+        folderMove.dropFolder = nullptr;
     }
 
     showTextureWindow(renderer, deltaTime);
@@ -417,6 +463,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         ImGui::EndPopup();
     }
 
+    // TODO: fix escape behavior (it only works when a window is focused)
     if (!ImGui::GetIO().WantCaptureKeyboard && g_input.isKeyPressed(KEY_ESCAPE))
     {
         ImGui::OpenPopup("Exit Editor");
@@ -438,63 +485,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 }
 
-void ResourceManager::newModel()
-{
-    activeEditor = ResourceType::MODEL;
-    auto model = std::make_unique<Model>();
-    model->guid = g_res.generateGUID();
-    model->name = str("Model ", models.size());
-    modelEditor.setModel(model.get());
-    saveResource(*model);
-    g_res.modelNameMap[model->name] = model.get();
-    g_res.models[model->guid] = std::move(model);
-    modelsStale = true;
-    g_game.unloadScene();
-}
-
-void ResourceManager::newTexture()
-{
-    auto tex = std::make_unique<Texture>();
-    tex->setTextureType(TextureType::COLOR);
-    tex->guid = g_res.generateGUID();
-    selectedTexture = tex.get();
-    isTextureWindowOpen = true;
-    tex->name = str("Texture ", g_res.textures.size());
-    editName = tex->name;
-    saveResource(*tex);
-    g_res.textureNameMap[tex->name] = selectedTexture;
-    g_res.textures[tex->guid] = std::move(tex);
-    texturesStale = true;
-}
-
-void ResourceManager::newMaterial()
-{
-    auto mat = std::make_unique<Material>();
-    mat->guid = g_res.generateGUID();
-    selectedMaterial = mat.get();
-    isMaterialWindowOpen = true;
-    mat->name = str("Material ", g_res.materials.size());
-    editName = mat->name;
-    saveResource(*mat);
-    g_res.materialNameMap[mat->name] = selectedMaterial;
-    g_res.materials[mat->guid] = std::move(mat);
-    materialsStale = true;
-}
-
-void ResourceManager::newSound()
-{
-    auto sound = std::make_unique<Sound>();
-    sound->guid = g_res.generateGUID();
-    selectedSound = sound.get();
-    isSoundWindowOpen = true;
-    sound->name = str("Sound ", g_res.sounds.size());
-    editName = sound->name;
-    saveResource(*sound);
-    g_res.soundNameMap[sound->name] = selectedSound;
-    g_res.sounds[sound->guid] = std::move(sound);
-    texturesStale = true;
-}
-
 void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
 {
     if (!isTextureWindowOpen)
@@ -504,107 +494,106 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
 
     bool dirty = false;
     Texture& tex = *selectedTexture;
+    bool changed = false;
 
-    ImGui::Begin("Texture Properties", &isTextureWindowOpen);
-
-    if (tex.getSourceFileCount() == 1)
+    if (ImGui::Begin("Texture Properties", &isTextureWindowOpen))
     {
-        if (ImGui::Button("Load Image"))
+        ImGui::PushItemWidth(150);
+        if (ImGui::InputText("##Name", &tex.name))
         {
-            std::string filename = chooseFile(".", true, "Image Files", { "*.png", "*.jpg", "*.bmp" });
-            if (!filename.empty())
-            {
-                tex.setSourceFile(0, std::filesystem::relative(filename));
-                tex.regenerate();
-                dirty = true;
-            }
+            markDirty(tex.guid);
         }
+        ImGui::PopItemWidth();
         ImGui::SameLine();
-    }
-    if (ImGui::Button("Reimport"))
-    {
-        tex.reloadSourceFiles();
-        dirty = true;
-    }
-
-    ImGui::Gap();
-
-    if (tex.getSourceFileCount() == 1 && tex.getPreviewHandle())
-    {
-        ImGui::BeginChild("Texture Preview",
-                { ImGui::GetWindowWidth(), (f32)glm::min(tex.height, 300u) }, false,
-                ImGuiWindowFlags_HorizontalScrollbar);
-        // TODO: Add controls to pan the image view and zoom in and out
-        ImGui::Image((void*)(uintptr_t)tex.getPreviewHandle(), ImVec2(tex.width, tex.height));
-        ImGui::EndChild();
-
-        ImGui::Text(tex.getSourceFile(0).path.c_str());
-        ImGui::Text("%i x %i", tex.width, tex.height);
-    }
-    else if (tex.getSourceFileCount() > 1)
-    {
-        for (u32 i=0; i<tex.getSourceFileCount(); ++i)
+        if (tex.getSourceFileCount() == 1)
         {
-            ImGui::Columns(2, NULL, false);
-            ImGui::SetColumnWidth(0, 80);
-            auto const& sf = tex.getSourceFile(i);
-            f32 ratio = 72.f / sf.width;
-            ImGui::Image((void*)(uintptr_t)sf.previewHandle, ImVec2(sf.width * ratio, sf.height * ratio));
-            ImGui::NextColumn();
-            if (ImGui::Button("Load File"))
+            if (ImGui::Button("Load Image"))
             {
                 std::string filename = chooseFile(".", true, "Image Files", { "*.png", "*.jpg", "*.bmp" });
                 if (!filename.empty())
                 {
-                    tex.setSourceFile(i, std::filesystem::relative(filename));
+                    tex.setSourceFile(0, std::filesystem::relative(filename));
                     tex.regenerate();
                     dirty = true;
                 }
             }
-            if (!sf.path.empty())
-            {
-                ImGui::Text(sf.path.c_str());
-            }
-            if (sf.width > 0 && sf.height > 0)
-            {
-                ImGui::Text("%i x %i", sf.width, sf.height);
-            }
-            ImGui::Columns(1);
+            ImGui::SameLine();
         }
+        if (ImGui::Button("Reimport"))
+        {
+            tex.reloadSourceFiles();
+            dirty = true;
+        }
+
         ImGui::Gap();
+
+        if (tex.getSourceFileCount() == 1 && tex.getPreviewHandle())
+        {
+            ImGui::BeginChild("Texture Preview",
+                    { ImGui::GetWindowWidth(), (f32)glm::min(tex.height, 300u) }, false,
+                    ImGuiWindowFlags_HorizontalScrollbar);
+            // TODO: Add controls to pan the image view and zoom in and out
+            ImGui::Image((void*)(uintptr_t)tex.getPreviewHandle(), ImVec2(tex.width, tex.height));
+            ImGui::EndChild();
+
+            ImGui::Text(tex.getSourceFile(0).path.c_str());
+            ImGui::Text("%i x %i", tex.width, tex.height);
+        }
+        else if (tex.getSourceFileCount() > 1)
+        {
+            for (u32 i=0; i<tex.getSourceFileCount(); ++i)
+            {
+                ImGui::Columns(2, NULL, false);
+                ImGui::SetColumnWidth(0, 80);
+                auto const& sf = tex.getSourceFile(i);
+                f32 ratio = 72.f / sf.width;
+                ImGui::Image((void*)(uintptr_t)sf.previewHandle, ImVec2(sf.width * ratio, sf.height * ratio));
+                ImGui::NextColumn();
+                if (ImGui::Button("Load File"))
+                {
+                    std::string filename = chooseFile(".", true, "Image Files", { "*.png", "*.jpg", "*.bmp" });
+                    if (!filename.empty())
+                    {
+                        tex.setSourceFile(i, std::filesystem::relative(filename));
+                        tex.regenerate();
+                        dirty = true;
+                    }
+                }
+                if (!sf.path.empty())
+                {
+                    ImGui::Text(sf.path.c_str());
+                }
+                if (sf.width > 0 && sf.height > 0)
+                {
+                    ImGui::Text("%i x %i", sf.width, sf.height);
+                }
+                ImGui::Columns(1);
+            }
+            ImGui::Gap();
+        }
+
+        ImGui::Text(selectedTexture->name.c_str());
+
+        const char* textureTypeNames = "Color\0Grayscale\0Normal Map\0Cube Map\0";
+        i32 textureType = tex.getTextureType();
+        changed |= ImGui::Combo("Type", &textureType, textureTypeNames);
+        if (textureType != tex.getTextureType())
+        {
+            tex.setTextureType(textureType);
+        }
+
+        changed |= ImGui::Checkbox("Repeat", &tex.repeat);
+        changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
+        changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);
+
+        changed |= ImGui::InputInt("Anisotropy", &tex.anisotropy);
+        tex.anisotropy = clamp(tex.anisotropy, 0, 16);
+
+        const char* filterNames = "Nearest\0Bilinear\0Trilinear\0";
+        changed |= ImGui::Combo("Filtering", &tex.filter, filterNames);
+
+        ImGui::End();
     }
-
-    if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        tex.name = editName;
-        g_res.textureNameMap[tex.name] = selectedTexture;
-        dirty = true;
-    }
-    if (!ImGui::IsItemFocused())
-    {
-        editName = tex.name;
-    }
-
-    const char* textureTypeNames = "Color\0Grayscale\0Normal Map\0Cube Map\0";
-    bool changed = false;
-    i32 textureType = tex.getTextureType();
-    changed |= ImGui::Combo("Type", &textureType, textureTypeNames);
-    if (textureType != tex.getTextureType())
-    {
-        tex.setTextureType(textureType);
-    }
-
-    changed |= ImGui::Checkbox("Repeat", &tex.repeat);
-    changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
-    changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);
-
-    changed |= ImGui::InputInt("Anisotropy", &tex.anisotropy);
-    tex.anisotropy = clamp(tex.anisotropy, 0, 16);
-
-    const char* filterNames = "Nearest\0Bilinear\0Trilinear\0";
-    changed |= ImGui::Combo("Filtering", &tex.filter, filterNames);
-
-    ImGui::End();
 
     if (changed)
     {
@@ -614,7 +603,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
 
     if (dirty)
     {
-        saveResource(tex);
+        markDirty(tex.guid);
     }
 }
 
@@ -645,94 +634,92 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
 
     renderer->addRenderWorld(&rw);
 
-    ImGui::Begin("Material Properties", &isMaterialWindowOpen);
-
-    // TODO: Add keyboard shortcut
-    if (ImGui::Button("Save"))
+    if (ImGui::Begin("Material Properties", &isMaterialWindowOpen))
     {
-        saveResource(mat);
-    }
-    //ImGui::SameLine();
-    ImGui::Gap();
-
-    ImGui::Columns(2, nullptr, false);
-    ImGui::SetColumnWidth(0, 208);
-    ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
-    ImGui::NextColumn();
-
-    if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        mat.name = editName;
-        g_res.materialNameMap[mat.name] = selectedMaterial;
-    }
-    if (!ImGui::IsItemFocused())
-    {
-        editName = mat.name;
-    }
-
-    const char* materialTypeNames = "Lit\0Unlit\0";
-    ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
-
-    const char* previewMeshNames = "Sphere\0Box\0Plane\0";
-    ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
-
-    ImGui::Columns(1);
-    ImGui::Gap();
-
-    ImGui::Image((void*)(uintptr_t)g_res.getTexture(mat.colorTexture)->getPreviewHandle(), { 48, 48 });
-    ImGui::SameLine();
-    ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
-    if (ImGui::BeginCombo("Color Texture",
-                mat.colorTexture == 0 ? "None" : g_res.getTexture(mat.colorTexture)->name.c_str()))
-    {
-        for (auto& tex : g_res.textures)
+        ImGui::PushItemWidth(200);
+        if (ImGui::InputText("##Name", &mat.name))
         {
-            if (tex.second->getTextureType() == TextureType::COLOR)
+            markDirty(mat.guid);
+        }
+        ImGui::PopItemWidth();
+        ImGui::Gap();
+
+        ImGui::Columns(2, nullptr, false);
+        ImGui::SetColumnWidth(0, 208);
+        ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
+        ImGui::NextColumn();
+
+        ImGui::Text(selectedMaterial->name.c_str());
+
+        const char* materialTypeNames = "Lit\0Unlit\0";
+        ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
+
+        const char* previewMeshNames = "Sphere\0Box\0Plane\0";
+        ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
+
+        ImGui::Columns(1);
+        ImGui::Gap();
+
+        ImGui::Image((void*)(uintptr_t)g_res.getTexture(mat.colorTexture)->getPreviewHandle(), { 48, 48 });
+        ImGui::SameLine();
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
+        if (ImGui::BeginCombo("Color Texture",
+                    mat.colorTexture == 0 ? "None" : g_res.getTexture(mat.colorTexture)->name.c_str()))
+        {
+            for (auto& res : g_res.resources)
             {
-                ImGui::Image((void*)(uintptr_t)tex.second->getPreviewHandle(), { 16, 16 });
-                ImGui::SameLine();
-                if (ImGui::Selectable(tex.second->name.c_str()))
+                if (res.second->type != ResourceType::TEXTURE)
                 {
-                    mat.colorTexture = tex.first;
+                    continue;
+                }
+                Texture* tex = (Texture*)res.second.get();
+                if (tex->getTextureType() == TextureType::COLOR)
+                {
+                    ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
+                    ImGui::SameLine();
+                    if (ImGui::Selectable(tex->name.c_str()))
+                    {
+                        mat.colorTexture = tex->guid;
+                    }
                 }
             }
+            ImGui::EndCombo();
         }
-        ImGui::EndCombo();
+
+        ImGui::Columns(2, nullptr, false);
+        ImGui::Checkbox("Culling", &mat.isCullingEnabled);
+        ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
+        ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
+        ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
+        ImGui::NextColumn();
+        ImGui::Checkbox("Visible", &mat.isVisible);
+        ImGui::Checkbox("Wireframe", &mat.displayWireframe);
+        ImGui::Checkbox("Transparent", &mat.isTransparent);
+        ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
+        ImGui::Columns(1);
+
+        ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
+        ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
+        ImGui::InputFloat("Depth Offset", &mat.depthOffset);
+
+        ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
+        ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
+        ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
+        ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
+        ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
+        ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
+
+        ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
+        ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
+        ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
+
+        ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
+        ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
+        ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
+        ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
+
+        ImGui::End();
     }
-
-    ImGui::Columns(2, nullptr, false);
-    ImGui::Checkbox("Culling", &mat.isCullingEnabled);
-    ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
-    ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
-    ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
-    ImGui::NextColumn();
-    ImGui::Checkbox("Visible", &mat.isVisible);
-    ImGui::Checkbox("Wireframe", &mat.displayWireframe);
-    ImGui::Checkbox("Transparent", &mat.isTransparent);
-    ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
-    ImGui::Columns(1);
-
-    ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
-    ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
-    ImGui::InputFloat("Depth Offset", &mat.depthOffset);
-
-    ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
-    ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
-    ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
-    ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
-    ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
-    ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
-
-    ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
-    ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
-    ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
-
-    ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
-    ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
-    ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
-    ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
-
-    ImGui::End();
 }
 
 void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
@@ -746,10 +733,12 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
 
     if (ImGui::Begin("Sound Properties", &isSoundWindowOpen))
     {
-        if (ImGui::Button("Save"))
+        ImGui::PushItemWidth(150);
+        if (ImGui::InputText("##Name", &sound.name))
         {
-            saveResource(sound);
+            markDirty(sound.guid);
         }
+        ImGui::PopItemWidth();
         ImGui::SameLine();
         if (ImGui::Button("Load Sound"))
         {
@@ -770,16 +759,6 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
 
         ImGui::Text(sound.sourceFilePath.c_str());
         ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
-
-        if (ImGui::InputText("Name", &editName, ImGuiInputTextFlags_EnterReturnsTrue))
-        {
-            sound.name = editName;
-            g_res.soundNameMap[sound.name] = selectedSound;
-        }
-        if (!ImGui::IsItemFocused())
-        {
-            editName = sound.name;
-        }
 
         ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
         ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);

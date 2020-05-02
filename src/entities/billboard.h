@@ -116,16 +116,21 @@ public:
     void showDetails(Scene* scene) override
     {
         u32 buttonCount = 0;
-        for (auto& tex : g_res.textures)
+        for (auto& res : g_res.resources)
         {
-            if (tex.second->name.find("billboard") != std::string::npos)
+            if (res.second->type != ResourceType::TEXTURE)
+            {
+                continue;
+            }
+            Texture* tex = (Texture*)res.second.get();
+            if (tex->name.find("billboard") != std::string::npos)
             {
                 f32 w = glm::min(ImGui::GetColumnWidth(), 200.f);
                 f32 h = w * 0.5f;
-                ImGui::PushID(tex.second->name.c_str());
-                if (ImGui::ImageButton((void*)(uintptr_t)tex.second->getPreviewHandle(), { w, h }))
+                ImGui::PushID(tex->name.c_str());
+                if (ImGui::ImageButton((void*)(uintptr_t)tex->getPreviewHandle(), { w, h }))
                 {
-                    billboardTextureGuid = tex.first;
+                    billboardTextureGuid = tex->guid;
                 }
                 ImGui::PopID();
                 ++buttonCount;

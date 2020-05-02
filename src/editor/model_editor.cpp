@@ -73,108 +73,109 @@ void ModelEditor::showSceneSelection()
 
 void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    ImGui::Begin("Model Editor");
-    // TODO: Add keyboard shortcut
-    if (ImGui::Button("Save"))
+    if (ImGui::Begin("Model Editor"))
     {
-        // TODO: mark resource_manager modelsStale = true
-        saveResource(*model);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Load File"))
-    {
-        std::string path = chooseFile("", true, "Model Files", { "*.blend" });
-        if (!path.empty())
+        ImGui::PushItemWidth(150);
+        if (ImGui::InputText("##Name", &model->name))
         {
-            model->sourceFilePath = std::filesystem::relative(path);
-            model->sourceSceneName = "";
-            loadBlenderFile(model->sourceFilePath);
+            g_game.resourceManager->markDirty(model->guid);
         }
-    }
-    showSceneSelection();
-    ImGui::SameLine();
-    if (ImGui::Button("Reimport"))
-    {
+        ImGui::PopItemWidth();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Load File"))
+        {
+            std::string path = chooseFile("", true, "Model Files", { "*.blend" });
+            if (!path.empty())
+            {
+                model->sourceFilePath = std::filesystem::relative(path);
+                model->sourceSceneName = "";
+                loadBlenderFile(model->sourceFilePath);
+            }
+        }
+        showSceneSelection();
+        ImGui::SameLine();
+        if (ImGui::Button("Reimport"))
+        {
+            if (!model->sourceFilePath.empty())
+            {
+                loadBlenderFile(model->sourceFilePath);
+            }
+        }
+
+        ImGui::Gap();
         if (!model->sourceFilePath.empty())
         {
-            loadBlenderFile(model->sourceFilePath);
+            ImGui::Text(model->sourceFilePath.c_str());
+            ImGui::Text(tstr("Scene: ", model->sourceSceneName.c_str()));
         }
-    }
-
-    ImGui::Gap();
-    if (!model->sourceFilePath.empty())
-    {
-        ImGui::Text(model->sourceFilePath.c_str());
-        ImGui::Text(tstr("Scene: ", model->sourceSceneName.c_str()));
-    }
-    std::string guid = str("0x", std::hex, model->guid, std::dec);
-    ImGui::TextDisabled("GUID: %s", guid.c_str());
-    ImGui::SameLine();
-    if (ImGui::SmallButton("Copy"))
-    {
-        ImGui::LogToClipboard();
-        ImGui::LogText(guid.c_str());
-        ImGui::LogFinish();
-    }
-    ImGui::InputText("Name", &model->name);
-    ImGui::Checkbox("Show Grid", &showGrid);
-    ImGui::Checkbox("Show Floor", &showFloor);
-    ImGui::Checkbox("Show Bounds", &showBoundingBox);
-    ImGui::Checkbox("Show Colliders", &showColliders);
-
-    ImGui::Gap();
-    ImGui::Combo("Usage", (i32*)&model->modelUsage,
-            "Internal\0Static Prop\0Dynamic Prop\0Spline\0Vehicle\0");
-    if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
-    {
-        ImGui::InputFloat("Density", &model->density);
-    }
-    if (model->modelUsage == ModelUsage::STATIC_PROP || model->modelUsage == ModelUsage::DYNAMIC_PROP)
-    {
-        if (ImGui::BeginCombo("Category", propCategoryNames[(u32)model->category]))
+        std::string guid = str("0x", std::hex, model->guid, std::dec);
+        ImGui::TextDisabled("GUID: %s", guid.c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Copy"))
         {
-            for (u32 i=0; i<ARRAY_SIZE(propCategoryNames); ++i)
-            {
-                if (ImGui::Selectable(propCategoryNames[i]))
-                {
-                    model->category = (PropCategory)i;
-                }
-            }
-            ImGui::EndCombo();
+            ImGui::LogToClipboard();
+            ImGui::LogText(guid.c_str());
+            ImGui::LogFinish();
         }
-    }
+        ImGui::Checkbox("Show Grid", &showGrid);
+        ImGui::Checkbox("Show Floor", &showFloor);
+        ImGui::Checkbox("Show Bounds", &showBoundingBox);
+        ImGui::Checkbox("Show Colliders", &showColliders);
 
-    ImGui::Gap();
-
-    if (ImGui::BeginChild("Objects", {0,0}, true))
-    {
-        for (u32 i=0; i<model->objects.size(); ++i)
+        ImGui::Gap();
+        ImGui::Combo("Usage", (i32*)&model->modelUsage,
+                "Internal\0Static Prop\0Dynamic Prop\0Spline\0Vehicle\0");
+        if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
         {
-            auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
-                    [&](u32 index){ return index == i; });
-            if (ImGui::Selectable(model->objects[i].name.c_str(), it != selectedObjects.end()))
+            ImGui::InputFloat("Density", &model->density);
+        }
+        if (model->modelUsage == ModelUsage::STATIC_PROP || model->modelUsage == ModelUsage::DYNAMIC_PROP)
+        {
+            if (ImGui::BeginCombo("Category", propCategoryNames[(u32)model->category]))
             {
-                if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+                for (u32 i=0; i<ARRAY_SIZE(propCategoryNames); ++i)
                 {
-                    selectedObjects.clear();
-                    selectedObjects.push_back(i);
-                }
-                else
-                {
-                    if (it == selectedObjects.end() && !g_input.isKeyDown(KEY_LSHIFT))
+                    if (ImGui::Selectable(propCategoryNames[i]))
                     {
+                        model->category = (PropCategory)i;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
+
+        ImGui::Gap();
+
+        if (ImGui::BeginChild("Objects", {0,0}, true))
+        {
+            for (u32 i=0; i<model->objects.size(); ++i)
+            {
+                auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
+                        [&](u32 index){ return index == i; });
+                if (ImGui::Selectable(model->objects[i].name.c_str(), it != selectedObjects.end()))
+                {
+                    if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+                    {
+                        selectedObjects.clear();
                         selectedObjects.push_back(i);
                     }
-                    if (it != selectedObjects.end() && !g_input.isKeyDown(KEY_LCTRL))
+                    else
                     {
-                        selectedObjects.erase(it);
+                        if (it == selectedObjects.end() && !g_input.isKeyDown(KEY_LSHIFT))
+                        {
+                            selectedObjects.push_back(i);
+                        }
+                        if (it != selectedObjects.end() && !g_input.isKeyDown(KEY_LCTRL))
+                        {
+                            selectedObjects.erase(it);
+                        }
                     }
                 }
             }
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
     }
-
     ImGui::End();
 
     if (selectedObjects.size() > 0)
@@ -212,15 +213,20 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             */
 
             if (ImGui::BeginCombo("Material",
-                    obj.materialGuid? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
+                    obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
             {
-                for (auto& mat : g_res.materials)
+                for (auto& res : g_res.resources)
                 {
-                    if (ImGui::Selectable(mat.second->name.c_str()))
+                    if (res.second->type != ResourceType::MATERIAL)
+                    {
+                        continue;
+                    }
+                    Material* mat = (Material*)res.second.get();
+                    if (ImGui::Selectable(mat->name.c_str()))
                     {
                         for (u32 index : selectedObjects)
                         {
-                            model->objects[index].materialGuid = mat.first;
+                            model->objects[index].materialGuid = mat->guid;
                         }
                     }
                 }

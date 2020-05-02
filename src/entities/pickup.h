@@ -55,12 +55,12 @@ public:
             if (pickupType == PickupType::MONEY)
             {
                 v->addBonus("$$$", PICKUP_BONUS_AMOUNT);
-                g_audio.playSound3D(g_res.getSound("money"), SoundType::GAME_SFX, position);
+                g_audio.playSound3D(g_res.getSound("pickup_money"), SoundType::GAME_SFX, position);
             }
             else
             {
                 v->fixup();
-                g_audio.playSound3D(g_res.getSound("fixup"), SoundType::GAME_SFX, position);
+                g_audio.playSound3D(g_res.getSound("pickup_fixup"), SoundType::GAME_SFX, position);
             }
             this->destroy();
         }
