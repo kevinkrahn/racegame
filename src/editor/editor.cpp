@@ -63,12 +63,11 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         }
     }
 
+    g_game.resourceManager->markDirty(scene->guid);
+
     if (ImGui::Begin("Track Editor"))
     {
-        if (ImGui::InputText("##Name", &scene->name))
-        {
-            g_game.resourceManager->markDirty(scene->guid);
-        }
+        ImGui::InputText("##Name", &scene->name);
 
         ImGui::SameLine();
         if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))

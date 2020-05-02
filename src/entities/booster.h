@@ -34,4 +34,5 @@ public:
                 [](Entity* e) { ((Booster*)e)->backwards = true; } },
         };
     }
+    const char* getName() const override { return "Booster"; }
 };

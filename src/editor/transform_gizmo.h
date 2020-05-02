@@ -223,7 +223,7 @@ public:
                 }
             }
 
-            Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.ScaleArrow");
+            Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.TranslateArrow");
             Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
             if (drawCenter)
             {

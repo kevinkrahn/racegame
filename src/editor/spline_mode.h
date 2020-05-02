@@ -596,10 +596,20 @@ public:
                     ImGui::SameLine();
                 }
                 ImGui::PushID(i);
+                bool isButtonSelected = selectedSplineModel == i;
+                if (isButtonSelected)
+                {
+                    const u32 selectedColor = 0x992299EE;
+                    ImGui::PushStyleColor(ImGuiCol_Button, selectedColor);
+                }
                 if (ImGui::ImageButton((void*)(uintptr_t)splineModels[i].icon.handle,
                             ImVec2(iconSize, iconSize), {1,1}, {0,0}))
                 {
                     selectedSplineModel = i;
+                }
+                if (isButtonSelected)
+                {
+                    ImGui::PopStyleColor();
                 }
                 if (ImGui::IsItemHovered())
                 {

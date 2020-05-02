@@ -194,4 +194,6 @@ public:
     void addEntity(Entity* entity) { newEntities.push_back(std::unique_ptr<Entity>(entity)); }
     std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
     std::vector<std::unique_ptr<Vehicle>>& getVehicles() { return vehicles; }
+
+    void writeTrackData();
 };

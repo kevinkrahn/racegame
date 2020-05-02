@@ -24,4 +24,5 @@ public:
     {
         return {{ PropCategory::OBSTACLES, "Oil" }};
     }
+    const char* getName() const override { return "Oil"; }
 };

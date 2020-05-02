@@ -772,8 +772,20 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
     trackPreview2D.endUpdate(hudTrackPos);
 }
 
+void Scene::writeTrackData()
+{
+    DataFile::Value data = DataFile::makeDict();
+    Serializer s(data, false);
+    serialize(s);
+    g_res.getTrackData(guid)->data = std::move(data);
+}
+
 void Scene::onEnd()
 {
+    if (g_game.isEditing)
+    {
+        writeTrackData();
+    }
 }
 
 void Scene::attackCredit(u32 instigator, u32 victim)

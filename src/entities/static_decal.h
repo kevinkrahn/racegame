@@ -3,10 +3,11 @@
 #include "../entity.h"
 #include "../decal.h"
 #include "../collision_flags.h"
+#include "../game.h"
 
 class StaticDecal : public PlaceableEntity
 {
-    struct Texture* tex;
+    Texture* tex;
     Decal decal;
     u32 decalFilter = DECAL_TRACK;
     i64 textureGuid = 0;
@@ -63,4 +64,5 @@ public:
         decal.setTexture(tex);
     }
     std::vector<PropPrefabData> generatePrefabProps() override;
+    const char* getName() const override { return tstr("Decal ", tex->name.c_str()); }
 };

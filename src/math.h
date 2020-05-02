@@ -18,6 +18,7 @@
 using namespace physx;
 
 #define PI PxPi
+#define PI2 (PxPi * 2.f)
 
 inline glm::vec3 xAxisOf(glm::mat4 const& m)
 {

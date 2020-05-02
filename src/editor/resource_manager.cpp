@@ -20,6 +20,10 @@ static void sortResources(ResourceFolder& folder)
 
 void ResourceManager::saveResources()
 {
+    if (g_game.currentScene)
+    {
+        g_game.currentScene->writeTrackData();
+    }
     for (auto& r : resourcesModified)
     {
         auto res = g_res.resources.find(r.first);
@@ -319,7 +323,6 @@ void ResourceManager::openResource(Resource* resource)
         case ResourceType::TRACK:
             activeEditor = ResourceType::TRACK;
             g_game.changeScene(resource->guid);
-            markDirty(resource->guid);
             break;
         case ResourceType::FONT:
             break;

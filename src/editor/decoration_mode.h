@@ -9,8 +9,6 @@
 #include "../mesh_renderables.h"
 #include "transform_gizmo.h"
 
-// TODO: Add scene graph window
-
 class DecorationMode : public EditorMode, public TransformGizmoHandler
 {
     struct PropPrefab
@@ -26,6 +24,14 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
     Scene* scene;
 
     std::vector<PlaceableEntity*> selectedEntities;
+    std::vector<DataFile::Value> serializedTransientEntities;
+    std::vector<u32> selectedPropTypes;
+
+    bool randomizeRotationX = false;
+    bool randomizeRotationY = false;
+    bool randomizeRotationZ = true;
+    f32 randomizeScaleMin = 0.85f;
+    f32 randomizeScaleMax = 1.15f;
 
     void showEntityIcons()
     {
@@ -63,10 +69,33 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                         ImGui::SameLine();
                     }
                     ImGui::PushID(itemIndex);
+                    auto selectIt = std::find(selectedPropTypes.begin(), selectedPropTypes.end(), itemIndex);
+                    bool isButtonSelected = selectIt != selectedPropTypes.end();
+                    if (isButtonSelected)
+                    {
+                        const u32 selectedColor = 0x992299EE;
+                        ImGui::PushStyleColor(ImGuiCol_Button, selectedColor);
+                    }
                     if (ImGui::ImageButton((void*)(uintptr_t)propPrefabs[itemIndex].icon.handle,
                                 ImVec2(iconSize, iconSize), {1,1}, {0,0}))
                     {
-                        selectedEntityTypeIndex = (i32)itemIndex;
+                        if (!isButtonSelected && g_input.isKeyDown(KEY_LCTRL))
+                        {
+                            selectedPropTypes.push_back(itemIndex);
+                        }
+                        else if (isButtonSelected && g_input.isKeyDown(KEY_LSHIFT))
+                        {
+                            selectedPropTypes.erase(selectIt);
+                        }
+                        else if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+                        {
+                            selectedPropTypes.clear();
+                            selectedPropTypes.push_back(itemIndex);
+                        }
+                    }
+                    if (isButtonSelected)
+                    {
+                        ImGui::PopStyleColor();
                     }
                     if (ImGui::IsItemHovered())
                     {
@@ -105,8 +134,43 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
         }
     }
 
-    std::vector<DataFile::Value> serializedTransientEntities;
-    i32 selectedEntityTypeIndex = 0;
+    void showEntityListWindow()
+    {
+        if (ImGui::Begin("Entities"))
+        {
+            for (auto& entity : scene->getEntities())
+            {
+                if (!(entity->entityFlags & Entity::PROP))
+                {
+                    continue;
+                }
+                auto it = std::find_if(selectedEntities.begin(), selectedEntities.end(),
+                        [&](PlaceableEntity* e){ return e == entity.get(); });
+                ImGui::PushID((void*)entity.get());
+                if (ImGui::Selectable(((PlaceableEntity*)entity.get())->getName(), it != selectedEntities.end()))
+                {
+                    if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+                    {
+                        selectedEntities.clear();
+                        selectedEntities.push_back((PlaceableEntity*)entity.get());
+                    }
+                    else
+                    {
+                        if (it == selectedEntities.end() && !g_input.isKeyDown(KEY_LSHIFT))
+                        {
+                            selectedEntities.push_back((PlaceableEntity*)entity.get());
+                        }
+                        if (it != selectedEntities.end() && !g_input.isKeyDown(KEY_LCTRL))
+                        {
+                            selectedEntities.erase(it);
+                        }
+                    }
+                }
+                ImGui::PopID();
+            }
+        }
+        ImGui::End();
+    }
 
 public:
     DecorationMode() : EditorMode("Props")
@@ -184,21 +248,32 @@ public:
             ImGui::End();
         }
 
+        showEntityListWindow();
+
         if (!isMouseClickHandled)
         {
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 isMouseClickHandled = true;
-                if (g_input.isKeyDown(KEY_LCTRL) && g_input.isKeyDown(KEY_LSHIFT))
+                if (g_input.isKeyDown(KEY_LCTRL) && g_input.isKeyDown(KEY_LSHIFT) && !selectedPropTypes.empty())
                 {
                     PxRaycastBuffer hit;
                     if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
                     {
+                        u32 propTypeIndex = selectedPropTypes[
+                            irandom(scene->randomSeries, 0, (u32)selectedPropTypes.size())];
                         glm::vec3 hitPoint = convert(hit.block.position);
                         PlaceableEntity* newEntity =
-                            (PlaceableEntity*)g_entities[propPrefabs[selectedEntityTypeIndex].entityIndex].create();
-                        propPrefabs[selectedEntityTypeIndex].prefabData.doThing(newEntity);
+                            (PlaceableEntity*)g_entities[propPrefabs[propTypeIndex].entityIndex].create();
+                        propPrefabs[propTypeIndex].prefabData.doThing(newEntity);
                         newEntity->position = hitPoint;
+                        newEntity->scale *= random(scene->randomSeries, randomizeScaleMin, randomizeScaleMax);;
+                        glm::vec3 eulerAngles =  {
+                            randomizeRotationX ? random(scene->randomSeries, 0.f, PI2) : 0,
+                            randomizeRotationY ? random(scene->randomSeries, 0.f, PI2) : 0,
+                            randomizeRotationZ ? random(scene->randomSeries, 0.f, PI2) : 0,
+                        };
+                        newEntity->rotation = glm::quat(eulerAngles);
                         newEntity->updateTransform(scene);
                         newEntity->setPersistent(true);
                         scene->addEntity(newEntity);
@@ -302,6 +377,13 @@ public:
             }
             selectedEntities.clear();
         }
+
+        ImGui::Gap();
+
+        ImGui::Checkbox("Randomize Rotation X", &randomizeRotationX);
+        ImGui::Checkbox("Randomize Rotation Y", &randomizeRotationY);
+        ImGui::Checkbox("Randomize Rotation Z", &randomizeRotationZ);
+        ImGui::DragFloatRange2("Scale Range", &randomizeScaleMin, &randomizeScaleMax, 0.01f, 0.1f, 10.f);
 
         ImGui::Gap();
 

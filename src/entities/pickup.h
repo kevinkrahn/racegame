@@ -20,6 +20,7 @@ namespace PickupType
 class Pickup : public PlaceableEntity
 {
     u32 pickupType = PickupType::MONEY;
+    static constexpr const char* pickupName[] = { "Money", "Fixup" };
 
 public:
     void onCreate(Scene* scene) override
@@ -113,4 +114,6 @@ public:
                 [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::FIXUP; } },
         };
     }
+
+    const char* getName() const override { return pickupName[pickupType]; }
 };

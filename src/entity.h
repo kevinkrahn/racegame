@@ -42,6 +42,7 @@ public:
         PERSISTENT = 1 << 1,
         DYNAMIC = 1 << 2,
         TRANSIENT = 1 << 3,
+        PROP = 1 << 4,
     };
     u32 entityFlags = NONE;
 
@@ -162,6 +163,10 @@ void registerEntity()
         [entityID] {
             Entity* e = new T();
             e->entityID = entityID;
+            if (std::is_base_of<PlaceableEntity, T>::value)
+            {
+                e->entityFlags |= Entity::PROP;
+            }
             return e;
         },
         std::is_base_of<PlaceableEntity, T>::value,

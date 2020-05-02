@@ -16,7 +16,7 @@ public:
         }
         else
         {
-            // TODO: save
+            s.dict = data.dict().val();
         }
     }
 };

@@ -29,4 +29,5 @@ public:
     {
         return {{ PropCategory::RACE, "Start" }};
     }
+    const char* getName() const override { return "Start"; }
 };
