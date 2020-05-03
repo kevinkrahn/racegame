@@ -33,6 +33,9 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
     f32 randomizeScaleMin = 0.85f;
     f32 randomizeScaleMax = 1.15f;
 
+    bool selectionStateCtrl = false;
+    bool selectionStateShift = false;
+
     void showEntityIcons()
     {
         u32 count = (u32)propPrefabs.size();
@@ -250,9 +253,40 @@ public:
 
         showEntityListWindow();
 
+        if (const u32* pixelID = rw->getPickPixelResult())
+        {
+            if (!selectionStateCtrl && !selectionStateShift)
+            {
+                selectedEntities.clear();
+            }
+
+            for (auto& e : scene->getEntities())
+            {
+                if (e->entityCounterID == *pixelID)
+                {
+                    auto it = std::find(selectedEntities.begin(), selectedEntities.end(), e.get());
+                    if (selectionStateShift)
+                    {
+                        if (it != selectedEntities.end())
+                        {
+                            selectedEntities.erase(it);
+                        }
+                    }
+                    else
+                    {
+                        if (it == selectedEntities.end())
+                        {
+                            selectedEntities.push_back((PlaceableEntity*)e.get());
+                        }
+                    }
+                }
+            }
+
+        }
+
         if (!isMouseClickHandled)
         {
-            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            if (g_input.isMouseButtonDown(MOUSE_LEFT))
             {
                 isMouseClickHandled = true;
                 if (g_input.isKeyDown(KEY_LCTRL) && g_input.isKeyDown(KEY_LSHIFT) && !selectedPropTypes.empty())
@@ -281,38 +315,10 @@ public:
                 }
                 else
                 {
-                    if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
-                    {
-                        selectedEntities.clear();
-                    }
-                    PxRaycastBuffer hit;
-                    if (scene->raycastStatic(cam.position, rayDir, 10000.f,
-                                &hit, COLLISION_FLAG_SELECTABLE))
-                    {
-                        if (hit.block.actor)
-                        {
-                            ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
-                            if (userData->entityType == ActorUserData::SELECTABLE_ENTITY)
-                            {
-                                auto it = std::find(selectedEntities.begin(),
-                                    selectedEntities.end(), userData->placeableEntity);
-                                if (g_input.isKeyDown(KEY_LSHIFT))
-                                {
-                                    if (it != selectedEntities.end())
-                                    {
-                                        selectedEntities.erase(it);
-                                    }
-                                }
-                                else
-                                {
-                                    if (it == selectedEntities.end())
-                                    {
-                                        selectedEntities.push_back((PlaceableEntity*)userData->entity);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    rw->pickPixel(g_input.getMousePosition()
+                            / glm::vec2(g_game.windowWidth, g_game.windowHeight));
+                    selectionStateCtrl = g_input.isKeyDown(KEY_LCTRL);
+                    selectionStateShift = g_input.isKeyDown(KEY_LSHIFT);
                 }
             }
         }

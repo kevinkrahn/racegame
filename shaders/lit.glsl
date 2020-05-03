@@ -35,7 +35,7 @@ void main()
 
 #if defined OUT_ID
 layout(location = 0) out uint outID;
-layout(location = 8) uniform uint highlightID;
+layout(location = 9) uniform uint highlightID;
 #else
 layout(location = 0) out vec4 outColor;
 #endif

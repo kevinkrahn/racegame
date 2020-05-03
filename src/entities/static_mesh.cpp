@@ -129,7 +129,7 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
                         t * o.modelObject->getTransform(),
-                        g_res.getMaterial(o.modelObject->materialGuid)));
+                        g_res.getMaterial(o.modelObject->materialGuid), entityCounterID));
 
         }
     }

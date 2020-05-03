@@ -74,6 +74,10 @@ struct Framebuffers
     GLuint highlightIDTexture;
     GLuint highlightDepthTexture;
 
+    GLuint pickFramebuffer;
+    GLuint pickIDTexture;
+    GLuint pickDepthTexture;
+
     u32 renderWidth;
     u32 renderHeight;
 };
@@ -135,16 +139,25 @@ class RenderWorld
     std::vector<QueuedRenderable> renderables;
     std::vector<HighlightMesh> highlightMeshes;
 
-    Buffer tempRenderBuffer = Buffer(megabytes(400), 32);
-
     Texture tex[MAX_VIEWPORTS];
+    u32 shadowMapResolution = 0;
+    bool bloomEnabled = false;
+    Buffer tempRenderBuffer = Buffer(megabytes(400), 32);
+    struct PickPixelResult
+    {
+        glm::vec2 pickPos;
+        GLuint pbo = 0;
+        GLsync fence = 0;
+        u32 pickID = 0;
+        bool sent = false;
+        bool ready = false;
+    };
+    SmallVec<PickPixelResult> pickPixelResults;
+    bool isPickPixelPending = false;
 
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex);
     void renderViewport(Renderer* renderer, u32 cameraIndex, f32 deltaTime);
     void render(Renderer* renderer, f32 deltaTime);
-
-    u32 shadowMapResolution = 0;
-    bool bloomEnabled = false;
 
 public:
     RenderWorld() {}
@@ -210,6 +223,27 @@ public:
     void updateWorldTime(f64 time);
     void createFramebuffers();
     void clear();
+
+    void pickPixel(glm::vec2 pos)
+    {
+        PickPixelResult result;
+        result.pickPos = pos;
+        glCreateBuffers(1, &result.pbo);
+        glNamedBufferStorage(result.pbo, sizeof(u32), nullptr, 0);
+        pickPixelResults.push_back(result);
+        isPickPixelPending = true;
+    }
+    u32* getPickPixelResult()
+    {
+        for (auto& result : pickPixelResults)
+        {
+            if (result.ready)
+            {
+                return &result.pickID;
+            }
+        }
+        return nullptr;
+    }
 };
 
 class Renderer

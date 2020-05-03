@@ -15,6 +15,8 @@ public:
     virtual void onDepthPrepass(class Renderer* renderer) {}
     virtual void onLitPassPriorityTransition(class Renderer* renderer) {}
     virtual void onLitPass(class Renderer* renderer) {}
+    virtual void onPickPassPriorityTransition(class Renderer* renderer) {}
+    virtual void onPickPass(class Renderer* renderer) {}
 };
 
 class Renderable2D {

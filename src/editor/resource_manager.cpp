@@ -322,6 +322,7 @@ void ResourceManager::openResource(Resource* resource)
             break;
         case ResourceType::TRACK:
             activeEditor = ResourceType::TRACK;
+            trackEditor.reset();
             g_game.changeScene(resource->guid);
             break;
         case ResourceType::FONT:

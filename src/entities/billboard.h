@@ -68,7 +68,8 @@ public:
             if (obj.isVisible)
             {
                 rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                            transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
+                            transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid),
+                            entityCounterID));
             }
         }
     }

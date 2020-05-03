@@ -45,6 +45,7 @@ public:
         PROP = 1 << 4,
     };
     u32 entityFlags = NONE;
+    u32 entityCounterID = 0;
 
     void destroy() { entityFlags |= DESTROYED; }
     bool isDestroyed() { return entityFlags & DESTROYED; }
@@ -154,6 +155,7 @@ struct RegisteredEntity
 
 std::vector<RegisteredEntity> g_entities;
 
+u32 entityCounter = 0;
 template<typename T>
 void registerEntity()
 {
@@ -167,6 +169,7 @@ void registerEntity()
             {
                 e->entityFlags |= Entity::PROP;
             }
+            e->entityCounterID = ++entityCounter;
             return e;
         },
         std::is_base_of<PlaceableEntity, T>::value,

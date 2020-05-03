@@ -12,9 +12,10 @@ public:
     glm::mat4 transform;
     Mesh* mesh;
     GLuint texture;
+    u32 pickID;
 
-    LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material)
-        : material(material), transform(worldTransform), mesh(mesh)
+    LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material, u32 pickID=0)
+        : material(material), transform(worldTransform), mesh(mesh), pickID(pickID)
     {
         if (material->colorTexture)
         {
@@ -151,6 +152,35 @@ public:
         glUniform3fv(6, 1, (GLfloat*)&emission);
         glUniform3f(7, material->reflectionStrength, material->reflectionLod, material->reflectionBias);
         glUniform1f(8, material->windAmount);
+
+        glBindVertexArray(mesh->vao);
+        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+
+    void onPickPassPriorityTransition(Renderer* renderer) override
+    {
+        glUseProgram(renderer->getShaderProgram(
+                    material->alphaCutoff > 0.f ? "lit_discard_id" : "lit_id"));
+    }
+
+    void onPickPass(Renderer* renderer) override
+    {
+        if (pickID == 0)
+        {
+            return;
+        }
+
+        glBindTextureUnit(0, texture);
+
+        glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+        if (material->alphaCutoff > 0.f)
+        {
+            glUniform1f(5, material->alphaCutoff);
+        }
+        glUniform1f(8, material->windAmount);
+        glUniform1ui(9, pickID);
 
         glBindVertexArray(mesh->vao);
         glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);

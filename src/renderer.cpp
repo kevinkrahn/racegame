@@ -240,6 +240,7 @@ void Renderer::initShaders()
     loadShader("blur2", { "VBLUR" }, "vblur2");
     loadShader("lit");
     loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
+    loadShader("lit", { "OUT_ID" }, "lit_id");
     loadShader("lit", { "ALPHA_DISCARD", "OUT_ID" }, "lit_discard_id");
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
@@ -512,6 +513,12 @@ void RenderWorld::createFramebuffers()
             glDeleteRenderbuffers(1, &fb.highlightDepthTexture);
             glDeleteFramebuffers(1, &fb.highlightFramebuffer);
         }
+        if (fb.pickFramebuffer)
+        {
+            glDeleteTextures(1, &fb.pickIDTexture);
+            glDeleteRenderbuffers(1, &fb.pickDepthTexture);
+            glDeleteFramebuffers(1, &fb.pickFramebuffer);
+        }
     }
     fbs.clear();
 
@@ -737,8 +744,7 @@ void RenderWorld::createFramebuffers()
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
 
-        bool highlightEnabled = true;
-        if (highlightEnabled)
+        if (width > 128 && height > 128)
         {
             glGenTextures(1, &fb.highlightIDTexture);
             glBindTexture(GL_TEXTURE_2D, fb.highlightIDTexture);
@@ -759,8 +765,30 @@ void RenderWorld::createFramebuffers()
             glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
                     fb.highlightDepthTexture);
 
-            glObjectLabel(GL_FRAMEBUFFER, fb.highlightIDTexture, -1, "Highlight ID Texture");
-            glObjectLabel(GL_FRAMEBUFFER, fb.highlightFramebuffer, -1, "Highlight ID Framebuffer");
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        }
+
+        if (width > 128 && height > 128)
+        {
+            glGenTextures(1, &fb.pickIDTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.pickIDTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, fb.renderWidth / 2, fb.renderHeight / 2,
+                    0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            glGenRenderbuffers(1, &fb.pickDepthTexture);
+            glBindRenderbuffer(GL_RENDERBUFFER, fb.pickDepthTexture);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+                    fb.renderWidth / 2, fb.renderHeight / 2);
+
+            glGenFramebuffers(1, &fb.pickFramebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.pickFramebuffer);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.pickIDTexture, 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                    fb.pickDepthTexture);
 
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
@@ -1140,27 +1168,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         r.renderable->onLitPass(renderer);
         prevPriority = r.priority;
     }
-
 	glPopDebugGroup();
-
-    // resolve multi-sample color buffer
-    if (g_game.config.graphics.msaaLevel > 0)
-    {
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffer);
-        glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
-                        0, 0, fb.renderWidth, fb.renderHeight,
-                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        glBindTextureUnit(0, fb.msaaResolveColorTexture);
-		glPopDebugGroup();
-        this->tex[index].handle = fb.msaaResolveColorTexture;
-    }
-    else
-    {
-        glBindTextureUnit(0, fb.mainColorTexture);
-        this->tex[index].handle = fb.mainColorTexture;
-    }
 
     // highlight
     if (!highlightMeshes.empty())
@@ -1185,6 +1193,89 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glDrawElements(GL_TRIANGLES, highlightMesh.mesh->numIndices, GL_UNSIGNED_INT, 0);
         }
         glPopDebugGroup();
+    }
+
+    // color picking
+    if (isPickPixelPending)
+    {
+	    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Color Pick Pass");
+        glViewport(0, 0, fb.renderWidth / 2, fb.renderHeight / 2);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.pickFramebuffer);
+	    glDepthFunc(GL_LESS);
+	    glDepthMask(GL_TRUE);
+	    glEnable(GL_DEPTH_TEST);
+	    glDisable(GL_CULL_FACE);
+	    glDisable(GL_BLEND);
+#if 0
+	    u32 clearValue = 0;
+	    glClearBufferuiv(GL_COLOR, fb.pickIDTexture, &clearValue);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
+#else
+	    glClearColor(0, 0, 0, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
+        prevPriority = INT32_MIN;
+        for (auto const& r : renderables)
+        {
+            if (r.priority != prevPriority)
+            {
+                r.renderable->onPickPassPriorityTransition(renderer);
+            }
+            r.renderable->onPickPass(renderer);
+            prevPriority = r.priority;
+        }
+        glPopDebugGroup();
+        isPickPixelPending = false;
+    }
+    for (auto it = pickPixelResults.begin(); it != pickPixelResults.end();)
+    {
+        auto& result = *it;
+        if (!result.sent)
+        {
+            glBindBuffer(GL_PIXEL_PACK_BUFFER, result.pbo);
+            glReadPixels((i32)(result.pickPos.x * fb.renderWidth / 2),
+                         (i32)((1.f - result.pickPos.y) * fb.renderHeight / 2),
+                         1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, 0);
+            result.fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            result.sent = true;
+        }
+        else if (!result.ready)
+        {
+            u32 syncResult = glClientWaitSync(result.fence, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+            if (syncResult == GL_ALREADY_SIGNALED || syncResult == GL_CONDITION_SATISFIED)
+            {
+                // TODO: find out why this still causes a hitch, even though the fence is signaled
+                glGetNamedBufferSubData(result.pbo, 0, sizeof(u32), &result.pickID);
+                result.ready = true;
+                glDeleteSync(result.fence);
+            }
+        }
+        else
+        {
+            pickPixelResults.erase(it);
+            continue;
+        }
+        ++it;
+    }
+
+    // resolve multi-sample color buffer
+    if (g_game.config.graphics.msaaLevel > 0)
+    {
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffer);
+        glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
+                        0, 0, fb.renderWidth, fb.renderHeight,
+                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBindTextureUnit(0, fb.msaaResolveColorTexture);
+		glPopDebugGroup();
+        this->tex[index].handle = fb.msaaResolveColorTexture;
+    }
+    else
+    {
+        glBindTextureUnit(0, fb.mainColorTexture);
+        this->tex[index].handle = fb.mainColorTexture;
     }
 
     // bloom
