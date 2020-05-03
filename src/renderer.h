@@ -70,6 +70,10 @@ struct Framebuffers
     GLuint saoTexture;
     GLuint saoBlurTexture;
 
+    GLuint highlightFramebuffer;
+    GLuint highlightIDTexture;
+    GLuint highlightDepthTexture;
+
     u32 renderWidth;
     u32 renderHeight;
 };
@@ -94,6 +98,13 @@ struct WorldInfo
     glm::mat4 cameraView;
     glm::vec4 cameraPosition;
     glm::mat4 shadowViewProjectionBias;
+};
+
+struct HighlightMesh
+{
+    Mesh* mesh;
+    glm::mat4 worldTransform;
+    u32 id;
 };
 
 class RenderWorld
@@ -122,6 +133,7 @@ class RenderWorld
         Renderable* renderable;
     };
     std::vector<QueuedRenderable> renderables;
+    std::vector<HighlightMesh> highlightMeshes;
 
     Buffer tempRenderBuffer = Buffer(megabytes(400), 32);
 
@@ -159,6 +171,11 @@ public:
         T* ptr = reinterpret_cast<T*>(mem);
         add(ptr);
         return ptr;
+    }
+
+    void addHighlightMesh(Mesh* mesh, glm::mat4 const& worldTransform, u32 id)
+    {
+        highlightMeshes.push_back({ mesh, worldTransform, id });
     }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }

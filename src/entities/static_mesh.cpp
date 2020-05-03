@@ -214,8 +214,12 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
         {
             if (o.modelObject->isVisible)
             {
+                /*
                 rw->push(WireframeRenderable(&model->meshes[o.modelObject->meshIndex],
                             transform * o.modelObject->getTransform()));
+                */
+                rw->addHighlightMesh(&model->meshes[o.modelObject->meshIndex],
+                        transform * o.modelObject->getTransform(), irandom(scene->randomSeries, 0, 10000));
             }
         }
     }

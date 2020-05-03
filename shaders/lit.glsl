@@ -33,7 +33,12 @@ void main()
 
 #include "lighting.glsl"
 
+#if defined OUT_ID
+layout(location = 0) out uint outID;
+layout(location = 8) uniform uint highlightID;
+#else
 layout(location = 0) out vec4 outColor;
+#endif
 
 layout(location = 0) in vec3 inColor;
 layout(location = 1) in vec3 inNormal;
@@ -56,9 +61,13 @@ void main()
 #if defined ALPHA_DISCARD
     if (tex.a < minAlpha) { discard; }
 #endif
+#if defined OUT_ID
+    outID = highlightID;
+#else
     outColor = lighting(tex * vec4(inColor * color, 1.0),
             normalize(inNormal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
             fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
+#endif
 }
 
 #endif

@@ -233,12 +233,14 @@ void Renderer::initShaders()
     loadShader("blit");
     loadShader("blit2");
     loadShader("post_process");
+    loadShader("post_process", { "OUTLINE_ENABLED" }, "post_process_outline");
     loadShader("blur", { "HBLUR" }, "hblur");
     loadShader("blur", { "VBLUR" }, "vblur");
     loadShader("blur2", { "HBLUR" }, "hblur2");
     loadShader("blur2", { "VBLUR" }, "vblur2");
     loadShader("lit");
     loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
+    loadShader("lit", { "ALPHA_DISCARD", "OUT_ID" }, "lit_discard_id");
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
     loadShader("quad2D", { "BLUR" }, "texBlur2D");
@@ -257,6 +259,7 @@ void Renderer::initShaders()
     loadShader("terrain");
     loadShader("track");
     loadShader("flames");
+    loadShader("highlight_id");
 }
 
 void Renderer::init()
@@ -269,6 +272,7 @@ void Renderer::init()
     updateFullscreenFramebuffers();
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    glDisable(GL_DITHER);
 
     renderWorld.name = "Main";
 }
@@ -293,7 +297,7 @@ void Renderer::render(f32 deltaTime)
     renderWorld.clear();
 
     // render to fullscreen texture
-#if 0
+#if 1
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Draw to Fullscreen Framebuffer");
     glBindFramebuffer(GL_FRAMEBUFFER, fsfb.fullscreenFramebuffer);
     glViewport(0, 0, g_game.windowWidth, g_game.windowHeight);
@@ -501,6 +505,12 @@ void RenderWorld::createFramebuffers()
         {
             glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
             glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
+        }
+        if (fb.highlightFramebuffer)
+        {
+            glDeleteTextures(1, &fb.highlightIDTexture);
+            glDeleteRenderbuffers(1, &fb.highlightDepthTexture);
+            glDeleteFramebuffers(1, &fb.highlightFramebuffer);
         }
     }
     fbs.clear();
@@ -727,6 +737,34 @@ void RenderWorld::createFramebuffers()
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
 
+        bool highlightEnabled = true;
+        if (highlightEnabled)
+        {
+            glGenTextures(1, &fb.highlightIDTexture);
+            glBindTexture(GL_TEXTURE_2D, fb.highlightIDTexture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, fb.renderWidth, fb.renderHeight,
+                    0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            glGenRenderbuffers(1, &fb.highlightDepthTexture);
+            glBindRenderbuffer(GL_RENDERBUFFER, fb.highlightDepthTexture);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight);
+
+            glGenFramebuffers(1, &fb.highlightFramebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, fb.highlightFramebuffer);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.highlightIDTexture, 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
+                    fb.highlightDepthTexture);
+
+            glObjectLabel(GL_FRAMEBUFFER, fb.highlightIDTexture, -1, "Highlight ID Texture");
+            glObjectLabel(GL_FRAMEBUFFER, fb.highlightFramebuffer, -1, "Highlight ID Framebuffer");
+
+            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+        }
+
         fbs.push_back(fb);
         worldInfoUBO.push_back(DynamicBuffer(sizeof(WorldInfo)));
         worldInfoUBOShadow.push_back(DynamicBuffer(sizeof(WorldInfo)));
@@ -804,6 +842,7 @@ void RenderWorld::clear()
 {
     renderables.clear();
     tempRenderBuffer.clear();
+    highlightMeshes.clear();
 }
 
 void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)
@@ -1123,6 +1162,31 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         this->tex[index].handle = fb.mainColorTexture;
     }
 
+    // highlight
+    if (!highlightMeshes.empty())
+    {
+	    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Highlight ID Pass");
+        glUseProgram(renderer->getShaderProgram("highlight_id"));
+        glViewport(0, 0, fb.renderWidth, fb.renderHeight);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.highlightFramebuffer);
+
+	    glDepthFunc(GL_LESS);
+	    glDepthMask(GL_TRUE);
+	    glEnable(GL_DEPTH_TEST);
+	    glDisable(GL_CULL_FACE);
+	    glDisable(GL_BLEND);
+	    glClearColor(0, 0, 0, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        for (auto& highlightMesh : highlightMeshes)
+        {
+            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(highlightMesh.worldTransform));
+            glUniform1ui(1, highlightMesh.id);
+            glBindVertexArray(highlightMesh.mesh->vao);
+            glDrawElements(GL_TRIANGLES, highlightMesh.mesh->numIndices, GL_UNSIGNED_INT, 0);
+        }
+        glPopDebugGroup();
+    }
+
     // bloom
     glDisable(GL_BLEND);
     glDepthMask(GL_FALSE);
@@ -1186,11 +1250,13 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Post Process");
         glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-        glUseProgram(renderer->getShaderProgram("post_process"));
+        glUseProgram(renderer->getShaderProgram(
+                    highlightMeshes.empty() ? "post_process" : "post_process_outline"));
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {
             glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);
         }
+        glBindTextureUnit(4, fb.highlightIDTexture);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 		glPopDebugGroup();
 
