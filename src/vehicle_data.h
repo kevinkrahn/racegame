@@ -298,7 +298,7 @@ struct VehicleData
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
             glm::mat4* wheelTransforms, VehicleConfiguration const& config,
-            class Vehicle* vehicle=nullptr, bool isBraking=false);
+            class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false);
     virtual void renderDebris(class RenderWorld* rw,
             std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config);
 

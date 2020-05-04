@@ -16,7 +16,6 @@
 - Make minigun bullets look more like bullets (streak instead of glowing orbs)
 - Add testing zone where you can drive around an open area
 - Add rippling flag
-- Add wind motion for plants and trees
 - Add powerups? Will have to think about whether this is a good idea game design wise
 - Kinetic armor effect
 - Create general-purpose particle system
@@ -44,6 +43,8 @@
 - Calculate vehicle acceleration and handling by simulating a physics world
 - Vehicle respawn angles are awkward sometimes
 - Have min camera Z so that when you drive off a cliff you see the car falling way down
+- Experiment with post-process sharpen effect
+- Align respawned vehicles with the incline of the track
 
 - Ideas:
     - Grenade launcher weapon

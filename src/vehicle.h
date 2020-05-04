@@ -86,7 +86,6 @@ public:
     u32 engineSound = 0;
     u32 tireSound = 0;
     glm::vec3 lastValidPosition;
-    bool isHidden = false;
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
     f32 lappingOffset[16] = { 0 };

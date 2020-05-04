@@ -13,9 +13,11 @@ public:
     Mesh* mesh;
     GLuint texture;
     u32 pickID;
+    u8 stencil;
 
-    LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material, u32 pickID=0)
-        : material(material), transform(worldTransform), mesh(mesh), pickID(pickID)
+    LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material,
+            u32 pickID=0, u8 stencil=0)
+        : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil)
     {
         if (material->colorTexture)
         {
@@ -129,6 +131,8 @@ public:
         {
             glDisable(GL_POLYGON_OFFSET_FILL);
         }
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glStencilMask(0xFF);
 
         glUseProgram(renderer->getShaderProgram(
                     material->alphaCutoff > 0.f ? "lit_discard" : "lit"));
@@ -138,6 +142,7 @@ public:
     {
         glBindTextureUnit(0, texture);
 
+        glStencilFunc(GL_ALWAYS, stencil, 0xFF);
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
@@ -303,6 +308,7 @@ public:
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_EQUAL);
         glCullFace(GL_BACK);
+        glStencilMask(0x0);
         glUseProgram(renderer->getShaderProgram("lit"));
 
         /*
@@ -382,6 +388,7 @@ public:
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
+        glStencilMask(0x0);
     }
 
     void onLitPass(Renderer* renderer) override
@@ -435,6 +442,7 @@ public:
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
         glDisable(GL_CULL_FACE);
+        glStencilMask(0x0);
 
         Camera const& camera = renderer->getRenderWorld()->getCamera(0);
         glUseProgram(renderer->getShaderProgram("debug"));

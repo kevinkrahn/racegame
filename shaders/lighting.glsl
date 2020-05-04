@@ -73,7 +73,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 
     color.rgb *= max(directLight, 0.1);
     color.rgb += specularLight * shadow;
-    color.rgb += fresnel * max(shadow, 0.5);
+    color.rgb += fresnel * max(shadow, 0.25);
 
 #if SSAO_ENABLED
 #ifndef NO_SSAO

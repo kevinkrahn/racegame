@@ -28,6 +28,8 @@ void SmokeParticles::onLitPass(Renderer* renderer)
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    glStencilMask(0);
 
     glUseProgram(renderer->getShaderProgram("billboard"));
     glBindVertexArray(emptyVAO);

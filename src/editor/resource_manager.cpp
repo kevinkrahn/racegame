@@ -387,6 +387,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         return;
     }
 
+    renderer->getRenderWorld()->setHighlightColor(0, glm::vec4(1.f, 0.65f, 0.1f, 1.f));
+
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))

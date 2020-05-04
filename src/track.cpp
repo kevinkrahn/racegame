@@ -793,6 +793,7 @@ void Track::onLitPass(class Renderer* renderer)
     glDepthFunc(GL_EQUAL);
     glEnable(GL_CULL_FACE);
     glBindTextureUnit(0, g_res.getTexture("tarmac")->handle);
+    glStencilMask(0x0);
     glUseProgram(renderer->getShaderProgram("track"));
     for (auto& c : connections)
     {

@@ -222,7 +222,7 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, VehicleConfiguration const& config, Vehicle* vehicle,
-        bool isBraking)
+        bool isBraking, bool isHidden)
 {
     // TODO: find some better way to handle paint materials
     if (lastFrameIndex != g_game.frameIndex)
@@ -243,8 +243,11 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         {
             mat = coloredPaintMaterial;
         }
-        rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat));
-        rw->addHighlightMesh(m.mesh, transform * m.transform, vehicle->vehicleIndex+1);
+        rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, isHidden ? 2 : 0));
+        if (isHidden)
+        {
+            rw->addHighlightMesh(m.mesh, transform * m.transform, vehicle->vehicleIndex+1);
+        }
     }
 
     glm::mat4 defaultWheelTransforms[NUM_WHEELS];
@@ -273,8 +276,11 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             {
                 mat = coloredPaintMaterial;
             }
-            rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat));
-            rw->addHighlightMesh(m.mesh, wheelTransform * m.transform, vehicle->vehicleIndex+1);
+            rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, isHidden ? 2 : 0));
+            if (isHidden)
+            {
+                rw->addHighlightMesh(m.mesh, wheelTransform * m.transform, vehicle->vehicleIndex+1);
+            }
         }
     }
 

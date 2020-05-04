@@ -472,6 +472,7 @@ void RenderWorld::createFramebuffers()
         {
             glDeleteTextures(1, &fb.mainColorTexture);
             glDeleteTextures(1, &fb.mainDepthTexture);
+            glDeleteTextures(1, &fb.stencilViewTexture);
             glDeleteFramebuffers(1, &fb.mainFramebuffer);
         }
         if (fb.finalFramebuffer)
@@ -507,12 +508,6 @@ void RenderWorld::createFramebuffers()
             glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
             glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
         }
-        if (fb.highlightFramebuffer)
-        {
-            glDeleteTextures(1, &fb.highlightIDTexture);
-            glDeleteRenderbuffers(1, &fb.highlightDepthTexture);
-            glDeleteFramebuffers(1, &fb.highlightFramebuffer);
-        }
         if (fb.pickFramebuffer)
         {
             glDeleteTextures(1, &fb.pickIDTexture);
@@ -533,6 +528,7 @@ void RenderWorld::createFramebuffers()
         glEnable(GL_FRAMEBUFFER_SRGB);
         glGenTextures(1, &fb.mainColorTexture);
         glGenTextures(1, &fb.mainDepthTexture);
+        glGenTextures(1, &fb.stencilViewTexture);
         if (g_game.config.graphics.msaaLevel > 0)
         {
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.mainColorTexture);
@@ -542,7 +538,7 @@ void RenderWorld::createFramebuffers()
 
             glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.mainDepthTexture);
             glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, g_game.config.graphics.msaaLevel,
-                    GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight, GL_TRUE);
+                    GL_DEPTH24_STENCIL8, fb.renderWidth, fb.renderHeight, GL_TRUE);
 
             glGenTextures(1, &fb.msaaResolveColorTexture);
             glGenTextures(1, &fb.msaaResolveDepthTexture);
@@ -556,29 +552,38 @@ void RenderWorld::createFramebuffers()
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glBindTexture(GL_TEXTURE_2D, fb.msaaResolveDepthTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
-                    0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH24_STENCIL8, fb.renderWidth, fb.renderHeight);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
 
             glGenFramebuffers(1, &fb.msaaResolveFramebuffer);
             glGenFramebuffers(1, &fb.msaaResolveFromFramebuffer);
 
             glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFramebuffer);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
                     fb.msaaResolveDepthTexture, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                     fb.msaaResolveColorTexture, 0);
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
             glBindFramebuffer(GL_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE,
-                    fb.mainDepthTexture, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                    GL_TEXTURE_2D_MULTISAMPLE, fb.mainDepthTexture, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE,
                     fb.mainColorTexture, 0);
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+            glTextureView(fb.stencilViewTexture, GL_TEXTURE_2D, fb.msaaResolveDepthTexture,
+                    GL_DEPTH24_STENCIL8, 0, 1, 0, 1);
+            glBindTexture(GL_TEXTURE_2D, fb.stencilViewTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX);
         }
         else
         {
@@ -591,17 +596,26 @@ void RenderWorld::createFramebuffers()
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glBindTexture(GL_TEXTURE_2D, fb.mainDepthTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight,
-                    0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH24_STENCIL8, fb.renderWidth, fb.renderHeight);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
+
+            glTextureView(fb.stencilViewTexture, GL_TEXTURE_2D, fb.mainDepthTexture,
+                    GL_DEPTH24_STENCIL8, 0, 1, 0, 1);
+            glBindTexture(GL_TEXTURE_2D, fb.stencilViewTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX);
         }
 
         glGenFramebuffers(1, &fb.mainFramebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.mainDepthTexture, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, fb.mainDepthTexture, 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.mainColorTexture, 0);
 
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
@@ -740,30 +754,6 @@ void RenderWorld::createFramebuffers()
             glGenFramebuffers(1, &fb.finalFramebuffer);
             glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.finalColorTexture, 0);
-
-            assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-        }
-
-        if (width > 128 && height > 128)
-        {
-            glGenTextures(1, &fb.highlightIDTexture);
-            glBindTexture(GL_TEXTURE_2D, fb.highlightIDTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, fb.renderWidth, fb.renderHeight,
-                    0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            glGenRenderbuffers(1, &fb.highlightDepthTexture);
-            glBindRenderbuffer(GL_RENDERBUFFER, fb.highlightDepthTexture);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, fb.renderWidth, fb.renderHeight);
-
-            glGenFramebuffers(1, &fb.highlightFramebuffer);
-            glBindFramebuffer(GL_FRAMEBUFFER, fb.highlightFramebuffer);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fb.highlightIDTexture, 0);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,
-                    fb.highlightDepthTexture);
 
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
@@ -962,6 +952,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World: ", name, ", Viewport #", index + 1));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_STENCIL_TEST);
 
     Framebuffers const& fb = fbs[index];
 
@@ -1152,11 +1143,16 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glBindTextureUnit(1, g_res.getTexture("sky_cubemap")->handle);
     glBindTextureUnit(3, g_res.getTexture("cloud_shadow")->handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glEnable(GL_STENCIL_TEST);
+    glStencilMask(0xFF);
+    glClearStencil(0);
+    glClearColor(clearColor.x, clearColor.y, clearColor.y, clearColor.w);
+    GLuint clearBits = GL_STENCIL_BUFFER_BIT;
     if (clearColorEnabled)
     {
-        glClearColor(clearColor.x, clearColor.y, clearColor.y, clearColor.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+        clearBits |= GL_COLOR_BUFFER_BIT;
     }
+    glClear(clearBits);
     glDepthFunc(GL_EQUAL);
     prevPriority = INT32_MIN;
     for (auto const& r : renderables)
@@ -1176,15 +1172,15 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 	    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Highlight ID Pass");
         glUseProgram(renderer->getShaderProgram("highlight_id"));
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.highlightFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
 
-	    glDepthFunc(GL_LESS);
-	    glDepthMask(GL_TRUE);
-	    glEnable(GL_DEPTH_TEST);
+	    glDepthMask(GL_FALSE);
+	    glDisable(GL_DEPTH_TEST);
+        glDepthFunc(GL_EQUAL);
+        glStencilFunc(GL_EQUAL, 0, 0xFF);
+        glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+        glStencilMask(0xFF);
 	    glDisable(GL_CULL_FACE);
-	    glDisable(GL_BLEND);
-	    glClearColor(0, 0, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         for (auto& highlightMesh : highlightMeshes)
         {
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(highlightMesh.worldTransform));
@@ -1193,7 +1189,11 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glDrawElements(GL_TRIANGLES, highlightMesh.mesh->numIndices, GL_UNSIGNED_INT, 0);
         }
         glPopDebugGroup();
+	    glDepthMask(GL_TRUE);
+	    glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
     }
+    glDisable(GL_STENCIL_TEST);
 
     // color picking
     if (isPickPixelPending)
@@ -1262,15 +1262,17 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     // resolve multi-sample color buffer
     if (g_game.config.graphics.msaaLevel > 0)
     {
+        glEnable(GL_STENCIL_TEST);
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffer);
         glBlitFramebuffer(0, 0, fb.renderWidth, fb.renderHeight,
                         0, 0, fb.renderWidth, fb.renderHeight,
-                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                        GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
         glBindTextureUnit(0, fb.msaaResolveColorTexture);
 		glPopDebugGroup();
         this->tex[index].handle = fb.msaaResolveColorTexture;
+        glDisable(GL_STENCIL_TEST);
     }
     else
     {
@@ -1343,11 +1345,12 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
         glUseProgram(renderer->getShaderProgram(
                     highlightMeshes.empty() ? "post_process" : "post_process_outline"));
+        glUniform4fv(0, 1, (f32*)&highlightColor[index]);
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {
             glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);
         }
-        glBindTextureUnit(4, fb.highlightIDTexture);
+        glBindTextureUnit(4, fb.stencilViewTexture);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 		glPopDebugGroup();
 

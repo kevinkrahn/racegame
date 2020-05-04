@@ -731,6 +731,7 @@ void Terrain::onLitPass(class Renderer* renderer)
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
     glUniform4fv(5, 1, m.texScale);
+    glStencilMask(0x0);
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 

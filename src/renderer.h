@@ -12,6 +12,14 @@
 #include <algorithm>
 #include <vector>
 
+enum
+{
+    STENCIL_ENVIRONMENT = 0,
+    STENCIL_OUTLINE = 1,
+    STENCIL_VEHICLE = 2,
+    STENCIL_NO_OUTLINE = 4,
+};
+
 GLuint emptyVAO;
 
 struct Camera
@@ -56,6 +64,8 @@ struct Framebuffers
     GLuint msaaResolveColorTexture;
     GLuint msaaResolveDepthTexture;
 
+    GLuint stencilViewTexture;
+
     SmallVec<GLuint> bloomFramebuffers;
     SmallVec<GLuint> bloomColorTextures;
     SmallVec<glm::ivec2> bloomBufferSize;
@@ -69,10 +79,6 @@ struct Framebuffers
     GLuint saoFramebuffer;
     GLuint saoTexture;
     GLuint saoBlurTexture;
-
-    GLuint highlightFramebuffer;
-    GLuint highlightIDTexture;
-    GLuint highlightDepthTexture;
 
     GLuint pickFramebuffer;
     GLuint pickIDTexture;
@@ -126,6 +132,7 @@ class RenderWorld
     SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
     SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
     SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
+    glm::vec4 highlightColor[MAX_VIEWPORTS] = {};
 
     // TODO: calculate these based on render resolution
     u32 firstBloomDivisor = 2;
@@ -223,6 +230,10 @@ public:
     void updateWorldTime(f64 time);
     void createFramebuffers();
     void clear();
+    void setHighlightColor(u32 viewportIndex, glm::vec4 const& color)
+    {
+        highlightColor[viewportIndex] = color;
+    }
 
     void pickPixel(glm::vec2 pos)
     {

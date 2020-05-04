@@ -172,6 +172,8 @@ void Decal::onLitPassPriorityTransition(Renderer* renderer)
     glDepthFunc(GL_LEQUAL);
     glUseProgram(renderer->getShaderProgram("mesh_decal"));
     glEnable(GL_CULL_FACE);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    glStencilMask(0);
 }
 
 void Decal::onLitPass(Renderer* renderer)

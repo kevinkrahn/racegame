@@ -4,13 +4,6 @@
 #include "datafile.h"
 #include "resource.h"
 
-struct RenderItem
-{
-    u32 vao;
-    u32 indexCount;
-    glm::mat4 worldTransform;
-};
-
 enum struct MaterialType
 {
     LIT = 0,

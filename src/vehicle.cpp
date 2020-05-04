@@ -890,22 +890,20 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         scene->ribbons.addChunk(&tireMarkRibbons[i]);
     }
 
-    if (cameraIndex >= 0 && isHidden)
-    {
-        Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.Arrow");
-        rw->push(OverlayRenderable(arrowMesh, cameraIndex,
-                    transform, g_vehicleColors[driver->getVehicleConfig()->colorIndex]));
-    }
-
     glm::mat4 wheelTransforms[NUM_WHEELS];
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         wheelTransforms[i] = convert(wheelQueryResults[i].localPose);
     }
     driver->getVehicleData()->render(rw, transform,
-            wheelTransforms, *driver->getVehicleConfig(), this, isBraking);
+            wheelTransforms, *driver->getVehicleConfig(), this, isBraking, cameraIndex >= 0);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
+    if (cameraIndex >= 0)
+    {
+        rw->setHighlightColor(0,
+                glm::vec4(g_vehicleColors[driver->getVehicleConfig()->colorIndex], 1.f));
+    }
 
     // visualize path finding
 #if 0
@@ -1209,30 +1207,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (cameraIndex >= 0)
     {
         updateCamera(rw, deltaTime);
-
-        // detect if vehicle is hidden behind something
-        glm::vec3 rayStart = currentPosition;
-        glm::vec3 diff = cameraFrom - rayStart;
-        glm::vec3 rayDir = glm::normalize(diff);
-        f32 dist = glm::length(diff);
-        PxRaycastBuffer hit;
-        PxQueryFilterData filter;
-        filter.flags |= PxQueryFlag::eANY_HIT;
-        filter.flags |= PxQueryFlag::eSTATIC;
-        filter.data = PxFilterData(COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK, 0, 0, 0);
-        PxHitFlags hitFlags(PxHitFlag::eMESH_BOTH_SIDES | PxHitFlag::eMESH_ANY);
-        isHidden = true;
-        for (u32 i=0; i<NUM_WHEELS; ++i)
-        {
-            glm::vec3 wheelPosition = transform *
-                glm::vec4(convert(wheelQueryResults[i].localPose.p), 1.0);
-            if (!scene->getPhysicsScene()->raycast(convert(wheelPosition),
-                        convert(rayDir), dist, hit, hitFlags, filter))
-            {
-                isHidden = false;
-                break;
-            }
-        }
     }
 
     // destroy vehicle if off track or out of bounds
