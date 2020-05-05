@@ -956,7 +956,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glDisable(GL_STENCIL_TEST);
 
     bool isEditorActive = g_game.isEditing
-        && g_game.currentScene && !g_game.currentScene->isRaceInProgress;
+        && ((g_game.currentScene && !g_game.currentScene->isRaceInProgress) || !g_game.currentScene);
 
     Framebuffers const& fb = fbs[index];
 

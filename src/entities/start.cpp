@@ -25,10 +25,10 @@ void Start::onCreateEnd(Scene* scene)
         PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(model->meshes[obj.meshIndex].getCollisionMesh(),
                     PxMeshScale(convert(scale))), *scene->genericMaterial);
-        collisionShape->setQueryFilterData(PxFilterData(
-                    COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
-        collisionShape->setSimulationFilterData(PxFilterData(
-                    COLLISION_FLAG_OBJECT, -1, 0, 0));
+        collisionShape->setQueryFilterData(
+                PxFilterData(0, DECAL_SIGN, 0, DRIVABLE_SURFACE));
+        collisionShape->setSimulationFilterData(
+                PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
         collisionShape->setLocalPose(PxTransform(convert(obj.position), convert(obj.rotation)));
     }
     scene->getPhysicsScene()->addActor(*actor);
@@ -118,7 +118,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     for (auto& obj : model->objects)
     {
         rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
-                    g_res.getMaterial(obj.materialGuid)));
+                    g_res.getMaterial(obj.materialGuid), entityCounterID));
     }
 
     rw->add(&finishLineDecal);
@@ -141,7 +141,15 @@ void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 
     {
         for (auto& obj : model->objects)
         {
-            rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform()));
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                        transform * obj.getTransform(),
+                        g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 0));
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                        transform * obj.getTransform(),
+                        g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 1));
+            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                        transform * obj.getTransform(),
+                        g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 2));
         }
         rw->push(LitRenderable(g_res.getModel("misc")->getMeshByName("world.Arrow"),
                 transform *

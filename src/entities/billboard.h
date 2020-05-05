@@ -46,8 +46,8 @@ public:
             PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(model->meshes[obj.meshIndex].getCollisionMesh(),
                         PxMeshScale(convert(scale * obj.scale))), *scene->genericMaterial);
-            collisionShape->setQueryFilterData(PxFilterData(
-                        COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_SIGN, 0, DRIVABLE_SURFACE));
+            collisionShape->setQueryFilterData(
+                    PxFilterData(COLLISION_FLAG_OBJECT, DECAL_SIGN, 0, DRIVABLE_SURFACE));
             collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
             collisionShape->setLocalPose(convert(obj.getTransform()));
         }
@@ -109,7 +109,15 @@ public:
         {
             for (auto& obj : model->objects)
             {
-                rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform() * transform));
+                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                            transform * obj.getTransform(),
+                            g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 0));
+                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                            transform * obj.getTransform(),
+                            g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 1));
+                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
+                            transform * obj.getTransform(),
+                            g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 2));
             }
         }
     }

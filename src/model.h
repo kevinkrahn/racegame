@@ -29,8 +29,6 @@ public:
     glm::vec3 bounds;
     std::vector<std::string> collections;
 
-    PxShape* mousePickShape = nullptr;
-
     void serialize(Serializer& s)
     {
         s.field(name);
@@ -45,7 +43,6 @@ public:
         s.field(collections);
     }
 
-    void createMousePickCollisionShape(class Model* model);
     glm::mat4 getTransform() const
     {
         glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
@@ -107,14 +104,6 @@ public:
         s.field(modelUsage);
         s.field(density);
         s.field(category);
-
-        if (s.deserialize)
-        {
-            for (auto& obj : objects)
-            {
-                obj.createMousePickCollisionShape(this);
-            }
-        }
     }
     ModelObject* getObjByName(const char* name)
     {

@@ -21,6 +21,7 @@ void ModelEditor::setModel(Model* model)
     this->model = model;
     selectedObjects.clear();
 
+#if 0
     if (physicsScene)
     {
         physicsScene->release();
@@ -38,10 +39,11 @@ void ModelEditor::setModel(Model* model)
 
     for (auto& obj : model->objects)
     {
-        body->attachShape(*obj.mousePickShape);
+        body->attachShape(model->meshes[obj.mesh].getCollisionMesh());
     }
 
     physicsScene->addActor(*body);
+#endif
 }
 
 void ModelEditor::showSceneSelection()
@@ -312,10 +314,6 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
     // end gui
 
-    // this seems to be necessary for debug visualization
-    physicsScene->simulate(deltaTime);
-    physicsScene->fetchResults(true);
-
     camera.setNearFar(1.f, 140.f);
     camera.update(deltaTime, renderer->getRenderWorld());
 
@@ -342,6 +340,10 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
+#if 0
+    physicsScene->simulate(deltaTime);
+    physicsScene->fetchResults(true);
+
     if (g_game.isPhysicsDebugVisualizationEnabled)
     {
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0f);
@@ -360,44 +362,45 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 0.0f);
     }
+#endif
 
     RenderWorld* rw = renderer->getRenderWorld();
-    glm::vec3 rayDir = camera.getMouseRay(rw);
-    Camera const& cam = camera.getCamera();
+    //glm::vec3 rayDir = camera.getMouseRay(rw);
+    //Camera const& cam = camera.getCamera();
     rw->updateWorldTime(g_game.currentTime);
 
-    if (!ImGui::GetIO().WantCaptureMouse && g_input.isMouseButtonPressed(MOUSE_LEFT))
+    if (const u32* pixelID = rw->getPickPixelResult())
     {
-        if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
+        if (!selectionStateCtrl && !selectionStateShift)
         {
             selectedObjects.clear();
         }
 
-        PxRaycastBuffer hit;
-        PxQueryFilterData filter;
-        filter.data = PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0);
-        if (physicsScene->raycast(convert(cam.position), convert(rayDir), 10000.f, hit,
-                PxHitFlags(PxHitFlag::eDEFAULT), filter))
+        for (u32 i=0; i<model->objects.size(); ++i)
         {
-            assert(hit.block.actor == body);
-            for (u32 i=0; i<model->objects.size(); ++i)
+            if (i + 1 == *pixelID)
             {
-                if (model->objects[i].mousePickShape == hit.block.shape)
+                auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
+                        [&](u32 index){ return index == i; });
+                if (it == selectedObjects.end())
                 {
-                    auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
-                            [&](u32 index){ return index == i; });
-                    if (it == selectedObjects.end())
-                    {
-                        selectedObjects.push_back(i);
-                    }
-                    else if (g_input.isKeyDown(KEY_LSHIFT))
-                    {
-                        selectedObjects.erase(it);
-                    }
-                    break;
+                    selectedObjects.push_back(i);
                 }
+                else if (g_input.isKeyDown(KEY_LSHIFT))
+                {
+                    selectedObjects.erase(it);
+                }
+                break;
             }
         }
+    }
+
+    if (!ImGui::GetIO().WantCaptureMouse && g_input.isMouseButtonPressed(MOUSE_LEFT))
+    {
+        rw->pickPixel(g_input.getMousePosition()
+                / glm::vec2(g_game.windowWidth, g_game.windowHeight));
+        selectionStateCtrl = g_input.isKeyDown(KEY_LCTRL);
+        selectionStateShift = g_input.isKeyDown(KEY_LSHIFT);
     }
 
     if (showFloor)
@@ -412,7 +415,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         if (obj.isVisible)
         {
             rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid)));
+                        g_res.getMaterial(obj.materialGuid), i+1));
         }
         if (obj.isCollider && showColliders)
         {
@@ -422,8 +425,16 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     for (u32 selectedIndex : selectedObjects)
     {
+        // NOTE: first byte is reserved for hidden flag
+        u8 selectIndexByte = (u8)((selectedIndex % 126) + 1) << 1;
         auto& obj = model->objects[selectedIndex];
-        rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform()));
+        Material* material = g_res.getMaterial(obj.materialGuid);
+        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                    material, 0, selectIndexByte, true, 0));
+        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                    material, 0, selectIndexByte, true, 1));
+        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
+                    material, 0, selectIndexByte, true, 2));
     }
 
     if (showBoundingBox)
@@ -610,9 +621,11 @@ void ModelEditor::processBlenderData()
 
         model->objects.push_back(std::move(*modelObj));
     }
+#if 0
     for (auto& obj : model->objects)
     {
         obj.createMousePickCollisionShape(model);
         body->attachShape(*obj.mousePickShape);
     }
+#endif
 }

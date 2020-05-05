@@ -260,28 +260,62 @@ public:
                 selectedEntities.clear();
             }
 
-            for (auto& e : scene->getEntities())
+            if (pixelID != 0)
             {
-                if (e->entityCounterID == *pixelID)
+                for (auto& e : scene->getEntities())
                 {
-                    auto it = std::find(selectedEntities.begin(), selectedEntities.end(), e.get());
-                    if (selectionStateShift)
+                    if (e->entityCounterID == *pixelID)
                     {
-                        if (it != selectedEntities.end())
+                        auto it = std::find(selectedEntities.begin(), selectedEntities.end(), e.get());
+                        if (selectionStateShift)
                         {
-                            selectedEntities.erase(it);
+                            if (it != selectedEntities.end())
+                            {
+                                selectedEntities.erase(it);
+                            }
+                        }
+                        else
+                        {
+                            if (it == selectedEntities.end())
+                            {
+                                selectedEntities.push_back((PlaceableEntity*)e.get());
+                            }
                         }
                     }
-                    else
+                }
+
+            }
+            else
+            {
+                PxRaycastBuffer hit;
+                if (scene->raycastStatic(cam.position, rayDir, 10000.f,
+                            &hit, COLLISION_FLAG_SELECTABLE))
+                {
+                    if (hit.block.actor)
                     {
-                        if (it == selectedEntities.end())
+                        ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
+                        if (userData->entityType == ActorUserData::SELECTABLE_ENTITY)
                         {
-                            selectedEntities.push_back((PlaceableEntity*)e.get());
+                            auto it = std::find(selectedEntities.begin(),
+                                selectedEntities.end(), userData->placeableEntity);
+                            if (selectionStateShift)
+                            {
+                                if (it != selectedEntities.end())
+                                {
+                                    selectedEntities.erase(it);
+                                }
+                            }
+                            else
+                            {
+                                if (it == selectedEntities.end())
+                                {
+                                    selectedEntities.push_back((PlaceableEntity*)userData->entity);
+                                }
+                            }
                         }
                     }
                 }
             }
-
         }
 
         if (!isMouseClickHandled)

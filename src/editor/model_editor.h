@@ -20,8 +20,14 @@ class ModelEditor
     bool showBoundingBox = false;
     bool showColliders = false;
     DebugDraw debugDraw;
+
+#if 0
     PxScene* physicsScene = nullptr;
     PxRigidStatic* body = nullptr;
+#endif
+
+    bool selectionStateCtrl = false;
+    bool selectionStateShift = false;
 
     void showSceneSelection();
 
