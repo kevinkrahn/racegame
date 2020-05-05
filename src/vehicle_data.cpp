@@ -94,8 +94,17 @@ void VehicleData::loadModelData(const char* modelName)
         glm::mat4 transform = obj.getTransform();
         std::string const& name = obj.name;
         Mesh* mesh = &model->meshes[obj.meshIndex];
-        bool isInDebrisCollection =
-            std::find(obj.collections.begin(), obj.collections.end(), "Debris") != obj.collections.end();
+        u32 debrisCollectionIndex = UINT32_MAX;
+        for (i32 i=0; i<(i32)model->collections.size(); ++i)
+        {
+            if (model->collections[i].name.find("Debris") != std::string::npos)
+            {
+                debrisCollectionIndex = i;
+                break;
+            }
+        }
+        bool isInDebrisCollection = std::find(obj.collectionIndexes.begin(),
+                obj.collectionIndexes.end(), debrisCollectionIndex) != obj.collectionIndexes.end();
         if (name.find("debris") != std::string::npos ||
             name.find("Debris") != std::string::npos ||
             name.find("FL") != std::string::npos ||
@@ -119,10 +128,10 @@ void VehicleData::loadModelData(const char* modelName)
             });
         }
 
-        bool isOnlyInDebrisCollections = isInDebrisCollection && obj.collections.size() == 1;
-        if (isOnlyInDebrisCollections)
+        bool isOnlyInDebrisCollection = isInDebrisCollection && obj.collectionIndexes.size() == 1;
+        if (isOnlyInDebrisCollection)
         {
-            return;
+            continue;
         }
         if (name.find("Chassis") != std::string::npos)
         {

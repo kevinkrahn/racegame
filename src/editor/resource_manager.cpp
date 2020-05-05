@@ -71,29 +71,29 @@ ResourceManager::ResourceManager()
 
 void ResourceManager::showFolder(ResourceFolder* folder)
 {
+    u32 flags = folder == &resources ? ImGuiTreeNodeFlags_DefaultOpen : 0;
     if (folder == renameFolder)
     {
-        ImGui::PushID(folder->name.c_str());
-        bool isFolderOpen = ImGui::TreeNodeEx("");
+        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "");
         ImGui::SameLine();
         static u32 renameID = 0;
-        ImGui::PushID(tstr("Rename ", renameID));
         if (firstFrameRename)
         {
             renameID++;
             ImGui::SetKeyboardFocusHere();
         }
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
+        ImGui::PushID(tstr("Rename ", renameID));
         if (ImGui::InputText("", &renameText, ImGuiInputTextFlags_EnterReturnsTrue))
         {
             renameFolder->name = renameText;
         }
+        ImGui::PopID();
         ImGui::PopStyleVar();
         if (!firstFrameRename && !ImGui::IsItemActive())
         {
             renameFolder = nullptr;
         }
-        ImGui::PopID();
         firstFrameRename = false;
         if (isFolderOpen)
         {
@@ -104,13 +104,10 @@ void ResourceManager::showFolder(ResourceFolder* folder)
             showFolderContents(folder);
             ImGui::TreePop();
         }
-        ImGui::PopID();
     }
     else
     {
-        ImGui::PushID((void*)folder);
-        bool isFolderOpen = ImGui::TreeNode(folder->name.c_str());
-        ImGui::PopID();
+        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "%s", folder->name.c_str());
         if (folder->parent && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
         {
             DragDropPayload payload = {};

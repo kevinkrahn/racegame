@@ -155,10 +155,33 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
         ImGui::Gap();
 
-        if (ImGui::BeginChild("Objects", {0,0}, true))
-        {
-            for (u32 i=0; i<model->objects.size(); ++i)
+        auto listObjects = [&](i32 filterCollectionIndex) {
+            for (u32 i=0; i<(u32)model->objects.size(); ++i)
             {
+                bool isInCollection = false;
+                if (filterCollectionIndex == -1)
+                {
+                    if (model->objects[i].collectionIndexes.empty())
+                    {
+                        isInCollection = true;
+                    }
+                }
+                else
+                {
+                    for (u32 collectionIndex : model->objects[i].collectionIndexes)
+                    {
+                        if ((i32)collectionIndex == filterCollectionIndex)
+                        {
+                            isInCollection = true;
+                            break;
+                        }
+                    }
+                }
+                if (!isInCollection)
+                {
+                    continue;
+                }
+
                 auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
                         [&](u32 index){ return index == i; });
                 if (ImGui::Selectable(model->objects[i].name.c_str(), it != selectedObjects.end()))
@@ -178,6 +201,27 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                         {
                             selectedObjects.erase(it);
                         }
+                    }
+                }
+            }
+        };
+
+        if (ImGui::BeginChild("Objects", {0,0}, true))
+        {
+            if (model->collections.empty())
+            {
+                if (ImGui::CollapsingHeader("Default Collection", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    listObjects(-1);
+                }
+            }
+            else
+            {
+                for (i32 i=0; i<(i32)model->collections.size(); ++i)
+                {
+                    if (ImGui::CollapsingHeader(model->collections[i].name.c_str()))
+                    {
+                        listObjects(i);
                     }
                 }
             }
@@ -560,6 +604,17 @@ void ModelEditor::processBlenderData()
         model->name = scene["name"].string().val();
     }
 
+    model->collections.clear();
+    auto collections = scene["collections"].array(true).val();
+    for (auto& collection : collections)
+    {
+        std::string collectionName = collection.string("");
+        model->collections.push_back({
+            collectionName,
+            collectionName.find("Debris") != std::string::npos
+        });
+    }
+
     std::map<std::string, u32> meshesToLoad;
     auto& objects = scene["objects"].array().val();
     for (auto& mesh : model->meshes)
@@ -598,15 +653,21 @@ void ModelEditor::processBlenderData()
         }
 
         modelObj->meshIndex = meshIt->second;
-        print(modelObj->meshIndex, '\n');
-        print(meshName, '\n');
-
         modelObj->name = std::move(obj["name"]).string().val();
         glm::mat4 matrix = obj["matrix"].convertBytes<glm::mat4>().val();
         modelObj->position = translationOf(matrix);
         modelObj->rotation = glm::quat_cast(glm::mat3(rotationOf(matrix)));
         modelObj->scale = scaleOf(matrix);
         modelObj->bounds = obj["bounds"].vec3().val();
+
+        modelObj->collectionIndexes.clear();
+        auto collections = obj["collection_indexes"].array(true).val();
+        for (auto& collection : collections)
+        {
+            modelObj->collectionIndexes.push_back((u32)collection.integer().val());
+        }
+
+        // auto set certain propers based on the name of the object
         if (modelObj->name.find("Collision") != std::string::npos
             || modelObj->name.find("collision") != std::string::npos)
         {

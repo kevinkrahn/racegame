@@ -233,13 +233,22 @@ def save_blender_data():
     for scene in bpy.data.scenes:
         bpy.context.window.scene = scene
         objects = []
+        collections = []
 
         def save_object(obj, objectType, matrix, data_name='NONE'):
+            collection_indexes = []
+            for collection in obj.users_collection:
+                if collection.name in collections:
+                     collection_indexes.append(collections.index(collection.name))
+                else:
+                     collection_indexes.append(len(collections))
+                     collections.append(collection.name)
+
             objects.append({
                 'type': objectType,
                 'name': obj.name,
                 'data_name': data_name,
-                'collection': obj.users_collection,
+                'collection_indexes': collection_indexes,
                 'matrix': struct.pack("<16f",
                     matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
                     matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
@@ -283,6 +292,7 @@ def save_blender_data():
             'type': 'scene',
             'name': namePrefix() + scene.name,
             'objects': objects,
+            'collections': collections,
             'properties': get_props(scene)
         })
 

@@ -27,7 +27,7 @@ public:
     bool isCollider = false;
     bool isVisible = true;
     glm::vec3 bounds;
-    std::vector<std::string> collections;
+    std::vector<u32> collectionIndexes;
 
     void serialize(Serializer& s)
     {
@@ -40,7 +40,7 @@ public:
         s.field(isVisible);
         s.field(materialGuid);
         s.field(bounds);
-        s.field(collections);
+        s.field(collectionIndexes);
     }
 
     glm::mat4 getTransform() const
@@ -81,6 +81,18 @@ const char* propCategoryNames[] = {
     "Race",
 };
 
+struct ModelObjectCollection
+{
+    std::string name;
+    bool isVisible = true;
+
+    void serialize(Serializer& s)
+    {
+        s.field(name);
+        s.field(isVisible);
+    }
+};
+
 class Model : public Resource
 {
 public:
@@ -89,6 +101,7 @@ public:
     std::string sourceSceneName;
     std::vector<Mesh> meshes;
     std::vector<ModelObject> objects;
+    std::vector<ModelObjectCollection> collections;
     ModelUsage modelUsage = ModelUsage::STATIC_PROP;
     f32 density = 150.f;
     PropCategory category = PropCategory::NOT_NATURE;
@@ -101,6 +114,7 @@ public:
         s.field(sourceSceneName);
         s.field(meshes);
         s.field(objects);
+        s.field(collections);
         s.field(modelUsage);
         s.field(density);
         s.field(category);
