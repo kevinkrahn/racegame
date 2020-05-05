@@ -18,7 +18,7 @@ public:
     void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onPreview(RenderWorld* rw) override;
-    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
+    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected, u8 selectIndex) override;
     void serializeState(Serializer& s) override
     {
         PlaceableEntity::serializeState(s);

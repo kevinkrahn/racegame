@@ -64,7 +64,7 @@ void Oil::onPreview(RenderWorld* rw)
                 glm::vec4(1.f), 8.f, 0.f, false));
 }
 
-void Oil::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
+void Oil::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
     BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
     if (isSelected)

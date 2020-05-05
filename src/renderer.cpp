@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "game.h"
+#include "scene.h"
 #include <fstream>
 #include <sstream>
 #include <map>
@@ -234,6 +235,7 @@ void Renderer::initShaders()
     loadShader("blit2");
     loadShader("post_process");
     loadShader("post_process", { "OUTLINE_ENABLED" }, "post_process_outline");
+    loadShader("post_process", { "EDITOR_OUTLINE_ENABLED" }, "post_process_outline_editor");
     loadShader("blur", { "HBLUR" }, "hblur");
     loadShader("blur", { "VBLUR" }, "vblur");
     loadShader("blur2", { "HBLUR" }, "hblur2");
@@ -860,7 +862,6 @@ void RenderWorld::clear()
 {
     renderables.clear();
     tempRenderBuffer.clear();
-    highlightMeshes.clear();
 }
 
 void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)
@@ -953,6 +954,9 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World: ", name, ", Viewport #", index + 1));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_STENCIL_TEST);
+
+    bool isEditorActive = g_game.isEditing
+        && g_game.currentScene && !g_game.currentScene->isRaceInProgress;
 
     Framebuffers const& fb = fbs[index];
 
@@ -1155,45 +1159,31 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glClear(clearBits);
     glDepthFunc(GL_EQUAL);
     prevPriority = INT32_MIN;
+    bool depthCleared = false;
     for (auto const& r : renderables)
     {
         if (r.priority != prevPriority)
         {
+#if 1
+            if (isEditorActive && r.priority > 290000 && !depthCleared)
+            {
+                depthCleared = true;
+	            glEnable(GL_DEPTH_TEST);
+	            glDepthMask(GL_TRUE);
+                glClear(GL_DEPTH_BUFFER_BIT);
+            }
+#endif
             r.renderable->onLitPassPriorityTransition(renderer);
         }
         r.renderable->onLitPass(renderer);
         prevPriority = r.priority;
     }
-	glPopDebugGroup();
-
-    // highlight
-    if (!highlightMeshes.empty())
-    {
-	    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Highlight ID Pass");
-        glUseProgram(renderer->getShaderProgram("highlight_id"));
-        glViewport(0, 0, fb.renderWidth, fb.renderHeight);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-
-	    glDepthMask(GL_FALSE);
-	    glDisable(GL_DEPTH_TEST);
-        glDepthFunc(GL_EQUAL);
-        glStencilFunc(GL_EQUAL, 0, 0xFF);
-        glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
-        glStencilMask(0xFF);
-	    glDisable(GL_CULL_FACE);
-        for (auto& highlightMesh : highlightMeshes)
-        {
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(highlightMesh.worldTransform));
-            glUniform1ui(1, highlightMesh.id);
-            glBindVertexArray(highlightMesh.mesh->vao);
-            glDrawElements(GL_TRIANGLES, highlightMesh.mesh->numIndices, GL_UNSIGNED_INT, 0);
-        }
-        glPopDebugGroup();
-	    glDepthMask(GL_TRUE);
-	    glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-    }
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     glDisable(GL_STENCIL_TEST);
+	glPopDebugGroup();
 
     // color picking
     if (isPickPixelPending)
@@ -1344,7 +1334,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);
         glUseProgram(renderer->getShaderProgram(
-                    highlightMeshes.empty() ? "post_process" : "post_process_outline"));
+                    isEditorActive ? "post_process_outline_editor" : "post_process_outline"));
         glUniform4fv(0, 1, (f32*)&highlightColor[index]);
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {

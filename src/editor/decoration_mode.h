@@ -286,7 +286,7 @@ public:
 
         if (!isMouseClickHandled)
         {
-            if (g_input.isMouseButtonDown(MOUSE_LEFT))
+            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 isMouseClickHandled = true;
                 if (g_input.isKeyDown(KEY_LCTRL) && g_input.isKeyDown(KEY_LSHIFT) && !selectedPropTypes.empty())
@@ -323,11 +323,20 @@ public:
             }
         }
 
-        for (auto& e : scene->getEntities())
+        for (u32 i=0; (u32)i<scene->getEntities().size(); ++i)
         {
-            bool isSelected = std::find(selectedEntities.begin(),
-                    selectedEntities.end(), e.get()) != selectedEntities.end();
-            e->onEditModeRender(rw, scene, isSelected);
+            auto& e = scene->getEntities()[i];
+            auto it = std::find(selectedEntities.begin(),
+                    selectedEntities.end(), e.get());
+            u8 selectIndexByte = 0;
+            bool isSelected = it != selectedEntities.end();
+            if (isSelected)
+            {
+                u32 selectIndex = it - selectedEntities.begin();
+                // NOTE: first byte is reserved for hidden flag
+                selectIndexByte = (u8)((selectIndex % 126) + 1) << 1;
+            }
+            e->onEditModeRender(rw, scene, isSelected, selectIndexByte);
         }
     }
 

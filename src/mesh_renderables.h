@@ -14,10 +14,13 @@ public:
     GLuint texture;
     u32 pickID;
     u8 stencil;
+    bool highlightModeEnabled;
+    u8 highlightStep;
 
     LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material,
-            u32 pickID=0, u8 stencil=0)
-        : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil)
+            u32 pickID=0, u8 stencil=0, bool highlightModeEnabled=false, u8 highlightStep=0)
+        : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil),
+        highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep)
     {
         if (material->colorTexture)
         {
@@ -35,12 +38,14 @@ public:
             + (material->isTransparent ? 11000 : 0)
             + (material->depthOffset != 0.f ? -1 : 0)
             + (!material->isDepthWriteEnabled ? 10 : 0)
-            + (material->alphaCutoff > 0.f ? 100 : 0);
+            + (material->alphaCutoff > 0.f ? 100 : 0)
+            + (highlightModeEnabled ? 250000 : 0)
+            + (highlightStep * 50000);
     }
 
     void onDepthPrepassPriorityTransition(Renderer* renderer) override
     {
-        if (material->isDepthWriteEnabled)
+        if (material->isDepthWriteEnabled && !highlightModeEnabled)
         {
             glUseProgram(renderer->getShaderProgram(
                 (material->alphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
@@ -49,7 +54,7 @@ public:
 
     void onDepthPrepass(Renderer* renderer) override
     {
-        if (material->isDepthWriteEnabled && !material->isTransparent)
+        if (material->isDepthWriteEnabled && !material->isTransparent && !highlightModeEnabled)
         {
             glUniform1f(8, material->windAmount);
             if (material->alphaCutoff > 0.f)
@@ -65,7 +70,7 @@ public:
 
     void onShadowPassPriorityTransition(Renderer* renderer) override
     {
-        if (material->castsShadow)
+        if (material->castsShadow && !highlightModeEnabled)
         {
             glUseProgram(renderer->getShaderProgram(
                 (material->shadowAlphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
@@ -74,7 +79,7 @@ public:
 
     void onShadowPass(Renderer* renderer) override
     {
-        if (material->castsShadow)
+        if (material->castsShadow && !highlightModeEnabled)
         {
             glUniform1f(8, material->windAmount);
             if (material->shadowAlphaCutoff > 0.f)
@@ -131,8 +136,37 @@ public:
         {
             glDisable(GL_POLYGON_OFFSET_FILL);
         }
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glStencilMask(0xFF);
+
+        if (highlightModeEnabled)
+        {
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	        glDisable(GL_CULL_FACE);
+            glStencilMask(0xFF);
+
+	        if (highlightStep == 0)
+	        {
+	            glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_EQUAL);
+	            glDepthMask(GL_FALSE);
+	        }
+	        else if (highlightStep < 3)
+	        {
+	            glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LESS);
+	            glDepthMask(GL_TRUE);
+	        }
+	        else
+	        {
+	            glDisable(GL_DEPTH_TEST);
+	            glDepthMask(GL_FALSE);
+	        }
+        }
+        else
+        {
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilMask(0xFF);
+        }
 
         glUseProgram(renderer->getShaderProgram(
                     material->alphaCutoff > 0.f ? "lit_discard" : "lit"));
@@ -142,24 +176,51 @@ public:
     {
         glBindTextureUnit(0, texture);
 
-        glStencilFunc(GL_ALWAYS, stencil, 0xFF);
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-        glUniform3fv(2, 1, (GLfloat*)&material->color);
-        glUniform3f(3, material->fresnelBias, material->fresnelScale, material->fresnelPower);
-        glUniform3f(4, material->specularPower, material->specularStrength, 0.f);
         if (material->alphaCutoff > 0.f)
         {
             glUniform1f(5, material->alphaCutoff);
         }
-        glm::vec3 emission = material->emit * material->emitPower;
-        glUniform3fv(6, 1, (GLfloat*)&emission);
-        glUniform3f(7, material->reflectionStrength, material->reflectionLod, material->reflectionBias);
         glUniform1f(8, material->windAmount);
-
         glBindVertexArray(mesh->vao);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+
+        if (highlightModeEnabled)
+        {
+            if (highlightStep == 0)
+            {
+                glStencilFunc(GL_ALWAYS, stencil, 0xFF);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            }
+            else if (highlightStep == 1)
+            {
+                glStencilFunc(GL_EQUAL, stencil, 0xFF);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            }
+            else if (highlightStep == 2)
+            {
+                glStencilFunc(GL_ALWAYS, stencil | STENCIL_HIDDEN, 0xFF);
+                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            }
+            else if (highlightStep == 3)
+            {
+                glStencilFunc(GL_EQUAL, 0, 0xFF);
+                glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+            }
+            glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        }
+        else
+        {
+            glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+            glUniform3fv(2, 1, (GLfloat*)&material->color);
+            glUniform3f(3, material->fresnelBias, material->fresnelScale, material->fresnelPower);
+            glUniform3f(4, material->specularPower, material->specularStrength, 0.f);
+            glm::vec3 emission = material->emit * material->emitPower;
+            glUniform3fv(6, 1, (GLfloat*)&emission);
+            glUniform3f(7, material->reflectionStrength, material->reflectionLod, material->reflectionBias);
+            glStencilFunc(GL_ALWAYS, stencil, 0xFF);
+            glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+        }
     }
 
     void onPickPassPriorityTransition(Renderer* renderer) override
@@ -377,7 +438,7 @@ public:
         : color(color), mesh(mesh), worldTransform(worldTransform),
           cameraIndex(cameraIndex), priorityOffset(priorityOffset), onlyDepth(onlyDepth) {}
 
-    i32 getPriority() const override { return 250000 + priorityOffset; }
+    i32 getPriority() const override { return 400000 + priorityOffset; }
 
     void onLitPassPriorityTransition(Renderer* renderer) override
     {
@@ -389,6 +450,7 @@ public:
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
         glStencilMask(0x0);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
 
     void onLitPass(Renderer* renderer) override

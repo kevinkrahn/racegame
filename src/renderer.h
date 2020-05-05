@@ -15,9 +15,7 @@
 enum
 {
     STENCIL_ENVIRONMENT = 0,
-    STENCIL_OUTLINE = 1,
-    STENCIL_VEHICLE = 2,
-    STENCIL_NO_OUTLINE = 4,
+    STENCIL_HIDDEN = 1,
 };
 
 GLuint emptyVAO;
@@ -110,13 +108,6 @@ struct WorldInfo
     glm::mat4 shadowViewProjectionBias;
 };
 
-struct HighlightMesh
-{
-    Mesh* mesh;
-    glm::mat4 worldTransform;
-    u32 id;
-};
-
 class RenderWorld
 {
     friend class Renderer;
@@ -144,7 +135,6 @@ class RenderWorld
         Renderable* renderable;
     };
     std::vector<QueuedRenderable> renderables;
-    std::vector<HighlightMesh> highlightMeshes;
 
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
@@ -191,11 +181,6 @@ public:
         T* ptr = reinterpret_cast<T*>(mem);
         add(ptr);
         return ptr;
-    }
-
-    void addHighlightMesh(Mesh* mesh, glm::mat4 const& worldTransform, u32 id)
-    {
-        highlightMeshes.push_back({ mesh, worldTransform, id });
     }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }

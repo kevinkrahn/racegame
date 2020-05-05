@@ -23,6 +23,9 @@ layout(binding = 3) uniform sampler2D bloomSampler3;
 #if defined OUTLINE_ENABLED
 layout(binding = 4) uniform usampler2D stencilSampler;
 #endif
+#if defined EDITOR_OUTLINE_ENABLED
+layout(binding = 4) uniform usampler2D stencilSampler;
+#endif
 
 void main()
 {
@@ -32,6 +35,46 @@ void main()
                 + texture(bloomSampler2, inTexCoord).rgb
                 + texture(bloomSampler3, inTexCoord).rgb) / 3.0;
     outColor += vec4(bloom, 0.0);
+#endif
+#if defined EDITOR_OUTLINE_ENABLED
+    ivec2 coord = ivec2(gl_FragCoord.xy);
+    uint id = texelFetch(stencilSampler, coord, 0).r;
+    uint mask = (~1);
+    float amount = 0.0;
+    for (int x = -1; x<=1; ++x)
+    {
+        for (int y = -1; y<=1; ++y)
+        {
+            uint adjacentID = texelFetch(stencilSampler, coord + ivec2(x, y), 0).r;
+            /*
+            if (adjacentID == 1 && id == 0 || adjacentID == 0 && id == 1)
+            {
+                amount += 0.2;
+            }
+            if (adjacentID == 2 && id == 0 || adjacentID == 0 && id == 2)
+            {
+                amount += 1.0;
+            }
+            */
+            if ((adjacentID & mask) != (id & mask))
+            {
+                if ((adjacentID & 1) == 1 && (id & 1) == 0 || (id & 1) == 1 && (adjacentID & 1) == 0)
+                {
+                    amount += 0.2;
+                }
+                else if ((adjacentID & 1) == 0 && (id & 1) == 0)
+                {
+                    amount += 1.0;
+                }
+            }
+        }
+    }
+    if ((id & 1) == 1)
+    {
+        coord /= 2;
+        amount = max(amount, ((coord.x & 1) == 0 || (coord.y & 1) == 1) ? 0.2 : 0.0);
+    }
+    outColor = mix(outColor, highlightColor, amount / 6.0);
 #endif
 #if defined OUTLINE_ENABLED
     ivec2 coord = ivec2(gl_FragCoord.xy);
@@ -47,6 +90,12 @@ void main()
                 amount += 1.0;
             }
         }
+    }
+    if (id == 1)
+    {
+        //coord /= 2;
+        //amount = max(amount, ((coord.x & 1) == 0 || (coord.y & 1) == 1) ? 0.5 : 0.0);
+        amount = max(amount, 0.5);
     }
     outColor = mix(outColor, highlightColor, amount / 6.0);
 #endif

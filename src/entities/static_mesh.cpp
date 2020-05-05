@@ -25,21 +25,19 @@ void StaticMesh::onCreate(Scene* scene)
         actor = g_game.physx.physics->createRigidDynamic(
                 PxTransform(convert(position), convert(rotation)));
 
-        for (auto& obj : model->objects)
+        for (auto& obj : objects)
         {
-            PxShape* shape = nullptr;
-            if (obj.isCollider)
+            if (obj.modelObject->isCollider)
             {
-                Mesh& mesh = model->meshes[obj.meshIndex];
-                shape = PxRigidActorExt::createExclusiveShape(*actor,
+                Mesh& mesh = model->meshes[obj.modelObject->meshIndex];
+                obj.shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxConvexMeshGeometry(mesh.getConvexCollisionMesh(),
-                        PxMeshScale(convert(scale * obj.scale))), *scene->genericMaterial);
-                shape->setQueryFilterData(PxFilterData(
+                        PxMeshScale(convert(scale * obj.modelObject->scale))), *scene->genericMaterial);
+                obj.shape->setQueryFilterData(PxFilterData(
                             COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_SELECTABLE, DECAL_NONE,
                             0, UNDRIVABLE_SURFACE));
-                shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DYNAMIC, -1, 0, 0));
+                obj.shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DYNAMIC, -1, 0, 0));
             }
-            objects.push_back({ &obj, shape });
         }
         PxRigidBodyExt::updateMassAndInertia(*((PxRigidDynamic*)actor), model->density);
     }
@@ -48,20 +46,18 @@ void StaticMesh::onCreate(Scene* scene)
         actor = g_game.physx.physics->createRigidStatic(
                 PxTransform(convert(position), convert(rotation)));
 
-        for (auto& obj : model->objects)
+        for (auto& obj : objects)
         {
-            PxShape* shape = nullptr;
-            if (obj.isCollider)
+            if (obj.modelObject->isCollider)
             {
-                Mesh& mesh = model->meshes[obj.meshIndex];
-                shape = PxRigidActorExt::createExclusiveShape(*actor,
+                Mesh& mesh = model->meshes[obj.modelObject->meshIndex];
+                obj.shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(mesh.getCollisionMesh(),
-                        PxMeshScale(convert(scale * obj.scale))), *scene->genericMaterial);
-                shape->setQueryFilterData(PxFilterData(
+                        PxMeshScale(convert(scale * obj.modelObject->scale))), *scene->genericMaterial);
+                obj.shape->setQueryFilterData(PxFilterData(
                             COLLISION_FLAG_OBJECT | COLLISION_FLAG_SELECTABLE, DECAL_GROUND, 0, DRIVABLE_SURFACE));
-                shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
+                obj.shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));
             }
-            objects.push_back({ &obj, shape });
         }
     }
 
@@ -206,7 +202,7 @@ void StaticMesh::onPreview(RenderWorld* rw)
     }
 }
 
-void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
+void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
     if (isSelected)
     {
@@ -214,12 +210,15 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
         {
             if (o.modelObject->isVisible)
             {
-                /*
-                rw->push(WireframeRenderable(&model->meshes[o.modelObject->meshIndex],
-                            transform * o.modelObject->getTransform()));
-                */
-                rw->addHighlightMesh(&model->meshes[o.modelObject->meshIndex],
-                        transform * o.modelObject->getTransform(), irandom(scene->randomSeries, 0, 10000));
+                rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
+                            transform * o.modelObject->getTransform(),
+                            g_res.getMaterial(o.modelObject->materialGuid), 0, selectIndex, true, 0));
+                rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
+                            transform * o.modelObject->getTransform(),
+                            g_res.getMaterial(o.modelObject->materialGuid), 0, selectIndex, true, 1));
+                rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
+                            transform * o.modelObject->getTransform(),
+                            g_res.getMaterial(o.modelObject->materialGuid), 0, selectIndex, true, 2));
             }
         }
     }

@@ -135,7 +135,7 @@ void Start::onPreview(RenderWorld* rw)
     }
 }
 
-void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
+void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
     if (isSelected)
     {

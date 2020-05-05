@@ -243,10 +243,10 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         {
             mat = coloredPaintMaterial;
         }
-        rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, isHidden ? 2 : 0));
+        rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2));
         if (isHidden)
         {
-            rw->addHighlightMesh(m.mesh, transform * m.transform, vehicle->vehicleIndex+1);
+            rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2, true, 3));
         }
     }
 
@@ -276,10 +276,10 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             {
                 mat = coloredPaintMaterial;
             }
-            rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, isHidden ? 2 : 0));
+            rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2));
             if (isHidden)
             {
-                rw->addHighlightMesh(m.mesh, wheelTransform * m.transform, vehicle->vehicleIndex+1);
+                rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2, true, 3));
             }
         }
     }

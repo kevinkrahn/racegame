@@ -64,7 +64,7 @@ void Glue::onPreview(RenderWorld* rw)
                 glm::vec4(1.f), 8.f, 0.f, false));
 }
 
-void Glue::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected)
+void Glue::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
     BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
     if (isSelected)

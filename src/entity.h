@@ -73,7 +73,8 @@ public:
 
     virtual void applyDecal(class Decal& decal) {}
 
-    virtual void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected) {}
+    virtual void onEditModeRender(class RenderWorld* rw, class Scene* scene, bool isSelected,
+            u8 selectIndex=1) {}
 };
 
 struct PropPrefabData

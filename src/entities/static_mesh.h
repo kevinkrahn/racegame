@@ -25,7 +25,7 @@ public:
     void onCreate(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onPreview(RenderWorld* rw) override;
-    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override;
+    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected, u8 selectIndex) override;
     void serializeState(Serializer& s) override;
     void updateTransform(class Scene* scene) override;
     std::vector<PropPrefabData> generatePrefabProps() override;

@@ -103,7 +103,7 @@ public:
         }
     }
 
-    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected) override
+    void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected, u8 selectIndex) override
     {
         if (isSelected)
         {
