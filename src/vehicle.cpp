@@ -1022,8 +1022,24 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                     random(scene->randomSeries, -5.f, 5.f), 0.f);
             pos = scene->findValidPosition(pos, 5.f);
 
-            reset(glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 6.5f)) *
-                  glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1)));
+            glm::mat4 resetTransform = glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 7.f)) *
+                  glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1));
+
+            PxRaycastBuffer hit;
+            if (scene->raycastStatic(pos + glm::vec3(0, 0, 8.f), { 0, 0, -1 }, 20.f, &hit))
+            {
+                glm::vec3 up = convert(hit.block.normal);
+                glm::vec3 forwardTmp = glm::vec3(lengthdir(node->angle, 1.f), 0.f);
+                glm::vec3 right = glm::normalize(glm::cross(up, forwardTmp));
+                glm::vec3 forward = glm::normalize(glm::cross(right, up));
+                glm::mat4 m(1.f);
+                m[0] = glm::vec4(forward, m[0].w);
+                m[1] = glm::vec4(right, m[1].w);
+                m[2] = glm::vec4(up, m[2].w);
+                resetTransform = glm::translate(glm::mat4(1.f), pos + up * 7.f) * m;
+            }
+
+            reset(resetTransform);
 
             if (!finishedRace)
             {

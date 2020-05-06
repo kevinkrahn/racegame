@@ -9,7 +9,6 @@
 - Change cursor when hovering over something interactable
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line? A power up?)
-- Allow setting the number of laps for a race in the editor (can make a short track with many laps, or a long track with few laps)
 - Get rid of GLM because it makes compile times so long
 - Add motion blur when using rocket booster
 - Add muzzle flash for minigun
@@ -41,10 +40,9 @@
 - Shoot out shell casings when minigun is fired
 - Fix transform gizmo
 - Calculate vehicle acceleration and handling by simulating a physics world
-- Vehicle respawn angles are awkward sometimes
 - Have min camera Z so that when you drive off a cliff you see the car falling way down
 - Experiment with post-process sharpen effect
-- Align respawned vehicles with the incline of the track
+- Vehicle respawn angles are awkward sometimes
 
 - Ideas:
     - Grenade launcher weapon
