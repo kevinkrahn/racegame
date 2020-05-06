@@ -26,7 +26,6 @@
 - Don't blow up so easily when two wheels are off the track
 - Add splitscreen configuration (horizontal vs vertical split for two and three players)
 - Vibrate player's controller when that player is selected (so that the player can be identified)
-- Fix culling on cactus thorns (fix when new material system is implemented)
 - Use heightfield for terrain collision geometry
 - Add ability to create holes in the terrain (for tunnels, caves, .etc)
 - Add sound effect when driving on sand

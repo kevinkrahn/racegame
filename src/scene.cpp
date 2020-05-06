@@ -425,13 +425,15 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (allPlayersFinished && isRaceInProgress)
         {
             finishTimer += deltaTime;
-            if (finishTimer >= 9.f && !g_game.isEditing)
+            if (finishTimer >= 4.f && !g_game.isEditing)
             {
-                buildRaceResults();
-                stopRace();
-                // TODO: Should the use press a key to end the race? That way you can continue to watch the carnage if you so desire.
-                //isCameraTourEnabled = false;
-                g_game.menu.showRaceResults();
+                // TODO: Tell the player to press a button
+                if (g_gui.didSelect())
+                {
+                    buildRaceResults();
+                    stopRace();
+                    g_game.menu.showRaceResults();
+                }
             }
         }
 

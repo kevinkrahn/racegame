@@ -572,6 +572,7 @@ public:
             if (ImGui::DragFloat("Scale", &selectedSpline->scale, 0.01f, 0.1f, 10.f))
             {
                 selectedSpline->isDirty = true;
+                selectedSpline->scale = glm::max(selectedSpline->scale, 0.01f);
             }
 
             ImGui::End();

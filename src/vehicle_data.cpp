@@ -353,7 +353,9 @@ void VehicleData::renderDebris(RenderWorld* rw,
         {
             mat = coloredPaintMaterial;
         }
-        rw->push(LitMaterialRenderable(d.meshInfo->mesh, convert(d.rigidBody->getGlobalPose()), mat));
+        glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
+        rw->push(LitMaterialRenderable(d.meshInfo->mesh,
+                    convert(d.rigidBody->getGlobalPose()) * scale, mat));
     }
 }
 
