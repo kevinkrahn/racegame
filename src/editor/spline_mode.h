@@ -87,6 +87,10 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         {
             return;
         }
+        if (splineA == splineB)
+        {
+            return;
+        }
 
         if (pointIndexA == splineA->points.size() - 1 &&
             pointIndexB == splineB->points.size() - 1)

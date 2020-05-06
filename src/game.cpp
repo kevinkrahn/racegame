@@ -228,13 +228,13 @@ void Game::run()
         ImGui::NewFrame();
 
         g_gui.beginFrame();
-        if (currentScene)
-        {
-            currentScene->onUpdate(renderer.get(), deltaTime);
-        }
         if (isEditing)
         {
             resourceManager->onUpdate(renderer.get(), deltaTime);
+        }
+        if (currentScene)
+        {
+            currentScene->onUpdate(renderer.get(), deltaTime);
         }
         menu.onUpdate(renderer.get(), deltaTime);
         checkDebugKeys();

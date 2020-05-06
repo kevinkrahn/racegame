@@ -71,13 +71,15 @@ Scene::Scene(TrackData* data)
     genericMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
     railingMaterial = g_game.physx.physics->createMaterial(0.2f, 0.2f, 0.3f);
 
-    if (!data)
+    if (!data->data.hasValue())
     {
-        // loading empty scene, so add default terrain, track, and start
-        addEntity(g_entities[0].create());
-        addEntity(g_entities[1].create());
-        addEntity(g_entities[4].create());
-        addEntity(g_entities[5].create());
+        print("Loading empty scene. Adding default entities.");
+        addEntity(g_entities[0].create()); // terrain
+        addEntity(g_entities[1].create()); // track
+        addEntity(g_entities[4].create()); // starting point
+
+        guid = data->guid;
+        name = data->name;
     }
     else
     {

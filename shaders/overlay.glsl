@@ -11,7 +11,7 @@ layout(location = 0) uniform mat4 worldMatrix;
 
 void main()
 {
-    float scaleFactor = 0.01;
+    float scaleFactor = 0.015;
     mat4 mvp = cameraViewProjection * worldMatrix;
     float w = (mvp * vec4(0, 0, 0, 1)).w * scaleFactor;
     gl_Position = mvp * vec4(attrPosition * w, 1.0);
