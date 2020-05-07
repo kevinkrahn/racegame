@@ -575,8 +575,6 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
             ImGui::Gap();
         }
 
-        ImGui::Text(selectedTexture->name.c_str());
-
         const char* textureTypeNames = "Color\0Grayscale\0Normal Map\0Cube Map\0";
         i32 textureType = tex.getTextureType();
         changed |= ImGui::Combo("Type", &textureType, textureTypeNames);

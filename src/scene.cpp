@@ -328,7 +328,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     rw->setViewportCount(viewportCount);
-    rw->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    //rw->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    // TODO: make light direction configurable in editor
+    rw->addDirectionalLight(glm::vec3(0.2f, 0.5f, -0.8f), glm::vec3(1.0));
 
     if (!isPaused)
     {

@@ -70,7 +70,7 @@ void main()
     vec3 normal = normalize(inNormal);
 #endif
     outColor = lighting(texture(texSampler, inTexCoord) * vec4(color, 1.0),
-            normal, inShadowCoord, inWorldPosition, 800.0, 0.5, vec3(1.0),
-            -0.1, 0.25, 3.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
+            normal, inShadowCoord, inWorldPosition, 0.0, 0.0, vec3(1.0),
+            0.0, 0.0, 0.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
 }
 #endif

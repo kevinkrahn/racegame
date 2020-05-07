@@ -50,7 +50,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit,
         float reflectionStrength, float reflectionLod, float reflectionBias)
 {
-    const vec3 ambientDirection = normalize(vec3(0.2, 0.0, 0.8));
+    const vec3 ambientDirection = normalize(vec3(0.3, 0.1, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
 
 #if SHADOWS_ENABLED
@@ -65,20 +65,28 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     vec3 toCamera = cameraPosition - worldPosition;
 
     float sunPower = 1.0;
+#if 1
+    // new lighting
+    float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.055)
+        + max(dot(normal, ambientDirection) * 0.07, 0.0);
+    color.rgb *= directLight;
+#else
+    // old lighting
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)
         + max(dot(normal, ambientDirection) * 0.12, 0.0);
+    color.rgb *= max(directLight, 0.1);
+#endif
+
     vec3 camDir = normalize(toCamera);
     vec3 halfDir = normalize(sunDirection + camDir);
     vec3 specularLight = specularColor * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * sunPower;
-
-    color.rgb *= max(directLight, 0.1);
     color.rgb += specularLight * shadow;
     color.rgb += fresnel * max(shadow, 0.25);
 
 #if SSAO_ENABLED
 #ifndef NO_SSAO
     float ssaoAmount = texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r;
-    color.rgb *= clamp(ssaoAmount + directLight * 0.5, 0.0, 1.0);
+    color.rgb *= clamp(ssaoAmount + directLight * 0.6, 0.0, 1.0);
 #endif
 #endif
 
