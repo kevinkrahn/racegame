@@ -260,7 +260,7 @@ public:
                 selectedEntities.clear();
             }
 
-            if (pixelID != 0)
+            if (*pixelID != 0)
             {
                 for (auto& e : scene->getEntities())
                 {

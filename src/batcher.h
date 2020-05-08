@@ -50,11 +50,11 @@ public:
 
     void end();
 
-    void render(RenderWorld* rw)
+    void render(RenderWorld* rw, glm::mat4 const& transform=glm::mat4(1.f))
     {
         for (auto& batch : batches)
         {
-            rw->push(LitMaterialRenderable(&batch.mesh, glm::mat4(1.f), batch.material));
+            rw->push(LitMaterialRenderable(&batch.mesh, transform, batch.material));
         }
     }
 };

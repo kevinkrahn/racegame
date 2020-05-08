@@ -125,6 +125,9 @@ class RenderWorld
     SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
     glm::vec4 highlightColor[MAX_VIEWPORTS] = {};
 
+    BoundingBox shadowBounds;
+    bool hasCustomShadowBounds = false;
+
     // TODO: calculate these based on render resolution
     u32 firstBloomDivisor = 2;
     u32 lastBloomDivisor = 16;
@@ -239,6 +242,11 @@ public:
             }
         }
         return nullptr;
+    }
+    void setShadowBounds(BoundingBox const& bb)
+    {
+        shadowBounds = bb;
+        hasCustomShadowBounds = true;
     }
 };
 

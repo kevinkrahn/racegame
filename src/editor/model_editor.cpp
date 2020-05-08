@@ -412,6 +412,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     //glm::vec3 rayDir = camera.getMouseRay(rw);
     //Camera const& cam = camera.getCamera();
     rw->updateWorldTime(g_game.currentTime);
+    //rw->setShadowBounds(model->getBoundingbox(glm::mat4(1.f)).expand(5.f));
+    rw->setShadowBounds(BoundingBox{ glm::vec3(-50), glm::vec3(50) });
 
     if (const u32* pixelID = rw->getPickPixelResult())
     {

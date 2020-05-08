@@ -875,50 +875,25 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
         return;
     }
 
-	// TODO: adjust znear and zfar for better shadow quality
-    Camera const& cam = cameras[cameraIndex];
-    glm::mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
-
-    glm::vec3 ndc[] = {
-        { -1,  1, 0 },
-        {  1,  1, 0 },
-        {  1, -1, 0 },
-        { -1, -1, 0 },
-
-        { -1,  1, 1 },
-        {  1,  1, 1 },
-        {  1, -1, 1 },
-        { -1, -1, 1 },
-    };
-
-    f32 minx =  FLT_MAX;
-    f32 maxx = -FLT_MAX;
-    f32 miny =  FLT_MAX;
-    f32 maxy = -FLT_MAX;
-    f32 minz =  FLT_MAX;
-    f32 maxz = -FLT_MAX;
-    for (auto& v : ndc)
+    if (!hasCustomShadowBounds)
     {
-        glm::vec4 b = inverseViewProj * glm::vec4(v, 1.f);
-        v = glm::vec3(b) / b.w;
-
-        if (v.x < minx) minx = v.x;
-        if (v.x > maxx) maxx = v.x;
-        if (v.y < miny) miny = v.y;
-        if (v.y > maxy) maxy = v.y;
-        if (v.z < minz) minz = v.z;
-        if (v.z > maxz) maxz = v.z;
+	    // TODO: adjust znear and zfar for better shadow quality
+        Camera const& cam = cameras[cameraIndex];
+        glm::mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
+        shadowBounds = computeCameraFrustumBoundingBox(inverseViewProj);
     }
 
-    glm::vec3 center = (glm::vec3(minx, miny, minz) + glm::vec3(maxx, maxy, maxz)) * 0.5f;
-    f32 extent = glm::max(maxx-minx, maxy-miny) * 0.5f;
+    glm::vec3 center = (shadowBounds.min + shadowBounds.max) * 0.5f;
+    f32 extent = glm::max(
+            shadowBounds.max.x-shadowBounds.min.x,
+            shadowBounds.max.y-shadowBounds.min.y) * 0.5f;
     f32 snapMultiple = 2.f * extent / shadowMapResolution;
     center.x = snap(center.x, snapMultiple);
     center.y = snap(center.y, snapMultiple);
     center.z = snap(center.z, snapMultiple);
-
     glm::mat4 depthProjection = glm::ortho(center.x-extent, center.x+extent,
-                                        center.y+extent, center.y-extent, -maxz, -minz);
+                                        center.y+extent, center.y-extent,
+                                        -shadowBounds.max.z, -shadowBounds.min.z);
     glm::mat4 viewProj = depthProjection * depthView;
 
     worldInfoShadow.cameraViewProjection = viewProj;

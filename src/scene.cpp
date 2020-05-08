@@ -496,7 +496,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
 
         Camera const& cam = rw->getCamera(0);
-        BoundingBox bb = computeCameraFrustumBoundingBox(cam.viewProjection);
+        BoundingBox bb = computeCameraFrustumBoundingBox(glm::inverse(cam.viewProjection));
         debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
 
         physicsScene->setVisualizationCullingBox(PxBounds3(convert(bb.min), convert(bb.max)));

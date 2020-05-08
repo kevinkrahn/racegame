@@ -171,9 +171,18 @@ void ResourceManager::showFolder(ResourceFolder* folder)
                 renameFolder = folder;
                 firstFrameRename = true;
             }
-            if (ImGui::MenuItem("Delete"))
+            if (folder->childFolders.empty() && folder->childResources.empty())
             {
-                // TODO
+                if (ImGui::MenuItem("Delete"))
+                {
+                    auto it = std::find_if(folder->parent->childFolders.begin(),
+                            folder->parent->childFolders.end(),
+                            [folder](auto& f) { return folder == f.get(); });
+                    if (it != folder->parent->childFolders.end())
+                    {
+                        folder->parent->childFolders.erase(it);
+                    }
+                }
             }
             ImGui::EndPopup();
         }
@@ -261,7 +270,14 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             {
                 if (ImGui::MenuItem("Duplicate"))
                 {
-                    // TODO
+                    DataFile::Value data = DataFile::makeDict();
+                    Serializer s(data, false);
+                    childResource->serialize(s);
+                    Resource* resource = newResource(childResource->type);
+                    data.dict().val()["guid"] = resource->guid;
+                    data.dict().val()["name"].string().val() += "_copy";
+                    s.deserialize = true;
+                    resource->serialize(s);
                 }
                 if (ImGui::MenuItem("Rename"))
                 {
@@ -271,7 +287,40 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                 }
                 if (ImGui::MenuItem("Delete"))
                 {
-                    // TODO
+                    // TODO: add confirmation dialog
+                    if (selectedTexture == childResource)
+                    {
+                        selectedTexture = nullptr;
+                        isTextureWindowOpen = false;
+                    }
+                    if (selectedSound == childResource)
+                    {
+                        selectedSound = nullptr;
+                        isSoundWindowOpen = false;
+                    }
+                    if (selectedMaterial == childResource)
+                    {
+                        selectedMaterial = nullptr;
+                        isMaterialWindowOpen = false;
+                    }
+                    if (modelEditor.getCurrentModel() == childResource)
+                    {
+                        modelEditor.setModel(nullptr);
+                    }
+                    if (g_game.currentScene && g_game.currentScene->guid == childResource->guid)
+                    {
+                        g_game.unloadScene();
+                    }
+
+                    std::string filename = str(DATA_DIRECTORY, "/", std::hex,
+                            childResource->guid, ".dat", std::dec);
+                    remove(filename.c_str());
+                    auto it = std::find(folder->childResources.begin(),
+                            folder->childResources.end(), childResource->guid);
+                    if (it != folder->childResources.end())
+                    {
+                        folder->childResources.erase(it);
+                    }
                 }
                 ImGui::EndPopup();
             }
@@ -478,7 +527,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         trackEditor.onUpdate(g_game.currentScene.get(), renderer, deltaTime);
         renderer->getRenderWorld()->setClearColor(true);
     }
-    else if (activeEditor == ResourceType::MODEL)
+    else if (activeEditor == ResourceType::MODEL && modelEditor.getCurrentModel())
     {
         modelEditor.onUpdate(renderer, deltaTime);
         renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
