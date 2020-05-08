@@ -1042,7 +1042,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             if (!finishedRace)
             {
-                getRigidBody()->addForce(convert(getForwardVector() * 9.f),
+                const f32 respawnSpeed = 11.f;
+                getRigidBody()->addForce(convert(getForwardVector() * respawnSpeed),
                         PxForceMode::eVELOCITY_CHANGE);
             }
         }

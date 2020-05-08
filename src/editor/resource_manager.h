@@ -74,7 +74,7 @@ class ResourceManager
 
     std::map<i64, bool> resourcesModified;
 
-    void showFolder(ResourceFolder* folder);
+    bool showFolder(ResourceFolder* folder);
     void showFolderContents(ResourceFolder* folder);
     void openResource(Resource* resource);
 

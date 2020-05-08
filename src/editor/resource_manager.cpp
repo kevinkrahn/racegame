@@ -6,6 +6,18 @@
 
 static void sortResources(ResourceFolder& folder)
 {
+    for (auto it = folder.childResources.begin(); it != folder.childResources.end();)
+    {
+        if (g_res.resources.find(*it) == g_res.resources.end())
+        {
+            showError("Resource ", std::hex, *it, std::dec, " does not exist, removing.");
+            it = folder.childResources.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
     std::sort(folder.childResources.begin(), folder.childResources.end(), [](i64 a, i64 b) {
         Resource* rA = g_res.resources.find(a)->second.get();
         Resource* rB = g_res.resources.find(b)->second.get();
@@ -69,8 +81,9 @@ ResourceManager::ResourceManager()
     sortResources(resources);
 }
 
-void ResourceManager::showFolder(ResourceFolder* folder)
+bool ResourceManager::showFolder(ResourceFolder* folder)
 {
+    bool removed = false;
     u32 flags = folder == &resources ? ImGuiTreeNodeFlags_DefaultOpen : 0;
     if (folder == renameFolder)
     {
@@ -139,9 +152,8 @@ void ResourceManager::showFolder(ResourceFolder* folder)
         {
             if (ImGui::MenuItem("New Folder"))
             {
-                static u32 folderCount = 0;
                 auto newFolder = std::make_unique<ResourceFolder>();
-                newFolder->name = str("New Folder ", folderCount++);
+                newFolder->name = "New Folder";
                 newFolder->parent = folder;
                 folder->childFolders.push_back(std::move(newFolder));
             }
@@ -175,35 +187,38 @@ void ResourceManager::showFolder(ResourceFolder* folder)
             {
                 if (ImGui::MenuItem("Delete"))
                 {
-                    auto it = std::find_if(folder->parent->childFolders.begin(),
-                            folder->parent->childFolders.end(),
-                            [folder](auto& f) { return folder == f.get(); });
-                    if (it != folder->parent->childFolders.end())
-                    {
-                        folder->parent->childFolders.erase(it);
-                    }
+                    removed = true;
                 }
             }
             ImGui::EndPopup();
         }
         if (isFolderOpen)
         {
-            for (auto& childFolder : folder->childFolders)
+            for (auto it = folder->childFolders.begin(); it != folder->childFolders.end();)
             {
-                showFolder(childFolder.get());
+                if (showFolder(it->get()))
+                {
+                    it = folder->childFolders.erase(it);
+                }
+                else
+                {
+                    ++it;
+                }
             }
             showFolderContents(folder);
             ImGui::TreePop();
         }
     }
+    return removed;
 }
 
 void ResourceManager::showFolderContents(ResourceFolder* folder)
 {
     const u32 selectedColor = 0x992299EE;
-    for (auto& childGUID : folder->childResources)
+    for (auto it = folder->childResources.begin(); it != folder->childResources.end();)
     {
-        Resource* childResource = g_res.resources.find(childGUID)->second.get();
+        Resource* childResource = g_res.resources.find(*it)->second.get();
+        bool removed = false;
         ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
         if (childResource == renameResource)
         {
@@ -287,40 +302,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                 }
                 if (ImGui::MenuItem("Delete"))
                 {
-                    // TODO: add confirmation dialog
-                    if (selectedTexture == childResource)
-                    {
-                        selectedTexture = nullptr;
-                        isTextureWindowOpen = false;
-                    }
-                    if (selectedSound == childResource)
-                    {
-                        selectedSound = nullptr;
-                        isSoundWindowOpen = false;
-                    }
-                    if (selectedMaterial == childResource)
-                    {
-                        selectedMaterial = nullptr;
-                        isMaterialWindowOpen = false;
-                    }
-                    if (modelEditor.getCurrentModel() == childResource)
-                    {
-                        modelEditor.setModel(nullptr);
-                    }
-                    if (g_game.currentScene && g_game.currentScene->guid == childResource->guid)
-                    {
-                        g_game.unloadScene();
-                    }
-
-                    std::string filename = str(DATA_DIRECTORY, "/", std::hex,
-                            childResource->guid, ".dat", std::dec);
-                    remove(filename.c_str());
-                    auto it = std::find(folder->childResources.begin(),
-                            folder->childResources.end(), childResource->guid);
-                    if (it != folder->childResources.end())
-                    {
-                        folder->childResources.erase(it);
-                    }
+                    removed = true;
                 }
                 ImGui::EndPopup();
             }
@@ -342,6 +324,45 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             ImGui::Text(childResource->name.c_str());
         }
         ImGui::PopStyleColor();
+        if (removed)
+        {
+            // TODO: add confirmation dialog
+            if (selectedTexture == childResource)
+            {
+                selectedTexture = nullptr;
+                isTextureWindowOpen = false;
+            }
+            if (selectedSound == childResource)
+            {
+                selectedSound = nullptr;
+                isSoundWindowOpen = false;
+            }
+            if (selectedMaterial == childResource)
+            {
+                selectedMaterial = nullptr;
+                isMaterialWindowOpen = false;
+            }
+            if (modelEditor.getCurrentModel() == childResource)
+            {
+                modelEditor.setModel(nullptr);
+            }
+            if (g_game.currentScene && g_game.currentScene->guid == childResource->guid)
+            {
+                g_game.unloadScene();
+            }
+
+            it = folder->childResources.erase(it);
+            std::string filename = str(DATA_DIRECTORY, "/", std::hex, *it, ".dat", std::dec);
+            if (remove(filename.c_str()) != 0)
+            {
+                error("Failed to delete file: ", filename, '\n');
+            }
+            removed = true;
+        }
+        else
+        {
+            ++it;
+        }
     }
 }
 
@@ -417,6 +438,7 @@ Resource* ResourceManager::newResource(ResourceType type)
         resource->guid = g_res.generateGUID();
         resource->name = str(namePrefix, ' ', g_res.resources.size());
         g_res.addResource(std::unique_ptr<Resource>(resource));
+        markDirty(resource->guid);
     }
     return resource;
 }

@@ -76,6 +76,14 @@ std::string str(Args const&... args)
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
+template <typename... Args>
+inline void showError(Args const&... args)
+{
+    std::string msg = str(args...);
+    error(msg, '\n');
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Warning", msg.c_str(), nullptr); \
+}
+
 inline f64 getTime()
 {
     static f64 freq = (f64)SDL_GetPerformanceFrequency();
