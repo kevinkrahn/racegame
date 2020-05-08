@@ -518,7 +518,7 @@ public:
 
         if (selectedSpline)
         {
-            selectedSpline->onRenderWireframe(rw, scene, deltaTime);
+            selectedSpline->onRenderOutline(rw, scene, deltaTime);
             showSelectedSplineProperties();
         }
 

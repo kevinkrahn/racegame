@@ -44,6 +44,10 @@ void ModelEditor::setModel(Model* model)
 
     physicsScene->addActor(*body);
 #endif
+
+    BoundingBox bb = model->getBoundingbox(glm::mat4(1.f));
+    f32 height = bb.max.z - bb.min.z;
+    camera.setCameraDistance(18 + height);
 }
 
 void ModelEditor::showSceneSelection()

@@ -42,7 +42,7 @@ void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
     {
         zoomSpeed = g_input.getMouseScroll() * (cameraDistance * 0.01f);
     }
-    cameraDistance = clamp(cameraDistance - zoomSpeed, 10.f, 200.f);
+    cameraDistance = clamp(cameraDistance - zoomSpeed, 3.f, 250.f);
     zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
     glm::vec3 cameraDir(

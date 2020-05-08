@@ -63,13 +63,15 @@ void Spline::onBatch(Batcher& batcher)
     }
 }
 
-void Spline::onRenderWireframe(RenderWorld* rw, Scene* scene, f32 deltaTime)
+void Spline::onRenderOutline(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     for (auto& rm : meshes)
     {
         if (rm.material)
         {
-            rw->push(WireframeRenderable(&rm.mesh, glm::mat4(1.f)));
+            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material, 0, 4, true, 0));
+            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material, 0, 4, true, 1));
+            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material, 0, 4, true, 2));
         }
     }
 }

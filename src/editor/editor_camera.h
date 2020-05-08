@@ -31,4 +31,5 @@ public:
         this->near = near;
         this->far = far;
     }
+    void setCameraDistance(f32 distance) { cameraDistance = distance; }
 };

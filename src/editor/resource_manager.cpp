@@ -535,6 +535,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     else
     {
         renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
+        renderer->getRenderWorld()->setShadowBounds({}, false);
     }
 }
 

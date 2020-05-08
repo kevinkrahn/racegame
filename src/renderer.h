@@ -243,10 +243,10 @@ public:
         }
         return nullptr;
     }
-    void setShadowBounds(BoundingBox const& bb)
+    void setShadowBounds(BoundingBox const& bb, bool enabled=true)
     {
         shadowBounds = bb;
-        hasCustomShadowBounds = true;
+        hasCustomShadowBounds = enabled;
     }
 };
 
