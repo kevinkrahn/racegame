@@ -21,11 +21,6 @@ layout(location = 5) out vec3 outShadowCoord;
 
 void main()
 {
-    //vec3 T = normalize(vec3(N.z, 0, N.x));
-    //vec3 B = normalize(vec3(0, N.z, N.y));
-    //vec3 T = cross(vec3(1.0, 0.0, 0.0), N);
-    //vec3 B = cross(T, N);
-
 #if NORMAL_MAPPING
     vec3 N = normalize(normalMatrix * attrNormal);
     vec3 T = normalize(normalMatrix * cross(vec3(0.0, 1.0, 0.0), attrNormal));

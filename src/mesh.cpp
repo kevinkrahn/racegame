@@ -4,7 +4,6 @@
 
 void Mesh::buildOctree()
 {
-    assert(elementSize == 3);
     if (octree) return;
     octree = std::make_unique<OctreeNode>();
     octree->aabb = aabb;
@@ -201,8 +200,6 @@ bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32
 
 void Mesh::createVAO()
 {
-    assert(vertexFormat.size() > 0);
-
     destroy();
 
     glCreateVertexArrays(1, &vao);
@@ -215,22 +212,51 @@ void Mesh::createVAO()
     glNamedBufferData(ebo, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
     glVertexArrayElementBuffer(vao, ebo);
 
+    /*
+    SmallVec<VertexAttribute> vertexFormat = {
+        { 0, VertexAttributeType::FLOAT3 }, // position
+        { 1, VertexAttributeType::FLOAT3 }, // normal
+        { 2, VertexAttributeType::FLOAT4 }, // tangent
+        { 3, VertexAttributeType::FLOAT2 }, // uv
+    };
+    */
+    SmallVec<VertexAttribute> vertexFormat = {
+        { 0, VertexAttributeType::FLOAT3 }, // position
+        { 1, VertexAttributeType::FLOAT3 }, // normal
+    };
+    assert(numTexCoords == 1);
+    if (hasTangents)
+    {
+        vertexFormat.push_back({ 2, VertexAttributeType::FLOAT4 }); // tangent
+        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
+        for (u32 i=0; i<numColors; ++i)
+        {
+            // TODO: colors should be packed into a single 32bit integer; 3 floats is too much
+            vertexFormat.push_back({ 4 + i, VertexAttributeType::FLOAT3 });
+        }
+    }
+    else
+    {
+        vertexFormat.push_back({ 4, VertexAttributeType::FLOAT3 }); // color
+        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
+    }
+
     u32 offset = 0;
     for (u32 i=0; i<vertexFormat.size(); ++i)
     {
         u32 numElements = 0;
-        switch (vertexFormat[i])
+        switch (vertexFormat[i].type)
         {
-            case VertexAttribute::FLOAT1:
+            case VertexAttributeType::FLOAT1:
                 numElements = 1;
                 break;
-            case VertexAttribute::FLOAT2:
+            case VertexAttributeType::FLOAT2:
                 numElements = 2;
                 break;
-            case VertexAttribute::FLOAT3:
+            case VertexAttributeType::FLOAT3:
                 numElements = 3;
                 break;
-            case VertexAttribute::FLOAT4:
+            case VertexAttributeType::FLOAT4:
                 numElements = 4;
                 break;
         }
@@ -238,13 +264,11 @@ void Mesh::createVAO()
         {
             FATAL_ERROR("Invalid vertex format");
         }
-        u32 bindIndex = i;
-        glEnableVertexArrayAttrib(vao, bindIndex);
-        glVertexArrayAttribFormat(vao, bindIndex, numElements, GL_FLOAT, GL_FALSE, offset);
-        glVertexArrayAttribBinding(vao, bindIndex, 0);
+        glEnableVertexArrayAttrib(vao, vertexFormat[i].binding);
+        glVertexArrayAttribFormat(vao, vertexFormat[i].binding, numElements, GL_FLOAT, GL_FALSE, offset);
+        glVertexArrayAttribBinding(vao, vertexFormat[i].binding, 0);
         offset += numElements * sizeof(f32);
     }
-    formatStride = offset;
 }
 
 PxTriangleMesh* Mesh::getCollisionMesh()
@@ -253,8 +277,6 @@ PxTriangleMesh* Mesh::getCollisionMesh()
     {
         return collisionMesh;
     }
-
-    assert(elementSize == 3);
 
     PxTriangleMeshDesc desc;
     desc.points.count = numVertices;
@@ -282,8 +304,6 @@ PxConvexMesh* Mesh::getConvexCollisionMesh()
     {
         return convexCollisionMesh;
     }
-
-    assert(elementSize == 3);
 
     PxConvexMeshDesc convexDesc;
     convexDesc.points.count  = numVertices;

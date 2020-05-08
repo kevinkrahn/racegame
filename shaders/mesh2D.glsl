@@ -1,7 +1,7 @@
 #if defined VERT
 
 layout(location = 0) in vec3 attrPosition;
-layout(location = 2) in vec3 attrColor;
+layout(location = 4) in vec3 attrColor;
 
 layout(location = 0) out vec3 outColor;
 

@@ -11,7 +11,8 @@ public:
     Material* material;
     glm::mat4 transform;
     Mesh* mesh;
-    GLuint texture;
+    GLuint textureColor;
+    GLuint textureNormal;
     u32 pickID;
     u8 stencil;
     bool highlightModeEnabled;
@@ -22,14 +23,15 @@ public:
         : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil),
         highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep)
     {
-        if (material->colorTexture)
-        {
-            texture = g_res.getTexture(material->colorTexture)->handle;
-        }
-        else
-        {
-            texture = g_res.white.handle;
-        }
+        textureColor = material->colorTexture
+            ? g_res.getTexture(material->colorTexture)->handle : g_res.white.handle;
+#if 0
+        textureNormal = material->normalMapTexture
+            ? g_res.getTexture(material->normalMapTexture)->handle : g_res.identityNormal.handle;
+#else
+        textureNormal = material->normalMapTexture
+            ? g_res.getTexture(material->normalMapTexture)->handle : 0;
+#endif
     }
 
     i32 getPriority() const override
@@ -39,6 +41,7 @@ public:
             + (material->depthOffset != 0.f ? -1 : 0)
             + (!material->isDepthWriteEnabled ? 10 : 0)
             + (material->alphaCutoff > 0.f ? 100 : 0)
+            + (textureNormal != 0 ? 500 : 0)
             + (highlightModeEnabled ? 250000 : 0)
             + (highlightStep * 50000);
     }
@@ -61,7 +64,7 @@ public:
             {
                 glUniform1f(5, material->alphaCutoff);
             }
-            glBindTextureUnit(0, texture);
+            glBindTextureUnit(0, textureColor);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
             glBindVertexArray(mesh->vao);
             glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
@@ -86,7 +89,7 @@ public:
             {
                 glUniform1f(5, material->shadowAlphaCutoff);
             }
-            glBindTextureUnit(0, texture);
+            glBindTextureUnit(0, textureColor);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
             glBindVertexArray(mesh->vao);
             glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
@@ -168,13 +171,21 @@ public:
             glStencilMask(0xFF);
         }
 
-        glUseProgram(renderer->getShaderProgram(
-                    material->alphaCutoff > 0.f ? "lit_discard" : "lit"));
+        const char* shaderProgram = material->alphaCutoff > 0.f ? "lit_discard" : "lit";
+        if (material->normalMapTexture != 0)
+        {
+            shaderProgram = "lit_normal_map";
+        }
+        glUseProgram(renderer->getShaderProgram(shaderProgram));
     }
 
     void onLitPass(Renderer* renderer) override
     {
-        glBindTextureUnit(0, texture);
+        glBindTextureUnit(0, textureColor);
+        if (textureNormal)
+        {
+            glBindTextureUnit(5, textureNormal);
+        }
 
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
@@ -236,7 +247,7 @@ public:
             return;
         }
 
-        glBindTextureUnit(0, texture);
+        glBindTextureUnit(0, textureColor);
 
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));

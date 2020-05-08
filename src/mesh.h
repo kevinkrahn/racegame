@@ -8,12 +8,18 @@
 #include "datafile.h"
 #include <vector>
 
-enum VertexAttribute
+enum struct VertexAttributeType
 {
     FLOAT1,
     FLOAT2,
     FLOAT3,
     FLOAT4
+};
+
+struct VertexAttribute
+{
+    u32 binding;
+    VertexAttributeType type;
 };
 
 struct Mesh
@@ -25,17 +31,11 @@ struct Mesh
     u32 numIndices;
     u32 numColors;
     u32 numTexCoords;
-    u32 elementSize;
     u32 stride = 0;
     BoundingBox aabb;
 
-    SmallVec<VertexAttribute> vertexFormat = {
-        VertexAttribute::FLOAT3, // position
-        VertexAttribute::FLOAT3, // normal
-        VertexAttribute::FLOAT3, // color
-        VertexAttribute::FLOAT2, // uv
-    };
-    u32 formatStride;
+    // TODO: remove this property when all meshes have been reimported
+    bool hasTangents = false;
 
     void serialize(Serializer& s)
     {
@@ -46,12 +46,12 @@ struct Mesh
         s.field(numIndices);
         s.field(numColors);
         s.field(numTexCoords);
-        s.field(elementSize);
         s.field(aabb);
+        s.field(hasTangents);
 
         if (s.deserialize)
         {
-            stride = (6 + numColors * 3 + numTexCoords * 2) * sizeof(f32);
+            calculateStride();
             createVAO();
         }
     }
@@ -71,6 +71,10 @@ struct Mesh
 
     std::unique_ptr<OctreeNode> octree = nullptr;
     void buildOctree();
+    void calculateStride()
+    {
+        stride = (6 + (hasTangents ? 4 : 0) + numColors * 3 + numTexCoords * 2) * sizeof(f32);
+    }
 
     bool intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const;
     void createVAO();
@@ -90,14 +94,16 @@ inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
     {
         glm::vec3 pos;
         glm::vec3 normal;
-        glm::vec3 color;
+        glm::vec4 tangent;
         glm::vec2 uv;
+        glm::vec3 color;
     };
     for (u32 i=0; i<rhs.numVertices; ++i)
     {
         Vertex v = *((Vertex*)(((u8*)rhs.vertices.data()) + i * rhs.stride));
         lhs << "POS:    " << v.pos << '\n';
         lhs << "NORMAL: " << v.normal << '\n';
+        lhs << "TANGENT: " << v.tangent << '\n';
         lhs << "COLOR:  " << v.color << '\n';
         lhs << "UV:     " << v.uv << '\n';
     }

@@ -8,17 +8,15 @@ void Batcher::end()
         bigBatchedMesh.name = itemsForThisMaterial.first->name + " Batch";
         bigBatchedMesh.numVertices = 0;
         bigBatchedMesh.numIndices = 0;
+        bigBatchedMesh.numColors = 1;
+        bigBatchedMesh.numTexCoords = 1;
+        bigBatchedMesh.hasTangents = true;
+        bigBatchedMesh.calculateStride();
+
         u32 vertexElementCount = 0;
-
-        Mesh* meshAttributeSource = itemsForThisMaterial.second.front().mesh;
-        bigBatchedMesh.numColors = meshAttributeSource->numColors;
-        bigBatchedMesh.numTexCoords = meshAttributeSource->numTexCoords;
-        bigBatchedMesh.elementSize = meshAttributeSource->elementSize;
-        bigBatchedMesh.stride = meshAttributeSource->stride;
-
         for (auto& item : itemsForThisMaterial.second)
         {
-            vertexElementCount += (u32)item.mesh->vertices.size();
+            vertexElementCount += item.mesh->numVertices * (bigBatchedMesh.stride / sizeof(f32));
             bigBatchedMesh.numVertices += item.mesh->numVertices;
             bigBatchedMesh.numIndices += item.mesh->numIndices;
         }
@@ -42,6 +40,7 @@ void Batcher::end()
                 u32 j = i * item.mesh->stride / sizeof(f32);
                 glm::vec3 p(item.mesh->vertices[j+0], item.mesh->vertices[j+1], item.mesh->vertices[j+2]);
                 glm::vec3 n(item.mesh->vertices[j+3], item.mesh->vertices[j+4], item.mesh->vertices[j+5]);
+                glm::vec3 t(item.mesh->vertices[j+6], item.mesh->vertices[j+7], item.mesh->vertices[j+8]);
 
                 p = item.transform * glm::vec4(p, 1.f);
                 n = glm::normalize(normalMatrix * n);
@@ -53,12 +52,35 @@ void Batcher::end()
                 bigBatchedMesh.vertices[vertexElementIndex + 4] = n.y;
                 bigBatchedMesh.vertices[vertexElementIndex + 5] = n.z;
 
-                for (u32 attrIndex = 6; attrIndex < item.mesh->stride / sizeof(f32); ++attrIndex)
+                if (item.mesh->hasTangents)
                 {
-                    bigBatchedMesh.vertices[vertexElementIndex+attrIndex] = item.mesh->vertices[j+attrIndex];
+                    t = glm::normalize(normalMatrix * t);
+                    bigBatchedMesh.vertices[vertexElementIndex + 6] = t.x;
+                    bigBatchedMesh.vertices[vertexElementIndex + 7] = t.y;
+                    bigBatchedMesh.vertices[vertexElementIndex + 8] = t.z;
+                    for (u32 attrIndex = 9; attrIndex < item.mesh->stride / sizeof(f32); ++attrIndex)
+                    {
+                        bigBatchedMesh.vertices[vertexElementIndex+attrIndex] = item.mesh->vertices[j+attrIndex];
+                    }
+                }
+                else
+                {
+                    bigBatchedMesh.vertices[vertexElementIndex + 6] = 0.f;
+                    bigBatchedMesh.vertices[vertexElementIndex + 7] = 0.f;
+                    bigBatchedMesh.vertices[vertexElementIndex + 8] = 1.f;
+                    bigBatchedMesh.vertices[vertexElementIndex + 9] = 1.f;
+                    bigBatchedMesh.vertices[vertexElementIndex + 10] = item.mesh->vertices[j+9];
+                    bigBatchedMesh.vertices[vertexElementIndex + 11] = item.mesh->vertices[j+10];
+                    bigBatchedMesh.vertices[vertexElementIndex + 12] = t.x;
+                    bigBatchedMesh.vertices[vertexElementIndex + 13] = t.y;
+                    bigBatchedMesh.vertices[vertexElementIndex + 14] = t.z;
+                    for (u32 attrIndex = 14; attrIndex < item.mesh->stride / sizeof(f32); ++attrIndex)
+                    {
+                        bigBatchedMesh.vertices[vertexElementIndex+attrIndex] = item.mesh->vertices[j+attrIndex];
+                    }
                 }
 
-                vertexElementIndex += item.mesh->stride / sizeof(f32);
+                vertexElementIndex += bigBatchedMesh.stride / sizeof(f32);
             }
             verticesCopied += item.mesh->numVertices;
         }

@@ -54,114 +54,73 @@ def get_props(obj):
         props[key] = value
     return props
 
-def namePrefix(path=bpy.data.filepath):
-    return os.path.splitext(os.path.basename(path))[0] + '.'
-
-def save_mesh(obj, mesh_map):
-    mesh_name = namePrefix() + obj.data.name
-    if len(obj.modifiers) > 0:
-        mesh_name = namePrefix() + obj.name
-    elif obj.library != None:
-        return (False, namePrefix(obj.library) + obj.data.name)
-
-    if(mesh_map.get(mesh_name, None) != None):
-        return (False, mesh_name)
-
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    mesh_copy = obj.evaluated_get(depsgraph).to_mesh()
-    mesh_copy.calc_normals_split()
-    mesh_copy.calc_loop_triangles()
-
+def build_mesh_buffer(triangles, source_mesh, mesh_name):
     vertices = []
     vertex_count = 0
     vertex_buffer = bytearray()
     vertex_dict = {}
     indices = []
-    element_size = 0
 
-    if len(mesh_copy.loop_triangles) > 0:
-        if len(mesh_copy.uv_layers) == 0:
-            mesh_copy.uv_layers.new()
-        #mesh_copy.calc_tangents()
-        element_size = 3
-        for tri in mesh_copy.loop_triangles:
-            tri_tex_coords = []
-            tri_colors = []
-            tri_tangents = []
-            tri_positions = []
-            tri_normals = []
-            for loop_index in tri.loops:
-                if len(mesh_copy.uv_layers) > 0:
-                    uvs = []
-                    for uv_layer in mesh_copy.uv_layers:
-                        uvs.append(uv_layer.data[loop_index].uv)
-                    tri_tex_coords.append(uvs)
-                else:
-                    tri_tex_coords.append([[ 0, 0 ]])
+    for tri in triangles:
+        tri_tex_coords = []
+        tri_colors = []
+        tri_tangents = []
+        tri_positions = []
+        tri_normals = []
+        for loop_index in tri.loops:
+            if len(source_mesh.uv_layers) > 0:
+                uvs = []
+                for uv_layer in source_mesh.uv_layers:
+                    uvs.append(uv_layer.data[loop_index].uv)
+                tri_tex_coords.append(uvs)
+            else:
+                tri_tex_coords.append([[ 0, 0 ]])
 
-                if len(mesh_copy.vertex_colors) > 0:
-                    colors = []
-                    for color in mesh_copy.vertex_colors:
-                        colors.append(color.data[loop_index].color)
-                    tri_colors.append(colors)
-                else:
-                    tri_colors.append([[ 1, 1, 1 ]])
+            if len(source_mesh.vertex_colors) > 0:
+                colors = []
+                for color in source_mesh.vertex_colors:
+                    colors.append(color.data[loop_index].color)
+                tri_colors.append(colors)
+            else:
+                tri_colors.append([[ 1, 1, 1 ]])
 
-                loop = mesh_copy.loops[loop_index]
-                #tri_tangents.append([ loop.tangent[0], loop.tangent[1], loop.tangent[2], loop.bitangent_sign ])
-                tri_normals.append(loop.normal)
-                tri_positions.append(mesh_copy.vertices[loop.vertex_index].co)
+            loop = source_mesh.loops[loop_index]
+            tri_tangents.append([ loop.tangent[0], loop.tangent[1], loop.tangent[2], loop.bitangent_sign ])
+            tri_normals.append(loop.normal)
+            tri_positions.append(source_mesh.vertices[loop.vertex_index].co)
 
-            for i in range(3):
-                position = tri_positions[i]
-                normal = tri_normals[i]
-                #tangent = tri_tangents[i]
-                colors = tri_colors[i]
-                tex_coords = tri_tex_coords[i]
+        for i in range(3):
+            position = tri_positions[i]
+            normal = tri_normals[i]
+            tangent = tri_tangents[i]
+            colors = tri_colors[i]
+            tex_coords = tri_tex_coords[i]
 
-                vertex = (position[0], position[1], position[2], normal[0], normal[1], normal[2])
-                for c in colors:
-                    vertex = vertex + (c[0], c[1], c[2])
+            vertex = (position[0], position[1], position[2], normal[0], normal[1], normal[2])
+            for c in colors:
+                vertex = vertex + (c[0], c[1], c[2])
+            for u in tex_coords:
+                vertex = vertex + (u[0], u[1])
+
+            index = vertex_dict.get(vertex, None)
+            if index == None:
+                vertices.append(vertex)
+                index = vertex_count
+                vertex_count += 1
+                vertex_dict[vertex] = index
+                vertex_buffer += struct.pack("<10f", position[0], position[1], position[2],
+                                                    normal[0], normal[1], normal[2],
+                                                    tangent[0], tangent[1], tangent[2], tangent[3])
                 for u in tex_coords:
-                    vertex = vertex + (u[0], u[1])
+                    vertex_buffer += struct.pack("<2f", u[0], 1.0 - u[1])
+                for c in colors:
+                    vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
 
-                index = vertex_dict.get(vertex, None)
-                if index == None:
-                    vertices.append(vertex)
-                    index = vertex_count
-                    vertex_count += 1
-                    vertex_dict[vertex] = index
-                    vertex_buffer += struct.pack("<6f", position[0], position[1], position[2],
-                                                        normal[0], normal[1], normal[2]
-                                                        #tangent[0], tangent[1], tangent[2], tangent[3]
-                                                        )
-                    for c in colors:
-                        vertex_buffer += struct.pack("<3f", c[0], c[1], c[2])
-                    for u in tex_coords:
-                        vertex_buffer += struct.pack("<2f", u[0], 1.0 - u[1])
-
-                indices.append(index)
-
-    elif len(mesh_copy.edges) > 0:
-        element_size = 2
-        vertex_count = len(mesh_copy.vertices)
-        for v in mesh_copy.vertices:
-            vertex_buffer += struct.pack("<3f", v.co[0], v.co[1], v.co[2])
-
-        for e in mesh_copy.edges:
-            for i in e.vertices:
-                indices.append(i)
-                index_buffer += struct.pack('<I', i)
-
-    else:
-        element_size = 1
-        vertex_count = len(mesh_copy.vertices)
-        for v in mesh_copy.vertices:
-            vertex_buffer += struct.pack("<3f", v.co[0], v.co[1], v.co[2])
+            indices.append(index)
 
     minP = [999999.0, 999999, 999999];
     maxP = [-999999.0, -999999, -999999];
-    for v in mesh_copy.vertices:
+    for v in source_mesh.vertices:
         if v.co[0] < minP[0]: minP[0] = v.co[0];
         if v.co[1] < minP[1]: minP[1] = v.co[1];
         if v.co[2] < minP[2]: minP[2] = v.co[2];
@@ -169,64 +128,80 @@ def save_mesh(obj, mesh_map):
         if v.co[1] > maxP[1]: maxP[1] = v.co[1];
         if v.co[2] > maxP[2]: maxP[2] = v.co[2];
 
-    if "sortz" in obj.data:
-        triangles = []
-        for i in range(0, len(indices) // 3):
-            z1 = vertices[indices[i*3+0]][2]
-            z2 = vertices[indices[i*3+1]][2]
-            z3 = vertices[indices[i*3+2]][2]
-            triangles.append({
-                "z": max(z1, z2, z3),
-                "indices": [ indices[i*3], indices[i*3+1], indices[i*3+2] ]
-            })
-
-        def takeZ(elem):
-            return elem["z"]
-        triangles.sort(key=takeZ)
-
-        indices = []
-        for tri in triangles:
-            indices.append(tri["indices"][0])
-            indices.append(tri["indices"][1])
-            indices.append(tri["indices"][2])
 
     index_buffer = bytearray()
     for index in indices:
         index_buffer += struct.pack('<I', index)
 
-    mesh_map[mesh_name] = {
+    return {
         'name': mesh_name,
-        'numColors': max(1, len(mesh_copy.vertex_colors)),
-        'numTexCoords': max(1, len(mesh_copy.uv_layers)),
-        'elementSize': element_size,
+        'numColors': max(1, len(source_mesh.vertex_colors)),
+        'numTexCoords': max(1, len(source_mesh.uv_layers)),
         'vertices': vertex_buffer,
         'numVertices': vertex_count,
         'indices': index_buffer,
         'numIndices': len(indices),
-        'properties': get_props(obj.data),
-        'aabb': { 'min': [minP[0], minP[1], minP[2]], 'max': [maxP[0], maxP[1], maxP[2]] }
+        'aabb': { 'min': [minP[0], minP[1], minP[2]], 'max': [maxP[0], maxP[1], maxP[2]] },
+        'hasTangents': True,
     }
-    return (True, mesh_name)
 
-def save_path(obj, scene):
-    obj.data.resolution_u = 5
-    obj.data.extrude = 0
-    obj.data.bevel_depth = 0
-    obj.data.offset = 0
-    path_mesh = obj.to_mesh(preserve_all_data_layers=True)
+def save_mesh(obj, mesh_map, mesh_lookup):
+    mesh_name = obj.data.name
+    if len(obj.modifiers) > 0:
+        mesh_name = obj.name
 
-    buf = bytearray()
+    if(mesh_lookup.get(mesh_name, None) != None):
+        return mesh_lookup[mesh_name]
 
-    for v in path_mesh.vertices:
-        p = obj.matrix_world * v.co
-        buf += struct.pack("<fff", p.x, p.y, p.z)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    mesh_copy = obj.evaluated_get(depsgraph).to_mesh()
 
-    return buf
+    bm = bmesh.new()
+    bm.from_mesh(mesh_copy)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.to_mesh(mesh_copy)
+    bm.free()
+    del bm
 
+    mesh_copy.calc_normals_split()
+    mesh_copy.calc_loop_triangles()
+
+    if len(mesh_copy.loop_triangles) == 0:
+        return []
+
+    if len(mesh_copy.uv_layers) == 0:
+        uv_layer = mesh_copy.uv_layers.new(name="hello")
+
+    mesh_copy.calc_tangents()
+
+    # split mesh by material
+    materials = {}
+    for tri in mesh_copy.loop_triangles:
+        if materials.get(tri.material_index, None) == None:
+            materials[tri.material_index] = []
+        materials[tri.material_index].append(tri)
+
+    meshes = []
+    if len(materials) > 0:
+        for matIndex in materials:
+            name = mesh_name
+            if len(materials) > 1:
+                name += "_mat" + str(matIndex)
+            mesh = build_mesh_buffer(materials[matIndex], mesh_copy, name)
+            mesh_map[name] = mesh
+            meshes.append(name)
+    else:
+        mesh = build_mesh_buffer(mesh_copy.loop_triangles, mesh_copy, mesh_name)
+        mesh_map[mesh_name] = mesh
+        meshes.append(mesh_name)
+
+    mesh_lookup[mesh_name] = meshes
+    return meshes
 
 def save_blender_data():
     start = time.time()
     mesh_map = {}
+    mesh_lookup = {}
     path_map = {}
     scenes = []
 
@@ -235,7 +210,7 @@ def save_blender_data():
         objects = []
         collections = []
 
-        def save_object(obj, objectType, matrix, data_name='NONE'):
+        def save_object(obj, objectType, name, matrix, data_name='NONE'):
             collection_indexes = []
             for collection in obj.users_collection:
                 if collection.name in collections:
@@ -246,7 +221,7 @@ def save_blender_data():
 
             objects.append({
                 'type': objectType,
-                'name': obj.name,
+                'name': name,
                 'data_name': data_name,
                 'collection_indexes': collection_indexes,
                 'matrix': struct.pack("<16f",
@@ -263,34 +238,18 @@ def save_blender_data():
                 continue
 
             if obj.type == 'MESH':
-                result = save_mesh(obj, mesh_map)
-                save_object(obj, 'MESH', obj.matrix_world, result[1])
-
-            #elif obj.type == 'EMPTY':
-                #if obj.dupli_group:
-                    #for child in obj.dupli_group.objects:
-                        #offset = Matrix.Translation(obj.dupli_group.dupli_offset).inverted()
-                        #matrix = obj.matrix_world * offset * child.matrix_world
-                        # TODO: fix
-                        #result = save_mesh(child, mesh_map)
-                        #save_object(child, 0, matrix, result[1])
-                        #data_name = namePrefix(
-                                #bpy.data.filepath if child.library == None else child.library.filepath) + child.data.name
-                        #save_object(child, 'MESH', matrix, data_name)
-                #else:
-                    #save_object(obj, 'EMPTY', obj.matrix_world)
-
-            #elif obj.type == 'CURVE':
-                #objects.append({
-                    #'type': 'PATH',
-                    #'name': obj.name,
-                    #'properties': get_props(obj),
-                    #'points': save_path(obj, scene)
-                #})
+                meshes = save_mesh(obj, mesh_map, mesh_lookup)
+                if len(meshes) > 0:
+                    if len(meshes) > 1:
+                        for index, mesh_name in enumerate(meshes):
+                            save_object(obj, 'MESH', obj.name + "_mat" + str(index),
+                                    obj.matrix_world, mesh_name)
+                    else:
+                        save_object(obj, 'MESH', obj.name, obj.matrix_world, meshes[0])
 
         scenes.append({
             'type': 'scene',
-            'name': namePrefix() + scene.name,
+            'name': scene.name,
             'objects': objects,
             'collections': collections,
             'properties': get_props(scene)

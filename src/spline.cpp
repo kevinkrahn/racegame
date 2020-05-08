@@ -208,16 +208,12 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
     f32 sourceMeshScaleFactor = lengthPerMesh / sourceMeshLength;
 
     outputMesh->vertices.resize(sourceMesh->numVertices
-            * sourceMesh->formatStride / sizeof(f32) * totalRepeatCount);
+            * sourceMesh->stride / sizeof(f32) * totalRepeatCount);
     outputMesh->indices.resize(sourceMesh->numIndices * totalRepeatCount);
-    outputMesh->vertexFormat.clear();
-    for (auto item : sourceMesh->vertexFormat)
-    {
-        outputMesh->vertexFormat.push_back(item);
-    }
-    outputMesh->stride = sourceMesh->formatStride;
-    outputMesh->elementSize = sourceMesh->elementSize;
-    assert(outputMesh->elementSize == 3);
+    outputMesh->stride = sourceMesh->stride;
+    outputMesh->numColors = sourceMesh->numColors;
+    outputMesh->numTexCoords = sourceMesh->numTexCoords;
+    outputMesh->hasTangents = sourceMesh->hasTangents;
 
     //f32 invMeshWidth = 1.f / ((sourceMesh->aabb.max.y - sourceMesh->aabb.min.y) * 8);
     f32 distanceAlongPath = 0.f;
@@ -229,11 +225,12 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
             u32 j = i * sourceMesh->stride / sizeof(f32);
             glm::vec3 p(sourceMesh->vertices[j+0], sourceMesh->vertices[j+1], sourceMesh->vertices[j+2]);
             glm::vec3 n(sourceMesh->vertices[j+3], sourceMesh->vertices[j+4], sourceMesh->vertices[j+5]);
-            glm::vec2 uv(sourceMesh->vertices[j+9], sourceMesh->vertices[j+10]);
+            glm::vec3 t(sourceMesh->vertices[j+6], sourceMesh->vertices[j+7], sourceMesh->vertices[j+8]);
             p.x -= sourceMesh->aabb.min.x;
             p *= meshScale;
             p.x *= sourceMeshScaleFactor;
             n.x *= sourceMeshScaleFactor;
+            t.x *= sourceMeshScaleFactor;
 
             u32 pointIndex = lastPolyLinePointIndex;
 
@@ -256,23 +253,27 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
             glm::vec3 dp = line.pos + line.dir *
                 (distanceAlongPath - line.distanceToHere) + m * p;
 
-            // bend the normal
+            // bend normal and tangent
             glm::vec3 dn = glm::normalize(m * n);
+            glm::vec3 dt = glm::normalize(m * t);
 
 #if 0
             uv.x = (distanceAlongPath + p.x) * invMeshWidth;
 #endif
 
-            // copy over the remaining vertex attributes
-            u32 nj = (repeatCount * sourceMesh->formatStride / sizeof(f32) * sourceMesh->numVertices)
-                + i * sourceMesh->formatStride / sizeof(f32);
+            u32 nj = (repeatCount * sourceMesh->stride / sizeof(f32) * sourceMesh->numVertices)
+                + i * sourceMesh->stride / sizeof(f32);
             outputMesh->vertices[nj+0] = dp.x;
             outputMesh->vertices[nj+1] = dp.y;
             outputMesh->vertices[nj+2] = dp.z;
             outputMesh->vertices[nj+3] = dn.x;
             outputMesh->vertices[nj+4] = dn.y;
             outputMesh->vertices[nj+5] = dn.z;
-            for (u32 attrIndex = 6; attrIndex < sourceMesh->formatStride / sizeof(f32); ++attrIndex)
+            outputMesh->vertices[nj+6] = dt.x;
+            outputMesh->vertices[nj+7] = dt.y;
+            outputMesh->vertices[nj+8] = dt.z;
+            // copy over the remaining vertex attributes
+            for (u32 attrIndex = 9; attrIndex < sourceMesh->stride / sizeof(f32); ++attrIndex)
             {
                 outputMesh->vertices[nj+attrIndex] = sourceMesh->vertices[j+attrIndex];
             }

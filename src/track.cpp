@@ -665,8 +665,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         enum
         {
             POSITION_BIND_INDEX = 0,
-            NORMAL_BIND_INDEX = 1,
-            COLOR_BIND_INDEX = 2
+            NORMAL_BIND_INDEX = 1
         };
 
         glCreateVertexArrays(1, &c.vao);
@@ -678,10 +677,6 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         glEnableVertexArrayAttrib(c.vao, NORMAL_BIND_INDEX);
         glVertexArrayAttribFormat(c.vao, NORMAL_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12);
         glVertexArrayAttribBinding(c.vao, NORMAL_BIND_INDEX, 0);
-
-        glEnableVertexArrayAttrib(c.vao, COLOR_BIND_INDEX);
-        glVertexArrayAttribFormat(c.vao, COLOR_BIND_INDEX, 3, GL_FLOAT, GL_FALSE, 12 + 12);
-        glVertexArrayAttribBinding(c.vao, COLOR_BIND_INDEX, 0);
     }
 
     f32 totalLength = c.getLength();
@@ -689,7 +684,8 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
     c.boundingBox = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
     c.vertices.clear();
     c.indices.clear();
-    f32 stepSize = 1.f;
+    // TODO: find the maximum viable step size
+    const f32 stepSize = 2.f;
     u32 totalSteps = (u32)(totalLength / stepSize);
     glm::vec3 prevP = points[c.pointIndexA].position;
     for (u32 i=0; i<=totalSteps; ++i)
@@ -707,9 +703,8 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         f32 width = glm::lerp(c.widthA, c.widthB, t);
         glm::vec3 p1 = p + yDir * width;
         glm::vec3 p2 = p - yDir * width;
-        glm::vec3 color = { 0, 0, 0 };
-        c.vertices.push_back(Vertex{ p1, zDir, color });
-        c.vertices.push_back(Vertex{ p2, zDir, color });
+        c.vertices.push_back(Vertex{ p1, zDir });
+        c.vertices.push_back(Vertex{ p2, zDir });
         if (i > 0)
         {
             c.indices.push_back(i * 2 - 1);

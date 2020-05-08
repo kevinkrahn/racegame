@@ -117,8 +117,6 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
 
 void Decal::addMesh(Mesh* mesh, glm::mat4 const& meshTransform)
 {
-    assert(mesh->elementSize == 3);
-
     if (mesh->octree)
     {
         std::vector<u32> indices;

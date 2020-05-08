@@ -50,7 +50,6 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit,
         float reflectionStrength, float reflectionLod, float reflectionBias)
 {
-    const vec3 ambientDirection = normalize(vec3(0.3, 0.1, 0.8));
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
 
 #if SHADOWS_ENABLED
@@ -65,6 +64,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     vec3 toCamera = cameraPosition - worldPosition;
 
     float sunPower = 1.0;
+    const vec3 ambientDirection = normalize(vec3(0.3, 0.1, 0.8));
 #if 1
     // new lighting
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.055)

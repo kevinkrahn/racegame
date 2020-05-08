@@ -244,6 +244,7 @@ void Renderer::initShaders()
     loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
     loadShader("lit", { "OUT_ID" }, "lit_id");
     loadShader("lit", { "ALPHA_DISCARD", "OUT_ID" }, "lit_discard_id");
+    loadShader("lit", { "NORMAL_MAP" }, "lit_normal_map");
     loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
     loadShader("quad2D", { "BLUR" }, "texBlur2D");

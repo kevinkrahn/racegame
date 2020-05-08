@@ -489,6 +489,89 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 }
 
+bool chooseTexture(i32 type, i64& currentTexture, const char* name)
+{
+    ImGui::Image((void*)(uintptr_t)g_res.getTexture(currentTexture)->getPreviewHandle(), { 48, 48 });
+    ImGui::SameLine();
+    ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
+    ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 300.f };
+    ImGui::SetNextWindowSizeConstraints(size, size);
+    bool changed = false;
+    if (ImGui::BeginCombo(name,
+                currentTexture == 0 ? "None" : g_res.getTexture(currentTexture)->name.c_str()))
+    {
+        static std::string searchString;
+        static std::vector<Texture*> searchResults;
+        searchResults.clear();
+
+        if (ImGui::IsWindowAppearing())
+        {
+            ImGui::SetKeyboardFocusHere();
+            searchString = "";
+        }
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
+        bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::Button("!", ImVec2(16, 0)))
+        {
+            if (g_game.resourceManager->getSelectedTexture())
+            {
+                currentTexture = g_game.resourceManager->getSelectedTexture()->guid;
+                changed = true;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        for (auto& res : g_res.resources)
+        {
+            if (res.second->type != ResourceType::TEXTURE)
+            {
+                continue;
+            }
+            Texture* tex = (Texture*)res.second.get();
+            if (tex->getTextureType() == type)
+            {
+                if (searchString.empty() || tex->name.find(searchString) != std::string::npos)
+                {
+                    searchResults.push_back(tex);
+                }
+            }
+        }
+        std::sort(searchResults.begin(), searchResults.end(), [](auto a, auto b) {
+            return a->name < b->name;
+        });
+
+        if (enterPressed)
+        {
+            currentTexture = searchResults[0]->guid;
+            changed = true;
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::BeginChild("Search Results", { 0, 0 }))
+        {
+            for (Texture* tex : searchResults)
+            {
+                ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
+                ImGui::SameLine();
+                ImGui::PushID(tex->guid);
+                if (ImGui::Selectable(tex->name.c_str()))
+                {
+                    changed = true;
+                    currentTexture = tex->guid;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::PopID();
+            }
+            ImGui::EndChild();
+        }
+
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
 void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
 {
     if (!isTextureWindowOpen)
@@ -659,82 +742,8 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::Columns(1);
         ImGui::Gap();
 
-        ImGui::Image((void*)(uintptr_t)g_res.getTexture(mat.colorTexture)->getPreviewHandle(), { 48, 48 });
-        ImGui::SameLine();
-        ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
-        ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 300.f };
-        ImGui::SetNextWindowSizeConstraints(size, size);
-        if (ImGui::BeginCombo("Color Texture",
-                    mat.colorTexture == 0 ? "None" : g_res.getTexture(mat.colorTexture)->name.c_str()))
-        {
-            dirty = true;
-
-            static std::string searchString;
-            static std::vector<Texture*> searchResults;
-            searchResults.clear();
-
-            if (ImGui::IsWindowAppearing())
-            {
-                ImGui::SetKeyboardFocusHere();
-                searchString = "";
-            }
-            ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
-            bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-            if (ImGui::Button("!", ImVec2(16, 0)))
-            {
-                if (getSelectedTexture())
-                {
-                    mat.colorTexture = getSelectedTexture()->guid;
-                    ImGui::CloseCurrentPopup();
-                }
-            }
-
-            for (auto& res : g_res.resources)
-            {
-                if (res.second->type != ResourceType::TEXTURE)
-                {
-                    continue;
-                }
-                Texture* tex = (Texture*)res.second.get();
-                if (tex->getTextureType() == TextureType::COLOR)
-                {
-                    if (searchString.empty() || tex->name.find(searchString) != std::string::npos)
-                    {
-                        searchResults.push_back(tex);
-                    }
-                }
-            }
-            std::sort(searchResults.begin(), searchResults.end(), [](auto a, auto b) {
-                return a->name < b->name;
-            });
-
-            if (enterPressed)
-            {
-                mat.colorTexture = searchResults[0]->guid;
-                ImGui::CloseCurrentPopup();
-            }
-
-            if (ImGui::BeginChild("Search Results", { 0, 0 }))
-            {
-                for (Texture* tex : searchResults)
-                {
-                    ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
-                    ImGui::SameLine();
-                    ImGui::PushID(tex->guid);
-                    if (ImGui::Selectable(tex->name.c_str()))
-                    {
-                        mat.colorTexture = tex->guid;
-                        ImGui::CloseCurrentPopup();
-                    }
-                    ImGui::PopID();
-                }
-                ImGui::EndChild();
-            }
-
-            ImGui::EndCombo();
-        }
+        chooseTexture(TextureType::COLOR, mat.colorTexture, "Color Texture");
+        chooseTexture(TextureType::NORMAL_MAP, mat.normalMapTexture, "Normal Map");
 
         ImGui::Columns(2, nullptr, false);
         dirty |= ImGui::Checkbox("Culling", &mat.isCullingEnabled);

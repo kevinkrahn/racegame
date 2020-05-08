@@ -597,6 +597,12 @@ void ModelEditor::processBlenderData()
             break;
         }
     }
+    if (!scenePtr)
+    {
+        error("Scene \"", model->sourceSceneName, "\" not found\n");
+        return;
+    }
+
     auto& scene = *scenePtr;
 
     if (model->name.empty() || model->name.substr(0, strlen("Model")) == "Model")

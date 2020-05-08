@@ -60,6 +60,7 @@ void main()
     float zSpec = texture(specSampler, uvZ).r;
     float spec = xSpec * blend.x + ySpec * blend.y + zSpec * blend.z;
 
+    // TODO: these normalize calls are probably unnecessary
     vec3 xNormal = normalize(texture(normalSampler, uvX).rgb * 2.0 - 1.0);
     vec3 yNormal = normalize(texture(normalSampler, uvY).rgb * 2.0 - 1.0);
     vec3 zNormal = normalize(texture(normalSampler, uvZ).rgb * 2.0 - 1.0);
