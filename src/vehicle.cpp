@@ -901,9 +901,8 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             *driver->getVehicleConfig());
     if (cameraIndex >= 0)
     {
-        rw->setHighlightColor(0,
+        rw->setHighlightColor(cameraIndex,
                 glm::vec4(g_vehicleColors[driver->getVehicleConfig()->colorIndex], 1.f));
-        //rw->setHighlightColor(0, glm::vec4(0.f, 0.f, 0.f, 0.5f));
     }
 
     // visualize path finding

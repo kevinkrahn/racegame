@@ -17,11 +17,12 @@ public:
     u8 stencil;
     bool highlightModeEnabled;
     u8 highlightStep;
+    u8 cameraIndex;
 
     LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material,
-            u32 pickID=0, u8 stencil=0, bool highlightModeEnabled=false, u8 highlightStep=0)
+            u32 pickID=0, u8 stencil=0, bool highlightModeEnabled=false, u8 highlightStep=0, u8 cameraIndex=0)
         : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil),
-        highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep)
+        highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep), cameraIndex(cameraIndex)
     {
         textureColor = material->colorTexture
             ? g_res.getTexture(material->colorTexture)->handle : g_res.white.handle;
@@ -202,23 +203,29 @@ public:
             {
                 glStencilFunc(GL_ALWAYS, stencil, 0xFF);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
             }
             else if (highlightStep == 1)
             {
                 glStencilFunc(GL_EQUAL, stencil, 0xFF);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
             }
             else if (highlightStep == 2)
             {
                 glStencilFunc(GL_ALWAYS, stencil | STENCIL_HIDDEN, 0xFF);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
             }
             else if (highlightStep == 3)
             {
-                glStencilFunc(GL_EQUAL, 0, 0xFF);
-                glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+                if (cameraIndex == renderer->getCurrentRenderingCameraIndex())
+                {
+                    glStencilFunc(GL_EQUAL, 0, 0xFF);
+                    glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+                    glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+                }
             }
-            glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
         }
         else
         {

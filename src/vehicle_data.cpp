@@ -255,7 +255,8 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2));
         if (isHidden)
         {
-            rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2, true, 3));
+            rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2, true,
+                        3, (u8)vehicle->cameraIndex));
         }
     }
 
@@ -288,7 +289,8 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2));
             if (isHidden)
             {
-                rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2, true, 3));
+                rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2, true,
+                            3, (u8)vehicle->cameraIndex));
             }
         }
     }
