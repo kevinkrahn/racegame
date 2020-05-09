@@ -38,8 +38,8 @@ public:
 
     // states
     bool isInAir = true;
-    bool isOnTrack = false;
-    bool isBraking = false;
+    bool isOnTrack = false; //
+    bool isBraking = false; // TODO: this is never set
 	bool isBackingUp = false;
 	bool isBlocked = false;
 	bool isFollowed = false;
@@ -108,7 +108,7 @@ public:
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
-	bool isStuckOnGlue = false;
+	f32 glueSoundTimer = 0.f;
 
     std::vector<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }

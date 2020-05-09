@@ -663,15 +663,15 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
         wheelInfo[i].position = wheelPosition;
         wheelInfo[i].contactNormal = convert(info.tireContactNormal);
         wheelInfo[i].contactPosition = wheelPosition - wheelInfo[i].contactNormal * wheelRadius;
-        wheelInfo[i].isTouchingTrack = false;
-        wheelInfo[i].isOffroad = false;
-        wheelInfo[i].isTouchingGlue = false;
-        wheelInfo[i].isInAir = info.isInAir;
         wheelInfo[i].rotationSpeed = vehicle4W->mWheelsDynData.getWheelRotationSpeed(i);
         wheelInfo[i].lateralSlip = info.lateralSlip;
         wheelInfo[i].longitudinalSlip = info.longitudinalSlip;
         wheelInfo[i].oilCoverage = glm::max(wheelInfo[i].oilCoverage - deltaTime, 0.f);
         wheelInfo[i].dustAmount = 0.f;
+        wheelInfo[i].isTouchingTrack = false;
+        wheelInfo[i].isOffroad = false;
+        wheelInfo[i].isTouchingGlue = false;
+        wheelInfo[i].isInAir = info.isInAir;
 
         if (!info.isInAir)
         {

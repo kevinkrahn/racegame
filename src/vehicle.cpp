@@ -653,6 +653,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     bool smoked = false;
     u32 numWheelsOnTrack = 0;
     isOnTrack = false;
+    isInAir = true;
     bool isTouchingAnyGlue = false;
     f32 maxSlip = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -665,12 +666,22 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 ++numWheelsOnTrack;
             }
 
-            if (info.isTouchingGlue && !isStuckOnGlue)
+            if (info.isTouchingTrack)
             {
-                g_audio.playSound3D(g_res.getSound("sticky"), SoundType::GAME_SFX,
-                        currentPosition, false, 1.f, 0.95f);
-                isStuckOnGlue = true;
+                isOnTrack = true;
             }
+
+            if (info.isTouchingGlue)
+            {
+                isTouchingAnyGlue = true;
+                if (glueSoundTimer == 0.f)
+                {
+                    g_audio.playSound3D(g_res.getSound("sticky"), SoundType::GAME_SFX,
+                            currentPosition, false, 1.f, 0.95f);
+                    glueSoundTimer = 0.5f;
+                }
+            }
+            isInAir = false;
         }
 
         f32 slip = glm::max(
@@ -732,7 +743,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     if (!isTouchingAnyGlue)
     {
-        isStuckOnGlue = false;
+        glueSoundTimer = glm::max(glueSoundTimer - deltaTime, 0.f);
     }
 
     g_audio.setSoundVolume(tireSound,

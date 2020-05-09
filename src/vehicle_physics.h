@@ -2,6 +2,7 @@
 
 #include "math.h"
 #include "vehicle_data.h"
+#include "collision_flags.h"
 
 class VehicleSceneQueryData
 {
@@ -62,15 +63,15 @@ struct WheelInfo
     glm::vec3 position;
     glm::vec3 contactNormal;
     glm::vec3 contactPosition;
-    f32 rotationSpeed;
-    f32 lateralSlip;
-    f32 longitudinalSlip;
-    f32 oilCoverage;
-    f32 dustAmount;
-    bool isTouchingTrack;
-    bool isOffroad;
-    bool isTouchingGlue;
-    bool isInAir;
+    f32 rotationSpeed = 0.f;
+    f32 lateralSlip = 0.f;
+    f32 longitudinalSlip = 0.f;
+    f32 oilCoverage = 0.f;
+    f32 dustAmount = 0.f;
+    bool isTouchingTrack = false;
+    bool isOffroad = false;
+    bool isTouchingGlue = false;
+    bool isInAir = false;
 };
 
 struct GroundSpot
@@ -88,7 +89,7 @@ struct GroundSpot
 
 struct IgnoredGroundSpot
 {
-    Entity* e;
+    class Entity* e;
     f32 t;
 };
 
