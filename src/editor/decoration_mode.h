@@ -341,7 +341,7 @@ public:
                             randomizeRotationY ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationZ ? random(scene->randomSeries, 0.f, PI2) : 0,
                         };
-                        newEntity->rotation = glm::quat(eulerAngles);
+                        newEntity->rotation = glm::quat(eulerAngles) * newEntity->rotation;
                         newEntity->updateTransform(scene);
                         newEntity->setPersistent(true);
                         scene->addEntity(newEntity);

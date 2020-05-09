@@ -14,6 +14,7 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
     switch(projectileType)
     {
         case BLASTER:
+        case PHANTOM:
             life = 3.f;
             groundFollow = false;
             collisionRadius = 0.4f;
@@ -43,6 +44,11 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
     }
 }
 
+void Projectile::onCreate(Scene* scene)
+{
+    Vehicle* vehicle = scene->getVehicle(instigator);
+    ignoreActors.push_back(vehicle->getRigidBody());
+}
 
 void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
@@ -85,97 +91,27 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         }
     }
 
-    Vehicle* vehicle = scene->getVehicle(instigator);
-    PxRigidBody* ignoreBody = vehicle ? vehicle->getRigidBody() : nullptr;
-    PxSweepBuffer sweepHit;
     glm::vec3 sweepDir = glm::normalize(position - prevPosition);
-    if (scene->sweep(collisionRadius, prevPosition,
-                sweepDir, glm::length(position - prevPosition), &sweepHit, ignoreBody))
+    PxSweepHit hitBuffer[8];
+    PxSweepBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
+    PxQueryFilterData filter;
+    filter.flags |= PxQueryFlag::ePREFILTER;
+    filter.data = PxFilterData(COLLISION_FLAG_CHASSIS |
+            COLLISION_FLAG_TRACK | COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT, 0, 0, 0);
+    PxTransform initialPose(convert(prevPosition), PxQuat(PxIdentity));
+    bool blocked = scene->getPhysicsScene()->sweep(PxSphereGeometry(collisionRadius), initialPose, convert(sweepDir),
+            glm::length(position - prevPosition), hit, PxHitFlags(PxHitFlag::eDEFAULT), filter, this);
+    for (u32 i=0; i<hit.nbTouches; ++i)
     {
-        ActorUserData* data = (ActorUserData*)sweepHit.block.actor->userData;
-        glm::vec3 hitPos = convert(sweepHit.block.position);
-
-        // hit vehicle
-        if (data && data->entityType == ActorUserData::VEHICLE)
+        onHit(scene, &hit.touches[i]);
+        if (ignoreActors.size() < ignoreActors.capacity())
         {
-            data->vehicle->applyDamage((f32)damage, instigator);
-            switch (projectileType)
-            {
-                case BLASTER:
-                {
-                    // TODO: sound
-                    this->destroy();
-                } break;
-                case BULLET:
-                {
-                    const char* impacts[] = {
-                        "bullet_impact1",
-                        "bullet_impact2",
-                        "bullet_impact3",
-                    };
-                    u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
-                    g_audio.playSound3D(g_res.getSound(impacts[index]),
-                            SoundType::GAME_SFX, hitPos, false,
-                            random(scene->randomSeries, 0.8f, 1.2f),
-                            random(scene->randomSeries, 0.8f, 1.f));
-                    this->destroy();
-                } break;
-                case MISSILE:
-                {
-                    scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
-                    g_audio.playSound3D(g_res.getSound("explosion1"),
-                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
-                    this->destroy();
-                } break;
-                case BOUNCER:
-                {
-                    // TODO: sound
-                    this->destroy();
-                } break;
-            }
+            ignoreActors.push_back(hit.touches[i].actor);
         }
-        // hit something else
-        else
-        {
-            switch (projectileType)
-            {
-                case BLASTER:
-                {
-                    g_audio.playSound3D(g_res.getSound("blaster_hit"),
-                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
-                    this->destroy();
-                } break;
-                case BULLET:
-                {
-                    const char* impacts[] = {
-                        "richochet1",
-                        "richochet2",
-                        "richochet3",
-                        "richochet4",
-                    };
-                    u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
-                    g_audio.playSound3D(g_res.getSound(impacts[index]),
-                            SoundType::GAME_SFX, hitPos, false, 0.9f,
-                            random(scene->randomSeries, 0.75f, 0.9f));
-                    this->destroy();
-                } break;
-                case MISSILE:
-                {
-                    scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
-                    g_audio.playSound3D(g_res.getSound("explosion1"),
-                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
-                    this->destroy();
-                } break;
-                case BOUNCER:
-                {
-                    glm::vec3 n = convert(sweepHit.block.normal);
-                    velocity = -2.f * glm::dot(velocity, n) * n + velocity;
-                    position = (prevPosition + sweepHit.block.distance * sweepDir) + n * 0.1f;
-                    g_audio.playSound3D(g_res.getSound("bouncer_bounce"),
-                            SoundType::GAME_SFX, hitPos, false, 1.f, 0.4f);
-                } break;
-            }
-        }
+    }
+    if (blocked)
+    {
+        onHit(scene, &hit.block);
     }
 
     life -= deltaTime;
@@ -238,5 +174,113 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(BillboardRenderable(g_res.getTexture("bouncer_projectile"),
                         position, glm::vec4(1.f), 1.75f, 0.f, false));
             break;
+        case PHANTOM:
+            settings.color = glm::vec3(1.f, 0.01f, 0.95f);
+            settings.emit = settings.color * 1.5f;
+            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+                * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
+            rw->push(LitRenderable(settings));
+            rw->push(BillboardRenderable(g_res.getTexture("flare"),
+                    position+glm::vec3(0,0,0.2f), glm::vec4(settings.color, 0.4f), 1.5f, 0.f, false));
+            break;
+    }
+}
+
+void Projectile::onHit(Scene* scene, PxSweepHit* hit)
+{
+    ActorUserData* data = (ActorUserData*)hit->actor->userData;
+    glm::vec3 hitPos = convert(hit->position);
+
+    // hit vehicle
+    if (data && data->entityType == ActorUserData::VEHICLE)
+    {
+        data->vehicle->applyDamage((f32)damage, instigator);
+        switch (projectileType)
+        {
+            case BLASTER:
+            {
+                // TODO: sound
+                this->destroy();
+            } break;
+            case BULLET:
+            {
+                const char* impacts[] = {
+                    "bullet_impact1",
+                    "bullet_impact2",
+                    "bullet_impact3",
+                };
+                u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
+                g_audio.playSound3D(g_res.getSound(impacts[index]),
+                        SoundType::GAME_SFX, hitPos, false,
+                        random(scene->randomSeries, 0.8f, 1.2f),
+                        random(scene->randomSeries, 0.8f, 1.f));
+                this->destroy();
+            } break;
+            case MISSILE:
+            {
+                scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
+                g_audio.playSound3D(g_res.getSound("explosion1"),
+                        SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
+                this->destroy();
+            } break;
+            case BOUNCER:
+            {
+                // TODO: sound
+                this->destroy();
+            } break;
+            case PHANTOM:
+            {
+                // TODO: sound
+            } break;
+        }
+    }
+    // hit something else
+    else
+    {
+        switch (projectileType)
+        {
+            case BLASTER:
+            {
+                g_audio.playSound3D(g_res.getSound("blaster_hit"),
+                        SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
+                this->destroy();
+            } break;
+            case BULLET:
+            {
+                const char* impacts[] = {
+                    "richochet1",
+                    "richochet2",
+                    "richochet3",
+                    "richochet4",
+                };
+                u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(impacts));
+                g_audio.playSound3D(g_res.getSound(impacts[index]),
+                        SoundType::GAME_SFX, hitPos, false, 0.9f,
+                        random(scene->randomSeries, 0.75f, 0.9f));
+                this->destroy();
+            } break;
+            case MISSILE:
+            {
+                scene->createExplosion(hitPos, glm::vec3(0.f), 5.f);
+                g_audio.playSound3D(g_res.getSound("explosion1"),
+                        SoundType::GAME_SFX, hitPos, false, 1.f, 0.7f);
+                this->destroy();
+            } break;
+            case BOUNCER:
+            {
+                glm::vec3 n = convert(hit->normal);
+                velocity = -2.f * glm::dot(velocity, n) * n + velocity;
+                position = convert(hit->position) + n * 0.1f;
+                g_audio.playSound3D(g_res.getSound("bouncer_bounce"),
+                        SoundType::GAME_SFX, hitPos, false, 1.f, 0.4f);
+            } break;
+            case PHANTOM:
+            {
+                // TODO: use unique sound
+                g_audio.playSound3D(g_res.getSound("blaster_hit"),
+                        SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
+                this->destroy();
+            } break;
+        }
     }
 }
