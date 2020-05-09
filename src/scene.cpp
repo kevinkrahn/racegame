@@ -309,6 +309,8 @@ bool Scene::canGo() const
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     RenderWorld* rw = renderer->getRenderWorld();
+    rw->setShadowBounds({}, false);
+    rw->setClearColor(g_game.isEditing || g_game.isDebugCameraEnabled);
 
     bool showPauseMenu = g_input.isKeyPressed(KEY_ESCAPE);
     for (auto& pair : g_input.getControllers())

@@ -544,20 +544,14 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         ImGui::OpenPopup("Exit Editor");
     }
 
+    renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
     if (activeEditor == ResourceType::TRACK && g_game.currentScene)
     {
         trackEditor.onUpdate(g_game.currentScene.get(), renderer, deltaTime);
-        renderer->getRenderWorld()->setClearColor(true);
     }
     else if (activeEditor == ResourceType::MODEL && modelEditor.getCurrentModel())
     {
         modelEditor.onUpdate(renderer, deltaTime);
-        renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
-    }
-    else
-    {
-        renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
-        renderer->getRenderWorld()->setShadowBounds({}, false);
     }
 }
 
