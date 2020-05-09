@@ -13,6 +13,7 @@
 #include "texture.cpp"
 #include "vehicle.cpp"
 #include "vehicle_data.cpp"
+#include "vehicle_physics.cpp"
 #include "font.cpp"
 #include "track_graph.cpp"
 #include "motion_grid.cpp"

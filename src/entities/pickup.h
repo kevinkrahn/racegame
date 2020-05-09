@@ -35,7 +35,7 @@ public:
         actor->userData = &physicsUserData;
 
         PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxSphereGeometry((scale * scaleOf(transform)).z), *scene->genericMaterial);
+            PxSphereGeometry((scale * scaleOf(transform)).z), *g_game.physx.materials.generic);
         collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE | COLLISION_FLAG_PICKUP,
                     DECAL_NONE, 0, UNDRIVABLE_SURFACE));
         collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_PICKUP, -1, 0, 0));

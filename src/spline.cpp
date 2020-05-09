@@ -170,7 +170,7 @@ void Spline::updateMesh(Scene* scene)
         {
             meshInfo.collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(outputMesh->getCollisionMesh()),
-                    *scene->railingMaterial);
+                    *g_game.physx.materials.railing);
             meshInfo.collisionShape->setQueryFilterData(PxFilterData(
                         COLLISION_FLAG_OBJECT | COLLISION_FLAG_SPLINE, DECAL_RAILING, 0, DRIVABLE_SURFACE));
             meshInfo.collisionShape->setSimulationFilterData(PxFilterData(
@@ -182,7 +182,7 @@ void Spline::updateMesh(Scene* scene)
             {
                 meshInfo.collisionShapeForSelection = PxRigidActorExt::createExclusiveShape(*actor,
                         PxTriangleMeshGeometry(outputMesh->getCollisionMesh()),
-                        *scene->railingMaterial);
+                        *g_game.physx.materials.railing);
                 meshInfo.collisionShapeForSelection->setQueryFilterData(
                         PxFilterData(COLLISION_FLAG_SPLINE, 0, 0, 0));
                 meshInfo.collisionShapeForSelection->setSimulationFilterData(PxFilterData(0, 0, 0, 0));

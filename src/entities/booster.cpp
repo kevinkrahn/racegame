@@ -20,7 +20,7 @@ void Booster::onCreateEnd(Scene* scene)
     physicsUserData.flags = ActorUserData::BOOSTER;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxBoxGeometry(convert(scale * 0.5f)), *scene->genericMaterial);
+            PxBoxGeometry(convert(scale * 0.5f)), *g_game.physx.materials.generic);
     collisionShape->setQueryFilterData(
             PxFilterData(COLLISION_FLAG_SELECTABLE | COLLISION_FLAG_BOOSTER, 0, 0, 0));
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));

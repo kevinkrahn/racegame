@@ -178,8 +178,8 @@ void Terrain::onCreate(Scene* scene)
         { 0.05f, 0.1f, 0.12f, 0.1f }
     };
 
-    materials[0] = scene->genericMaterial;
-    materials[1] = scene->offroadMaterial;
+    materials[0] = g_game.physx.materials.generic;
+    materials[1] = g_game.physx.materials.offroad;
 
     regenerateMesh();
     regenerateCollisionMesh(scene);

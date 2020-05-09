@@ -24,7 +24,7 @@ void Oil::onCreateEnd(Scene* scene)
     physicsUserData.placeableEntity = this;
     actor->userData = &physicsUserData;
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxBoxGeometry(convert(scale * 0.5f)), *scene->genericMaterial);
+            PxBoxGeometry(convert(scale * 0.5f)), *g_game.physx.materials.generic);
     collisionShape->setQueryFilterData(
             PxFilterData(COLLISION_FLAG_SELECTABLE | COLLISION_FLAG_OIL, 0, 0, 0));
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));

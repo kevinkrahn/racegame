@@ -44,7 +44,7 @@ public:
         scene->addEntity(oil);
         g_audio.playSound3D(g_res.getSound("oil"), SoundType::GAME_SFX,
                 vehicle->getPosition(), false, 1.f, 0.9f);
-        vehicle->addIgnoredGroundSpot(oil);
+        vehicle->getVehiclePhysics()->addIgnoredGroundSpot(oil);
 
         ammo -= 1;
     }

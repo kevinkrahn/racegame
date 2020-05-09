@@ -747,7 +747,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
     if (!c.collisionShape)
     {
         c.collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-                PxTriangleMeshGeometry(triMesh), *scene->trackMaterial);
+                PxTriangleMeshGeometry(triMesh), *g_game.physx.materials.track);
         c.collisionShape->setQueryFilterData(PxFilterData(
                     COLLISION_FLAG_TRACK, DECAL_TRACK, 0, DRIVABLE_SURFACE));
         c.collisionShape->setSimulationFilterData(PxFilterData(

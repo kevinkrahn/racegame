@@ -130,11 +130,6 @@ public:
 
     RandomSeries randomSeries;
     SoundHandle backgroundSound = 0;
-    PxMaterial* vehicleMaterial = nullptr;
-    PxMaterial* trackMaterial = nullptr;
-    PxMaterial* offroadMaterial = nullptr;
-    PxMaterial* genericMaterial = nullptr;
-    PxMaterial* railingMaterial = nullptr;
     SmokeParticles smoke;
     RibbonRenderable ribbons;
     DebugDraw debugDraw;

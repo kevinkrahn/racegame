@@ -64,13 +64,6 @@ Scene::Scene(TrackData* data)
         pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
     }
 
-    // create physics materials
-    vehicleMaterial = g_game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
-    trackMaterial   = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.4f);
-    offroadMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
-    genericMaterial = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
-    railingMaterial = g_game.physx.physics->createMaterial(0.2f, 0.2f, 0.3f);
-
     if (!data->data.hasValue())
     {
         print("Loading empty scene. Adding default entities.");
@@ -118,11 +111,6 @@ Scene::Scene(TrackData* data)
 Scene::~Scene()
 {
     physicsScene->release();
-    vehicleMaterial->release();
-    trackMaterial->release();
-    offroadMaterial->release();
-    genericMaterial->release();
-    railingMaterial->release();
     if (backgroundSound)
     {
         g_audio.stopSound(backgroundSound);
@@ -138,7 +126,6 @@ void Scene::startRace()
     }
     glm::mat4 const& start = this->start->transform;
 
-    const PxMaterial* surfaceMaterials[] = { trackMaterial, offroadMaterial };
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
     i32 cameraIndex = 0;
@@ -226,8 +213,7 @@ void Scene::startRace()
                     tuning.getRestOffset())) * rotationOf(start);
 
         vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
-            driverInfo.driver, std::move(tuning), vehicleMaterial, surfaceMaterials, i,
-            driverInfo.cameraIndex));
+            driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
     }
 
     for (u32 i=0; i<vehicles.size(); ++i)

@@ -24,7 +24,7 @@ void Start::onCreateEnd(Scene* scene)
     {
         PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxTriangleMeshGeometry(model->meshes[obj.meshIndex].getCollisionMesh(),
-                    PxMeshScale(convert(scale))), *scene->genericMaterial);
+                    PxMeshScale(convert(scale))), *g_game.physx.materials.generic);
         collisionShape->setQueryFilterData(
                 PxFilterData(0, DECAL_SIGN, 0, DRIVABLE_SURFACE));
         collisionShape->setSimulationFilterData(

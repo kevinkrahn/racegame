@@ -32,7 +32,7 @@ void StaticMesh::onCreate(Scene* scene)
                 Mesh& mesh = model->meshes[obj.modelObject->meshIndex];
                 obj.shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxConvexMeshGeometry(mesh.getConvexCollisionMesh(),
-                        PxMeshScale(convert(scale * obj.modelObject->scale))), *scene->genericMaterial);
+                        PxMeshScale(convert(scale * obj.modelObject->scale))), *g_game.physx.materials.generic);
                 obj.shape->setQueryFilterData(
                         PxFilterData(COLLISION_FLAG_DYNAMIC, DECAL_NONE, 0, UNDRIVABLE_SURFACE));
                 obj.shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DYNAMIC, -1, 0, 0));
@@ -52,7 +52,7 @@ void StaticMesh::onCreate(Scene* scene)
                 Mesh& mesh = model->meshes[obj.modelObject->meshIndex];
                 obj.shape = PxRigidActorExt::createExclusiveShape(*actor,
                     PxTriangleMeshGeometry(mesh.getCollisionMesh(),
-                        PxMeshScale(convert(scale * obj.modelObject->scale))), *scene->genericMaterial);
+                        PxMeshScale(convert(scale * obj.modelObject->scale))), *g_game.physx.materials.generic);
                 obj.shape->setQueryFilterData(
                         PxFilterData(COLLISION_FLAG_OBJECT, DECAL_GROUND, 0, DRIVABLE_SURFACE));
                 obj.shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_OBJECT, -1, 0, 0));

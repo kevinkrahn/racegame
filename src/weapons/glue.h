@@ -44,7 +44,7 @@ public:
         scene->addEntity(glue);
         g_audio.playSound3D(g_res.getSound("glue"), SoundType::GAME_SFX,
                 vehicle->getPosition(), false, 1.f, 0.9f);
-        vehicle->addIgnoredGroundSpot(glue);
+        vehicle->getVehiclePhysics()->addIgnoredGroundSpot(glue);
 
         ammo -= 1;
     }

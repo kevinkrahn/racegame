@@ -52,7 +52,14 @@ public:
         PxDefaultCpuDispatcher* dispatcher;
         PxPvd* pvd;
         PxCooking* cooking;
-        PxMaterial* defaultMaterial;
+        struct
+        {
+            PxMaterial* vehicle;
+            PxMaterial* track;
+            PxMaterial* offroad;
+            PxMaterial* generic;
+            PxMaterial* railing;
+        } materials;
     } physx;
 
     Config config;

@@ -20,7 +20,7 @@ void StaticDecal::onCreateEnd(Scene* scene)
     actor->userData = &physicsUserData;
 
     PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxBoxGeometry(convert(scale * 0.5f)), *scene->genericMaterial);
+            PxBoxGeometry(convert(scale * 0.5f)), *g_game.physx.materials.generic);
     collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE, 0, 0, 0));
     collisionShape->setSimulationFilterData(PxFilterData(0, 0, 0, 0));
     collisionShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);

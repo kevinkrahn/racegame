@@ -59,7 +59,7 @@ void MotionGrid::build(Scene* scene)
                 {
                     PxMaterial* hitMaterial =
                         hit.touches[i].shape->getMaterialFromInternalFaceIndex(hit.touches[i].faceIndex);
-                    if (hitMaterial == scene->trackMaterial)
+                    if (hitMaterial == g_game.physx.materials.track)
                     {
                         // check for obstructions
                         bool obstructed = scene->getPhysicsScene()->overlap(PxSphereGeometry(overlapRadius),

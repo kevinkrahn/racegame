@@ -1,40 +1,35 @@
 #pragma once
 
 #include "math.h"
-#include "vehicle_data.h"
+#include "vehicle_physics.h"
 #include "track_graph.h"
 #include "ribbon.h"
 #include "driver.h"
 #include "scene.h"
 
-class VehicleSceneQueryData
+struct VehicleInput
 {
-public:
-    static VehicleSceneQueryData* allocate(
-        const PxU32 maxNumVehicles, const PxU32 maxNumWheelsPerVehicle, const PxU32 maxNumHitPointsPerWheel, const PxU32 numVehiclesInBatch,
-        PxBatchQueryPreFilterShader preFilterShader, PxBatchQueryPostFilterShader postFilterShader,
-        PxAllocatorCallback& allocator);
-    void free(PxAllocatorCallback& allocator) { allocator.deallocate(this); }
-    static PxBatchQuery* setUpBatchedSceneQuery(const PxU32 batchId, const VehicleSceneQueryData& vehicleSceneQueryData, PxScene* scene);
-    PxRaycastQueryResult* getRaycastQueryResultBuffer(const PxU32 batchId) { return (mRaycastResults + batchId * mNumQueriesPerBatch); }
-    PxSweepQueryResult* getSweepQueryResultBuffer(const PxU32 batchId) { return (mSweepResults + batchId * mNumQueriesPerBatch); }
-    PxU32 getQueryResultBufferSize() const { return mNumQueriesPerBatch; }
-
-private:
-    PxU32 mNumQueriesPerBatch;
-    PxU32 mNumHitResultsPerQuery;
-    PxRaycastQueryResult* mRaycastResults;
-    PxSweepQueryResult* mSweepResults;
-    PxRaycastHit* mRaycastHitBuffer;
-    PxSweepHit* mSweepHitBuffer;
-    PxBatchQueryPreFilterShader mPreFilterShader;
-    PxBatchQueryPostFilterShader mPostFilterShader;
+    f32 accel = 0.f;
+    f32 brake = 0.f;
+    f32 steer = 0.f;
+    bool digital = false;
+    bool handbrake = false;
+    bool beginShoot = false;
+    bool holdShoot = false;
+    bool beginShootRear = false;
+    bool holdShootRear = false;
+    bool switchFrontWeapon = false;
+    bool switchRearWeapon = false;
 };
 
 class Vehicle
 {
 // TODO: should be private
 public:
+    VehiclePhysics vehiclePhysics;
+    VehicleTuning tuning;
+    ActorUserData actorUserData;
+
 	Driver* driver;
 	Scene* scene;
 	u32 vehicleIndex;
@@ -50,16 +45,8 @@ public:
 	bool isFollowed = false;
 	bool isNearHazard = false;
 
-    // physics data
-    PxVehicleDrive4W* vehicle4W;
-    ActorUserData actorUserData;
-    VehicleSceneQueryData* sceneQueryData;
-    PxBatchQuery* batchQuery;
-    PxVehicleDrivableSurfaceToTireFrictionPairs* frictionPairs;
-	PxWheelQueryResult wheelQueryResults[PX_MAX_NB_WHEELS];
-	VehicleTuning tuning;
-
     // gameplay data
+    VehicleInput input;
 	bool finishedRace = false;
     glm::vec3 cameraTarget;
     glm::vec3 cameraFrom;
@@ -89,7 +76,6 @@ public:
     glm::vec3 previousVelocity;
     f32 engineRPM = 0.f;
     f32 lappingOffset[16] = { 0 };
-    f32 engineThrottle = 0.f;
     f32 engineThrottleLevel = 0.f;
 	i32 currentFrontWeaponIndex = 0;
 	i32 currentRearWeaponIndex = 0;
@@ -122,29 +108,7 @@ public:
 
     bool isWheelSlipping[NUM_WHEELS] = {};
 	Ribbon tireMarkRibbons[NUM_WHEELS];
-	f32 wheelOilCoverage[NUM_WHEELS] = { 0 };
 	bool isStuckOnGlue = false;
-
-    struct GroundSpot
-    {
-        enum GroundType
-        {
-            DUST,
-            OIL,
-            GLUE,
-        };
-        u32 groundType;
-        glm::vec3 p;
-        f32 radius;
-    };
-    SmallVec<GroundSpot, 16> groundSpots;
-    void checkGroundSpots();
-    struct IgnoredGroundSpot
-    {
-        Entity* e;
-        f32 t;
-    };
-    SmallVec<IgnoredGroundSpot> ignoredGroundSpots;
 
     std::vector<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
@@ -160,27 +124,11 @@ public:
 
 	RaceStatistics raceStatistics;
 
-	void setupPhysics(PxScene* scene, PxMaterial* vehicleMaterial,
-	        const PxMaterial** surfaceMaterials, glm::mat4 const& transform);
-
-    void updatePhysics(PxScene* scene, f32 timestep, bool digital,
-            f32 accel, f32 brake, f32 steer, bool handbrake, bool canGo, bool onlyBrake);
-
 public:
 	Vehicle(class Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
-	        Driver* driver, VehicleTuning&& tuning, PxMaterial* material, const PxMaterial** surfaceMaterials,
-	        u32 vehicleIndex, i32 cameraIndex);
+	        Driver* driver, VehicleTuning&& tuning, u32 vehicleIndex, i32 cameraIndex);
 	~Vehicle();
 
-    f32 getEngineRPM() const { return vehicle4W->mDriveDynData.getEngineRotationSpeed() * 9.5493f + 900.f; }
-    f32 getForwardSpeed() const { return vehicle4W->computeForwardSpeed(); }
-    f32 getSidewaysSpeed() const { return vehicle4W->computeSidewaysSpeed(); }
-    PxRigidDynamic* getRigidBody() const { return vehicle4W->getRigidDynamicActor(); }
-    glm::mat4 getTransform() const { return convert(PxMat44(getRigidBody()->getGlobalPose())); }
-    glm::vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
-    glm::vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
-    glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
-    glm::vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
     Driver* getDriver() const { return driver; }
     ComputerDriverData* getAI() const { return &g_ais[driver->aiIndex]; }
 
@@ -201,7 +149,6 @@ public:
         }
         notifications.push_back({ text, time, 0.f, color });
     }
-    void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
     void addBonus(const char* name, u32 amount, glm::vec3 const& color = glm::vec3(0.9f, 0.9f, 0.01f))
     {
         raceStatistics.bonuses.push_back({ name, amount });
@@ -218,20 +165,6 @@ public:
         hitPoints = this->tuning.maxHitPoints;
     }
 
-    struct Input
-    {
-        f32 accel = 0.f;
-        f32 brake = 0.f;
-        f32 steer = 0.f;
-        bool digital = false;
-        bool beginShoot = false;
-        bool holdShoot = false;
-        bool beginShootRear = false;
-        bool holdShootRear = false;
-        bool switchFrontWeapon = false;
-        bool switchRearWeapon = false;
-    } input;
-
     void updateAiInput(f32 deltaTime, RenderWorld* rw);
     void updatePlayerInput(f32 deltaTime, RenderWorld* rw);
 
@@ -244,4 +177,11 @@ public:
     void updateCamera(RenderWorld* rw, f32 deltaTime);
     void resetAmmo();
     void onTrigger(ActorUserData* userData);
+
+    VehiclePhysics* getVehiclePhysics() { return &vehiclePhysics; }
+    glm::mat4 getTransform() { return vehiclePhysics.getTransform(); }
+    f32 getForwardSpeed() { return vehiclePhysics.getForwardSpeed(); }
+    PxRigidBody* getRigidBody() { return vehiclePhysics.getRigidBody(); }
+    glm::vec3 getPosition() { return vehiclePhysics.getPosition(); }
+    glm::vec3 getForwardVector() { return vehiclePhysics.getForwardVector(); }
 };
