@@ -798,6 +798,7 @@ void Menu::championshipGarage()
                 menuPos + glm::vec2(o + g_gui.convertSize(8), glm::floor(g_gui.convertSize(8))),
                 glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT));
 
+#if 0
     struct Stat
     {
         const char* name = nullptr;
@@ -808,24 +809,24 @@ void Menu::championshipGarage()
         { "Top Speed" },
         { "Armor" },
         { "Mass" },
-        { "Handling" },
+        { "Grip" },
         { "Offroad" },
     };
     static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
     f32 targetStats[] = {
         tuningReal.specs.acceleration,
-        tuningReal.topSpeed / 100.f,
-        tuningReal.maxHitPoints / 300.f,
-        tuningReal.chassisMass / 2500.f,
-        tuningReal.specs.handling,
+        tuningReal.specs.topSpeed,
+        tuningReal.specs.armor,
+        tuningReal.specs.mass,
+        tuningReal.specs.grip,
         tuningReal.specs.offroad,
     };
     f32 targetStatsUpgrade[] = {
         tuningUpgrade.specs.acceleration,
-        tuningUpgrade.topSpeed / 100.f,
-        tuningUpgrade.maxHitPoints / 300.f,
-        tuningUpgrade.chassisMass / 2500.f,
-        tuningUpgrade.specs.handling,
+        tuningUpgrade.specs.topSpeed,
+        tuningUpgrade.specs.armor,
+        tuningUpgrade.specs.mass,
+        tuningUpgrade.specs.grip,
         tuningUpgrade.specs.offroad,
     };
 
@@ -875,6 +876,7 @@ void Menu::championshipGarage()
                     statsPos + glm::vec2(0, g_gui.convertSizei(ARRAY_SIZE(stats) * 27.f + 8.f)),
                     glm::vec3(1.f)));
     }
+#endif
 }
 
 void Menu::championshipStandings()

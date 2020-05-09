@@ -22,9 +22,6 @@ public:
 
         tuning.maxHitPoints = 150;
 
-        tuning.specs.acceleration = 1.f;
-        tuning.specs.handling = 0.9f;
-
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
         tuning.chassisMass = 1100;
         tuning.wheelMassFront = 20;

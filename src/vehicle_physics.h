@@ -27,6 +27,35 @@ private:
     PxBatchQueryPostFilterShader mPostFilterShader;
 };
 
+PxFilterFlags vehicleFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+    PX_UNUSED(attributes0);
+    PX_UNUSED(attributes1);
+    PX_UNUSED(constantBlock);
+    PX_UNUSED(constantBlockSize);
+
+    if( (0 == (filterData0.word0 & filterData1.word1)) && (0 == (filterData1.word0 & filterData0.word1)) )
+    {
+        return PxFilterFlag::eSUPPRESS;
+    }
+
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+    pairFlags |= PxPairFlags(PxU16(filterData0.word2 | filterData1.word2));
+
+    if (((filterData0.word0 & COLLISION_FLAG_CHASSIS) || (filterData1.word0 & COLLISION_FLAG_CHASSIS)) &&
+        (!(filterData0.word0 & COLLISION_FLAG_DEBRIS) && !(filterData1.word0 & COLLISION_FLAG_DEBRIS)))
+    {
+        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
+        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+        pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
+    }
+
+    return PxFilterFlags();
+}
+
 struct WheelInfo
 {
     glm::mat4 transform;
@@ -103,6 +132,5 @@ public:
     f32 getCurrentGearRatio()  const{ return tuning->gearRatios[getCurrentGear()]; }
     f32 getAverageWheelRotationSpeed() const;
     f32 getEngineThrottle() const { return engineThrottle; }
-    void addIgnoredGroundSpot(Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
+    void addIgnoredGroundSpot(class Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
 };
-

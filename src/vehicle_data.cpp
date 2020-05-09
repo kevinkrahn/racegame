@@ -5,6 +5,124 @@
 #include "mesh_renderables.h"
 #include "vehicle.h"
 
+VehicleStats VehicleTuning::computeVehicleStats()
+{
+    VehicleStats stats;
+    stats.topSpeed = topSpeed / 100.f;
+    stats.armor = maxHitPoints / 300.f;
+    stats.mass = chassisMass / 2500.f;
+
+    PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
+    sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f); // TODO: share this constant with scene
+    sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
+    sceneDesc.filterShader = vehicleFilterShader;
+    sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+    //sceneDesc.simulationEventCallback = this;
+    sceneDesc.solverType = PxSolverType::eTGS;
+    sceneDesc.broadPhaseType = PxBroadPhaseType::eABP;
+
+    PxScene* physicsScene = g_game.physx.physics->createScene(sceneDesc);
+
+    // create floor
+    PxRigidStatic* actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
+    Mesh* floorMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+    PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
+            PxTriangleMeshGeometry(floorMesh->getCollisionMesh(),
+                PxMeshScale(200.f)), *g_game.physx.materials.track);
+    shape->setQueryFilterData(
+            PxFilterData(COLLISION_FLAG_TRACK, 0, 0, DRIVABLE_SURFACE));
+    shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_TRACK, -1, 0, 0));
+    physicsScene->addActor(*actor);
+
+    // create vehicle
+    glm::mat4 startTransform = glm::translate(glm::mat4(1.f), { 0, 0, getRestOffset() });
+    VehiclePhysics v;
+    v.setup(nullptr, physicsScene, startTransform, this);
+
+    const f32 timestep = 1.f / 60.f;
+
+    // TODO: Use PhysX scratch buffer to reduce allocations
+
+    // acceleration
+    for (u32 iterations=0; iterations<1000; ++iterations)
+    {
+        physicsScene->simulate(timestep);
+        physicsScene->fetchResults(true);
+
+        v.update(physicsScene, timestep, true, 1.f, 0.f, 0.f, false, true, false);
+        if (v.getForwardSpeed() >= 28.f)
+        {
+            f32 time = iterations * timestep;
+            stats.acceleration = clamp((8.f - time) / 8.f, 0.f, 1.f);
+            print("Acceleration time: ", time, '\n');
+            break;
+        }
+    }
+
+    // grip
+    v.reset(startTransform);
+    //v.getRigidBody()->setLinearVelocity(PxVec3(0, 0, 0));
+    //v.getRigidBody()->setAngularVelocity(PxVec3(0, 0, 0));
+    v.getRigidBody()->addForce(PxVec3(0, 20.f, 0), PxForceMode::eVELOCITY_CHANGE);
+    for (u32 iterations=0; iterations<1000; ++iterations)
+    {
+        physicsScene->simulate(timestep);
+        physicsScene->fetchResults(true);
+
+        v.update(physicsScene, timestep, true, 0.f, 0.f, 0.f, false, true, false);
+
+        // prevent vehicle from moving forwards or backwards
+        PxVec3 vel = v.getRigidBody()->getLinearVelocity();
+        vel.x = 0;
+        v.getRigidBody()->setLinearVelocity(vel);
+
+        // prevent vehicle from rotating in a way that would disturb the simulation
+        PxVec3 angularVel = v.getRigidBody()->getAngularVelocity();
+        angularVel.z = 0.f;
+        v.getRigidBody()->setAngularVelocity(angularVel);
+
+        // apply downforce which will affect grip
+        f32 downforce = (forwardDownforce + constantDownforce) * 24.f;
+        PxVec3 down = v.getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
+        v.getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
+
+        f32 magnitude = v.getRigidBody()->getLinearVelocity().y;
+        if (magnitude < 0.1f)
+        {
+            f32 time = iterations * timestep;
+            stats.acceleration = clamp((0.8f - time) / 0.8f, 0.f, 1.f);
+            print("Stop time: ", time, '\n');
+            break;
+        }
+    }
+
+    // offroad acceleration
+    v.reset(startTransform);
+    shape->setQueryFilterData(
+            PxFilterData(COLLISION_FLAG_TERRAIN, 0, 0, DRIVABLE_SURFACE));
+    shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_TERRAIN, -1, 0, 0));
+    shape->setMaterials(&g_game.physx.materials.offroad, 1);
+    for (u32 iterations=0; iterations<2000; ++iterations)
+    {
+        physicsScene->simulate(timestep);
+        physicsScene->fetchResults(true);
+
+        v.update(physicsScene, timestep, true, 1.f, 0.f, 0.f, false, true, false);
+        if (v.getForwardSpeed() >= 16.f)
+        {
+            f32 time = iterations * timestep;
+            stats.acceleration = clamp((8.f - time) / 8.f, 0.f, 1.f);
+            print("Offroad acceleration time: ", time, '\n');
+            break;
+        }
+    }
+
+    actor->release();
+    physicsScene->release();
+
+    return stats;
+}
+
 void VehicleData::initStandardUpgrades()
 {
     availableUpgrades = {

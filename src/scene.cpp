@@ -14,42 +14,13 @@
 #include "imgui.h"
 #include <algorithm>
 
-PxFilterFlags vehicleFilterShader(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
-{
-    PX_UNUSED(attributes0);
-    PX_UNUSED(attributes1);
-    PX_UNUSED(constantBlock);
-    PX_UNUSED(constantBlockSize);
-
-    if( (0 == (filterData0.word0 & filterData1.word1)) && (0 == (filterData1.word0 & filterData0.word1)) )
-    {
-        return PxFilterFlag::eSUPPRESS;
-    }
-
-    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-    pairFlags |= PxPairFlags(PxU16(filterData0.word2 | filterData1.word2));
-
-    if (((filterData0.word0 & COLLISION_FLAG_CHASSIS) || (filterData1.word0 & COLLISION_FLAG_CHASSIS)) &&
-        (!(filterData0.word0 & COLLISION_FLAG_DEBRIS) && !(filterData1.word0 & COLLISION_FLAG_DEBRIS)))
-    {
-        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
-        pairFlags |= PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
-        pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
-    }
-
-    return PxFilterFlags();
-}
-
 Scene::Scene(TrackData* data)
 {
     // create PhysX scene
     PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f);
     sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
-    sceneDesc.filterShader  = vehicleFilterShader;
+    sceneDesc.filterShader = vehicleFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
     sceneDesc.simulationEventCallback = this;
     sceneDesc.solverType = PxSolverType::eTGS;
@@ -1042,8 +1013,9 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             if (b->vehicle->hasAbility("Ram Booster"))
                             {
                                 myDamage *= 2.75f;
-                                // TODO: test this out
-                                myDamage = std::max(myDamage, 5.f);
+                                // TODO: Shouldn't minDamage be multiplied by deltaTime?
+                                f32 minDamage = 5.f;
+                                myDamage = std::max(myDamage, minDamage);
                             }
                             if (a->vehicle->hasAbility("Ram Booster"))
                             {

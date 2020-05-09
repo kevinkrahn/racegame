@@ -1005,6 +1005,11 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
     {
         getRigidBody()->addForce(convert(vehiclePhysics.getForwardVector() * 30.f), PxForceMode::eVELOCITY_CHANGE);
     }
+
+    if (g_input.isKeyPressed(KEY_J))
+    {
+        getRigidBody()->addForce(convert(vehiclePhysics.getRightVector() * 15.f), PxForceMode::eVELOCITY_CHANGE);
+    }
 #endif
 
 #if 0

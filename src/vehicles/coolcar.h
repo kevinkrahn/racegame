@@ -25,10 +25,6 @@ public:
 
         tuning.maxHitPoints = 100;
 
-        tuning.specs.acceleration = 0.3f;
-        tuning.specs.handling = 0.4f;
-        tuning.specs.offroad = 0.18f;
-
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
         tuning.chassisMass = 1280;
         tuning.wheelMassFront = 15;
@@ -83,22 +79,16 @@ public:
                 case PerformanceUpgradeType::ENGINE:
                     tuning.peekEngineTorque += 8.f * u.upgradeLevel;
                     tuning.topSpeed += 1.2f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.05f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:
                     tuning.trackTireFriction += 0.1f * u.upgradeLevel;
                     tuning.offroadTireFriction += 0.02f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.015f * u.upgradeLevel;
-                    tuning.specs.offroad += 0.04f * u.upgradeLevel;
-                    tuning.specs.handling += 0.06f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 10.f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::WEIGHT_REDUCTION:
                     tuning.chassisMass -= 30.f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
-                    tuning.specs.handling += 0.02f * u.upgradeLevel;
                     break;
                 // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:
@@ -106,7 +96,6 @@ public:
                     tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
                     tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
                     tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
-                    tuning.specs.handling += 0.05f * u.upgradeLevel;
                     break;
                 default:
                     print("Unhandled upgrade: ", upgrade.name, '\n');

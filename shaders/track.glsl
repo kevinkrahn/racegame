@@ -74,7 +74,7 @@ void main()
     // TODO: bend normal Z to make track lighting variation more pronounced
 
     outColor = lighting(color, worldNormal, inShadowCoord, inWorldPosition,
-            100.0, spec * 1.75, vec3(1.0), 0.0, 0.0, 0.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
+            100.0, spec * 1.85, vec3(1.0), 0.0, 0.0, 0.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
     //outColor *= (inNormal.z * inNormal.z * inNormal.z * inNormal.z);
 
     //outColor = vec4((inNormal + 1.0) * 0.5, 1.0);

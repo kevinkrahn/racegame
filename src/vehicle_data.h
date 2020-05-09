@@ -4,7 +4,7 @@
 #include "datafile.h"
 #include "mesh.h"
 #include "weapon.h"
-#include "batcher.h"
+#include "material.h"
 #include <algorithm>
 #include <functional>
 
@@ -50,6 +50,17 @@ struct VehicleCollisionsMesh
 {
     PxConvexMesh* convexMesh;
     glm::mat4 transform;
+};
+
+struct VehicleStats
+{
+    // all [0,1]
+    f32 acceleration = 0.f;
+    f32 topSpeed = 0.f;
+    f32 armor = 0.f;
+    f32 mass = 0.f;
+    f32 grip = 0.f;
+    f32 offroad = 0.f;
 };
 
 struct VehicleTuning
@@ -113,14 +124,6 @@ struct VehicleTuning
 
     glm::vec3 wheelPositions[NUM_WHEELS];
 
-    // all [0,1]
-    struct
-    {
-        f32 acceleration = 0.f;
-        f32 handling = 0.f;
-        f32 offroad = 0.f;
-    } specs;
-
     f32 collisionWidth = 0.f;
     f32 maxHitPoints;
 
@@ -129,6 +132,8 @@ struct VehicleTuning
         f32 wheelZ = -wheelPositions[0].z;
         return wheelZ + wheelRadiusFront;
     }
+
+    VehicleStats computeVehicleStats();
 };
 
 glm::vec3 g_vehicleColors[] = {

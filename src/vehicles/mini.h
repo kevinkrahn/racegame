@@ -33,10 +33,6 @@ public:
 
         tuning.maxHitPoints = 100;
 
-        tuning.specs.acceleration = 0.3f;
-        tuning.specs.handling = 0.5f;
-        tuning.specs.offroad = 0.25f;
-
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
         tuning.chassisMass = 1300;
         tuning.wheelMassFront = 20;
@@ -89,14 +85,10 @@ public:
                 case PerformanceUpgradeType::ENGINE:
                     tuning.peekEngineTorque += 10.f * u.upgradeLevel;
                     tuning.topSpeed += 1.f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.04f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:
                     tuning.trackTireFriction += 0.12f * u.upgradeLevel;
                     tuning.offroadTireFriction += 0.05f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
-                    tuning.specs.offroad += 0.03f * u.upgradeLevel;
-                    tuning.specs.handling += 0.04f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 12.f * u.upgradeLevel;
@@ -106,19 +98,13 @@ public:
                     tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
                     tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
                     tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
-                    tuning.specs.handling += 0.04f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::WEIGHT_REDUCTION:
                     tuning.chassisMass -= 70.f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
-                    tuning.specs.handling += 0.02f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ALL_WHEEL_DRIVE:
                     tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
                     tuning.peekEngineTorque += 5.f;
-                    tuning.specs.handling += 0.125f;
-                    tuning.specs.acceleration += 0.05f;
-                    tuning.specs.offroad += 0.15f;
                     break;
                 default:
                     print("Unhandled upgrade: ", upgrade.name, '\n');

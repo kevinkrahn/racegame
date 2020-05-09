@@ -50,10 +50,6 @@ public:
 
         tuning.maxHitPoints = 175;
 
-        tuning.specs.acceleration = 0.3f;
-        tuning.specs.handling = 0.5f;
-        tuning.specs.offroad = 0.5f;
-
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
         tuning.chassisMass = 2090;
         tuning.wheelMassFront = 25;
@@ -106,14 +102,10 @@ public:
                 case PerformanceUpgradeType::ENGINE:
                     tuning.peekEngineTorque += 10.f * u.upgradeLevel;
                     tuning.topSpeed += 1.f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.04f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:
                     tuning.trackTireFriction += 0.12f * u.upgradeLevel;
                     tuning.offroadTireFriction += 0.05f * u.upgradeLevel;
-                    tuning.specs.acceleration += 0.02f * u.upgradeLevel;
-                    tuning.specs.offroad += 0.03f * u.upgradeLevel;
-                    tuning.specs.handling += 0.04f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 12.f * u.upgradeLevel;
