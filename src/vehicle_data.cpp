@@ -480,6 +480,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 }
 
 #include "weapons/blaster.h"
+#include "weapons/phantom.h"
 #include "weapons/machinegun.h"
 #include "weapons/explosive_mine.h"
 #include "weapons/jumpjets.h"
@@ -514,6 +515,7 @@ void initializeVehicleData()
     registerWeapon<WGlue>();
     registerWeapon<WUnderPlating>();
     registerWeapon<WKineticArmor>();
+    registerWeapon<WPhantom>();
 
     //registerVehicle<VMini>();
     registerVehicle<VStationWagon>();

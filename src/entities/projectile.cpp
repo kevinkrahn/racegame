@@ -99,7 +99,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     filter.data = PxFilterData(COLLISION_FLAG_CHASSIS |
             COLLISION_FLAG_TRACK | COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT, 0, 0, 0);
     PxTransform initialPose(convert(prevPosition), PxQuat(PxIdentity));
-    bool blocked = scene->getPhysicsScene()->sweep(PxSphereGeometry(collisionRadius), initialPose, convert(sweepDir),
+    scene->getPhysicsScene()->sweep(PxSphereGeometry(collisionRadius), initialPose, convert(sweepDir),
             glm::length(position - prevPosition), hit, PxHitFlags(PxHitFlag::eDEFAULT), filter, this);
     for (u32 i=0; i<hit.nbTouches; ++i)
     {
@@ -109,7 +109,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             ignoreActors.push_back(hit.touches[i].actor);
         }
     }
-    if (blocked)
+    if (hit.hasBlock)
     {
         onHit(scene, &hit.block);
     }
