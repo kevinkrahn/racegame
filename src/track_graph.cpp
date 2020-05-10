@@ -62,9 +62,10 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
     }
 }
 
-void TrackGraph::addNode(glm::vec3 const& position)
+u32 TrackGraph::addNode(glm::vec3 const& position)
 {
     nodes.push_back({ position });
+    return (u32)nodes.size() - 1;
 }
 
 void TrackGraph::addConnection(u32 fromIndex, u32 toIndex)

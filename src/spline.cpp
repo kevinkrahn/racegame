@@ -209,6 +209,7 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
     f32 lengthPerMesh = pathLength / totalRepeatCount;
     f32 sourceMeshScaleFactor = lengthPerMesh / sourceMeshLength;
 
+    outputMesh->name = sourceMesh->name + " spline";
     outputMesh->vertices.resize(sourceMesh->numVertices
             * sourceMesh->stride / sizeof(f32) * totalRepeatCount);
     outputMesh->indices.resize(sourceMesh->numIndices * totalRepeatCount);
@@ -216,6 +217,7 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
     outputMesh->numColors = sourceMesh->numColors;
     outputMesh->numTexCoords = sourceMesh->numTexCoords;
     outputMesh->hasTangents = sourceMesh->hasTangents;
+    outputMesh->vertexFormat = sourceMesh->vertexFormat;
 
     //f32 invMeshWidth = 1.f / ((sourceMesh->aabb.max.y - sourceMesh->aabb.min.y) * 8);
     f32 distanceAlongPath = 0.f;

@@ -61,7 +61,7 @@ void Game::initPhysX()
     physx.materials.track   = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.4f);
     physx.materials.offroad = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
     physx.materials.generic = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
-    physx.materials.railing = g_game.physx.physics->createMaterial(0.2f, 0.2f, 0.3f);
+    physx.materials.railing = g_game.physx.physics->createMaterial(0.05f, 0.05f, 0.3f);
 }
 
 #ifndef NDEBUG

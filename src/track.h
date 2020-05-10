@@ -26,6 +26,8 @@ public:
     {
         glm::vec3 position;
 
+        u32 trackGraphNodeIndex = UINT32_MAX;
+
         void serialize(Serializer& s) { s.field(position); }
     };
 
@@ -74,6 +76,8 @@ private:
         PxShape* collisionShape = nullptr;
         BoundingBox boundingBox;
         Track* track;
+        u32 trackGraphNodeIndexA = UINT32_MAX;
+        u32 trackGraphNodeIndexB = UINT32_MAX;
 
         void serialize(Serializer& s)
         {
@@ -156,6 +160,9 @@ private:
     void createSegmentMesh(BezierSegment& segment, Scene* scene);
     void computeBoundingBox();
 
+    Mesh previewMesh;
+    void buildPreviewMesh(Scene* scene);
+
 public:
     Track()
     {
@@ -168,6 +175,10 @@ public:
         segment->handleOffsetB = glm::vec3(10, 0, 0);
         segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
+    }
+    ~Track()
+    {
+        previewMesh.destroy();
     }
     void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime,
             bool& isMouseHandled, struct GridSettings* gridSettings);
@@ -200,7 +211,6 @@ public:
     glm::vec3 getPointDir(i32 pointIndex) const;
     void clearSelection();
     void buildTrackGraph(class TrackGraph* trackGraph, glm::mat4 const& startTransform);
-    void drawTrackPreview(class TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection);
     BoundingBox getBoundingBox() const { return boundingBox; }
     void applyDecal(Decal& decal) override
     {
@@ -213,6 +223,14 @@ public:
                         c->indices.data(), (u32)c->indices.size(), glm::mat4(1.f));
             }
         }
+    }
+    Mesh* getPreviewMesh(Scene* scene)
+    {
+        if (!previewMesh.vao)
+        {
+            buildPreviewMesh(scene);
+        }
+        return &previewMesh;
     }
 
     // entity

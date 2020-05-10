@@ -212,35 +212,6 @@ void Mesh::createVAO()
     glNamedBufferData(ebo, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
     glVertexArrayElementBuffer(vao, ebo);
 
-    /*
-    SmallVec<VertexAttribute> vertexFormat = {
-        { 0, VertexAttributeType::FLOAT3 }, // position
-        { 1, VertexAttributeType::FLOAT3 }, // normal
-        { 2, VertexAttributeType::FLOAT4 }, // tangent
-        { 3, VertexAttributeType::FLOAT2 }, // uv
-    };
-    */
-    SmallVec<VertexAttribute> vertexFormat = {
-        { 0, VertexAttributeType::FLOAT3 }, // position
-        { 1, VertexAttributeType::FLOAT3 }, // normal
-    };
-    assert(numTexCoords == 1);
-    if (hasTangents)
-    {
-        vertexFormat.push_back({ 2, VertexAttributeType::FLOAT4 }); // tangent
-        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
-        for (u32 i=0; i<numColors; ++i)
-        {
-            // TODO: colors should be packed into a single 32bit integer; 3 floats is too much
-            vertexFormat.push_back({ 4 + i, VertexAttributeType::FLOAT3 });
-        }
-    }
-    else
-    {
-        vertexFormat.push_back({ 4, VertexAttributeType::FLOAT3 }); // color
-        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
-    }
-
     u32 offset = 0;
     for (u32 i=0; i<vertexFormat.size(); ++i)
     {
@@ -344,4 +315,38 @@ void Mesh::destroy()
         convexCollisionMesh = nullptr;
     }
     octree.reset();
+}
+
+void Mesh::calculateVertexFormat()
+{
+    stride = (6 + (hasTangents ? 4 : 0) + numColors * 3 + numTexCoords * 2) * sizeof(f32);
+
+    /*
+    SmallVec<VertexAttribute> vertexFormat = {
+        { 0, VertexAttributeType::FLOAT3 }, // position
+        { 1, VertexAttributeType::FLOAT3 }, // normal
+        { 2, VertexAttributeType::FLOAT4 }, // tangent
+        { 3, VertexAttributeType::FLOAT2 }, // uv
+    };
+    */
+    vertexFormat = {
+        { 0, VertexAttributeType::FLOAT3 }, // position
+        { 1, VertexAttributeType::FLOAT3 }, // normal
+    };
+    assert(numTexCoords == 1);
+    if (hasTangents)
+    {
+        vertexFormat.push_back({ 2, VertexAttributeType::FLOAT4 }); // tangent
+        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
+        for (u32 i=0; i<numColors; ++i)
+        {
+            // TODO: colors should be packed into a single 32bit integer; 3 floats is too much
+            vertexFormat.push_back({ 4 + i, VertexAttributeType::FLOAT3 });
+        }
+    }
+    else
+    {
+        vertexFormat.push_back({ 4, VertexAttributeType::FLOAT3 }); // color
+        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
+    }
 }

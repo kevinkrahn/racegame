@@ -82,7 +82,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         v.getRigidBody()->setAngularVelocity(angularVel);
 
         // apply downforce which will affect grip
-        f32 downforce = (forwardDownforce + constantDownforce) * 24.f;
+        f32 downforce = (forwardDownforce * 0.65f + constantDownforce) * 25.f;
         PxVec3 down = v.getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
         v.getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
 

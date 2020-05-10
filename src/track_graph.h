@@ -39,12 +39,16 @@ public:
         startNode = nullptr;
         endNode = nullptr;
     }
-    void addNode(glm::vec3 const& position);
+    u32 addNode(glm::vec3 const& position);
     void addConnection(u32 fromIndex, u32 toIndex);
     void rebuild(glm::mat4 const& startTransform);
 
     Node* getStartNode() const { return startNode; }
     Node* getEndNode() const { return endNode; }
+    Node* getNode(u32 index) { return &nodes[index]; }
+    u32 getNodeCount() const { return (u32)nodes.size(); }
+    u32 getStartNodeIndex() const { return startNode - nodes.data(); }
+    u32 getEndNodeIndex() const { return (u32)nodes.size() - 1; }
 
     void debugDraw(class DebugDraw* dbg, class Renderer* renderer) const;
 

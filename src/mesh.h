@@ -31,8 +31,10 @@ struct Mesh
     u32 numIndices;
     u32 numColors;
     u32 numTexCoords;
-    u32 stride = 0;
     BoundingBox aabb;
+
+    u32 stride = 0;
+    SmallVec<VertexAttribute> vertexFormat;
 
     // TODO: remove this property when all meshes have been reimported
     bool hasTangents = false;
@@ -51,7 +53,7 @@ struct Mesh
 
         if (s.deserialize)
         {
-            calculateStride();
+            calculateVertexFormat();
             createVAO();
         }
     }
@@ -71,10 +73,7 @@ struct Mesh
 
     std::unique_ptr<OctreeNode> octree = nullptr;
     void buildOctree();
-    void calculateStride()
-    {
-        stride = (6 + (hasTangents ? 4 : 0) + numColors * 3 + numTexCoords * 2) * sizeof(f32);
-    }
+    void calculateVertexFormat();
 
     bool intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const;
     void createVAO();

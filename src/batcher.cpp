@@ -11,7 +11,7 @@ void Batcher::end()
         bigBatchedMesh.numColors = 1;
         bigBatchedMesh.numTexCoords = 1;
         bigBatchedMesh.hasTangents = true;
-        bigBatchedMesh.calculateStride();
+        bigBatchedMesh.calculateVertexFormat();
 
         u32 vertexElementCount = 0;
         for (auto& item : itemsForThisMaterial.second)

@@ -655,6 +655,7 @@ glm::vec3 Track::getPointDir(i32 pointIndex) const
 
 void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
 {
+    previewMesh.destroy();
     c.isDirty = false;
 
     if (c.vertices.empty())
@@ -804,11 +805,13 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
     trackGraph->clear();
     for (Point& p : points)
     {
-        trackGraph->addNode(p.position);
+        p.trackGraphNodeIndex = trackGraph->addNode(p.position);
     }
     u32 nodeIndex = (u32)points.size();
     for (auto& c : connections)
     {
+        c->trackGraphNodeIndexA = points[c->pointIndexA].trackGraphNodeIndex;
+        c->trackGraphNodeIndexB = points[c->pointIndexB].trackGraphNodeIndex;
         f32 totalLength = c->getLength();
         f32 stepSize = 20.f;
         u32 totalSteps = glm::max(2u, (u32)(totalLength / stepSize));
@@ -844,13 +847,193 @@ void Track::computeBoundingBox()
     boundingBox.max += glm::vec3(addSize * 0.5f, 0.f);
 }
 
-void Track::drawTrackPreview(TrackPreview2D* trackPreview, glm::mat4 const& orthoProjection)
+void Track::buildPreviewMesh(Scene* scene)
 {
+    previewMesh.destroy();
+
+    u32 vertexCount = 0;
+    u32 indexCount = 0;
     for (auto& c : connections)
     {
-        trackPreview->drawItem(c->vao, (u32)c->indices.size(),
-                orthoProjection, glm::vec3(1.f), true);
+        vertexCount += c->vertices.size();
+        indexCount += c->indices.size();
     }
+    const u32 vertexElementCount = 7;
+    previewMesh.vertices.resize(vertexCount * vertexElementCount + 2);
+    previewMesh.indices.resize(indexCount);
+
+#if 0
+    u32 vertexIndex = 0;
+    u32 indexOffset = 0;
+    u32 indexIndex = 0;
+    const f32 stepSize = 4.f;
+    TrackGraph& trackGraph = scene->getTrackGraph();
+    glm::vec3 finishLinePosition = translationOf(scene->getStart());
+    for (auto& c : connections)
+    {
+        f32 totalLength = c->getLength();
+        u32 totalSteps = (u32)(totalLength / stepSize);
+        glm::vec3 prevP = points[c->pointIndexA].position;
+        f32 dA = trackGraph.getNode(c->trackGraphNodeIndexA)->t;
+        f32 dB = trackGraph.getNode(c->trackGraphNodeIndexB)->t;
+
+        u32 finishLineStepIndex = 0;
+        bool crossesFinishLine = false;
+        for (u32 i=0; i<=totalSteps; ++i)
+        {
+            f32 t = (f32)i / (f32)totalSteps;
+            glm::vec3 p = pointOnBezierCurve(
+                    points[c->pointIndexA].position,
+                    points[c->pointIndexA].position + c->handleOffsetA,
+                    points[c->pointIndexB].position + c->handleOffsetB,
+                    points[c->pointIndexB].position, t);
+            if (glm::distance2(p, finishLinePosition) < square(6.f))
+            {
+                crossesFinishLine = true;
+                finishLineStepIndex = i;
+                break;
+            }
+        }
+
+        f32 ddA = dA;
+        f32 ddB = dB;
+        if (crossesFinishLine)
+        {
+            ddB = dA < dB ? 0.f : trackGraph.getStartNode()->t;
+        }
+
+        for (u32 i=0; i<=totalSteps; ++i)
+        {
+            f32 t = (f32)i / (f32)totalSteps;
+            glm::vec3 p = pointOnBezierCurve(
+                    points[c->pointIndexA].position,
+                    points[c->pointIndexA].position + c->handleOffsetA,
+                    points[c->pointIndexB].position + c->handleOffsetB,
+                    points[c->pointIndexB].position, t);
+            glm::vec3 xDir = glm::normalize(i == 0 ? c->handleOffsetA :
+                    (i == totalSteps ? -c->handleOffsetB : glm::normalize(p - prevP)));
+            glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
+            glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
+            f32 width = glm::lerp(c->widthA, c->widthB, t);
+            glm::vec3 p1 = p + yDir * width;
+            glm::vec3 p2 = p - yDir * width;
+
+            f32 distance = 0.f;
+            f32 lerpT = t;
+            if (crossesFinishLine)
+            {
+                if (i <= finishLineStepIndex)
+                {
+                    lerpT = (f32)i / (f32)(finishLineStepIndex);
+                }
+                else
+                {
+                    lerpT = (f32)(i - finishLineStepIndex) / (f32)(totalSteps - finishLineStepIndex);
+                }
+                distance = glm::lerp(ddA, ddB, lerpT);
+            }
+            else
+            {
+                distance = trackGraph.findTrackProgressAtPoint(p, glm::lerp(ddA, ddB, lerpT));
+            }
+
+            previewMesh.vertices[vertexIndex + 0]  = p1.x;
+            previewMesh.vertices[vertexIndex + 1]  = p1.y;
+            previewMesh.vertices[vertexIndex + 2]  = p1.z;
+            previewMesh.vertices[vertexIndex + 3]  = zDir.x;
+            previewMesh.vertices[vertexIndex + 4]  = zDir.y;
+            previewMesh.vertices[vertexIndex + 5]  = zDir.z;
+            previewMesh.vertices[vertexIndex + 6]  = distance / trackGraph.getStartNode()->t;
+            previewMesh.vertices[vertexIndex + 7]  = p2.x;
+            previewMesh.vertices[vertexIndex + 8]  = p2.y;
+            previewMesh.vertices[vertexIndex + 9]  = p2.z;
+            previewMesh.vertices[vertexIndex + 10] = zDir.x;
+            previewMesh.vertices[vertexIndex + 11] = zDir.y;
+            previewMesh.vertices[vertexIndex + 12] = zDir.z;
+            previewMesh.vertices[vertexIndex + 13] = distance / trackGraph.getStartNode()->t;;
+            vertexIndex += 2 * vertexElementCount;
+
+            if (i > 0)
+            {
+                previewMesh.indices[indexIndex + 0] = indexOffset - 1;
+                previewMesh.indices[indexIndex + 1] = indexOffset - 2;
+                previewMesh.indices[indexIndex + 2] = indexOffset;
+                previewMesh.indices[indexIndex + 3] = indexOffset;
+                previewMesh.indices[indexIndex + 4] = indexOffset + 1;
+                previewMesh.indices[indexIndex + 5] = indexOffset - 1;
+
+                indexIndex += 6;
+            }
+
+            if (crossesFinishLine && i == finishLineStepIndex)
+            {
+                previewMesh.vertices[vertexIndex + 0]  = p1.x;
+                previewMesh.vertices[vertexIndex + 1]  = p1.y;
+                previewMesh.vertices[vertexIndex + 2]  = p1.z;
+                previewMesh.vertices[vertexIndex + 3]  = zDir.x;
+                previewMesh.vertices[vertexIndex + 4]  = zDir.y;
+                previewMesh.vertices[vertexIndex + 5]  = zDir.z;
+                previewMesh.vertices[vertexIndex + 6]  = ddA;
+                previewMesh.vertices[vertexIndex + 7]  = p2.x;
+                previewMesh.vertices[vertexIndex + 8]  = p2.y;
+                previewMesh.vertices[vertexIndex + 9]  = p2.z;
+                previewMesh.vertices[vertexIndex + 10] = zDir.x;
+                previewMesh.vertices[vertexIndex + 11] = zDir.y;
+                previewMesh.vertices[vertexIndex + 12] = zDir.z;
+                previewMesh.vertices[vertexIndex + 13] = ddA;
+                vertexIndex += 2 * vertexElementCount;
+                indexOffset += 2;
+
+                ddA = dA < dB ? trackGraph.getStartNode()->t : 0.f;
+                ddB = dB;
+            }
+
+            indexOffset += 2;
+            prevP = p;
+        }
+    }
+
+#else
+    u32 vertexIndex = 0;
+    u32 indexOffset = 0;
+    u32 indexIndex = 0;
+    for (auto& c : connections)
+    {
+        for (u32 i=0; i<c->vertices.size(); ++i)
+        {
+            previewMesh.vertices[vertexIndex + 0] = c->vertices[i].position.x;
+            previewMesh.vertices[vertexIndex + 1] = c->vertices[i].position.y;
+            previewMesh.vertices[vertexIndex + 2] = c->vertices[i].position.z;
+            // TODO: don't include normals if not used
+            previewMesh.vertices[vertexIndex + 3] = c->vertices[i].normal.x;
+            previewMesh.vertices[vertexIndex + 4] = c->vertices[i].normal.y;
+            previewMesh.vertices[vertexIndex + 5] = c->vertices[i].normal.z;
+            //previewMesh.vertices[vertexIndex + 6] = 0.f;
+
+            vertexIndex += vertexElementCount;
+        }
+        for (u32 i=0; i<c->indices.size(); ++i)
+        {
+            previewMesh.indices[indexIndex + i] = c->indices[i] + indexOffset;
+        }
+        indexIndex += (u32)c->indices.size();
+        indexOffset += (u32)c->vertices.size();
+    }
+#endif
+    previewMesh.name = "Track Preview";
+    previewMesh.numVertices = previewMesh.vertices.size() / vertexElementCount;
+    previewMesh.numIndices = previewMesh.indices.size();
+    previewMesh.numColors = 0;
+    previewMesh.numTexCoords = 0;
+    previewMesh.stride = vertexElementCount * sizeof(f32);
+    previewMesh.aabb = boundingBox;
+    previewMesh.vertexFormat = {
+        { 0, VertexAttributeType::FLOAT3 }, // position
+        { 1, VertexAttributeType::FLOAT3 }, // normal
+        //{ 2, VertexAttributeType::FLOAT1 }, // distance
+    };
+
+    previewMesh.createVAO();
 }
 
 void Track::serializeState(Serializer& s)

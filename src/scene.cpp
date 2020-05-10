@@ -721,14 +721,15 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
         quadMesh->vao, quadMesh->numIndices,
         trackOrtho * start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
             * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
-    track->drawTrackPreview(&trackPreview2D, trackOrtho);
+    Mesh* trackMesh = track->getPreviewMesh(this);
+    trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, trackOrtho, glm::vec3(1.f), true);
 
     Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.TrackArrow");
     for (auto const& v : vehicles)
     {
         glm::vec3 pos = v->getPosition();
         trackPreview2D.drawItem(arrowMesh->vao, arrowMesh->numIndices,
-            trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2) + pos)
+            trackOrtho * glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
                 * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
                 * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
             g_vehicleColors[v->getDriver()->getVehicleConfig()->colorIndex], false);

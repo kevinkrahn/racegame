@@ -49,8 +49,7 @@ public:
 
     ~SmallVec() { clear(); }
 
-    /*
-    SmallVec<T>& operator = (SmallVec<T> const& other)
+    SmallVec<T, maxSize>& operator = (SmallVec<T, maxSize> const& other)
     {
         clear();
         size_ = other.size_;
@@ -60,7 +59,6 @@ public:
         }
         return *this;
     }
-    */
 
     SmallVec<T, maxSize>& operator = (SmallVec<T, maxSize> && other)
     {
