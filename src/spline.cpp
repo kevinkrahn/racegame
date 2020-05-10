@@ -111,7 +111,6 @@ void Spline::updateMesh(Scene* scene)
     // build poly line from bezier curve
     u32 steps = 32;
     std::vector<PolyLinePoint> polyLine;
-    //f32 zGroundOffset = flat ? 0.01f : 0.f;
     f32 zGroundOffset = 0.01f;
     u32 stickToGroundCollisionFlags = COLLISION_FLAG_TRACK;
     for (size_t i=0; i<points.size()-1; ++i)

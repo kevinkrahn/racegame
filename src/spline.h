@@ -66,28 +66,6 @@ public:
         s.field(points);
         s.field(scale);
         s.field(modelGuid);
-
-        // TODO: remove this when tracks are updated
-        if (s.deserialize && modelGuid == 0)
-        {
-            u32 meshTypeIndex = 0;
-            s.field(meshTypeIndex);
-            switch (meshTypeIndex)
-            {
-                case 0:
-                    modelGuid = g_res.getModel("concrete_barrier")->guid;
-                    break;
-                case 1:
-                    modelGuid = g_res.getModel("rumblestrip")->guid;
-                    break;
-                case 2:
-                    modelGuid = g_res.getModel("railing1")->guid;
-                    break;
-                case 3:
-                    modelGuid = g_res.getModel("railing2")->guid;
-                    break;
-            }
-        }
     }
 
     struct PolyLinePoint

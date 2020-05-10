@@ -761,7 +761,7 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, glm::mat4(1.f),
             glm::vec3(1.f), true, 1);
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices,
-            glm::translate(glm::mat4(1.f), { 0, 0, -6 }), glm::vec3(0.2f), true, 0);
+            glm::translate(glm::mat4(1.f), { 0, 0, -5 }), glm::vec3(0.2f), true, 0);
     /*
     for (u32 i=0; i<20; ++i)
     {

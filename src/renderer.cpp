@@ -16,6 +16,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     str << "#define SHADOWS_ENABLED " << u32(g_game.config.graphics.shadowsEnabled) << '\n';
     str << "#define SSAO_ENABLED " << u32(g_game.config.graphics.ssaoEnabled) << '\n';
     str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
+    str << "#define SHARPEN_ENABLED " << u32(g_game.config.graphics.sharpenEnabled) << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';

@@ -35,16 +35,6 @@ void Track::onCreate(Scene* scene)
     {
         scene->track = this;
     }
-
-    if (railingData.hasValue())
-    {
-        for (auto& r : railingData.array().val())
-        {
-            r.dict().val()["entityID"] = DataFile::makeInteger(5);
-            scene->deserializeEntity(r);
-        }
-        railingData = DataFile::Value();
-    }
 }
 
 void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
@@ -1047,7 +1037,5 @@ void Track::serializeState(Serializer& s)
         {
             c->track = this;
         }
-
-        railingData = s.dict["railings"];
     }
 }

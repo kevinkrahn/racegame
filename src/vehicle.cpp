@@ -325,6 +325,7 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
 {
     glm::vec3 pos = lastValidPosition;
+    pos.z = glm::max(pos.z, -10.f);
 #if 0
     cameraTarget = pos + glm::vec3(0, 0, 2.f);
     cameraFrom = smoothMove(cameraFrom,
@@ -615,7 +616,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
     // destroy vehicle if off track or out of bounds
     bool onGround = false;
-    if (currentPosition.z < -16.f)
+    if (currentPosition.z < -32.f)
     {
         applyDamage(100.f, vehicleIndex);
     }

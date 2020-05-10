@@ -27,10 +27,34 @@ layout(binding = 4) uniform usampler2D stencilSampler;
 layout(binding = 4) uniform usampler2D stencilSampler;
 #endif
 
+float sharpenKernel[9] = { 0.0, -1.0, 0.0, -1.0, 5.0, -1.0, 0.0, -1.0, 0.0 };
+vec2 sampleOffset[9] = {
+    vec2(-1.0, -1.0),
+    vec2(0.0, -1.0),
+    vec2(1.0, -1.0),
+    vec2(-1.0, 0.0),
+    vec2(0.0, 0.0),
+    vec2(1.0, 0.0),
+    vec2(-1.0, 1.0),
+    vec2(0.0, 1.0),
+    vec2(1.0, 1.0)
+};
+
 void main()
 {
     outColor = texture(colorSampler, inTexCoord);
-#if defined BLOOM_ENABLED
+#if SHARPEN_ENABLED
+    vec3 sum = vec3(0.0);
+    vec2 step = 1.0 / vec2(textureSize(colorSampler, 0));
+    for (int i=0; i<9; ++i)
+    {
+        vec3 color = texture(colorSampler, inTexCoord + sampleOffset[i] * step).rgb;
+        sum += color * sharpenKernel[i];
+    }
+    outColor = mix(outColor, vec4(sum, 1.0), 0.25);
+#endif
+
+#if BLOOM_ENABLED
     vec3 bloom = (texture(bloomSampler1, inTexCoord).rgb
                 + texture(bloomSampler2, inTexCoord).rgb
                 + texture(bloomSampler3, inTexCoord).rgb) / 3.0;
@@ -46,16 +70,6 @@ void main()
         for (int y = -1; y<=1; ++y)
         {
             uint adjacentID = texelFetch(stencilSampler, coord + ivec2(x, y), 0).r;
-            /*
-            if (adjacentID == 1 && id == 0 || adjacentID == 0 && id == 1)
-            {
-                amount += 0.2;
-            }
-            if (adjacentID == 2 && id == 0 || adjacentID == 0 && id == 2)
-            {
-                amount += 1.0;
-            }
-            */
             if ((adjacentID & mask) != (id & mask))
             {
                 if ((adjacentID & 1) == 1 && (id & 1) == 0 || (id & 1) == 1 && (adjacentID & 1) == 0)
@@ -93,8 +107,6 @@ void main()
     }
     if (id == 1)
     {
-        //coord /= 2;
-        //amount = max(amount, ((coord.x & 1) == 0 || (coord.y & 1) == 1) ? 0.5 : 0.0);
         amount = max(amount, 0.5);
     }
     outColor = mix(outColor, highlightColor, amount / 6.0);

@@ -20,6 +20,7 @@ struct Config
         bool ssaoEnabled = true;
         bool ssaoHighQuality = false; // TODO: Implement
         bool bloomEnabled = true;
+        bool sharpenEnabled = false;
 
         void serialize(Serializer& s)
         {
@@ -34,6 +35,7 @@ struct Config
             s.field(ssaoEnabled);
             s.field(ssaoHighQuality);
             s.field(bloomEnabled);
+            s.field(sharpenEnabled);
         }
     } graphics;
 
