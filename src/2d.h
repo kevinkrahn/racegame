@@ -73,6 +73,8 @@ class TrackPreview2D : public Renderable2D
     GLuint destFramebuffer, destTex;
     u32 width = 0;
     u32 height = 0;
+    glm::vec3 camPosition;
+    glm::mat4 viewProjection;
 
     struct Vertex
     {
@@ -162,14 +164,27 @@ public:
         glDisable(GL_BLEND);
 
         glUseProgram(renderer->getShaderProgram("mesh2D"));
+        glUniform3fv(5, 1, (GLfloat*)&camPosition);
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(viewProjection));
     }
 
-    void drawItem(GLuint vao, u32 numIndices, glm::mat4 const& transform,
-            glm::vec3 const& color=glm::vec3(1.0), bool overwriteColor=false)
+    void setCamViewProjection(glm::mat4 const& viewProjection)
     {
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
-        glUniform3fv(1, 1, (GLfloat*)&color);
-        glUniform1i(2, overwriteColor);
+        this->viewProjection = viewProjection;
+    }
+
+    void setCamPosition(glm::vec3 camPosition)
+    {
+        this->camPosition = camPosition;
+    }
+
+    void drawItem(GLuint vao, u32 numIndices, glm::mat4 const& worldTransform,
+            glm::vec3 const& color=glm::vec3(1.0), bool overwriteColor=false, i32 shadeMode=0)
+    {
+        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(worldTransform));
+        glUniform3fv(2, 1, (GLfloat*)&color);
+        glUniform1i(3, overwriteColor);
+        glUniform1i(4, shadeMode);
         glBindVertexArray(vao);
         glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
     }
@@ -189,8 +204,8 @@ public:
         glm::vec2 size(width, height);
         glm::vec2 p1 = pos - size * 0.5f;
         glm::vec2 p2 = pos + size * 0.5f;
-        glm::vec2 t1 = { 0.f, 0.f };
-        glm::vec2 t2 = { 1.f, 1.f };
+        glm::vec2 t1 = { 0.f, 1.f };
+        glm::vec2 t2 = { 1.f, 0.f };
         points[0] = { p1, t1 };
         points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
         points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };

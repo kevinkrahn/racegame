@@ -101,6 +101,7 @@ private:
     MotionGrid motionGrid;
     PxDistanceJoint* dragJoint = nullptr;
     Batcher batcher;
+    bool hasTrackPreview = false;
 
     bool allPlayersFinished = false;
     f32 finishTimer = 0.f;

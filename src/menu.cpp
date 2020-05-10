@@ -96,7 +96,7 @@ void Menu::mainMenu()
 
         g_game.state.gameMode = GameMode::QUICK_RACE;
         g_game.isEditing = false;
-#if 1
+#if 0
         Scene* scene = g_game.changeScene("race7");
 #else
         Scene* scene = g_game.changeScene(
@@ -336,7 +336,7 @@ void Menu::championshipMenu()
     g_game.renderer->push2D(TextRenderable(mediumFont, tstr("Race ", g_game.state.currentRace + 1),
                 menuPos + o + glm::vec2(0, glm::floor(g_gui.convertSize(52))), glm::vec3(1.f)));
 
-    u32 trackPreviewSize = (u32)g_gui.convertSize(320);
+    u32 trackPreviewSize = (u32)g_gui.convertSize(380);
     g_game.currentScene->drawTrackPreview(g_game.renderer.get(), trackPreviewSize,
             menuPos + glm::vec2(glm::floor(trackPreviewSize/2) + o, menuSize.y / 2));
     g_game.renderer->add2D(&g_game.currentScene->getTrackPreview2D());

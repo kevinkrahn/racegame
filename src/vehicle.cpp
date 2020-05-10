@@ -338,7 +338,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
             5.f, deltaTime);
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
     cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
-    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 23.f, 250.f);
+    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 18.f, 250.f);
 #endif
 }
 
