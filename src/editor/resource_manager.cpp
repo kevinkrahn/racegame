@@ -663,7 +663,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                         str(ASSET_DIRECTORY, "/textures"));
                 if (!filename.empty())
                 {
-                    tex.setSourceFile(0, std::filesystem::relative(filename));
+                    tex.setSourceFile(0, std::filesystem::relative(filename).string());
                     tex.regenerate();
                     dirty = true;
                 }
@@ -706,7 +706,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                                 str(ASSET_DIRECTORY, "/textures"));
                     if (!filename.empty())
                     {
-                        tex.setSourceFile(i, std::filesystem::relative(filename));
+                        tex.setSourceFile(i, std::filesystem::relative(filename).string());
                         tex.regenerate();
                         dirty = true;
                     }
@@ -874,7 +874,7 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
                 chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, str(ASSET_DIRECTORY, "/sounds"));
             if (!filename.empty())
             {
-                sound.sourceFilePath = std::filesystem::relative(filename);
+                sound.sourceFilePath = std::filesystem::relative(filename).string();
                 sound.loadFromFile(sound.sourceFilePath.c_str());
             }
             dirty = true;

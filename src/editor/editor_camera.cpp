@@ -50,7 +50,7 @@ void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
             glm::sin(cameraYaw) * glm::cos(cameraPitch),
             glm::sin(cameraPitch));
     cameraFrom = cameraTarget - cameraDir * cameraDistance;
-    rw->setViewportCamera(0, cameraFrom, cameraTarget, near, far, 53.f);
+    rw->setViewportCamera(0, cameraFrom, cameraTarget, nearDistance, farDistance, 53.f);
     camera = rw->getCamera(0);
 }
 

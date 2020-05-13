@@ -18,7 +18,7 @@ std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
 
 #if _WIN32
     WIN32_FIND_DATA fileData;
-    HANDLE handle = FindFirstFileA(dir.c_str(), &fileData);
+    HANDLE handle = FindFirstFile((dir + "\\*").c_str(), &fileData);
     if (handle == INVALID_HANDLE_VALUE)
     {
         FATAL_ERROR("Failed to read directory: ", dir);
@@ -27,7 +27,7 @@ std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
     {
         if (fileData.cFileName[0] != '.')
         {
-            if (fileData & FILE_ATTRIBUTE_DIRECTORY)
+            if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
                 files.push_back({ fileData.cFileName, true });
                 std::string childDirectory = dir + '/' + fileData.cFileName;
@@ -57,15 +57,12 @@ std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
         {
             if (dp->d_type == DT_DIR)
             {
-                if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
-                {
-                    files.push_back({ dp->d_name, true });
-                    std::string childDirectory = dir + '/' + dp->d_name;
-                    if (recursive)
-                    {
-                        files.back().children = readDirectory(childDirectory, recursive);
-                    }
-                }
+				files.push_back({ dp->d_name, true });
+				std::string childDirectory = dir + '/' + dp->d_name;
+				if (recursive)
+				{
+					files.back().children = readDirectory(childDirectory, recursive);
+				}
             }
             else if (dp->d_type == DT_REG)
             {

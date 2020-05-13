@@ -97,7 +97,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 chooseFile( true, "Model Files", { "*.blend" }, str(ASSET_DIRECTORY, "/models"));
             if (!path.empty())
             {
-                model->sourceFilePath = std::filesystem::relative(path);
+                model->sourceFilePath = std::filesystem::relative(path).string();
                 model->sourceSceneName = "";
                 loadBlenderFile(model->sourceFilePath);
                 dirty = true;
@@ -537,7 +537,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     // execute blender with a python script that will output the data in the datafile format
     const char* blenderPath =
 #if _WIN32
-    "\"C:/Program Files/Blender Foundation/Blender 2.81/blender.exe\""
+    "\"C:/Program Files/Blender Foundation/Blender 2.81/blender.exe\"";
 #else
     "blender";
 #endif

@@ -97,7 +97,7 @@ public:
         : textureType(textureType), width(width), height(height)
     {
         this->name = name;
-        sourceFiles.push_back({ "", std::vector<u8>(data, data+width*height*4), width, height });
+        sourceFiles.push_back({ "", std::vector<u8>(data, data+width*height), width, height });
         regenerate();
     }
 

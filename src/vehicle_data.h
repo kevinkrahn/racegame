@@ -229,18 +229,18 @@ struct VehicleConfiguration
     {
         s.field(colorIndex);
         s.field(paintTypeIndex);
-        s.value("frontWeapon0", frontWeaponIndices[0]);
-        s.value("frontWeapon1", frontWeaponIndices[1]);
-        s.value("frontWeapon2", frontWeaponIndices[2]);
-        s.value("frontWeapon0UpgradeLevel", frontWeaponUpgradeLevel[0]);
-        s.value("frontWeapon1UpgradeLevel", frontWeaponUpgradeLevel[1]);
-        s.value("frontWeapon2UpgradeLevel", frontWeaponUpgradeLevel[2]);
-        s.value("rearWeapon0", rearWeaponIndices[0]);
-        s.value("rearWeapon1", rearWeaponIndices[1]);
-        s.value("rearWeapon2", rearWeaponIndices[2]);
-        s.value("rearWeapon0UpgradeLevel", rearWeaponUpgradeLevel[0]);
-        s.value("rearWeapon1UpgradeLevel", rearWeaponUpgradeLevel[1]);
-        s.value("rearWeapon2UpgradeLevel", rearWeaponUpgradeLevel[2]);
+        s.fieldName("frontWeapon0", frontWeaponIndices[0]);
+        s.fieldName("frontWeapon1", frontWeaponIndices[1]);
+        s.fieldName("frontWeapon2", frontWeaponIndices[2]);
+        s.fieldName("frontWeapon0UpgradeLevel", frontWeaponUpgradeLevel[0]);
+        s.fieldName("frontWeapon1UpgradeLevel", frontWeaponUpgradeLevel[1]);
+        s.fieldName("frontWeapon2UpgradeLevel", frontWeaponUpgradeLevel[2]);
+        s.fieldName("rearWeapon0", rearWeaponIndices[0]);
+        s.fieldName("rearWeapon1", rearWeaponIndices[1]);
+        s.fieldName("rearWeapon2", rearWeaponIndices[2]);
+        s.fieldName("rearWeapon0UpgradeLevel", rearWeaponUpgradeLevel[0]);
+        s.fieldName("rearWeapon1UpgradeLevel", rearWeaponUpgradeLevel[1]);
+        s.fieldName("rearWeapon2UpgradeLevel", rearWeaponUpgradeLevel[2]);
         s.field(specialAbilityIndex);
         s.field(performanceUpgrades);
     }

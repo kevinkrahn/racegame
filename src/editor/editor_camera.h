@@ -15,7 +15,8 @@ class EditorCamera
     glm::vec3 cameraVelocity = glm::vec3(0, 0, 0);
     glm::vec2 lastMousePosition;
     glm::vec3 cameraFrom;
-    f32 near = 2.f, far = 380.f;
+    f32 nearDistance = 2.f;
+    f32 farDistance = 380.f;
     Camera camera;
 
 public:
@@ -26,10 +27,10 @@ public:
     void update(f32 deltaTime, RenderWorld* rw);
     glm::vec3 getMouseRay(RenderWorld* rw) const;
 
-    void setNearFar(f32 near, f32 far)
+    void setNearFar(f32 nearDistance, f32 farDistance)
     {
-        this->near = near;
-        this->far = far;
+        this->nearDistance = nearDistance;
+        this->farDistance = farDistance;
     }
     void setCameraDistance(f32 distance) { cameraDistance = distance; }
 };

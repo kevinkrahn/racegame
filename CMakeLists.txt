@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(
     external
     external/sdl2
+    external/sdl2/SDL2
     external/glm
     external/physx/physx/include
     external/physx/pxshared/include

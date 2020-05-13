@@ -353,20 +353,23 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
 
     // update debris chunks
-    for (auto it = vehicleDebris.begin(); it != vehicleDebris.end();)
+    for (u32 i=0; i<(u32)vehicleDebris.size();)
     {
-        it->life -= deltaTime;
-        if (it->life <= 0.f)
+        VehicleDebris& debris = vehicleDebris[i];
+        debris.life -= deltaTime;
+        if (debris.life <= 0.f)
         {
-            scene->getPhysicsScene()->removeActor(*it->rigidBody);
-            it->rigidBody->release();
-            //std::swap(*it, vehicleDebris.back());
-            *it = vehicleDebris.back();
-            vehicleDebris.pop_back();
+            scene->getPhysicsScene()->removeActor(*debris.rigidBody);
+            debris.rigidBody->release();
+            if (vehicleDebris.size() > 1)
+            {
+                debris = vehicleDebris.back();
+            }
+			vehicleDebris.pop_back();
         }
         else
         {
-            ++it;
+            ++i;
         }
     }
 

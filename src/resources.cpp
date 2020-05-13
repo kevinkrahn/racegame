@@ -61,7 +61,7 @@ void Resources::load()
         auto path = std::filesystem::path(file.path);
         if (path.extension() == ".dat" && path.filename() != METADATA_FILE)
         {
-            print("Loading data file: ", file.path, '\n');
+            //print("Loading data file: ", file.path, '\n');
             auto data = DataFile::load(str(DATA_DIRECTORY, "/", file.path));
             if (data.array().hasValue())
             {

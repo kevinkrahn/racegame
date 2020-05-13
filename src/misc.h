@@ -7,7 +7,6 @@
 #include <cassert>
 #include <vector>
 #include <SDL2/SDL.h>
-#include <dirent.h>
 
 typedef uint8_t  u8;
 typedef uint16_t u16;

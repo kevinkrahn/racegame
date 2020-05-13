@@ -4,7 +4,7 @@
 
 using namespace DataFile;
 
-Value DataFile::load(std::string const& filename)
+DataFile::Value DataFile::load(std::string const& filename)
 {
     // text format
     if (filename.substr(filename.size()-4) == ".txt")

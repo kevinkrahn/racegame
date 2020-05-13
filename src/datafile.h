@@ -78,7 +78,7 @@ namespace DataFile
         using ByteArray = std::vector<u8>;
         using String = std::string;
 
-        friend Value load(const char* filename);
+        friend Value load(std::string const&);
 
     private:
         DataType dataType = DataType::NONE;
@@ -633,7 +633,7 @@ class Serializer
 public:
     DataFile::Value::Dict& dict;
     bool deserialize;
-    const char* context = "";
+    std::string context;
 
     Serializer(DataFile::Value& val, bool deserialize) : dict(val.dict(true).val()),
         deserialize(deserialize) {}
@@ -648,12 +648,12 @@ public:
     }
 
     template<typename T>
-    void _value(const char* name, T& field, const char* context="")
+    void serializeValue(const char* name, T& field, std::string&& context)
     {
         if (deserialize)
         {
             element(name, dict[name], field);
-            this->context = context;
+            this->context = std::move(context);
         }
         else
         {
@@ -963,9 +963,9 @@ public:
 #undef DESERIALIZE_ERROR
 
 #ifndef NDEBUG
-#define field(FIELD) _value(#FIELD, FIELD, str(__FILE__, ": ", __LINE__).c_str())
-#define value(NAME, FIELD) _value(NAME, FIELD, str(__FILE__, ": ", __LINE__).c_str())
+#define field(FIELD) serializeValue(#FIELD, FIELD, str(__FILE__, ": ", __LINE__))
+#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, str(__FILE__, ": ", __LINE__))
 #else
-#define field(FIELD) _value(#FIELD, FIELD, "WARNING")
-#define value(NAME, FIELD) _value(NAME, FIELD, "WARNING")
+#define field(FIELD) serializeValue(#FIELD, FIELD, "WARNING")
+#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, "WARNING")
 #endif
