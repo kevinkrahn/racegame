@@ -5,6 +5,11 @@
 #include <algorithm>
 #include <filesystem>
 
+#if _WIN32
+#else
+#include <dirent.h>
+#endif
+
 struct FileItem
 {
     std::string path;
