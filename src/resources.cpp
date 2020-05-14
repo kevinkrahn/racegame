@@ -52,8 +52,9 @@ void Resources::load()
 {
     constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
     constexpr u8 identityNormalBytes[] = { 128, 128, 255, 255 };
-    white = Texture("white", 1, 1, (u8*)whiteBytes, TextureType::COLOR);
-    identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes, TextureType::NORMAL_MAP);
+    white = Texture("white", 1, 1, (u8*)whiteBytes, sizeof(whiteBytes), TextureType::COLOR);
+    identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes,
+            sizeof(identityNormalBytes), TextureType::NORMAL_MAP);
 
     std::vector<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
     for (auto& file : resourceFiles)

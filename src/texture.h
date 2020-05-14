@@ -93,11 +93,11 @@ public:
     GLuint handle = 0;
 
     Texture() { setTextureType(TextureType::COLOR); }
-    Texture(const char* name, u32 width, u32 height, u8* data, u32 textureType)
+    Texture(const char* name, u32 width, u32 height, u8* data, u32 dataSize, u32 textureType)
         : textureType(textureType), width(width), height(height)
     {
         this->name = name;
-        sourceFiles.push_back({ "", std::vector<u8>(data, data+width*height), width, height });
+        sourceFiles.push_back({ "", std::vector<u8>(data, data+dataSize), width, height });
         regenerate();
     }
 
