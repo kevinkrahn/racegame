@@ -86,8 +86,10 @@ void Batcher::end()
         }
 
         bigBatchedMesh.createVAO();
-        // TODO: the vertices and indices can be cleared because they will not be used after
-        // the data is uploaded to the GPU
+
+        // not needed anymore
+        bigBatchedMesh.vertices.clear();
+        bigBatchedMesh.indices.clear();
 
         batches.push_back({ itemsForThisMaterial.first, std::move(bigBatchedMesh) });
     }

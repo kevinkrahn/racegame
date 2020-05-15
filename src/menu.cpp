@@ -81,8 +81,8 @@ void Menu::mainMenu()
 #if 0
         drivers[0].hasCamera = true;
         drivers[1].hasCamera = true;
-        //drivers[2].hasCamera = true;
-        //drivers[3].hasCamera = true;
+        drivers[2].hasCamera = true;
+        drivers[3].hasCamera = true;
 #endif
 
         // shuffle

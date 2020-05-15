@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "weapon.h"
 #include "material.h"
+#include "batcher.h"
 #include <algorithm>
 #include <functional>
 
@@ -270,7 +271,9 @@ struct PerformanceUpgrade
 
 struct VehicleData
 {
-    std::vector<VehicleMesh> chassisMeshes;
+    Batcher chassisBatch;
+    Batcher chassisOneMaterialBatch;
+
     SmallVec<VehicleMesh> wheelMeshes[NUM_WHEELS];
 
     glm::vec3 wheelPositions[NUM_WHEELS] = {};

@@ -205,6 +205,9 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
 
 void VehicleData::loadModelData(const char* modelName)
 {
+    chassisBatch.begin();
+    chassisOneMaterialBatch.begin();
+
     Model* model = g_res.getModel(modelName);
 
     for (auto& obj : model->objects)
@@ -253,12 +256,9 @@ void VehicleData::loadModelData(const char* modelName)
         }
         if (name.find("Chassis") != std::string::npos)
         {
-            chassisMeshes.push_back({
-                mesh,
-                transform,
-                nullptr,
-                g_res.getMaterial(obj.materialGuid),
-            });
+            Material* mat = g_res.getMaterial(obj.materialGuid);
+            chassisBatch.add(mat, transform, mesh);
+            chassisOneMaterialBatch.add(&g_res.defaultMaterial, transform, mesh);
         }
         if (name.find("FL") != std::string::npos)
         {
@@ -330,6 +330,9 @@ void VehicleData::loadModelData(const char* modelName)
             exhaustHoles.push_back(obj.position);
         }
     }
+
+    chassisBatch.end();
+    chassisOneMaterialBatch.end();
 }
 
 void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
@@ -363,17 +366,21 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
     Material* coloredPaintMaterial = &paintMaterials.back();
     coloredPaintMaterial->color = g_vehicleColors[config.colorIndex];
 
-    for (auto& m : chassisMeshes)
+    for (auto& m : chassisBatch.batches)
     {
         Material* mat = m.material;
         if (mat == originalPaintMaterial)
         {
             mat = coloredPaintMaterial;
         }
-        rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2));
-        if (isHidden)
+        rw->push(LitMaterialRenderable(&m.mesh, transform, mat, 0, 2));
+    }
+
+    if (isHidden)
+    {
+        for (auto& m : chassisOneMaterialBatch.batches)
         {
-            rw->push(LitMaterialRenderable(m.mesh, transform * m.transform, mat, 0, 2, true,
+            rw->push(LitMaterialRenderable(&m.mesh, transform, &g_res.defaultMaterial, 0, 2, true,
                         3, (u8)vehicle->cameraIndex));
         }
     }

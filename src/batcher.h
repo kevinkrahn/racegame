@@ -8,6 +8,14 @@
 
 class Batcher
 {
+    struct BatchableItem
+    {
+        glm::mat4 transform;
+        Mesh* mesh;
+    };
+    std::map<Material*, std::vector<BatchableItem>> materialMap;
+
+public:
     struct Batch
     {
         Material* material;
@@ -15,16 +23,6 @@ class Batcher
     };
 
     std::vector<Batch> batches;
-
-    struct BatchableItem
-    {
-        glm::mat4 transform;
-        Mesh* mesh;
-    };
-
-    std::map<Material*, std::vector<BatchableItem>> materialMap;
-
-public:
 
     ~Batcher()
     {
