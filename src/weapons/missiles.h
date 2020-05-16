@@ -40,7 +40,7 @@ public:
         }
 
         glm::mat4 transform = vehicle->getTransform();
-        f32 minSpeed = 25.f;
+        f32 minSpeed = 10.f;
         glm::vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
         if (glm::length2(vel) < square(minSpeed))

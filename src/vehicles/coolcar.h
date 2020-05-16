@@ -36,7 +36,7 @@ public:
         //tuning.rearToeAngle = glm::radians(4.5f); // faster recovery from slide
         tuning.rearToeAngle = glm::radians(0.9f); // faster recovery from slide
         tuning.trackTireFriction = 2.4f;
-        tuning.offroadTireFriction = 1.f;
+        tuning.offroadTireFriction = 1.3f;
 
         tuning.rearTireGripPercent = 0.98f;
         tuning.constantDownforce = 0.001f;

@@ -62,6 +62,7 @@ void Texture::setSourceFile(u32 index, std::string const& path)
 {
     assert(index < sourceFiles.size());
     sourceFiles[index].path = path;
+    loadSourceFile(index);
 }
 
 void Texture::regenerate()
@@ -148,7 +149,7 @@ void Texture::initGLTexture(u32 index)
         glTextureParameteri(s.previewHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(s.previewHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
-    glTextureParameteri(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, anisotropy);
+    glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, glm::max((f32)anisotropy, 1.f));
     glTextureParameterf(s.previewHandle, GL_TEXTURE_LOD_BIAS, lodBias);
     if (generateMipMaps)
     {

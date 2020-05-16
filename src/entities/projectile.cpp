@@ -33,7 +33,7 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             groundFollow = true;
             collisionRadius = 0.5f;
             damage = 120;
-            accel = 4.f;
+            accel = 20.f;
             break;
         case BOUNCER:
             life = 4.f;

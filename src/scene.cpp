@@ -763,12 +763,10 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
     }
     trackPreview2D.beginUpdate(renderer, size, size);
 
-    // TODO: use better starting line mesh
-    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+    //Mesh* startMesh = &g_res.getModel("misc")->meshes.front();
+    Mesh* startMesh = &g_res.getModel("HUDStart")->meshes.back();
     trackPreview2D.drawItem(
-        quadMesh->vao, quadMesh->numIndices,
-        start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
-            * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
+        startMesh->vao, startMesh->numIndices, start->transform, glm::vec3(1.f), false);
 
     Mesh* trackMesh = track->getPreviewMesh(this);
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, glm::mat4(1.f),
@@ -785,8 +783,8 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
     }
     */
 
-    Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
-    //Mesh* cubeMesh = g_res.getModel("HUDCar")->getMeshByName("HUDCar");
+    Mesh* sphereMesh = &g_res.getModel("sphere")->meshes.front();
+    //Mesh* cubeMesh = &g_res.getModel("HUDCar")->meshes.front();
     for (auto const& v : vehicles)
     {
         trackPreview2D.drawItem(sphereMesh->vao, sphereMesh->numIndices,
@@ -1171,7 +1169,14 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         SoundType::GAME_SFX, convert(contactPoints[j].position));
             }
 
-            if (magnitude > 20.f)
+            PxMaterial* materialA = pairs[i].shapes[0]->getMaterialFromInternalFaceIndex(
+                    contactPoints[j].internalFaceIndex0);
+            PxMaterial* materialB = pairs[i].shapes[1]->getMaterialFromInternalFaceIndex(
+                    contactPoints[j].internalFaceIndex1);
+            if (magnitude > 20.f &&
+                    materialA != g_game.physx.materials.offroad &&
+                    materialB != g_game.physx.materials.offroad)
+                    // && pairs[i].events & PxPairFlag::eNOTIFY_TOUCH_PERSISTS)
             {
                 glm::vec3 velOffset = glm::vec3(
                     random(randomSeries, -0.25f, 0.25f),
