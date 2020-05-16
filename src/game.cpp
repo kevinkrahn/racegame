@@ -57,11 +57,11 @@ void Game::initPhysX()
     PxVehicleSetSweepHitRejectionAngles(POINT_REJECT_ANGLE, NORMAL_REJECT_ANGLE);
     PxVehicleSetMaxHitActorAcceleration(80.f);
 
-    physx.materials.vehicle = g_game.physx.physics->createMaterial(0.1f, 0.1f, 0.4f);
-    physx.materials.track   = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.4f);
-    physx.materials.offroad = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.1f);
-    physx.materials.generic = g_game.physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
-    physx.materials.railing = g_game.physx.physics->createMaterial(0.05f, 0.05f, 0.3f);
+    physx.materials.vehicle = physx.physics->createMaterial(0.1f, 0.1f, 0.38f);
+    physx.materials.track   = physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
+    physx.materials.offroad = physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
+    physx.materials.generic = physx.physics->createMaterial(0.4f, 0.4f, 0.05f);
+    physx.materials.railing = physx.physics->createMaterial(0.05f, 0.05f, 0.3f);
 }
 
 #ifndef NDEBUG

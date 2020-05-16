@@ -5,7 +5,7 @@
 #include "motion_grid.h"
 #include "entity.h"
 #include "ribbon.h"
-#include "smoke_particles.h"
+#include "particle_system.h"
 #include "debug_draw.h"
 #include "driver.h"
 #include "editor/editor_camera.h"
@@ -131,7 +131,8 @@ public:
 
     RandomSeries randomSeries;
     SoundHandle backgroundSound = 0;
-    SmokeParticles smoke;
+    ParticleSystem smoke;
+    ParticleSystem sparks;
     RibbonRenderable ribbons;
     DebugDraw debugDraw;
     Terrain* terrain = nullptr;

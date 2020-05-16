@@ -17,7 +17,7 @@
 #include "font.cpp"
 #include "track_graph.cpp"
 #include "motion_grid.cpp"
-#include "smoke_particles.cpp"
+#include "particle_system.cpp"
 #include "audio.cpp"
 #include "driver.cpp"
 #include "mesh.cpp"

@@ -5,6 +5,62 @@
 #include "model.h"
 #include <functional>
 
+#if 0
+enum EntityFlags
+{
+    ENTITY_NONE = 0,
+    ENTITY_DESTROYED = 1,
+    ENTITY_PERSISTENT = 1 << 1,
+    ENTITY_DYNAMIC = 1 << 2,
+    ENTITY_TRANSIENT = 1 << 3,
+    ENTITY_PROP = 1 << 4,
+};
+
+struct ECS_Component
+{
+    struct ECS_Entity* entity;
+    u32 componentID;
+
+    virtual ~ECS_Component() {}
+    virtual void serialize(Serializer& s);
+};
+
+struct ECS_Entity
+{
+    std::string name;
+    SmallVec<ECS_Component*, 8> components;
+    glm::vec3 position;
+    u32 flags = ENTITY_NONE;
+    glm::quat rotation = glm::identity<glm::quat>();
+    glm::vec3 scale = glm::vec3(1.f);
+
+    /*
+    void serialize(Serializer& s)
+    {
+        s.field(name);
+        s.field(position);
+        s.field(rotation);
+        s.field(scale);
+        s.field(flags);
+
+        if (s.deserialize)
+        {
+            for (ECS_Component* component : components)
+            {
+                DataFile::Value componentData = DataFile::makeDict();
+                Serializer componentSerializer(componentData, false);
+                component->serialize(s);
+            }
+        }
+        else
+        {
+            s.field(components);
+        }
+    }
+    */
+};
+#endif
+
 struct ActorUserData
 {
     enum

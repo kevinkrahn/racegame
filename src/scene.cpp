@@ -16,6 +16,17 @@
 
 Scene::Scene(TrackData* data)
 {
+    smoke.texture = g_res.getTexture("smoke");
+
+    sparks.texture = g_res.getTexture("flash");
+    sparks.alphaCurve = { {0.f, 1.f}, {1.f, 0.f} };
+    sparks.scaleCurve = { {0.f, 1.f}, {1.f, 0.f} };
+    sparks.minLife = 0.25f;
+    sparks.maxLife = 0.35f;
+    sparks.minScale = 0.3f;
+    sparks.maxScale = 0.5f;
+    sparks.lit = false;
+
     // create PhysX scene
     PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f);
@@ -379,6 +390,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
 
         smoke.update(deltaTime);
+        sparks.update(deltaTime);
         ribbons.update(deltaTime);
 
         g_audio.setListeners(listenerPositions);
@@ -497,6 +509,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     rw->add(&ribbons);
     rw->add(&smoke);
+    rw->add(&sparks);
     rw->add(&debugDraw);
 
     // draw HUD track
@@ -1088,73 +1101,100 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
         u32 contactCount = pairs[i].contactCount;
         assert(contactCount < ARRAY_SIZE(contactPoints));
 
-        if(contactCount > 0)
+        if(contactCount == 0)
         {
-            pairs[i].extractContacts(contactPoints, contactCount);
+            continue;
+        }
+        pairs[i].extractContacts(contactPoints, contactCount);
 
-            for(u32 j=0; j<contactCount; ++j)
+        for(u32 j=0; j<contactCount; ++j)
+        {
+            f32 magnitude = contactPoints[j].impulse.magnitude();
+            if (magnitude > 1350.f)
             {
-                f32 magnitude = contactPoints[j].impulse.magnitude();
-                if (magnitude > 1400.f)
-                {
-                    ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
-                    ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
-                    f32 damage = glm::min(magnitude * 0.0006f, 100.f);
+                ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
+                ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
+                f32 damage = glm::min(magnitude * 0.00058f, 100.f);
 
-                    // apply damage
-                    if (a && a->entityType == ActorUserData::VEHICLE)
-                    {
-                        f32 myDamage = damage;
-                        if (b && b->entityType == ActorUserData::VEHICLE)
-                        {
-                            if (b->vehicle->hasAbility("Ram Booster"))
-                            {
-                                myDamage *= 2.75f;
-                                // TODO: Shouldn't minDamage be multiplied by deltaTime?
-                                f32 minDamage = 5.f;
-                                myDamage = std::max(myDamage, minDamage);
-                            }
-                            if (a->vehicle->hasAbility("Ram Booster"))
-                            {
-                                myDamage *= 0.75f;
-                            }
-                        }
-                        u32 instigator = (b && b->entityType == ActorUserData::VEHICLE)
-                            ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
-                        a->vehicle->applyDamage(myDamage, instigator);
-                        if (damage > 5.f)
-                        {
-                            a->vehicle->shakeScreen(damage * 0.35f);
-                        }
-                    }
+                // apply damage
+                if (a && a->entityType == ActorUserData::VEHICLE)
+                {
+                    f32 myDamage = damage;
                     if (b && b->entityType == ActorUserData::VEHICLE)
                     {
-                        f32 myDamage = damage;
-                        if (a && a->entityType == ActorUserData::VEHICLE)
+                        if (b->vehicle->hasAbility("Ram Booster"))
                         {
-                            if (a->vehicle->hasAbility("Ram Booster"))
-                            {
-                                myDamage *= 2.75f;
-                                // TODO: test this out
-                                myDamage = std::max(myDamage, 5.f);
-                            }
-                            if (b->vehicle->hasAbility("Ram Booster"))
-                            {
-                                myDamage *= 0.75f;
-                            }
+                            myDamage *= 2.75f;
+                            // TODO: Shouldn't minDamage be multiplied by deltaTime?
+                            f32 minDamage = 5.f;
+                            myDamage = std::max(myDamage, minDamage);
                         }
-                        u32 instigator = (a && a->entityType == ActorUserData::VEHICLE)
-                            ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
-                        b->vehicle->applyDamage(myDamage, instigator);
-                        if (damage > 5.f)
+                        if (a->vehicle->hasAbility("Ram Booster"))
                         {
-                            b->vehicle->shakeScreen(damage * 0.35f);
+                            myDamage *= 0.75f;
                         }
                     }
+                    u32 instigator = (b && b->entityType == ActorUserData::VEHICLE)
+                        ? b->vehicle->vehicleIndex : a->vehicle->vehicleIndex;
+                    a->vehicle->applyDamage(myDamage, instigator);
+                    if (damage > 5.f)
+                    {
+                        a->vehicle->shakeScreen(damage * 0.35f);
+                    }
+                }
+                if (b && b->entityType == ActorUserData::VEHICLE)
+                {
+                    f32 myDamage = damage;
+                    if (a && a->entityType == ActorUserData::VEHICLE)
+                    {
+                        if (a->vehicle->hasAbility("Ram Booster"))
+                        {
+                            myDamage *= 2.75f;
+                            // TODO: test this out
+                            myDamage = std::max(myDamage, 5.f);
+                        }
+                        if (b->vehicle->hasAbility("Ram Booster"))
+                        {
+                            myDamage *= 0.75f;
+                        }
+                    }
+                    u32 instigator = (a && a->entityType == ActorUserData::VEHICLE)
+                        ? a->vehicle->vehicleIndex : b->vehicle->vehicleIndex;
+                    b->vehicle->applyDamage(myDamage, instigator);
+                    if (damage > 5.f)
+                    {
+                        b->vehicle->shakeScreen(damage * 0.35f);
+                    }
+                }
 
-                    g_audio.playSound3D(g_res.getSound("impact"),
-                            SoundType::GAME_SFX, convert(contactPoints[j].position));
-                    // TODO: create sparks at contactPoints[j].position
+                g_audio.playSound3D(g_res.getSound("impact"),
+                        SoundType::GAME_SFX, convert(contactPoints[j].position));
+            }
+
+            if (magnitude > 20.f)
+            {
+                glm::vec3 velOffset = glm::vec3(
+                    random(randomSeries, -0.25f, 0.25f),
+                    random(randomSeries, -0.25f, 0.25f),
+                    random(randomSeries, 1.f, 2.f));
+
+                PxVec3 velA = pairHeader.actors[0]->getConcreteType() == PxConcreteType::eRIGID_DYNAMIC ?
+                    pairHeader.actors[0]->is<PxRigidDynamic>()->getLinearVelocity() : PxVec3(0, 0, 0);
+                PxVec3 velB = pairHeader.actors[1]->getConcreteType() == PxConcreteType::eRIGID_DYNAMIC ?
+                    pairHeader.actors[1]->is<PxRigidDynamic>()->getLinearVelocity() : PxVec3(0, 0, 0);
+                PxVec3 velocityDiff = velA - velB;
+                f32 magnitude = velocityDiff.magnitude();
+                f32 minMagnitude = 10.f;
+                if (magnitude > minMagnitude)
+                {
+                    f32 alpha = glm::min((magnitude - minMagnitude) * 0.25f, 1.f);
+                    glm::vec3 collisionVelocity = convert(velA + velB) * 0.5f;
+                    sparks.spawn(
+                            convert(contactPoints[j].position),
+                            (convert(contactPoints[j].normal) + velOffset)
+                                * random(randomSeries, 4.f, 5.f) + collisionVelocity * 0.4f, 1.f,
+                            glm::vec4(glm::vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f) * 2.f, alpha),
+                            1.f);
                 }
             }
         }
