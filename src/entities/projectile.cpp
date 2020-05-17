@@ -117,6 +117,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     life -= deltaTime;
     if (life <= 0.f)
     {
+        createImpactParticles(scene, nullptr);
         this->destroy();
     }
 }
@@ -200,6 +201,7 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
             case BLASTER:
             {
                 // TODO: sound
+                createImpactParticles(scene, hit);
                 this->destroy();
             } break;
             case BULLET:
@@ -214,6 +216,7 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
                         SoundType::GAME_SFX, hitPos, false,
                         random(scene->randomSeries, 0.8f, 1.2f),
                         random(scene->randomSeries, 0.8f, 1.f));
+                createImpactParticles(scene, hit);
                 this->destroy();
             } break;
             case MISSILE:
@@ -226,6 +229,7 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
             case BOUNCER:
             {
                 // TODO: sound
+                createImpactParticles(scene, hit);
                 this->destroy();
             } break;
             case PHANTOM:
@@ -243,6 +247,7 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
             {
                 g_audio.playSound3D(g_res.getSound("blaster_hit"),
                         SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
+                createImpactParticles(scene, hit);
                 this->destroy();
             } break;
             case BULLET:
@@ -257,6 +262,7 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
                 g_audio.playSound3D(g_res.getSound(impacts[index]),
                         SoundType::GAME_SFX, hitPos, false, 0.9f,
                         random(scene->randomSeries, 0.75f, 0.9f));
+                createImpactParticles(scene, hit);
                 this->destroy();
             } break;
             case MISSILE:
@@ -279,8 +285,46 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
                 // TODO: use unique sound
                 g_audio.playSound3D(g_res.getSound("blaster_hit"),
                         SoundType::GAME_SFX, hitPos, false, 1.f, 0.8f);
+                createImpactParticles(scene, hit);
                 this->destroy();
             } break;
         }
+    }
+}
+
+void Projectile::createImpactParticles(Scene* scene, PxSweepHit* hit)
+{
+    u32 count = 5;
+    glm::vec4 color(glm::vec3(1.f, 0.6f, 0.02f) * 2.f, 1.f);
+    switch (projectileType)
+    {
+        case BLASTER:
+            color = glm::vec4(glm::vec3(0.04f, 1.f, 0.04f) * 2.f, 1.f);
+            count = 5;
+            break;
+        case BULLET:
+            count = 1;
+            break;
+        case BOUNCER:
+            color = glm::vec4(glm::vec3(0.3f, 0.3f, 1.f) * 2.f, 1.f);
+            count = 8;
+            break;
+        case PHANTOM:
+            color = glm::vec4(glm::vec3(1.f, 0.02f, 0.95f) * 2.f, 1.f);
+            count = 5;
+            break;
+        default:
+            break;
+    }
+
+    glm::vec3 normal = hit ? convert(hit->normal) : glm::vec3(0, 0, 1);
+    glm::vec3 pos = hit ? convert(hit->position) : position;
+    for (u32 i=0; i<count; ++i)
+    {
+        glm::vec3 vel = normal + glm::normalize(glm::vec3(
+            random(scene->randomSeries, -0.5f, 0.5f),
+            random(scene->randomSeries, -0.5f, 0.5f),
+            random(scene->randomSeries, -0.25f, 0.75f))) * random(scene->randomSeries, 6.f, 8.f);
+        scene->sparks.spawn(pos, vel, 1.f, color);
     }
 }

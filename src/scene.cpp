@@ -1198,8 +1198,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             convert(contactPoints[j].position),
                             (convert(contactPoints[j].normal) + velOffset)
                                 * random(randomSeries, 4.f, 5.f) + collisionVelocity * 0.4f, 1.f,
-                            glm::vec4(glm::vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f) * 2.f, alpha),
-                            1.f);
+                            glm::vec4(glm::vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f) * 2.f, alpha));
                 }
             }
         }

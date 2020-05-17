@@ -35,6 +35,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
     physicsScene->addActor(*actor);
 
     // create vehicle
+    // TODO: add a few timesteps of delay to make sure that suspension is at rest position
     glm::mat4 startTransform = glm::translate(glm::mat4(1.f), { 0, 0, getRestOffset() });
     VehiclePhysics v;
     v.setup(nullptr, physicsScene, startTransform, this);

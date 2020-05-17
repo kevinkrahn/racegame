@@ -59,6 +59,7 @@ private:
     SmallVec<const PxRigidActor*> ignoreActors;
 
     void onHit(Scene* scene, PxSweepHit* hit);
+    void createImpactParticles(Scene* scene, PxSweepHit* hit);
 
 public:
     Projectile(glm::vec3 const& position, glm::vec3 const& velocity,

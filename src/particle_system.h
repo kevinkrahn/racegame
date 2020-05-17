@@ -47,7 +47,7 @@ public:
     f32 maxAngle = PI2;
     f32 minScale = 0.9f;
     f32 maxScale = 1.1f;
-    Texture* texture;
+    struct Texture* texture;
     bool lit = true;
 
     struct CurvePoint
