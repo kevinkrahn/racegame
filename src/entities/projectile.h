@@ -55,8 +55,10 @@ private:
     f32 collisionRadius;
     u32 damage;
     f32 accel = 0.f;
+    f32 maxSpeed = 100.f;
     ProjectileType projectileType;
     SmallVec<const PxRigidActor*> ignoreActors;
+    f32 homingSpeed = 0.f;
 
     void onHit(Scene* scene, PxSweepHit* hit);
     void createImpactParticles(Scene* scene, PxSweepHit* hit);

@@ -1248,6 +1248,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                 f32 d = glm::length2(diff);
                 f32 dot = glm::dot(glm::vec2(forwardVector), targetDiff);
                 f32 targetPriority = d + dot * 4.f;
+                // TODO: dot < aggression seems like the wrong calculation
                 if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
                 {
                     target = v.get();

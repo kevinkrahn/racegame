@@ -34,6 +34,8 @@ Projectile::Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
             collisionRadius = 0.5f;
             damage = 120;
             accel = 20.f;
+            homingSpeed = 80.f;
+            maxSpeed = 100.f;
             break;
         case BOUNCER:
             life = 4.f;
@@ -74,8 +76,38 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     velocity += convert(rayHit.block.normal) *
                         glm::min(velAgainstHit * deltaTime * 20.f, velAgainstHit);
                 }
-                velocity = glm::normalize(velocity) * (speed + accel * deltaTime);
+                velocity = glm::normalize(velocity) * glm::min(speed + accel * deltaTime, maxSpeed);
             }
+        }
+    }
+
+    if (homingSpeed > 0.f)
+    {
+        f32 lowestTargetPriority = FLT_MAX;
+        glm::vec3 targetPosition;
+        for (auto& v : scene->getVehicles())
+        {
+            if (v->getRigidBody() == ignoreActors.front())
+            {
+                continue;
+            }
+
+            glm::vec3 dir = glm::normalize(velocity);
+            glm::vec3 diff = v->getPosition() - position;
+            f32 dot = glm::dot(dir, glm::normalize(diff));
+            f32 targetPriority = glm::length2(diff);
+            if (dot > 0.25f && targetPriority < lowestTargetPriority)
+            {
+                targetPosition = v->getPosition();
+                lowestTargetPriority = targetPriority;
+            }
+        }
+
+        if (lowestTargetPriority != FLT_MAX)
+        {
+            f32 speed = glm::length(velocity);
+            velocity += glm::normalize(targetPosition - position) * (homingSpeed * deltaTime);
+            velocity = glm::normalize(velocity) * speed;
         }
     }
 

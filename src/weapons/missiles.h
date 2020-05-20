@@ -47,7 +47,7 @@ public:
         {
             vel = glm::normalize(vel) * minSpeed;
         }
-        glm::vec3 pos = transform * mountTransform * glm::vec4(missileSpawnPoint(ammo), 1.f);
+        glm::vec3 pos = transform * mountTransform * glm::vec4(missileSpawnPoint(ammo - 1), 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::MISSILE));
         g_audio.playSound3D(g_res.getSound("missile"),
