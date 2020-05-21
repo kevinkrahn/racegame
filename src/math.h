@@ -200,7 +200,7 @@ inline f32 random(RandomSeries& series, f32 min, f32 max)
 inline i32 irandom(RandomSeries& series, i32 min, i32 max)
 {
     i32 diff = max - min;
-    return diff > 0 ? (xorshift32(series) % diff) + min : 0;
+    return diff > 0 ? (xorshift32(series) % diff) + min : min;
 }
 
 inline glm::vec3 closest(glm::vec3 const& p, glm::vec3 const& v1, glm::vec3 const& v2)

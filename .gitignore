@@ -3,3 +3,4 @@ bin
 __pycache__
 compile_commands.json
 .ccls-cache
+.vscode

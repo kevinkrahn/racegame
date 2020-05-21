@@ -4,6 +4,7 @@
 #include "../entity.h"
 #include "../resources.h"
 
+// TODO: turn this into a particle system
 class Flash : public Entity
 {
     glm::vec3 position;

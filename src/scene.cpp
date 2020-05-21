@@ -987,6 +987,16 @@ void Scene::createExplosion(glm::vec3 const& position, glm::vec3 const& velocity
             + glm::vec3(0, 0, random(randomSeries, 2.f, 3.f)) + velocity * 0.9f;
         smoke.spawn(position + offset, vel, 1.f, glm::vec4(s, s, s, 1.f), random(randomSeries, 3.f, 5.f));
     }
+    for (u32 i=0; i<8; ++i)
+    {
+        glm::vec3 vel = velocity + glm::normalize(glm::vec3(
+            random(randomSeries, -0.5f, 0.5f),
+            random(randomSeries, -0.5f, 0.5f),
+            random(randomSeries, -0.25f, 0.75f))) * random(randomSeries, 5.f, 12.f);
+        sparks.spawn(position, vel, 1.f,
+                glm::vec4(glm::vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f), 1.f) * 2.f);
+    }
+
     addEntity(new Flash(position + glm::vec3(0, 0, 1.f), velocity * 0.8f, strength * 0.5f));
 }
 

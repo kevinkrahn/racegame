@@ -87,3 +87,40 @@ public:
 
     std::string getDebugString() const override { return "Particle System"; }
 };
+
+struct ParticleEmitter
+{
+    RandomSeries series;
+
+    ParticleSystem* particleSystem;
+    i32 minCount = 0;
+    i32 maxCount = 0;
+    glm::vec4 color;
+    f32 velocityVariance;
+    f32 minVel = 4.f;
+    f32 maxVel = 8.f;
+
+    ParticleEmitter(ParticleSystem* particleSystem, i32 minCount, i32 maxCount,
+            glm::vec4 const& color, f32 velocityVariance, f32 minVel, f32 maxVel) :
+        particleSystem(particleSystem),
+        minCount(minCount),
+        maxCount(maxCount),
+        color(color),
+        velocityVariance(velocityVariance)
+    {}
+
+    ParticleEmitter() {}
+
+    void emit(glm::vec3 const& position, glm::vec3 const& inheritedVelocity)
+    {
+        i32 count = irandom(series, minCount, maxCount);
+        for (i32 i=0; i<count; ++i)
+        {
+            glm::vec3 vel = inheritedVelocity + glm::normalize(glm::vec3(
+                random(series, -velocityVariance, velocityVariance),
+                random(series, -velocityVariance, velocityVariance),
+                random(series, -velocityVariance, velocityVariance))) * random(series, minVel, maxVel);
+            particleSystem->spawn(position, vel, 1.f, color);
+        }
+    }
+};

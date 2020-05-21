@@ -3,6 +3,7 @@
 #include "../math.h"
 #include "../entity.h"
 #include "../resources.h"
+#include "../particle_system.h"
 
 class Projectile : public Entity, public PxQueryFilterCallback
 {
@@ -23,7 +24,7 @@ class Projectile : public Entity, public PxQueryFilterCallback
             {
                 return PxQueryHitType::eBLOCK;
             }
-            return projectileType == PHANTOM ? PxQueryHitType::eTOUCH : PxQueryHitType::eBLOCK;
+            return passThroughVehicles ? PxQueryHitType::eTOUCH : PxQueryHitType::eBLOCK;
         }
         return PxQueryHitType::eBLOCK;
     }
@@ -45,27 +46,36 @@ public:
     };
 
 private:
+    Mesh* bulletMesh;
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 upVector;
-    u32 instigator;
-    Mesh* bulletMesh;
-    f32 life;
-    bool groundFollow;
-    f32 collisionRadius;
     u32 damage;
+    u32 instigator;
+    f32 life;
+    f32 collisionRadius;
     f32 accel = 0.f;
     f32 maxSpeed = 100.f;
     ProjectileType projectileType;
-    SmallVec<const PxRigidActor*> ignoreActors;
     f32 homingSpeed = 0.f;
+    SmallVec<const PxRigidActor*> ignoreActors;
+    bool groundFollow = false;
+    bool passThroughVehicles = false;
+    bool bounceOffEnvironment = false;
+    f32 explosionStrength = 0.f;
+
+    ParticleEmitter impactEmitter;
+    SmallVec<const char*, 4> environmentImpactSounds;
+    SmallVec<const char*, 4> vehicleImpactSounds;
 
     void onHit(Scene* scene, PxSweepHit* hit);
     void createImpactParticles(Scene* scene, PxSweepHit* hit);
 
 public:
     Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
-            glm::vec3 const& upVector, u32 instigator, ProjectileType projectileType);
+            glm::vec3 const& upVector, u32 instigator, ProjectileType projectileType)
+        : position(position), velocity(velocity), upVector(upVector),
+            instigator(instigator), projectileType(projectileType) {}
 
     void onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;

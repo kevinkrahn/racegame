@@ -275,10 +275,12 @@ void Audio::audioCallback(u8* buf, i32 len)
                     break;
             }
 
-            left  = glm::clamp(left  + sampleLeft  *
-                    ((s->volume * masterVolume) * (soundTypeVolume * attenuation)) * panLeft, -1.0f, 1.0f);
-            right = glm::clamp(right + sampleRight *
-                    ((s->volume * masterVolume) * (soundTypeVolume * attenuation)) * panRight, -1.0f, 1.0f);
+            left  = glm::clamp(left  + sampleLeft
+                    * ((s->volume * masterVolume * s->sound->volume)
+                    * (soundTypeVolume * attenuation)) * panLeft, -1.0f, 1.0f);
+            right = glm::clamp(right + sampleRight
+                    * ((s->volume * masterVolume * s->sound->volume)
+                    * (soundTypeVolume * attenuation)) * panRight, -1.0f, 1.0f);
 
             f32 pitch = glm::lerp(s->pitch, s->targetPitch, bufferPercent);
             s->playPosition += pitch  * (f32)g_game.timeDilation;
