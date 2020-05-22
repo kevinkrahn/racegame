@@ -78,9 +78,12 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     lightOut += specularLight * shadow;
 
     // point lights
+    uint partitionX = uint((float(gl_FragCoord.x) * invResolution.x) * LIGHT_SPLITS);
+    uint partitionY = uint((1.f - (float(gl_FragCoord.y) * invResolution.y)) * LIGHT_SPLITS);
+    uint pointLightCount = lightPartitions[partitionX][partitionY].pointLightCount;
     for (uint i=0; i<pointLightCount; ++i)
     {
-        PointLight light = pointLights[i];
+        PointLight light = lightPartitions[partitionX][partitionY].pointLights[i];
         vec3 lightDiff = light.position - worldPosition;
         float distance = length(lightDiff);
         vec3 lightDirection = lightDiff / distance;

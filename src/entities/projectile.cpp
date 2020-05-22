@@ -206,7 +206,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"),
                         position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f, 0.f, false));
-            rw->addPointLight(position, settings.color * 4.f, 4.f, 2.f);
+            rw->addPointLight(position, settings.color * 2.f, 4.f, 2.f);
             break;
         case BULLET:
             settings.color = glm::vec3(1.f, 0.5f, 0.01f);
@@ -216,7 +216,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"),
                         position, glm::vec4(settings.emit, 0.8f), 0.75f, 0.f, false));
-            rw->addPointLight(position, settings.color * 3.f, 4.f, 2.f);
+            rw->addPointLight(position, settings.color * 2.f, 4.f, 2.f);
             break;
         case MISSILE:
             settings.mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
@@ -246,7 +246,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"),
                     position+glm::vec3(0,0,0.2f), glm::vec4(settings.color, 0.4f), 1.5f, 0.f, false));
-            rw->addPointLight(position, settings.color * 4.f, 4.f, 2.f);
+            rw->addPointLight(position, settings.color * 2.f, 4.f, 2.f);
             break;
     }
 }

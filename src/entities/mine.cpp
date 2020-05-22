@@ -87,7 +87,9 @@ void Mine::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
                     g_res.getMaterial(obj.materialGuid)));
     }
-    rw->push(BillboardRenderable(g_res.getTexture("flare"),
-                translationOf(transform) + glm::vec3(0,0,0.7f), {2.f,0.02f,0.02f,0.3f},
-                (glm::sin(aliveTime * 2.f) + 2.f) * 0.3f, 0.f, false));
+    glm::vec3 p = translationOf(transform) + glm::vec3(0,0,0.7f);
+    glm::vec4 color = {2.f,0.02f,0.02f,0.3f};
+    f32 t = (glm::sin(aliveTime * 2.f) + 2.f);
+    rw->push(BillboardRenderable(g_res.getTexture("flare"), p, color, t * 0.3f, 0.f, false));
+    rw->addPointLight(p, color, 1.5f * t, 2.f);
 }

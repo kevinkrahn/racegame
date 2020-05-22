@@ -18,6 +18,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
     str << "#define SHARPEN_ENABLED " << u32(g_game.config.graphics.sharpenEnabled) << '\n';
     str << "#define MAX_POINT_LIGHTS " << MAX_POINT_LIGHTS << '\n';
+    str << "#define LIGHT_SPLITS " << LIGHT_SPLITS << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -300,7 +301,7 @@ void Renderer::render(f32 deltaTime)
 
     renderWorld.render(this, deltaTime);
     renderablesCount += renderWorld.renderables.size();
-    renderWorld.clear();
+    //renderWorld.clear();
 
     // render to fullscreen texture
 #if 1
@@ -411,11 +412,41 @@ void Renderer::render(f32 deltaTime)
     {
         r.renderable->on2DPass(this);
     }
+
+#if 0
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    for (auto& p : renderWorld.pointLights)
+    {
+        glm::vec4 tp = renderWorld.cameras[0].viewProjection * glm::vec4(p.position, 1.f);
+        tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * g_game.windowWidth;
+        tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * g_game.windowHeight;
+
+        f32 screenSpaceLightRadius = g_game.windowHeight
+            * renderWorld.cameras[0].projection[1][1] * p.radius / tp.w;
+
+        glm::mat4 transform = glm::translate(glm::mat4(1.f), glm::vec3(tp.x, tp.y, 0.f))
+            * glm::scale(glm::mat4(1.f), glm::vec3(screenSpaceLightRadius, screenSpaceLightRadius, 0.01f));
+        glUseProgram(getShaderProgram("mesh2D"));
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(fullscreenOrtho));
+        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(transform));
+        glm::vec3 color(1.f);
+        glUniform3fv(2, 1, (GLfloat*)&color);
+        glUniform1i(3, 0);
+        glUniform1i(4, 0);
+        Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
+        glBindVertexArray(sphereMesh->vao);
+        glDrawElements(GL_TRIANGLES, sphereMesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+#endif
+
 	glPopDebugGroup();
 	glPopDebugGroup();
 
     renderables2D.clear();
     renderWorlds.clear();
+    renderWorld.clear();
 }
 
 void RenderWorld::setViewportCount(u32 viewports)
@@ -454,13 +485,12 @@ void RenderWorld::addDirectionalLight(glm::vec3 const& direction, glm::vec3 cons
 
 void RenderWorld::addPointLight(glm::vec3 const& position, glm::vec3 const& color, f32 radius, f32 falloff)
 {
-    assert(worldInfo.pointLightCount < MAX_POINT_LIGHTS);
     PointLight pointLight;
     pointLight.position = position;
     pointLight.radius = radius;
     pointLight.color = color;
     pointLight.falloff = falloff;
-    worldInfo.pointLights[worldInfo.pointLightCount++] = pointLight;
+    pointLights.push_back(pointLight);
 }
 
 void RenderWorld::updateWorldTime(f64 time)
@@ -876,7 +906,7 @@ void RenderWorld::clear()
 {
     renderables.clear();
     tempRenderBuffer.clear();
-    worldInfo.pointLightCount = 0;
+    pointLights.clear();
 }
 
 void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)
@@ -932,14 +962,55 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
     }
 }
 
+void RenderWorld::partitionPointLights(u32 viewportIndex)
+{
+    f32 partitionWidth = fbs[viewportIndex].renderWidth / LIGHT_SPLITS;
+    f32 partitionHeight = fbs[viewportIndex].renderHeight / LIGHT_SPLITS;
+    for (u32 x = 0; x<LIGHT_SPLITS; ++x)
+    {
+        f32 splitX = x * partitionWidth;
+
+        for (u32 y = 0; y<LIGHT_SPLITS; ++y)
+        {
+            f32 splitY = y * partitionHeight;
+
+            u32 lightCount = 0;
+            for (auto& p : pointLights)
+            {
+                glm::vec4 tp = cameras[viewportIndex].viewProjection * glm::vec4(p.position, 1.f);
+                tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * fbs[viewportIndex].renderWidth;
+                tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * fbs[viewportIndex].renderHeight;
+
+                f32 screenSpaceLightRadius = fbs[viewportIndex].renderHeight
+                    * cameras[viewportIndex].projection[1][1] * p.radius / tp.w;
+
+                if (!(tp.x - screenSpaceLightRadius > splitX + partitionWidth
+                    || tp.x + screenSpaceLightRadius < splitX
+                    || tp.y - screenSpaceLightRadius > splitY + partitionHeight
+                    || tp.y + screenSpaceLightRadius < splitY))
+                {
+                    worldInfo.lightPartitions[x][y].pointLights[lightCount++] = p;
+                    if (lightCount >= MAX_POINT_LIGHTS)
+                    {
+                        break;
+                    }
+                }
+            }
+            worldInfo.lightPartitions[x][y].pointLightCount = lightCount;
+        }
+    }
+}
+
 void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 {
     // update worldinfo uniform buffer
+    partitionPointLights(index);
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     worldInfo.cameraViewProjection = cameras[index].viewProjection;
     worldInfo.cameraProjection = cameras[index].projection;
     worldInfo.cameraView = cameras[index].view;
     worldInfo.cameraPosition = glm::vec4(cameras[index].position, 1.0);
+    worldInfo.invResolution = 1.f / glm::vec2(fbs[index].renderWidth, fbs[index].renderHeight);
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World: ", name, ", Viewport #", index + 1));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

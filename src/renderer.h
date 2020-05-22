@@ -94,7 +94,8 @@ struct FullscreenFramebuffers
     GLuint fullscreenBlurFramebuffer;
 };
 
-const u32 MAX_POINT_LIGHTS = 30;
+const u32 MAX_POINT_LIGHTS = 8;
+const u32 LIGHT_SPLITS = 12;
 
 struct PointLight
 {
@@ -102,6 +103,13 @@ struct PointLight
     f32 radius;
     glm::vec3 color;
     f32 falloff;
+};
+
+struct LightPartition
+{
+    PointLight pointLights[MAX_POINT_LIGHTS];
+    u32 pointLightCount;
+    f32 pad[3];
 };
 
 struct WorldInfo
@@ -116,8 +124,9 @@ struct WorldInfo
     glm::mat4 cameraView;
     glm::vec4 cameraPosition;
     glm::mat4 shadowViewProjectionBias;
-    PointLight pointLights[MAX_POINT_LIGHTS];
-    u32 pointLightCount = 0;
+    LightPartition lightPartitions[LIGHT_SPLITS][LIGHT_SPLITS];
+    glm::vec2 invResolution;
+    f32 pad2[2];
 };
 
 class RenderWorld
@@ -136,6 +145,7 @@ class RenderWorld
     SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
     SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
     glm::vec4 highlightColor[MAX_VIEWPORTS] = {};
+    std::vector<PointLight> pointLights;
 
     BoundingBox shadowBounds;
     bool hasCustomShadowBounds = false;
@@ -170,6 +180,7 @@ class RenderWorld
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex);
     void renderViewport(Renderer* renderer, u32 cameraIndex, f32 deltaTime);
     void render(Renderer* renderer, f32 deltaTime);
+    void partitionPointLights(u32 viewportIndex);
 
 public:
     RenderWorld() {}

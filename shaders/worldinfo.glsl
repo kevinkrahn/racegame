@@ -6,6 +6,12 @@ struct PointLight
     float falloff;
 };
 
+struct LightPartition
+{
+    PointLight pointLights[MAX_POINT_LIGHTS];
+    uint pointLightCount;
+};
+
 layout (std140, binding = 0) uniform WorldInfo
 {
     mat4 orthoProjection;
@@ -17,7 +23,7 @@ layout (std140, binding = 0) uniform WorldInfo
     mat4 cameraView;
     vec3 cameraPosition;
     mat4 shadowViewProjectionBias;
-    PointLight pointLights[MAX_POINT_LIGHTS];
-    uint pointLightCount;
+    LightPartition lightPartitions[LIGHT_SPLITS][LIGHT_SPLITS];
+    vec2 invResolution;
 };
 
