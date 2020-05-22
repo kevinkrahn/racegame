@@ -452,6 +452,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         return;
     }
 
+    //rw->addPointLight(getPosition() + getForwardVector() * 3.f, glm::vec3(1.f, 0.9f, 0.8f), 5.f, 2.f);
+
     input = {};
     if (isPlayerControlled)
     {

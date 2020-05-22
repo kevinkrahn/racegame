@@ -94,6 +94,16 @@ struct FullscreenFramebuffers
     GLuint fullscreenBlurFramebuffer;
 };
 
+const u32 MAX_POINT_LIGHTS = 30;
+
+struct PointLight
+{
+    glm::vec3 position;
+    f32 radius;
+    glm::vec3 color;
+    f32 falloff;
+};
+
 struct WorldInfo
 {
     glm::mat4 orthoProjection;
@@ -106,6 +116,8 @@ struct WorldInfo
     glm::mat4 cameraView;
     glm::vec4 cameraPosition;
     glm::mat4 shadowViewProjectionBias;
+    PointLight pointLights[MAX_POINT_LIGHTS];
+    u32 pointLightCount = 0;
 };
 
 class RenderWorld
@@ -211,9 +223,9 @@ public:
         clearColor = color;
     }
 
-    //void addPointLight(glm::vec3 position, glm::vec3 color, f32 attenuation);
-    //void addSpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, f32 innerRadius, f32 outerRadius, f32 attenuation);
-    void addDirectionalLight(glm::vec3 direction, glm::vec3 color);
+    void addPointLight(glm::vec3 const& position, glm::vec3 const& color, f32 radius, f32 falloff);
+    //void addSpotLight(glm::vec3 const& position, glm::vec3 const& direction, glm::vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
+    void addDirectionalLight(glm::vec3 const& direction, glm::vec3 const& color);
 
     void updateWorldTime(f64 time);
     void createFramebuffers();

@@ -45,79 +45,86 @@ float getFresnel(vec3 normal, vec3 worldPosition, float bias, float scale, float
     return max(bias + scale * pow(1.0 + dot(normalize(worldPosition - cameraPosition), normal), power), 0.0);
 }
 
+// TODO: investigate other BRDFs (diffuse-oren-nayar)
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float specularPower, float specularStrength, vec3 specularColor,
         float fresnelBias, float fresnelScale, float fresnelPower, vec3 emit,
         float reflectionStrength, float reflectionLod, float reflectionBias)
 {
-    float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
+    vec3 lightOut = emit;
+    vec3 toCamera = cameraPosition - worldPosition;
+    float distanceToCamera = length(toCamera);
+    vec3 camDir = toCamera / distanceToCamera;
 
+    // directional light shadow
 #if SHADOWS_ENABLED
     float shadow = getShadow(shadowDepthSampler, shadowCoord);
 #else
-    float shadow = 1.f;
+    float shadow = 1.0;
 #endif
     float cloudShadow = min(texture(cloudShadowTexture,
             vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r, 1.0);
     shadow *= cloudShadow;
 
-    vec3 toCamera = cameraPosition - worldPosition;
-
-    float sunPower = 1.0;
+    // directional light
+    const float sunPower = 1.0;
     const vec3 ambientDirection = normalize(vec3(0.3, 0.1, 0.8));
-#if 1
-    // new lighting
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.055)
         + max(dot(normal, ambientDirection) * 0.07, 0.0);
-    color.rgb *= directLight;
-#else
-    // old lighting
-    float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.0)
-        + max(dot(normal, ambientDirection) * 0.12, 0.0);
-    color.rgb *= max(directLight, 0.1);
-#endif
-
-    vec3 camDir = normalize(toCamera);
     vec3 halfDir = normalize(sunDirection + camDir);
     vec3 specularLight = specularColor * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * sunPower;
-    color.rgb += specularLight * shadow;
-    color.rgb += fresnel * max(shadow, 0.25);
 
+    lightOut += color.rgb * directLight;
+    lightOut += specularLight * shadow;
+
+    // point lights
+    for (uint i=0; i<pointLightCount; ++i)
+    {
+        PointLight light = pointLights[i];
+        vec3 lightDiff = light.position - worldPosition;
+        float distance = length(lightDiff);
+        vec3 lightDirection = lightDiff / distance;
+
+        // TODO: possible optimization would be to hardcode attenuation power (2.f)
+        float falloff = pow(smoothstep(light.radius, 0, distance), light.falloff);
+        float directLight = max(dot(normal, lightDirection), 0.0) * falloff;
+        vec3 halfDir = normalize(lightDirection + camDir);
+        vec3 specularLight = specularColor * light.color * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * falloff;
+
+        lightOut += color.rgb * light.color * directLight;
+        lightOut += specularLight;
+    }
+
+    // fresnel
+    float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
+    lightOut += fresnel * max(shadow, 0.25);
+
+    // ssao
 #if SSAO_ENABLED
 #ifndef NO_SSAO
     float ssaoAmount = texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r;
-    color.rgb *= clamp(ssaoAmount + directLight * 0.6, 0.0, 1.0);
+    lightOut *= clamp(ssaoAmount + directLight * 0.6, 0.0, 1.0);
 #endif
 #endif
 
-#ifndef NO_FOG
-    const vec3 fogColor = vec3(0.5, 0.6, 1);
-    float dist = length(toCamera);
-#if 0
-    const float fogStart = 90.0;
-    const float fogEnd = 1200.0;
-    float fogIntensity = max(dist - fogStart, 0.0) / (fogEnd - fogStart);
-#else
-    const float density = 0.0015;
-    const float LOG2 = -1.442695;
-    //float fogIntensity = 1.0 - clamp(exp(-density * (dist - 90)), 0.0, 1.0);
-    //float fogIntensity = 1.0 - clamp(exp(-density * dist), 0.0, 1.0);
-    float d = density * dist;
-    float fogIntensity = 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
-#endif
-    color.rgb = mix(color.rgb, fogColor, fogIntensity);
-#endif
-
+    // environment reflections
     vec3 I = normalize(worldPosition - cameraPosition);
     vec3 R = reflect(I, normal);
-    color.rgb += textureLod(cubemapSampler, R, reflectionLod).rgb
+    lightOut += textureLod(cubemapSampler, R, reflectionLod).rgb
         * reflectionStrength
         * clamp(shadow * getFresnel(normal, worldPosition, reflectionBias, 1.0, 1.3), 0.1, 1.0);
 
-    color.rgb += emit;
+    // fog
+#ifndef NO_FOG
+    const vec3 fogColor = vec3(0.5, 0.6, 1);
+    const float density = 0.0015;
+    const float LOG2 = -1.442695;
+    //float fogIntensity = 1.0 - clamp(exp(-density * (distanceToCamera - 90)), 0.0, 1.0);
+    //float fogIntensity = 1.0 - clamp(exp(-density * distanceToCamera), 0.0, 1.0);
+    float d = density * distanceToCamera;
+    float fogIntensity = 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
+    lightOut = mix(lightOut, fogColor, fogIntensity);
+#endif
 
-    //color.rgb = vec3(getFresnel(normal, worldPosition, 0.2, 1.0, 1.5));
-    //color.rgb = textureLod(cubemapSampler, R, reflectionLod).rgb;
-
-    return color;
+    return vec4(lightOut, color.a);
 }

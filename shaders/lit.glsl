@@ -17,8 +17,9 @@ layout(location = 1) out vec2 outTexCoord;
 layout(location = 2) out vec3 outWorldPosition;
 layout(location = 3) out vec3 outShadowCoord;
 layout(location = 4) out vec3 outColor;
+layout(location = 5) out vec3 outLocalPosition;
 #if defined NORMAL_MAP
-layout(location = 5) out mat3 outTBN;
+layout(location = 6) out mat3 outTBN;
 #endif
 
 void main()
@@ -31,6 +32,7 @@ void main()
     outTexCoord = attrTexCoord;
     outShadowCoord = (shadowViewProjectionBias * vec4(outWorldPosition, 1.0)).xyz;
     outColor = attrColor;
+    outLocalPosition = attrPosition;
 
 #if defined NORMAL_MAP
     vec3 normalWorldSpace    = normalize(normalMatrix * attrNormal);
@@ -56,8 +58,9 @@ layout(location = 1) in vec2 inTexCoord;
 layout(location = 2) in vec3 inWorldPosition;
 layout(location = 3) in vec3 inShadowCoord;
 layout(location = 4) in vec3 inColor;
+layout(location = 5) in vec3 inLocalPosition;
 #if defined NORMAL_MAP
-layout(location = 5) in mat3 inTBN;
+layout(location = 6) in mat3 inTBN;
 #endif
 
 layout(location = 2) uniform vec3 color;
@@ -93,6 +96,12 @@ void main()
     outColor = lighting(tex * vec4(inColor * color, 1.0),
             normalize(normal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
             fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
+#if defined VEHICLE
+    vec3 shieldColor = vec3(0.05f, 0.15f, 1.f);
+    outColor.rgb += shieldColor *
+        pow((sin(time * 4.f + inLocalPosition.x * 4.f + inLocalPosition.z * 4.f) + 1.f) * 0.5f, 2.f)
+        * shieldIntensity;
+#endif
 #endif
 }
 

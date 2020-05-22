@@ -206,6 +206,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"),
                         position+glm::vec3(0,0,0.2f), {0.01f,1.f,0.01f,0.2f}, 1.5f, 0.f, false));
+            rw->addPointLight(position, settings.color * 4.f, 4.f, 2.f);
             break;
         case BULLET:
             settings.color = glm::vec3(1.f, 0.5f, 0.01f);
@@ -215,6 +216,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"),
                         position, glm::vec4(settings.emit, 0.8f), 0.75f, 0.f, false));
+            rw->addPointLight(position, settings.color * 3.f, 4.f, 2.f);
             break;
         case MISSILE:
             settings.mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
@@ -223,6 +225,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"), position,
                         glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false));
+            rw->addPointLight(position, glm::vec3(1.f, 0.5f, 0.03f) * 5.f, 5.f, 2.f);
             break;
         case BOUNCER:
             settings.mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
@@ -233,6 +236,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("bouncer_projectile"),
                         position, glm::vec4(1.f), 1.75f, 0.f, false));
+            rw->addPointLight(position, glm::vec3(0.1f, 0.15f, 1.f) * 7.f, 6.5f, 2.f);
             break;
         case PHANTOM:
             settings.color = glm::vec3(1.f, 0.01f, 0.95f);
@@ -242,6 +246,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             rw->push(LitRenderable(settings));
             rw->push(BillboardRenderable(g_res.getTexture("flare"),
                     position+glm::vec3(0,0,0.2f), glm::vec4(settings.color, 0.4f), 1.5f, 0.f, false));
+            rw->addPointLight(position, settings.color * 4.f, 4.f, 2.f);
             break;
     }
 }

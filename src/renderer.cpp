@@ -17,6 +17,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     str << "#define SSAO_ENABLED " << u32(g_game.config.graphics.ssaoEnabled) << '\n';
     str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
     str << "#define SHARPEN_ENABLED " << u32(g_game.config.graphics.sharpenEnabled) << '\n';
+    str << "#define MAX_POINT_LIGHTS " << MAX_POINT_LIGHTS << '\n';
     for (auto const& d : defines)
     {
         str << "#define " << d << '\n';
@@ -445,10 +446,21 @@ Camera& RenderWorld::setViewportCamera(u32 index, glm::vec3 const& from,
     return cam;
 }
 
-void RenderWorld::addDirectionalLight(glm::vec3 direction, glm::vec3 color)
+void RenderWorld::addDirectionalLight(glm::vec3 const& direction, glm::vec3 const& color)
 {
     worldInfo.sunDirection = -glm::normalize(direction);
     worldInfo.sunColor = color;
+}
+
+void RenderWorld::addPointLight(glm::vec3 const& position, glm::vec3 const& color, f32 radius, f32 falloff)
+{
+    assert(worldInfo.pointLightCount < MAX_POINT_LIGHTS);
+    PointLight pointLight;
+    pointLight.position = position;
+    pointLight.radius = radius;
+    pointLight.color = color;
+    pointLight.falloff = falloff;
+    worldInfo.pointLights[worldInfo.pointLightCount++] = pointLight;
 }
 
 void RenderWorld::updateWorldTime(f64 time)
@@ -864,6 +876,7 @@ void RenderWorld::clear()
 {
     renderables.clear();
     tempRenderBuffer.clear();
+    worldInfo.pointLightCount = 0;
 }
 
 void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)

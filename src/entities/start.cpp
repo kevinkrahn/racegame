@@ -112,6 +112,10 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 rw->push(BillboardRenderable(flare, transform * glm::vec4(v, 1.f),
                             col, countIndex == 2 ? 1.3f : 1.f, 0.f, false));
             }
+
+            glm::vec3 color = (countIndex == 2 ?
+                    glm::vec3(0.1f, 1.f, 0.1f) : glm::vec3(1.f, 0.1f, 0.1f)) * (f32)(countIndex + 1);
+            rw->addPointLight(position + glm::vec3(0, 0, 8.f - countIndex * 0.1f), color, 20.f, 2.f);
         }
     }
 

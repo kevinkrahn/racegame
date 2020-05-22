@@ -54,7 +54,7 @@ public:
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
 
-        //ammo -= 1;
+        ammo -= 1;
     }
 
     glm::vec3 missileSpawnPoint(u32 i)
