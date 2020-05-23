@@ -63,6 +63,6 @@ public:
         tex = g_res.getTexture(guid);
         decal.setTexture(tex);
     }
-    std::vector<PropPrefabData> generatePrefabProps() override;
+    Array<PropPrefabData> generatePrefabProps() override;
     const char* getName() const override { return tstr("Decal ", tex->name.c_str()); }
 };

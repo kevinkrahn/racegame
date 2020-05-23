@@ -1,8 +1,7 @@
 #pragma once
 
-#include "math.h"
+#include "misc.h"
 #include <map>
-#include <vector>
 #include <functional>
 
 enum struct WidgetType
@@ -27,7 +26,7 @@ struct WidgetState
     u64 frameCount = 0;
     f32 hoverIntensity = 0.f;
     i32 selectIndex = 0;
-    std::map<const char*, std::unique_ptr<WidgetState>, CompareKey> childState;
+    std::map<const char*, OwnedPtr<WidgetState>, CompareKey> childState;
     f32 repeatTimer = 0.f;
     i32 selectableChildCount = 0;
     bool mouseCaptured = false;
@@ -51,8 +50,8 @@ struct WidgetStackItem
 
 class Gui
 {
-    std::map<const char*, std::unique_ptr<WidgetState>, CompareKey> childState;
-    std::vector<WidgetStackItem> widgetStack;
+    std::map<const char*, OwnedPtr<WidgetState>, CompareKey> childState;
+    Array<WidgetStackItem> widgetStack;
     class Font* fontTiny = nullptr;
     class Font* fontSmall = nullptr;
     class Font* fontBig = nullptr;
@@ -61,7 +60,7 @@ class Gui
     WidgetState* previousTextInputCapture = nullptr;
     WidgetState* textInputCapture = nullptr;
 
-    std::vector<i32> selectStack;
+    Array<i32> selectStack;
     i32 poppedSelectIndex = -1;
 
     WidgetState* getWidgetState(WidgetState* parent, const char* identifier,

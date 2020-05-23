@@ -11,7 +11,6 @@
 #include "imgui.h"
 #include <imgui/examples/imgui_impl_sdl.h>
 #include <imgui/examples/imgui_impl_opengl3.h>
-#include <chrono>
 #include <iostream>
 
 void Game::initPhysX()
@@ -88,6 +87,8 @@ void Game::run()
 #ifndef NDEBUG
     print("Debug mode\n");
 #endif
+
+    f64 loadStartTime = getTime();
 
     g_game.config.load();
 
@@ -169,13 +170,15 @@ void Game::run()
     registerEntities();
     resourceManager.reset(new ResourceManager());
 
+    print("Took ", getTime() - loadStartTime, " seconds to load\n");
+
     changeScene("race1");
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;
     while (true)
     {
-        auto frameStartTime = std::chrono::high_resolution_clock::now();
+        f64 frameStartTime = getTime();
         g_input.onFrameBegin();
 
         while (SDL_PollEvent(&event) != 0)
@@ -257,12 +260,11 @@ void Game::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(g_game.window);
 
-        using seconds = std::chrono::duration<f64, std::ratio<1>>;
         if (!config.graphics.vsync)
         {
             f64 minFrameTime = 1.0 / (f64)config.graphics.maxFPS;
-            auto frameEndTime = frameStartTime + seconds(minFrameTime);
-            while (std::chrono::high_resolution_clock::now() < frameEndTime)
+            auto frameEndTime = frameStartTime + minFrameTime;
+            while (getTime() < frameEndTime)
             {
                 _mm_pause();
             }
@@ -271,8 +273,7 @@ void Game::run()
         tempMem.clear();
 
         const f64 maxDeltaTime = 1.f / 30.f;
-        f64 delta = glm::min(seconds(std::chrono::high_resolution_clock::now() -
-                    frameStartTime).count(), maxDeltaTime);
+        f64 delta = glm::min(getTime() - frameStartTime, maxDeltaTime);
         realDeltaTime = (f32)delta;
         deltaTime = (f32)(delta * timeDilation);
         currentTime += delta * timeDilation;

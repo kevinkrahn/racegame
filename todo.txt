@@ -40,8 +40,6 @@
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
 - Fix depth issues with rumblestrip
-- Add particle effects for projectile impacts
-- Remove <memory> header to improve compile times (make custom smart pointer)
 
 - Ideas:
     - Grenade launcher weapon

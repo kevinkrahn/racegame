@@ -6,7 +6,6 @@
 #include "dynamic_buffer.h"
 #include "resources.h"
 #include "renderer.h"
-#include <vector>
 
 struct RibbonPoint
 {
@@ -30,15 +29,16 @@ struct RibbonVertex
 class Ribbon
 {
 private:
-    std::vector<RibbonPoint> points;
+    Array<RibbonPoint> points;
     static constexpr f32 minDistanceBetweenPoints = 0.9f;
     f32 texU = 0.f;
     f32 fadeRate = 0.1f;
     f32 fadeDelay = 8.f;
     RibbonPoint lastPoint;
 
-    bool connected(std::vector<RibbonPoint>::iterator p)
+    bool connected(size_t pointIndex)
     {
+        auto p = points.begin() + pointIndex;
         if (p->isEnd)
         {
             if (p != points.begin())
@@ -108,7 +108,7 @@ public:
             if (p->life > fadeDelay)
             {
                 p->color.a = glm::max(0.f, p->color.a - deltaTime * fadeRate);
-                if (p->color.a <= 0.f && !connected(p))
+                if (p->color.a <= 0.f && !connected(p - points.begin()))
                 {
                     p = points.erase(p);
                     continue;
@@ -235,7 +235,7 @@ class RibbonRenderable : public Renderable {
         u32 count;
     };
 
-    std::vector<Chunk> chunks;
+    Array<Chunk> chunks;
     DynamicBuffer vertexBuffer;
     GLuint vao;
 

@@ -260,9 +260,9 @@ void StaticMesh::serializeState(Serializer& s)
     }
 }
 
-std::vector<PropPrefabData> StaticMesh::generatePrefabProps()
+Array<PropPrefabData> StaticMesh::generatePrefabProps()
 {
-    std::vector<PropPrefabData> result;
+    Array<PropPrefabData> result;
 
     for (auto& res : g_res.resources)
     {

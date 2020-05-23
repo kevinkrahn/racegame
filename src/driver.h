@@ -29,7 +29,7 @@ struct Driver
             s.field(vehicleConfig);
         }
     };
-    std::vector<OwnedVehicle> ownedVehicles;
+    Array<OwnedVehicle> ownedVehicles;
 
     VehicleConfiguration* getVehicleConfig()
     {

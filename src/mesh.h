@@ -2,11 +2,9 @@
 
 #include "misc.h"
 #include "math.h"
-#include "smallvec.h"
 #include "bounding_box.h"
 #include "gl.h"
 #include "datafile.h"
-#include <vector>
 
 enum struct VertexAttributeType
 {
@@ -25,8 +23,8 @@ struct VertexAttribute
 struct Mesh
 {
     std::string name;
-    std::vector<f32> vertices;
-    std::vector<u32> indices;
+    Array<f32> vertices;
+    Array<u32> indices;
     u32 numVertices;
     u32 numIndices;
     u32 numColors;
@@ -34,7 +32,7 @@ struct Mesh
     BoundingBox aabb;
 
     u32 stride = 0;
-    SmallVec<VertexAttribute> vertexFormat;
+    SmallArray<VertexAttribute> vertexFormat;
 
     // TODO: remove this property when all meshes have been reimported
     bool hasTangents = false;
@@ -63,19 +61,19 @@ struct Mesh
     struct OctreeNode
     {
         BoundingBox aabb;
-        std::vector<OctreeNode> children;
-        std::vector<u32> triangleIndices;
+        Array<OctreeNode> children;
+        Array<u32> triangleIndices;
 
         void subdivide(Mesh const& mesh);
         void debugDraw(class DebugDraw* dbg, glm::mat4 const& transform, glm::vec4 const& col=glm::vec4(1.f));
-        bool intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, std::vector<u32>& output) const;
+        bool intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, Array<u32>& output) const;
     };
 
-    std::unique_ptr<OctreeNode> octree = nullptr;
+    OwnedPtr<OctreeNode> octree = nullptr;
     void buildOctree();
     void calculateVertexFormat();
 
-    bool intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const;
+    bool intersect(glm::mat4 const& transform, BoundingBox bb, Array<u32>& output) const;
     void createVAO();
 
     PxTriangleMesh* collisionMesh = nullptr;

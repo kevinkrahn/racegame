@@ -142,9 +142,9 @@ void StaticDecal::showDetails(Scene* scene)
     }
 }
 
-std::vector<PropPrefabData> StaticDecal::generatePrefabProps()
+Array<PropPrefabData> StaticDecal::generatePrefabProps()
 {
-    std::vector<PropPrefabData> results;
+    Array<PropPrefabData> results;
 
     for (auto& res : g_res.resources)
     {

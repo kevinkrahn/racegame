@@ -83,7 +83,6 @@ public:
 	f32 savedAirTime = 0.f;
 	f32 airBonusGracePeriod = 0.f;
 	u32 totalAirBonuses = 0;
-    std::vector<MotionGrid::PathNode> motionPath;
 
     // ai
     glm::vec3 targetOffset = glm::vec3(0);
@@ -95,11 +94,11 @@ public:
     f32 rearWeaponTimer = 0.f;
 
     // weapons
-    SmallVec<std::unique_ptr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
+    SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
         frontWeapons;
-    SmallVec<std::unique_ptr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
+    SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
         rearWeapons;
-    std::unique_ptr<Weapon> specialAbility;
+    OwnedPtr<Weapon> specialAbility;
 
     glm::vec3 screenShakeVelocity = glm::vec3(0);
     glm::vec3 screenShakeOffset = glm::vec3(0);
@@ -110,7 +109,7 @@ public:
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 	f32 glueSoundTimer = 0.f;
 
-    std::vector<VehicleDebris> vehicleDebris;
+    Array<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
 
 	struct Notification
@@ -120,7 +119,7 @@ public:
         f32 time;
         glm::vec3 color;
 	};
-	SmallVec<Notification> notifications;
+	SmallArray<Notification> notifications;
 
 	RaceStatistics raceStatistics;
 

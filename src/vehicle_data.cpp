@@ -468,7 +468,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
 }
 
 void VehicleData::renderDebris(RenderWorld* rw,
-        std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config)
+        Array<VehicleDebris> const& debris, VehicleConfiguration const& config)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     paintMaterials.push_back(*originalPaintMaterial);

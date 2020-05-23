@@ -1,10 +1,7 @@
 #pragma once
 
 #include <map>
-#include <vector>
 #include <string>
-#include <memory>
-#include <cassert>
 #include <fstream>
 #include <iostream>
 #include "misc.h"
@@ -74,8 +71,8 @@ namespace DataFile
     {
     public:
         using Dict = std::map<std::string, Value>;
-        using Array = std::vector<Value>;
-        using ByteArray = std::vector<u8>;
+        using Array = Array<Value>;
+        using ByteArray = ::Array<u8>;
         using String = std::string;
 
         friend Value load(std::string const&);
@@ -849,7 +846,7 @@ public:
         }
     }
 
-    template<typename T> void element(const char* name, DataFile::Value& val, std::vector<T>& dest)
+    template<typename T> void element(const char* name, DataFile::Value& val, Array<T>& dest)
     {
         if constexpr (std::is_arithmetic<T>::value)
         {
@@ -869,8 +866,7 @@ public:
             }
             else
             {
-                DataFile::Value::ByteArray bytes;
-                bytes.assign(reinterpret_cast<u8*>(dest.data()),
+                DataFile::Value::ByteArray bytes(reinterpret_cast<u8*>(dest.data()),
                              reinterpret_cast<u8*>(dest.data() + dest.size()));
                 val.setBytearray(std::move(bytes));
             }
@@ -908,7 +904,7 @@ public:
         }
     }
 
-    template<> void element(const char* name, DataFile::Value& val, std::vector<u8>& dest)
+    template<> void element(const char* name, DataFile::Value& val, Array<u8>& dest)
     {
         if (deserialize)
         {
@@ -926,7 +922,7 @@ public:
         }
     }
 
-    template<typename T> void element(const char* name, DataFile::Value& val, std::unique_ptr<T>& dest)
+    template<typename T> void element(const char* name, DataFile::Value& val, OwnedPtr<T>& dest)
     {
         if (deserialize)
         {

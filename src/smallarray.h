@@ -3,16 +3,15 @@
 #include "misc.h"
 
 template <typename T, u32 maxSize=8>
-class SmallVec
+class SmallArray
 {
-private:
     union { T data_[maxSize]; };
     u32 size_;
 
 public:
-    SmallVec() : size_(0) {}
+    SmallArray() : size_(0) {}
 
-    SmallVec(std::initializer_list<T> list) : size_((u32)list.size())
+    SmallArray(std::initializer_list<T> list) : size_((u32)list.size())
     {
         T* ptr = data_;
         for (auto& it : list)
@@ -22,7 +21,7 @@ public:
         }
     }
 
-    SmallVec(SmallVec const& other) : size_(other.size_)
+    SmallArray(SmallArray const& other) : size_(other.size_)
     {
         for (u32 i=0; i<size_; ++i)
         {
@@ -30,7 +29,7 @@ public:
         }
     }
 
-    SmallVec(SmallVec&& other) : size_(other.size_)
+    SmallArray(SmallArray&& other) : size_(other.size_)
     {
         for (u32 i=0; i<size_; ++i)
         {
@@ -38,7 +37,7 @@ public:
         }
     }
 
-    explicit SmallVec(u32 size) : size_(size)
+    explicit SmallArray(u32 size) : size_(size)
     {
         auto endPtr = data_ + size;
         for (T* ptr = data_; ptr != endPtr; ++ptr)
@@ -47,9 +46,9 @@ public:
         }
     }
 
-    ~SmallVec() { clear(); }
+    ~SmallArray() { clear(); }
 
-    SmallVec<T, maxSize>& operator = (SmallVec<T, maxSize> const& other)
+    SmallArray<T, maxSize>& operator = (SmallArray<T, maxSize> const& other)
     {
         clear();
         size_ = other.size_;
@@ -60,7 +59,7 @@ public:
         return *this;
     }
 
-    SmallVec<T, maxSize>& operator = (SmallVec<T, maxSize> && other)
+    SmallArray<T, maxSize>& operator = (SmallArray<T, maxSize> && other)
     {
         clear();
         size_ = other.size_;
@@ -92,9 +91,9 @@ public:
     }
 
     // merge two vecs into one
-    SmallVec<T> concat(SmallVec<T> const& other)
+    SmallArray<T> concat(SmallArray<T> const& other)
     {
-        SmallVec<T> v;
+        SmallArray<T> v;
         for (auto const& val : *this)
         {
             v.push_back(val);

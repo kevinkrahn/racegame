@@ -5,7 +5,6 @@
 #include "renderable.h"
 #include "entity.h"
 #include "gl.h"
-#include "smallvec.h"
 #include "mesh.h"
 #include "decal.h"
 #include "spline.h"
@@ -39,7 +38,7 @@ public:
             glm::vec3 offset;
             glm::vec3 handleOffset;
         };
-        SmallVec<Curve> curves;
+        SmallArray<Curve> curves;
     };
     TrackItem prefabTrackItems[3] = {
         { "Straight", "straight_track_icon", {
@@ -67,8 +66,8 @@ private:
         f32 widthB = 12.f;
 
         bool isDirty = true;
-        std::vector<Vertex> vertices;
-        std::vector<u32> indices;
+        Array<Vertex> vertices;
+        Array<u32> indices;
         GLuint vao = 0, vbo = 0, ebo = 0;
         PxShape* collisionShape = nullptr;
         BoundingBox boundingBox;
@@ -130,8 +129,8 @@ private:
         }
     };
 
-    std::vector<Point> points;
-    std::vector<std::unique_ptr<BezierSegment>> connections;
+    Array<Point> points;
+    Array<OwnedPtr<BezierSegment>> connections;
 
     struct Selection
     {
@@ -147,7 +146,7 @@ private:
     i32 dragOppositeConnectionHandle = -1;
     bool isDragging = false;
     glm::vec3 dragOffset;
-    std::vector<Selection> selectedPoints;
+    Array<Selection> selectedPoints;
     Scene* scene = nullptr;
 
     PxRigidStatic* actor = nullptr;
@@ -165,7 +164,7 @@ public:
     {
         points.push_back(Point{ glm::vec3(50, 0, 0.05f) });
         points.push_back(Point{ glm::vec3(-50, 0, 0.05f) });
-        auto segment = std::make_unique<BezierSegment>();
+        OwnedPtr<BezierSegment> segment(new BezierSegment);
         segment->track = this;
         segment->handleOffsetA = glm::vec3(-10, 0, 0);
         segment->pointIndexA = 0;

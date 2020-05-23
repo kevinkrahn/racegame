@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "resources.h"
-#include "smallvec.h"
 #include "entity.h"
 
 class Decal : public Renderable
@@ -19,7 +18,7 @@ class Decal : public Renderable
     glm::vec3 color = { 1, 1, 1 };
     Texture* tex = nullptr;
     Texture* texNormal = nullptr;
-    std::vector<DecalVertex> vertices;
+    Array<DecalVertex> vertices;
     u32 vertexCount = 0;
     GLuint vao = 0, vbo = 0;
     i32 priority = 8000;

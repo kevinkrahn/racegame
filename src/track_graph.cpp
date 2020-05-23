@@ -7,7 +7,6 @@
 #include "track.h"
 #include "mesh_renderables.h"
 #include "input.h"
-#include <iomanip>
 
 void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
 {
@@ -34,9 +33,9 @@ void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
 }
 
 void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
-        std::vector<std::vector<u32>>& nodeIndexPaths)
+        Array<Array<u32>>& nodeIndexPaths)
 {
-    std::vector<u32>& path = nodeIndexPaths[pathIndex];
+    Array<u32>& path = nodeIndexPaths[pathIndex];
     // never visit the same node twice
     if (std::find(path.begin(), path.end(), toIndex) != path.end())
     {
@@ -45,7 +44,7 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
     Node& to = nodes[toIndex];
     nodeIndexPaths[pathIndex].push_back(toIndex);
     u32 branchCount = 0;
-    std::vector<u32> pathToHere = nodeIndexPaths[pathIndex];
+    Array<u32> pathToHere = nodeIndexPaths[pathIndex];
     for (u32 i=0; i<to.connections.size(); ++i)
     {
         u32 c = to.connections[i];
@@ -139,14 +138,14 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
         computeTravelTime(c, endIndex, startIndex);
     }
 
-    std::vector<std::vector<u32>> nodeIndexPaths;
+    Array<Array<u32>> nodeIndexPaths;
     for (u32 c : start.connections)
     {
         nodeIndexPaths.push_back({ startIndex });
         computePath(c, startIndex, (u32)nodeIndexPaths.size() - 1, nodeIndexPaths);
     }
 
-    std::vector<f32> pathLengths;
+    Array<f32> pathLengths;
     for (auto it = nodeIndexPaths.begin(); it != nodeIndexPaths.end();)
     {
         // filter out paths that didn't reach the end
@@ -180,7 +179,7 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     // convert node indices to positions
     for (auto& indexPath : nodeIndexPaths)
     {
-        std::vector<Node*> path;
+        Array<Node*> path;
         path.reserve(indexPath.size());
         for (u32 nodeIndex : indexPath)
         {
@@ -190,24 +189,24 @@ void TrackGraph::rebuild(glm::mat4 const& startTransform)
     }
 
     // set node angles
-    for (auto it = nodeIndexPaths.rbegin(); it != nodeIndexPaths.rend(); ++it)
+    for (i32 j=(i32)nodeIndexPaths.size() - 1; j >= 0; --j)
     {
-        for (u32 i=0; i<it->size(); ++i)
+        for (u32 i=0; i<nodeIndexPaths[j].size(); ++i)
         {
             glm::vec3 fromPosition;
             glm::vec3 toPosition;
-            if (i < it->size() - 1)
+            if (i < nodeIndexPaths[j].size() - 1)
             {
-                toPosition = nodes[(*it)[i]].position;
-                fromPosition = nodes[(*it)[i+1]].position;
+                toPosition = nodes[nodeIndexPaths[j][i]].position;
+                fromPosition = nodes[nodeIndexPaths[j][i+1]].position;
             }
             else
             {
-                toPosition = nodes[(*it)[i-1]].position;
-                fromPosition = nodes[(*it)[i]].position;
+                toPosition = nodes[nodeIndexPaths[j][i-1]].position;
+                fromPosition = nodes[nodeIndexPaths[j][i]].position;
             }
-            nodes[(*it)[i]].angle = pointDirection(glm::vec2(fromPosition), glm::vec2(toPosition)) - f32(M_PI) * 0.5f;
-            nodes[(*it)[i]].direction = glm::normalize(fromPosition - toPosition);
+            nodes[nodeIndexPaths[j][i]].angle = pointDirection(glm::vec2(fromPosition), glm::vec2(toPosition)) - f32(M_PI) * 0.5f;
+            nodes[nodeIndexPaths[j][i]].direction = glm::normalize(fromPosition - toPosition);
         }
     }
 

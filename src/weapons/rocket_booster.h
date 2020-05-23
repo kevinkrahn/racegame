@@ -7,12 +7,12 @@
 
 class Flames : public Renderable
 {
-    SmallVec<glm::mat4, 4> exhausts;
+    SmallArray<glm::mat4, 4> exhausts;
     Mesh* mesh;
     float alpha;
 
 public:
-    Flames(SmallVec<glm::mat4, 4> exhausts, Mesh* mesh, float alpha)
+    Flames(SmallArray<glm::mat4, 4> exhausts, Mesh* mesh, float alpha)
         : exhausts(exhausts), mesh(mesh), alpha(alpha) {}
 
     void onLitPassPriorityTransition(Renderer* renderer) override
@@ -99,12 +99,18 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        SmallVec<glm::mat4, 4> exhausts;
+        f32 alpha = glm::min(boostTimer * 7.f, 1.f);
+        SmallArray<glm::mat4, 4> exhausts;
         for (auto& p : vehicleData.exhaustHoles)
         {
             exhausts.push_back(vehicleTransform * glm::translate(glm::mat4(1.f), p));
+            if (alpha > 0.f)
+            {
+                rw->addPointLight(vehicleTransform * glm::vec4(p + glm::vec3(-0.25f, 0, 0.25f), 1.f),
+                        glm::vec3(1.f, 0.6f, 0.05f) * alpha, 3.f, 2.f);
+            }
         }
-        rw->push(Flames(exhausts, mesh, glm::min(boostTimer * 7.f, 1.f)));
+        rw->push(Flames(exhausts, mesh, alpha));
     }
 
     bool shouldUse(Scene* scene, Vehicle* vehicle) override

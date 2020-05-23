@@ -6,8 +6,6 @@
 #include "config.h"
 #include "buffer.h"
 #include "editor/resource_manager.h"
-#include <memory>
-#include <vector>
 
 namespace GameMode
 {
@@ -24,12 +22,12 @@ class Game
     void initPhysX();
 
 public:
-    std::unique_ptr<class Renderer> renderer;
+    OwnedPtr<class Renderer> renderer;
 
     // TODO: split game state out into its own thing
     struct
     {
-        std::vector<Driver> drivers;
+        Array<Driver> drivers;
         u32 currentLeague = 0;
         u32 currentRace = 0;
         i32 driverContextIndex = 0;
@@ -82,11 +80,11 @@ public:
     f32 deltaTimeHistory[300] = { 0 };
 
     SDL_Window* window = nullptr;
-    std::unique_ptr<class Scene> currentScene;
-    std::unique_ptr<class Scene> nextScene;
+    OwnedPtr<class Scene> currentScene;
+    OwnedPtr<class Scene> nextScene;
     Menu menu;
     Buffer tempMem = Buffer(megabytes(4), 16);
-    std::unique_ptr<ResourceManager> resourceManager;
+    OwnedPtr<ResourceManager> resourceManager;
 
     // debug
     bool isImGuiDemoWindowOpen = false;
@@ -98,7 +96,7 @@ public:
     bool isMotionGridDebugVisualizationEnabled = false;
     bool isPathVisualizationEnabled = false;
     /*
-    std::vector<std::string> debugLogs;
+    Array<std::string> debugLogs;
     template <typename T, typename... Args>
     void log(Args const& ...args)
     {

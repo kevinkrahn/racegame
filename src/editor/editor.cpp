@@ -13,11 +13,11 @@
 void Editor::reset()
 {
     modes.clear();
-    modes.push_back(std::make_unique<TerrainMode>());
-    modes.push_back(std::make_unique<TrackMode>());
-    modes.push_back(std::make_unique<SplineMode>());
-    modes.push_back(std::make_unique<DecorationMode>());
-    modes.push_back(std::make_unique<PathMode>());
+    modes.push_back(new TerrainMode);
+    modes.push_back(new TrackMode);
+    modes.push_back(new SplineMode);
+    modes.push_back(new DecorationMode);
+    modes.push_back(new PathMode);
 
     for (auto& mode : modes)
     {

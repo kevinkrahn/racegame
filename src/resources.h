@@ -9,7 +9,6 @@
 #include "model.h"
 #include "audio.h"
 #include "trackdata.h"
-#include <vector>
 #include <map>
 #include <string>
 
@@ -24,10 +23,10 @@ private:
     std::map<const char*, std::map<u32, Font>> fonts;
 
 public:
-    std::map<i64, std::unique_ptr<Resource>> resources;
+    std::map<i64, OwnedPtr<Resource>> resources;
     std::map<std::string, Resource*> resourceNameMap;
 
-    void addResource(std::unique_ptr<Resource>&& resource);
+    void addResource(OwnedPtr<Resource>&& resource);
 
     Texture white;
     Texture identityNormal;

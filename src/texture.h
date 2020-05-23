@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "gl.h"
-#include "smallvec.h"
 #include "resource.h"
 #include <stb_image.h>
 
@@ -41,7 +40,7 @@ public:
     struct SourceFile
     {
         std::string path;
-        std::vector<u8> data;
+        Array<u8> data;
         u32 width = 0;
         u32 height = 0;
 
@@ -77,7 +76,7 @@ public:
 private:
     i32 textureType = TextureType::COLOR;
 
-    std::vector<SourceFile> sourceFiles;
+    Array<SourceFile> sourceFiles;
 
     void loadSourceFile(u32 index);
     void initGLTexture(u32 index);
@@ -97,7 +96,7 @@ public:
         : textureType(textureType), width(width), height(height)
     {
         this->name = name;
-        sourceFiles.push_back({ "", std::vector<u8>(data, data+dataSize), width, height });
+        sourceFiles.push_back({ "", Array<u8>(data, data+dataSize), width, height });
         regenerate();
     }
 

@@ -69,7 +69,7 @@ void Menu::mainMenu()
         RandomSeries series = randomSeed();
         i32 driverCredits = irandom(series, 10000, 50000);
         print("Starting quick race with driver budget: ", driverCredits, '\n');
-        std::vector<Driver> drivers;
+        Array<Driver> drivers;
         const u32 driverCount = 10;
         for (u32 i=0; i<driverCount; ++i)
         {
@@ -439,7 +439,7 @@ void Menu::championshipGarage()
     }
     else if (mode == 1)
     {
-        std::vector<std::string> carNames;
+        Array<std::string> carNames;
         for (auto& v : g_vehicles)
         {
             carNames.push_back(v->name);
@@ -907,7 +907,7 @@ void Menu::championshipStandings()
 
     u32 vehicleIconSize = (u32)g_gui.convertSize(48);
     Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
-    SmallVec<Driver*, 20> sortedDrivers;
+    SmallArray<Driver*, 20> sortedDrivers;
     for(auto& driver : g_game.state.drivers)
     {
         sortedDrivers.push_back(&driver);
@@ -1202,7 +1202,7 @@ void Menu::graphicsOptions()
         { 2560, 1440 },
         { 3840, 2160 },
     };
-    SmallVec<std::string> resolutionNames;
+    SmallArray<std::string> resolutionNames;
     for (i32 i=0; i<(i32)ARRAY_SIZE(resolutions); ++i)
     {
         if (resolutions[i].x == (i32)tmpConfig.graphics.resolutionX &&

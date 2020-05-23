@@ -3,7 +3,6 @@
 #include "math.h"
 #include "renderable.h"
 #include "texture.h"
-#include <vector>
 
 enum struct HorizontalAlign
 {
@@ -33,8 +32,8 @@ class Font
     f32 height;
     f32 lineHeight;
     u32 startingChar;
-    std::vector<GlyphMetrics> glyphs;
-    std::vector<f32> kerningTable;
+    Array<GlyphMetrics> glyphs;
+    Array<f32> kerningTable;
 
     friend class TextRenderable;
 

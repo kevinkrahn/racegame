@@ -88,7 +88,7 @@ WidgetState* Gui::getWidgetState(WidgetState* parent, const char* identifier,
     auto it = childStateMap.find(identifier);
     if (it == childStateMap.end())
     {
-        std::unique_ptr<WidgetState> widgetState = std::make_unique<WidgetState>();
+        OwnedPtr<WidgetState> widgetState(new WidgetState);
         widgetState->widgetType = widgetType;
         widgetState->frameCount = g_game.frameCount;
         childStateMap[identifier] = std::move(widgetState);
@@ -97,7 +97,7 @@ WidgetState* Gui::getWidgetState(WidgetState* parent, const char* identifier,
     if (it->second->frameCount + 1 != g_game.frameCount)
     {
         childStateMap.erase(identifier);
-        std::unique_ptr<WidgetState> widgetState = std::make_unique<WidgetState>();
+        OwnedPtr<WidgetState> widgetState(new WidgetState);
         widgetState->widgetType = widgetType;
         widgetState->frameCount = g_game.frameCount;
         childStateMap[identifier] = std::move(widgetState);

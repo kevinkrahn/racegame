@@ -25,7 +25,7 @@ public:
         s.field(backwards);
     }
     void showDetails(Scene* scene) override;
-    std::vector<PropPrefabData> generatePrefabProps() override
+    Array<PropPrefabData> generatePrefabProps() override
     {
         return {
             { PropCategory::OBSTACLES, "Green Booster",

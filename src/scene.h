@@ -17,7 +17,6 @@
 #include "collision_flags.h"
 #include "racing_line.h"
 #include "batcher.h"
-#include <vector>
 
 struct RaceBonus
 {
@@ -39,7 +38,7 @@ struct RaceStatistics
     i32 frags = 0;
     i32 accidents = 0;
     i32 destroyed = 0;
-    std::vector<RaceBonus> bonuses;
+    Array<RaceBonus> bonuses;
 };
 
 struct RaceResult
@@ -76,16 +75,16 @@ class Scene : public PxSimulationEventCallback
 private:
     EditorCamera editorCamera;
 
-    std::vector<RacingLine> paths;
+    Array<RacingLine> paths;
     bool hasGeneratedPaths = false;
 
-    std::vector<std::unique_ptr<Entity>> entities;
-    std::vector<std::unique_ptr<Entity>> newEntities;
+    Array<OwnedPtr<Entity>> entities;
+    Array<OwnedPtr<Entity>> newEntities;
 
-    std::vector<u32> finishOrder;
-    std::vector<std::unique_ptr<class Vehicle>> vehicles;
-    std::vector<u32> placements;
-    std::vector<RaceResult> raceResults;
+    Array<u32> finishOrder;
+    Array<OwnedPtr<class Vehicle>> vehicles;
+    Array<u32> placements;
+    Array<RaceResult> raceResults;
 
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
@@ -150,8 +149,8 @@ public:
     void serialize(Serializer& s);
     Entity* deserializeEntity(DataFile::Value& data);
 
-    std::vector<DataFile::Value> serializeTransientEntities();
-    void deserializeTransientEntities(std::vector<DataFile::Value>& entities);
+    Array<DataFile::Value> serializeTransientEntities();
+    void deserializeTransientEntities(Array<DataFile::Value>& entities);
 
     void onStart();
     void onEnd();
@@ -167,9 +166,9 @@ public:
     u32 getNumHumanDrivers() const { return numHumanDrivers; }
     void drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 pos);
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
-    std::vector<RaceResult>& getRaceResults() { return raceResults; }
+    Array<RaceResult>& getRaceResults() { return raceResults; }
     EditorCamera& getEditorCamera() { return editorCamera; }
-    std::vector<RacingLine>& getPaths() { return paths; }
+    Array<RacingLine>& getPaths() { return paths; }
     void showDebugInfo();
     glm::mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
@@ -188,9 +187,9 @@ public:
             PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr,
             u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS) const;
 
-    void addEntity(Entity* entity) { newEntities.push_back(std::unique_ptr<Entity>(entity)); }
-    std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
-    std::vector<std::unique_ptr<Vehicle>>& getVehicles() { return vehicles; }
+    void addEntity(Entity* entity) { newEntities.push_back(OwnedPtr<Entity>(entity)); }
+    Array<OwnedPtr<Entity>>& getEntities() { return entities; }
+    Array<OwnedPtr<Vehicle>>& getVehicles() { return vehicles; }
 
     void writeTrackData();
 };

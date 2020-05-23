@@ -105,8 +105,8 @@ class VehiclePhysics
 
 	bool isInAir = true;
 
-    SmallVec<GroundSpot, 16> groundSpots;
-    SmallVec<IgnoredGroundSpot> ignoredGroundSpots;
+    SmallArray<GroundSpot, 16> groundSpots;
+    SmallArray<IgnoredGroundSpot> ignoredGroundSpots;
 
     void checkGroundSpots(PxScene* physicsScene, f32 deltaTime);
     void updateWheelInfo(f32 deltaTime);

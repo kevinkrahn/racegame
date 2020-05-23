@@ -27,7 +27,7 @@ public:
     bool isCollider = false;
     bool isVisible = true;
     glm::vec3 bounds;
-    std::vector<u32> collectionIndexes;
+    Array<u32> collectionIndexes;
 
     void serialize(Serializer& s)
     {
@@ -99,9 +99,9 @@ public:
     // serialized
     std::string sourceFilePath;
     std::string sourceSceneName;
-    std::vector<Mesh> meshes;
-    std::vector<ModelObject> objects;
-    std::vector<ModelObjectCollection> collections;
+    Array<Mesh> meshes;
+    Array<ModelObject> objects;
+    Array<ModelObjectCollection> collections;
     ModelUsage modelUsage = ModelUsage::STATIC_PROP;
     f32 density = 150.f;
     PropCategory category = PropCategory::NOT_NATURE;

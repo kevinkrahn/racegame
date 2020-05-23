@@ -11,8 +11,8 @@
 struct ResourceFolder
 {
     std::string name;
-    std::vector<std::unique_ptr<ResourceFolder>> childFolders;
-    std::vector<i64> childResources;
+    Array<OwnedPtr<ResourceFolder>> childFolders;
+    Array<i64> childResources;
     ResourceFolder* parent = nullptr;
 
     bool hasParent(ResourceFolder* p)

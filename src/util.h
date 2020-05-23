@@ -1,25 +1,25 @@
 #pragma once
 
-#include "smallvec.h"
-#include <vector>
-#include <algorithm>
-#include <filesystem>
-
 #if _WIN32
 #else
 #include <dirent.h>
 #endif
 
+#include "misc.h"
+#include <string>
+#include <filesystem>
+#include <algorithm>
+
 struct FileItem
 {
     std::string path;
     bool isDirectory;
-    std::vector<FileItem> children;
+    Array<FileItem> children;
 };
 
-std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
+Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
 {
-    std::vector<FileItem> files;
+    Array<FileItem> files;
 
 #if _WIN32
     WIN32_FIND_DATA fileData;
@@ -87,7 +87,7 @@ std::vector<FileItem> readDirectory(std::string const& dir, bool recursive=true)
 }
 
 std::string chooseFile(bool open, std::string const& fileType,
-        SmallVec<const char*> extensions, std::string const& defaultDir)
+        SmallArray<const char*> extensions, std::string const& defaultDir)
 {
 #if _WIN32
     char szFile[260];

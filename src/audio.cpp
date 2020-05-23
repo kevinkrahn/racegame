@@ -118,7 +118,7 @@ static f32 sampleAudio(Sound* sound, f32 position, u32 channel, bool looping)
 
 void Audio::audioCallback(u8* buf, i32 len)
 {
-    SmallVec<glm::vec3> listeners;
+    SmallArray<glm::vec3> listeners;
 
     bool pauseGameplaySounds;
     {
@@ -429,7 +429,7 @@ void Audio::setSoundPaused(SoundHandle handle, bool paused)
     playbackModifications.push_back(pm);
 }
 
-void Audio::setListeners(SmallVec<glm::vec3>const& listeners)
+void Audio::setListeners(SmallArray<glm::vec3>const& listeners)
 {
     std::lock_guard<std::mutex> lock(audioMutex);
     listenerPositions.clear();

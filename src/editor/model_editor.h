@@ -13,7 +13,7 @@ class ModelEditor
     void loadBlenderFile(std::string const& filename);
     void processBlenderData();
     DataFile::Value blenderData;
-    std::vector<u32> selectedObjects;
+    Array<u32> selectedObjects;
     EditorCamera camera;
     bool showGrid = true;
     bool showFloor = false;

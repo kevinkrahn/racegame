@@ -4,7 +4,6 @@
 #include "renderable.h"
 #include "material.h"
 #include "resources.h"
-#include <vector>
 
 struct SplinePoint
 {
@@ -25,7 +24,7 @@ class Spline : public Entity
     friend class SplineMode;
 
     // serialized
-    std::vector<SplinePoint> points;
+    Array<SplinePoint> points;
     i64 modelGuid = 0;
     f32 scale = 1.f;
 
@@ -47,7 +46,7 @@ class Spline : public Entity
             //collisionMesh.destroy();
         }
     };
-    std::vector<MeshInfo> meshes;
+    Array<MeshInfo> meshes;
     bool isDirty = true;
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
@@ -78,7 +77,7 @@ public:
 
     void updateMesh(Scene* scene);
     void deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshScale,
-            std::vector<PolyLinePoint> const& polyLine, f32 pathLength);
+            Array<PolyLinePoint> const& polyLine, f32 pathLength);
 
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;

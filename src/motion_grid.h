@@ -1,8 +1,6 @@
 #pragma once
 
-#include "math.h"
-#include "smallvec.h"
-#include <vector>
+#include "misc.h"
 
 #define DEBUG_INFO 0
 
@@ -33,7 +31,7 @@ public:
 
     struct Cell
     {
-        SmallVec<CellContents> contents;
+        SmallArray<CellContents> contents;
     };
 
     struct PathNode
@@ -46,14 +44,14 @@ private:
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     i32 width, height;
 
-    std::unique_ptr<Cell[]> grid;
+    OwnedPtr<Cell[]> grid;
 
     u32 pathGeneration = 0;
     struct CellPathInfo
     {
         u32 pathGeneration[8] = { 0 };
     };
-    std::unique_ptr<CellPathInfo[]> pathFindingBuffer;
+    OwnedPtr<CellPathInfo[]> pathFindingBuffer;
 
     struct Node
     {
@@ -68,10 +66,10 @@ private:
         bool isBlocked = false;
 #endif
     };
-    std::vector<Node*> open;
+    Array<Node*> open;
 
 #if DEBUG_INFO
-    std::vector<Node> debugInfo;
+    Array<Node> debugInfo;
 #endif
 
 public:
@@ -87,7 +85,7 @@ public:
     i32 getCellLayerIndex(glm::vec3 const& p) const;
 
     void findPath(glm::vec3& from, glm::vec3& to, bool isBlockedAhead, glm::vec2 forward,
-            std::vector<PathNode>& outPath);
+            Array<PathNode>& outPath);
 
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);
 

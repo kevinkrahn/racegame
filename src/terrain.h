@@ -15,12 +15,12 @@ class Terrain : public Renderable, public Entity
         u32 blend;
     };
 
-    std::unique_ptr<f32[]> heightBuffer;
+    OwnedPtr<f32[]> heightBuffer;
+    OwnedPtr<Vertex[]> vertices;
+    OwnedPtr<u32[]> indices;
+    OwnedPtr<u32[]> blend;
 	u32 heightBufferSize = 0;
-    std::unique_ptr<Vertex[]> vertices;
-    std::unique_ptr<u32[]> indices;
 	u32 indexCount = 0;
-    std::unique_ptr<u32[]> blend;
 
     GLuint vao = 0, vbo = 0, ebo = 0;
     glm::vec3 brushSettings = { 1.f, 1.f, 1.f };
@@ -32,7 +32,7 @@ class Terrain : public Renderable, public Entity
     bool isCollisionMeshDirty = true;
 
     PxMaterial* materials[2];
-    std::unique_ptr<PxMaterialTableIndex[]> materialIndices;
+    OwnedPtr<PxMaterialTableIndex[]> materialIndices;
     PxRigidStatic* actor = nullptr;
     ActorUserData physicsUserData;
     void setDirty()

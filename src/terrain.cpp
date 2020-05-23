@@ -54,10 +54,10 @@ void Terrain::generate(f32 heightScale, f32 scale)
 void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve)
 {
     // record old info
-    std::unique_ptr<f32[]> oldHeightBuffer(heightBuffer.release());
+    OwnedPtr<f32[]> oldHeightBuffer = std::move(heightBuffer);
     i32 ow = (i32)((this->x2 - this->x1) / tileSize);
     i32 oh = (i32)((this->y2 - this->y1) / tileSize);
-    std::unique_ptr<u32[]> oldBlend(blend.release());
+    OwnedPtr<u32[]> oldBlend = std::move(blend);
     i32 xOffset = (i32)((this->x1 - x1) / tileSize);
     i32 yOffset = (i32)((this->y1 - y1) / tileSize);
 
@@ -487,7 +487,7 @@ void Terrain::erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     f32 Kg = g * 2;
     f32 scale = 40.f;
 
-    std::unique_ptr<glm::vec2[]> erosion(new glm::vec2[width * height]);
+    OwnedPtr<glm::vec2[]> erosion(new glm::vec2[width * height]);
 
     const u32 MAX_PATH_LEN = 10;
 
@@ -774,7 +774,7 @@ void Terrain::applyDecal(Decal& decal)
 {
     i32 width = (i32)((x2 - x1) / tileSize);
     i32 height = (i32)((y2 - y1) / tileSize);
-    std::vector<u32> collisionIndices;
+    Array<u32> collisionIndices;
     collisionIndices.reserve(256);
     BoundingBox bb = decal.getBoundingBox();
     i32 startX = getCellX(bb.min.x);

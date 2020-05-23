@@ -1,11 +1,9 @@
 #pragma once
 
 #include "misc.h"
-#include "smallvec.h"
 #include "math.h"
 #include "resource.h"
 #include <mutex>
-#include <vector>
 
 enum struct AudioFormat
 {
@@ -17,7 +15,7 @@ struct Sound : public Resource
 {
     // serialized
     std::string sourceFilePath;
-    std::vector<u8> rawAudioData;
+    Array<u8> rawAudioData;
     u32 numSamples = 0;
     u32 numChannels = 0;
     AudioFormat format = AudioFormat::RAW;
@@ -50,7 +48,7 @@ struct Sound : public Resource
     }
 
     i16* audioData;
-    std::vector<i16> decodedAudioData;
+    Array<i16> decodedAudioData;
 
     Sound() {}
     Sound(const char* filename);
@@ -125,9 +123,9 @@ class Audio
     SoundHandle nextSoundHandle = 0;
     bool pauseGameplaySounds = false;
 
-    std::vector<PlayingSound> playingSounds; // modified only by audio thread
-    std::vector<PlaybackModification> playbackModifications;
-    SmallVec<glm::vec3> listenerPositions;
+    Array<PlayingSound> playingSounds; // modified only by audio thread
+    Array<PlaybackModification> playbackModifications;
+    SmallArray<glm::vec3> listenerPositions;
 
     RandomSeries randomSeries;
 
@@ -148,7 +146,7 @@ public:
     void setSoundPan(SoundHandle handle, f32 pan);
     void setSoundPosition(SoundHandle handle, glm::vec3 const& position);
     void setSoundPaused(SoundHandle handle, bool paused);
-    void setListeners(SmallVec<glm::vec3>const& listeners);
+    void setListeners(SmallArray<glm::vec3>const& listeners);
     void setPaused(bool paused);
     void stopAllGameplaySounds();
 } g_audio;

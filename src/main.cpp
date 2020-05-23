@@ -53,8 +53,45 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#if 1
 int main(int argc, char** argv)
 {
     g_game.run();
     return EXIT_SUCCESS;
 }
+#else
+#include "util.h"
+int main(int argc, char** argv)
+{
+    struct Thing
+    {
+        u32 n;
+        std::string name;
+    };
+    Array<Thing> things;
+    for (u32 i=0; i<10000; ++i)
+    {
+        things.push_back({ i, "hello" });
+    }
+
+    for (auto& thing : things)
+    {
+        printf("%s %i\n", thing.name.c_str(), thing.n);
+    }
+
+    /*
+    Array<u32> ns;
+    for (u32 i=0; i<100000; ++i)
+    {
+        ns.push_back(i);
+    }
+
+    for (u32 n : ns)
+    {
+        printf("%i\n", n);
+    }
+    */
+
+    return EXIT_SUCCESS;
+}
+#endif

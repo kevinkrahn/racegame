@@ -20,7 +20,7 @@ inline size_t align(size_t x, size_t alignment)
 class Buffer
 {
 public:
-    std::unique_ptr<u8[]> data;
+    OwnedPtr<u8[]> data;
     size_t size;
     size_t pos;
     size_t alignment;

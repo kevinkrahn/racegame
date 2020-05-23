@@ -60,7 +60,7 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
         n3 = normalTransform * n3;
 
         const u32 MAX_VERTS = 9;
-        SmallVec<DecalVertex, MAX_VERTS> out = { { v1, n1 }, { v2, n2 }, { v3, n3 } };
+        SmallArray<DecalVertex, MAX_VERTS> out = { { v1, n1 }, { v2, n2 }, { v3, n3 } };
 
         for (u32 i=0; i<6; ++i)
         {
@@ -69,7 +69,7 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
                 break;
             }
 
-            SmallVec<DecalVertex, MAX_VERTS> in = out;
+            SmallArray<DecalVertex, MAX_VERTS> in = out;
             out.clear();
 
             DecalVertex lastVert = in.back();
@@ -119,7 +119,7 @@ void Decal::addMesh(Mesh* mesh, glm::mat4 const& meshTransform)
 {
     if (mesh->octree)
     {
-        std::vector<u32> indices;
+        Array<u32> indices;
         indices.reserve(128);
         mesh->intersect(meshTransform, getBoundingBox(), indices);
         addMesh(mesh->vertices.data(), mesh->stride, indices.data(),

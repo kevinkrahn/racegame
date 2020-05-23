@@ -280,7 +280,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 dirty = true;
 
                 static std::string searchString;
-                static std::vector<Material*> searchResults;
+                static Array<Material*> searchResults;
                 searchResults.clear();
 
                 if (ImGui::IsWindowAppearing())
@@ -634,7 +634,7 @@ void ModelEditor::processBlenderData()
         mesh.destroy();
     }
     model->meshes.clear();
-    std::vector<ModelObject> oldObjects = std::move(model->objects);
+    Array<ModelObject> oldObjects = std::move(model->objects);
     model->objects.clear();
     auto& meshDict = dict["meshes"].dict().val();
     for (auto& object : objects)

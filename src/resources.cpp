@@ -5,7 +5,7 @@
 #include "util.h"
 #include <filesystem>
 
-void Resources::addResource(std::unique_ptr<Resource>&& resource)
+void Resources::addResource(OwnedPtr<Resource>&& resource)
 {
     i64 guid = resource->guid;
     resourceNameMap[resource->name] = resource.get();
@@ -43,7 +43,7 @@ void Resources::loadResource(DataFile::Value& data)
         {
             Serializer s(data, true);
             resource->serialize(s);
-            addResource(std::unique_ptr<Resource>(resource));
+            addResource(OwnedPtr<Resource>(resource));
         }
     }
 }
@@ -56,7 +56,7 @@ void Resources::load()
     identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes,
             sizeof(identityNormalBytes), TextureType::NORMAL_MAP);
 
-    std::vector<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
+    Array<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
     for (auto& file : resourceFiles)
     {
         auto path = std::filesystem::path(file.path);

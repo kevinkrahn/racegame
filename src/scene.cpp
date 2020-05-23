@@ -64,7 +64,7 @@ Scene::Scene(TrackData* data)
 
     while (newEntities.size() > 0)
     {
-        std::vector<std::unique_ptr<Entity>> savedNewEntities = std::move(newEntities);
+        Array<OwnedPtr<Entity>> savedNewEntities = std::move(newEntities);
         for (auto& e : savedNewEntities)
         {
             e->setPersistent(true);
@@ -144,7 +144,7 @@ void Scene::startRace()
         Driver* driver;
         i32 cameraIndex;
     };
-    std::vector<OrderedDriver> createOrder;
+    Array<OrderedDriver> createOrder;
     for (auto& driver : g_game.state.drivers)
     {
         createOrder.push_back({ &driver, driver.hasCamera ? cameraIndex : -1});
@@ -194,7 +194,7 @@ void Scene::startRace()
                 convert(hit.block.position + hit.block.normal *
                     tuning.getRestOffset())) * rotationOf(start);
 
-        vehicles.push_back(std::make_unique<Vehicle>(this, vehicleTransform, -offset,
+        vehicles.push_back(new Vehicle(this, vehicleTransform, -offset,
             driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
     }
 
@@ -208,7 +208,6 @@ void Scene::startRace()
 
 void Scene::buildBatches()
 {
-    print("Building batches...\n");
     f64 t = getTime();
     batcher.begin();
     for (auto& e : entities)
@@ -217,7 +216,7 @@ void Scene::buildBatches()
     }
     batcher.end();
     f64 timeTakenToBuildBatches = getTime() - t;
-    print("Batching took ", timeTakenToBuildBatches, " seconds\n");
+    print("Built ", batcher.batches.size(), " batches in ", timeTakenToBuildBatches, " seconds\n");
     isBatched = true;
 }
 
@@ -312,7 +311,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             readyToGo = true;
         }
 
-        SmallVec<glm::vec3> listenerPositions;
+        SmallArray<glm::vec3> listenerPositions;
         if (!g_game.isEditing && !isRaceInProgress && isCameraTourEnabled
                 && trackGraph.getPaths().size() > 0)
         {
@@ -937,11 +936,10 @@ void Scene::buildRaceResults()
     }
     for (auto& v : vehicles)
     {
-        RaceStatistics& stats = v->raceStatistics;
         raceResults.push_back({
             v->placement,
             v->driver,
-            stats,
+            std::move(v->raceStatistics),
             v->placement != 9999
         });
     }
@@ -1302,9 +1300,9 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
     return entity;
 }
 
-std::vector<DataFile::Value> Scene::serializeTransientEntities()
+Array<DataFile::Value> Scene::serializeTransientEntities()
 {
-    std::vector<DataFile::Value> transientEntities;
+    Array<DataFile::Value> transientEntities;
     for (auto& entity : this->entities)
     {
         if (entity->entityFlags & Entity::TRANSIENT)
@@ -1318,7 +1316,7 @@ std::vector<DataFile::Value> Scene::serializeTransientEntities()
     return transientEntities;
 }
 
-void Scene::deserializeTransientEntities(std::vector<DataFile::Value>& entities)
+void Scene::deserializeTransientEntities(Array<DataFile::Value>& entities)
 {
     for (auto it = this->entities.begin(); it != this->entities.end();)
     {

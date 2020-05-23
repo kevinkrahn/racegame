@@ -4,11 +4,13 @@
 
 void Mesh::buildOctree()
 {
-    if (octree) return;
-    octree = std::make_unique<OctreeNode>();
-    octree->aabb = aabb;
-    octree->triangleIndices = indices;
-    octree->subdivide(*this);
+    if (!octree)
+    {
+        octree.reset(new OctreeNode);
+        octree->aabb = aabb;
+        octree->triangleIndices = indices;
+        octree->subdivide(*this);
+    }
 }
 
 void Mesh::OctreeNode::debugDraw(DebugDraw* dbg, glm::mat4 const& transform, glm::vec4 const& col)
@@ -51,10 +53,10 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         }
     }
 
-    SmallVec<BoundingBox> childBoxes = {
+    SmallArray<BoundingBox> childBoxes = {
         { { aabb.min, aabb.max } }
     };
-    SmallVec<BoundingBox> splits;
+    SmallArray<BoundingBox> splits;
 
     const f32 MIN_SIZE = 3.f;
 
@@ -100,8 +102,8 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         childBoxes[i] = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
     }
 
-    std::vector<u32> indices(std::move(triangleIndices));
-    triangleIndices = std::vector<u32>();
+    Array<u32> indices(std::move(triangleIndices));
+    triangleIndices = Array<u32>();
     for (u32 i=0; i<indices.size(); i+=3)
     {
         u32 j = indices[i+0] * mesh.stride / sizeof(f32);
@@ -160,7 +162,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
     }
 }
 
-bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, std::vector<u32>& output) const
+bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, Array<u32>& output) const
 {
     if (aabb.intersects(bb))
     {
@@ -177,7 +179,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
     return false;
 }
 
-bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, std::vector<u32>& output) const
+bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, Array<u32>& output) const
 {
     bb = bb.transform(glm::inverse(transform));
     if (octree)
@@ -322,7 +324,7 @@ void Mesh::calculateVertexFormat()
     stride = (6 + (hasTangents ? 4 : 0) + numColors * 3 + numTexCoords * 2) * sizeof(f32);
 
     /*
-    SmallVec<VertexAttribute> vertexFormat = {
+    SmallArray<VertexAttribute> vertexFormat = {
         { 0, VertexAttributeType::FLOAT3 }, // position
         { 1, VertexAttributeType::FLOAT3 }, // normal
         { 2, VertexAttributeType::FLOAT4 }, // tangent

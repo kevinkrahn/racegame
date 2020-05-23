@@ -67,7 +67,7 @@ void Driver::aiUpgrades(RandomSeries& series)
 
     const u32 MAX_UPGRADE = 0;
 
-    std::vector<UpgradeChoice> upgradeChoices = {
+    Array<UpgradeChoice> upgradeChoices = {
         { FRONT_WEAPON1, 20 + ai.aggression, 2 },
         { FRONT_WEAPON1, 18 + ai.aggression * 2.f, 3 },
         { FRONT_WEAPON1, 16 + ai.aggression * 2.f, MAX_UPGRADE },
@@ -108,9 +108,9 @@ void Driver::aiUpgrades(RandomSeries& series)
     std::sort(upgradeChoices.begin(), upgradeChoices.end(),
             [&](auto& a, auto& b) { return a.priority > b.priority; });
 
-    std::vector<i32> frontWeapons;
-    std::vector<i32> rearWeapons;
-    std::vector<i32> specialAbilities;
+    Array<i32> frontWeapons;
+    Array<i32> rearWeapons;
+    Array<i32> specialAbilities;
     for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
     {
         switch (g_weapons[i].info.weaponType)

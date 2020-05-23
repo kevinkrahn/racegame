@@ -4,7 +4,6 @@
 #include "mesh_renderables.h"
 #include "model.h"
 #include "material.h"
-#include <vector>
 
 class Batcher
 {
@@ -13,7 +12,7 @@ class Batcher
         glm::mat4 transform;
         Mesh* mesh;
     };
-    std::map<Material*, std::vector<BatchableItem>> materialMap;
+    std::map<Material*, Array<BatchableItem>> materialMap;
 
 public:
     struct Batch
@@ -22,7 +21,7 @@ public:
         Mesh mesh;
     };
 
-    std::vector<Batch> batches;
+    Array<Batch> batches;
 
     ~Batcher()
     {

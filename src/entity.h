@@ -28,7 +28,7 @@ struct ECS_Component
 struct ECS_Entity
 {
     std::string name;
-    SmallVec<ECS_Component*, 8> components;
+    SmallArray<ECS_Component*, 8> components;
     glm::vec3 position;
     u32 flags = ENTITY_NONE;
     glm::quat rotation = glm::identity<glm::quat>();
@@ -190,7 +190,7 @@ public:
     }
     virtual const char* getName() const { return "Entity"; }
     virtual void showDetails(Scene* scene) {}
-    virtual std::vector<PropPrefabData> generatePrefabProps() { return {}; }
+    virtual Array<PropPrefabData> generatePrefabProps() { return {}; }
 
     virtual void onPreview(class RenderWorld* rw) {}
 
@@ -210,7 +210,7 @@ struct RegisteredEntity
     bool isPlaceableInEditor;
 };
 
-std::vector<RegisteredEntity> g_entities;
+Array<RegisteredEntity> g_entities;
 
 u32 entityCounter = 0;
 template<typename T>

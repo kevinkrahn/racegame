@@ -20,7 +20,7 @@ public:
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected, u8 selectIndex) override;
     void onPreview(RenderWorld* rw) override;
-    std::vector<PropPrefabData> generatePrefabProps() override
+    Array<PropPrefabData> generatePrefabProps() override
     {
         return {{ PropCategory::OBSTACLES, "Glue" }};
     }

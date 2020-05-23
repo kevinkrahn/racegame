@@ -8,7 +8,7 @@
 constexpr u32 viewportGapPixels = 1;
 constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
 
-void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines)
+void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallArray<std::string> const& defines)
 {
     std::ostringstream str;
     str << "#version 450\n";
@@ -28,7 +28,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallVec<s
     glShaderSource(shader, 2, sources, 0);
 }
 
-void Renderer::loadShader(std::string filename, SmallVec<std::string> defines, std::string name)
+void Renderer::loadShader(std::string filename, SmallArray<std::string> defines, std::string name)
 {
     if (name.empty())
     {

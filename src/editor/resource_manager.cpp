@@ -55,7 +55,7 @@ ResourceManager::ResourceManager()
     Serializer::fromFile(resources, str(DATA_DIRECTORY, "/", METADATA_FILE));
 
     std::map<i64, bool> resourceFolderMap;
-    std::vector<ResourceFolder*> folders = { &resources };
+    Array<ResourceFolder*> folders = { &resources };
     while (folders.size() > 0)
     {
         ResourceFolder* folder = folders.back();
@@ -152,7 +152,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
         {
             if (ImGui::MenuItem("New Folder"))
             {
-                auto newFolder = std::make_unique<ResourceFolder>();
+                OwnedPtr<ResourceFolder> newFolder(new ResourceFolder);
                 newFolder->name = "New Folder";
                 newFolder->parent = folder;
                 folder->childFolders.push_back(std::move(newFolder));
@@ -437,7 +437,7 @@ Resource* ResourceManager::newResource(ResourceType type)
         resource->type = type;
         resource->guid = g_res.generateGUID();
         resource->name = str(namePrefix, ' ', g_res.resources.size());
-        g_res.addResource(std::unique_ptr<Resource>(resource));
+        g_res.addResource(OwnedPtr<Resource>(resource));
         markDirty(resource->guid);
     }
     return resource;
@@ -567,7 +567,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
                 currentTexture == 0 ? "None" : g_res.getTexture(currentTexture)->name.c_str()))
     {
         static std::string searchString;
-        static std::vector<Texture*> searchResults;
+        static Array<Texture*> searchResults;
         searchResults.clear();
 
         if (ImGui::IsWindowAppearing())

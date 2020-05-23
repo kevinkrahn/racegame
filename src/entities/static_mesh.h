@@ -16,7 +16,7 @@ class StaticMesh : public PlaceableEntity
         PxShape* shape = nullptr;
     };
 
-    std::vector<Object> objects;
+    Array<Object> objects;
 
     void loadModel();
 
@@ -28,7 +28,7 @@ public:
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected, u8 selectIndex) override;
     void serializeState(Serializer& s) override;
     void updateTransform(class Scene* scene) override;
-    std::vector<PropPrefabData> generatePrefabProps() override;
+    Array<PropPrefabData> generatePrefabProps() override;
     const char* getName() const override { return model->name.c_str(); }
     void onBatch(class Batcher& batcher) override;
 };

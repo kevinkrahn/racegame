@@ -11,7 +11,7 @@
 
 class PathMode : public EditorMode, public TransformGizmoHandler
 {
-    std::vector<u16> selectedPoints;
+    Array<u16> selectedPoints;
     u32 selectedPathIndex = 0;
     i32 selectedGraphPathIndex = -1;
     TransformGizmo transformGizmo;

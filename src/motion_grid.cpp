@@ -291,7 +291,7 @@ static f32 octileDistance(i32 x1, i32 y1, i32 x2, i32 y2)
 }
 
 void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::vec2 forward,
-        std::vector<PathNode>& outPath)
+        Array<PathNode>& outPath)
 {
     outPath.clear();
 

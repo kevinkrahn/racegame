@@ -58,15 +58,15 @@ private:
     f32 maxSpeed = 100.f;
     ProjectileType projectileType;
     f32 homingSpeed = 0.f;
-    SmallVec<const PxRigidActor*> ignoreActors;
+    SmallArray<const PxRigidActor*> ignoreActors;
     bool groundFollow = false;
     bool passThroughVehicles = false;
     bool bounceOffEnvironment = false;
     f32 explosionStrength = 0.f;
 
     ParticleEmitter impactEmitter;
-    SmallVec<const char*, 4> environmentImpactSounds;
-    SmallVec<const char*, 4> vehicleImpactSounds;
+    SmallArray<const char*, 4> environmentImpactSounds;
+    SmallArray<const char*, 4> vehicleImpactSounds;
 
     void onHit(Scene* scene, PxSweepHit* hit);
     void createImpactParticles(Scene* scene, PxSweepHit* hit);

@@ -508,7 +508,7 @@ void Track::extendTrack(i32 prefabCurveIndex)
         points.push_back({ p });
         glm::vec3 h(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
 
-        auto segment = std::make_unique<BezierSegment>();
+        OwnedPtr<BezierSegment> segment(new BezierSegment);
         segment->track = this;
         segment->handleOffsetA = -fromHandleOffset;
         segment->pointIndexA = pIndex;
@@ -570,7 +570,7 @@ void Track::connectPoints()
         handle2 = c2->pointIndexA == index2 ? c2->handleOffsetA : c2->handleOffsetB;
     }
 
-    auto segment = std::make_unique<BezierSegment>();
+    OwnedPtr<BezierSegment> segment(new BezierSegment);
     segment->track = this;
     segment->handleOffsetA = -handle1;
     segment->pointIndexA = index1;

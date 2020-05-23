@@ -17,7 +17,7 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     }
 
     auto size = file.tellg();
-    std::vector<u8> fontData((u32)size);
+    Array<u8> fontData((u32)size);
     file.seekg(0, std::ios::beg);
     file.read((char*)fontData.data(), size);
 
@@ -30,10 +30,10 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
 
     stbtt_pack_context c;
-    std::vector<stbtt_packedchar> charData(numGlyphs);
+    Array<stbtt_packedchar> charData(numGlyphs);
 
     i32 w = 1024, h = 1024;
-    std::vector<u8> texData(w * h);
+    Array<u8> texData(w * h);
 
     const i32 padding = 4;
     stbtt_PackBegin(&c, texData.data(), w, h, 0, padding, nullptr);

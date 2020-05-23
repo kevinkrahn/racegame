@@ -105,7 +105,7 @@ public:
         s.field(pickupType);
     }
 
-    std::vector<PropPrefabData> generatePrefabProps() override
+    Array<PropPrefabData> generatePrefabProps() override
     {
         return {
             { PropCategory::PICKUPS, "Money",

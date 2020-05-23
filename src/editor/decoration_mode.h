@@ -18,14 +18,14 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
         u32 entityIndex;
         PropPrefabData prefabData;
     };
-    std::vector<PropPrefab> propPrefabs;
+    Array<PropPrefab> propPrefabs;
 
     TransformGizmo transformGizmo;
     Scene* scene;
 
-    std::vector<PlaceableEntity*> selectedEntities;
-    std::vector<DataFile::Value> serializedTransientEntities;
-    std::vector<u32> selectedPropTypes;
+    Array<PlaceableEntity*> selectedEntities;
+    Array<DataFile::Value> serializedTransientEntities;
+    Array<u32> selectedPropTypes;
 
     bool randomizeRotationX = false;
     bool randomizeRotationY = false;
@@ -124,7 +124,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     renderWorld.updateWorldTime(30.f);
                     renderWorld.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
                             glm::vec3(0.f, 0.f, 1.f), 1.f, 220.f, 39.f);
-                    static std::unique_ptr<PlaceableEntity> ptr;
+                    static OwnedPtr<PlaceableEntity> ptr;
                     ptr.reset((PlaceableEntity*)
                             g_entities[propPrefabs[itemIndex].entityIndex].create());
                     propPrefabs[itemIndex].prefabData.doThing(ptr.get());
@@ -183,8 +183,8 @@ public:
             auto& e = g_entities[entityIndex];
             if (e.isPlaceableInEditor)
             {
-                std::unique_ptr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
-                std::vector<PropPrefabData> data = ptr->generatePrefabProps();
+                OwnedPtr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
+                Array<PropPrefabData> data = ptr->generatePrefabProps();
                 for (auto& d : data)
                 {
                     propPrefabs.push_back({ {}, false, entityIndex, std::move(d) });
@@ -401,7 +401,7 @@ public:
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
         if (ImGui::Button("Duplicate [b]", buttonSize) > 0 || g_input.isKeyPressed(KEY_B))
         {
-            std::vector<PlaceableEntity*> newEntities;
+            Array<PlaceableEntity*> newEntities;
             for (auto e : selectedEntities)
             {
                 auto data = DataFile::makeDict();
@@ -443,13 +443,13 @@ public:
 
     void onBeginTest(Scene* scene) override
     {
-        serializedTransientEntities = scene->serializeTransientEntities();
+        //serializedTransientEntities = scene->serializeTransientEntities();
         transformGizmo.reset();
     }
 
     void onEndTest(Scene* scene) override
     {
-        scene->deserializeTransientEntities(serializedTransientEntities);
+        //scene->deserializeTransientEntities(serializedTransientEntities);
     }
 
     void onSwitchFrom(Scene* scene) override

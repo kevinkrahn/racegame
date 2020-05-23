@@ -18,7 +18,7 @@ struct GridSettings
 
 class Editor
 {
-    SmallVec<std::unique_ptr<EditorMode>> modes;
+    SmallArray<OwnedPtr<EditorMode>> modes;
     u32 activeModeIndex = 0;
     GridSettings gridSettings;
 

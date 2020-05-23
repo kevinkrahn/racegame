@@ -110,7 +110,7 @@ void Spline::updateMesh(Scene* scene)
 
     // build poly line from bezier curve
     u32 steps = 32;
-    std::vector<PolyLinePoint> polyLine;
+    Array<PolyLinePoint> polyLine;
     f32 zGroundOffset = 0.01f;
     u32 stickToGroundCollisionFlags = COLLISION_FLAG_TRACK;
     for (size_t i=0; i<points.size()-1; ++i)
@@ -191,12 +191,12 @@ void Spline::updateMesh(Scene* scene)
             meshInfo.material = g_res.getMaterial(obj.materialGuid);
         }
 
-        meshes.emplace_back(std::move(meshInfo));
+        meshes.push_back(std::move(meshInfo));
     }
 }
 
 void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshScale,
-        std::vector<PolyLinePoint> const& polyLine, f32 pathLength)
+        Array<PolyLinePoint> const& polyLine, f32 pathLength)
 {
     f32 sourceMeshLength = (sourceMesh->aabb.max.x - sourceMesh->aabb.min.x) * meshScale;
     f32 fractionalRepeatCount = pathLength / sourceMeshLength;

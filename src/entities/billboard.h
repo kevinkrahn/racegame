@@ -153,9 +153,9 @@ public:
         PlaceableEntity::serializeState(s);
     }
 
-    std::vector<PropPrefabData> generatePrefabProps() override
+    Array<PropPrefabData> generatePrefabProps() override
     {
-        std::vector<PropPrefabData> result = {
+        Array<PropPrefabData> result = {
             { PropCategory::NOT_NATURE, "Billboard" }
         };
         return result;

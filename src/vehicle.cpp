@@ -370,6 +370,18 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         else
         {
             ++i;
+#if 0
+            if (debris.life > 4.f)
+            {
+                if ((u32)(debris.life * 1000) % 2 == 0)
+                {
+                    glm::vec3 vel = convert(debris.rigidBody->getLinearVelocity());
+                    glm::vec3 pos = convert(debris.rigidBody->getGlobalPose().p);
+                    scene->smoke.spawn(pos, vel * 0.5f, glm::min(debris.life - 4.f, 1.f),
+                            glm::vec4(glm::vec3(0.06f), 1.f), random(scene->randomSeries, 0.5f, 1.f));
+                }
+            }
+#endif
         }
     }
 

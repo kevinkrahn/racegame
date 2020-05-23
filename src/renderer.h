@@ -3,14 +3,12 @@
 #include "gl.h"
 #include "resources.h"
 #include "math.h"
-#include "smallvec.h"
 #include "decal.h"
 #include "renderable.h"
 #include "dynamic_buffer.h"
 #include "buffer.h"
 
 #include <algorithm>
-#include <vector>
 
 enum
 {
@@ -64,9 +62,9 @@ struct Framebuffers
 
     GLuint stencilViewTexture;
 
-    SmallVec<GLuint> bloomFramebuffers;
-    SmallVec<GLuint> bloomColorTextures;
-    SmallVec<glm::ivec2> bloomBufferSize;
+    SmallArray<GLuint> bloomFramebuffers;
+    SmallArray<GLuint> bloomColorTextures;
+    SmallArray<glm::ivec2> bloomBufferSize;
 
     GLuint shadowFramebuffer;
     GLuint shadowDepthTexture;
@@ -140,12 +138,12 @@ class RenderWorld
 
     const char* name = "";
     WorldInfo worldInfo;
-    SmallVec<Framebuffers, MAX_VIEWPORTS> fbs;
-    SmallVec<Camera, MAX_VIEWPORTS> cameras = { {} };
-    SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
-    SmallVec<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
+    SmallArray<Framebuffers, MAX_VIEWPORTS> fbs;
+    SmallArray<Camera, MAX_VIEWPORTS> cameras = { {} };
+    SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
+    SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
     glm::vec4 highlightColor[MAX_VIEWPORTS] = {};
-    std::vector<PointLight> pointLights;
+    Array<PointLight> pointLights;
 
     BoundingBox shadowBounds;
     bool hasCustomShadowBounds = false;
@@ -159,7 +157,7 @@ class RenderWorld
         i32 priority;
         Renderable* renderable;
     };
-    std::vector<QueuedRenderable> renderables;
+    Array<QueuedRenderable> renderables;
 
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
@@ -174,7 +172,7 @@ class RenderWorld
         bool sent = false;
         bool ready = false;
     };
-    SmallVec<PickPixelResult> pickPixelResults;
+    SmallArray<PickPixelResult> pickPixelResults;
     bool isPickPixelPending = false;
 
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex);
@@ -292,10 +290,10 @@ private:
         i32 priority;
         Renderable2D* renderable;
     };
-    std::vector<QueuedRenderable2D> renderables2D;
-    std::vector<RenderWorld*> renderWorlds;
+    Array<QueuedRenderable2D> renderables2D;
+    Array<RenderWorld*> renderWorlds;
 
-    void glShaderSources(GLuint shader, std::string const& src, SmallVec<std::string> const& defines);
+    void glShaderSources(GLuint shader, std::string const& src, SmallArray<std::string> const& defines);
 
     void createFullscreenFramebuffers();
 
@@ -320,7 +318,7 @@ public:
     void initShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    void loadShader(std::string filename, SmallVec<std::string> defines={}, std::string name="");
+    void loadShader(std::string filename, SmallArray<std::string> defines={}, std::string name="");
     u32 getShader(const char* name, i32 viewportCount=0) const;
     GLuint getShaderProgram(const char* name) const;
     void render(f32 deltaTime);

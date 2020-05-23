@@ -18,7 +18,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         bool hasIcon = false;
     };
 
-    std::vector<SplineMeshInfo> splineModels;
+    Array<SplineMeshInfo> splineModels;
     u32 selectedSplineModel = 0;
 
     struct PointSelection
@@ -34,12 +34,12 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         bool firstHandle;
     };
 
-    std::vector<PointSelection> selectedPoints;
-    std::vector<HandleSelection> selectedHandles;
+    Array<PointSelection> selectedPoints;
+    Array<HandleSelection> selectedHandles;
     Spline* selectedSpline = nullptr;
     TransformGizmo transformGizmo;
 
-    std::vector<Spline*> splineEntities;
+    Array<Spline*> splineEntities;
 
     void clearSelection()
     {
@@ -95,9 +95,9 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         if (pointIndexA == splineA->points.size() - 1 &&
             pointIndexB == splineB->points.size() - 1)
         {
-            for (auto it = splineB->points.rbegin(); it != splineB->points.rend(); ++it)
+            for (i32 i=(i32)splineB->points.size() - 1; i >= 0; --i)
             {
-                SplinePoint point = *it;
+                SplinePoint point = splineB->points[i];
                 std::swap(point.handleOffsetA, point.handleOffsetB);
                 splineA->points.push_back(point);
             }
@@ -113,9 +113,9 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         else if (pointIndexA == 0 &&
             pointIndexB == splineB->points.size() - 1)
         {
-            for (auto it = splineB->points.rbegin(); it != splineB->points.rend(); ++it)
+            for (i32 i=(i32)splineB->points.size() - 1; i >= 0; --i)
             {
-                splineA->points.insert(splineA->points.begin(), *it);
+                splineA->points.insert(splineA->points.begin(), splineB->points[i]);
             }
         }
         else if (pointIndexA == 0 &&
@@ -190,7 +190,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         Spline* newSpline = (Spline*)g_entities[5].create();
         newSpline->setPersistent(true);
 
-        newSpline->points = std::vector<SplinePoint>(
+        newSpline->points = Array<SplinePoint>(
                 spline->points.begin() + selectedPoints.front().pointIndex,
                 spline->points.end());
         newSpline->scale = spline->scale;

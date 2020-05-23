@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "track_graph.h"
-#include <vector>
 
 class RacingLine
 {
@@ -24,7 +23,7 @@ public:
         }
     };
 
-    std::vector<Point> points;
+    Array<Point> points;
     f32 length = 0.f;
     Point endPoint;
 

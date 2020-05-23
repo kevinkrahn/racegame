@@ -293,7 +293,7 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
             bool foundValue = v.dataType != DataType::NONE;
             if (foundValue)
             {
-                val.array_.emplace_back(std::move(v));
+                val.array_.push_back(std::move(v));
             }
 
             eatSpace(ch);

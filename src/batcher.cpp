@@ -89,10 +89,11 @@ void Batcher::end()
 
         // not needed anymore
         bigBatchedMesh.vertices.clear();
+        bigBatchedMesh.vertices.shrink_to_fit();
         bigBatchedMesh.indices.clear();
+        bigBatchedMesh.indices.shrink_to_fit();
 
         batches.push_back({ itemsForThisMaterial.first, std::move(bigBatchedMesh) });
     }
     materialMap.clear();
-    print("Built ", batches.size(), " batches\n");
 }

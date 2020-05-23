@@ -1,8 +1,6 @@
 #pragma once
 
-#include "math.h"
-#include <vector>
-#include "smallvec.h"
+#include "misc.h"
 
 struct WeaponInfo
 {
@@ -35,7 +33,7 @@ public:
     u32 ammoUnitCount = 1;
     u32 upgradeLevel;
     glm::mat4 mountTransform;
-    SmallVec<glm::vec3, 3> projectileSpawnPoints;
+    SmallArray<glm::vec3, 3> projectileSpawnPoints;
 
     void loadModelData(const char* modelName);
     void outOfAmmo(class Vehicle* vehicle);

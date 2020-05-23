@@ -1,9 +1,7 @@
 #pragma once
 
 #include "math.h"
-#include "smallvec.h"
 #include "renderable.h"
-#include <vector>
 
 template <typename T>
 f32 getCurveValue(T const& curve, f32 t)
@@ -36,7 +34,7 @@ private:
         f32 alphaMultiplier = 1.f;
     };
 
-    std::vector<Particle> particles;
+    Array<Particle> particles;
 
     RandomSeries series;
 
@@ -55,12 +53,12 @@ public:
         f32 t;
         f32 v;
     };
-    SmallVec<CurvePoint, 4> alphaCurve = {
+    SmallArray<CurvePoint, 4> alphaCurve = {
         { 0.f,  0.f   },
         { 0.1f, 0.25f },
         { 1.f,  0.f   }
     };
-    SmallVec<CurvePoint, 4> scaleCurve = {
+    SmallArray<CurvePoint, 4> scaleCurve = {
         { 0.f, 0.5f },
         { 1.f, 1.f },
     };

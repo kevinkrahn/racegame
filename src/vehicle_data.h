@@ -29,7 +29,7 @@ struct ComputerDriverData
 struct RegisteredWeapon
 {
     WeaponInfo info;
-    std::function<std::unique_ptr<Weapon>()> create;
+    std::function<OwnedPtr<Weapon>()> create;
 };
 
 struct VehicleMesh
@@ -66,7 +66,7 @@ struct VehicleStats
 
 struct VehicleTuning
 {
-    std::vector<VehicleCollisionsMesh> collisionMeshes;
+    Array<VehicleCollisionsMesh> collisionMeshes;
 
     f32 chassisMass = 1400.f;
     glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
@@ -104,7 +104,7 @@ struct VehicleTuning
     f32 autoBoxSwitchTime = 0.25f;
 
     // reverse, neutral, first, second, third...
-    SmallVec<f32, 12> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
+    SmallArray<f32, 12> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
     f32 finalGearRatio = 4.f;
 
     f32 suspensionMaxCompression = 0.2f;
@@ -220,7 +220,7 @@ struct VehicleConfiguration
             s.field(upgradeLevel);
         }
     };
-    std::vector<Upgrade> performanceUpgrades;
+    Array<Upgrade> performanceUpgrades;
 
     Upgrade* getUpgrade(i32 upgradeIndex);
     bool canAddUpgrade(struct Driver* driver, i32 upgradeIndex);
@@ -274,7 +274,7 @@ struct VehicleData
     Batcher chassisBatch;
     Batcher chassisOneMaterialBatch;
 
-    SmallVec<VehicleMesh> wheelMeshes[NUM_WHEELS];
+    SmallArray<VehicleMesh> wheelMeshes[NUM_WHEELS];
 
     glm::vec3 wheelPositions[NUM_WHEELS] = {};
     glm::mat4 weaponMounts[3] = {
@@ -282,7 +282,7 @@ struct VehicleData
         glm::translate(glm::mat4(1.f), { 0.f, 0.f, 2.f }),
         glm::translate(glm::mat4(1.f), { -2.f, 0.f, 2.f }),
     };
-    SmallVec<glm::vec3> exhaustHoles;
+    SmallArray<glm::vec3> exhaustHoles;
     f32 frontWheelMeshRadius = 0.f;
     f32 frontWheelMeshWidth = 0.f;
     f32 rearWheelMeshRadius = 0.f;
@@ -290,8 +290,8 @@ struct VehicleData
     f32 collisionWidth = 0.f;
     glm::vec3 sceneCenterOfMass = glm::vec3(0.f);
 
-    std::vector<VehicleCollisionsMesh> collisionMeshes;
-    std::vector<PerformanceUpgrade> availableUpgrades;
+    Array<VehicleCollisionsMesh> collisionMeshes;
+    Array<PerformanceUpgrade> availableUpgrades;
 
     const char* name ="";
     const char* description ="";
@@ -299,8 +299,8 @@ struct VehicleData
     u32 frontWeaponCount = 1;
     u32 rearWeaponCount = 1;
 
-    std::vector<VehicleMesh> debrisChunks;
-    std::vector<Material> paintMaterials;
+    Array<VehicleMesh> debrisChunks;
+    Array<Material> paintMaterials;
     u32 lastFrameIndex = 9999;
 
     virtual ~VehicleData() {}
@@ -308,7 +308,7 @@ struct VehicleData
             glm::mat4* wheelTransforms, VehicleConfiguration const& config,
             class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false);
     virtual void renderDebris(class RenderWorld* rw,
-            std::vector<VehicleDebris> const& debris, VehicleConfiguration const& config);
+            Array<VehicleDebris> const& debris, VehicleConfiguration const& config);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
     void loadModelData(const char* modelName);
@@ -316,9 +316,9 @@ struct VehicleData
     void initStandardUpgrades();
 };
 
-std::vector<std::unique_ptr<VehicleData>> g_vehicles;
-std::vector<RegisteredWeapon> g_weapons;
-std::vector<ComputerDriverData> g_ais;
+Array<OwnedPtr<VehicleData>> g_vehicles;
+Array<RegisteredWeapon> g_weapons;
+Array<ComputerDriverData> g_ais;
 
 u32 findVehicleIndexByName(const char* name)
 {
@@ -338,14 +338,14 @@ void registerWeapon()
 {
     g_weapons.push_back({
         (T().info),
-        [] { return std::make_unique<T>(); }
+        [] { return OwnedPtr<Weapon>(new T); }
     });
 }
 
 template <typename T>
 void registerVehicle()
 {
-    g_vehicles.push_back(std::make_unique<T>());
+    g_vehicles.push_back(new T);
 }
 
 void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear,
