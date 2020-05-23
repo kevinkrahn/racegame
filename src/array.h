@@ -2,8 +2,6 @@
 
 #include "misc.h"
 
-#if 1
-#define NO_SELF_REFERENCE 0
 template <typename T>
 class Array
 {
@@ -13,25 +11,31 @@ class Array
 
     void reallocate()
     {
-#if NO_SELF_REFERENCE
-        data_ = (T*)realloc(data_, capacity_ * sizeof(T));
-#else
-        T* newData = (T*)malloc(capacity_ * sizeof(T));
-        if (data_)
+        if constexpr (std::is_trivial<T>::value)
         {
-            for (u32 i=0; i<size_; ++i)
-            {
-                new (newData + i) T(std::move(data_[i]));
-            }
-            free(data_);
+            data_ = (T*)realloc(data_, capacity_ * sizeof(T));
         }
-        data_ = newData;
-#endif
+        else
+        {
+            T* newData = (T*)malloc(capacity_ * sizeof(T));
+            if (data_)
+            {
+                for (u32 i=0; i<size_; ++i)
+                {
+                    new (newData + i) T(std::move(data_[i]));
+                }
+                free(data_);
+            }
+            data_ = newData;
+        }
     }
 
     void ensureCapacity()
     {
-        if (size_ < capacity_) return;
+        if (size_ < capacity_)
+        {
+            return;
+        }
         capacity_ += capacity_ / 2 + 4;
         reallocate();
     }
@@ -39,7 +43,7 @@ class Array
 public:
     Array() {}
 
-    Array(std::initializer_list<T> list) : data_(nullptr), size_(list.size()), capacity_(list.size())
+    Array(std::initializer_list<T> list) : size_(list.size()), capacity_(list.size())
     {
         reallocate();
         T* ptr = data_;
@@ -50,25 +54,22 @@ public:
         }
     }
 
-    explicit Array(u32 size) : data_(nullptr), size_(size), capacity_(size)
+    explicit Array(u32 size) : size_(size), capacity_(size)
     {
         reallocate();
-        auto endPtr = data_ + size;
-        for (T* ptr = data_; ptr != endPtr; ++ptr)
+        if constexpr (!std::is_trivial<T>::value)
         {
-            new (ptr) T;
+            auto endPtr = data_ + size;
+            for (T* ptr = data_; ptr != endPtr; ++ptr)
+            {
+                new (ptr) T;
+            }
         }
     }
 
-    Array(T* start, T* end) : data_(nullptr)
+    Array(T* start, T* end)
     {
-        size_ = end - start;
-        capacity_ = size_;
-        reallocate();
-        for (u32 i=0; i<end-start; ++i)
-        {
-            new (data_+i) T(start[i]);
-        }
+        assign(start, end);
     }
 
     Array(Array&& other)
@@ -96,23 +97,20 @@ public:
 
     Array& operator = (Array const& other)
     {
-        clear();
-        size_ = other.size_;
-        reserve(size_);
-        for (u32 i=0; i<size_; ++i)
-        {
-            new (data_ + i) T(other.data_[i]);
-        }
+        assign((T*)other.begin(), (T*)other.end());
         return *this;
     }
 
     ~Array()
     {
         u32 count = 0;
-        for (auto& l : *this)
+        if constexpr (!std::is_trivial<T>::value)
         {
-            l.~T();
-            count++;
+            for (auto& l : *this)
+            {
+                l.~T();
+                count++;
+            }
         }
         if (data_)
         {
@@ -135,9 +133,16 @@ public:
         clear();
         size_ = end - start;
         reserve(size_);
-        for (u32 i=0; i<size_; ++i)
+        if constexpr (std::is_trivial<T>::value)
         {
-            new (data_+i) T(start[i]);
+            memcpy(data_, start, size_ * sizeof(T));
+        }
+        else
+        {
+            for (u32 i=0; i<size_; ++i)
+            {
+                new (data_+i) T(start[i]);
+            }
         }
     }
 
@@ -195,14 +200,17 @@ public:
     {
         assert(element < data_+size_);
         element->~T();
-#if NO_SELF_REFERENCE
-        memmove(element, element+1, ((data_+size_) - element) * sizeof(T));
-#else
-        for (u32 i=element - data_; i<size_-1; ++i)
+        if constexpr (std::is_trivial<T>::value)
         {
-            data_[i] = std::move(data_[i+1]);
+            memmove(element, element+1, ((data_+size_) - element) * sizeof(T));
         }
-#endif
+        else
+        {
+            for (u32 i=element - data_; i<size_-1; ++i)
+            {
+                data_[i] = std::move(data_[i+1]);
+            }
+        }
         --size_;
         return element;
     }
@@ -218,20 +226,23 @@ public:
             it->~T();
         }
         u32 elementsRemoved = endPtr - startPtr;
-#if NO_SELF_REFERENCE
-        if (size_ > 0 && endPtr != end())
+        if constexpr (std::is_trivial<T>::value)
         {
-            memmove(startPtr, endPtr, (end() - endPtr) * sizeof(T));
-        }
-#else
-        if (size_ > 0 && endPtr != end())
-        {
-            for (u32 i=startPtr - data_; i<size_-1; ++i)
+            if (size_ > 0 && endPtr != end())
             {
-                startPtr[i] = std::move(data_[i + elementsRemoved]);
+                memmove(startPtr, endPtr, (end() - endPtr) * sizeof(T));
             }
         }
-#endif
+        else
+        {
+            if (size_ > 0 && endPtr != end())
+            {
+                for (u32 i=startPtr - data_; i<size_-1; ++i)
+                {
+                    startPtr[i] = std::move(data_[i + elementsRemoved]);
+                }
+            }
+        }
         size_ -= elementsRemoved;
         return startPtr;
     }
@@ -387,8 +398,3 @@ public:
         return NONE;
     }
 };
-#else
-#include <vector>
-template<typename T>
-using Array = std::vector<T>;
-#endif

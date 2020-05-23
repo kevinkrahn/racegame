@@ -904,24 +904,6 @@ public:
         }
     }
 
-    template<> void element(const char* name, DataFile::Value& val, Array<u8>& dest)
-    {
-        if (deserialize)
-        {
-            auto v = val.bytearray();
-            if (!v.hasValue())
-            {
-                DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"", name, "\"");
-            }
-            dest.clear();
-            dest.assign(v.val().begin(), v.val().end());
-        }
-        else
-        {
-            val.setBytearray(DataFile::Value::ByteArray(dest.begin(), dest.end()));
-        }
-    }
-
     template<typename T> void element(const char* name, DataFile::Value& val, OwnedPtr<T>& dest)
     {
         if (deserialize)

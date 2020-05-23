@@ -170,7 +170,7 @@ void Game::run()
     registerEntities();
     resourceManager.reset(new ResourceManager());
 
-    print("Took ", getTime() - loadStartTime, " seconds to load\n");
+    print("Loaded resources in ", getTime() - loadStartTime, " seconds\n");
 
     changeScene("race1");
 
