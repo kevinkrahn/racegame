@@ -328,7 +328,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
     }
 
-    chassisBatch.end();
+    chassisBatch.end(true);
     chassisOneMaterialBatch.end();
 }
 
@@ -348,27 +348,20 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
 }
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
-        glm::mat4* wheelTransforms, VehicleConfiguration const& config, Vehicle* vehicle,
+        glm::mat4* wheelTransforms, VehicleConfiguration& config, Vehicle* vehicle,
         bool isBraking, bool isHidden)
 {
-    // TODO: find some better way to handle paint materials
-    if (lastFrameIndex != g_game.frameIndex)
-    {
-        lastFrameIndex = g_game.frameIndex;
-        paintMaterials.clear();
-    }
-
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
-    paintMaterials.push_back(*originalPaintMaterial);
-    Material* coloredPaintMaterial = &paintMaterials.back();
-    coloredPaintMaterial->color = g_vehicleColors[config.colorIndex];
+
+    config.paintMaterial = *originalPaintMaterial;
+    config.paintMaterial.color = g_vehicleColors[config.colorIndex];
 
     for (auto& m : chassisBatch.batches)
     {
         Material* mat = m.material;
         if (mat == originalPaintMaterial)
         {
-            mat = coloredPaintMaterial;
+            mat = &config.paintMaterial;
         }
         rw->push(LitMaterialRenderable(&m.mesh, transform, mat, 0, 2));
     }
@@ -406,7 +399,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             Material* mat = m.material;
             if (mat == originalPaintMaterial)
             {
-                mat = coloredPaintMaterial;
+                mat = &config.paintMaterial;
             }
             rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2));
             if (isHidden)
@@ -461,21 +454,51 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             w->render(rw, transform, config, *this);
         }
     }
+
+    if (config.decals.empty())
+    {
+        VehicleDecal d;
+        d.position = { -0.5f, 0, 2 };
+        d.rotation = glm::rotate(glm::identity<glm::quat>(), PI * 0.5f, glm::vec3(0, 1, 0));
+        d.scale = { 4, 3, 3 };
+        d.decal.setColor(glm::vec3(1, 0, 0));
+        config.decals.push_back(std::move(d));
+    }
+    for (VehicleDecal& d : config.decals)
+    {
+        glm::mat4 decalTransform = glm::translate(glm::mat4(1.f), d.position)
+            * glm::mat4_cast(d.rotation)
+            * glm::scale(glm::mat4(1.f), d.scale);
+        if (d.dirty)
+        {
+            d.decal.begin(decalTransform);
+            for (auto& batch : chassisBatch.batches)
+            {
+                if (batch.material == originalPaintMaterial)
+                {
+                    d.decal.addMesh(&batch.mesh, glm::mat4(1.f));
+                    break;
+                }
+            }
+            d.decal.end();
+            d.decal.setTexture(g_res.getTexture(g_decalTextures[d.textureIndex]));
+            d.dirty = false;
+        }
+        d.decal.setTransform(transform * decalTransform);
+        rw->add(&d.decal);
+    }
 }
 
 void VehicleData::renderDebris(RenderWorld* rw,
-        Array<VehicleDebris> const& debris, VehicleConfiguration const& config)
+        Array<VehicleDebris> const& debris, VehicleConfiguration& config)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
-    paintMaterials.push_back(*originalPaintMaterial);
-    Material* coloredPaintMaterial = &paintMaterials.back();
-    coloredPaintMaterial->color = g_vehicleColors[config.colorIndex];
     for (auto const& d : debris)
     {
         Material* mat = d.meshInfo->material;
         if (mat == originalPaintMaterial)
         {
-            mat = coloredPaintMaterial;
+            mat = &config.paintMaterial;
         }
         glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
         rw->push(LitMaterialRenderable(d.meshInfo->mesh,

@@ -3,8 +3,7 @@
 
 void Decal::begin(glm::mat4 const& transform)
 {
-    this->transform = transform;
-    this->normalTransform = glm::inverseTranspose(glm::mat3(transform));
+    setTransform(transform);
     vertices.reserve(128);
 }
 

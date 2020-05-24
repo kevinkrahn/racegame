@@ -1,6 +1,6 @@
 #include "batcher.h"
 
-void Batcher::end()
+void Batcher::end(bool keepMeshData)
 {
     for (auto& itemsForThisMaterial : materialMap)
     {
@@ -87,11 +87,13 @@ void Batcher::end()
 
         bigBatchedMesh.createVAO();
 
-        // not needed anymore
-        bigBatchedMesh.vertices.clear();
-        bigBatchedMesh.vertices.shrink_to_fit();
-        bigBatchedMesh.indices.clear();
-        bigBatchedMesh.indices.shrink_to_fit();
+        if (!keepMeshData)
+        {
+            bigBatchedMesh.vertices.clear();
+            bigBatchedMesh.vertices.shrink_to_fit();
+            bigBatchedMesh.indices.clear();
+            bigBatchedMesh.indices.shrink_to_fit();
+        }
 
         batches.push_back({ itemsForThisMaterial.first, std::move(bigBatchedMesh) });
     }

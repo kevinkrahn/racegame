@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <functional>
 #include "math.h"
 
 template <typename T, u32 maxSize=8>
@@ -269,5 +270,42 @@ public:
     {
         assert(size_ > 0);
         return *((T*)data_ + (size_ - 1));
+    }
+
+    T* find(T const& needle)
+    {
+        for (auto it = begin(); it != end(); ++it)
+        {
+            if (*it == needle)
+            {
+                return it;
+            }
+        }
+        return nullptr;
+    }
+
+    T* find(std::function<bool(T const& e)> const& cb)
+    {
+        for (auto it = begin(); it != end(); ++it)
+        {
+            if (cb(*it))
+            {
+                return it;
+            }
+        }
+        return nullptr;
+    }
+
+    static constexpr u32 NONE = -1;
+    u32 findIndex(T const& needle)
+    {
+        for (u32 i=0; i<size_; ++i)
+        {
+            if (data_[i] == needle)
+            {
+                return i;
+            }
+        }
+        return NONE;
     }
 };

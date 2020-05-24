@@ -59,5 +59,10 @@ public:
     std::string getDebugString() const override { return "Decal"; }
     void onLitPassPriorityTransition(class Renderer* renderer) override;
     void onLitPass(class Renderer* renderer) override;
+    void setTransform(glm::mat4 const& transform)
+    {
+        this->transform = transform;
+        this->normalTransform = glm::inverseTranspose(glm::mat3(transform));
+    }
 };
 

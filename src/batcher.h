@@ -45,7 +45,7 @@ public:
         materialMap[material].push_back({ transform, mesh });
     }
 
-    void end();
+    void end(bool keepMeshData=false);
 
     void render(RenderWorld* rw, glm::mat4 const& transform=glm::mat4(1.f))
     {

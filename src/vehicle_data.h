@@ -196,6 +196,28 @@ std::string g_paintTypeNames[(i32)PaintType::MAX] = {
     "Matte"
 };
 
+const char* g_decalTextures[] = {
+    "vd_two"
+};
+
+struct VehicleDecal
+{
+    glm::vec3 position;
+    glm::quat rotation;
+    glm::vec3 scale;
+    u32 textureIndex = 0;
+    Decal decal;
+    bool dirty = true;
+
+    void serialize(Serializer& s)
+    {
+        s.field(position);
+        s.field(rotation);
+        s.field(scale);
+        s.field(textureIndex);
+    }
+};
+
 struct VehicleConfiguration
 {
     i32 colorIndex = 0;
@@ -206,6 +228,9 @@ struct VehicleConfiguration
     i32 rearWeaponIndices[3] = { -1, -1, -1 };
     u32 rearWeaponUpgradeLevel[3] = { 0, 0, 0 };
     i32 specialAbilityIndex = -1;
+    SmallArray<VehicleDecal> decals;
+
+    Material paintMaterial;
 
     struct Upgrade
     {
@@ -228,6 +253,7 @@ struct VehicleConfiguration
     {
         s.field(colorIndex);
         s.field(paintTypeIndex);
+        s.field(decals);
         s.fieldName("frontWeapon0", frontWeaponIndices[0]);
         s.fieldName("frontWeapon1", frontWeaponIndices[1]);
         s.fieldName("frontWeapon2", frontWeaponIndices[2]);
@@ -298,15 +324,13 @@ struct VehicleData
     u32 rearWeaponCount = 1;
 
     Array<VehicleMesh> debrisChunks;
-    Array<Material> paintMaterials;
-    u32 lastFrameIndex = 9999;
 
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
-            glm::mat4* wheelTransforms, VehicleConfiguration const& config,
+            glm::mat4* wheelTransforms, VehicleConfiguration& config,
             class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false);
     virtual void renderDebris(class RenderWorld* rw,
-            Array<VehicleDebris> const& debris, VehicleConfiguration const& config);
+            Array<VehicleDebris> const& debris, VehicleConfiguration& config);
 
     virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
     void loadModelData(const char* modelName);

@@ -28,7 +28,7 @@ struct Driver
             s.field(vehicleConfig);
         }
     };
-    Array<OwnedVehicle> ownedVehicles;
+    SmallArray<OwnedVehicle> ownedVehicles;
 
     VehicleConfiguration* getVehicleConfig()
     {
