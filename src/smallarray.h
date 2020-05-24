@@ -10,6 +10,8 @@ class SmallArray
     u32 size_;
 
 public:
+    using value_type = T;
+
     SmallArray() : size_(0) {}
 
     SmallArray(std::initializer_list<T> list) : size_((u32)list.size())
@@ -45,6 +47,11 @@ public:
         {
             new (ptr) T;
         }
+    }
+
+    SmallArray(T* start, T* end)
+    {
+        assign(start, end);
     }
 
     ~SmallArray() { clear(); }
@@ -112,7 +119,10 @@ public:
         assert(index <= size_);
         assert(size_ < maxSize);
         auto ptr = data_ + index;
-        memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
+        for (T* movePtr = end(); movePtr != data_ + index; --movePtr)
+        {
+            new (movePtr) T(std::move(*(movePtr - 1)));
+        }
         ++size_;
         new (ptr) T(val);
     }
@@ -129,7 +139,10 @@ public:
         assert(index <= size_);
         assert(size_ < maxSize);
         auto ptr = data_ + index;
-        memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
+        for (T* movePtr = end(); movePtr != data_ + index; --movePtr)
+        {
+            new (movePtr) T(std::move(*(movePtr - 1)));
+        }
         ++size_;
         new (ptr) T(std::move(val));
     }
@@ -187,11 +200,28 @@ public:
         size_ = newSize;
     }
 
+    // for compatibility with Array
+    void reserve(u32 capacity) { /* no-op */ }
+
+    void assign(T* start, T* end)
+    {
+        assert(start <= end);
+        clear();
+        size_ = end - start;
+        for (u32 i=0; i<size_; ++i)
+        {
+            new (data_+i) T(start[i]);
+        }
+    }
+
     void erase(T * element)
     {
         assert(element < data_ + size_);
         element->~T();
-        memmove(element, element+1, ((data_ + size_) - element) * sizeof(T));
+        for (u32 i=element - data_; i<size_-1; ++i)
+        {
+            data_[i] = std::move(data_[i+1]);
+        }
         --size_;
     }
 

@@ -746,109 +746,63 @@ public:
         else val = dest;
     }
 
-    template<> void element(const char* name, DataFile::Value& val, glm::vec2& dest)
+    template<typename T>
+    void realArray(const char* name, DataFile::Value& val, T& dest)
     {
+        u32 count = sizeof(dest) / sizeof(f32);
         if (deserialize)
         {
             auto v = val.array();
-            if (!v.hasValue() || v.val().size() < 2
-                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue())
+            if (!v.hasValue() || v.val().size() < count)
             {
-                DESERIALIZE_ERROR("Failed to read ARRAY (vec2) field: \"", name, "\"");
+                DESERIALIZE_ERROR("Failed to read real ARRAY [", count, "] field: \"", name, "\"");
             }
-            dest = { v.val()[0].real().val(), v.val()[1].real().val() };
+            for (u32 i=0; i<count; ++i)
+            {
+                auto optionalValue = v.val()[i].real();
+                if (!optionalValue.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read real ARRAY [", count, "] field: \"", name, "\"");
+                }
+                ((f32*)&dest)[i] = optionalValue.val();
+            }
         }
         else
         {
-            val = DataFile::makeArray(DataFile::Value::Array(
-                        { DataFile::makeReal(dest.x), DataFile::makeReal(dest.y) }));
+            val = DataFile::makeArray();
+            val.array().val().reserve(count);
+            for (u32 i=0; i<count; ++i)
+            {
+                val.array().val().push_back(DataFile::makeReal(((f32*)&dest)[i]));
+            }
         }
+    }
+
+    template<> void element(const char* name, DataFile::Value& val, glm::vec2& dest)
+    {
+        realArray(name, val, dest);
     }
 
     template<> void element(const char* name, DataFile::Value& val, glm::vec3& dest)
     {
-        if (deserialize)
-        {
-            auto v = val.array();
-            if (!v.hasValue() || v.val().size() < 3
-                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue()
-                    || !v.val()[2].real().hasValue())
-            {
-                DESERIALIZE_ERROR("Failed to read ARRAY (vec3) field: \"", name, "\"");
-            }
-            dest = { v.val()[0].real().val(), v.val()[1].real().val(), v.val()[2].real().val() };
-        }
-        else
-        {
-            val = DataFile::makeArray(DataFile::Value::Array({
-                        DataFile::makeReal(dest.x),
-                        DataFile::makeReal(dest.y),
-                        DataFile::makeReal(dest.z),
-                    }));
-        }
+        realArray(name, val, dest);
     }
 
     template<> void element(const char* name, DataFile::Value& val, glm::vec4& dest)
     {
-        if (deserialize)
-        {
-            auto v = val.array();
-            if (!v.hasValue() || v.val().size() < 4
-                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue()
-                    || !v.val()[2].real().hasValue() || !v.val()[3].real().hasValue())
-            {
-                DESERIALIZE_ERROR("Failed to read ARRAY (vec4) field: \"", name, "\"");
-            }
-            dest = {
-                v.val()[0].real().val(),
-                v.val()[1].real().val(),
-                v.val()[2].real().val(),
-                v.val()[3].real().val()
-            };
-        }
-        else
-        {
-            val = DataFile::makeArray(DataFile::Value::Array({
-                        DataFile::makeReal(dest.x),
-                        DataFile::makeReal(dest.y),
-                        DataFile::makeReal(dest.z),
-                        DataFile::makeReal(dest.w)
-                    }));
-        }
+        realArray(name, val, dest);
     }
 
     template<> void element(const char* name, DataFile::Value& val, glm::quat& dest)
     {
-        if (deserialize)
-        {
-            auto v = val.array();
-            if (!v.hasValue() || v.val().size() < 4
-                    || !v.val()[0].real().hasValue() || !v.val()[1].real().hasValue()
-                    || !v.val()[2].real().hasValue() || !v.val()[3].real().hasValue())
-            {
-                DESERIALIZE_ERROR("Failed to read ARRAY (quat) field: \"", name, "\"");
-            }
-            dest = {
-                v.val()[3].real().val(),
-                v.val()[0].real().val(),
-                v.val()[1].real().val(),
-                v.val()[2].real().val()
-            };
-        }
-        else
-        {
-            val = DataFile::makeArray(DataFile::Value::Array({
-                        DataFile::makeReal(dest.x),
-                        DataFile::makeReal(dest.y),
-                        DataFile::makeReal(dest.z),
-                        DataFile::makeReal(dest.w)
-                    }));
-        }
+        realArray(name, val, dest);
     }
 
-    template<typename T> void element(const char* name, DataFile::Value& val, Array<T>& dest)
+    template<typename T>
+    void array(const char* name, DataFile::Value& val, T& dest)
     {
-        if constexpr (std::is_arithmetic<T>::value)
+        using V = typename T::value_type;
+        if constexpr (std::is_arithmetic<V>::value)
         {
             if (deserialize)
             {
@@ -857,12 +811,12 @@ public:
                 {
                     DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"", name, "\"");
                 }
-                if (v.val().size() % sizeof(T) != 0)
+                if (v.val().size() % sizeof(V) != 0)
                 {
                     DESERIALIZE_ERROR("Cannot convert BYTEARRAY field: \"", name, "\"");
                 }
-                dest.assign(reinterpret_cast<T*>(v.val().data()),
-                        reinterpret_cast<T*>(v.val().data() + v.val().size()));
+                dest.assign(reinterpret_cast<V*>(v.val().data()),
+                        reinterpret_cast<V*>(v.val().data() + v.val().size()));
             }
             else
             {
@@ -884,7 +838,7 @@ public:
                 dest.reserve(v.val().size());
                 for (auto& item : v.val())
                 {
-                    T el;
+                    V el;
                     element(name, item, el);
                     dest.push_back(std::move(el));
                 }
@@ -902,6 +856,16 @@ public:
                 val.setArray(std::move(array));
             }
         }
+    }
+
+    template<typename T> void element(const char* name, DataFile::Value& val, Array<T>& dest)
+    {
+        array(name, val, dest);
+    }
+
+    template<typename T> void element(const char* name, DataFile::Value& val, SmallArray<T>& dest)
+    {
+        array(name, val, dest);
     }
 
     template<typename T> void element(const char* name, DataFile::Value& val, OwnedPtr<T>& dest)

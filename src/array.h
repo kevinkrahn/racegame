@@ -64,6 +64,8 @@ class Array
     }
 
 public:
+    using value_type = T;
+
     Array() {}
 
     Array(std::initializer_list<T> list) : size_(list.size()), capacity_(list.size())
@@ -191,7 +193,17 @@ public:
         assert(index <= size_);
         ensureCapacity();
         auto ptr = data_+index;
-        memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
+        if constexpr (std::is_trivial<T>::value)
+        {
+            memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
+        }
+        else
+        {
+            for (T* movePtr = end(); movePtr != ptr; --movePtr)
+            {
+                new (movePtr) T(std::move(*(movePtr - 1)));
+            }
+        }
         ++size_;
         new (ptr) T(val);
     }
@@ -208,7 +220,17 @@ public:
         assert(index <= size_);
         ensureCapacity();
         auto ptr = data_+index;
-        memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
+        if constexpr (std::is_trivial<T>::value)
+        {
+            memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
+        }
+        else
+        {
+            for (T* movePtr = end(); movePtr != ptr; --movePtr)
+            {
+                new (movePtr) T(std::move(*(movePtr - 1)));
+            }
+        }
         ++size_;
         new (ptr) T(std::move(val));
     }

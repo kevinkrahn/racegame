@@ -40,6 +40,7 @@
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
 - Fix depth issues with rumblestrip
+- Add hash table to replace std::map
 
 - Ideas:
     - Grenade launcher weapon
