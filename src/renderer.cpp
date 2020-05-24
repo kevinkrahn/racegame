@@ -1,9 +1,9 @@
 #include "renderer.h"
 #include "game.h"
 #include "scene.h"
-#include <fstream>
 #include <sstream>
-#include <map>
+
+#include <stb_include.h>
 
 constexpr u32 viewportGapPixels = 1;
 constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
@@ -28,7 +28,7 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallArray
     glShaderSource(shader, 2, sources, 0);
 }
 
-void Renderer::loadShader(std::string filename, SmallArray<std::string> defines, std::string name)
+void Renderer::loadShader(std::string filename, SmallArray<std::string> const& defines, std::string name)
 {
     if (name.empty())
     {
@@ -37,6 +37,7 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> defines,
 
     filename = "shaders/" + filename + ".glsl";
 
+#if 0
     std::ifstream file(filename);
     if (!file)
     {
@@ -48,11 +49,13 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> defines,
     file.close();
     std::string shaderStr = stream.str();
 
+    size_t slashIndex = filename.find_last_of('/');
+    std::string parentPath = (slashIndex == std::string::npos) ? "" : filename.substr(0, slashIndex+1);
+    std::string identifier = "#include";
+
     // add support for #include to glsl files
-    // TODO: investigate using stb_include
     while (true)
     {
-        std::string identifier = "#include";
         auto pos = shaderStr.find(identifier);
         if (pos == std::string::npos)
         {
@@ -64,13 +67,11 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> defines,
 
         auto trim = [](std::string const& s) -> std::string {
             auto front = std::find_if_not(s.begin(),s.end(), [](int c) { return isspace(c); });
-            return std::string(front, std::find_if_not(s.rbegin(), std::string::const_reverse_iterator(front), [](int c) { return isspace(c); }).base());
+            return std::string(front, std::find_if_not(s.rbegin(),
+                        std::string::const_reverse_iterator(front), [](int c) { return isspace(c); }).base());
         };
         std::string includeStr = trim(shaderStr.substr(offset, newLinePos - offset));
         includeStr.erase(std::remove(includeStr.begin(), includeStr.end(), '"'), includeStr.end());
-
-        size_t slashIndex = filename.find_last_of('/');
-        std::string parentPath = (slashIndex == std::string::npos) ? "" : filename.substr(0, slashIndex+1);
         std::string includePath = parentPath + includeStr;
 
         std::ifstream file(includePath);
@@ -86,6 +87,16 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> defines,
 
         shaderStr.replace(pos, newLinePos - pos, includeContent);
     }
+#else
+    char errorMsg[256];
+    char* shaderText = stb_include_file((char*)filename.c_str(), (char*)"", (char*)"shaders", errorMsg);
+    if (!shaderText)
+    {
+        error(errorMsg, '\n');
+    }
+    std::string shaderStr = shaderText;
+    free(shaderText);
+#endif
 
     GLint success, errorMessageLength;
     GLuint program = glCreateProgram();
@@ -404,10 +415,8 @@ void Renderer::render(f32 deltaTime)
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "2D Pass");
     glEnable(GL_BLEND);
 
-    std::stable_sort(renderables2D.begin(), renderables2D.end(), [&](auto& a, auto& b) {
-        return a.priority < b.priority;
-    });
-
+    // NOTE: stable sort to preserve the order the renderables were added
+    renderables2D.stableSort([&](auto& a, auto& b) { return a.priority < b.priority; });
     for (auto const& r : renderables2D)
     {
         r.renderable->on2DPass(this);
@@ -951,10 +960,7 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
-    std::stable_sort(renderables.begin(), renderables.end(), [&](auto& a, auto& b) {
-        return a.priority < b.priority;
-    });
-
+    renderables.sort([&](auto& a, auto& b) { return a.priority < b.priority; });
     for (u32 i=0; i<fbs.size(); ++i)
     {
         renderer->setCurrentRenderingCameraIndex(i);

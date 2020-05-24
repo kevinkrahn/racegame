@@ -1,6 +1,7 @@
 #pragma once
 
 #if _WIN32
+#include <windows.h>
 #else
 #include <dirent.h>
 #endif
@@ -8,7 +9,6 @@
 #include "misc.h"
 #include <string>
 #include <filesystem>
-#include <algorithm>
 
 struct FileItem
 {
@@ -78,7 +78,7 @@ Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
     closedir(dirp);
 #endif
 
-    std::sort(files.begin(), files.end(), [](FileItem const& a, FileItem const& b) {
+    files.sort([](auto& a, auto& b) {
         if (a.isDirectory && !b.isDirectory) return true;
         if (!a.isDirectory && b.isDirectory) return false;
         return a.path < b.path;

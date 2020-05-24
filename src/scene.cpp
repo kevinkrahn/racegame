@@ -12,7 +12,6 @@
 #include "entities/booster.h"
 #include "gui.h"
 #include "imgui.h"
-#include <algorithm>
 
 Scene::Scene(TrackData* data)
 {
@@ -153,8 +152,7 @@ void Scene::startRace()
             ++cameraIndex;
         }
     }
-    std::sort(createOrder.begin(), createOrder.end(),
-            [](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
+    createOrder.sort([](auto& a, auto& b) { return a.driver->lastPlacement < b.driver->lastPlacement; });
 
 #if 0
     u32 numVehicles = 2;
@@ -196,10 +194,7 @@ void Scene::startRace()
 
         vehicles.push_back(new Vehicle(this, vehicleTransform, -offset,
             driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
-    }
 
-    for (u32 i=0; i<vehicles.size(); ++i)
-    {
         placements.push_back(i);
     }
 
@@ -223,8 +218,8 @@ void Scene::buildBatches()
 void Scene::stopRace()
 {
     trackPreviewCameraFrom = g_game.renderer->getRenderWorld()->getCamera(0).position;
-    trackPreviewCameraTarget = (*std::find_if(vehicles.begin(), vehicles.end(),
-            [](auto& v) { return v->cameraIndex == 0; }))->getPosition();
+    trackPreviewCameraTarget =
+        vehicles.find([](auto& v) { return v->cameraIndex == 0; })->get()->getPosition();
 
     finishOrder.clear();
     placements.clear();
@@ -371,14 +366,22 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         // determine vehicle placement
         if (vehicles.size() > 0)
         {
-            f32 maxT = trackGraph.getStartNode()->t;
-            std::sort(placements.begin(), placements.end(), [&](u32 a, u32 b) {
-                return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
-                    maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
-            });
-            for (u32 i=0; i<placements.size(); ++i)
+            if (canGo())
             {
-                vehicles[placements[i]]->placement = i;
+                placements.clear();
+                for (u32 i=0; i<vehicles.size(); ++i)
+                {
+                    placements.push_back(i);
+                }
+                f32 maxT = trackGraph.getStartNode()->t;
+                placements.sort([&](u32 a, u32 b) {
+                    return maxT - vehicles[a]->graphResult.currentLapDistance + vehicles[a]->currentLap * maxT >
+                        maxT - vehicles[b]->graphResult.currentLapDistance + vehicles[b]->currentLap * maxT;
+                });
+                for (u32 i=0; i<placements.size(); ++i)
+                {
+                    vehicles[placements[i]]->placement = i;
+                }
             }
 
             // override placement with finish order for vehicles that have finished the race
@@ -943,9 +946,7 @@ void Scene::buildRaceResults()
             v->placement != 9999
         });
     }
-    std::sort(raceResults.begin(), raceResults.end(), [](auto& a, auto&b) {
-        return a.placement < b.placement;
-    });
+    raceResults.sort([](auto& a, auto&b) { return a.placement < b.placement; });
     for (u32 i=0; i<(u32)raceResults.size(); ++i)
     {
         raceResults[i].placement = i;
@@ -1342,10 +1343,7 @@ void Scene::showDebugInfo()
     ImGui::Text("Entities: %i", entities.size());
     ImGui::Text("Generated Paths: %s", hasGeneratedPaths ? "true" : "false");
     ImGui::Text("World Time: %.4f", worldTime);
-    auto playerVehicle = std::find_if(vehicles.begin(), vehicles.end(), [](auto& v) {
-        return v->driver->isPlayer;
-    });
-    if (playerVehicle != vehicles.end())
+    if (auto playerVehicle = vehicles.find([](auto& v) { return v->driver->isPlayer; }))
     {
         ImGui::Gap();
         (*playerVehicle)->showDebugInfo();

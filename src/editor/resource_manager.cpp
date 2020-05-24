@@ -18,7 +18,7 @@ static void sortResources(ResourceFolder& folder)
             ++it;
         }
     }
-    std::sort(folder.childResources.begin(), folder.childResources.end(), [](i64 a, i64 b) {
+    folder.childResources.sort([](i64 a, i64 b) {
         Resource* rA = g_res.resources.find(a)->second.get();
         Resource* rB = g_res.resources.find(b)->second.get();
         if (rA->type != rB->type) return (u32)rA->type < (u32)rB->type;
@@ -491,10 +491,9 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         {
             if (folderMove.payload.isFolder)
             {
-                auto removeIt = std::find_if(folderMove.payload.sourceFolder->childFolders.begin(),
-                                folderMove.payload.sourceFolder->childFolders.end(),
-                                [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
-                assert (removeIt != folderMove.payload.sourceFolder->childFolders.end());
+                auto removeIt = folderMove.payload.sourceFolder->childFolders.find(
+                            [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
+                assert(removeIt);
                 folderMove.dropFolder->childFolders.push_back(std::move(*removeIt));
                 folderMove.dropFolder->childFolders.back()->parent = folderMove.dropFolder;
                 folderMove.payload.sourceFolder->childFolders.erase(removeIt);
@@ -502,10 +501,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             else
             {
                 folderMove.payload.sourceFolder->childResources.erase(
-                        std::find(folderMove.payload.sourceFolder->childResources.begin(),
-                                folderMove.payload.sourceFolder->childResources.end(),
-                                folderMove.payload.resourceDragged->guid));
-                folderMove.dropFolder->childResources.push_back(folderMove.payload.resourceDragged->guid);
+                        folderMove.payload.sourceFolder->childResources.find(
+                            folderMove.payload.resourceDragged->guid));
+                folderMove.dropFolder->childResources.push_back(
+                        folderMove.payload.resourceDragged->guid);
             }
         }
         folderMove.dropFolder = nullptr;
@@ -604,9 +603,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
                 }
             }
         }
-        std::sort(searchResults.begin(), searchResults.end(), [](auto a, auto b) {
-            return a->name < b->name;
-        });
+        searchResults.sort([](auto& a, auto& b) { return a->name < b->name; });
 
         if (enterPressed)
         {

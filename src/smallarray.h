@@ -1,6 +1,7 @@
 #pragma once
 
-#include "misc.h"
+#include <utility>
+#include "math.h"
 
 template <typename T, u32 maxSize=8>
 class SmallArray
@@ -91,7 +92,7 @@ public:
     }
 
     // merge two vecs into one
-    SmallArray<T> concat(SmallArray<T> const& other)
+    SmallArray<T> concat(SmallArray<T> const& other) const
     {
         SmallArray<T> v;
         for (auto const& val : *this)

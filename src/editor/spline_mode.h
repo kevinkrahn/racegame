@@ -533,23 +533,20 @@ public:
                 auto& point = spline->points[i];
 
                 glm::mat4 transform = glm::translate(glm::mat4(1.f), point.position);
-                bool isSelected = std::find_if(selectedPoints.begin(), selectedPoints.end(), [&](auto& p) {
-                    return p.spline == spline && p.pointIndex == i;
-                }) != selectedPoints.end();
+                bool isSelected = !!selectedPoints.find([&](auto& p) {
+                    return p.spline == spline && p.pointIndex == i; });
                 glm::vec3 color = isSelected ? white : red;
                 rw->push(OverlayRenderable(sphereMesh, 0, transform, color));
 
-                isSelected = std::find_if(selectedHandles.begin(), selectedHandles.end(), [&](auto& p) {
-                    return p.spline == spline && p.pointIndex == i && p.firstHandle;
-                }) != selectedHandles.end();
+                isSelected = !!selectedHandles.find([&](auto& p) {
+                    return p.spline == spline && p.pointIndex == i && p.firstHandle; });
                 color = isSelected ? white : orange;
                 transform = glm::translate(glm::mat4(1.f), point.position + point.handleOffsetA) *
                             glm::scale(glm::mat4(1.f), glm::vec3(0.8f));
                 rw->push(OverlayRenderable(sphereMesh, 0, transform, color));
 
-                isSelected = std::find_if(selectedHandles.begin(), selectedHandles.end(), [&](auto& p) {
-                    return p.spline == spline && p.pointIndex == i && !p.firstHandle;
-                }) != selectedHandles.end();
+                isSelected = !!selectedHandles.find([&](auto& p) {
+                    return p.spline == spline && p.pointIndex == i && !p.firstHandle; });
                 color = isSelected ? white : orange;
                 transform = glm::translate(glm::mat4(1.f), point.position + point.handleOffsetB) *
                             glm::scale(glm::mat4(1.f), glm::vec3(0.8f));

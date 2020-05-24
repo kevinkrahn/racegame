@@ -72,9 +72,8 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                         ImGui::SameLine();
                     }
                     ImGui::PushID(itemIndex);
-                    auto selectIt = std::find(selectedPropTypes.begin(), selectedPropTypes.end(), itemIndex);
-                    bool isButtonSelected = selectIt != selectedPropTypes.end();
-                    if (isButtonSelected)
+                    auto selectIt = selectedPropTypes.find(itemIndex);
+                    if (selectIt)
                     {
                         const u32 selectedColor = 0x992299EE;
                         ImGui::PushStyleColor(ImGuiCol_Button, selectedColor);
@@ -82,11 +81,11 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     if (ImGui::ImageButton((void*)(uintptr_t)propPrefabs[itemIndex].icon.handle,
                                 ImVec2(iconSize, iconSize), {1,1}, {0,0}))
                     {
-                        if (!isButtonSelected && g_input.isKeyDown(KEY_LCTRL))
+                        if (!selectIt && g_input.isKeyDown(KEY_LCTRL))
                         {
                             selectedPropTypes.push_back(itemIndex);
                         }
-                        else if (isButtonSelected && g_input.isKeyDown(KEY_LSHIFT))
+                        else if (selectIt && g_input.isKeyDown(KEY_LSHIFT))
                         {
                             selectedPropTypes.erase(selectIt);
                         }
@@ -96,7 +95,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                             selectedPropTypes.push_back(itemIndex);
                         }
                     }
-                    if (isButtonSelected)
+                    if (selectIt)
                     {
                         ImGui::PopStyleColor();
                     }
@@ -147,10 +146,9 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                 {
                     continue;
                 }
-                auto it = std::find_if(selectedEntities.begin(), selectedEntities.end(),
-                        [&](PlaceableEntity* e){ return e == entity.get(); });
+                auto it = selectedEntities.find([&](PlaceableEntity* e) { return e == entity.get(); });
                 ImGui::PushID((void*)entity.get());
-                if (ImGui::Selectable(((PlaceableEntity*)entity.get())->getName(), it != selectedEntities.end()))
+                if (ImGui::Selectable(((PlaceableEntity*)entity.get())->getName(), !!it))
                 {
                     if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                     {
@@ -159,11 +157,11 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     }
                     else
                     {
-                        if (it == selectedEntities.end() && !g_input.isKeyDown(KEY_LSHIFT))
+                        if (it && !g_input.isKeyDown(KEY_LSHIFT))
                         {
                             selectedEntities.push_back((PlaceableEntity*)entity.get());
                         }
-                        if (it != selectedEntities.end() && !g_input.isKeyDown(KEY_LCTRL))
+                        if (!it && !g_input.isKeyDown(KEY_LCTRL))
                         {
                             selectedEntities.erase(it);
                         }

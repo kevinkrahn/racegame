@@ -454,10 +454,9 @@ void Menu::championshipGarage()
         {
         }
 
-        auto ownedVehicle = std::find_if(driver.ownedVehicles.begin(),
-                        driver.ownedVehicles.end(),
-                        [&](auto& e) { return e.vehicleIndex == currentVehicleIndex; });
-        bool isOwned = ownedVehicle != driver.ownedVehicles.end();
+        auto ownedVehicle = driver.ownedVehicles.find(
+                [&](auto& e) { return e.vehicleIndex == currentVehicleIndex; });
+        bool isOwned = !!ownedVehicle;
         VehicleData* vehicleData = g_vehicles[currentVehicleIndex].get();
 
         if (isOwned)
@@ -518,11 +517,9 @@ void Menu::championshipGarage()
         for (i32 i=0; i<(i32)driver.getVehicleData()->availableUpgrades.size(); ++i)
         {
             auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
-            auto currentUpgrade = std::find_if(
-                    vehicleConfig.performanceUpgrades.begin(),
-                    vehicleConfig.performanceUpgrades.end(),
+            auto currentUpgrade = vehicleConfig.performanceUpgrades.find(
                     [&](auto& u) { return u.upgradeIndex == i; });
-            bool isEquipped = currentUpgrade != vehicleConfig.performanceUpgrades.end();
+            bool isEquipped = !!currentUpgrade;
             i32 upgradeLevel = 1;
             const char* extraText = nullptr;
             i32 price = upgrade.price * upgradeLevel;

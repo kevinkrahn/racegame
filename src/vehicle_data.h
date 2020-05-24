@@ -6,8 +6,6 @@
 #include "weapon.h"
 #include "material.h"
 #include "batcher.h"
-#include <algorithm>
-#include <functional>
 
 #define WHEEL_FRONT_LEFT  PxVehicleDrive4WWheelOrder::eFRONT_LEFT
 #define WHEEL_FRONT_RIGHT PxVehicleDrive4WWheelOrder::eFRONT_RIGHT

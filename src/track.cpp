@@ -93,10 +93,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         glm::vec2 pointScreen = project(point, renderer->getRenderWorld()->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
 
-        auto it = std::find_if(selectedPoints.begin(), selectedPoints.end(), [&i](Selection& s) -> bool {
-            return s.pointIndex == i;
-        });
-        bool isSelected = it != selectedPoints.end();
+        auto it = selectedPoints.find([&i](auto& s) { return s.pointIndex == i; });
+        bool isSelected = !!it;
 
         if (isSelected)
         {
@@ -151,7 +149,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 isMouseHandled = true;
                 if (g_input.isKeyDown(KEY_LSHIFT))
                 {
-                    if (it != selectedPoints.end())
+                    if (isSelected)
                     {
                         selectedPoints.erase(it);
                     }
@@ -185,10 +183,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         auto& c = connections[i];
         if (isDragging)
         {
-            auto it = std::find_if(selectedPoints.begin(), selectedPoints.end(), [&c](Selection& s) -> bool {
-                return s.pointIndex == c->pointIndexA || s.pointIndex == c->pointIndexB;
-            });
-            if (it != selectedPoints.end())
+            if (selectedPoints.find([&c](auto& s) {
+                return s.pointIndex == c->pointIndexA || s.pointIndex == c->pointIndexB; }))
             {
                 c->isDirty = true;
             }
@@ -370,40 +366,6 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 points[c->pointIndexB].position + c->handleOffsetB + glm::vec3(0, 0, 0.01f),
                 glm::vec4(colorB, 1.f), glm::vec4(colorB, 1.f));
     }
-
-    // railing points
-#if 0
-    // place new railing points
-    if (!isDragging && !isMouseHandled)
-    {
-        for (auto& railing : railings)
-        {
-            if (railing->selectedPoints.size() > 0 && g_input.isKeyDown(KEY_LCTRL))
-            {
-                glm::vec3 hitPos = previewRailingPlacement(scene, renderer, cam.position, rayDir);
-                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-                {
-                    f32 d1 = glm::length2(railing->points.front().position - hitPos);
-                    f32 d2 = glm::length2(railing->points.back().position - hitPos);
-                    auto insertPos = d1 < d2 ? railing->points.begin() : railing->points.end();
-                    auto const& fromPoint = d1 < d2 ? railing->points.front() : railing->points.back();
-                    glm::vec3 handleOffset = (hitPos - fromPoint.position) * 0.35f;
-                    glm::vec3 handleOffsetA = d1 < d2 ? handleOffset : -handleOffset;
-                    glm::vec3 handleOffsetB = d1 < d2 ? -handleOffset : handleOffset;
-                    auto inserted = railing->points.insert(insertPos, {
-                        hitPos,
-                        handleOffsetA,
-                        handleOffsetB
-                    });
-                    railing->selectedPoints.clear();
-                    railing->selectedPoints.push_back({ (i32)(inserted - railing->points.begin()) });
-                    isMouseHandled = true;
-                }
-                break;
-            }
-        }
-    }
-#endif
 
     // handle dragging of points
     if (dragConnectionHandle == -1

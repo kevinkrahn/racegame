@@ -3,6 +3,9 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <functional>
+#include <utility>
+
 #include <SDL2/SDL.h>
 
 #include "math.h"

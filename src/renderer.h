@@ -8,8 +8,6 @@
 #include "dynamic_buffer.h"
 #include "buffer.h"
 
-#include <algorithm>
-
 enum
 {
     STENCIL_ENVIRONMENT = 0,
@@ -318,7 +316,7 @@ public:
     void initShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    void loadShader(std::string filename, SmallArray<std::string> defines={}, std::string name="");
+    void loadShader(std::string filename, SmallArray<std::string> const& defines={}, std::string name="");
     u32 getShader(const char* name, i32 viewportCount=0) const;
     GLuint getShaderProgram(const char* name) const;
     void render(f32 deltaTime);

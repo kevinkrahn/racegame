@@ -41,6 +41,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
     this->hitPoints = this->tuning.maxHitPoints;
     this->previousTargetPosition = translationOf(transform);
     this->rearWeaponTimer = 0.f + vehicleIndex * 0.2f;
+    this->placement = vehicleIndex;
 
     engineSound = g_audio.playSound3D(g_res.getSound("engine2"),
             SoundType::VEHICLE, translationOf(transform), true);

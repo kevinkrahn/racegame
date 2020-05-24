@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "vehicle_data.h"
-#include <algorithm>
 
 struct Driver
 {
@@ -33,10 +32,8 @@ struct Driver
 
     VehicleConfiguration* getVehicleConfig()
     {
-        auto ownedVehicle = std::find_if(ownedVehicles.begin(),
-                        ownedVehicles.end(),
-                        [&](auto& e) { return e.vehicleIndex == vehicleIndex; });
-        assert(ownedVehicle != ownedVehicles.end());
+        auto ownedVehicle = ownedVehicles.find([&](auto& e) { return e.vehicleIndex == vehicleIndex; });
+        assert(ownedVehicle);
         return &ownedVehicle->vehicleConfig;
     }
 

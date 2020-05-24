@@ -172,11 +172,7 @@ void VehicleData::initStandardUpgrades()
 
 VehicleConfiguration::Upgrade* VehicleConfiguration::getUpgrade(i32 upgradeIndex)
 {
-    auto currentUpgrade = std::find_if(
-            performanceUpgrades.begin(),
-            performanceUpgrades.end(),
-            [&](auto& u) { return u.upgradeIndex == upgradeIndex; });
-    return currentUpgrade != performanceUpgrades.end() ? &(*currentUpgrade) : nullptr;
+    return performanceUpgrades.find([&](auto& u) { return u.upgradeIndex == upgradeIndex; });
 }
 
 bool VehicleConfiguration::canAddUpgrade(struct Driver* driver, i32 upgradeIndex)

@@ -186,9 +186,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     continue;
                 }
 
-                auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
-                        [&](u32 index){ return index == i; });
-                if (ImGui::Selectable(model->objects[i].name.c_str(), it != selectedObjects.end()))
+                auto it = selectedObjects.find(i);
+                if (ImGui::Selectable(model->objects[i].name.c_str(), !!it))
                 {
                     if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                     {
@@ -197,11 +196,11 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     }
                     else
                     {
-                        if (it == selectedObjects.end() && !g_input.isKeyDown(KEY_LSHIFT))
+                        if (it && !g_input.isKeyDown(KEY_LSHIFT))
                         {
                             selectedObjects.push_back(i);
                         }
-                        if (it != selectedObjects.end() && !g_input.isKeyDown(KEY_LCTRL))
+                        if (!it && !g_input.isKeyDown(KEY_LCTRL))
                         {
                             selectedObjects.erase(it);
                         }
@@ -430,9 +429,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             if (i + 1 == *pixelID)
             {
-                auto it = std::find_if(selectedObjects.begin(), selectedObjects.end(),
-                        [&](u32 index){ return index == i; });
-                if (it == selectedObjects.end())
+                auto it = selectedObjects.find(i);
+                if (!it)
                 {
                     selectedObjects.push_back(i);
                 }
@@ -549,7 +547,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     {
         error("Failed to import blender file:\n");
         error(r.output);
-        // TODO: Show error message box
+        showError("Failed to import blender file. See console for details.");
         return;
     }
 
@@ -560,7 +558,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     if (!val.dict().hasValue())
     {
         error("Failed to import blender file: Unexpected data structure.\n");
-        // TODO: Show error message box
+        showError("Failed to import blender file. See console for details.");
         return;
     }
 
@@ -569,7 +567,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
             || val.dict().val()["scenes"].array().val().empty())
     {
         error("Failed to import blender file: No scenes found in file.\n");
-        // TODO: Show error message box
+        showError("The chosen does not contain any scenes.");
         return;
     }
 

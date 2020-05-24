@@ -1,6 +1,8 @@
 #pragma once
 
-#include "misc.h"
+#include <utility>
+#include <functional>
+#include "math.h"
 
 template <typename T>
 class Array
@@ -38,6 +40,27 @@ class Array
         }
         capacity_ += capacity_ / 2 + 4;
         reallocate();
+    }
+
+    void quickSort(i32 lowIndex, i32 highIndex,
+            std::function<bool(T const& a, T const& b)> const& compare)
+    {
+        if (lowIndex < highIndex)
+        {
+            i32 swapIndex = lowIndex - 1;
+            T const& pivot = data_[highIndex];
+            for (i32 i=lowIndex; i<highIndex; ++i)
+            {
+                if (compare(data_[i], pivot))
+                {
+                    std::swap(data_[++swapIndex], data_[i]);
+                }
+            }
+            std::swap(data_[swapIndex + 1], data_[highIndex]);
+            i32 middleIndex = swapIndex + 1;
+            quickSort(lowIndex, middleIndex - 1, compare);
+            quickSort(middleIndex + 1, highIndex, compare);
+        }
     }
 
 public:
@@ -361,23 +384,23 @@ public:
     u32 size() const { return size_; }
     u32 capacity() const { return capacity_; }
 
-    bool contains(T const& needle)
-    {
-        for (auto const& val : *this)
-        {
-            if (val == needle)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     T* find(T const& needle)
     {
         for (auto it = begin(); it != end(); ++it)
         {
             if (*it == needle)
+            {
+                return it;
+            }
+        }
+        return nullptr;
+    }
+
+    T* find(std::function<bool(T const& e)> const& cb)
+    {
+        for (auto it = begin(); it != end(); ++it)
+        {
+            if (cb(*it))
             {
                 return it;
             }
@@ -396,5 +419,33 @@ public:
             }
         }
         return NONE;
+    }
+
+    void sort()
+    {
+        sort([](T const& a, T const& b) { return a < b; });
+    }
+
+    void sort(std::function<bool(T const& a, T const& b)> const& compare)
+    {
+        quickSort(0, (i32)size_ - 1, compare);
+    }
+
+    void stableSort()
+    {
+        stableSort([](T const& a, T const& b) { return a < b; });
+    }
+
+    void stableSort(std::function<bool(T const& a, T const& b)> const& compare)
+    {
+        for (u32 i=0; i<size_; ++i)
+        {
+            u32 j = i;
+            while (j > 0 && compare(data_[j], data_[j-1]))
+            {
+                std::swap(data_[j-1], data_[j]);
+                j--;
+            }
+        }
     }
 };
