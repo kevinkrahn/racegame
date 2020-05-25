@@ -462,7 +462,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             * glm::scale(glm::mat4(1.f), d.scale);
         if (d.dirty)
         {
-            d.decal.begin(decalTransform);
+            d.decal.begin(decalTransform, true);
             for (auto& batch : chassisBatch.batches)
             {
                 if (batch.material == originalPaintMaterial)
@@ -476,7 +476,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             d.decal.setColor(d.color);
             d.dirty = false;
         }
-        d.decal.setTransform(transform * decalTransform);
+        d.decal.setTransform(transform);
         rw->add(&d.decal);
     }
 }

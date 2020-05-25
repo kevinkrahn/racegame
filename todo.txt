@@ -41,6 +41,8 @@
 - Compile in release mode with -ffastmath
 - Fix depth issues with rumblestrip
 - Add hash table to replace std::map
+- Replace std::string with custom string type
+- Support multiple keyboards (not supported by SDL)
 
 - Ideas:
     - Grenade launcher weapon

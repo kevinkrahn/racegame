@@ -1,10 +1,20 @@
 #include "decal.h"
 #include "renderer.h"
 
-void Decal::begin(glm::mat4 const& transform)
+struct DecalVertex
+{
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
+};
+
+void Decal::begin(glm::mat4 const& transform, bool worldSpace)
 {
     setTransform(transform);
-    vertices.reserve(128);
+    this->worldSpace = worldSpace;
+    mesh.destroy();
+    mesh.vertices.reserve(128 * sizeof(DecalVertex) / sizeof(f32));
+    mesh.indices.reserve(128);
 }
 
 void Decal::setTexture(Texture* tex, Texture* texNormal)
@@ -24,6 +34,28 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
         {  0.f, -1.f,  0.f },
         {  0.f,  0.f,  1.f },
         {  0.f,  0.f, -1.f }
+    };
+
+    glm::mat3 worldSpaceNormalTransform = glm::inverseTranspose(transform);
+    auto addVertex = [&](DecalVertex vert)
+    {
+        vert.uv = glm::vec2(vert.pos.y, vert.pos.z) + 0.5f;
+        if (worldSpace)
+        {
+            vert.pos = transform * glm::vec4(vert.pos, 1.f);
+            vert.normal = worldSpaceNormalTransform * vert.normal;
+        }
+
+        mesh.vertices.push_back(vert.pos.x);
+        mesh.vertices.push_back(vert.pos.y);
+        mesh.vertices.push_back(vert.pos.z);
+        mesh.vertices.push_back(vert.normal.x);
+        mesh.vertices.push_back(vert.normal.y);
+        mesh.vertices.push_back(vert.normal.z);
+        mesh.vertices.push_back(vert.uv.x);
+        mesh.vertices.push_back(vert.uv.y);
+
+        mesh.indices.push_back(mesh.indices.size());
     };
 
     glm::mat4 vertTransform = glm::inverse(transform) * meshTransform;
@@ -133,33 +165,20 @@ void Decal::addMesh(Mesh* mesh, glm::mat4 const& meshTransform)
 
 void Decal::end()
 {
-    if (vao)
-    {
-        glDeleteBuffers(0, &vbo);
-        glDeleteVertexArrays(0, &vao);
-    }
-
-    glCreateVertexArrays(1, &vao);
-
-    glCreateBuffers(1, &vbo);
-    glNamedBufferData(vbo, vertices.size() * sizeof(vertices[0]), vertices.data(), GL_STATIC_DRAW);
-    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(DecalVertex));
-
-    glEnableVertexArrayAttrib(vao, 0);
-    glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(vao, 0, 0);
-
-    glEnableVertexArrayAttrib(vao, 1);
-    glVertexArrayAttribFormat(vao, 1, 3, GL_FLOAT, GL_FALSE, 12);
-    glVertexArrayAttribBinding(vao, 1, 0);
-
-    glEnableVertexArrayAttrib(vao, 2);
-    glVertexArrayAttribFormat(vao, 2, 2, GL_FLOAT, GL_FALSE, 12 + 12);
-    glVertexArrayAttribBinding(vao, 2, 0);
-
-    vertexCount = (u32)vertices.size();
-    vertices.clear();
-    vertices.shrink_to_fit();
+    mesh.hasTangents = false;
+    mesh.vertexFormat = {
+        { 0, VertexAttributeType::FLOAT3 },
+        { 1, VertexAttributeType::FLOAT3 },
+        { 3, VertexAttributeType::FLOAT2 },
+    };
+    mesh.stride = sizeof(DecalVertex);
+    mesh.numVertices = mesh.vertices.size() / (sizeof(DecalVertex) / sizeof(f32));
+    mesh.numIndices = mesh.indices.size();
+    mesh.createVAO();
+    mesh.vertices.clear();
+    mesh.vertices.shrink_to_fit();
+    mesh.indices.clear();
+    mesh.indices.shrink_to_fit();
 }
 
 void Decal::onLitPassPriorityTransition(Renderer* renderer)
@@ -179,10 +198,10 @@ void Decal::onLitPass(Renderer* renderer)
     glPolygonOffset(0.f, -500.f);
     glBindTextureUnit(0, tex->handle);
     glBindTextureUnit(6, texNormal->handle);
-    glBindVertexArray(vao);
+    glBindVertexArray(mesh.vao);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
     glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalTransform));
     glUniform4f(2, color.x, color.y, color.z, color.a);
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
     glDisable(GL_POLYGON_OFFSET_FILL);
 }

@@ -25,6 +25,8 @@ struct Mesh
     std::string name;
     Array<f32> vertices;
     Array<u32> indices;
+
+    // TODO: remove these and only store vertexFormat
     u32 numVertices;
     u32 numIndices;
     u32 numColors;
