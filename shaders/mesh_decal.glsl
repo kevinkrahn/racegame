@@ -50,7 +50,7 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) in vec3 inWorldPosition;
 layout(location = 5) in vec3 inShadowCoord;
 
-layout(location = 2) uniform vec3 color;
+layout(location = 2) uniform vec4 color;
 //layout(location = 3) uniform vec3 reflection;
 layout(binding = 0) uniform sampler2D texSampler;
 layout(binding = 6) uniform sampler2D normalSampler;
@@ -64,7 +64,7 @@ void main()
 #else
     vec3 normal = normalize(inNormal);
 #endif
-    outColor = lighting(texture(texSampler, inTexCoord) * vec4(color, 1.0),
+    outColor = lighting(texture(texSampler, inTexCoord) * color,
             normal, inShadowCoord, inWorldPosition, 0.0, 0.0, vec3(1.0),
             0.0, 0.0, 0.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
 }

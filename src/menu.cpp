@@ -71,10 +71,11 @@ void Menu::mainMenu()
         print("Starting quick race with driver budget: ", driverCredits, '\n');
         Array<Driver> drivers;
         const u32 driverCount = 10;
+        i32 driverIndexOffset = irandom(series, 0, (i32)g_ais.size());
         for (u32 i=0; i<driverCount; ++i)
         {
             drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
-                        0, i==0 ? irandom(series, 0, (i32)g_ais.size()) : -1 + i));
+                        0, (driverIndexOffset + i) % g_ais.size()));
             drivers.back().credits = driverCredits;
             drivers.back().aiUpgrades(series);
         }

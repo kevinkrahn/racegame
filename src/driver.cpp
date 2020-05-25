@@ -37,6 +37,11 @@ void Driver::aiUpgrades(RandomSeries& series)
         VehicleConfiguration vehicleConfig;
         vehicleConfig.colorIndex = ai.colorIndex;
         vehicleIndex = (i32)ai.vehicleIndex;
+        if (ai.decalIndex != -1
+                && (i32)g_vehicles[vehicleIndex]->availableDecals.size() > ai.decalIndex)
+        {
+            vehicleConfig.decals.push_back(g_vehicles[vehicleIndex]->availableDecals[ai.decalIndex]);
+        }
         ownedVehicles.push_back({ vehicleIndex, vehicleConfig });
         credits -= g_vehicles[vehicleIndex]->price;
         AI_DEBUG_PRINT(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');

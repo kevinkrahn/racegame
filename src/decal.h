@@ -15,7 +15,7 @@ class Decal : public Renderable
 
     glm::mat4 transform;
     glm::mat3 normalTransform;
-    glm::vec3 color = { 1, 1, 1 };
+    glm::vec4 color = { 1, 1, 1, 1 };
     Texture* tex = nullptr;
     Texture* texNormal = nullptr;
     Array<DecalVertex> vertices;
@@ -25,7 +25,7 @@ class Decal : public Renderable
 
 public:
     Decal() {}
-    Decal(Texture* tex, glm::vec3 const& color = { 1, 1, 1 }, i32 priority=8000)
+    Decal(Texture* tex, glm::vec4 const& color = { 1, 1, 1, 1 }, i32 priority=8000)
         : color(color), tex(tex), priority(priority) {}
     ~Decal()
     {
@@ -36,7 +36,7 @@ public:
         }
     }
     void setPriority(i32 priority) { this->priority = priority; }
-    void setColor(glm::vec3 const& color) { this->color = color; }
+    void setColor(glm::vec4 const& color) { this->color = color; }
     void setTexture(Texture* tex, Texture* texNormal = nullptr);
     BoundingBox getBoundingBox() const
     {

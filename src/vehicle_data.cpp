@@ -455,15 +455,6 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         }
     }
 
-    if (config.decals.empty())
-    {
-        VehicleDecal d;
-        d.position = { -0.5f, 0, 2 };
-        d.rotation = glm::rotate(glm::identity<glm::quat>(), PI * 0.5f, glm::vec3(0, 1, 0));
-        d.scale = { 4, 3, 3 };
-        d.decal.setColor(glm::vec3(1, 0, 0));
-        config.decals.push_back(std::move(d));
-    }
     for (VehicleDecal& d : config.decals)
     {
         glm::mat4 decalTransform = glm::translate(glm::mat4(1.f), d.position)
@@ -482,6 +473,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             }
             d.decal.end();
             d.decal.setTexture(g_res.getTexture(g_decalTextures[d.textureIndex]));
+            d.decal.setColor(d.color);
             d.dirty = false;
         }
         d.decal.setTransform(transform * decalTransform);
@@ -552,16 +544,16 @@ void initializeVehicleData()
     //registerVehicle<VTruck>();
     //registerVehicle<VRacecar>();
 
-    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   "Red",         "Station Wagon");
-    registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   "Light Brown", "Muscle Car");
-    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, "Orange",      "Cool Car");
-    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  "Yellow",      "Cool Car");
-    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, "Blue",        "Muscle Car");
-    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   "Dark Blue",   "Muscle Car");
-    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   "Aruba",       "Station Wagon");
-    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  "White",       "Cool Car");
-    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  "Black",       "Station Wagon");
-    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  "Green",       "Muscle Car");
-    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  "Maroon",      "Cool Car");
-    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f,  "Dark Brown",  "Station Wagon");
+    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   "Red",         "Station Wagon", 2);
+    registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   "Red",         "Muscle Car", 2);
+    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, "Orange",      "Cool Car", 0);
+    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  "Yellow",      "Cool Car", 1);
+    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, "Blue",        "Muscle Car", 0);
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   "Dark Blue",   "Muscle Car", 1);
+    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   "Aruba",       "Station Wagon", 1);
+    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  "White",       "Cool Car", -1);
+    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  "Black",       "Station Wagon", 0);
+    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  "Green",       "Muscle Car", 2);
+    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  "Maroon",      "Cool Car", 2);
+    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f,  "Dark Brown",  "Station Wagon", -1);
 }

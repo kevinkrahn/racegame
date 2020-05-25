@@ -182,7 +182,7 @@ void Decal::onLitPass(Renderer* renderer)
     glBindVertexArray(vao);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
     glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalTransform));
-    glUniform3f(2, color.x, color.y, color.z);
+    glUniform4f(2, color.x, color.y, color.z, color.a);
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
     glDisable(GL_POLYGON_OFFSET_FILL);
 }

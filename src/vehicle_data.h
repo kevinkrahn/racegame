@@ -22,6 +22,7 @@ struct ComputerDriverData
     f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
     u32 colorIndex = 0;
     u32 vehicleIndex = 0;
+    i32 decalIndex = -1;
 };
 
 struct RegisteredWeapon
@@ -197,14 +198,23 @@ std::string g_paintTypeNames[(i32)PaintType::MAX] = {
 };
 
 const char* g_decalTextures[] = {
-    "vd_two"
+    "vd_two",
+    "vd_six",
+    "vd_stripe",
+    "vd_stripes",
+    "vd_stripes2",
+    "vd_flames",
 };
 
+glm::quat FACING_DOWN = glm::rotate(glm::identity<glm::quat>(), PI * 0.5f, glm::vec3(0, 1, 0));
+glm::quat FACING_RIGHT = glm::rotate(glm::identity<glm::quat>(), PI * 0.5f, glm::vec3(0, 0, 1));
+glm::quat FACING_LEFT = glm::rotate(glm::identity<glm::quat>(), PI * -0.5f, glm::vec3(0, 0, 1));
 struct VehicleDecal
 {
-    glm::vec3 position;
-    glm::quat rotation;
-    glm::vec3 scale;
+    glm::vec3 position = { 0, 0, 2 };
+    glm::vec3 scale = { 4, 3, 3 };
+    glm::quat rotation = glm::identity<glm::quat>();
+    glm::vec4 color = { 1, 1, 1, 1 };
     u32 textureIndex = 0;
     Decal decal;
     bool dirty = true;
@@ -214,6 +224,7 @@ struct VehicleDecal
         s.field(position);
         s.field(rotation);
         s.field(scale);
+        s.field(color);
         s.field(textureIndex);
     }
 };
@@ -316,6 +327,7 @@ struct VehicleData
 
     Array<VehicleCollisionsMesh> collisionMeshes;
     Array<PerformanceUpgrade> availableUpgrades;
+    SmallArray<VehicleDecal> availableDecals;
 
     const char* name ="";
     const char* description ="";
@@ -371,7 +383,7 @@ void registerVehicle()
 }
 
 void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear,
-    const char* colorName, const char* vehicleName)
+    const char* colorName, const char* vehicleName, i32 decalIndex=-1)
 {
     g_ais.push_back({
         name,
@@ -381,6 +393,7 @@ void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awarenes
         fear,
         findColorIndexByName(colorName),
         findVehicleIndexByName(vehicleName),
+        decalIndex,
     });
 }
 
