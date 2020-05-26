@@ -270,6 +270,8 @@ bool Scene::canGo() const
 
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    TIMED_BLOCK();
+
     RenderWorld* rw = renderer->getRenderWorld();
     rw->setShadowBounds({}, false);
     rw->setClearColor(g_game.isEditing || g_game.isDebugCameraEnabled);

@@ -297,6 +297,8 @@ void Renderer::init()
 
 void Renderer::render(f32 deltaTime)
 {
+    TIMED_BLOCK();
+
     renderablesCount = 0;
     for (RenderWorld* rw : renderWorlds)
     {
@@ -1009,6 +1011,8 @@ void RenderWorld::partitionPointLights(u32 viewportIndex)
 
 void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 {
+    TIMED_BLOCK();
+
     // update worldinfo uniform buffer
     partitionPointLights(index);
     worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);

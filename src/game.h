@@ -66,6 +66,7 @@ public:
     u32 windowHeight;
     f32 realDeltaTime;
     f32 deltaTime;
+    f64 cpuTime = 1.f;
     f64 currentTime = 0.0;
     f64 timeDilation = 1.0; // TODO: use this somewhere
     u64 frameCount = 0;
@@ -95,6 +96,10 @@ public:
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isMotionGridDebugVisualizationEnabled = false;
     bool isPathVisualizationEnabled = false;
+    std::map<const char*, f64> timedBlocks;
+    std::map<const char*, f64> previousFrameTimedBlocks;
+    f64 previousCpuTime = 1.f;
+    bool isTimedBlockTrackingPaused = false;
     /*
     Array<std::string> debugLogs;
     template <typename T, typename... Args>
@@ -125,3 +130,16 @@ char* tstr(Args const&... args)
     u8* mem = g_game.tempMem.writeBytes((void*)s.data(), s.size() + 1);
     return reinterpret_cast<char*>(mem);
 }
+
+struct TimedBlock
+{
+    const char* name;
+    f64 startTime;
+
+    ~TimedBlock()
+    {
+        g_game.timedBlocks[name] += getTime() - startTime;
+    }
+};
+#define TIMED_BLOCK() TimedBlock timedBlock{ __PRETTY_FUNCTION__, getTime() }
+

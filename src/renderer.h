@@ -8,6 +8,28 @@
 #include "dynamic_buffer.h"
 #include "buffer.h"
 
+struct RenderItem
+{
+    enum RenderFlags
+    {
+        CULLING,
+        WIREFRAME,
+        DEPTH_OFFSET,
+        NO_DEPTH_READ,
+        NO_DEPTH_WRITE,
+        TRANSPARENT,
+    };
+
+    GLuint program;
+    GLuint vao;
+    u32 indexCount;
+    u32 renderFlags;
+    f32 depthOffset;
+    std::function<void()> setUniforms;
+    f32 pad[2];
+};
+static_assert(sizeof(RenderItem) == 64);
+
 enum
 {
     STENCIL_ENVIRONMENT = 0,
@@ -157,6 +179,11 @@ class RenderWorld
     };
     Array<QueuedRenderable> renderables;
 
+    Array<RenderItem> depthPrepassRenderItems;
+    Array<RenderItem> shadowPassRenderItems;
+    Array<RenderItem> colorPassRenderItems;
+    Array<RenderItem> highlightPassRenderItems;
+
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
     bool bloomEnabled = false;
@@ -204,6 +231,10 @@ public:
         add(ptr);
         return ptr;
     }
+
+    void addDepthPrepassItem(RenderItem&& item) { depthPrepassRenderItems.push_back(std::move(item)); }
+    void addShadowPassItem(RenderItem&& item) { shadowPassRenderItems.push_back(std::move(item)); }
+    void addColorPassItem(RenderItem&& item) { colorPassRenderItems.push_back(std::move(item)); }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
     Texture releaseTexture(u32 cameraIndex=0);

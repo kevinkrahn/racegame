@@ -258,6 +258,15 @@ void Game::run()
         ++frameCount;
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        cpuTime = getTime() - frameStartTime;
+        if (!isTimedBlockTrackingPaused)
+        {
+            previousFrameTimedBlocks = std::move(timedBlocks);
+            previousCpuTime = cpuTime;
+        }
+        timedBlocks.clear();
+
         SDL_GL_SwapWindow(g_game.window);
 
         if (!config.graphics.vsync)
@@ -423,6 +432,8 @@ void Game::checkDebugKeys()
         ImGui::Text("FPS: %.3f", 1.f / g_game.realDeltaTime);
         ImGui::Text("Average FPS: %.3fms", 1.f / g_game.averageDeltaTime);
         ImGui::Text("Frame Time: %.3fms", g_game.realDeltaTime * 1000);
+        ImGui::Text("CPU Time: %.3fms", g_game.cpuTime * 1000);
+        ImGui::Text("Swap Wait Time: %.3fms", (g_game.realDeltaTime - g_game.cpuTime) * 1000);
         ImGui::Text("Average Frame Time: %.3fms", g_game.averageDeltaTime * 1000);
         ImGui::Text("Highest Frame Time: %.3fms", g_game.allTimeHighestDeltaTime * 1000);
         ImGui::Text("Lowest Frame Time: %.3fms", g_game.allTimeLowestDeltaTime * 1000);
@@ -433,9 +444,15 @@ void Game::checkDebugKeys()
         ImGui::Text("Time Dilation: %f", g_game.timeDilation);
         ImGui::Text("Renderables: %i", renderer->getRenderablesCount());
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        ImGui::Gap();
+
+        ImGui::Checkbox("Timing Collection Paused", &isTimedBlockTrackingPaused);
+        for (auto& pair : previousFrameTimedBlocks)
+        {
+            ImGui::Text("%5.2f %s", (pair.second / previousCpuTime) * 100.f, pair.first);
+        }
+
+        ImGui::Gap();
 
         ImGui::Checkbox("Debug Camera", &isDebugCameraEnabled);
         ImGui::Checkbox("Physics Visualization", &isPhysicsDebugVisualizationEnabled);

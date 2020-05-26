@@ -165,6 +165,8 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
 
 void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 {
+    TIMED_BLOCK();
+
     if (cameraIndex >= 0)
     {
         Font& font1 = g_res.getFont("font_bold", (u32)(g_game.windowHeight * 0.04f));
@@ -275,6 +277,8 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
 void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 {
+    TIMED_BLOCK();
+
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         scene->ribbons.addChunk(&tireMarkRibbons[i]);
@@ -346,6 +350,8 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
 
 void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 {
+    TIMED_BLOCK();
+
     bool isPlayerControlled = driver->isPlayer;
 
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -942,7 +948,7 @@ void Vehicle::showDebugInfo()
     ImGui::Text("Engine RPM: %f", vehiclePhysics.getEngineRPM());
     ImGui::Text("Speed: %f", vehiclePhysics.getForwardSpeed());
     const char* gearNames[] = { "REVERSE", "NEUTRAL", "1", "2", "3", "4", "5", "6", "7", "8" };
-    ImGui::Text("Speed: %s", gearNames[vehiclePhysics.getCurrentGear()]);
+    ImGui::Text("Gear: %s", gearNames[vehiclePhysics.getCurrentGear()]);
     ImGui::Text("Lap Progress: %f", graphResult.currentLapDistance);
     ImGui::Text("Lap Low Mark: %f", graphResult.lapDistanceLowMark);
 }
