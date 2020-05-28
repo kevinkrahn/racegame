@@ -78,7 +78,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
         return;
     }
     print("OpenGL Debug (", id, "): ", message, '\n');
-    //assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
+    assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
 }
 #endif
 
@@ -403,7 +403,7 @@ void Game::checkDebugKeys()
 
     if (g_input.isKeyPressed(KEY_F9))
     {
-        renderer->initShaders();
+        renderer->reloadShaders();
     }
 
     if (isDebugOverlayEnabled)

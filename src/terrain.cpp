@@ -703,14 +703,14 @@ void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 mate
 void Terrain::onShadowPass(class Renderer* renderer)
 {
     // TODO: should the terrain cast shadow?
-    glUseProgram(renderer->getShaderProgram("terrain"));
+    glUseProgram(renderer->getShaderProgram(depthShader));
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
 
 void Terrain::onDepthPrepass(class Renderer* renderer)
 {
-    glUseProgram(renderer->getShaderProgram("terrain"));
+    glUseProgram(renderer->getShaderProgram(depthShader));
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
@@ -727,7 +727,7 @@ void Terrain::onLitPass(class Renderer* renderer)
     glBindTextureUnit(7, m.textures[1]->handle);
     glBindTextureUnit(8, m.textures[2]->handle);
     glBindTextureUnit(9, m.textures[3]->handle);
-    glUseProgram(renderer->getShaderProgram("terrain"));
+    glUseProgram(renderer->getShaderProgram(colorShader));
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
     glUniform4fv(5, 1, m.texScale);

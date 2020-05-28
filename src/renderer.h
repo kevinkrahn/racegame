@@ -10,20 +10,10 @@
 
 struct RenderItem
 {
-    enum RenderFlags
-    {
-        CULLING,
-        WIREFRAME,
-        DEPTH_OFFSET,
-        NO_DEPTH_READ,
-        NO_DEPTH_WRITE,
-        TRANSPARENT,
-    };
-
-    GLuint program;
+    ShaderHandle program;
     GLuint vao;
     u32 indexCount;
-    u32 renderFlags;
+    u32 flags;
     f32 depthOffset;
     std::function<void()> setUniforms;
     f32 pad[2];
@@ -183,6 +173,7 @@ class RenderWorld
     Array<RenderItem> shadowPassRenderItems;
     Array<RenderItem> colorPassRenderItems;
     Array<RenderItem> highlightPassRenderItems;
+    Array<RenderItem> colorPickRenderItems;
 
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
@@ -312,7 +303,19 @@ private:
     u32 fullscreenBlurDivisor = 4;
     u32 settingsVersion = 0;
 
-    std::map<std::string, GLuint> shaderPrograms;
+    struct ShaderProgramData
+    {
+        const char* name;
+        SmallArray<ShaderDefine> defines;
+    };
+    Array<GLuint> shaderPrograms;
+    Array<ShaderProgramData> shaderProgramData;
+
+    // TODO: remove
+    std::map<const char*, ShaderHandle> shaderNameMap;
+    void loadShaders();
+    void loadShader(const char* filename, SmallArray<const char*> defines={}, const char* name=nullptr);
+    void loadShader(ShaderHandle handle);
 
     struct QueuedRenderable2D
     {
@@ -322,11 +325,13 @@ private:
     Array<QueuedRenderable2D> renderables2D;
     Array<RenderWorld*> renderWorlds;
 
-    void glShaderSources(GLuint shader, std::string const& src, SmallArray<std::string> const& defines);
-
     void createFullscreenFramebuffers();
 
 public:
+    // TODO: remove
+    GLuint getShaderProgram(const char* name) { return shaderPrograms[shaderNameMap[name]]; }
+    GLuint getShaderProgram(ShaderHandle handle) { return shaderPrograms[handle]; }
+
     void add2D(Renderable2D* renderable, i32 priority=0)
     {
         renderables2D.push_back({ priority, renderable });
@@ -344,19 +349,17 @@ public:
     u32 getCurrentRenderingCameraIndex() const { return currentRenderingCameraIndex; }
     void setCurrentRenderingCameraIndex(u32 index) { currentRenderingCameraIndex = index; }
     void init();
-    void initShaders();
+    void reloadShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    void loadShader(std::string filename, SmallArray<std::string> const& defines={}, std::string name="");
-    u32 getShader(const char* name, i32 viewportCount=0) const;
-    GLuint getShaderProgram(const char* name) const;
+    ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines);
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
     void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }
     void updateSettingsVersion()
     {
         ++settingsVersion;
-        initShaders();
+        reloadShaders();
         updateFramebuffers();
         renderWorld.settingsVersion = settingsVersion;
     }
@@ -364,4 +367,3 @@ public:
     size_t getTempRenderBufferSize() const { return renderWorld.tempRenderBuffer.pos; }
     u32 getRenderablesCount() { return renderablesCount; }
 };
-

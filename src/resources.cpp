@@ -77,5 +77,14 @@ void Resources::load()
             }
         }
     }
+
+    for (auto& r : resources)
+    {
+        if (r.second->type == ResourceType::MATERIAL)
+        {
+            ((Material*)r.second.get())->loadShaderHandles();
+        }
+    }
+    defaultMaterial.loadShaderHandles();
 }
 

@@ -13,8 +13,10 @@ void main()
 {
     outWorldPosition = attrPosition;
     gl_Position = cameraViewProjection * vec4(outWorldPosition, 1.0);
+#if !defined DEPTH_ONLY
     outNormal = attrNormal;
     outShadowCoord = (shadowViewProjectionBias * vec4(outWorldPosition, 1.0)).xyz;
+#endif
 }
 
 #elif defined FRAG
@@ -33,6 +35,7 @@ layout(binding = 6) uniform sampler2D specSampler;
 
 void main()
 {
+#if !defined DEPTH_ONLY
     const float texScale = 0.1;
 
 #if 1
@@ -79,5 +82,6 @@ void main()
 
     //outColor = vec4((inNormal + 1.0) * 0.5, 1.0);
     //outColor = vec4((worldNormal + 1.0) * 0.5, 1.0);
+#endif
 }
 #endif

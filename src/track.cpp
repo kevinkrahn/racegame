@@ -715,7 +715,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
 
 void Track::onShadowPass(class Renderer* renderer)
 {
-    glUseProgram(renderer->getShaderProgram("track"));
+    glUseProgram(renderer->getShaderProgram(depthShader));
     for (auto& c : connections)
     {
         glBindVertexArray(c->vao);
@@ -725,7 +725,7 @@ void Track::onShadowPass(class Renderer* renderer)
 
 void Track::onDepthPrepass(class Renderer* renderer)
 {
-    glUseProgram(renderer->getShaderProgram("track"));
+    glUseProgram(renderer->getShaderProgram(depthShader));
     for (auto& c : connections)
     {
         glBindVertexArray(c->vao);
@@ -744,7 +744,7 @@ void Track::onLitPass(class Renderer* renderer)
     glBindTextureUnit(5, g_res.getTexture("tarmac_normal")->handle);
     glBindTextureUnit(6, g_res.getTexture("tarmac_spec")->handle);
     glStencilMask(0x0);
-    glUseProgram(renderer->getShaderProgram("track"));
+    glUseProgram(renderer->getShaderProgram(colorShader));
     for (auto& c : connections)
     {
         glBindVertexArray(c->vao);

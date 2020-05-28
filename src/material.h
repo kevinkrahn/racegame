@@ -3,6 +3,7 @@
 #include "math.h"
 #include "datafile.h"
 #include "resource.h"
+#include "gl.h"
 
 enum struct MaterialType
 {
@@ -87,4 +88,14 @@ public:
         s.field(colorTexture);
         s.field(normalMapTexture);
     }
+
+    ShaderHandle colorShaderHandle = 0;
+    ShaderHandle depthShaderHandle = 0;
+    ShaderHandle shadowShaderHandle = 0;
+    ShaderHandle pickShaderHandle = 0;
+    u32 renderFlags = 0;
+    GLuint textureColorHandle = 0;
+    GLuint textureNormalHandle = 0;
+
+    void loadShaderHandles(SmallArray<ShaderDefine> additionalDefines={});
 };

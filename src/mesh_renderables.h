@@ -11,8 +11,6 @@ public:
     Material* material;
     glm::mat4 transform;
     Mesh* mesh;
-    GLuint textureColor;
-    GLuint textureNormal;
     u32 pickID;
     u8 stencil;
     bool highlightModeEnabled;
@@ -23,17 +21,7 @@ public:
             u32 pickID=0, u8 stencil=0, bool highlightModeEnabled=false, u8 highlightStep=0, u8 cameraIndex=0)
         : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil),
         highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep), cameraIndex(cameraIndex)
-    {
-        textureColor = material->colorTexture
-            ? g_res.getTexture(material->colorTexture)->handle : g_res.white.handle;
-#if 0
-        textureNormal = material->normalMapTexture
-            ? g_res.getTexture(material->normalMapTexture)->handle : g_res.identityNormal.handle;
-#else
-        textureNormal = material->normalMapTexture
-            ? g_res.getTexture(material->normalMapTexture)->handle : 0;
-#endif
-    }
+    {}
 
     i32 getPriority() const override
     {
@@ -42,7 +30,7 @@ public:
             + (material->depthOffset != 0.f ? -1 : 0)
             + (!material->isDepthWriteEnabled ? 10 : 0)
             + (material->alphaCutoff > 0.f ? 100 : 0)
-            + (textureNormal != 0 ? 500 : 0)
+            + (material->textureNormalHandle != 0 ? 500 : 0)
             + (highlightModeEnabled ? 250000 : 0)
             + (highlightStep * 50000);
     }
@@ -51,8 +39,7 @@ public:
     {
         if (material->isDepthWriteEnabled && !highlightModeEnabled)
         {
-            glUseProgram(renderer->getShaderProgram(
-                (material->alphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
+            glUseProgram(renderer->getShaderProgram(material->depthShaderHandle));
         }
     }
 
@@ -65,7 +52,7 @@ public:
             {
                 glUniform1f(5, material->alphaCutoff);
             }
-            glBindTextureUnit(0, textureColor);
+            glBindTextureUnit(0, material->textureColorHandle);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
             glBindVertexArray(mesh->vao);
             glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
@@ -76,8 +63,7 @@ public:
     {
         if (material->castsShadow && !highlightModeEnabled)
         {
-            glUseProgram(renderer->getShaderProgram(
-                (material->shadowAlphaCutoff > 0.f || material->isTransparent) ? "lit_discard" : "lit"));
+            glUseProgram(renderer->getShaderProgram(material->shadowShaderHandle));
         }
     }
 
@@ -90,7 +76,7 @@ public:
             {
                 glUniform1f(5, material->shadowAlphaCutoff);
             }
-            glBindTextureUnit(0, textureColor);
+            glBindTextureUnit(0, material->textureColorHandle);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
             glBindVertexArray(mesh->vao);
             glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
@@ -172,20 +158,15 @@ public:
             glStencilMask(0xFF);
         }
 
-        const char* shaderProgram = material->alphaCutoff > 0.f ? "lit_discard" : "lit";
-        if (material->normalMapTexture != 0)
-        {
-            shaderProgram = "lit_normal_map";
-        }
-        glUseProgram(renderer->getShaderProgram(shaderProgram));
+        glUseProgram(renderer->getShaderProgram(material->colorShaderHandle));
     }
 
     void onLitPass(Renderer* renderer) override
     {
-        glBindTextureUnit(0, textureColor);
-        if (textureNormal)
+        glBindTextureUnit(0, material->textureColorHandle);
+        if (material->textureNormalHandle)
         {
-            glBindTextureUnit(5, textureNormal);
+            glBindTextureUnit(5, material->textureNormalHandle);
         }
 
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
@@ -243,8 +224,7 @@ public:
 
     void onPickPassPriorityTransition(Renderer* renderer) override
     {
-        glUseProgram(renderer->getShaderProgram(
-                    material->alphaCutoff > 0.f ? "lit_discard_id" : "lit_id"));
+        glUseProgram(renderer->getShaderProgram(material->pickShaderHandle));
     }
 
     void onPickPass(Renderer* renderer) override
@@ -254,7 +234,7 @@ public:
             return;
         }
 
-        glBindTextureUnit(0, textureColor);
+        glBindTextureUnit(0, material->textureColorHandle);
 
         glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(transform));
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));

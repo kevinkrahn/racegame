@@ -156,6 +156,9 @@ private:
     void createSegmentMesh(BezierSegment& segment, Scene* scene);
     void computeBoundingBox();
 
+    ShaderHandle colorShader = getShaderHandle("track");
+    ShaderHandle depthShader = getShaderHandle("track", { {"DEPTH_ONLY"} });
+
     Mesh previewMesh;
     void buildPreviewMesh(Scene* scene);
 

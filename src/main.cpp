@@ -6,6 +6,7 @@
 #include "batcher.cpp"
 #include "datafile.cpp"
 #include "resources.cpp"
+#include "material.cpp"
 #include "texture.cpp"
 #include "vehicle.cpp"
 #include "vehicle_data.cpp"

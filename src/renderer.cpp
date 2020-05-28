@@ -8,7 +8,13 @@
 constexpr u32 viewportGapPixels = 1;
 constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
 
-void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallArray<std::string> const& defines)
+ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines)
+{
+    return g_game.renderer->getShaderHandle(name, defines);
+}
+
+void glShaderSources(GLuint shader, std::string const& src,
+        SmallArray<ShaderDefine> const& defines, ShaderDefine const& stageDefine)
 {
     std::ostringstream str;
     str << "#version 450\n";
@@ -21,73 +27,37 @@ void Renderer::glShaderSources(GLuint shader, std::string const& src, SmallArray
     str << "#define LIGHT_SPLITS " << LIGHT_SPLITS << '\n';
     for (auto const& d : defines)
     {
-        str << "#define " << d << '\n';
+        str << "#define " << d.name << d.value << '\n';
     }
+    str << "#define " << stageDefine.name << stageDefine.value << '\n';
     std::string tmp = str.str();
     const char* sources[] = { tmp.c_str(), src.c_str() };
     glShaderSource(shader, 2, sources, 0);
 }
 
-void Renderer::loadShader(std::string filename, SmallArray<std::string> const& defines, std::string name)
+// TODO: remove
+void Renderer::loadShader(const char* filename, SmallArray<const char*> defines, const char* name)
 {
-    if (name.empty())
+    SmallArray<ShaderDefine> actualDefines;
+    for (auto& name : defines)
     {
-        name = filename;
+        actualDefines.push_back({ name, "" });
+    }
+    ShaderHandle handle = getShaderHandle(filename, actualDefines);
+    shaderNameMap[name ? name : filename] = handle;
+}
+
+void Renderer::loadShader(ShaderHandle handle)
+{
+    if (shaderPrograms[handle] != 0)
+    {
+        glDeleteProgram(shaderPrograms[handle]);
     }
 
-    filename = "shaders/" + filename + ".glsl";
+    ShaderProgramData const& d = shaderProgramData[handle];
+    std::string filename = str("shaders/", d.name, ".glsl");
 
-#if 0
-    std::ifstream file(filename);
-    if (!file)
-    {
-        FATAL_ERROR("Cannot load shader file: ", filename);
-    }
-
-    std::stringstream stream;
-    stream << file.rdbuf();
-    file.close();
-    std::string shaderStr = stream.str();
-
-    size_t slashIndex = filename.find_last_of('/');
-    std::string parentPath = (slashIndex == std::string::npos) ? "" : filename.substr(0, slashIndex+1);
-    std::string identifier = "#include";
-
-    // add support for #include to glsl files
-    while (true)
-    {
-        auto pos = shaderStr.find(identifier);
-        if (pos == std::string::npos)
-        {
-            break;
-        }
-        auto offset = pos + identifier.size();
-        auto newLinePos = shaderStr.find('\n', offset);
-        newLinePos = (newLinePos == std::string::npos) ? shaderStr.size() - 1 : newLinePos;
-
-        auto trim = [](std::string const& s) -> std::string {
-            auto front = std::find_if_not(s.begin(),s.end(), [](int c) { return isspace(c); });
-            return std::string(front, std::find_if_not(s.rbegin(),
-                        std::string::const_reverse_iterator(front), [](int c) { return isspace(c); }).base());
-        };
-        std::string includeStr = trim(shaderStr.substr(offset, newLinePos - offset));
-        includeStr.erase(std::remove(includeStr.begin(), includeStr.end(), '"'), includeStr.end());
-        std::string includePath = parentPath + includeStr;
-
-        std::ifstream file(includePath);
-        if (!file)
-        {
-            FATAL_ERROR("Cannot load shader include file: ", includePath, " (Included from ", filename, ")");
-        }
-
-        std::stringstream stream;
-        stream << file.rdbuf();
-        file.close();
-        std::string includeContent = stream.str();
-
-        shaderStr.replace(pos, newLinePos - pos, includeContent);
-    }
-#else
+    // TODO: remove dependency on stb_include
     char errorMsg[256];
     char* shaderText = stb_include_file((char*)filename.c_str(), (char*)"", (char*)"shaders", errorMsg);
     if (!shaderText)
@@ -96,13 +66,12 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> const& d
     }
     std::string shaderStr = shaderText;
     free(shaderText);
-#endif
 
     GLint success, errorMessageLength;
     GLuint program = glCreateProgram();
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSources(vertexShader, shaderStr, defines.concat({ "VERT" }));
+    glShaderSources(vertexShader, shaderStr, d.defines, {"VERT", ""});
     glCompileShader(vertexShader);
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -115,7 +84,7 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> const& d
     glAttachShader(program, vertexShader);
 
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSources(fragmentShader, shaderStr, defines.concat({ "FRAG" }));
+    glShaderSources(fragmentShader, shaderStr, d.defines, {"FRAG", ""});
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -127,11 +96,12 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> const& d
     }
     glAttachShader(program, fragmentShader);
 
+#if 0
     GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
     bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
     if (hasGeometryShader)
     {
-        glShaderSources(geometryShader, shaderStr, defines.concat({ "GEOM" }));
+        glShaderSources(geometryShader, shaderStr, defines, {"GEOM", ""});
         glCompileShader(geometryShader);
         glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
         if (!success)
@@ -143,6 +113,7 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> const& d
         }
         glAttachShader(program, geometryShader);
     }
+#endif
 
     glLinkProgram(program);
     glGetProgramiv(program, GL_LINK_STATUS, &success);
@@ -156,19 +127,82 @@ void Renderer::loadShader(std::string filename, SmallArray<std::string> const& d
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+#if 0
     glDeleteShader(geometryShader);
-
-    shaderPrograms[name] = program;
+#endif
+    shaderPrograms[handle] = program;
 }
 
-GLuint Renderer::getShaderProgram(const char* name) const
+// TODO: remove
+void Renderer::loadShaders()
 {
-    auto it = shaderPrograms.find(name);
-    if (it == shaderPrograms.end())
+    loadShader("bloom_filter");
+    loadShader("blit");
+    loadShader("blit2");
+    loadShader("post_process");
+    loadShader("post_process", { "OUTLINE_ENABLED" }, "post_process_outline");
+    loadShader("post_process", { "EDITOR_OUTLINE_ENABLED" }, "post_process_outline_editor");
+    loadShader("blur", { "HBLUR" }, "hblur");
+    loadShader("blur", { "VBLUR" }, "vblur");
+    loadShader("blur2", { "HBLUR" }, "hblur2");
+    loadShader("blur2", { "VBLUR" }, "vblur2");
+    loadShader("lit");
+    loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
+    loadShader("debug");
+    loadShader("quad2D", { "COLOR" }, "tex2D");
+    loadShader("quad2D", { "BLUR" }, "texBlur2D");
+    loadShader("quad2D", {}, "text2D");
+    loadShader("post");
+    loadShader("mesh2D");
+    loadShader("billboard", { "LIT" });
+    loadShader("billboard", {}, "billboard_unlit");
+    loadShader("ribbon");
+    loadShader("csz");
+    loadShader("csz_minify");
+    loadShader("sao");
+    loadShader("sao_blur");
+    loadShader("overlay");
+    loadShader("mesh_decal");
+    loadShader("highlight_id");
+}
+
+ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines)
+{
+    for (u32 shaderIndex = 0; shaderIndex < shaderProgramData.size(); ++shaderIndex)
     {
-        FATAL_ERROR("Could not find shader: ", name, '\n');
+        ShaderProgramData& shaderData = shaderProgramData[shaderIndex];
+        if (shaderData.name != name)
+        {
+            continue;
+        }
+        if (shaderData.defines.empty() && defines.empty())
+        {
+            return shaderIndex;
+        }
+        if (shaderData.defines.size() != defines.size())
+        {
+            continue;
+        }
+        bool definesMatch = true;
+        for (u32 i=0; i<defines.size(); ++i)
+        {
+            if (strcmp(shaderData.defines[i].name, defines[i].name) != 0 ||
+                strcmp(shaderData.defines[i].value, defines[i].value) != 0)
+            {
+                definesMatch = false;
+                break;
+            }
+        }
+        if (definesMatch)
+        {
+            return shaderIndex;
+        }
     }
-    return it->second;
+    shaderPrograms.push_back(0);
+    shaderProgramData.push_back({ name, defines });
+    ShaderHandle handle = shaderPrograms.size() - 1;
+    loadShader(handle);
+    return handle;
 }
 
 void Renderer::updateFramebuffers()
@@ -236,53 +270,17 @@ void Renderer::createFullscreenFramebuffers()
     assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 }
 
-void Renderer::initShaders()
+void Renderer::reloadShaders()
 {
-    for (auto& p : shaderPrograms)
+    for (u32 i=0; i<shaderPrograms.size(); ++i)
     {
-        glDeleteProgram(p.second);
+        loadShader(i);
     }
-    shaderPrograms.clear();
-
-    loadShader("bloom_filter");
-    loadShader("blit");
-    loadShader("blit2");
-    loadShader("post_process");
-    loadShader("post_process", { "OUTLINE_ENABLED" }, "post_process_outline");
-    loadShader("post_process", { "EDITOR_OUTLINE_ENABLED" }, "post_process_outline_editor");
-    loadShader("blur", { "HBLUR" }, "hblur");
-    loadShader("blur", { "VBLUR" }, "vblur");
-    loadShader("blur2", { "HBLUR" }, "hblur2");
-    loadShader("blur2", { "VBLUR" }, "vblur2");
-    loadShader("lit");
-    loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
-    loadShader("lit", { "OUT_ID" }, "lit_id");
-    loadShader("lit", { "ALPHA_DISCARD", "OUT_ID" }, "lit_discard_id");
-    loadShader("lit", { "NORMAL_MAP" }, "lit_normal_map");
-    loadShader("debug");
-    loadShader("quad2D", { "COLOR" }, "tex2D");
-    loadShader("quad2D", { "BLUR" }, "texBlur2D");
-    loadShader("quad2D", {}, "text2D");
-    loadShader("post");
-    loadShader("mesh2D");
-    loadShader("billboard", { "LIT" });
-    loadShader("billboard", {}, "billboard_unlit");
-    loadShader("ribbon");
-    loadShader("csz");
-    loadShader("csz_minify");
-    loadShader("sao");
-    loadShader("sao_blur");
-    loadShader("overlay");
-    loadShader("mesh_decal");
-    loadShader("terrain");
-    loadShader("track");
-    loadShader("flames");
-    loadShader("highlight_id");
 }
 
 void Renderer::init()
 {
-    initShaders();
+    loadShaders();
 
     glCreateVertexArrays(1, &emptyVAO);
 
@@ -418,7 +416,7 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_BLEND);
 
     // NOTE: stable sort to preserve the order the renderables were added
-    renderables2D.stableSort([&](auto& a, auto& b) { return a.priority < b.priority; });
+    renderables2D.stableSort([](auto& a, auto& b) { return a.priority < b.priority; });
     for (auto const& r : renderables2D)
     {
         r.renderable->on2DPass(this);
@@ -962,7 +960,15 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
-    renderables.sort([&](auto& a, auto& b) { return a.priority < b.priority; });
+    /*
+    auto sort = [](auto const& a, auto const& b) {
+        if ((a.flags & RenderFlags::TRANSPARENT) < (b.flags & RenderFlags::TRANSPARENT)) return true;
+        if ((a.flags & RenderFlags::TRANSPARENT) < (b.flags & RenderFlags::TRANSPARENT)) return true;
+    };
+    colorPassRenderItems.sort(sort);
+    */
+
+    renderables.sort([](auto& a, auto& b) { return a.priority < b.priority; });
     for (u32 i=0; i<fbs.size(); ++i)
     {
         renderer->setCurrentRenderingCameraIndex(i);
@@ -982,6 +988,7 @@ void RenderWorld::partitionPointLights(u32 viewportIndex)
         {
             f32 splitY = y * partitionHeight;
 
+            // TODO: perform circle vs box collision so that each light affects fewer pixels
             u32 lightCount = 0;
             for (auto& p : pointLights)
             {

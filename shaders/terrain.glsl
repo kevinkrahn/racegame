@@ -14,10 +14,12 @@ layout(location = 3) out vec4 outBlend;
 void main()
 {
     gl_Position = cameraViewProjection * vec4(attrPosition, 1.0);
+#if !defined DEPTH_ONLY
     outNormal = attrNormal;
     outWorldPosition = attrPosition;
     outShadowCoord = (shadowViewProjectionBias * vec4(attrPosition, 1.0)).xyz;
     outBlend = attrBlend;
+#endif
 }
 
 #elif defined FRAG
@@ -42,6 +44,7 @@ layout(binding = 9) uniform sampler2D texSampler4;
 
 void main()
 {
+#if !defined DEPTH_ONLY
     vec3 blending = abs(inNormal);
     blending.z *= (blending.z + 0.5);
     blending.z *= (blending.z + 0.5);
@@ -92,5 +95,6 @@ void main()
 
     if (brushSettings.z >= 0.0) outColor += vec4(vec3(0.05, 0.2, 1.0) * t, 1.0);
     else outColor += vec4(vec3(0.8, 0.02, 0.02) * t, 1.0);
+#endif
 }
 #endif

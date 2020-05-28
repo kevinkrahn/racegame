@@ -10,6 +10,7 @@ class Flames : public Renderable
     SmallArray<glm::mat4, 4> exhausts;
     Mesh* mesh;
     float alpha;
+    ShaderHandle shader = getShaderHandle("flames");
 
 public:
     Flames(SmallArray<glm::mat4, 4> exhausts, Mesh* mesh, float alpha)
@@ -21,7 +22,7 @@ public:
         glEnable(GL_BLEND);
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        glUseProgram(renderer->getShaderProgram("flames"));
+        glUseProgram(renderer->getShaderProgram(shader));
         glEnable(GL_CULL_FACE);
         glBindTextureUnit(0, g_res.getTexture("flames")->handle);
         glBindVertexArray(mesh->vao);

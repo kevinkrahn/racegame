@@ -28,17 +28,22 @@ void main()
     outWorldPosition.x += sin(outWorldPosition.x + outWorldPosition.y * 0.5f + outWorldPosition.z * 0.2f + time * 0.8f) * windAmount * attrTexCoord.y;
     //outWorldPosition.x += sin(outWorldPosition.x * 0.5f + outWorldPosition.y * 0.1f + outWorldPosition.z * 0.25f + time * 0.2f) * 0.15f * windAmount * attrTexCoord.y;
     gl_Position = cameraViewProjection * vec4(outWorldPosition, 1.0);
-    outNormal = normalize(normalMatrix * attrNormal);
+
+#if defined ALPHA_DISCARD || !defined DEPTH_ONLY
     outTexCoord = attrTexCoord;
+#endif
+
+#if !defined DEPTH_ONLY
+    outNormal = normalize(normalMatrix * attrNormal);
     outShadowCoord = (shadowViewProjectionBias * vec4(outWorldPosition, 1.0)).xyz;
     outColor = attrColor;
     outLocalPosition = attrPosition;
-
 #if defined NORMAL_MAP
     vec3 normalWorldSpace    = normalize(normalMatrix * attrNormal);
     vec3 tangentWorldSpace   = normalize(normalMatrix * attrTangent.xyz);
     vec3 biTangentWorldSpace = cross(normalWorldSpace, tangentWorldSpace) * attrTangent.w;
     outTBN = mat3(tangentWorldSpace, biTangentWorldSpace, normalWorldSpace);
+#endif
 #endif
 }
 
@@ -77,7 +82,15 @@ layout(binding = 5) uniform sampler2D normalSampler;
 
 void main()
 {
+#if defined ALPHA_DISCARD || !defined DEPTH_ONLY
     vec4 tex = texture(texSampler, inTexCoord);
+#endif
+
+#if defined ALPHA_DISCARD
+    if (tex.a < minAlpha) { discard; }
+#endif
+
+#if !defined DEPTH_ONLY
     vec3 normal = inNormal;
 
 #if defined NORMAL_MAP
@@ -85,10 +98,6 @@ void main()
     normal = texture2D(normalSampler, inTexCoord).rgb * 2.0 - 1.0;
     normal = normalize(normal * vec3(1.0, 1.0, normalMapStrength));
     normal = inTBN * normal;
-#endif
-
-#if defined ALPHA_DISCARD
-    if (tex.a < minAlpha) { discard; }
 #endif
 #if defined OUT_ID
     outID = highlightID;
@@ -101,6 +110,7 @@ void main()
     outColor.rgb += shieldColor *
         pow((sin(time * 4.f + inLocalPosition.x * 4.f + inLocalPosition.z * 4.f) + 1.f) * 0.5f, 2.f)
         * shieldIntensity;
+#endif
 #endif
 #endif
 }
