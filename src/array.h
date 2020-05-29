@@ -253,7 +253,7 @@ public:
         {
             for (u32 i=element - data_; i<size_-1; ++i)
             {
-                data_[i] = std::move(data_[i+1]);
+                new (data_ + i) T(std::move(data_[i+1]));
             }
         }
         --size_;
@@ -284,7 +284,7 @@ public:
             {
                 for (u32 i=startPtr - data_; i<size_-1; ++i)
                 {
-                    startPtr[i] = std::move(data_[i + elementsRemoved]);
+                    new (startPtr + i) T(std::move(data_[elementsRemoved + i]));
                 }
             }
         }

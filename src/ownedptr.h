@@ -22,7 +22,7 @@ public:
 
     OwnedPtr& operator = (OwnedPtr&& other)
     {
-        ptr_ = other.ptr_;
+        reset(other.ptr_);
         other.ptr_ = nullptr;
         return *this;
     }
@@ -55,7 +55,7 @@ public:
 
     OwnedPtr& operator = (OwnedPtr&& other)
     {
-        ptr_ = other.ptr_;
+        reset(other.ptr_);
         other.ptr_ = nullptr;
         return *this;
     }
