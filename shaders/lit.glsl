@@ -74,6 +74,7 @@ layout(location = 4) uniform vec3 specular; // x: power, y: strength
 layout(location = 5) uniform float minAlpha;
 layout(location = 6) uniform vec3 emit;
 layout(location = 7) uniform vec3 reflection;
+layout(location = 10) uniform vec3 shieldColor;
 
 layout(binding = 0) uniform sampler2D texSampler;
 #if defined NORMAL_MAP
@@ -106,10 +107,8 @@ void main()
             normalize(normal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
             fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
 #if defined VEHICLE
-    vec3 shieldColor = vec3(0.05f, 0.15f, 1.f);
     outColor.rgb += shieldColor *
-        pow((sin(time * 4.f + inLocalPosition.x * 4.f + inLocalPosition.z * 4.f) + 1.f) * 0.5f, 2.f)
-        * shieldIntensity;
+        pow((sin(time * 4.f + inLocalPosition.x * 4.f + inLocalPosition.z * 4.f) + 1.f) * 0.5f, 2.f);
 #endif
 #endif
 #endif

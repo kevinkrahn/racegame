@@ -349,12 +349,16 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, VehicleConfiguration& config, Vehicle* vehicle,
-        bool isBraking, bool isHidden)
+        bool isBraking, bool isHidden, glm::vec3 const& shieldColor)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
-
-    config.paintMaterial = *originalPaintMaterial;
-    config.paintMaterial.color = g_vehicleColors[config.colorIndex];
+    if (config.dirty)
+    {
+        config.paintMaterial = *originalPaintMaterial;
+        config.paintMaterial.color = g_vehicleColors[config.colorIndex];
+        config.paintMaterial.loadShaderHandles({ {"VEHICLE"} });
+        config.dirty = false;
+    }
 
     for (auto& m : chassisBatch.batches)
     {
@@ -363,7 +367,8 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         {
             mat = &config.paintMaterial;
         }
-        rw->push(LitMaterialRenderable(&m.mesh, transform, mat, 0, 2));
+        rw->push(LitMaterialRenderable(&m.mesh, transform, mat, 0, 2, false, 0, 0, shieldColor,
+                    mat == &config.paintMaterial));
     }
 
     if (isHidden)

@@ -20,6 +20,11 @@ public:
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
+        if (ammo > 0)
+        {
+            //vehicle->shieldColor = glm::vec3(0.05f, 0.15f, 1.f);
+            vehicle->shieldColor = glm::vec3(1.f, 0.2f, 0.f);
+        }
     }
 
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,

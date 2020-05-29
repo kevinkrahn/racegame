@@ -559,6 +559,7 @@ void Menu::championshipGarage()
                 (i32)ARRAY_SIZE(g_vehicleColorNames), driver.getVehicleConfig()->colorIndex);
         g_gui.select("Paint Type", g_paintTypeNames,
                 (i32)ARRAY_SIZE(g_paintTypeNames), driver.getVehicleConfig()->paintTypeIndex);
+        driver.getVehicleConfig()->dirty = true;
     }
     else if (mode >= 4 && mode <= 6)
     {

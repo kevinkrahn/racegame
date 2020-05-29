@@ -16,15 +16,23 @@ public:
     bool highlightModeEnabled;
     u8 highlightStep;
     u8 cameraIndex;
+    glm::vec3 shieldColor;
+    bool isVehicle;
 
     LitMaterialRenderable(Mesh* mesh, glm::mat4 const& worldTransform, Material* material,
-            u32 pickID=0, u8 stencil=0, bool highlightModeEnabled=false, u8 highlightStep=0, u8 cameraIndex=0)
+            u32 pickID=0, u8 stencil=0, bool highlightModeEnabled=false, u8 highlightStep=0, u8 cameraIndex=0,
+            glm::vec3 const& shieldColor={0,0,0}, bool isVehicle=false)
         : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil),
-        highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep), cameraIndex(cameraIndex)
-    {}
+        highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep), cameraIndex(cameraIndex),
+        shieldColor(shieldColor), isVehicle(isVehicle) {}
 
     i32 getPriority() const override
     {
+        if (isVehicle)
+        {
+            return 18;
+        }
+
         return 20 + material->isCullingEnabled
             + (material->isTransparent ? 11000 : 0)
             + (material->depthOffset != 0.f ? -1 : 0)
@@ -217,6 +225,7 @@ public:
             glm::vec3 emission = material->emit * material->emitPower;
             glUniform3fv(6, 1, (GLfloat*)&emission);
             glUniform3f(7, material->reflectionStrength, material->reflectionLod, material->reflectionBias);
+            glUniform3fv(10, 1, (GLfloat*)&shieldColor);
             glStencilFunc(GL_ALWAYS, stencil, 0xFF);
             glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
         }

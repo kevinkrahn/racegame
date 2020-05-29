@@ -241,8 +241,6 @@ struct VehicleConfiguration
     i32 specialAbilityIndex = -1;
     SmallArray<VehicleDecal> decals;
 
-    Material paintMaterial;
-
     struct Upgrade
     {
         i32 upgradeIndex;
@@ -280,6 +278,9 @@ struct VehicleConfiguration
         s.field(specialAbilityIndex);
         s.field(performanceUpgrades);
     }
+
+    bool dirty = true;
+    Material paintMaterial;
 };
 
 enum struct PerformanceUpgradeType
@@ -340,7 +341,8 @@ struct VehicleData
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
             glm::mat4* wheelTransforms, VehicleConfiguration& config,
-            class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false);
+            class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false,
+            glm::vec3 const& shieldColor={0,0,0});
     virtual void renderDebris(class RenderWorld* rw,
             Array<VehicleDebris> const& debris, VehicleConfiguration& config);
 

@@ -291,7 +291,8 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
     }
     glm::mat4 transform = vehiclePhysics.getTransform();
     driver->getVehicleData()->render(rw, transform,
-            wheelTransforms, *driver->getVehicleConfig(), this, isBraking, cameraIndex >= 0);
+            wheelTransforms, *driver->getVehicleConfig(), this, isBraking, cameraIndex >= 0,
+            shieldColor);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
 
@@ -503,6 +504,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     {
         updateAiInput(deltaTime, rw);
     }
+
+    shieldColor = glm::vec3(0, 0, 0);
 
     // update weapons
     for (i32 i=0; i<(i32)frontWeapons.size(); ++i)
