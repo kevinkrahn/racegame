@@ -69,6 +69,7 @@ void Booster::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 Vehicle* vehicle = (Vehicle*)userData->vehicle;
                 vehicle->getRigidBody()->addForce(convert(yAxisOf(transform)) * 15.f,
                         PxForceMode::eACCELERATION);
+                vehicle->setMotionBlur(1.f, 1.5f);
                 active = true;
             }
         }

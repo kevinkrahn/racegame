@@ -109,6 +109,10 @@ public:
 	Ribbon tireMarkRibbons[NUM_WHEELS];
 	f32 glueSoundTimer = 0.f;
 
+	f32 targetMotionBlurStrength = 0.f;
+	f32 motionBlurStrength = 0.f;
+	f32 motionBlurResetTimer = 0.f;
+
     Array<VehicleDebris> vehicleDebris;
     void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
 
@@ -183,4 +187,10 @@ public:
     PxRigidBody* getRigidBody() { return vehiclePhysics.getRigidBody(); }
     glm::vec3 getPosition() { return vehiclePhysics.getPosition(); }
     glm::vec3 getForwardVector() { return vehiclePhysics.getForwardVector(); }
+
+    void setMotionBlur(f32 strength, f32 resetTimer)
+    {
+        targetMotionBlurStrength = strength;
+        motionBlurResetTimer = resetTimer;
+    }
 };

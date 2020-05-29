@@ -15,6 +15,7 @@ layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outColor;
 
 layout(location = 0) uniform vec4 highlightColor;
+layout(location = 1) uniform vec2 motionBlur;
 
 layout(binding = 0) uniform sampler2D colorSampler;
 layout(binding = 1) uniform sampler2D bloomSampler1;
@@ -43,6 +44,17 @@ vec2 sampleOffset[9] = {
 void main()
 {
     outColor = texture(colorSampler, inTexCoord);
+#if 1
+    outColor += texture(colorSampler, inTexCoord + motionBlur * 0.01);
+    outColor += texture(colorSampler, inTexCoord + motionBlur * 0.02);
+    outColor += texture(colorSampler, inTexCoord + motionBlur * 0.03);
+    outColor += texture(colorSampler, inTexCoord + motionBlur * 0.04);
+    outColor /= 5.0;
+#else
+    outColor += texture(colorSampler, inTexCoord + motionBlur * 0.1);
+    outColor /= 2.0;
+#endif
+
 #if SHARPEN_ENABLED
     vec3 sum = vec3(0.0);
     vec2 step = 1.0 / vec2(textureSize(colorSampler, 0));

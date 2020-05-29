@@ -502,6 +502,11 @@ void RenderWorld::addPointLight(glm::vec3 const& position, glm::vec3 const& colo
     pointLights.push_back(pointLight);
 }
 
+void RenderWorld::setMotionBlur(u32 viewportIndex, glm::vec2 const& motionBlur)
+{
+    this->motionBlur[viewportIndex] = motionBlur;
+}
+
 void RenderWorld::updateWorldTime(f64 time)
 {
     worldInfo.time = (f32)time;
@@ -1414,6 +1419,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         glUseProgram(renderer->getShaderProgram(
                     isEditorActive ? "post_process_outline_editor" : "post_process_outline"));
         glUniform4fv(0, 1, (f32*)&highlightColor[index]);
+        glUniform2fv(1, 1, (f32*)&motionBlur[index]);
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {
             glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);

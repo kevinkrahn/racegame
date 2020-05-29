@@ -78,6 +78,7 @@ public:
                     PxForceMode::eACCELERATION);
             boostTimer = glm::max(boostTimer - deltaTime, 0.f);
             g_audio.setSoundPosition(boostSound, vehicle->getPosition());
+            vehicle->setMotionBlur(glm::min(boostTimer, 1.f), 0.1f);
             return;
         }
 

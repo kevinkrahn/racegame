@@ -294,11 +294,6 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             wheelTransforms, *driver->getVehicleConfig(), this, isBraking, cameraIndex >= 0);
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
-    if (cameraIndex >= 0)
-    {
-        rw->setHighlightColor(cameraIndex,
-                glm::vec4(g_vehicleColors[driver->getVehicleConfig()->colorIndex], 1.f));
-    }
 
     // visualize path finding
 #if 0
@@ -331,6 +326,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
 {
     glm::vec3 pos = lastValidPosition;
     pos.z = glm::max(pos.z, -10.f);
+
 #if 0
     cameraTarget = pos + glm::vec3(0, 0, 2.f);
     cameraFrom = smoothMove(cameraFrom,
@@ -343,8 +339,33 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
             pos + glm::vec3(glm::normalize(glm::vec2(forwardVector)), 0.f) * forwardSpeed * 0.3f,
             5.f, deltaTime);
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
-    cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+    glm::vec3 cameraDir = glm::normalize(glm::vec3(1.f, 1.f, 1.25f));
+    cameraFrom = cameraTarget + cameraDir * camDistance;
     rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 18.f, 250.f);
+    if (cameraIndex >= 0)
+    {
+        rw->setHighlightColor(cameraIndex,
+                glm::vec4(g_vehicleColors[driver->getVehicleConfig()->colorIndex], 1.f));
+
+        glm::mat4 m = glm::mat4(1.f);
+        m[0] = glm::vec4(-cameraDir, m[0].w);
+        m[1] = glm::vec4(glm::normalize(
+                    glm::cross(glm::vec3(0, 0, 1), glm::vec3(m[0]))), m[1].w);
+        m[2] = glm::vec4(glm::normalize(
+                    glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
+
+        motionBlurStrength = smoothMove(motionBlurStrength, targetMotionBlurStrength, 2.f, deltaTime);
+
+        glm::vec3 vel = m * glm::vec4(convert(getRigidBody()->getLinearVelocity()), 1.f);
+        glm::vec2 motionBlur = glm::vec2(vel) * motionBlurStrength * 0.01f;
+        rw->setMotionBlur(cameraIndex, motionBlur);
+
+        motionBlurResetTimer = glm::max(motionBlurResetTimer - deltaTime, 0.f);
+        if (motionBlurResetTimer <= 0.f)
+        {
+            targetMotionBlurStrength = 0.f;
+        }
+    }
 #endif
 }
 

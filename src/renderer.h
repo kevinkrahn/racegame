@@ -153,6 +153,7 @@ class RenderWorld
     SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
     SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
     glm::vec4 highlightColor[MAX_VIEWPORTS] = {};
+    glm::vec2 motionBlur[MAX_VIEWPORTS];
     Array<PointLight> pointLights;
 
     BoundingBox shadowBounds;
@@ -255,6 +256,7 @@ public:
     void addPointLight(glm::vec3 const& position, glm::vec3 const& color, f32 radius, f32 falloff);
     //void addSpotLight(glm::vec3 const& position, glm::vec3 const& direction, glm::vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
     void addDirectionalLight(glm::vec3 const& direction, glm::vec3 const& color);
+    void setMotionBlur(u32 viewportIndex, glm::vec2 const& motionBlur);
 
     void updateWorldTime(f64 time);
     void createFramebuffers();
