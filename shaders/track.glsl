@@ -63,10 +63,16 @@ void main()
     float zSpec = texture(specSampler, uvZ).r;
     float spec = xSpec * blend.x + ySpec * blend.y + zSpec * blend.z;
 
-    // TODO: these normalize calls are probably unnecessary
+    // TODO: verify whether these normalize calls are unnecessary
+#if 0
     vec3 xNormal = normalize(texture(normalSampler, uvX).rgb * 2.0 - 1.0);
     vec3 yNormal = normalize(texture(normalSampler, uvY).rgb * 2.0 - 1.0);
     vec3 zNormal = normalize(texture(normalSampler, uvZ).rgb * 2.0 - 1.0);
+#else
+    vec3 xNormal = texture(normalSampler, uvX).rgb * 2.0 - 1.0;
+    vec3 yNormal = texture(normalSampler, uvY).rgb * 2.0 - 1.0;
+    vec3 zNormal = texture(normalSampler, uvZ).rgb * 2.0 - 1.0;
+#endif
     xNormal = vec3(xNormal.xy + inNormal.zy, abs(xNormal.z) * inNormal.x);
     yNormal = vec3(yNormal.xy + inNormal.xz, abs(yNormal.z) * inNormal.y);
     zNormal = vec3(zNormal.xy + inNormal.xy, abs(zNormal.z) * inNormal.z);
@@ -74,14 +80,9 @@ void main()
             xNormal.zyx * blend.x +
             yNormal.xzy * blend.y +
             zNormal.xyz * blend.z);
-    // TODO: bend normal Z to make track lighting variation more pronounced
 
     outColor = lighting(color, worldNormal, inShadowCoord, inWorldPosition,
             100.0, spec * 1.85, vec3(1.0), 0.0, 0.0, 0.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
-    //outColor *= (inNormal.z * inNormal.z * inNormal.z * inNormal.z);
-
-    //outColor = vec4((inNormal + 1.0) * 0.5, 1.0);
-    //outColor = vec4((worldNormal + 1.0) * 0.5, 1.0);
 #endif
 }
 #endif

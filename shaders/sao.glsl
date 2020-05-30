@@ -34,6 +34,7 @@ vec3 reconstructNonUnitCSFaceNormal(vec3 C)
 #define LOG_MAX_OFFSET 3
 #define MAX_MIP_LEVEL 4
 #define NUM_SPIRAL_TURNS 7
+// TODO: I think this is wrong
 #define FAR_PLANE_Z -200.0
 #define TWO_PI 6.283185307179586
 

@@ -78,6 +78,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     lightOut += specularLight * shadow;
 
     // point lights
+#if POINT_LIGHTS_ENABLED
     uint partitionX = uint((float(gl_FragCoord.x) * invResolution.x) * LIGHT_SPLITS);
     uint partitionY = uint((1.f - (float(gl_FragCoord.y) * invResolution.y)) * LIGHT_SPLITS);
     uint pointLightCount = lightPartitions[partitionX][partitionY].pointLightCount;
@@ -88,8 +89,9 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float distance = length(lightDiff);
         vec3 lightDirection = lightDiff / distance;
 
-        // TODO: possible optimization would be to hardcode attenuation power (2.f)
-        float falloff = pow(smoothstep(light.radius, 0, distance), light.falloff);
+        //float falloff = pow(smoothstep(light.radius, 0, distance), light.falloff);
+        // NOTE: Hardcoded light falloff; uncomment line above to use uniform value
+        float falloff = pow(smoothstep(light.radius, 0, distance), 2.f);
         float directLight = max(dot(normal, lightDirection), 0.0) * falloff;
         vec3 halfDir = normalize(lightDirection + camDir);
         vec3 specularLight = specularColor * light.color * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * falloff;
@@ -97,6 +99,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         lightOut += color.rgb * light.color * directLight;
         lightOut += specularLight;
     }
+#endif
 
     // fresnel
     float fresnel = getFresnel(normal, worldPosition, fresnelBias, fresnelScale, fresnelPower);
@@ -118,7 +121,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         * clamp(shadow * getFresnel(normal, worldPosition, reflectionBias, 1.0, 1.3), 0.1, 1.0);
 
     // fog
-#ifndef NO_FOG
+#if FOG_ENABLED
     const vec3 fogColor = vec3(0.5, 0.6, 1);
     const float density = 0.0015;
     const float LOG2 = -1.442695;

@@ -44,15 +44,13 @@ vec2 sampleOffset[9] = {
 void main()
 {
     outColor = texture(colorSampler, inTexCoord);
-#if 1
+
+#if MOTION_BLUR_ENABLED
     outColor += texture(colorSampler, inTexCoord + motionBlur * 0.01);
     outColor += texture(colorSampler, inTexCoord + motionBlur * 0.02);
     outColor += texture(colorSampler, inTexCoord + motionBlur * 0.03);
     outColor += texture(colorSampler, inTexCoord + motionBlur * 0.04);
     outColor /= 5.0;
-#else
-    outColor += texture(colorSampler, inTexCoord + motionBlur * 0.1);
-    outColor /= 2.0;
 #endif
 
 #if SHARPEN_ENABLED

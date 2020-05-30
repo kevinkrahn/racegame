@@ -727,7 +727,7 @@ void Terrain::onLitPass(class Renderer* renderer)
     glBindTextureUnit(7, m.textures[1]->handle);
     glBindTextureUnit(8, m.textures[2]->handle);
     glBindTextureUnit(9, m.textures[3]->handle);
-    glUseProgram(renderer->getShaderProgram(colorShader));
+    glUseProgram(renderer->getShaderProgram(g_game.isEditing ? colorShaderWithBrush : colorShader));
     glUniform3fv(3, 1, (GLfloat*)&brushSettings);
     glUniform3fv(4, 1, (GLfloat*)&brushPosition);
     glUniform4fv(5, 1, m.texScale);

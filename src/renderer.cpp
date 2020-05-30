@@ -23,6 +23,9 @@ void glShaderSources(GLuint shader, std::string const& src,
     str << "#define SSAO_ENABLED " << u32(g_game.config.graphics.ssaoEnabled) << '\n';
     str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
     str << "#define SHARPEN_ENABLED " << u32(g_game.config.graphics.sharpenEnabled) << '\n';
+    str << "#define POINT_LIGHTS_ENABLED " << u32(g_game.config.graphics.pointLightsEnabled) << '\n';
+    str << "#define MOTION_BLUR_ENABLED " << u32(g_game.config.graphics.motionBlurEnabled) << '\n';
+    str << "#define FOG_ENABLED " << u32(g_game.config.graphics.fogEnabled) << '\n';
     str << "#define MAX_POINT_LIGHTS " << MAX_POINT_LIGHTS << '\n';
     str << "#define LIGHT_SPLITS " << LIGHT_SPLITS << '\n';
     for (auto const& d : defines)

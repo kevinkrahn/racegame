@@ -44,6 +44,7 @@ class Terrain : public Renderable, public Entity
     static constexpr u8 OFFROAD_THRESHOLD = 170;
 
     ShaderHandle depthShader = getShaderHandle("terrain", {{ "DEPTH_ONLY" }});
+    ShaderHandle colorShaderWithBrush = getShaderHandle("terrain", { {"BRUSH_ENABLED"} });
     ShaderHandle colorShader = getShaderHandle("terrain", {});
 
 public:

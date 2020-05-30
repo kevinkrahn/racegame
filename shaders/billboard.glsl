@@ -48,7 +48,7 @@ void main()
 
     gl_Position = matrix * vec4(vertices[gl_VertexID], 0.0, 1.0);
     outTexCoord = uvs[gl_VertexID];
-#if defined LIT
+#if defined LIT && SHADOWS_ENABLED
     outWorldPos = (translation * rotation * vec4(vertices[gl_VertexID], 0.0, 1.0)).xyz;
     outShadowCoord = (shadowViewProjectionBias
             * (translation * rotation * vec4(vertices[gl_VertexID], 0.0, 1.0))).xyz;
@@ -78,7 +78,7 @@ layout(location = 0) uniform vec4 color;
 void main()
 {
     outColor = texture(texSampler, inTexCoord) * color;
-#if defined LIT
+#if defined LIT && SHADOWS_ENABLED
     outColor = lighting(outColor,
             vec3(0, 0, 1), inShadowCoord, inWorldPosition, 0.f, 0.f, vec3(1.0),
             0.f, 0.f, 0.f, vec3(0.f), 0.0, 0.0, 0.0);
