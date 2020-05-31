@@ -42,6 +42,7 @@
 - Add hash table to replace std::map
 - Replace std::string with custom string type
 - Support multiple keyboards (not supported by SDL)
+- Show controller button icons on UI buttons when a controller is plugged in
 
 - Ideas:
     - Grenade launcher weapon

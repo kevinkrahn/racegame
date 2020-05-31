@@ -45,8 +45,342 @@ const char* championshipTracks[] = {
     "race10",
 };
 
+void Menu::startQuickRace()
+{
+    g_game.state.drivers.clear();
+    RandomSeries series = randomSeed();
+    i32 driverCredits = irandom(series, 10000, 50000);
+    print("Starting quick race with driver budget: ", driverCredits, '\n');
+    Array<Driver> drivers;
+    const u32 driverCount = 10;
+    i32 driverIndexOffset = irandom(series, 0, (i32)g_ais.size());
+    for (u32 i=0; i<driverCount; ++i)
+    {
+        drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
+                    0, (driverIndexOffset + i) % g_ais.size()));
+        drivers.back().credits = driverCredits;
+        drivers.back().aiUpgrades(series);
+    }
+#if 0
+    drivers[0].hasCamera = true;
+    drivers[1].hasCamera = true;
+    drivers[2].hasCamera = true;
+    drivers[3].hasCamera = true;
+#endif
+
+    // shuffle
+    for (u32 i=0; i<driverCount; ++i)
+    {
+        i32 index = irandom(series, 0, (i32)drivers.size());
+        Driver driver = std::move(drivers[index]);
+        drivers.erase(drivers.begin() + index);
+        g_game.state.drivers.push_back(std::move(driver));
+    }
+
+    g_game.state.gameMode = GameMode::QUICK_RACE;
+    g_game.isEditing = false;
+#if 0
+    Scene* scene = g_game.changeScene("race7");
+#else
+    Scene* scene = g_game.changeScene(
+            championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);
+#endif
+    scene->startRace();
+    menuMode = HIDDEN;
+}
+
+f32 convertSize(f32 size)
+{
+    f32 baseHeight = 1080.f;
+    return glm::floor(size * (g_game.windowHeight / baseHeight));
+}
+
+glm::vec2 convertSize(glm::vec2 size)
+{
+    return glm::vec2(convertSize(size.x), convertSize(size.y));
+}
+
+bool didSelect()
+{
+    bool result = g_input.isKeyPressed(KEY_RETURN);
+    for (auto& pair : g_input.getControllers())
+    {
+        if (pair.second.isButtonPressed(BUTTON_A))
+        {
+            result = true;
+            break;
+        }
+    }
+    return result;
+}
+
+i32 Menu::didChangeSelectionX()
+{
+    i32 result = (i32)(g_input.isKeyPressed(KEY_RIGHT, true) || didSelect())
+                - (i32)g_input.isKeyPressed(KEY_LEFT, true);
+
+    for (auto& pair : g_input.getControllers())
+    {
+        i32 tmpResult = pair.second.isButtonPressed(BUTTON_DPAD_RIGHT) -
+                        pair.second.isButtonPressed(BUTTON_DPAD_LEFT);
+        if (!tmpResult)
+        {
+            if (repeatTimer == 0.f)
+            {
+                f32 xaxis = pair.second.getAxis(AXIS_LEFT_X);
+                if (xaxis < -0.2f)
+                {
+                    tmpResult = -1;
+                    repeatTimer = 0.2f;
+                }
+                else if (xaxis > 0.2f)
+                {
+                    tmpResult = 1;
+                    repeatTimer = 0.2f;
+                }
+            }
+        }
+        if (tmpResult)
+        {
+            result = tmpResult;
+            break;
+        }
+    }
+
+    return result;
+}
+
+i32 Menu::didChangeSelectionY()
+{
+    i32 result = (i32)g_input.isKeyPressed(KEY_DOWN, true)
+                - (i32)g_input.isKeyPressed(KEY_UP, true);
+
+    for (auto& pair : g_input.getControllers())
+    {
+        i32 tmpResult = pair.second.isButtonPressed(BUTTON_DPAD_DOWN) -
+                        pair.second.isButtonPressed(BUTTON_DPAD_UP);
+        if (!tmpResult)
+        {
+            if (repeatTimer == 0.f)
+            {
+                f32 yaxis = pair.second.getAxis(AXIS_LEFT_Y);
+                if (yaxis < -0.2f)
+                {
+                    tmpResult = -1;
+                    repeatTimer = 0.2f;
+                }
+                else if (yaxis > 0.2f)
+                {
+                    tmpResult = 1;
+                    repeatTimer = 0.2f;
+                }
+            }
+        }
+        if (tmpResult)
+        {
+            result = tmpResult;
+            break;
+        }
+    }
+
+    return result;
+}
+
+Button* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+        std::function<void()> onSelect)
+{
+    Font* font = &g_res.getFont("font", (u32)convertSize(38));
+
+    Button button;
+    button.helpText = helpText;
+    button.pos = pos;
+    button.size = size;
+    button.onSelect = std::move(onSelect);
+    button.onRender = [text, font](Button& btn, bool isSelected){
+        f32 borderSize = convertSize(isSelected ? 5 : 2);
+        glm::vec3 borderColor = glm::mix(glm::vec3(1.f), glm::vec3(1.f, 0.6f, 0.05f), btn.hover);
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 size = convertSize(btn.size);
+        glm::vec2 pos = convertSize(btn.pos) + center - size * 0.5f;
+        g_game.renderer->push2D(QuadRenderable(&g_res.white,
+                    pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
+                    borderColor, 0.5f + btn.hover * 0.5f, false));
+        g_game.renderer->push2D(QuadRenderable(&g_res.white,
+                    pos, size.x, size.y, glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f, true));
+        g_game.renderer->push2D(TextRenderable(font, text, pos + size * 0.5f,
+                    glm::vec3(1.f), isSelected ? 1.f : 0.5f, 1.f,
+                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    };
+    buttons.push_back(button);
+    return &buttons.back();
+}
+
+void Menu::showMainMenu()
+{
+    menuMode = MenuMode::MAIN_MENU;
+    buttons.clear();
+
+    glm::vec2 size(380, 200);
+    glm::vec2 smallSize(380, 100);
+    addButton("CHAMPIONSHIP", "Start a new championship with up to 4 players!", { -400, -200 }, size, [&]{
+        menuMode = NEW_CHAMPIONSHIP;
+        g_game.state = {};
+    });
+    addButton("LOAD CHAMPIONSHIP", "Resume a previous championship.", { -0, -200 }, size, [&]{
+        g_game.loadGame();
+        menuMode = CHAMPIONSHIP_MENU;
+        g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+    });
+    addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size, [&]{ startQuickRace(); });
+    addButton("SETTINGS", "Settings change things.", { -400, -30 }, smallSize, [&]{
+        showOptionsMenu();
+        g_gui.pushSelection();
+    });
+    addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [&]{
+        g_game.isEditing = true;
+        g_game.unloadScene();
+        menuMode = HIDDEN;
+    });
+    addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 }, smallSize, [&]{});
+
+    addButton("EXIT", "Terminate your entertainment experience.", {0, 300}, {200, 50}, [&]{
+        g_game.shouldExit = true;
+    });
+
+    selectedButton = &buttons.front();
+}
+
 void Menu::mainMenu()
 {
+#if 1
+    glm::vec2 mousePos = g_input.getMousePosition();
+    glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+    const char* helpText = "";
+    Button* previousSelectedButton = selectedButton;
+    for (auto& button : buttons)
+    {
+        glm::vec2 size = convertSize(button.size);
+        glm::vec2 pos = convertSize(button.pos) + center - size * 0.5f;
+        bool isHovered = pointInRectangle(mousePos, pos, pos + size);
+        if (isHovered)
+        {
+            if (g_input.didMouseMove())
+            {
+                selectedButton = &button;
+            }
+            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                button.onSelect();
+                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+            }
+        }
+        bool isSelected = selectedButton == &button;
+        button.hover = smoothMove(button.hover,
+                 isSelected ? 1.f : 0.f, 8.f, g_game.realDeltaTime);
+        if (isSelected)
+        {
+            button.hoverTimer += g_game.realDeltaTime;
+            helpText = button.helpText;
+            if (didSelect())
+            {
+                button.onSelect();
+                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+            }
+        }
+        button.onRender(button, isSelected);
+    }
+
+    if (strcmp(helpText, "") != 0)
+    {
+        Font* font = &g_res.getFont("font", (u32)convertSize(26));
+        f32 textWidth = font->stringDimensions(helpText).x + convertSize(50.f);
+        glm::vec2 size = { textWidth, convertSize(50) };
+        glm::vec2 pos = convertSize({ 0, 100 });
+        g_game.renderer->push2D(QuadRenderable(&g_res.white,
+                    center + pos - size * 0.5f, size.x, size.y, glm::vec3(0.f), 0.8f, true));
+        g_game.renderer->push2D(TextRenderable(font, helpText, center + pos,
+                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    }
+
+    i32 selectDirX = didChangeSelectionX();
+    i32 selectDirY = didChangeSelectionY();
+    f32 xRef = selectedButton->pos.x + (selectedButton->size.x * selectDirX) * 0.5f;
+    f32 yRef = selectedButton->pos.y + (selectedButton->size.y * selectDirY) * 0.5f;
+    Button* minSelectTargetX = nullptr;
+    Button* minSelectTargetY = nullptr;
+    Button* maxSelectTargetX = nullptr;
+    Button* maxSelectTargetY = nullptr;
+    f32 minDistX = FLT_MAX;
+    f32 minDistY = FLT_MAX;
+    f32 maxDistX = FLT_MIN;
+    f32 maxDistY = FLT_MIN;
+    if (selectDirX || selectDirY)
+    {
+        for (auto& button : buttons)
+        {
+            if (&button == selectedButton)
+            {
+                continue;
+            }
+
+            if (selectDirX)
+            {
+                f32 xDist = selectDirX * ((button.pos.x - (button.size.x * selectDirX) * 0.5f) - xRef);
+                f32 yDist = glm::abs((button.pos.y + button.size.y * 0.5f)
+                            - (selectedButton->pos.y + selectedButton->size.y * 0.5f)) * 0.5f;
+                if (xDist > 0.f && xDist + yDist < minDistX)
+                {
+                    minDistX = xDist + yDist;
+                    minSelectTargetX = &button;
+                }
+                if (xDist + yDist < maxDistX)
+                {
+                    maxDistX = xDist + yDist;
+                    maxSelectTargetX = &button;
+                }
+            }
+            if (selectDirY)
+            {
+                f32 yDist = selectDirY * ((button.pos.y - (button.size.y * selectDirY) * 0.5f) - yRef);
+                f32 xDist = glm::abs((button.pos.x + button.size.x * 0.5f)
+                            - (selectedButton->pos.x + selectedButton->size.x * 0.5f)) * 0.5f;
+                if (yDist > 0.f && yDist + xDist < minDistY)
+                {
+                    minDistY = yDist + xDist;
+                    minSelectTargetY = &button;
+                }
+                if (yDist + xDist < maxDistY)
+                {
+                    maxDistY = yDist + xDist;
+                    maxSelectTargetY = &button;
+                }
+            }
+        }
+    }
+    if (minSelectTargetX)
+    {
+        selectedButton = minSelectTargetX;
+    }
+    else if (maxSelectTargetX)
+    {
+        selectedButton = maxSelectTargetX;
+    }
+    if (minSelectTargetY)
+    {
+        selectedButton = minSelectTargetY;
+    }
+    else if (maxSelectTargetY)
+    {
+        selectedButton = maxSelectTargetY;
+    }
+
+    if (selectedButton != previousSelectedButton)
+    {
+        selectedButton->hoverTimer = 0.f;
+        g_audio.playSound(g_res.getSound("select"), SoundType::MENU_SFX);
+    }
+
+#else
     g_gui.beginPanel("Main Menu", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
             0.5f, false, true);
 
@@ -160,6 +494,7 @@ void Menu::mainMenu()
 #endif
 
     g_gui.end();
+#endif
 }
 
 void Menu::newChampionship()
@@ -1300,12 +1635,15 @@ void Menu::graphicsOptions()
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    repeatTimer = glm::max(repeatTimer - g_game.deltaTime, 0.f);
+    /*
     if (menuMode < MenuMode::HIDDEN)
     {
         f32 w = g_gui.convertSize(280);
         drawBox(glm::vec2(g_game.windowWidth/2 - w/2, g_game.windowHeight * 0.1f),
                 glm::vec2(w, (f32)g_game.windowHeight * 0.8f));
     }
+    */
 
     if (menuMode != MenuMode::HIDDEN)
     {

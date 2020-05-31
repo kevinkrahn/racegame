@@ -172,6 +172,7 @@ void Game::run()
 
     print("Loaded resources in ", getTime() - loadStartTime, " seconds\n");
 
+    menu.showMainMenu();
     changeScene("race1");
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;

@@ -3,6 +3,17 @@
 #include "misc.h"
 #include "config.h"
 
+struct Button
+{
+    const char* helpText;
+    glm::vec2 pos;
+    glm::vec2 size;
+    f32 hover = 0.f;
+    f32 hoverTimer = 0.f;
+    std::function<void()> onSelect;
+    std::function<void(Button& button, bool isSelected)> onRender;
+};
+
 class Menu
 {
     enum MenuMode
@@ -18,7 +29,7 @@ class Menu
         CHAMPIONSHIP_GARAGE,
         CHAMPIONSHIP_STANDINGS,
         RACE_RESULTS,
-    } menuMode = MAIN_MENU;
+    } menuMode;
 
     Config tmpConfig;
 
@@ -35,8 +46,19 @@ class Menu
 
     void drawBox(glm::vec2 pos, glm::vec2 size);
 
+    Button* selectedButton = nullptr;
+    SmallArray<Button> buttons;
+
+    f32 repeatTimer = 0.f;
+    i32 didChangeSelectionY();
+    i32 didChangeSelectionX();
+
+    void startQuickRace();
+    Button* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+            std::function<void()> onSelect);
+
 public:
-    void showMainMenu() { menuMode = MenuMode::MAIN_MENU; }
+    void showMainMenu();
     //void showChampionshipMenu() { menuMode = MenuMode::CHAMPIONSHIP_MENU; }
     void showRaceResults() { menuMode = MenuMode::RACE_RESULTS; }
     void showOptionsMenu();
