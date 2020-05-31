@@ -43,6 +43,7 @@
 - Replace std::string with custom string type
 - Support multiple keyboards (not supported by SDL)
 - Show controller button icons on UI buttons when a controller is plugged in
+- Show version or git hash in the corner in the menu
 
 - Ideas:
     - Grenade launcher weapon

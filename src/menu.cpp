@@ -89,10 +89,10 @@ void Menu::startQuickRace()
     menuMode = HIDDEN;
 }
 
+constexpr f32 REFERENCE_HEIGHT = 1080.f;
 f32 convertSize(f32 size)
 {
-    f32 baseHeight = 1080.f;
-    return glm::floor(size * (g_game.windowHeight / baseHeight));
+    return glm::floor(size * (g_game.windowHeight / REFERENCE_HEIGHT));
 }
 
 glm::vec2 convertSize(glm::vec2 size)
@@ -131,12 +131,12 @@ i32 Menu::didChangeSelectionX()
                 if (xaxis < -0.2f)
                 {
                     tmpResult = -1;
-                    repeatTimer = 0.2f;
+                    repeatTimer = 0.1f;
                 }
                 else if (xaxis > 0.2f)
                 {
                     tmpResult = 1;
-                    repeatTimer = 0.2f;
+                    repeatTimer = 0.1f;
                 }
             }
         }
@@ -167,12 +167,12 @@ i32 Menu::didChangeSelectionY()
                 if (yaxis < -0.2f)
                 {
                     tmpResult = -1;
-                    repeatTimer = 0.2f;
+                    repeatTimer = 0.1f;
                 }
                 else if (yaxis > 0.2f)
                 {
                     tmpResult = 1;
-                    repeatTimer = 0.2f;
+                    repeatTimer = 0.1f;
                 }
             }
         }
@@ -187,7 +187,7 @@ i32 Menu::didChangeSelectionY()
 }
 
 Button* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
-        std::function<void()> onSelect)
+        std::function<void()> onSelect, bool fadeToBlackWhenSelected)
 {
     Font* font = &g_res.getFont("font", (u32)convertSize(38));
 
@@ -198,19 +198,24 @@ Button* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
     button.onSelect = std::move(onSelect);
     button.onRender = [text, font](Button& btn, bool isSelected){
         f32 borderSize = convertSize(isSelected ? 5 : 2);
-        glm::vec3 borderColor = glm::mix(glm::vec3(1.f), glm::vec3(1.f, 0.6f, 0.05f), btn.hover);
+        glm::vec4 borderColor = glm::mix(glm::vec4(1.f), glm::vec4(1.f, 0.6f, 0.05f, 1.f), btn.hover);
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        glm::vec2 size = convertSize(btn.size);
+        glm::vec2 size = convertSize(btn.size) * btn.fadeInScale;
         glm::vec2 pos = convertSize(btn.pos) + center - size * 0.5f;
-        g_game.renderer->push2D(QuadRenderable(&g_res.white,
+        //f32 alphaPow = powf(btn.fadeInAlpha, 4.f);
+        f32 alphaPow = btn.fadeInAlpha;
+        g_game.renderer->push2D(Quad(&g_res.white,
                     pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                    borderColor, 0.5f + btn.hover * 0.5f, false));
-        g_game.renderer->push2D(QuadRenderable(&g_res.white,
-                    pos, size.x, size.y, glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f, true));
+                    borderColor, (0.5f + btn.hover * 0.5f) * alphaPow));
+        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                    glm::vec4(glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f),
+                    alphaPow));
         g_game.renderer->push2D(TextRenderable(font, text, pos + size * 0.5f,
-                    glm::vec3(1.f), isSelected ? 1.f : 0.5f, 1.f,
+                    glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * alphaPow, btn.fadeInScale,
                     HorizontalAlign::CENTER, VerticalAlign::CENTER));
     };
+    button.fadeInScale = 0.7f;
+    button.fadeToBlackWhenSelected = fadeToBlackWhenSelected;
     buttons.push_back(button);
     return &buttons.back();
 }
@@ -218,6 +223,8 @@ Button* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
 void Menu::showMainMenu()
 {
     menuMode = MenuMode::MAIN_MENU;
+    fadeInTimer = 0.f;
+    fadeIn = true;
     buttons.clear();
 
     glm::vec2 size(380, 200);
@@ -225,27 +232,28 @@ void Menu::showMainMenu()
     addButton("CHAMPIONSHIP", "Start a new championship with up to 4 players!", { -400, -200 }, size, [&]{
         menuMode = NEW_CHAMPIONSHIP;
         g_game.state = {};
-    });
+    }, false);
     addButton("LOAD CHAMPIONSHIP", "Resume a previous championship.", { -0, -200 }, size, [&]{
         g_game.loadGame();
         menuMode = CHAMPIONSHIP_MENU;
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
-    });
-    addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size, [&]{ startQuickRace(); });
+    }, true);
+    addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size,
+            [&]{ startQuickRace(); }, true);
     addButton("SETTINGS", "Settings change things.", { -400, -30 }, smallSize, [&]{
         showOptionsMenu();
-        g_gui.pushSelection();
-    });
+    }, false);
     addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [&]{
         g_game.isEditing = true;
         g_game.unloadScene();
         menuMode = HIDDEN;
-    });
-    addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 }, smallSize, [&]{});
+    }, false);
+    addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 },
+            smallSize, [&]{}, false);
 
     addButton("EXIT", "Terminate your entertainment experience.", {0, 300}, {200, 50}, [&]{
         g_game.shouldExit = true;
-    });
+    }, true);
 
     selectedButton = &buttons.front();
 }
@@ -257,127 +265,190 @@ void Menu::mainMenu()
     glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
     const char* helpText = "";
     Button* previousSelectedButton = selectedButton;
+
+    f32 deltaTime = g_game.realDeltaTime;
+
     for (auto& button : buttons)
     {
         glm::vec2 size = convertSize(button.size);
         glm::vec2 pos = convertSize(button.pos) + center - size * 0.5f;
         bool isHovered = pointInRectangle(mousePos, pos, pos + size);
-        if (isHovered)
+        if (fadeIn)
         {
-            if (g_input.didMouseMove())
+            if (isHovered)
             {
-                selectedButton = &button;
-            }
-            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
-            {
-                button.onSelect();
-                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+                if (g_input.didMouseMove())
+                {
+                    selectedButton = &button;
+                }
+                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                {
+                    fadeIn = false;
+                    fadeInTimer = REFERENCE_HEIGHT;
+                    g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+                }
             }
         }
         bool isSelected = selectedButton == &button;
         button.hover = smoothMove(button.hover,
-                 isSelected ? 1.f : 0.f, 8.f, g_game.realDeltaTime);
+                isSelected ? 1.f : 0.f, 8.f, deltaTime);
         if (isSelected)
         {
-            button.hoverTimer += g_game.realDeltaTime;
+            button.hoverTimer += deltaTime;
             helpText = button.helpText;
-            if (didSelect())
+            if (didSelect() && fadeIn)
             {
-                button.onSelect();
+                fadeIn = false;
+                fadeInTimer = REFERENCE_HEIGHT;
                 g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
             }
         }
+
         button.onRender(button, isSelected);
+
+        if (fadeIn)
+        {
+            if (fadeInTimer > button.pos.y + REFERENCE_HEIGHT * 0.5f)
+            {
+                button.fadeInAlpha = smoothMoveSnap(button.fadeInAlpha, 1.f, 10.f, deltaTime, 0.002f);
+                button.fadeInScale = smoothMoveSnap(button.fadeInScale, 1.f, 10.f, deltaTime, 0.002f);
+            }
+        }
+        else
+        {
+            if (fadeInTimer < button.pos.y + REFERENCE_HEIGHT * 0.5f)
+            {
+                //button.fadeInAlpha = clamp(button.fadeInAlpha - deltaTime * 4.f, 0.f, 1.f);
+                //button.fadeInScale = clamp(button.fadeInScale - deltaTime, 0.f, 10.f);
+                button.fadeInAlpha = smoothMove(button.fadeInAlpha, 0.f, 7.f, deltaTime);
+                button.fadeInAlpha = clamp(button.fadeInAlpha - deltaTime * 3.f, 0.f, 1.f);
+                button.fadeInScale = smoothMove(button.fadeInScale, 0.f, 5.f, deltaTime);
+            }
+        }
     }
 
+    if (fadeToBlack)
+    {
+        blackFadeAlpha = clamp(blackFadeAlpha+deltaTime*4.f, 0.f, 1.f);
+    }
+
+    if (blackFadeAlpha > 0.f)
+    {
+        g_game.renderer->push2D(Quad(&g_res.white, {0,0}, g_game.windowWidth, g_game.windowHeight,
+                    glm::vec4(0,0,0,1), blackFadeAlpha), 100);
+    }
+
+#if 0
     if (strcmp(helpText, "") != 0)
     {
         Font* font = &g_res.getFont("font", (u32)convertSize(26));
         f32 textWidth = font->stringDimensions(helpText).x + convertSize(50.f);
         glm::vec2 size = { textWidth, convertSize(50) };
         glm::vec2 pos = convertSize({ 0, 100 });
-        g_game.renderer->push2D(QuadRenderable(&g_res.white,
-                    center + pos - size * 0.5f, size.x, size.y, glm::vec3(0.f), 0.8f, true));
+        f32 alpha = clamp((fadeInTimer - 0.1f) * 2.f, 0.f, 1.f);
+        g_game.renderer->push2D(Quad(&g_res.white,
+                    center + pos - size * 0.5f, size.x, size.y, glm::vec4(0,0,0,0.8f), alpha));
         g_game.renderer->push2D(TextRenderable(font, helpText, center + pos,
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+                    glm::vec3(1.f), alpha, 1.f, HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    }
+#endif
+
+    if (fadeIn)
+    {
+        fadeInTimer += deltaTime * 2100.f;
+    }
+    else
+    {
+        fadeInTimer -= deltaTime * 2100.f;
+        if (fadeInTimer < REFERENCE_HEIGHT * 0.5f)
+        {
+            fadeToBlack = selectedButton->fadeToBlackWhenSelected;
+        }
+        if (fadeInTimer < -500.f)
+        {
+            selectedButton->onSelect();
+        }
     }
 
-    i32 selectDirX = didChangeSelectionX();
-    i32 selectDirY = didChangeSelectionY();
-    f32 xRef = selectedButton->pos.x + (selectedButton->size.x * selectDirX) * 0.5f;
-    f32 yRef = selectedButton->pos.y + (selectedButton->size.y * selectDirY) * 0.5f;
-    Button* minSelectTargetX = nullptr;
-    Button* minSelectTargetY = nullptr;
-    Button* maxSelectTargetX = nullptr;
-    Button* maxSelectTargetY = nullptr;
-    f32 minDistX = FLT_MAX;
-    f32 minDistY = FLT_MAX;
-    f32 maxDistX = FLT_MIN;
-    f32 maxDistY = FLT_MIN;
-    if (selectDirX || selectDirY)
+    if (fadeIn)
     {
-        for (auto& button : buttons)
+        i32 selectDirX = didChangeSelectionX();
+        i32 selectDirY = didChangeSelectionY();
+        f32 xRef = selectedButton->pos.x + (selectedButton->size.x * selectDirX) * 0.5f;
+        f32 yRef = selectedButton->pos.y + (selectedButton->size.y * selectDirY) * 0.5f;
+        Button* minSelectTargetX = nullptr;
+        Button* minSelectTargetY = nullptr;
+        Button* maxSelectTargetX = nullptr;
+        Button* maxSelectTargetY = nullptr;
+        f32 minDistX = FLT_MAX;
+        f32 minDistY = FLT_MAX;
+        f32 maxDistX = FLT_MIN;
+        f32 maxDistY = FLT_MIN;
+        if (selectDirX || selectDirY)
         {
-            if (&button == selectedButton)
+            for (auto& button : buttons)
             {
-                continue;
-            }
+                if (&button == selectedButton)
+                {
+                    continue;
+                }
 
-            if (selectDirX)
-            {
-                f32 xDist = selectDirX * ((button.pos.x - (button.size.x * selectDirX) * 0.5f) - xRef);
-                f32 yDist = glm::abs((button.pos.y + button.size.y * 0.5f)
-                            - (selectedButton->pos.y + selectedButton->size.y * 0.5f)) * 0.5f;
-                if (xDist > 0.f && xDist + yDist < minDistX)
+                if (selectDirX)
                 {
-                    minDistX = xDist + yDist;
-                    minSelectTargetX = &button;
+                    f32 xDist = selectDirX * ((button.pos.x - (button.size.x * selectDirX) * 0.5f) - xRef);
+                    f32 yDist = glm::abs((button.pos.y + button.size.y * 0.5f)
+                                - (selectedButton->pos.y + selectedButton->size.y * 0.5f)) * 0.5f;
+                    if (xDist > 0.f && xDist + yDist < minDistX)
+                    {
+                        minDistX = xDist + yDist;
+                        minSelectTargetX = &button;
+                    }
+                    if (xDist + yDist < maxDistX)
+                    {
+                        maxDistX = xDist + yDist;
+                        maxSelectTargetX = &button;
+                    }
                 }
-                if (xDist + yDist < maxDistX)
+                if (selectDirY)
                 {
-                    maxDistX = xDist + yDist;
-                    maxSelectTargetX = &button;
-                }
-            }
-            if (selectDirY)
-            {
-                f32 yDist = selectDirY * ((button.pos.y - (button.size.y * selectDirY) * 0.5f) - yRef);
-                f32 xDist = glm::abs((button.pos.x + button.size.x * 0.5f)
-                            - (selectedButton->pos.x + selectedButton->size.x * 0.5f)) * 0.5f;
-                if (yDist > 0.f && yDist + xDist < minDistY)
-                {
-                    minDistY = yDist + xDist;
-                    minSelectTargetY = &button;
-                }
-                if (yDist + xDist < maxDistY)
-                {
-                    maxDistY = yDist + xDist;
-                    maxSelectTargetY = &button;
+                    f32 yDist = selectDirY * ((button.pos.y - (button.size.y * selectDirY) * 0.5f) - yRef);
+                    f32 xDist = glm::abs((button.pos.x + button.size.x * 0.5f)
+                                - (selectedButton->pos.x + selectedButton->size.x * 0.5f)) * 0.5f;
+                    if (yDist > 0.f && yDist + xDist < minDistY)
+                    {
+                        minDistY = yDist + xDist;
+                        minSelectTargetY = &button;
+                    }
+                    if (yDist + xDist < maxDistY)
+                    {
+                        maxDistY = yDist + xDist;
+                        maxSelectTargetY = &button;
+                    }
                 }
             }
         }
-    }
-    if (minSelectTargetX)
-    {
-        selectedButton = minSelectTargetX;
-    }
-    else if (maxSelectTargetX)
-    {
-        selectedButton = maxSelectTargetX;
-    }
-    if (minSelectTargetY)
-    {
-        selectedButton = minSelectTargetY;
-    }
-    else if (maxSelectTargetY)
-    {
-        selectedButton = maxSelectTargetY;
-    }
+        if (minSelectTargetX)
+        {
+            selectedButton = minSelectTargetX;
+        }
+        else if (maxSelectTargetX)
+        {
+            selectedButton = maxSelectTargetX;
+        }
+        if (minSelectTargetY)
+        {
+            selectedButton = minSelectTargetY;
+        }
+        else if (maxSelectTargetY)
+        {
+            selectedButton = maxSelectTargetY;
+        }
 
-    if (selectedButton != previousSelectedButton)
-    {
-        selectedButton->hoverTimer = 0.f;
-        g_audio.playSound(g_res.getSound("select"), SoundType::MENU_SFX);
+        if (selectedButton != previousSelectedButton)
+        {
+            selectedButton->hoverTimer = 0.f;
+            g_audio.playSound(g_res.getSound("select"), SoundType::MENU_SFX);
+        }
     }
 
 #else

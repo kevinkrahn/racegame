@@ -146,6 +146,12 @@ inline glm::vec3 smoothMove(const glm::vec3& from, const glm::vec3& to, f32 amou
     return glm::lerp(from, to, 1.f-exp(-amount * deltaTime));
 }
 
+inline f32 smoothMoveSnap(f32 from, f32 to, f32 amount, f32 deltaTime, f32 snap)
+{
+    f32 val = glm::lerp(from, to, 1.f-expf(-amount * deltaTime));
+    return glm::abs(val - to) < snap ? to : val;
+}
+
 inline bool pointInRectangle(glm::vec2 p, glm::vec2 v1, glm::vec2 v2)
 {
     return p.x >= v1.x && p.y >= v1.y && p.x <= v2.x && p.y <= v2.y;

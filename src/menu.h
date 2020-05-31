@@ -12,6 +12,9 @@ struct Button
     f32 hoverTimer = 0.f;
     std::function<void()> onSelect;
     std::function<void(Button& button, bool isSelected)> onRender;
+    bool fadeToBlackWhenSelected = false;
+    f32 fadeInScale = 1.f;
+    f32 fadeInAlpha = 0.f;
 };
 
 class Menu
@@ -50,12 +53,17 @@ class Menu
     SmallArray<Button> buttons;
 
     f32 repeatTimer = 0.f;
+    f32 fadeInTimer = 0.f;
+    bool fadeIn = true;
+    f32 blackFadeAlpha = 0.f;
+    bool fadeToBlack = false;
+
     i32 didChangeSelectionY();
     i32 didChangeSelectionX();
 
     void startQuickRace();
     Button* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
-            std::function<void()> onSelect);
+            std::function<void()> onSelect, bool fadeToBlackWhenSelected);
 
 public:
     void showMainMenu();

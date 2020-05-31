@@ -3,10 +3,8 @@
 #include "worldinfo.glsl"
 
 layout(location = 0) uniform vec4 points[4];
-layout(location = 4) uniform vec4 color;
 
-layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec2 outTexCoord;
+layout(location = 0) out vec2 outTexCoord;
 #ifdef BLUR
 layout(location = 2) out vec2 outScreenTexCoord;
 #endif
@@ -17,7 +15,6 @@ void main()
 #ifdef BLUR
     outScreenTexCoord = (gl_Position.xy + 1.0) * 0.5;
 #endif
-    outColor = color;
     outTexCoord = points[gl_VertexID].zw;
 }
 
@@ -27,11 +24,12 @@ void main()
 layout(binding = 0) uniform sampler2D texBlurBg;
 #endif
 layout(binding = 1) uniform sampler2D tex;
+layout(location = 4) uniform vec4 uColor;
+layout(location = 5) uniform float uAlpha;
 
 layout(location = 0) out vec4 outColor;
 
-layout(location = 0) in vec4 inColor;
-layout(location = 1) in vec2 inTexCoord;
+layout(location = 0) in vec2 inTexCoord;
 #ifdef BLUR
 layout(location = 2) in vec2 inScreenTexCoord;
 #endif
@@ -39,13 +37,13 @@ layout(location = 2) in vec2 inScreenTexCoord;
 void main()
 {
 #ifdef COLOR
-    outColor = inColor * texture(tex, inTexCoord);
+    outColor = uColor * texture(tex, inTexCoord);
 #elif defined BLUR
     vec4 texColor = texture(tex, inTexCoord);
-    vec4 color = inColor * texColor;
-    outColor = vec4(mix(texture(texBlurBg, inScreenTexCoord).rgb, color.rgb, color.a), texColor.a);
+    vec4 color = uColor * texColor;
+    outColor = vec4(mix(texture(texBlurBg, inScreenTexCoord).rgb, color.rgb, color.a), texColor.a * uAlpha);
 #else
-    outColor = inColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
+    outColor = uColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
 #endif
 }
 
