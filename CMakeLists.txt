@@ -21,6 +21,7 @@ project(game)
 add_executable(game src/main.cpp src/vorbis_decode.cpp src/imgui.cpp external/glad/glad.c)
 target_compile_definitions(game PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>")
 if(UNIX)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG")
     target_link_libraries(game general SDL2 GL dl pthread)
     foreach(LIB_NAME
         libPhysXCooking_static_64.a

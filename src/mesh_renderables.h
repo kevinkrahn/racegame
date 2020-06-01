@@ -24,7 +24,11 @@ public:
             glm::vec3 const& shieldColor={0,0,0}, bool isVehicle=false)
         : material(material), transform(worldTransform), mesh(mesh), pickID(pickID), stencil(stencil),
         highlightModeEnabled(highlightModeEnabled), highlightStep(highlightStep), cameraIndex(cameraIndex),
-        shieldColor(shieldColor), isVehicle(isVehicle) {}
+        shieldColor(shieldColor), isVehicle(isVehicle)
+    {
+        assert(material);
+        assert(material->colorShaderHandle != 0);
+    }
 
     i32 getPriority() const override
     {
@@ -47,6 +51,7 @@ public:
     {
         if (material->isDepthWriteEnabled && !highlightModeEnabled)
         {
+            assert(material->depthShaderHandle);
             glUseProgram(renderer->getShaderProgram(material->depthShaderHandle));
         }
     }
@@ -71,6 +76,7 @@ public:
     {
         if (material->castsShadow && !highlightModeEnabled)
         {
+            assert(material->shadowShaderHandle);
             glUseProgram(renderer->getShaderProgram(material->shadowShaderHandle));
         }
     }
