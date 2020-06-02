@@ -12,6 +12,7 @@ namespace WidgetFlags
         NAVIGATE_HORIZONTAL = 1 << 1, // can navigate left or right from this widget
         FADE_TO_BLACK       = 1 << 2, // screen will fade to black when widget is selected
         FADE_OUT            = 1 << 3, // all widgets will animate away when this widget is selected
+        DISABLED            = 1 << 4,
     };
 }
 

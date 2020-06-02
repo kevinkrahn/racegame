@@ -205,16 +205,14 @@ Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         glm::vec2 size = convertSize(btn.size) * btn.fadeInScale;
         glm::vec2 pos = convertSize(btn.pos) + center - size * 0.5f;
-        //f32 alphaPow = powf(btn.fadeInAlpha, 4.f);
-        f32 alphaPow = btn.fadeInAlpha;
         g_game.renderer->push2D(Quad(&g_res.white,
                     pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                    borderColor, (0.5f + btn.hover * 0.5f) * alphaPow));
+                    borderColor, (0.5f + btn.hover * 0.5f) * btn.fadeInAlpha));
         g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                    glm::vec4(glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f),
-                    alphaPow));
+                glm::vec4(glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f),
+                btn.fadeInAlpha));
         g_game.renderer->push2D(TextRenderable(font, text, pos + size * 0.5f,
-                    glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * alphaPow, btn.fadeInScale,
+                    glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * btn.fadeInAlpha, btn.fadeInScale,
                     HorizontalAlign::CENTER, VerticalAlign::CENTER));
     };
     button.fadeInScale = 0.7f;
@@ -324,7 +322,7 @@ void Menu::showNewChampionshipMenu()
     selectedWidget = addButton("BACK", "Return to main menu.", { -280, 320 }, size, [&]{
         showMainMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("BEGIN", "Begin the championship!", { 280, 320 }, size, [this]{
+    Widget* beginButton = addButton("BEGIN", "Begin the championship!", { 280, 320 }, size, [this]{
         g_game.isEditing = false;
         g_game.state.currentLeague = 0;
         g_game.state.currentRace = 0;
@@ -346,7 +344,7 @@ void Menu::showNewChampionshipMenu()
         }
         menuMode = CHAMPIONSHIP_MENU;
         reset();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
+    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK | WidgetFlags::DISABLED);
 
     for (u32 i=0; i<4; ++i)
     {
@@ -393,8 +391,11 @@ void Menu::showNewChampionshipMenu()
             }
             else
             {
+                g_game.renderer->push2D(Quad(&g_res.white,
+                            pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
+                            borderColor, 0.35f * btn.fadeInAlpha));
                 g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                            glm::vec4(glm::vec3(0.02f), 0.7f), btn.fadeInAlpha));
+                            glm::vec4(glm::vec3(0.f), 0.3f), btn.fadeInAlpha));
                 Font* font = &g_res.getFont("font", (u32)convertSize(30));
                 f32 textAlpha = 0.3f;
                 g_game.renderer->push2D(TextRenderable(font, "Empty Player Slot",
@@ -410,12 +411,17 @@ void Menu::showNewChampionshipMenu()
     {
         // TODO: ensure all player names are unique before starting championship
         Widget w;
-        w.onRender = [](Widget& w, bool isSelected){
+        w.onRender = [beginButton](Widget& w, bool isSelected){
             glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
             glm::vec2 size = convertSize(glm::vec2(880, 780)) * w.fadeInScale;
             glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
             g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
                         glm::vec4(glm::vec3(0.f), 0.3f), w.fadeInAlpha), -100);
+
+            if (!g_game.state.drivers.empty())
+            {
+                beginButton->flags = beginButton->flags & ~WidgetFlags::DISABLED;
+            }
 
             if (g_game.state.drivers.size() < 4)
             {
@@ -1591,6 +1597,11 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
     for (auto& widget : widgets)
     {
+        if (widget.flags & WidgetFlags::DISABLED)
+        {
+            continue;
+        }
+
         glm::vec2 size = convertSize(widget.size);
         glm::vec2 pos = convertSize(widget.pos) + center - size * 0.5f;
         bool isHovered = pointInRectangle(mousePos, pos, pos + size);
@@ -1708,7 +1719,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             for (auto& widget : widgets)
             {
-                if (&widget == selectedWidget || !(widget.flags & WidgetFlags::SELECTABLE))
+                if (&widget == selectedWidget
+                        || !(widget.flags & WidgetFlags::SELECTABLE)
+                        || (widget.flags & WidgetFlags::DISABLED))
                 {
                     continue;
                 }
