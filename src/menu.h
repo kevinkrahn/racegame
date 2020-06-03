@@ -34,14 +34,13 @@ class Menu
 {
     enum MenuMode
     {
-        MAIN_MENU,
-        OPTIONS,
-        NEW_CHAMPIONSHIP,
         HIDDEN,
+        VISIBLE,
         CHAMPIONSHIP_MENU,
         CHAMPIONSHIP_GARAGE,
         CHAMPIONSHIP_STANDINGS,
         RACE_RESULTS,
+        PAUSE_MENU,
     } menuMode;
 
     Config tmpConfig;
@@ -67,7 +66,9 @@ class Menu
         widgets.clear();
         repeatTimer = 0.f;
         fadeIn = true;
+        fadeInTimer = 0.f;
         blackFadeAlpha = 0.f;
+        menuMode = MenuMode::VISIBLE;
     }
 
     i32 didChangeSelectionY();
@@ -77,12 +78,19 @@ class Menu
             std::function<void()> onSelect, u32 flags=0);
     Widget* addHelpMessage(glm::vec2 pos);
     Widget* addLabel(const char* text, glm::vec2 pos, f32 width, class Font* font);
+    Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
 
 public:
     void startQuickRace();
     void showMainMenu();
     void showNewChampionshipMenu();
+    void showChampionshipMenu();
     void showRaceResults() { menuMode = MenuMode::RACE_RESULTS; }
-    void showOptionsMenu();
+    void showSettingsMenu();
+    void showGraphicsSettingsMenu();
+    void showAudioSettingsMenu();
+    void showGameplaySettingsMenu();
+    void showControlsSettingsMenu();
+    void showPauseMenu();
     void onUpdate(class Renderer* renderer, f32 deltaTime);
 };

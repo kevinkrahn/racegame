@@ -276,19 +276,21 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     rw->setShadowBounds({}, false);
     rw->setClearColor(g_game.isEditing || g_game.isDebugCameraEnabled);
 
-    bool showPauseMenu = g_input.isKeyPressed(KEY_ESCAPE);
-    for (auto& pair : g_input.getControllers())
+    if (!isPaused)
     {
-        if (pair.second.isButtonPressed(BUTTON_START))
+        bool showPauseMenu = g_input.isKeyPressed(KEY_ESCAPE);
+        for (auto& pair : g_input.getControllers())
         {
-            showPauseMenu = true;
-            break;
+            if (pair.second.isButtonPressed(BUTTON_START))
+            {
+                showPauseMenu = true;
+                break;
+            }
         }
-    }
-    if ((!g_game.isEditing && isRaceInProgress) && showPauseMenu)
-    {
-        isPaused = !isPaused;
-        g_audio.setPaused(isPaused);
+        if ((!g_game.isEditing && isRaceInProgress) && showPauseMenu)
+        {
+            setPaused(true);
+        }
     }
 
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
@@ -549,40 +551,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             renderer->add2D(&trackPreview2D);
         }
-    }
-
-    if (isPaused)
-    {
-        // pause menu
-        g_gui.beginPanel("PAUSED",
-                glm::vec2(g_game.windowWidth * 0.5f, g_game.windowHeight * 0.35f),
-                0.5f, true, true);
-        if (g_gui.button("Resume"))
-        {
-            isPaused = false;
-            g_audio.setPaused(false);
-        }
-        if (g_gui.button("Forfeit Race"))
-        {
-            isPaused = false;
-            g_game.isEditing = false;
-            if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
-            {
-                buildRaceResults();
-                stopRace();
-                g_game.menu.showRaceResults();
-            }
-            else
-            {
-                stopRace();
-                g_game.menu.showMainMenu();
-            }
-        }
-        if (g_gui.button("Quit to Desktop"))
-        {
-            g_game.shouldExit = true;
-        }
-        g_gui.end();
     }
 
     if (backgroundSound)
@@ -1404,4 +1372,29 @@ glm::vec3 Scene::findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f3
     }
 
     return pos;
+}
+
+void Scene::setPaused(bool paused)
+{
+    isPaused = paused;
+    g_audio.setPaused(isPaused);
+    if (isPaused)
+    {
+        g_game.menu.showPauseMenu();
+    }
+}
+
+void Scene::forfeitRace()
+{
+    if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+    {
+        buildRaceResults();
+        stopRace();
+        g_game.menu.showRaceResults();
+    }
+    else
+    {
+        stopRace();
+        g_game.menu.showMainMenu();
+    }
 }

@@ -272,10 +272,31 @@ Widget* Menu::addLabel(const char* text, glm::vec2 pos, f32 width, Font* font)
     return &widgets.back();
 }
 
+Widget* Menu::addTitle(const char* text, glm::vec2 pos)
+{
+    Font* font = &g_res.getFont("font_bold", (u32)convertSize(88));
+    Widget w;
+    w.pos = pos;
+    w.onRender = [text, font](Widget& widget, bool isSelected){
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 pos = convertSize(widget.pos) + center;
+        glm::vec2 boxSize = convertSize({5000, 90});
+        g_game.renderer->push2D(Quad(&g_res.white,
+                    pos-boxSize*0.5f, boxSize.x, boxSize.y, glm::vec4(0,0,0,0.5f), widget.fadeInAlpha));
+        g_game.renderer->push2D(TextRenderable(font, text,
+                    pos, glm::vec3(1.f), widget.fadeInAlpha, widget.fadeInScale,
+                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+    };
+    w.flags = 0;
+    widgets.push_back(w);
+    return &widgets.back();
+}
+
 void Menu::showMainMenu()
 {
-    menuMode = MenuMode::MAIN_MENU;
     reset();
+
+    addTitle("Main Menu");
 
     glm::vec2 size(380, 200);
     glm::vec2 smallSize(380, 100);
@@ -293,7 +314,7 @@ void Menu::showMainMenu()
         startQuickRace();
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
     addButton("SETTINGS", "Settings change things.", { -400, -30 }, smallSize, [&]{
-        showOptionsMenu();
+        showSettingsMenu();
     }, WidgetFlags::FADE_OUT);
     addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [&]{
         g_game.isEditing = true;
@@ -313,8 +334,9 @@ void Menu::showMainMenu()
 void Menu::showNewChampionshipMenu()
 {
     g_game.state = {};
-    menuMode = NEW_CHAMPIONSHIP;
     reset();
+
+    addTitle("New Championship");
 
     addLabel("Press SPACE or controller button to join", { 0, -320 }, 840,
             &g_res.getFont("font", (u32)convertSize(38)));
@@ -342,8 +364,8 @@ void Menu::showNewChampionshipMenu()
                 driver.aiUpgrades(series);
             }
         }
-        menuMode = CHAMPIONSHIP_MENU;
         reset();
+        menuMode = CHAMPIONSHIP_MENU;
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK | WidgetFlags::DISABLED);
 
     for (u32 i=0; i<4; ++i)
@@ -543,7 +565,7 @@ void Menu::championshipMenu()
 
     if (g_gui.button("Quit"))
     {
-        menuMode = MenuMode::MAIN_MENU;
+        showMainMenu();
         g_gui.clearSelectionStack();
     }
 
@@ -1295,28 +1317,81 @@ void Menu::raceResults()
         }
         else
         {
-            menuMode = MAIN_MENU;
+            showMainMenu();
             g_game.currentScene->isCameraTourEnabled = true;
         }
     }
 }
 
-void Menu::showOptionsMenu()
+void Menu::showSettingsMenu()
 {
-    menuMode = MenuMode::OPTIONS;
     tmpConfig = g_game.config;
     reset();
 
-    glm::vec2 size(250, 50);
-    selectedWidget = addButton("BACK", "", { -300, -360 }, size, [&]{
+    addTitle("Settings");
+    glm::vec2 size(350, 150);
+    selectedWidget = addButton("GRAPHICS", "", { -185, -180 }, size, [&]{
+        showGraphicsSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+    addButton("AUDIO", "", { -185, -10 }, size, [&]{
+        showAudioSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+    addButton("GAMEPLAY", "", { 185, -180 }, size, [&]{
+        showGameplaySettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+    addButton("CONTROLS", "", { 185, -10 }, size, [&]{
+        showControlsSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+    addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
         showMainMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("GRAPHICS", "", { -300, -300 }, size, [&]{
-    }, 0);
-    addButton("AUDIO", "", { 0, -300 }, size, [&]{
-    }, 0);
-    addButton("GAMEPLAY", "", { 300, -300 }, size, [&]{
-    }, 0);
+}
+
+void Menu::showGraphicsSettingsMenu()
+{
+    reset();
+    addTitle("Graphics Settings");
+    {
+        Widget w;
+        w.onRender = [](Widget& w, bool isSelected){
+            glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+            glm::vec2 size = convertSize(glm::vec2(880, 780)) * w.fadeInScale;
+            glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
+            g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                        glm::vec4(glm::vec3(0.f), 0.3f), w.fadeInAlpha), -100);
+        };
+        widgets.push_back(w);
+    }
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+        showSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+}
+
+void Menu::showAudioSettingsMenu()
+{
+    reset();
+    addTitle("Audio Settings");
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+        showSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+}
+
+void Menu::showGameplaySettingsMenu()
+{
+    reset();
+    addTitle("Gameplay Settings");
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+        showSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
+}
+
+void Menu::showControlsSettingsMenu()
+{
+    reset();
+    addTitle("Control Settings");
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+        showSettingsMenu();
+    }, WidgetFlags::FADE_OUT);
 }
 
 #if 0
@@ -1380,7 +1455,7 @@ void Menu::audioOptions()
 
     if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
-        showOptionsMenu();
+        showSettingsMenu();
         g_gui.popSelection();
     }
 
@@ -1412,7 +1487,7 @@ void Menu::gameplayOptions()
 
     if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
-        showOptionsMenu();
+        showSettingsMenu();
         g_gui.popSelection();
     }
 
@@ -1525,13 +1600,53 @@ void Menu::graphicsOptions()
 
     if (g_gui.button("Cancel") || g_gui.didGoBack())
     {
-        showOptionsMenu();
+        showSettingsMenu();
         g_gui.popSelection();
     }
 
     g_gui.end();
 }
 #endif
+
+void Menu::showPauseMenu()
+{
+    reset();
+    menuMode = MenuMode::PAUSE_MENU;
+    fadeInTimer = 400.f;
+
+    {
+        Widget w;
+        w.onRender = [this](Widget& w, bool isSelected){
+            glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+            glm::vec2 size = convertSize(glm::vec2(400, 400)) * w.fadeInScale;
+            glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
+            g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                        glm::vec4(glm::vec3(0.f), 0.8f), w.fadeInAlpha), -100);
+
+            if (w.fadeInAlpha > 0.1f && g_input.isKeyPressed(KEY_ESCAPE))
+            {
+                menuMode = MenuMode::HIDDEN;
+                g_game.currentScene->setPaused(false);
+            }
+        };
+        widgets.push_back(w);
+    }
+
+    Font* font = &g_res.getFont("font_bold", (u32)convertSize(55));
+    addLabel("PAUSED", {0, -160}, 0, font);
+    glm::vec2 size(350, 80);
+    selectedWidget = addButton("Resume", "", {0, -70}, size, [this]{
+        menuMode = MenuMode::HIDDEN;
+        g_game.currentScene->setPaused(false);
+    });
+    addButton("Forfeit Race", "", {0, 30}, size, []{
+        g_game.currentScene->setPaused(false);
+        g_game.currentScene->forfeitRace();
+    });
+    addButton("Quit to Desktop", "", {0, 130}, size, []{
+        g_game.shouldExit = true;
+    });
+}
 
 void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 {
@@ -1545,7 +1660,7 @@ void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    if (menuMode != MenuMode::HIDDEN)
+    if (menuMode == MenuMode::VISIBLE)
     {
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
@@ -1560,10 +1675,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     switch (menuMode)
     {
         case MenuMode::HIDDEN:
-            break;
-        case MenuMode::MAIN_MENU:
-            break;
-        case MenuMode::NEW_CHAMPIONSHIP:
+        case MenuMode::VISIBLE:
+        case MenuMode::PAUSE_MENU:
             break;
         case MenuMode::CHAMPIONSHIP_MENU:
             championshipMenu();
@@ -1576,8 +1689,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             break;
         case MenuMode::RACE_RESULTS:
             raceResults();
-            break;
-        case MenuMode::OPTIONS:
             break;
     }
 

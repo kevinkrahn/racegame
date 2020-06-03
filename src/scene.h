@@ -145,6 +145,8 @@ public:
 
     void startRace();
     void stopRace();
+    void setPaused(bool paused);
+    void forfeitRace();
 
     void serialize(Serializer& s);
     Entity* deserializeEntity(DataFile::Value& data);
