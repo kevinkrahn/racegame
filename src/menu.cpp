@@ -269,7 +269,7 @@ Widget* Menu::addSelector(const char* text, const char* helpText, glm::vec2 pos,
         SmallArray<std::string> values, i32 valueIndex,
         std::function<void(i32 valueIndex)> onValueChanged)
 {
-    Font* font = &g_res.getFont("font", (u32)convertSize(38));
+    Font* font = &g_res.getFont("font", (u32)convertSize(34));
 
     Widget w;
     w.helpText = helpText;
@@ -1489,17 +1489,23 @@ void Menu::showGraphicsSettingsMenu()
         resolutionNames.push_back(str(resolutions[i].x, " x ", resolutions[i].y));
     }
 
-    glm::vec2 size(750, 60);
-    selectedWidget = addSelector("Resolution", "The internal render resolution.", { 0, -300 },
+    glm::vec2 size(750, 50);
+    f32 y = -300;
+    selectedWidget = addSelector("Resolution", "The internal render resolution.", { 0, y },
         size, resolutionNames, valueIndex, [this](i32 valueIndex){
             tmpConfig.graphics.resolutionX = resolutions[valueIndex].x;
             tmpConfig.graphics.resolutionY = resolutions[valueIndex].y;
         });
-    addSelector("Fullscreen", "Run the game in fullscreen or window.", { 0, -230 }, size, { "OFF", "ON" }, tmpConfig.graphics.fullscreen,
+    y += size.y + 10;
+
+    addSelector("Fullscreen", "Run the game in fullscreen or window.", { 0, y }, size, { "OFF", "ON" }, tmpConfig.graphics.fullscreen,
             [this](i32 valueIndex){ tmpConfig.graphics.fullscreen = (bool)valueIndex; });
+    y += size.y + 10;
+
     addSelector("V-Sync", "Lock the frame rate to the monitor's refresh rate.",
-            { 0, -160 }, size, { "OFF", "ON" }, tmpConfig.graphics.vsync,
+            { 0, y }, size, { "OFF", "ON" }, tmpConfig.graphics.vsync,
             [this](i32 valueIndex){ tmpConfig.graphics.vsync = (bool)valueIndex; });
+    y += size.y + 10;
 
     /*
     f32 maxFPS = tmpConfig.graphics.maxFPS;
@@ -1518,11 +1524,12 @@ void Menu::showGraphicsSettingsMenu()
             break;
         }
     }
-    addSelector("Shadows", "The quality of shadows cast by objects in the world.", { 0, -90 },
+    addSelector("Shadows", "The quality of shadows cast by objects in the world.", { 0, y },
         size, shadowQualityNames, shadowQualityIndex, [this](i32 valueIndex){
             tmpConfig.graphics.shadowsEnabled = valueIndex > 0;
             tmpConfig.graphics.shadowMapResolution = shadowMapResolutions[valueIndex];
         });
+    y += size.y + 10;
 
     SmallArray<std::string> ssaoQualityNames = { "Off", "Normal", "High" };
     i32 ssaoQualityIndex = 0;
@@ -1535,14 +1542,16 @@ void Menu::showGraphicsSettingsMenu()
         }
     }
 
-    addSelector("SSAO", "Darkens occluded areas of the world for improved realism.", { 0, -20 }, size, ssaoQualityNames,
+    addSelector("SSAO", "Darkens occluded areas of the world for improved realism.", { 0, y }, size, ssaoQualityNames,
         ssaoQualityIndex, [this](i32 valueIndex){
             tmpConfig.graphics.ssaoEnabled = valueIndex > 0;
             tmpConfig.graphics.ssaoHighQuality = valueIndex == 2;
         });
+    y += size.y + 10;
 
-    addSelector("Bloom", "Adds a glowy light-bleeding effect to bright areas of the world.", { 0, 50 }, size, { "OFF", "ON" }, tmpConfig.graphics.bloomEnabled,
+    addSelector("Bloom", "Adds a glowy light-bleeding effect to bright areas of the world.", { 0, y }, size, { "OFF", "ON" }, tmpConfig.graphics.bloomEnabled,
             [this](i32 valueIndex){ tmpConfig.graphics.bloomEnabled = (bool)valueIndex; });
+    y += size.y + 10;
 
     i32 aaIndex = 0;
     static u32 aaLevels[] = { 0, 2, 4, 8 };
@@ -1555,12 +1564,27 @@ void Menu::showGraphicsSettingsMenu()
             break;
         }
     }
-    addSelector("Anti-Aliasing", "Improves image quality by smoothing jagged edges.", { 0, 120 }, size, aaLevelNames,
+    addSelector("Anti-Aliasing", "Improves image quality by smoothing jagged edges.", { 0, y }, size, aaLevelNames,
         aaIndex, [this](i32 valueIndex){
             tmpConfig.graphics.msaaLevel = aaLevels[valueIndex];
         });
+    y += size.y + 10;
 
-    addHelpMessage({0, 230});
+    addSelector("Sharpen", "Sharpen the final image in a post-processing pass.",
+            { 0, y }, size, { "OFF", "ON" }, tmpConfig.graphics.sharpenEnabled,
+            [this](i32 valueIndex){ tmpConfig.graphics.sharpenEnabled = (bool)valueIndex; });
+    y += size.y + 10;
+
+    addSelector("Potato Mode", "Disables basic graphics features to reduce system requirements.",
+            { 0, y }, size, { "OFF", "ON" }, !tmpConfig.graphics.fogEnabled, [this](i32 valueIndex){
+        tmpConfig.graphics.pointLightsEnabled = !(bool)valueIndex;
+        tmpConfig.graphics.motionBlurEnabled = !(bool)valueIndex;
+        tmpConfig.graphics.fogEnabled = !(bool)valueIndex;
+    });
+    y += size.y + 10;
+
+    y += 20;
+    addHelpMessage({0, y});
 
     glm::vec2 buttonSize(280, 60);
     addButton("APPLY", nullptr, { -290, 350 }, buttonSize, [this]{
