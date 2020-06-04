@@ -117,6 +117,22 @@ bool didSelect()
     return result;
 }
 
+bool didGoBack()
+{
+    if (g_input.isKeyPressed(KEY_ESCAPE))
+    {
+        return true;
+    }
+    for (auto& c : g_input.getControllers())
+    {
+        if (c.second.isButtonPressed(BUTTON_B))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 i32 Menu::didChangeSelectionX()
 {
     i32 result = (i32)(g_input.isKeyPressed(KEY_RIGHT, true) || didSelect())
@@ -189,6 +205,32 @@ i32 Menu::didChangeSelectionY()
     return result;
 }
 
+Widget* Menu::addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha)
+{
+    Widget w;
+    w.pos = pos;
+    w.size = size;
+    w.onRender = [alpha](Widget& w, bool){
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 size = convertSize(w.size) * w.fadeInScale;
+        glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
+        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                    glm::vec4(glm::vec3(0.f), alpha), w.fadeInAlpha), -100);
+    };
+    w.flags = 0;
+    widgets.push_back(w);
+    return &widgets.back();
+}
+
+Widget* Menu::addLogic(std::function<void()> onUpdate)
+{
+    Widget w;
+    w.flags = 0;
+    w.onRender = [onUpdate](Widget& w, bool isSelected){ onUpdate(); };
+    widgets.push_back(w);
+    return &widgets.back();
+}
+
 Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
         std::function<void()> onSelect, u32 flags)
 {
@@ -220,6 +262,86 @@ Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
                    WidgetFlags::NAVIGATE_VERTICAL |
                    WidgetFlags::NAVIGATE_HORIZONTAL | flags;
     widgets.push_back(button);
+    return &widgets.back();
+}
+
+Widget* Menu::addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+        SmallArray<std::string> values, i32 valueIndex,
+        std::function<void(i32 valueIndex)> onValueChanged)
+{
+    Font* font = &g_res.getFont("font", (u32)convertSize(38));
+
+    Widget w;
+    w.helpText = helpText;
+    w.pos = pos;
+    w.size = size;
+    w.onSelect = []{};
+    w.onRender = [=](Widget& w, bool isSelected) mutable {
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 size = convertSize(w.size) * w.fadeInScale;
+        glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
+        if (isSelected)
+        {
+            f32 borderSize = convertSize(isSelected ? 5 : 2);
+            glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
+            g_game.renderer->push2D(Quad(&g_res.white,
+                        pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
+                        borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
+        }
+        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                glm::vec4(glm::vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
+                w.fadeInAlpha));
+        g_game.renderer->push2D(TextRenderable(font, text,
+                    pos + glm::vec2(convertSize(20.f), size.y * 0.5f),
+                    glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
+                    HorizontalAlign::LEFT, VerticalAlign::CENTER));
+        g_game.renderer->push2D(TextRenderable(font, tstr(values[valueIndex]),
+                    pos + glm::vec2(size.x * 0.75f, size.y * 0.5f),
+                    glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
+                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+
+        if (isSelected)
+        {
+            Texture* cheveron = g_res.getTexture("cheveron");
+            f32 cheveronSize = convertSize(36);
+            f32 offset = convertSize(150.f);
+            g_game.renderer->push2D(Quad(cheveron,
+                    pos + glm::vec2(size.x*0.75f - offset - cheveronSize, size.y*0.5f - cheveronSize*0.5f),
+                    cheveronSize, cheveronSize, glm::vec4(1.f), w.fadeInAlpha * w.hover));
+            g_game.renderer->push2D(Quad(cheveron,
+                    pos + glm::vec2(size.x*0.75f + offset, size.y*0.5f - cheveronSize*0.5f),
+                    cheveronSize, cheveronSize, {1,0}, {0,1}, glm::vec4(1.f), w.fadeInAlpha * w.hover));
+
+            i32 dir = didChangeSelectionX();
+            if (dir)
+            {
+                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+            }
+            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                glm::vec2 mousePos = g_input.getMousePosition();
+                f32 x = convertSize(pos.x + size.x * 0.75f);
+                dir = mousePos.x - x < 0 ? -1 : 1;
+            }
+            if (dir)
+            {
+                valueIndex += dir;
+                if (valueIndex < 0)
+                {
+                    valueIndex = (i32)values.size() - 1;
+                }
+                if (valueIndex >= (i32)values.size())
+                {
+                    valueIndex = 0;
+                }
+                onValueChanged(valueIndex);
+            }
+        }
+    };
+    w.fadeInScale = 0.7f;
+    w.flags = WidgetFlags::SELECTABLE |
+              WidgetFlags::NAVIGATE_VERTICAL;
+    widgets.push_back(w);
     return &widgets.back();
 }
 
@@ -300,7 +422,7 @@ void Menu::showMainMenu()
 
     glm::vec2 size(380, 200);
     glm::vec2 smallSize(380, 100);
-    selectedWidget = addButton("CHAMPIONSHIP", "Start a new championship with up to 4 players!", { -400, -200 }, size, [&]{
+    selectedWidget = addButton("CHAMPIONSHIP", "Start a new championship with up to 4 players!", { -400, -200 }, size, [this]{
         showNewChampionshipMenu();
     }, WidgetFlags::FADE_OUT);
     addButton("LOAD CHAMPIONSHIP", "Resume a previous championship.", { -0, -200 }, size, [this]{
@@ -309,22 +431,22 @@ void Menu::showMainMenu()
         menuMode = CHAMPIONSHIP_MENU;
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
-    addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size, [&]{
+    addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size, [this]{
         reset();
         startQuickRace();
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
-    addButton("SETTINGS", "Settings change things.", { -400, -30 }, smallSize, [&]{
+    addButton("SETTINGS", "Settings change things.", { -400, -30 }, smallSize, [this]{
         showSettingsMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [&]{
+    addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [this]{
         g_game.isEditing = true;
         g_game.unloadScene();
         menuMode = HIDDEN;
     }, WidgetFlags::FADE_OUT);
     addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 },
-            smallSize, [&]{}, WidgetFlags::FADE_OUT);
+            smallSize, []{}, WidgetFlags::FADE_OUT);
 
-    addButton("EXIT", "Terminate your entertainment experience.", {0, 300}, {200, 50}, [&]{
+    addButton("EXIT", "Terminate your entertainment experience.", {0, 300}, {200, 50}, []{
         g_game.shouldExit = true;
     }, /*WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK*/ 0);
 
@@ -341,9 +463,9 @@ void Menu::showNewChampionshipMenu()
     addLabel("Press SPACE or controller button to join", { 0, -320 }, 840,
             &g_res.getFont("font", (u32)convertSize(38)));
     glm::vec2 size(250, 75);
-    selectedWidget = addButton("BACK", "Return to main menu.", { -280, 320 }, size, [&]{
+    selectedWidget = addButton("BACK", "Return to main menu.", { -280, 320 }, size, [this]{
         showMainMenu();
-    }, WidgetFlags::FADE_OUT);
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
     Widget* beginButton = addButton("BEGIN", "Begin the championship!", { 280, 320 }, size, [this]{
         g_game.isEditing = false;
         g_game.state.currentLeague = 0;
@@ -430,67 +552,58 @@ void Menu::showNewChampionshipMenu()
         widgets.push_back(w);
     }
 
-    {
+    addBackgroundBox({0,0}, {880, 780});
+    addLogic([this, beginButton]{
         // TODO: ensure all player names are unique before starting championship
-        Widget w;
-        w.onRender = [beginButton](Widget& w, bool isSelected){
-            glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-            glm::vec2 size = convertSize(glm::vec2(880, 780)) * w.fadeInScale;
-            glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
-            g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                        glm::vec4(glm::vec3(0.f), 0.3f), w.fadeInAlpha), -100);
+        if (!g_game.state.drivers.empty())
+        {
+            beginButton->flags = beginButton->flags & ~WidgetFlags::DISABLED;
+        }
 
-            if (!g_game.state.drivers.empty())
+        if (g_game.state.drivers.size() < 4)
+        {
+            if (g_input.isKeyPressed(KEY_SPACE) && fadeInTimer > 800.f)
             {
-                beginButton->flags = beginButton->flags & ~WidgetFlags::DISABLED;
+                bool keyboardPlayerExists = false;
+                for (auto& driver : g_game.state.drivers)
+                {
+                    if (driver.useKeyboard)
+                    {
+                        keyboardPlayerExists = true;
+                        break;
+                    }
+                }
+                if (!keyboardPlayerExists)
+                {
+                    g_game.state.drivers.push_back(Driver(true, true, true, 0));
+                    g_game.state.drivers.back().playerName = str("Player ", g_game.state.drivers.size());
+                }
             }
 
-            if (g_game.state.drivers.size() < 4)
+            for (auto& controller : g_input.getControllers())
             {
-                if (g_input.isKeyPressed(KEY_SPACE) && w.fadeInAlpha > 0.9f)
+                if (controller.second.isAnyButtonPressed())
                 {
-                    bool keyboardPlayerExists = false;
+                    bool controllerPlayerExists = false;
                     for (auto& driver : g_game.state.drivers)
                     {
-                        if (driver.useKeyboard)
+                        if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.first)
                         {
-                            keyboardPlayerExists = true;
+                            controllerPlayerExists = true;
                             break;
                         }
                     }
-                    if (!keyboardPlayerExists)
+
+                    if (!controllerPlayerExists)
                     {
-                        g_game.state.drivers.push_back(Driver(true, true, true, 0));
+                        g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
+                        g_game.state.drivers.back().controllerGuid = controller.second.getGuid();
                         g_game.state.drivers.back().playerName = str("Player ", g_game.state.drivers.size());
                     }
                 }
-
-                for (auto& controller : g_input.getControllers())
-                {
-                    if (controller.second.isAnyButtonPressed())
-                    {
-                        bool controllerPlayerExists = false;
-                        for (auto& driver : g_game.state.drivers)
-                        {
-                            if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.first)
-                            {
-                                controllerPlayerExists = true;
-                                break;
-                            }
-                        }
-
-                        if (!controllerPlayerExists)
-                        {
-                            g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
-                            g_game.state.drivers.back().controllerGuid = controller.second.getGuid();
-                            g_game.state.drivers.back().playerName = str("Player ", g_game.state.drivers.size());
-                        }
-                    }
-                }
             }
-        };
-        widgets.push_back(w);
-    }
+        }
+    });
 }
 
 void Menu::championshipMenu()
@@ -1330,19 +1443,19 @@ void Menu::showSettingsMenu()
 
     addTitle("Settings");
     glm::vec2 size(350, 150);
-    selectedWidget = addButton("GRAPHICS", "", { -185, -180 }, size, [&]{
+    selectedWidget = addButton("GRAPHICS", "", { -185, -180 }, size, [this]{
         showGraphicsSettingsMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("AUDIO", "", { -185, -10 }, size, [&]{
+    addButton("AUDIO", "", { -185, -10 }, size, [this]{
         showAudioSettingsMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("GAMEPLAY", "", { 185, -180 }, size, [&]{
+    addButton("GAMEPLAY", "", { 185, -180 }, size, [this]{
         showGameplaySettingsMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("CONTROLS", "", { 185, -10 }, size, [&]{
+    addButton("CONTROLS", "", { 185, -10 }, size, [this]{
         showControlsSettingsMenu();
     }, WidgetFlags::FADE_OUT);
-    addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+    addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
         showMainMenu();
     }, WidgetFlags::FADE_OUT);
 }
@@ -1351,83 +1464,161 @@ void Menu::showGraphicsSettingsMenu()
 {
     reset();
     addTitle("Graphics Settings");
+    addBackgroundBox({0,0}, {880, 780});
+
+    // TODO: detect aspect ratio and show resolutions accordingly
+    static glm::ivec2 resolutions[] = {
+        { 960, 540 },
+        { 1024, 576 },
+        { 1280, 720 },
+        { 1366, 768 },
+        { 1600, 900 },
+        { 1920, 1080 },
+        { 2560, 1440 },
+        { 3840, 2160 },
+    };
+    SmallArray<std::string> resolutionNames;
+    i32 valueIndex = 2;
+    for (i32 i=0; i<(i32)ARRAY_SIZE(resolutions); ++i)
     {
-        Widget w;
-        w.onRender = [](Widget& w, bool isSelected){
-            glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-            glm::vec2 size = convertSize(glm::vec2(880, 780)) * w.fadeInScale;
-            glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
-            g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                        glm::vec4(glm::vec3(0.f), 0.3f), w.fadeInAlpha), -100);
-        };
-        widgets.push_back(w);
+        if (resolutions[i].x == (i32)tmpConfig.graphics.resolutionX &&
+            resolutions[i].y == (i32)tmpConfig.graphics.resolutionY)
+        {
+            valueIndex = i;
+        }
+        resolutionNames.push_back(str(resolutions[i].x, " x ", resolutions[i].y));
     }
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+
+    glm::vec2 size(750, 60);
+    selectedWidget = addSelector("Resolution", "The internal render resolution.", { 0, -300 },
+        size, resolutionNames, valueIndex, [this](i32 valueIndex){
+            tmpConfig.graphics.resolutionX = resolutions[valueIndex].x;
+            tmpConfig.graphics.resolutionY = resolutions[valueIndex].y;
+        });
+    addSelector("Fullscreen", "Run the game in fullscreen or window.", { 0, -230 }, size, { "OFF", "ON" }, tmpConfig.graphics.fullscreen,
+            [this](i32 valueIndex){ tmpConfig.graphics.fullscreen = (bool)valueIndex; });
+    addSelector("V-Sync", "Lock the frame rate to the monitor's refresh rate.",
+            { 0, -160 }, size, { "OFF", "ON" }, tmpConfig.graphics.vsync,
+            [this](i32 valueIndex){ tmpConfig.graphics.vsync = (bool)valueIndex; });
+
+    /*
+    f32 maxFPS = tmpConfig.graphics.maxFPS;
+    g_gui.slider("Max FPS", 30, 300, maxFPS);
+    tmpConfig.graphics.maxFPS = (u32)maxFPS;
+    */
+
+    static u32 shadowMapResolutions[] = { 0, 1024, 2048, 4096 };
+    SmallArray<std::string> shadowQualityNames = { "Off", "Low", "Medium", "High" };
+    i32 shadowQualityIndex = 0;
+    for (i32 i=0; i<(i32)ARRAY_SIZE(shadowMapResolutions); ++i)
+    {
+        if (shadowMapResolutions[i] == tmpConfig.graphics.shadowMapResolution)
+        {
+            shadowQualityIndex = i;
+            break;
+        }
+    }
+    addSelector("Shadows", "The quality of shadows cast by objects in the world.", { 0, -90 },
+        size, shadowQualityNames, shadowQualityIndex, [this](i32 valueIndex){
+            tmpConfig.graphics.shadowsEnabled = valueIndex > 0;
+            tmpConfig.graphics.shadowMapResolution = shadowMapResolutions[valueIndex];
+        });
+
+    SmallArray<std::string> ssaoQualityNames = { "Off", "Normal", "High" };
+    i32 ssaoQualityIndex = 0;
+    if (tmpConfig.graphics.ssaoEnabled)
+    {
+        ssaoQualityIndex = 1;
+        if (tmpConfig.graphics.ssaoHighQuality)
+        {
+            ssaoQualityIndex = 2;
+        }
+    }
+
+    addSelector("SSAO", "Darkens occluded areas of the world for improved realism.", { 0, -20 }, size, ssaoQualityNames,
+        ssaoQualityIndex, [this](i32 valueIndex){
+            tmpConfig.graphics.ssaoEnabled = valueIndex > 0;
+            tmpConfig.graphics.ssaoHighQuality = valueIndex == 2;
+        });
+
+    addSelector("Bloom", "Adds a glowy light-bleeding effect to bright areas of the world.", { 0, 50 }, size, { "OFF", "ON" }, tmpConfig.graphics.bloomEnabled,
+            [this](i32 valueIndex){ tmpConfig.graphics.bloomEnabled = (bool)valueIndex; });
+
+    i32 aaIndex = 0;
+    static u32 aaLevels[] = { 0, 2, 4, 8 };
+    SmallArray<std::string> aaLevelNames = { "Off", "2x MSAA", "4x MSAA", "8x MSAA" };
+    for (i32 i=0; i<(i32)ARRAY_SIZE(aaLevels); ++i)
+    {
+        if (aaLevels[i] == tmpConfig.graphics.msaaLevel)
+        {
+            aaIndex = i;
+            break;
+        }
+    }
+    addSelector("Anti-Aliasing", "Improves image quality by smoothing jagged edges.", { 0, 120 }, size, aaLevelNames,
+        aaIndex, [this](i32 valueIndex){
+            tmpConfig.graphics.msaaLevel = aaLevels[valueIndex];
+        });
+
+    addHelpMessage({0, 230});
+
+    glm::vec2 buttonSize(280, 60);
+    addButton("APPLY", nullptr, { -290, 350 }, buttonSize, [this]{
+        g_game.config = tmpConfig;
+        g_game.renderer->updateSettingsVersion();
+        SDL_SetWindowFullscreen(g_game.window, g_game.config.graphics.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+        SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
+        g_game.config.save();
         showSettingsMenu();
     }, WidgetFlags::FADE_OUT);
+
+    addButton("DEFAULTS", nullptr, { 0, 350 }, buttonSize, [this]{
+        Config defaultConfig;
+        tmpConfig.graphics = defaultConfig.graphics;
+        Widget* previousSelectedWidget = selectedWidget;
+        showGraphicsSettingsMenu();
+        selectedWidget = previousSelectedWidget;
+        for (auto& w : widgets)
+        {
+            w.fadeInAlpha = 1.f;
+            w.fadeInScale = 1.f;
+            fadeInTimer = 1920.f;
+        }
+    }, 0);
+
+    addButton("CANCEL", nullptr, { 290, 350 }, buttonSize, [this]{
+        showSettingsMenu();
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
 
 void Menu::showAudioSettingsMenu()
 {
     reset();
     addTitle("Audio Settings");
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
         showSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
 
 void Menu::showGameplaySettingsMenu()
 {
     reset();
     addTitle("Gameplay Settings");
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
         showSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
 
 void Menu::showControlsSettingsMenu()
 {
     reset();
     addTitle("Control Settings");
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [&]{
+    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
         showSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
 
 #if 0
-void Menu::mainOptions()
-{
-    g_gui.beginPanel("Options", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
-            0.5f, false, true);
-
-    if (g_gui.button("Graphics Options"))
-    {
-        menuMode = OPTIONS_GRAPHICS;
-        g_gui.pushSelection();
-    }
-
-    if (g_gui.button("Audio Options"))
-    {
-        menuMode = OPTIONS_AUDIO;
-        g_gui.pushSelection();
-    }
-
-    if (g_gui.button("Gameplay Options"))
-    {
-        menuMode = OPTIONS_GAMEPLAY;
-        g_gui.pushSelection();
-    }
-
-    g_gui.gap(20);
-    if (g_gui.button("Back") || g_gui.didGoBack())
-    {
-        showMainMenu();
-        g_gui.popSelection();
-    }
-
-    g_gui.end();
-}
-
 void Menu::audioOptions()
 {
     g_gui.beginPanel("Audio Options", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
@@ -1614,23 +1805,19 @@ void Menu::showPauseMenu()
     menuMode = MenuMode::PAUSE_MENU;
     fadeInTimer = 400.f;
 
-    {
-        Widget w;
-        w.onRender = [this](Widget& w, bool isSelected){
-            glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-            glm::vec2 size = convertSize(glm::vec2(400, 400)) * w.fadeInScale;
-            glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
-            g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                        glm::vec4(glm::vec3(0.f), 0.8f), w.fadeInAlpha), -100);
-
-            if (w.fadeInAlpha > 0.1f && g_input.isKeyPressed(KEY_ESCAPE))
-            {
-                menuMode = MenuMode::HIDDEN;
-                g_game.currentScene->setPaused(false);
-            }
-        };
-        widgets.push_back(w);
-    }
+    addBackgroundBox({0,0}, {400, 400}, 0.8f);
+    addLogic([this]{
+        bool unpause = g_input.isKeyPressed(KEY_ESCAPE);
+        for (auto& c : g_input.getControllers())
+        {
+            unpause |= c.second.isButtonPressed(BUTTON_START);
+        }
+        if (fadeInTimer > 800.f && unpause)
+        {
+            menuMode = MenuMode::HIDDEN;
+            g_game.currentScene->setPaused(false);
+        }
+    });
 
     Font* font = &g_res.getFont("font_bold", (u32)convertSize(55));
     addLabel("PAUSED", {0, -160}, 0, font);
@@ -1713,6 +1900,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             continue;
         }
 
+        bool activated = false;
+        if (widget.flags & WidgetFlags::BACK && didGoBack())
+        {
+            activated = true;
+        }
+
         glm::vec2 size = convertSize(widget.size);
         glm::vec2 pos = convertSize(widget.pos) + center - size * 0.5f;
         bool isHovered = pointInRectangle(mousePos, pos, pos + size);
@@ -1726,16 +1919,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
                 if (g_input.isMouseButtonPressed(MOUSE_LEFT))
                 {
-                    g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
-                    if (widget.flags & WidgetFlags::FADE_OUT)
-                    {
-                        fadeIn = false;
-                        fadeInTimer = REFERENCE_HEIGHT;
-                    }
-                    else
-                    {
-                        activatedWidget = &widget;
-                    }
+                    activated = true;
                 }
             }
         }
@@ -1748,16 +1932,21 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             helpText = widget.helpText;
             if (didSelect() && fadeIn)
             {
-                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
-                if (widget.flags & WidgetFlags::FADE_OUT)
-                {
-                    fadeIn = false;
-                    fadeInTimer = REFERENCE_HEIGHT;
-                }
-                else
-                {
-                    activatedWidget = &widget;
-                }
+                activated = true;
+            }
+        }
+
+        if (activated)
+        {
+            g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+            if (widget.flags & WidgetFlags::FADE_OUT)
+            {
+                fadeIn = false;
+                fadeInTimer = REFERENCE_HEIGHT;
+            }
+            else
+            {
+                activatedWidget = &widget;
             }
         }
 

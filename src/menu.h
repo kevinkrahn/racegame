@@ -12,7 +12,8 @@ namespace WidgetFlags
         NAVIGATE_HORIZONTAL = 1 << 1, // can navigate left or right from this widget
         FADE_TO_BLACK       = 1 << 2, // screen will fade to black when widget is selected
         FADE_OUT            = 1 << 3, // all widgets will animate away when this widget is selected
-        DISABLED            = 1 << 4,
+        DISABLED            = 1 << 4, // it's as if the widget does not exist
+        BACK                = 1 << 5, // triggered by escape or "X" or "O" on controller
     };
 }
 
@@ -74,8 +75,13 @@ class Menu
     i32 didChangeSelectionY();
     i32 didChangeSelectionX();
 
+    Widget* addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha=0.3f);
+    Widget* addLogic(std::function<void()> onUpdate);
     Widget* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             std::function<void()> onSelect, u32 flags=0);
+    Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+            SmallArray<std::string> values, i32 valueIndex,
+            std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addHelpMessage(glm::vec2 pos);
     Widget* addLabel(const char* text, glm::vec2 pos, f32 width, class Font* font);
     Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
