@@ -428,7 +428,7 @@ void Menu::showMainMenu()
     addButton("LOAD CHAMPIONSHIP", "Resume a previous championship.", { -0, -200 }, size, [this]{
         reset();
         g_game.loadGame();
-        menuMode = CHAMPIONSHIP_MENU;
+        showChampionshipMenu();
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
     addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size, [this]{
@@ -487,7 +487,7 @@ void Menu::showNewChampionshipMenu()
             }
         }
         reset();
-        menuMode = CHAMPIONSHIP_MENU;
+        showChampionshipMenu();
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK | WidgetFlags::DISABLED);
 
     for (u32 i=0; i<4; ++i)
@@ -606,95 +606,125 @@ void Menu::showNewChampionshipMenu()
     });
 }
 
-void Menu::championshipMenu()
+void Menu::showChampionshipMenu()
 {
-    f32 w = glm::floor(g_gui.convertSize(670));
-
-    glm::vec2 menuPos = glm::vec2(g_game.windowWidth/2 - w/2, g_game.windowHeight * 0.1f);
-    glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
-    drawBox(menuPos, menuSize);
+    reset();
 
     static RenderWorld renderWorlds[MAX_VIEWPORTS];
 
-    f32 o = glm::floor(g_gui.convertSize(32));
-
-    g_gui.beginPanel("Championship Menu",
-            { menuPos.x + w - o, menuPos.y + o },
-            1.f, false, true, false);
-
-    i32 vehicleCount = 0;
     i32 playerIndex = 0;
-    u32 vehicleIconSize = (u32)g_gui.convertSize(64);
-    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     for (auto& driver : g_game.state.drivers)
     {
         if (driver.isPlayer)
         {
-            renderWorlds[playerIndex].setName(tstr("Vehicle Icon ", playerIndex));
-            renderWorlds[playerIndex].setSize(vehicleIconSize, vehicleIconSize);
-            renderWorlds[playerIndex].push(LitRenderable(quadMesh,
-                        glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-            if (driver.vehicleIndex != -1)
-            {
-                glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
-                driver.getVehicleData()->render(&renderWorlds[playerIndex],
-                    glm::translate(glm::mat4(1.f),
-                        glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
-                    vehicleTransform, nullptr, *driver.getVehicleConfig());
-                ++vehicleCount;
-            }
-            renderWorlds[playerIndex].setViewportCount(1);
-            renderWorlds[playerIndex].addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
-            renderWorlds[playerIndex].setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
-                    glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
-            g_game.renderer->addRenderWorld(&renderWorlds[playerIndex]);
+            Widget w;
+            w.helpText = "Buy, sell, or upgrade your vehicle";
+            w.pos = { 55, -135 + playerIndex * 170 };
+            w.size = { 450, 150 };
+            w.onRender = [&driver, playerIndex](Widget& w, bool isSelected){
+                Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+                u32 vehicleIconSize = (u32)convertSize(w.size.y);
+                RenderWorld& rw = renderWorlds[playerIndex];
+                rw.setName(tstr("Vehicle Icon ", playerIndex));
+                rw.setSize(vehicleIconSize, vehicleIconSize);
+                rw.push(LitRenderable(quadMesh, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
+                if (driver.vehicleIndex != -1)
+                {
+                    glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
+                    driver.getVehicleData()->render(&rw, glm::translate(glm::mat4(1.f),
+                            glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
+                        vehicleTransform, nullptr, *driver.getVehicleConfig());
+                }
+                rw.setViewportCount(1);
+                rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+                rw.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f),
+                        glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+                g_game.renderer->addRenderWorld(&rw);
 
-            if (g_gui.vehicleButton(tstr(driver.playerName, "'s Garage"),
-                    renderWorlds[playerIndex].getTexture(), &driver))
-            {
+                glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+                glm::vec2 size = convertSize(w.size) * w.fadeInScale;
+                glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
+                f32 borderSize = convertSize(isSelected ? 5 : 2);
+                glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
+                g_game.renderer->push2D(Quad(&g_res.white,
+                            pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
+                            borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
+                g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                        glm::vec4(glm::vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
+                        w.fadeInAlpha));
+
+                f32 iconSize = vehicleIconSize * w.fadeInScale;
+                g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
+                            pos, iconSize, iconSize, glm::vec3(1.f), w.fadeInAlpha, false, true));
+
+                f32 textAlpha = (isSelected ? 1.f : 0.5f) * w.fadeInAlpha;
+                f32 margin = convertSize(15.f);
+                Font* font = &g_res.getFont("font", (u32)convertSize(34));
+                g_game.renderer->push2D(TextRenderable(font, tstr(driver.playerName, "'s Garage"),
+                            pos + glm::vec2(iconSize + margin, margin),
+                            glm::vec3(1.f), textAlpha, w.fadeInScale));
+
+                Font* fontSmall = &g_res.getFont("font", (u32)convertSize(28));
+                g_game.renderer->push2D(TextRenderable(fontSmall, tstr("Credits: ", driver.credits),
+                            pos + glm::vec2(iconSize + margin, margin + convertSize(35.f)),
+                            glm::vec3(1.f), textAlpha, w.fadeInScale));
+
+            };
+            w.onSelect = [playerIndex, this]{
+                reset();
                 menuMode = MenuMode::CHAMPIONSHIP_GARAGE;
                 g_game.state.driverContextIndex = playerIndex;
-            }
+            };
+            w.fadeInScale = 0.7f;
+            w.flags = WidgetFlags::SELECTABLE |
+                        WidgetFlags::NAVIGATE_VERTICAL |
+                        WidgetFlags::NAVIGATE_HORIZONTAL |
+                        WidgetFlags::FADE_OUT;
+            widgets.push_back(w);
 
             ++playerIndex;
         }
     }
 
-    g_gui.gap(10);
-    if (g_gui.button("Begin Race", playerIndex == vehicleCount, g_res.getTexture("icon_flag"), false))
-    {
+    //g_res.getTexture("icon_flag")
+    f32 y = -170.f;
+    glm::vec2 size(300, 80);
+    selectedWidget = addButton("BEGIN RACE", "Start the next race.", { 450, y }, size, [this]{
         Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
         menuMode = HIDDEN;
-        g_gui.clearSelectionStack();
-    }
-    if (g_gui.button("Championship Standings", true, g_res.getTexture("icon_stats"), false))
-    {
+    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
+    y += 100;
+
+    //g_res.getTexture("icon_stats")
+    addButton("STANDINGS", "View the current championship standings.", { 450, y }, size, [this]{
         menuMode = CHAMPIONSHIP_STANDINGS;
-        g_gui.pushSelection();
-    }
-    g_gui.button("Player Stats", true, g_res.getTexture("icon_stats2"), false);
-    g_gui.gap(10);
+    });
+    y += 100;
 
-    if (g_gui.button("Quit"))
-    {
+    addButton("QUIT", "Return to main menu.", { 450, y }, size, [this]{
         showMainMenu();
-        g_gui.clearSelectionStack();
-    }
+    }, WidgetFlags::FADE_OUT);
+    y += 100;
 
-    g_gui.end();
+    //addBackgroundBox({0,0}, {1300, 850});
+    addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f);
 
-    Font* bigfont = &g_res.getFont("font", (u32)g_gui.convertSize(64));
-    g_game.renderer->push2D(TextRenderable(bigfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
-                menuPos + o, glm::vec3(1.f)));
-    Font* mediumFont = &g_res.getFont("font", (u32)g_gui.convertSize(32));
-    g_game.renderer->push2D(TextRenderable(mediumFont, tstr("Race ", g_game.state.currentRace + 1),
-                menuPos + o + glm::vec2(0, glm::floor(g_gui.convertSize(52))), glm::vec3(1.f)));
+    addLogic([]{
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
 
-    u32 trackPreviewSize = (u32)g_gui.convertSize(380);
-    g_game.currentScene->drawTrackPreview(g_game.renderer.get(), trackPreviewSize,
-            menuPos + glm::vec2(glm::floor(trackPreviewSize/2) + o, menuSize.y / 2));
-    g_game.renderer->add2D(&g_game.currentScene->getTrackPreview2D());
+        Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize(110));
+        g_game.renderer->push2D(TextRenderable(bigfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
+                    center + convertSize({-250, -400}), glm::vec3(1.f)));
+        Font* mediumFont = &g_res.getFont("font", (u32)convertSize(60));
+        g_game.renderer->push2D(TextRenderable(mediumFont, tstr("Race ", g_game.state.currentRace + 1, "/10"),
+                    center + convertSize({-250, -305}), glm::vec3(1.f)));
+
+        u32 trackPreviewSize = (u32)convertSize(380);
+        g_game.currentScene->drawTrackPreview(g_game.renderer.get(), trackPreviewSize,
+                center + convertSize({ -450, -350 }));
+        g_game.renderer->add2D(&g_game.currentScene->getTrackPreview2D());
+    });
 }
 
 void Menu::championshipGarage()
@@ -1097,7 +1127,7 @@ void Menu::championshipGarage()
             }
             else
             {
-                menuMode = MenuMode::CHAMPIONSHIP_MENU;
+                showChampionshipMenu();
             }
             g_gui.popSelection();
             // TODO: fix the gui and remove this hack
@@ -1317,7 +1347,7 @@ void Menu::championshipStandings()
     if (g_gui.didSelect())
     {
         g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
-        menuMode = CHAMPIONSHIP_MENU;
+        showChampionshipMenu();
         RandomSeries series = randomSeed();
         if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
         {
@@ -1850,7 +1880,8 @@ void Menu::showPauseMenu()
         menuMode = MenuMode::HIDDEN;
         g_game.currentScene->setPaused(false);
     });
-    addButton("Forfeit Race", "", {0, 30}, size, []{
+    addButton("Forfeit Race", "", {0, 30}, size, [this]{
+        reset();
         g_game.currentScene->setPaused(false);
         g_game.currentScene->forfeitRace();
     });
@@ -1888,9 +1919,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         case MenuMode::HIDDEN:
         case MenuMode::VISIBLE:
         case MenuMode::PAUSE_MENU:
-            break;
-        case MenuMode::CHAMPIONSHIP_MENU:
-            championshipMenu();
             break;
         case MenuMode::CHAMPIONSHIP_GARAGE:
             championshipGarage();
@@ -1941,7 +1969,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 {
                     selectedWidget = &widget;
                 }
-                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                if (g_input.isMouseButtonPressed(MOUSE_LEFT)
+                        && selectedWidget == &widget && fadeInTimer > 500.f)
                 {
                     activated = true;
                 }
@@ -1954,7 +1983,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             widget.hoverTimer += deltaTime;
             helpText = widget.helpText;
-            if (didSelect() && fadeIn)
+            if (didSelect() && fadeIn && fadeInTimer > 500.f)
             {
                 activated = true;
             }

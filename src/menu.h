@@ -37,7 +37,6 @@ class Menu
     {
         HIDDEN,
         VISIBLE,
-        CHAMPIONSHIP_MENU,
         CHAMPIONSHIP_GARAGE,
         CHAMPIONSHIP_STANDINGS,
         RACE_RESULTS,
@@ -46,7 +45,6 @@ class Menu
 
     Config tmpConfig;
 
-    void championshipMenu();
     void championshipGarage();
     void championshipStandings();
     void raceResults();

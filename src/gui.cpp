@@ -23,31 +23,18 @@ void Gui::beginFrame()
 
 void Gui::pushSelection()
 {
-    assert(widgetStack.size() > 0);
-    assert(widgetStack.back().widgetType == WidgetType::PANEL);
-    selectStack.push_back(widgetStack.back().widgetState->selectIndex);
-    //print("Pushed ", selectStack.back(), '\n');
 }
 
 void Gui::popSelection()
 {
-    if (!selectStack.empty())
-    {
-        poppedSelectIndex = selectStack.back();
-        selectStack.pop_back();
-        //print("Popped ", poppedSelectIndex, '\n');
-    }
 }
 
 void Gui::clearSelectionStack()
 {
-    selectStack.clear();
-    //print("Cleared stack\n");
 }
+
 void Gui::forceSelection(i32 selection)
 {
-    poppedSelectIndex = selection;
-    //print("Forced selection: ", selection, "\n");
 }
 
 void Gui::endFrame()

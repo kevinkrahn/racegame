@@ -47,6 +47,7 @@
 - Add challenges mode where you have to do crazy things to complete the challenge, for example
   (beat a lap time, destroy n number of cars with a time limit). These challenges would be unlocked
   as you complete leagues in championship mode.
+- Add water
 
 - Ideas:
     - Grenade launcher weapon
