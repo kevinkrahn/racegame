@@ -17,6 +17,7 @@
 #include "collision_flags.h"
 #include "racing_line.h"
 #include "batcher.h"
+#include "track_preview.h"
 
 struct RaceBonus
 {
@@ -166,7 +167,7 @@ public:
     void applyAreaForce(glm::vec3 const& position, f32 strength) const;
     void createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength);
     u32 getNumHumanDrivers() const { return numHumanDrivers; }
-    void drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 pos);
+    void updateTrackPreview(Renderer* renderer, u32 size);
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
     Array<RaceResult>& getRaceResults() { return raceResults; }
     EditorCamera& getEditorCamera() { return editorCamera; }

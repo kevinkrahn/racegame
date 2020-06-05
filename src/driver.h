@@ -16,25 +16,12 @@ struct Driver
     bool isPlayer = false;
     bool hasCamera = false;
     bool useKeyboard = false;
-
-    struct OwnedVehicle
-    {
-        i32 vehicleIndex;
-        VehicleConfiguration vehicleConfig;
-
-        void serialize(Serializer& s)
-        {
-            s.field(vehicleIndex);
-            s.field(vehicleConfig);
-        }
-    };
-    SmallArray<OwnedVehicle> ownedVehicles;
+    VehicleConfiguration vehicleConfig;
 
     VehicleConfiguration* getVehicleConfig()
     {
-        auto ownedVehicle = ownedVehicles.find([&](auto& e) { return e.vehicleIndex == vehicleIndex; });
-        assert(ownedVehicle);
-        return &ownedVehicle->vehicleConfig;
+        assert(vehicleIndex != -1);
+        return &vehicleConfig;
     }
 
     VehicleTuning getTuning()
@@ -73,6 +60,7 @@ struct Driver
         s.field(isPlayer);
         s.field(hasCamera);
         s.field(useKeyboard);
-        s.field(ownedVehicles);
+        s.field(vehicleIndex);
+        s.field(vehicleConfig);
     }
 };

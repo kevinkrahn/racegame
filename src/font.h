@@ -62,6 +62,9 @@ public:
     TextRenderable(Font* font, const char* text, glm::vec2 pos, glm::vec3 color, f32 alpha=1.f,
             f32 scale=1.f, HorizontalAlign halign=HorizontalAlign::LEFT,
             VerticalAlign valign=VerticalAlign::TOP) : font(font), text(text), pos(pos), color(color),
-            alpha(alpha), scale(scale), halign(halign), valign(valign) {}
+            alpha(alpha), scale(scale), halign(halign), valign(valign)
+    {
+        assert(isprint(text[0]));
+    }
     void on2DPass(Renderer* renderer) override;
 };

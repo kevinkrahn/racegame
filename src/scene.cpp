@@ -546,10 +546,12 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         }
 
-        drawTrackPreview(renderer, size, hudTrackPos);
+        updateTrackPreview(renderer, size);
         if (!(isPaused && renderer->getRenderWorld()->getViewportCount() == 4))
         {
-            renderer->add2D(&trackPreview2D);
+            glm::vec2 size = trackPreview2D.getSize();
+            renderer->push2D(QuadRenderable(trackPreview2D.getTexture(), hudTrackPos-size*0.5f,
+                        size.x, size.y, {0,1}, {1,0}));
         }
     }
 
@@ -678,7 +680,7 @@ void Scene::vehicleFinish(u32 n)
             SoundType::GAME_SFX, translationOf(getStart()));
 }
 
-void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos)
+void Scene::updateTrackPreview(Renderer* renderer, u32 size)
 {
     BoundingBox bb = track->getBoundingBox();
 
@@ -814,7 +816,7 @@ void Scene::drawTrackPreview(Renderer* renderer, u32 size, glm::vec2 hudTrackPos
     }
 #endif
 
-    trackPreview2D.endUpdate(hudTrackPos);
+    trackPreview2D.endUpdate();
 }
 
 void Scene::writeTrackData()

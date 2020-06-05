@@ -12,9 +12,7 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
 
     if (vehicleIndex != -1)
     {
-        VehicleConfiguration vehicleConfig;
         vehicleConfig.colorIndex = colorIndex;
-        ownedVehicles.push_back({ vehicleIndex, vehicleConfig });
     }
 
     this->aiIndex = aiIndex;
@@ -32,9 +30,8 @@ void Driver::aiUpgrades(RandomSeries& series)
 //#define AI_DEBUG_PRINT(...) print(__VA_ARGS__)
 #define AI_DEBUG_PRINT(...)
 
-    if (ownedVehicles.empty())
+    if (vehicleIndex == -1)
     {
-        VehicleConfiguration vehicleConfig;
         vehicleConfig.colorIndex = ai.colorIndex;
         vehicleIndex = (i32)ai.vehicleIndex;
         if (ai.decalIndex != -1
@@ -42,7 +39,6 @@ void Driver::aiUpgrades(RandomSeries& series)
         {
             vehicleConfig.decals.push_back(g_vehicles[vehicleIndex]->availableDecals[ai.decalIndex]);
         }
-        ownedVehicles.push_back({ vehicleIndex, vehicleConfig });
         credits -= g_vehicles[vehicleIndex]->price;
         AI_DEBUG_PRINT(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');
     }

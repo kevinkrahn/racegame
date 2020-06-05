@@ -76,7 +76,7 @@ class Menu
     Widget* addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha=0.3f);
     Widget* addLogic(std::function<void()> onUpdate);
     Widget* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
-            std::function<void()> onSelect, u32 flags=0);
+            std::function<void()> onSelect, u32 flags=0, Texture* icon=nullptr);
     Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
