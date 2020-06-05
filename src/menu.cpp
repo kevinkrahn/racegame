@@ -370,24 +370,16 @@ Widget* Menu::addHelpMessage(glm::vec2 pos)
     return &widgets.back();
 }
 
-Widget* Menu::addLabel(const char* text, glm::vec2 pos, f32 width, Font* font)
+Widget* Menu::addLabel(std::string const& text, glm::vec2 pos, Font* font,
+        HorizontalAlign halign, VerticalAlign valign)
 {
     Widget w;
     w.pos = pos;
-    w.onRender = [text, font, width](Widget& widget, bool isSelected) {
-        glm::vec2 textSize = font->stringDimensions(text)
-            + glm::vec2(convertSize(60.f), convertSize(40.f));
-        if (width > 0.f) { textSize.x = convertSize(width); }
+    w.onRender = [=](Widget& widget, bool isSelected) {
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        glm::vec2 size = textSize * widget.fadeInScale;
-        glm::vec2 pos = convertSize(widget.pos) + center - size * 0.5f;
-#if 0
-        g_game.renderer->push2D(Quad(&g_res.white,
-                    pos, size.x, size.y, glm::vec4(0,0,0,0.5f), widget.fadeInAlpha));
-#endif
-        g_game.renderer->push2D(TextRenderable(font, text,
-                    pos + size * 0.5f, glm::vec3(1.f), widget.fadeInAlpha, widget.fadeInScale,
-                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        g_game.renderer->push2D(TextRenderable(font, text.c_str(),
+                    center + convertSize(w.pos), glm::vec3(1.f),
+                    widget.fadeInAlpha, widget.fadeInScale, halign, valign));
     };
     w.flags = 0;
     widgets.push_back(w);
@@ -460,7 +452,7 @@ void Menu::showNewChampionshipMenu()
 
     addTitle("New Championship");
 
-    addLabel("Press SPACE or controller button to join", { 0, -320 }, 840,
+    addLabel("Press SPACE or controller button to join", { 0, -320 },
             &g_res.getFont("font", (u32)convertSize(38)));
     glm::vec2 size(250, 75);
     selectedWidget = addButton("BACK", "Return to main menu.", { -280, 320 }, size, [this]{
@@ -671,8 +663,7 @@ void Menu::showChampionshipMenu()
 
             };
             w.onSelect = [playerIndex, this]{
-                reset();
-                menuMode = MenuMode::CHAMPIONSHIP_GARAGE;
+                showChampionshipMenu();
                 g_game.state.driverContextIndex = playerIndex;
             };
             w.fadeInScale = 0.7f;
@@ -709,17 +700,15 @@ void Menu::showChampionshipMenu()
 
     //addBackgroundBox({0,0}, {1300, 850});
     addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f);
+    Font* bigFont = &g_res.getFont("font_bold", (u32)convertSize(110));
+    addLabel(str("League ", (char)('A' + g_game.state.currentLeague)), {-250, -400}, bigFont,
+            HorizontalAlign::LEFT, VerticalAlign::TOP);
+    Font* mediumFont = &g_res.getFont("font", (u32)convertSize(60));
+    addLabel(str("Race ", g_game.state.currentRace + 1, "/10"), {-250, -305}, mediumFont,
+            HorizontalAlign::LEFT, VerticalAlign::TOP);
 
     addLogic([]{
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-
-        Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize(110));
-        g_game.renderer->push2D(TextRenderable(bigfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
-                    center + convertSize({-250, -400}), glm::vec3(1.f)));
-        Font* mediumFont = &g_res.getFont("font", (u32)convertSize(60));
-        g_game.renderer->push2D(TextRenderable(mediumFont, tstr("Race ", g_game.state.currentRace + 1, "/10"),
-                    center + convertSize({-250, -305}), glm::vec3(1.f)));
-
         u32 trackPreviewSize = (u32)convertSize(380);
         g_game.currentScene->drawTrackPreview(g_game.renderer.get(), trackPreviewSize,
                 center + convertSize({ -450, -350 }));
@@ -727,6 +716,12 @@ void Menu::showChampionshipMenu()
     });
 }
 
+void Menu::showGarageMenu()
+{
+    reset();
+}
+
+#if 0
 void Menu::championshipGarage()
 {
     f32 w = glm::floor(g_gui.convertSize(600));
@@ -1143,7 +1138,7 @@ void Menu::championshipGarage()
     renderWorld.setSize(vehicleIconWidth, vehicleIconHeight);
     renderWorld.push(LitRenderable(quadMesh,
             glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
-#if 0
+
     VehicleTuning tuningReal;
     g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig, tuningReal);
     VehicleTuning tuningUpgrade = tuningReal;
@@ -1181,9 +1176,7 @@ void Menu::championshipGarage()
                 tstr(driver.playerName, "'s Garage       Credits: ", driver.credits),
                 menuPos + glm::vec2(o + g_gui.convertSize(8), glm::floor(g_gui.convertSize(8))),
                 glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT));
-#endif
 
-#if 0
     struct Stat
     {
         const char* name = nullptr;
@@ -1261,8 +1254,8 @@ void Menu::championshipGarage()
                     statsPos + glm::vec2(0, g_gui.convertSizei(ARRAY_SIZE(stats) * 27.f + 8.f)),
                     glm::vec3(1.f)));
     }
-#endif
 }
+#endif
 
 void Menu::championshipStandings()
 {
@@ -1874,18 +1867,18 @@ void Menu::showPauseMenu()
     });
 
     Font* font = &g_res.getFont("font_bold", (u32)convertSize(55));
-    addLabel("PAUSED", {0, -160}, 0, font);
+    addLabel("PAUSED", {0, -160}, font);
     glm::vec2 size(350, 80);
-    selectedWidget = addButton("Resume", "", {0, -70}, size, [this]{
+    selectedWidget = addButton("RESUME", "", {0, -70}, size, [this]{
         menuMode = MenuMode::HIDDEN;
         g_game.currentScene->setPaused(false);
     });
-    addButton("Forfeit Race", "", {0, 30}, size, [this]{
+    addButton("FORFEIT RACE", "", {0, 30}, size, [this]{
         reset();
         g_game.currentScene->setPaused(false);
         g_game.currentScene->forfeitRace();
     });
-    addButton("Quit to Desktop", "", {0, 130}, size, []{
+    addButton("QUIT TO DESKTOP", "", {0, 130}, size, []{
         g_game.shouldExit = true;
     });
 }
@@ -1919,9 +1912,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         case MenuMode::HIDDEN:
         case MenuMode::VISIBLE:
         case MenuMode::PAUSE_MENU:
-            break;
-        case MenuMode::CHAMPIONSHIP_GARAGE:
-            championshipGarage();
             break;
         case MenuMode::CHAMPIONSHIP_STANDINGS:
             championshipStandings();

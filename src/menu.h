@@ -2,6 +2,7 @@
 
 #include "misc.h"
 #include "config.h"
+#include "font.h"
 
 namespace WidgetFlags
 {
@@ -37,7 +38,6 @@ class Menu
     {
         HIDDEN,
         VISIBLE,
-        CHAMPIONSHIP_GARAGE,
         CHAMPIONSHIP_STANDINGS,
         RACE_RESULTS,
         PAUSE_MENU,
@@ -81,7 +81,8 @@ class Menu
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addHelpMessage(glm::vec2 pos);
-    Widget* addLabel(const char* text, glm::vec2 pos, f32 width, class Font* font);
+    Widget* addLabel(std::string const& text, glm::vec2 pos, class Font* font,
+            HorizontalAlign halign=HorizontalAlign::CENTER, VerticalAlign valign=VerticalAlign::CENTER);
     Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
 
 public:
@@ -89,6 +90,7 @@ public:
     void showMainMenu();
     void showNewChampionshipMenu();
     void showChampionshipMenu();
+    void showGarageMenu();
     void showRaceResults() { menuMode = MenuMode::RACE_RESULTS; }
     void showSettingsMenu();
     void showGraphicsSettingsMenu();
