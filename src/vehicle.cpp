@@ -346,7 +346,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     if (cameraIndex >= 0)
     {
         rw->setHighlightColor(cameraIndex,
-                glm::vec4(g_vehicleColors[driver->getVehicleConfig()->colorIndex], 1.f));
+                glm::vec4(driver->getVehicleConfig()->color, 1.f));
 
         glm::mat4 m = glm::mat4(1.f);
         m[0] = glm::vec4(-cameraDir, m[0].w);

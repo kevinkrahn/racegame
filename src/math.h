@@ -355,3 +355,46 @@ inline glm::vec3 srgb(f32 r, f32 g, f32 b)
 {
     return glm::vec3(glm::pow(r, 2.2f), glm::pow(g, 2.2f), glm::pow(b, 2.2f));
 }
+
+inline glm::vec3 hsvToRgb(f32 h, f32 s, f32 v)
+{
+    h *= 360;
+    f32 chroma = v * s;
+    f32 hprime = fmodf(h / 60.f, 6);
+    f32 x = chroma * (1 - fabs(fmodf(hprime, 2) - 1));
+    f32 m = v - chroma;
+
+    glm::vec3 out;
+    if (0 <= hprime && hprime < 1)
+    {
+        out = { chroma, x, 0 };
+    }
+    else if (1 <= hprime && hprime < 2)
+    {
+        out = { x, chroma, 0 };
+    }
+    else if (2 <= hprime && hprime < 3)
+    {
+        out = { 0, chroma, x };
+    }
+    else if (3 <= hprime && hprime < 4)
+    {
+        out = { 0, x, chroma };
+    }
+    else if (4 <= hprime && hprime < 5)
+    {
+        out = { x, 0, chroma };
+    }
+    else if (5 <= hprime && hprime < 6)
+    {
+        out = { chroma, 0, x };
+    }
+    else
+    {
+        out = { 0, 0, 0 };
+    }
+
+    out += glm::vec3(m);
+
+    return out;
+}

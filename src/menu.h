@@ -61,9 +61,8 @@ class Menu
 
     void drawBox(glm::vec2 pos, glm::vec2 size);
 
+    SmallArray<Widget, 100> widgets;
     Widget* selectedWidget = nullptr;
-    SmallArray<Widget, 32> widgets;
-
     f32 repeatTimer = 0.f;
     f32 fadeInTimer = 0.f;
     bool fadeIn = true;
@@ -110,7 +109,8 @@ class Menu
     Widget* addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
             std::function<ImageButtonInfo()> getInfo);
-    Widget* addColorButton(glm::vec2 pos, glm::vec2 size, std::function<void()> onSelect, u32 flags=0);
+    Widget* addColorButton(glm::vec2 pos, glm::vec2 size, glm::vec3 const& color,
+            std::function<void()> onSelect, u32 flags=0);
     Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
@@ -123,6 +123,7 @@ class Menu
     void createVehiclePreview();
     void createMainGarageMenu();
     void createPerformanceMenu();
+    void createCosmeticsMenu();
 
 public:
     void startQuickRace();

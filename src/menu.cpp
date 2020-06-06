@@ -241,7 +241,7 @@ Widget* Menu::addLogic(std::function<void(Widget&)> onUpdate)
     return &widgets.back();
 }
 
-void drawSelectableBox(Widget& w, bool isSelected)
+void drawSelectableBox(Widget& w, bool isSelected, glm::vec4 const& color=glm::vec4(0,0,0,0.8f))
 {
     f32 borderSize = convertSize(isSelected ? 5 : 2);
     glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
@@ -251,9 +251,10 @@ void drawSelectableBox(Widget& w, bool isSelected)
     g_game.renderer->push2D(Quad(&g_res.white,
                 pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
                 borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
+    glm::vec3 col = glm::mix( glm::vec3(color), glm::vec3(1.f),
+            (sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f);
     g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-            glm::vec4(glm::vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
-            w.fadeInAlpha));
+            glm::vec4(col, color.a), w.fadeInAlpha));
 }
 
 Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
@@ -364,6 +365,24 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 p
                             glm::vec4(1.f), btn.fadeInAlpha));
             }
         }
+    };
+    button.fadeInScale = 0.7f;
+    button.flags = WidgetFlags::SELECTABLE |
+                   WidgetFlags::NAVIGATE_VERTICAL |
+                   WidgetFlags::NAVIGATE_HORIZONTAL | flags;
+    widgets.push_back(button);
+    return &widgets.back();
+}
+
+Widget* Menu::addColorButton(glm::vec2 pos, glm::vec2 size, glm::vec3 const& color,
+        std::function<void()> onSelect, u32 flags)
+{
+    Widget button;
+    button.pos = pos;
+    button.size = size;
+    button.onSelect = std::move(onSelect);
+    button.onRender = [=](Widget& btn, bool isSelected){
+        drawSelectableBox(btn, isSelected, glm::vec4(color, 1.f));
     };
     button.fadeInScale = 0.7f;
     button.flags = WidgetFlags::SELECTABLE |
@@ -1010,8 +1029,10 @@ void Menu::createMainGarageMenu()
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_engine"));
     y += size.y + gap;
 
-    addButton("COSMETICS", "Change your vehicle's appearance with decals or paint.", {x,y}, size, []{
-    }, WidgetFlags::TRANSIENT, g_res.getTexture("icon_spraycan"));
+    addButton("COSMETICS", "Change your vehicle's appearance with decals or paint.", {x,y}, size, [this]{
+        resetTransient();
+        createCosmeticsMenu();
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_spraycan"));
     y += size.y + gap;
 
     addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, []{
@@ -1042,7 +1063,7 @@ void Menu::createMainGarageMenu()
 void Menu::createPerformanceMenu()
 {
     glm::vec2 buttonSize(450, 75);
-    selectedWidget = addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+    addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
         resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
@@ -1051,15 +1072,15 @@ void Menu::createPerformanceMenu()
     f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
     f32 y = -400 + size.y * 0.5f;
     f32 gap = 6;
+    u32 buttonsPerRow = 3;
 
     Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
     for (i32 i=0; i<(i32)driver.getVehicleData()->availableUpgrades.size(); ++i)
     {
         auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
-        u32 buttonsPerRow = 3;
         glm::vec2 pos = { x + (i % buttonsPerRow) * (size.x + gap),
                           y + (i / buttonsPerRow) * (size.y + gap) };
-        addImageButton(upgrade.name, upgrade.description, pos, size, [i, &driver]{
+        Widget* w = addImageButton(upgrade.name, upgrade.description, pos, size, [i, &driver]{
             auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
             auto currentUpgrade = driver.getVehicleConfig()->performanceUpgrades.find(
                     [i](auto& u) { return u.upgradeIndex == i; });
@@ -1098,6 +1119,11 @@ void Menu::createPerformanceMenu()
             return ImageButtonInfo{
                 isPurchasable, upgrade.maxUpgradeLevel, upgradeLevel, price };
         });
+
+        if (i == 0)
+        {
+            selectedWidget = w;
+        }
 #if 0
         if (isSelected)
         {
@@ -1109,6 +1135,41 @@ void Menu::createPerformanceMenu()
             }
         }
 #endif
+    }
+}
+
+void Menu::createCosmeticsMenu()
+{
+    glm::vec2 buttonSize(450, 75);
+    addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+        resetTransient();
+        createMainGarageMenu();
+    }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
+
+    glm::vec2 size(36, 36);
+    f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
+    f32 y = -400 + size.y * 0.5f;
+    f32 gap = 8;
+    u32 buttonsPerRow = 10;
+    u32 buttonRows = 8;
+
+    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
+    for (u32 i=0; i<buttonRows; ++i)
+    {
+        for (u32 j=0; j<buttonsPerRow; ++j)
+        {
+            glm::vec3 color = hsvToRgb(i/(f32)buttonRows, 0.95f, 0.05f + j/(f32)buttonsPerRow);
+            glm::vec2 pos = { x + j * (size.x + gap),
+                              y + i * (size.y + gap) };
+            Widget* w = addColorButton(pos, size, color, [color, &driver]{
+                driver.getVehicleConfig()->color = color;
+                driver.getVehicleConfig()->dirty = true;
+            }, WidgetFlags::TRANSIENT);
+            if (i == 0)
+            {
+                selectedWidget = w;
+            }
+        }
     }
 }
 

@@ -231,7 +231,7 @@ struct VehicleDecal
 
 struct VehicleConfiguration
 {
-    i32 colorIndex = 0;
+    glm::vec3 color;
     i32 paintTypeIndex = 0;
 
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
@@ -260,7 +260,7 @@ struct VehicleConfiguration
 
     void serialize(Serializer& s)
     {
-        s.field(colorIndex);
+        s.field(color);
         s.field(paintTypeIndex);
         s.field(decals);
         s.fieldName("frontWeapon0", frontWeaponIndices[0]);

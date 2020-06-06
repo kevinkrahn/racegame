@@ -355,7 +355,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
     if (config.dirty)
     {
         config.paintMaterial = *originalPaintMaterial;
-        config.paintMaterial.color = g_vehicleColors[config.colorIndex];
+        config.paintMaterial.color = config.color;
         config.paintMaterial.loadShaderHandles({ {"VEHICLE"} });
         config.dirty = false;
     }

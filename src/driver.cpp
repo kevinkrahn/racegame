@@ -12,7 +12,7 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
 
     if (vehicleIndex != -1)
     {
-        vehicleConfig.colorIndex = colorIndex;
+        vehicleConfig.color = g_vehicleColors[colorIndex];
     }
 
     this->aiIndex = aiIndex;
@@ -32,7 +32,7 @@ void Driver::aiUpgrades(RandomSeries& series)
 
     if (vehicleIndex == -1)
     {
-        vehicleConfig.colorIndex = ai.colorIndex;
+        vehicleConfig.color = g_vehicleColors[ai.colorIndex];
         vehicleIndex = (i32)ai.vehicleIndex;
         if (ai.decalIndex != -1
                 && (i32)g_vehicles[vehicleIndex]->availableDecals.size() > ai.decalIndex)

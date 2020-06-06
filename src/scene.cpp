@@ -764,10 +764,10 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
         trackPreview2D.drawItem(sphereMesh->vao, sphereMesh->numIndices,
             glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2.1f) + v->getPosition())
                 * glm::scale(glm::mat4(1.f), glm::vec3(5.1f)),
-            g_vehicleColors[v->getDriver()->getVehicleConfig()->colorIndex], false, 2);
+            v->getDriver()->getVehicleConfig()->color, false, 2);
         /*
         trackPreview2D.drawItem(cubeMesh->vao, cubeMesh->numIndices, v->getTransform(),
-            g_vehicleColors[v->getDriver()->getVehicleConfig()->colorIndex], false, 0);
+            v->getDriver()->getVehicleConfig()->color, false, 0);
         */
     }
 #else
@@ -812,7 +812,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
             glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
                 * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
                 * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
-            g_vehicleColors[v->getDriver()->getVehicleConfig()->colorIndex], false, 0);
+            v->getDriver()->getVehicleConfig()->color, false, 0);
     }
 #endif
 
