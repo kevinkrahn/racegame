@@ -215,20 +215,21 @@ public:
         }
     }
 
-    void erase(T * element)
+    T* erase(T * element)
     {
         assert(element < data_ + size_);
         element->~T();
         for (u32 i=element - data_; i<size_-1; ++i)
         {
-            data_[i] = std::move(data_[i+1]);
+            new (data_ + i) T(std::move(data_[i+1]));
         }
         --size_;
+        return element;
     }
 
-    void erase(u32 index)
+    T* erase(u32 index)
     {
-        erase(data_ + index);
+        return erase(data_ + index);
     }
 
     T& operator[](u32 index)

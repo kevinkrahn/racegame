@@ -232,8 +232,32 @@ Widget* Menu::addLogic(std::function<void()> onUpdate)
     return &widgets.back();
 }
 
+Widget* Menu::addLogic(std::function<void(Widget&)> onUpdate)
+{
+    Widget w;
+    w.flags = 0;
+    w.onRender = [onUpdate](Widget& w, bool isSelected){ onUpdate(w); };
+    widgets.push_back(w);
+    return &widgets.back();
+}
+
+void drawSelectableBox(Widget& w, bool isSelected)
+{
+    f32 borderSize = convertSize(isSelected ? 5 : 2);
+    glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
+    glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+    glm::vec2 size = convertSize(w.size) * w.fadeInScale;
+    glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
+    g_game.renderer->push2D(Quad(&g_res.white,
+                pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
+                borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
+    g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+            glm::vec4(glm::vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
+            w.fadeInAlpha));
+}
+
 Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
-        std::function<void()> onSelect, u32 flags, Texture* icon)
+        std::function<void()> onSelect, u32 flags, Texture* image)
 {
     Font* font = &g_res.getFont("font", (u32)convertSize(38));
 
@@ -242,23 +266,15 @@ Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
     button.pos = pos;
     button.size = size;
     button.onSelect = std::move(onSelect);
-    button.onRender = [=](Widget& btn, bool isSelected){
-        f32 borderSize = convertSize(isSelected ? 5 : 2);
-        glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, btn.hover);
+    button.onRender = [image, font, text](Widget& btn, bool isSelected){
+        drawSelectableBox(btn, isSelected);
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         glm::vec2 size = convertSize(btn.size) * btn.fadeInScale;
         glm::vec2 pos = convertSize(btn.pos) + center - size * 0.5f;
-        g_game.renderer->push2D(Quad(&g_res.white,
-                    pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                    borderColor, (0.5f + btn.hover * 0.5f) * btn.fadeInAlpha));
-        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                glm::vec4(glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f),
-                btn.fadeInAlpha));
-
-        if (icon)
+        if (image)
         {
-            f32 iconSize = convertSize(64) * btn.fadeInScale;
-            f32 textOffsetX = iconSize + convertSize(40);
+            f32 imageSize = convertSize(64) * btn.fadeInScale;
+            f32 textOffsetX = imageSize + convertSize(40);
 #if 1
             g_game.renderer->push2D(TextRenderable(font, text, pos + glm::vec2(textOffsetX, size.y * 0.5f),
                         glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * btn.fadeInAlpha, btn.fadeInScale,
@@ -268,14 +284,85 @@ Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
                         glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * btn.fadeInAlpha, btn.fadeInScale,
                         HorizontalAlign::CENTER, VerticalAlign::CENTER));
 #endif
-            g_game.renderer->push2D(Quad(icon, pos + glm::vec2(convertSize(20), size.y*0.5f-iconSize*0.5f),
-                        iconSize, iconSize, glm::vec4(1.f), btn.fadeInAlpha));
+            g_game.renderer->push2D(Quad(image, pos + glm::vec2(convertSize(20), size.y*0.5f-imageSize*0.5f),
+                        imageSize, imageSize, glm::vec4(1.f), btn.fadeInAlpha));
         }
         else
         {
             g_game.renderer->push2D(TextRenderable(font, text, pos + size * 0.5f,
                         glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * btn.fadeInAlpha, btn.fadeInScale,
                         HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        }
+    };
+    button.fadeInScale = 0.7f;
+    button.flags = WidgetFlags::SELECTABLE |
+                   WidgetFlags::NAVIGATE_VERTICAL |
+                   WidgetFlags::NAVIGATE_HORIZONTAL | flags;
+    widgets.push_back(button);
+    return &widgets.back();
+}
+
+Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+        std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
+        std::function<ImageButtonInfo()> getInfo)
+{
+    Font* font = &g_res.getFont("font", (u32)convertSize(22));
+
+    Widget button;
+    button.helpText = helpText;
+    button.pos = pos;
+    button.size = size;
+    button.onSelect = std::move(onSelect);
+    button.onRender = [=](Widget& btn, bool isSelected){
+        drawSelectableBox(btn, isSelected);
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 imageSize = convertSize(btn.size - imageMargin) * btn.fadeInScale;
+        glm::vec2 pos = convertSize(btn.pos) + center - imageSize * 0.5f;
+        f32 textOffsetY1 = convertSize(btn.pos.y) + center.y - (convertSize(btn.size.y) * 0.5f
+            - convertSize(16)) * btn.fadeInScale;
+        f32 textOffsetY2 = convertSize(btn.pos.y) + center.y + (convertSize(btn.size.y) * 0.5f
+            - convertSize(16)) * btn.fadeInScale;
+
+        auto info = getInfo();
+        f32 alpha = (info.isEnabled ? (isSelected ? 1.f : 0.8f) : 0.25f) * btn.fadeInAlpha;
+        g_game.renderer->push2D(Quad(image, pos, imageSize.x, imageSize.y, glm::vec4(1.f), alpha));
+
+        g_game.renderer->push2D(TextRenderable(font, text, {pos.x + imageSize.x*0.5f, textOffsetY1},
+                    glm::vec3(1.f), alpha, btn.fadeInScale,
+                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+
+        if (info.maxUpgradeLevel == 0 || info.upgradeLevel < info.maxUpgradeLevel)
+        {
+            g_game.renderer->push2D(TextRenderable(font, tstr(info.price),
+                        {pos.x + imageSize.x*0.5f, textOffsetY2},
+                        glm::vec3(1.f), alpha, btn.fadeInScale,
+                        HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        }
+
+        if (info.maxUpgradeLevel > 0)
+        {
+            Texture* tex1 = g_res.getTexture("button");
+            Texture* tex2 = g_res.getTexture("button_glow");
+            f32 size = convertSize(16);
+            f32 sep = convertSize(20);
+            for (i32 i=0; i<info.maxUpgradeLevel; ++i)
+            {
+                glm::vec2 pos = center + convertSize(btn.pos) - (convertSize({btn.size.x, 0}) * 0.5f
+                    - glm::vec2(0, sep * info.maxUpgradeLevel * 0.5f) + glm::vec2(0, sep * i)
+                    - convertSize({ 12, -10 })) * btn.fadeInScale;
+                g_game.renderer->push2D(Quad(tex1, pos - size*0.5f * btn.fadeInScale,
+                            size * btn.fadeInScale, size * btn.fadeInScale,
+                            glm::vec4(1.f), btn.fadeInAlpha));
+            }
+            for (i32 i=0; i<info.upgradeLevel; ++i)
+            {
+                glm::vec2 pos = center + convertSize(btn.pos) - (convertSize({btn.size.x, 0}) * 0.5f
+                    - glm::vec2(0, sep * info.maxUpgradeLevel * 0.5f) + glm::vec2(0, sep * i)
+                    - convertSize({ 12, -10 })) * btn.fadeInScale;
+                g_game.renderer->push2D(Quad(tex2, pos - size*0.5f * btn.fadeInScale,
+                            size * btn.fadeInScale, size * btn.fadeInScale,
+                            glm::vec4(1.f), btn.fadeInAlpha));
+            }
         }
     };
     button.fadeInScale = 0.7f;
@@ -374,9 +461,9 @@ Widget* Menu::addHelpMessage(glm::vec2 pos)
         if (selectedWidget->helpText)
         {
             Font* font = &g_res.getFont("font", (u32)convertSize(26));
-            f32 textWidth = font->stringDimensions(selectedWidget->helpText).x + convertSize(50.f);
+            glm::vec2 textSize = font->stringDimensions(selectedWidget->helpText) + convertSize({50,30});
             glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-            glm::vec2 size = glm::vec2(textWidth, convertSize(50)) * widget.fadeInScale;
+            glm::vec2 size = textSize * widget.fadeInScale;
             glm::vec2 pos = convertSize(widget.pos) + center - size * 0.5f;
             f32 alpha = selectedWidget->hover * widget.fadeInAlpha;
             g_game.renderer->push2D(Quad(&g_res.white,
@@ -759,7 +846,7 @@ void Menu::createVehiclePreview()
     Font* font = &g_res.getFont("font", (u32)convertSize(30));
     std::string garageName = str(driver.playerName, "'s Garage");
 
-    Widget* tb = addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
+    addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
     addLabel([=]{ return tstr(garageName); }, {-260 - vehiclePreviewSize.x * 0.5f
             + font->stringDimensions(garageName.c_str()).x * 0.5f + 20, -375}, font);
 
@@ -858,7 +945,7 @@ void Menu::createVehiclePreview()
         }
     });
 
-    addLogic([tb]{
+    addLogic([](Widget& w){
         Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
 
         glm::vec2 vehicleIconSize = convertSize(vehiclePreviewSize);
@@ -894,11 +981,11 @@ void Menu::createVehiclePreview()
         rw.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f), glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
         g_game.renderer->addRenderWorld(&rw);
 
-        glm::vec2 size = vehicleIconSize * tb->fadeInScale;
+        glm::vec2 size = vehicleIconSize * w.fadeInScale;
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         glm::vec2 pos = center + convertSize({-260, -150}) - size * 0.5f;
         g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
-                    pos, size.x, size.y, glm::vec3(1.f), tb->fadeInAlpha, false, true));
+                    pos, size.x, size.y, glm::vec3(1.f), w.fadeInAlpha, false, true));
 
         /*
         g_game.renderer->push2D(TextRenderable(smallfont,
@@ -910,48 +997,126 @@ void Menu::createVehiclePreview()
     });
 }
 
-void Menu::showGarageMenu()
+void Menu::createMainGarageMenu()
 {
-    reset();
     Texture* iconbg = g_res.getTexture("iconbg");
-    createVehiclePreview();
-
     glm::vec2 size(450, 75);
     f32 x = 280;
     f32 y = -400 + size.y * 0.5f;
     f32 gap = 12;
-
-    selectedWidget = addButton("PERFORMANCE", "Upgrades to enhance your vehicle's performance.", {x,y}, size, []{
-    }, 0, g_res.getTexture("icon_engine"));
-    y += size.y + gap;
-
-    addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, []{
-    }, 0, iconbg);
+    selectedWidget = addButton("PERFORMANCE", "Upgrades to enhance your vehicle's performance.", {x,y}, size, [this]{
+        resetTransient();
+        createPerformanceMenu();
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_engine"));
     y += size.y + gap;
 
     addButton("COSMETICS", "Change your vehicle's appearance with decals or paint.", {x,y}, size, []{
-    }, 0, g_res.getTexture("icon_spraycan"));
+    }, WidgetFlags::TRANSIENT, g_res.getTexture("icon_spraycan"));
+    y += size.y + gap;
+
+    addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, []{
+    }, WidgetFlags::TRANSIENT, iconbg);
+    y += size.y + gap;
+
+    addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, []{
+    }, WidgetFlags::TRANSIENT, iconbg);
+    y += size.y + gap;
+
+    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, []{
+    }, WidgetFlags::TRANSIENT, iconbg);
+    y += size.y + gap;
+
+    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, []{
+    }, WidgetFlags::TRANSIENT, iconbg);
     y += size.y + gap;
 
     addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, []{
-    }, 0);
+    }, WidgetFlags::TRANSIENT);
     y += size.y + gap;
 
     addButton("BACK", nullptr, {x, 350-size.y*0.5f}, size, [this]{
         showChampionshipMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
+}
+
+void Menu::createPerformanceMenu()
+{
+    glm::vec2 buttonSize(450, 75);
+    selectedWidget = addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+        resetTransient();
+        createMainGarageMenu();
+    }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
+
+    glm::vec2 size(150, 150);
+    f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
+    f32 y = -400 + size.y * 0.5f;
+    f32 gap = 6;
+
+    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
+    for (i32 i=0; i<(i32)driver.getVehicleData()->availableUpgrades.size(); ++i)
+    {
+        auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
+        u32 buttonsPerRow = 3;
+        glm::vec2 pos = { x + (i % buttonsPerRow) * (size.x + gap),
+                          y + (i / buttonsPerRow) * (size.y + gap) };
+        addImageButton(upgrade.name, upgrade.description, pos, size, [i, &driver]{
+            auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
+            auto currentUpgrade = driver.getVehicleConfig()->performanceUpgrades.find(
+                    [i](auto& u) { return u.upgradeIndex == i; });
+            bool isEquipped = !!currentUpgrade;
+            i32 upgradeLevel = 0;
+            i32 price = upgrade.price;
+            if (isEquipped)
+            {
+                upgradeLevel = currentUpgrade->upgradeLevel;
+                price = upgrade.price * (upgradeLevel + 1);
+            }
+            bool isPurchasable = driver.credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
+            if (isPurchasable)
+            {
+                g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
+                driver.credits -= price;
+                driver.getVehicleConfig()->addUpgrade(i);
+            }
+            else
+            {
+                g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
+            }
+        }, WidgetFlags::TRANSIENT, upgrade.icon, 48, [i, &driver]{
+            auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
+            auto currentUpgrade = driver.getVehicleConfig()->performanceUpgrades.find(
+                    [i](auto& u) { return u.upgradeIndex == i; });
+            bool isEquipped = !!currentUpgrade;
+            i32 upgradeLevel = 0;
+            i32 price = upgrade.price;
+            if (isEquipped)
+            {
+                upgradeLevel = currentUpgrade->upgradeLevel;
+                price = upgrade.price * (upgradeLevel + 1);
+            }
+            bool isPurchasable = driver.credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
+            return ImageButtonInfo{
+                isPurchasable, upgrade.maxUpgradeLevel, upgradeLevel, price };
+        });
+#if 0
+        if (isSelected)
+        {
+            messageStr = upgrade.description;
+            if (upgradeLevel < upgrade.maxUpgradeLevel ||
+                    (!isEquipped && upgrade.maxUpgradeLevel == 1))
+            {
+                vehicleConfig2.addUpgrade(i);
+            }
+        }
+#endif
+    }
+}
+
+void Menu::showGarageMenu()
+{
+    reset();
+    createVehiclePreview();
+    createMainGarageMenu();
 }
 
 #if 0
@@ -1114,46 +1279,6 @@ void Menu::championshipGarage()
                     tstr(isOwned ? "Value: " : "Price: ", vehicleData->price),
                     vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(16)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
-    }
-    else if (mode == 2)
-    {
-        g_gui.label("Performance Upgrades");
-        for (i32 i=0; i<(i32)driver.getVehicleData()->availableUpgrades.size(); ++i)
-        {
-            auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
-            auto currentUpgrade = vehicleConfig.performanceUpgrades.find(
-                    [&](auto& u) { return u.upgradeIndex == i; });
-            bool isEquipped = !!currentUpgrade;
-            i32 upgradeLevel = 1;
-            const char* extraText = nullptr;
-            i32 price = upgrade.price * upgradeLevel;
-            if (isEquipped)
-            {
-                upgradeLevel = currentUpgrade->upgradeLevel;
-                extraText =
-                    tstr(upgradeLevel, "/", upgrade.maxUpgradeLevel);
-                price = upgrade.price * (upgradeLevel + 1);
-            }
-            bool isSelected = false;
-            if (g_gui.itemButton(upgrade.name, tstr("Price: ", price),
-                    extraText, driver.credits >= price &&
-                        ((upgradeLevel < upgrade.maxUpgradeLevel && isEquipped) || !isEquipped),
-                    upgrade.icon, &isSelected))
-            {
-                g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
-                driver.credits -= price;
-                driver.getVehicleConfig()->addUpgrade(i);
-            }
-            if (isSelected)
-            {
-                messageStr = upgrade.description;
-                if (upgradeLevel < upgrade.maxUpgradeLevel ||
-                        (!isEquipped && upgrade.maxUpgradeLevel == 1))
-                {
-                    vehicleConfig2.addUpgrade(i);
-                }
-            }
-        }
     }
     else if (mode == 3)
     {
@@ -2092,7 +2217,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         if (activated)
         {
             g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
-            if (widget.flags & WidgetFlags::FADE_OUT)
+            if (widget.flags & (WidgetFlags::FADE_OUT | WidgetFlags::FADE_OUT_TRANSIENT))
             {
                 fadeIn = false;
                 fadeInTimer = REFERENCE_HEIGHT;
@@ -2115,11 +2240,15 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         }
         else
         {
-            if (fadeInTimer < widget.pos.y + REFERENCE_HEIGHT * 0.5f)
+            if (!(selectedWidget->flags & WidgetFlags::FADE_OUT_TRANSIENT) ||
+                ((selectedWidget->flags & WidgetFlags::FADE_OUT_TRANSIENT) && (widget.flags & WidgetFlags::TRANSIENT)))
             {
-                widget.fadeInAlpha = smoothMove(widget.fadeInAlpha, 0.f, 7.f, deltaTime);
-                widget.fadeInAlpha = clamp(widget.fadeInAlpha - deltaTime * 3.f, 0.f, 1.f);
-                widget.fadeInScale = smoothMove(widget.fadeInScale, 0.f, 5.f, deltaTime);
+                if (fadeInTimer < widget.pos.y + REFERENCE_HEIGHT * 0.5f)
+                {
+                    widget.fadeInAlpha = smoothMove(widget.fadeInAlpha, 0.f, 7.f, deltaTime);
+                    widget.fadeInAlpha = clamp(widget.fadeInAlpha - deltaTime * 3.f, 0.f, 1.f);
+                    widget.fadeInScale = smoothMove(widget.fadeInScale, 0.f, 5.f, deltaTime);
+                }
             }
         }
     }
