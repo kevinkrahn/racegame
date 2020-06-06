@@ -714,10 +714,12 @@ void Menu::showChampionshipMenu()
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK, g_res.getTexture("icon_flag"));
     y += 100;
 
+    /*
     addButton("STANDINGS", "View the current championship standings.", {x,y}, size, [this]{
         menuMode = CHAMPIONSHIP_STANDINGS;
     }, 0, g_res.getTexture("icon_stats"));
     y += 100;
+    */
 
     addButton("QUIT", "Return to main menu.", {x,y}, size, [this]{
         showMainMenu();
@@ -750,12 +752,13 @@ void Menu::showGarageMenu()
     reset();
 
     static const glm::vec2 vehiclePreviewSize = {600,450};
-    addBackgroundBox({-260,200}, {vehiclePreviewSize.x, 400}, 0.5f);
+    Widget* box = addBackgroundBox({-260,200}, {vehiclePreviewSize.x, 300}, 0.8f);
+    addHelpMessage({0, 400});
 
     Texture* iconbg = g_res.getTexture("iconbg");
 
-    glm::vec2 size(400, 80);
-    f32 x = 255;
+    glm::vec2 size(450, 80);
+    f32 x = 280;
     f32 y = -400 + size.y * 0.5f;
     f32 gap = 15;
 
@@ -783,15 +786,98 @@ void Menu::showGarageMenu()
     }, 0, g_res.getTexture("icon_spraycan"));
     y += size.y + gap;
 
-    addButton("BUY/SELL CAR", "Buy a new vehicle!", {x,y}, size, []{
+    addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, []{
     }, 0);
     y += size.y + gap;
 
-    addButton("BACK", nullptr, {x, 400-40}, size, [this]{
+    addButton("BACK", nullptr, {x, 350-40}, size, [this]{
         showChampionshipMenu();
     }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 
     static RenderWorld rw;
+
+    addLogic([box]{
+        struct Stat
+        {
+            const char* name = nullptr;
+            f32 value = 0.5f;
+        };
+        static Stat stats[] = {
+            { "ACCELERATION" },
+            { "TOP SPEED" },
+            { "ARMOR" },
+            { "MASS" },
+            { "GRIP" },
+            { "OFFROAD" },
+        };
+        static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
+        /*
+        f32 targetStats[] = {
+            tuningReal.specs.acceleration,
+            tuningReal.specs.topSpeed,
+            tuningReal.specs.armor,
+            tuningReal.specs.mass,
+            tuningReal.specs.grip,
+            tuningReal.specs.offroad,
+        };
+        f32 targetStatsUpgrade[] = {
+            tuningUpgrade.specs.acceleration,
+            tuningUpgrade.specs.topSpeed,
+            tuningUpgrade.specs.armor,
+            tuningUpgrade.specs.mass,
+            tuningUpgrade.specs.grip,
+            tuningUpgrade.specs.offroad,
+        };
+        */
+
+        Font* tinyfont = &g_res.getFont("font", (u32)convertSize(24));
+        f32 barMargin = convertSize(30 * box->fadeInScale);
+        f32 maxBarWidth = convertSize(vehiclePreviewSize.x * box->fadeInScale) - barMargin*2;
+        f32 barHeight = convertSize(8 * box->fadeInScale);
+        f32 barSep = convertSize(40 * box->fadeInScale);
+        f32 barOffset = convertSize(20 * box->fadeInScale);
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 statsPos = center +
+            convertSize(box->pos - box->size * 0.5f * box->fadeInScale) + barMargin;
+        for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
+        {
+            //stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
+            //statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
+
+            g_game.renderer->push2D(TextRenderable(tinyfont, stats[i].name,
+                        statsPos + glm::vec2(0, i * barSep),
+                        glm::vec3(1.f), box->fadeInAlpha));
+
+            g_game.renderer->push2D(Quad(&g_res.white,
+                        statsPos + glm::vec2(0, i * barSep + barOffset),
+                        maxBarWidth, barHeight, glm::vec4(0,0,0,0.9f), box->fadeInAlpha));
+
+            f32 barWidth = maxBarWidth * stats[i].value + i * 10.f;
+            f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
+
+            if (upgradeBarWidth > barWidth)
+            {
+                g_game.renderer->push2D(Quad(&g_res.white,
+                            statsPos + glm::vec2(0, i * barSep + barOffset),
+                            upgradeBarWidth, barHeight, glm::vec4(0.01f,0.7f,0.01f,0.9f),
+                            box->fadeInAlpha));
+            }
+
+            g_game.renderer->push2D(Quad(&g_res.white,
+                        statsPos + glm::vec2(0, i * barSep + barOffset),
+                        barWidth, barHeight, glm::vec4(0.5f,0.5f,0.5f,1.f),
+                        box->fadeInAlpha));
+
+#if 0
+            if (upgradeBarWidth < barWidth)
+            {
+                g_game.renderer->push2D(QuadRenderable(&g_res.white,
+                            statsPos + glm::vec2((f32)upgradeBarWidth, convertSize(i * 27.f + 12.f)),
+                            barWidth-upgradeBarWidth, barHeight, glm::vec3(0.8f, 0.01f, 0.01f)));
+            }
+#endif
+        }
+    });
 
     addLogic([fw]{
         Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
@@ -839,7 +925,7 @@ void Menu::showGarageMenu()
         g_game.renderer->push2D(TextRenderable(smallfont,
                     currentVehicleIndex != -1 ? g_vehicles[currentVehicleIndex]->name : "No Vehicle",
                     vehiclePreviewPos + glm::vec2((u32)vehicleIconWidth / 2,
-                        glm::floor(vehicleIconHeight + g_gui.convertSize(8))),
+                        glm::floor(vehicleIconHeight + convertSize(8))),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER));
                     */
     });
@@ -848,15 +934,6 @@ void Menu::showGarageMenu()
 #if 0
 void Menu::championshipGarage()
 {
-    f32 w = glm::floor(g_gui.convertSize(600));
-
-    glm::vec2 menuPos = glm::vec2(g_game.windowWidth/2 - w/2, g_game.windowHeight * 0.1f);
-    glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
-    drawBox(menuPos, menuSize);
-
-    f32 o = glm::floor(g_gui.convertSize(32));
-    f32 oy = glm::floor(g_gui.convertSize(48));
-
     Texture* white = &g_res.white;
     u32 vehicleIconWidth = (u32)g_gui.convertSize(290);
     u32 vehicleIconHeight = (u32)g_gui.convertSize(256);
@@ -1256,76 +1333,6 @@ void Menu::championshipGarage()
 
     g_gui.end();
 
-    struct Stat
-    {
-        const char* name = nullptr;
-        f32 value = 0.f;
-    };
-    static Stat stats[] = {
-        { "Acceleration" },
-        { "Top Speed" },
-        { "Armor" },
-        { "Mass" },
-        { "Grip" },
-        { "Offroad" },
-    };
-    static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
-    f32 targetStats[] = {
-        tuningReal.specs.acceleration,
-        tuningReal.specs.topSpeed,
-        tuningReal.specs.armor,
-        tuningReal.specs.mass,
-        tuningReal.specs.grip,
-        tuningReal.specs.offroad,
-    };
-    f32 targetStatsUpgrade[] = {
-        tuningUpgrade.specs.acceleration,
-        tuningUpgrade.specs.topSpeed,
-        tuningUpgrade.specs.armor,
-        tuningUpgrade.specs.mass,
-        tuningUpgrade.specs.grip,
-        tuningUpgrade.specs.offroad,
-    };
-
-    const f32 maxBarWidth = (f32)vehicleIconWidth;
-    glm::vec2 statsPos = vehiclePreviewPos
-        + glm::vec2(0, vehicleIconHeight + glm::floor(g_gui.convertSize(48)));
-    f32 barHeight = glm::floor(g_gui.convertSize(5));
-    Font* tinyfont = &g_res.getFont("font", (u32)g_gui.convertSize(13));
-    for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
-    {
-        stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
-        statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
-
-        g_game.renderer->push2D(TextRenderable(tinyfont, stats[i].name,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f))),
-                    glm::vec3(1.f)));
-
-        g_game.renderer->push2D(QuadRenderable(white,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f + 12.f))),
-                    maxBarWidth, barHeight, glm::vec3(0.f), 0.9f, true));
-
-        f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
-        f32 barWidth = maxBarWidth * stats[i].value;
-
-        if (upgradeBarWidth > barWidth)
-        {
-            g_game.renderer->push2D(QuadRenderable(white,
-                        statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f + 12.f))),
-                        upgradeBarWidth, barHeight, glm::vec3(0.01f, 0.7f, 0.01f)));
-        }
-
-        g_game.renderer->push2D(QuadRenderable(white,
-                    statsPos + glm::vec2(0, glm::floor(g_gui.convertSize(i * 27.f + 12.f))),
-                    barWidth, barHeight, glm::vec3(0.8f)));
-
-        if (upgradeBarWidth < barWidth)
-        {
-            g_game.renderer->push2D(QuadRenderable(white,
-                        statsPos + glm::vec2((f32)upgradeBarWidth, g_gui.convertSizei(i * 27.f + 12.f)),
-                        barWidth-upgradeBarWidth, barHeight, glm::vec3(0.8f, 0.01f, 0.01f)));
-        }
-    }
 
     if (messageStr)
     {
