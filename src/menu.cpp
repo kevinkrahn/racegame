@@ -391,15 +391,15 @@ Widget* Menu::addHelpMessage(glm::vec2 pos)
     return &widgets.back();
 }
 
-Widget* Menu::addLabel(std::string const& text, glm::vec2 pos, Font* font,
-        HorizontalAlign halign, VerticalAlign valign)
+Widget* Menu::addLabel(std::function<const char*()> getText, glm::vec2 pos, Font* font,
+        HorizontalAlign halign, VerticalAlign valign, glm::vec3 const& color)
 {
     Widget w;
     w.pos = pos;
     w.onRender = [=](Widget& widget, bool isSelected) {
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        g_game.renderer->push2D(TextRenderable(font, tstr(text.c_str()),
-                    center + convertSize(w.pos), glm::vec3(1.f),
+        g_game.renderer->push2D(TextRenderable(font, getText(),
+                    center + convertSize(w.pos), color,
                     widget.fadeInAlpha, widget.fadeInScale, halign, valign));
     };
     w.flags = 0;
@@ -473,7 +473,7 @@ void Menu::showNewChampionshipMenu()
 
     addTitle("New Championship");
 
-    addLabel("Press SPACE or controller button to join", { 0, -320 },
+    addLabel([]{ return "Press SPACE or controller button to join"; }, { 0, -320 },
             &g_res.getFont("font", (u32)convertSize(38)));
     glm::vec2 size(250, 75);
     selectedWidget = addButton("BACK", "Return to main menu.", { -280, 320 }, size, [this]{
@@ -729,10 +729,10 @@ void Menu::showChampionshipMenu()
     //addBackgroundBox({0,0}, {1300, 850});
     addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f);
     Font* bigFont = &g_res.getFont("font_bold", (u32)convertSize(110));
-    Widget* label = addLabel(str("League ", (char)('A' + g_game.state.currentLeague)), {0, -370}, bigFont,
-            HorizontalAlign::CENTER, VerticalAlign::CENTER);
+    Widget* label = addLabel([]{ return tstr("League ", (char)('A' + g_game.state.currentLeague)); },
+            {0, -370}, bigFont, HorizontalAlign::CENTER, VerticalAlign::CENTER);
     Font* mediumFont = &g_res.getFont("font", (u32)convertSize(60));
-    addLabel(str("Race ", g_game.state.currentRace + 1, "/10"), {0, -290}, mediumFont,
+    addLabel([]{ return tstr("Race ", g_game.state.currentRace + 1, "/10"); }, {0, -290}, mediumFont,
             HorizontalAlign::CENTER, VerticalAlign::CENTER);
 
     addLogic([label]{
@@ -747,52 +747,31 @@ void Menu::showChampionshipMenu()
     });
 }
 
-void Menu::showGarageMenu()
+static const glm::vec2 vehiclePreviewSize = {600,400};
+void Menu::createVehiclePreview()
 {
-    reset();
+    addBackgroundBox({0,0}, {1920,1080}, 0.3f);
 
-    static const glm::vec2 vehiclePreviewSize = {600,450};
     Widget* box = addBackgroundBox({-260,200}, {vehiclePreviewSize.x, 300}, 0.8f);
     addHelpMessage({0, 400});
 
-    Texture* iconbg = g_res.getTexture("iconbg");
+    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
+    Font* font = &g_res.getFont("font", (u32)convertSize(30));
+    std::string garageName = str(driver.playerName, "'s Garage");
 
-    glm::vec2 size(450, 80);
-    f32 x = 280;
-    f32 y = -400 + size.y * 0.5f;
-    f32 gap = 15;
+    Widget* tb = addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
+    addLabel([=]{ return tstr(garageName); }, {-260 - vehiclePreviewSize.x * 0.5f
+            + font->stringDimensions(garageName.c_str()).x * 0.5f + 20, -375}, font);
 
-    selectedWidget = addButton("PERFORMANCE", "Upgrades to enhance your vehicle's performance.", {x,y}, size, []{
-    }, 0, g_res.getTexture("icon_engine"));
-    y += size.y + gap;
-
-    Widget* fw = addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, []{
-    }, 0, iconbg);
-    y += size.y + gap;
-
-    addButton("COSMETICS", "Change your vehicle's appearance with decals or paint.", {x,y}, size, []{
-    }, 0, g_res.getTexture("icon_spraycan"));
-    y += size.y + gap;
-
-    addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, []{
-    }, 0);
-    y += size.y + gap;
-
-    addButton("BACK", nullptr, {x, 350-40}, size, [this]{
-        showChampionshipMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
+    Font* font2 = &g_res.getFont("font_bold", (u32)convertSize(30));
+    std::string creditsMaxSize = "CREDITS: 000000";
+    addBackgroundBox({-260 + vehiclePreviewSize.x * 0.5f
+            - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375},
+            { font2->stringDimensions(creditsMaxSize.c_str()).x + 40, 50.f }, 0.92f);
+    addLabel([]{ return tstr("CREDITS: ", g_game.state.drivers[g_game.state.driverContextIndex].credits); },
+            {-260 + vehiclePreviewSize.x * 0.5f
+            - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375}, font2,
+            HorizontalAlign::CENTER, VerticalAlign::CENTER, COLOR_SELECTED);
 
     static RenderWorld rw;
 
@@ -879,7 +858,7 @@ void Menu::showGarageMenu()
         }
     });
 
-    addLogic([fw]{
+    addLogic([tb]{
         Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
 
         glm::vec2 vehicleIconSize = convertSize(vehiclePreviewSize);
@@ -915,11 +894,11 @@ void Menu::showGarageMenu()
         rw.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f), glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
         g_game.renderer->addRenderWorld(&rw);
 
-        glm::vec2 size = vehicleIconSize * fw->fadeInScale;
+        glm::vec2 size = vehicleIconSize * tb->fadeInScale;
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        glm::vec2 pos = center + convertSize({-260, -175}) - size * 0.5f;
+        glm::vec2 pos = center + convertSize({-260, -150}) - size * 0.5f;
         g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
-                    pos, size.x, size.y, glm::vec3(1.f), fw->fadeInAlpha, false, true));
+                    pos, size.x, size.y, glm::vec3(1.f), tb->fadeInAlpha, false, true));
 
         /*
         g_game.renderer->push2D(TextRenderable(smallfont,
@@ -929,6 +908,50 @@ void Menu::showGarageMenu()
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER));
                     */
     });
+}
+
+void Menu::showGarageMenu()
+{
+    reset();
+    Texture* iconbg = g_res.getTexture("iconbg");
+    createVehiclePreview();
+
+    glm::vec2 size(450, 75);
+    f32 x = 280;
+    f32 y = -400 + size.y * 0.5f;
+    f32 gap = 12;
+
+    selectedWidget = addButton("PERFORMANCE", "Upgrades to enhance your vehicle's performance.", {x,y}, size, []{
+    }, 0, g_res.getTexture("icon_engine"));
+    y += size.y + gap;
+
+    addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, []{
+    }, 0, iconbg);
+    y += size.y + gap;
+
+    addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, []{
+    }, 0, iconbg);
+    y += size.y + gap;
+
+    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, []{
+    }, 0, iconbg);
+    y += size.y + gap;
+
+    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, []{
+    }, 0, iconbg);
+    y += size.y + gap;
+
+    addButton("COSMETICS", "Change your vehicle's appearance with decals or paint.", {x,y}, size, []{
+    }, 0, g_res.getTexture("icon_spraycan"));
+    y += size.y + gap;
+
+    addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, []{
+    }, 0);
+    y += size.y + gap;
+
+    addButton("BACK", nullptr, {x, 350-size.y*0.5f}, size, [this]{
+        showChampionshipMenu();
+    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
 
 #if 0
@@ -1953,7 +1976,7 @@ void Menu::showPauseMenu()
     });
 
     Font* font = &g_res.getFont("font_bold", (u32)convertSize(55));
-    addLabel("PAUSED", {0, -160}, font);
+    addLabel([]{ return "PAUSED"; }, {0, -160}, font);
     glm::vec2 size(350, 80);
     selectedWidget = addButton("RESUME", "", {0, -70}, size, [this]{
         menuMode = MenuMode::HIDDEN;

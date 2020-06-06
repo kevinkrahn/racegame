@@ -81,9 +81,12 @@ class Menu
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addHelpMessage(glm::vec2 pos);
-    Widget* addLabel(std::string const& text, glm::vec2 pos, class Font* font,
-            HorizontalAlign halign=HorizontalAlign::CENTER, VerticalAlign valign=VerticalAlign::CENTER);
+    Widget* addLabel(std::function<const char*()> getText, glm::vec2 pos, class Font* font,
+            HorizontalAlign halign=HorizontalAlign::CENTER,
+            VerticalAlign valign=VerticalAlign::CENTER, glm::vec3 const& color=glm::vec3(1.f));
     Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
+
+    void createVehiclePreview();
 
 public:
     void startQuickRace();
