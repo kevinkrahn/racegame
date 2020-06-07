@@ -30,7 +30,6 @@ public:
         Array<Driver> drivers;
         u32 currentLeague = 0;
         u32 currentRace = 0;
-        i32 driverContextIndex = 0;
         u32 gameMode = GameMode::NONE;
 
         void serialize(Serializer& s)

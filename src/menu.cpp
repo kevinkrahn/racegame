@@ -241,10 +241,11 @@ Widget* Menu::addLogic(std::function<void(Widget&)> onUpdate)
     return &widgets.back();
 }
 
-void drawSelectableBox(Widget& w, bool isSelected, glm::vec4 const& color=glm::vec4(0,0,0,0.8f))
+void drawSelectableBox(Widget& w, bool isSelected, glm::vec4 const& color=glm::vec4(0,0,0,0.8f),
+        glm::vec4 unselectedBorderColor=COLOR_NOT_SELECTED)
 {
     f32 borderSize = convertSize(isSelected ? 5 : 2);
-    glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
+    glm::vec4 borderColor = glm::mix(unselectedBorderColor, COLOR_SELECTED, w.hover);
     glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
     glm::vec2 size = convertSize(w.size) * w.fadeInScale;
     glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
@@ -305,7 +306,7 @@ Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
 
 Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
         std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
-        std::function<ImageButtonInfo()> getInfo)
+        std::function<ImageButtonInfo(bool isSelected)> getInfo)
 {
     Font* font = &g_res.getFont("font", (u32)convertSize(22));
 
@@ -315,7 +316,14 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 p
     button.size = size;
     button.onSelect = std::move(onSelect);
     button.onRender = [=](Widget& btn, bool isSelected){
-        drawSelectableBox(btn, isSelected);
+        auto info = getInfo(isSelected);
+#if 0
+        drawSelectableBox(btn, isSelected, {0,0,0,0.8f},
+                info.isHighlighted ? glm::vec4(0.05f,0.05f,1.f,1.f) : COLOR_NOT_SELECTED);
+#else
+        drawSelectableBox(btn, isSelected, {0,0,0,0.8f},
+                info.isHighlighted ? COLOR_SELECTED : COLOR_NOT_SELECTED);
+#endif
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         glm::vec2 imageSize = convertSize(btn.size - imageMargin) * btn.fadeInScale;
         glm::vec2 pos = convertSize(btn.pos) + center - imageSize * 0.5f;
@@ -324,9 +332,9 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 p
         f32 textOffsetY2 = convertSize(btn.pos.y) + center.y + (convertSize(btn.size.y) * 0.5f
             - convertSize(16)) * btn.fadeInScale;
 
-        auto info = getInfo();
         f32 alpha = (info.isEnabled ? (isSelected ? 1.f : 0.8f) : 0.25f) * btn.fadeInAlpha;
-        g_game.renderer->push2D(Quad(image, pos, imageSize.x, imageSize.y, glm::vec4(1.f), alpha));
+        g_game.renderer->push2D(Quad(image, pos, imageSize.x, imageSize.y,
+                    glm::vec4(1.f), alpha, info.flipImage));
 
         g_game.renderer->push2D(TextRenderable(font, text, {pos.x + imageSize.x*0.5f, textOffsetY1},
                     glm::vec3(1.f), alpha, btn.fadeInScale,
@@ -334,7 +342,7 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 p
 
         if (info.maxUpgradeLevel == 0 || info.upgradeLevel < info.maxUpgradeLevel)
         {
-            g_game.renderer->push2D(TextRenderable(font, tstr(info.price),
+            g_game.renderer->push2D(TextRenderable(font, info.bottomText,
                         {pos.x + imageSize.x*0.5f, textOffsetY2},
                         glm::vec3(1.f), alpha, btn.fadeInScale,
                         HorizontalAlign::CENTER, VerticalAlign::CENTER));
@@ -796,7 +804,12 @@ void Menu::showChampionshipMenu()
 
             };
             w.onSelect = [playerIndex, this]{
-                g_game.state.driverContextIndex = playerIndex;
+                garage.driver = &g_game.state.drivers[playerIndex];
+                garage.previewVehicleIndex = garage.driver->vehicleIndex;
+                garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                garage.previewTuning = garage.driver->getTuning();
+                garage.currentStats = garage.previewTuning.computeVehicleStats();
+                garage.upgradeStats = garage.currentStats;
                 showGarageMenu();
             };
             w.fadeInScale = 0.7f;
@@ -861,9 +874,8 @@ void Menu::createVehiclePreview()
     Widget* box = addBackgroundBox({-260,200}, {vehiclePreviewSize.x, 300}, 0.8f);
     addHelpMessage({0, 400});
 
-    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
     Font* font = &g_res.getFont("font", (u32)convertSize(30));
-    std::string garageName = str(driver.playerName, "'s Garage");
+    std::string garageName = str(garage.driver->playerName, "'s Garage");
 
     addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
     addLabel([=]{ return tstr(garageName); }, {-260 - vehiclePreviewSize.x * 0.5f
@@ -874,46 +886,45 @@ void Menu::createVehiclePreview()
     addBackgroundBox({-260 + vehiclePreviewSize.x * 0.5f
             - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375},
             { font2->stringDimensions(creditsMaxSize.c_str()).x + 40, 50.f }, 0.92f);
-    addLabel([]{ return tstr("CREDITS: ", g_game.state.drivers[g_game.state.driverContextIndex].credits); },
+    addLabel([this]{ return tstr("CREDITS: ", garage.driver->credits); },
             {-260 + vehiclePreviewSize.x * 0.5f
             - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375}, font2,
             HorizontalAlign::CENTER, VerticalAlign::CENTER, COLOR_SELECTED);
 
     static RenderWorld rw;
 
-    addLogic([box]{
-        struct Stat
-        {
-            const char* name = nullptr;
-            f32 value = 0.5f;
-        };
-        static Stat stats[] = {
-            { "ACCELERATION" },
-            { "TOP SPEED" },
-            { "ARMOR" },
-            { "MASS" },
-            { "GRIP" },
-            { "OFFROAD" },
-        };
-        static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
-        /*
+    struct Stat
+    {
+        const char* name = nullptr;
+        f32 value = 0.5f;
+    };
+    static Stat stats[] = {
+        { "ACCELERATION" },
+        { "TOP SPEED" },
+        { "ARMOR" },
+        { "MASS" },
+        { "GRIP" },
+        { "OFFROAD" },
+    };
+    static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
+
+    addLogic([box,this]{
         f32 targetStats[] = {
-            tuningReal.specs.acceleration,
-            tuningReal.specs.topSpeed,
-            tuningReal.specs.armor,
-            tuningReal.specs.mass,
-            tuningReal.specs.grip,
-            tuningReal.specs.offroad,
+            garage.currentStats.acceleration,
+            garage.currentStats.topSpeed,
+            garage.currentStats.armor,
+            garage.currentStats.mass,
+            garage.currentStats.grip,
+            garage.currentStats.offroad,
         };
         f32 targetStatsUpgrade[] = {
-            tuningUpgrade.specs.acceleration,
-            tuningUpgrade.specs.topSpeed,
-            tuningUpgrade.specs.armor,
-            tuningUpgrade.specs.mass,
-            tuningUpgrade.specs.grip,
-            tuningUpgrade.specs.offroad,
+            garage.upgradeStats.acceleration,
+            garage.upgradeStats.topSpeed,
+            garage.upgradeStats.armor,
+            garage.upgradeStats.mass,
+            garage.upgradeStats.grip,
+            garage.upgradeStats.offroad,
         };
-        */
 
         Font* tinyfont = &g_res.getFont("font", (u32)convertSize(24));
         f32 barMargin = convertSize(30 * box->fadeInScale);
@@ -926,8 +937,8 @@ void Menu::createVehiclePreview()
             convertSize(box->pos - box->size * 0.5f * box->fadeInScale) + barMargin;
         for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
         {
-            //stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
-            //statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
+            stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
+            statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
 
             g_game.renderer->push2D(TextRenderable(tinyfont, stats[i].name,
                         statsPos + glm::vec2(0, i * barSep),
@@ -937,10 +948,10 @@ void Menu::createVehiclePreview()
                         statsPos + glm::vec2(0, i * barSep + barOffset),
                         maxBarWidth, barHeight, glm::vec4(0,0,0,0.9f), box->fadeInAlpha));
 
-            f32 barWidth = maxBarWidth * stats[i].value + i * 10.f;
+            f32 barWidth = maxBarWidth * stats[i].value;
             f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
 
-            if (upgradeBarWidth > barWidth)
+            if (upgradeBarWidth - barWidth > 0.01f)
             {
                 g_game.renderer->push2D(Quad(&g_res.white,
                             statsPos + glm::vec2(0, i * barSep + barOffset),
@@ -948,31 +959,23 @@ void Menu::createVehiclePreview()
                             box->fadeInAlpha));
             }
 
+            if (upgradeBarWidth - barWidth < -0.01f)
+            {
+                g_game.renderer->push2D(Quad(&g_res.white,
+                            statsPos + glm::vec2(0, i * barSep + barOffset),
+                            upgradeBarWidth, barHeight, glm::vec4(0.8f, 0.01f, 0.01f, 0.9f),
+                            box->fadeInAlpha));
+            }
+
             g_game.renderer->push2D(Quad(&g_res.white,
                         statsPos + glm::vec2(0, i * barSep + barOffset),
-                        barWidth, barHeight, glm::vec4(0.5f,0.5f,0.5f,1.f),
+                        glm::min(upgradeBarWidth, barWidth), barHeight, glm::vec4(0.5f,0.5f,0.5f,1.f),
                         box->fadeInAlpha));
-
-#if 0
-            if (upgradeBarWidth < barWidth)
-            {
-                g_game.renderer->push2D(QuadRenderable(&g_res.white,
-                            statsPos + glm::vec2((f32)upgradeBarWidth, convertSize(i * 27.f + 12.f)),
-                            barWidth-upgradeBarWidth, barHeight, glm::vec3(0.8f, 0.01f, 0.01f)));
-            }
-#endif
         }
     });
 
-    addLogic([](Widget& w){
-        Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
-
+    addLogic([this](Widget& w){
         glm::vec2 vehicleIconSize = convertSize(vehiclePreviewSize);
-        //i32 currentVehicleIndex = driver.vehicleIndex;
-
-        VehicleConfiguration vehicleConfig = driver.vehicleIndex == -1
-            ? VehicleConfiguration{} : *driver.getVehicleConfig();
-        VehicleConfiguration vehicleConfig2 = vehicleConfig;
 
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
@@ -980,21 +983,10 @@ void Menu::createVehiclePreview()
         rw.push(LitRenderable(quadMesh, glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
                     nullptr, glm::vec3(0.02f)));
 
-        /*
-        VehicleTuning tuningReal;
-        g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig, tuningReal);
-        VehicleTuning tuningUpgrade = tuningReal;
-        g_vehicles[currentVehicleIndex]->initTuning(vehicleConfig2, tuningUpgrade);
-        g_vehicles[currentVehicleIndex]->render(&rw,
-            glm::translate(glm::mat4(1.f),
-                glm::vec3(0, 0, tuningUpgrade.getRestOffset())) *
-            glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
-            nullptr, vehicleConfig);
-            */
         glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
-        driver.getVehicleData()->render(&rw, glm::translate(glm::mat4(1.f),
-                glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
-            vehicleTransform, nullptr, *driver.getVehicleConfig());
+        g_vehicles[garage.previewVehicleIndex]->render(&rw, glm::translate(glm::mat4(1.f),
+                glm::vec3(0, 0, garage.previewTuning.getRestOffset())) *
+            vehicleTransform, nullptr, garage.previewVehicleConfig);
         rw.setViewportCount(1);
         rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
         rw.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f), glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
@@ -1005,14 +997,6 @@ void Menu::createVehiclePreview()
         glm::vec2 pos = center + convertSize({-260, -150}) - size * 0.5f;
         g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
                     pos, size.x, size.y, glm::vec3(1.f), w.fadeInAlpha, false, true));
-
-        /*
-        g_game.renderer->push2D(TextRenderable(smallfont,
-                    currentVehicleIndex != -1 ? g_vehicles[currentVehicleIndex]->name : "No Vehicle",
-                    vehiclePreviewPos + glm::vec2((u32)vehicleIconWidth / 2,
-                        glm::floor(vehicleIconHeight + convertSize(8))),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::CENTER));
-                    */
     });
 }
 
@@ -1051,8 +1035,10 @@ void Menu::createMainGarageMenu()
     }, WidgetFlags::TRANSIENT, iconbg);
     y += size.y + gap;
 
-    addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, []{
-    }, WidgetFlags::TRANSIENT);
+    addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, [this]{
+        resetTransient();
+        createCarLotMenu();
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT);
     y += size.y + gap;
 
     addButton("BACK", nullptr, {x, 350-size.y*0.5f}, size, [this]{
@@ -1064,6 +1050,8 @@ void Menu::createPerformanceMenu()
 {
     glm::vec2 buttonSize(450, 75);
     addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+        garage.upgradeStats = garage.currentStats;
         resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
@@ -1074,15 +1062,16 @@ void Menu::createPerformanceMenu()
     f32 gap = 6;
     u32 buttonsPerRow = 3;
 
-    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
-    for (i32 i=0; i<(i32)driver.getVehicleData()->availableUpgrades.size(); ++i)
+    static i32 previewUpgradeIndex;
+    previewUpgradeIndex = -1;
+    for (i32 i=0; i<(i32)garage.driver->getVehicleData()->availableUpgrades.size(); ++i)
     {
-        auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
+        auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
         glm::vec2 pos = { x + (i % buttonsPerRow) * (size.x + gap),
                           y + (i / buttonsPerRow) * (size.y + gap) };
-        Widget* w = addImageButton(upgrade.name, upgrade.description, pos, size, [i, &driver]{
-            auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
-            auto currentUpgrade = driver.getVehicleConfig()->performanceUpgrades.find(
+        Widget* w = addImageButton(upgrade.name, upgrade.description, pos, size, [i, this]{
+            auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
+            auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.find(
                     [i](auto& u) { return u.upgradeIndex == i; });
             bool isEquipped = !!currentUpgrade;
             i32 upgradeLevel = 0;
@@ -1092,20 +1081,20 @@ void Menu::createPerformanceMenu()
                 upgradeLevel = currentUpgrade->upgradeLevel;
                 price = upgrade.price * (upgradeLevel + 1);
             }
-            bool isPurchasable = driver.credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
+            bool isPurchasable = garage.driver->credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
             if (isPurchasable)
             {
                 g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
-                driver.credits -= price;
-                driver.getVehicleConfig()->addUpgrade(i);
+                garage.driver->credits -= price;
+                garage.driver->getVehicleConfig()->addUpgrade(i);
             }
             else
             {
                 g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
             }
-        }, WidgetFlags::TRANSIENT, upgrade.icon, 48, [i, &driver]{
-            auto& upgrade = driver.getVehicleData()->availableUpgrades[i];
-            auto currentUpgrade = driver.getVehicleConfig()->performanceUpgrades.find(
+        }, WidgetFlags::TRANSIENT, upgrade.icon, 48, [i, this](bool isSelected){
+            auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
+            auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.find(
                     [i](auto& u) { return u.upgradeIndex == i; });
             bool isEquipped = !!currentUpgrade;
             i32 upgradeLevel = 0;
@@ -1115,9 +1104,19 @@ void Menu::createPerformanceMenu()
                 upgradeLevel = currentUpgrade->upgradeLevel;
                 price = upgrade.price * (upgradeLevel + 1);
             }
-            bool isPurchasable = driver.credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
+
+            if (isSelected && upgradeLevel < upgrade.maxUpgradeLevel && previewUpgradeIndex != i)
+            {
+                previewUpgradeIndex = i;
+                garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                garage.previewVehicleConfig.addUpgrade(i);
+                g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                garage.upgradeStats = garage.previewTuning.computeVehicleStats();
+            }
+
+            bool isPurchasable = garage.driver->credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
             return ImageButtonInfo{
-                isPurchasable, upgrade.maxUpgradeLevel, upgradeLevel, price };
+                isPurchasable, isEquipped, upgrade.maxUpgradeLevel, upgradeLevel, tstr(price) };
         });
 
         if (i == 0)
@@ -1153,7 +1152,6 @@ void Menu::createCosmeticsMenu()
     u32 buttonsPerRow = 10;
     u32 buttonRows = 8;
 
-    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
     for (u32 i=0; i<buttonRows; ++i)
     {
         for (u32 j=0; j<buttonsPerRow; ++j)
@@ -1161,15 +1159,115 @@ void Menu::createCosmeticsMenu()
             glm::vec3 color = hsvToRgb(i/(f32)buttonRows, 0.95f, 0.05f + j/(f32)buttonsPerRow);
             glm::vec2 pos = { x + j * (size.x + gap),
                               y + i * (size.y + gap) };
-            Widget* w = addColorButton(pos, size, color, [color, &driver]{
-                driver.getVehicleConfig()->color = color;
-                driver.getVehicleConfig()->dirty = true;
+            Widget* w = addColorButton(pos, size, color, [color, this]{
+                garage.driver->getVehicleConfig()->color = color;
+                garage.driver->getVehicleConfig()->reloadMaterials();
+                garage.previewVehicleConfig.color = color;
+                garage.previewVehicleConfig.reloadMaterials();
             }, WidgetFlags::TRANSIENT);
             if (i == 0)
             {
                 selectedWidget = w;
             }
         }
+    }
+}
+
+void Menu::createCarLotMenu()
+{
+    static VehicleConfiguration vehicleConfig;
+    static Array<RenderWorld> renderWorlds;
+    renderWorlds.clear();
+    renderWorlds.reserve(g_vehicles.size());
+
+    glm::vec2 buttonSize(450, 75);
+    addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+        garage.previewVehicleIndex = garage.driver->vehicleIndex;
+        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+        garage.previewTuning = garage.driver->getTuning();
+        garage.currentStats = garage.previewTuning.computeVehicleStats();
+        garage.upgradeStats = garage.currentStats;
+        resetTransient();
+        createMainGarageMenu();
+    }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
+
+    addButton("BUY CAR", nullptr, {280, 350-buttonSize.y*0.5f - buttonSize.y - 12}, buttonSize, [this]{
+        if (garage.driver->vehicleIndex != garage.previewVehicleIndex)
+        {
+            garage.driver->vehicleIndex = garage.previewVehicleIndex;
+            garage.driver->vehicleConfig = garage.previewVehicleConfig;
+        }
+    }, WidgetFlags::TRANSIENT);
+
+    glm::vec2 size(150, 150);
+    f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
+    f32 y = -400 + size.y * 0.5f;
+    f32 gap = 6;
+    u32 buttonsPerRow = 3;
+
+    for (i32 i=0; i<(i32)g_vehicles.size(); ++i)
+    {
+        renderWorlds.push_back({});
+        RenderWorld& rw = renderWorlds.back();
+
+        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+        rw.setName("Garage");
+        rw.setSize((u32)size.x, (u32)size.y);
+        rw.push(LitRenderable(quadMesh, glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
+                    nullptr, glm::vec3(0.02f)));
+
+        VehicleTuning tuning;
+        g_vehicles[i]->initTuning(vehicleConfig, tuning);
+        f32 vehicleAngle = 0.f;
+        glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), vehicleAngle, glm::vec3(0, 0, 1));
+        g_vehicles[i]->render(&rw, glm::translate(glm::mat4(1.f), glm::vec3(0, 0, tuning.getRestOffset())) *
+            vehicleTransform, nullptr, vehicleConfig);
+        rw.setViewportCount(1);
+        rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+        rw.setViewportCamera(0, glm::vec3(8.f, -8.f, 10.f), glm::vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+        g_game.renderer->addRenderWorld(&rw);
+
+        glm::vec2 pos = { x + (i % buttonsPerRow) * (size.x + gap),
+                          y + (i / buttonsPerRow) * (size.y + gap) };
+        Widget* w = addImageButton(g_vehicles[i]->name, g_vehicles[i]->description, pos, size, [i,this]{
+            garage.previewVehicleIndex = i;
+            if (i == garage.driver->vehicleIndex)
+            {
+                garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                garage.previewTuning = garage.driver->getTuning();
+                garage.currentStats = garage.previewTuning.computeVehicleStats();
+                garage.upgradeStats = garage.currentStats;
+            }
+            else
+            {
+                garage.previewVehicleConfig = VehicleConfiguration{};
+                garage.previewVehicleConfig.reloadMaterials();
+                g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                garage.currentStats = garage.previewTuning.computeVehicleStats();
+                garage.upgradeStats = garage.currentStats;
+            }
+        }, WidgetFlags::TRANSIENT, rw.getTexture(), 0.f, [i,this](bool isSelected){
+            return ImageButtonInfo{
+                garage.driver->credits >= g_vehicles[i]->price || i == garage.driver->vehicleIndex,
+                i == garage.previewVehicleIndex, 0, 0,
+                i == garage.driver->vehicleIndex ? "OWNED" : tstr(g_vehicles[i]->price), true };
+        });
+
+        if (i == 0)
+        {
+            selectedWidget = w;
+        }
+#if 0
+        if (isSelected)
+        {
+            messageStr = upgrade.description;
+            if (upgradeLevel < upgrade.maxUpgradeLevel ||
+                    (!isEquipped && upgrade.maxUpgradeLevel == 1))
+            {
+                vehicleConfig2.addUpgrade(i);
+            }
+        }
+#endif
     }
 }
 
@@ -1183,174 +1281,8 @@ void Menu::showGarageMenu()
 #if 0
 void Menu::championshipGarage()
 {
-    Texture* white = &g_res.white;
-    u32 vehicleIconWidth = (u32)g_gui.convertSize(290);
-    u32 vehicleIconHeight = (u32)g_gui.convertSize(256);
-    Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
-    glm::vec2 vehiclePreviewPos = menuPos + glm::vec2(o, oy);
-
-    Driver& driver = g_game.state.drivers[g_game.state.driverContextIndex];
-
-    static u32 mode = 0;
-    static i32 currentVehicleIndex = driver.vehicleIndex;
-
-    const char* messageStr = nullptr;
-    if (driver.vehicleIndex == -1)
-    {
-        mode = 1;
-    }
-
-    VehicleConfiguration vehicleConfig = driver.vehicleIndex == -1
-        ? VehicleConfiguration{} : *driver.getVehicleConfig();
-    VehicleConfiguration vehicleConfig2 = vehicleConfig;
-
-    glm::vec2 panelPos = menuPos + glm::vec2(w - o, oy);
-    g_gui.beginPanel(tstr("Garage ", mode), panelPos, 1.f, false, true, false);
-    if (driver.vehicleIndex == -1)
-    {
-        g_gui.pushSelection();
-    }
-
     u32 previousMode = mode;
-    if (mode == 0)
-    {
-        currentVehicleIndex = driver.vehicleIndex;
-
-        if (g_gui.button("Choose Vehicle"))
-        {
-            mode = 1;
-            g_gui.pushSelection();
-            g_gui.forceSelection(0);
-        }
-        g_gui.label("Vehicle Upgrades");
-        if (g_gui.button("Performance", driver.vehicleIndex != -1, g_res.getTexture("icon_engine"), false))
-        {
-            mode = 2;
-            g_gui.pushSelection();
-            g_gui.forceSelection(0);
-        }
-        if (g_gui.button("Cosmetics", driver.vehicleIndex != -1, g_res.getTexture("icon_spraycan"), false))
-        {
-            mode = 3;
-            g_gui.pushSelection();
-            g_gui.forceSelection(0);
-        }
-        g_gui.label("Equipment");
-        for (u32 i=0; i<g_vehicles[currentVehicleIndex]->frontWeaponCount; ++i)
-        {
-            i32 weaponIndex = vehicleConfig.frontWeaponIndices[i];
-            if (g_gui.button(tstr("Front Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? g_res.getTexture("iconbg") : g_weapons[weaponIndex].info.icon))
-            {
-                mode = i + 4;
-                g_gui.pushSelection();
-                g_gui.forceSelection(0);
-            }
-        }
-        for (u32 i=0; i<g_vehicles[currentVehicleIndex]->rearWeaponCount; ++i)
-        {
-            i32 weaponIndex = vehicleConfig.rearWeaponIndices[i];
-            if (g_gui.button(tstr("Rear Weapon ", i + 1), driver.vehicleIndex != -1,
-                        weaponIndex == -1 ? g_res.getTexture("iconbg") : g_weapons[weaponIndex].info.icon))
-            {
-                mode = i + 7;
-                g_gui.pushSelection();
-                g_gui.forceSelection(0);
-            }
-        }
-        if (g_gui.button("Passive Ability", driver.vehicleIndex != -1,
-                    vehicleConfig.specialAbilityIndex == -1 ? g_res.getTexture("iconbg")
-                    : g_weapons[vehicleConfig.specialAbilityIndex].info.icon))
-        {
-            mode = 9;
-            g_gui.pushSelection();
-            g_gui.forceSelection(0);
-        }
-    }
-    else if (mode == 1)
-    {
-        Array<std::string> carNames;
-        for (auto& v : g_vehicles)
-        {
-            carNames.push_back(v->name);
-        }
-
-        if (currentVehicleIndex == -1)
-        {
-            currentVehicleIndex = 0;
-        }
-
-        if (g_gui.select("Vehicle", carNames.data(), (i32)carNames.size(), currentVehicleIndex))
-        {
-        }
-
-        auto ownedVehicle = driver.ownedVehicles.find(
-                [&](auto& e) { return e.vehicleIndex == currentVehicleIndex; });
-        bool isOwned = !!ownedVehicle;
-        VehicleData* vehicleData = g_vehicles[currentVehicleIndex].get();
-
-        if (isOwned)
-        {
-            driver.vehicleIndex = currentVehicleIndex;
-        }
-        else
-        {
-            driver.vehicleIndex = -1;
-            vehicleConfig = VehicleConfiguration{};
-            RandomSeries s{(u32)currentVehicleIndex+1};
-            // TODO: set default color in vehicle class
-            vehicleConfig.colorIndex = irandom(s, 0, ARRAY_SIZE(g_vehicleColors));
-        }
-
-        messageStr = vehicleData->description;
-
-        g_gui.gap(20);
-        if (g_gui.button("Purchase", !isOwned && driver.credits >= vehicleData->price))
-        {
-            driver.ownedVehicles.push_back({
-                currentVehicleIndex,
-                vehicleConfig
-            });
-            driver.vehicleIndex = currentVehicleIndex;
-            isOwned = true;
-            driver.credits -= vehicleData->price;
-        }
-        if (g_gui.button("Sell", isOwned))
-        {
-            // TODO: make the vehicle worth more when it has upgrades
-            driver.credits += vehicleData->price;
-            driver.vehicleIndex = -1;
-            driver.ownedVehicles.erase(ownedVehicle);
-        }
-        g_gui.gap(20);
-
-        if (g_gui.button("Done", isOwned) || g_gui.didGoBack())
-        {
-            g_gui.popSelection();
-            mode = 0;
-            // TODO: fix the gui and remove this hack
-            g_gui.clearWidgetState("Done");
-        }
-
-        g_game.renderer->push2D(QuadRenderable(white,
-                    vehiclePreviewPos + glm::vec2(0, vehicleIconHeight - g_gui.convertSize(26)),
-                    g_gui.convertSize(120), g_gui.convertSize(26),
-                    glm::vec3(0.f), 0.25f, false), 1);
-        g_game.renderer->push2D(TextRenderable(smallfont,
-                    tstr(isOwned ? "Value: " : "Price: ", vehicleData->price),
-                    vehiclePreviewPos + glm::vec2(g_gui.convertSize(8), vehicleIconHeight - g_gui.convertSize(16)),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT), 2);
-    }
-    else if (mode == 3)
-    {
-        g_gui.label("Cosmetics");
-        g_gui.select("Color", g_vehicleColorNames,
-                (i32)ARRAY_SIZE(g_vehicleColorNames), driver.getVehicleConfig()->colorIndex);
-        g_gui.select("Paint Type", g_paintTypeNames,
-                (i32)ARRAY_SIZE(g_paintTypeNames), driver.getVehicleConfig()->paintTypeIndex);
-        driver.getVehicleConfig()->dirty = true;
-    }
-    else if (mode >= 4 && mode <= 6)
+    if (mode >= 4 && mode <= 6)
     {
         u32 weaponNumber = mode - 4;
         g_gui.label(tstr("Front Weapon ", weaponNumber + 1));
@@ -1538,16 +1470,6 @@ void Menu::championshipGarage()
             // TODO: fix the gui and remove this hack
             g_gui.clearWidgetState("Done");
         }
-    }
-
-    g_gui.end();
-
-
-    if (messageStr)
-    {
-        g_game.renderer->push2D(TextRenderable(smallfont, messageStr,
-                    statsPos + glm::vec2(0, g_gui.convertSizei(ARRAY_SIZE(stats) * 27.f + 8.f)),
-                    glm::vec3(1.f)));
     }
 }
 #endif

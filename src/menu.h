@@ -3,6 +3,7 @@
 #include "misc.h"
 #include "config.h"
 #include "font.h"
+#include "vehicle_data.h"
 
 namespace WidgetFlags
 {
@@ -37,9 +38,23 @@ struct Widget
 struct ImageButtonInfo
 {
     bool isEnabled;
+    bool isHighlighted;
     i32 maxUpgradeLevel;
     i32 upgradeLevel;
-    i32 price;
+    const char* bottomText;
+    bool flipImage = false;
+};
+
+struct GarageData
+{
+    Driver* driver = nullptr;
+
+    i32 previewVehicleIndex = -1;
+    VehicleConfiguration previewVehicleConfig;
+    VehicleTuning previewTuning;
+
+    VehicleStats currentStats;
+    VehicleStats upgradeStats;
 };
 
 class Menu
@@ -67,6 +82,7 @@ class Menu
     f32 fadeInTimer = 0.f;
     bool fadeIn = true;
     f32 blackFadeAlpha = 0.f;
+    GarageData garage;
 
     void reset()
     {
@@ -108,7 +124,7 @@ class Menu
             std::function<void()> onSelect, u32 flags=0, Texture* image=nullptr);
     Widget* addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
-            std::function<ImageButtonInfo()> getInfo);
+            std::function<ImageButtonInfo(bool isSelected)> getInfo);
     Widget* addColorButton(glm::vec2 pos, glm::vec2 size, glm::vec3 const& color,
             std::function<void()> onSelect, u32 flags=0);
     Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
@@ -124,6 +140,8 @@ class Menu
     void createMainGarageMenu();
     void createPerformanceMenu();
     void createCosmeticsMenu();
+    void createCarLotMenu();
+    void createWeaponsMenu();
 
 public:
     void startQuickRace();

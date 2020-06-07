@@ -231,7 +231,7 @@ struct VehicleDecal
 
 struct VehicleConfiguration
 {
-    glm::vec3 color;
+    glm::vec3 color = glm::vec3(0.95f);
     i32 paintTypeIndex = 0;
 
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
@@ -281,6 +281,15 @@ struct VehicleConfiguration
 
     bool dirty = true;
     Material paintMaterial;
+
+    void reloadMaterials()
+    {
+        Material* originalPaintMaterial = g_res.getMaterial("paint_material");
+        paintMaterial = *originalPaintMaterial;
+        paintMaterial.color = color;
+        paintMaterial.loadShaderHandles({ {"VEHICLE"} });
+        dirty = false;
+    }
 };
 
 enum struct PerformanceUpgradeType

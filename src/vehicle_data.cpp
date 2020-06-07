@@ -12,16 +12,20 @@ VehicleStats VehicleTuning::computeVehicleStats()
     stats.armor = maxHitPoints / 300.f;
     stats.mass = chassisMass / 2500.f;
 
-    PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
-    sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f); // TODO: share this constant with scene
-    sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
-    sceneDesc.filterShader = vehicleFilterShader;
-    sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-    //sceneDesc.simulationEventCallback = this;
-    sceneDesc.solverType = PxSolverType::eTGS;
-    sceneDesc.broadPhaseType = PxBroadPhaseType::eABP;
+    static PxScene* physicsScene = nullptr;
+    if (!physicsScene)
+    {
+        PxSceneDesc sceneDesc(g_game.physx.physics->getTolerancesScale());
+        sceneDesc.gravity = PxVec3(0.f, 0.f, -15.f); // TODO: share this constant with scene
+        sceneDesc.cpuDispatcher = g_game.physx.dispatcher;
+        sceneDesc.filterShader = vehicleFilterShader;
+        sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+        //sceneDesc.simulationEventCallback = this;
+        sceneDesc.solverType = PxSolverType::eTGS;
+        sceneDesc.broadPhaseType = PxBroadPhaseType::eABP;
 
-    PxScene* physicsScene = g_game.physx.physics->createScene(sceneDesc);
+        physicsScene = g_game.physx.physics->createScene(sceneDesc);
+    }
 
     // create floor
     PxRigidStatic* actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
@@ -40,7 +44,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
     VehiclePhysics v;
     v.setup(nullptr, physicsScene, startTransform, this);
 
-    const f32 timestep = 1.f / 60.f;
+    const f32 timestep = 1.f / 50.f;
 
     // TODO: Use PhysX scratch buffer to reduce allocations
 
@@ -55,7 +59,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         {
             f32 time = iterations * timestep;
             stats.acceleration = clamp((8.f - time) / 8.f, 0.f, 1.f);
-            print("Acceleration time: ", time, '\n');
+            //print("Acceleration time: ", time, '\n');
             break;
         }
     }
@@ -91,8 +95,8 @@ VehicleStats VehicleTuning::computeVehicleStats()
         if (magnitude < 0.1f)
         {
             f32 time = iterations * timestep;
-            stats.acceleration = clamp((0.8f - time) / 0.8f, 0.f, 1.f);
-            print("Stop time: ", time, '\n');
+            stats.grip = clamp((0.8f - time) / 0.8f, 0.f, 1.f);
+            //print("Stop time: ", time, '\n');
             break;
         }
     }
@@ -112,14 +116,13 @@ VehicleStats VehicleTuning::computeVehicleStats()
         if (v.getForwardSpeed() >= 16.f)
         {
             f32 time = iterations * timestep;
-            stats.acceleration = clamp((8.f - time) / 8.f, 0.f, 1.f);
-            print("Offroad acceleration time: ", time, '\n');
+            stats.offroad = clamp((8.f - time) / 8.f, 0.f, 1.f);
+            //print("Offroad acceleration time: ", time, '\n');
             break;
         }
     }
 
     actor->release();
-    physicsScene->release();
 
     return stats;
 }
@@ -354,9 +357,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     if (config.dirty)
     {
-        config.paintMaterial = *originalPaintMaterial;
-        config.paintMaterial.color = config.color;
-        config.paintMaterial.loadShaderHandles({ {"VEHICLE"} });
+        config.reloadMaterials();
         config.dirty = false;
     }
 
