@@ -56,6 +56,9 @@ struct GarageData
 
     VehicleStats currentStats;
     VehicleStats upgradeStats;
+
+    bool initialCarSelect = false;
+    i32 playerIndex = -1;
 };
 
 class Menu
@@ -159,5 +162,6 @@ public:
     void showGameplaySettingsMenu();
     void showControlsSettingsMenu();
     void showPauseMenu();
+    void showInitialCarLotMenu(u32 playerIndex);
     void onUpdate(class Renderer* renderer, f32 deltaTime);
 };

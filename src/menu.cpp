@@ -614,12 +614,6 @@ void Menu::showNewChampionshipMenu()
         g_game.state.gameMode = GameMode::CHAMPIONSHIP;
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
 
-        // TODO: show vehicle selection screen immediately after starting
-        for (auto& driver : g_game.state.drivers)
-        {
-            driver.vehicleIndex = 0;
-        }
-
         // add AI drivers
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
@@ -633,8 +627,8 @@ void Menu::showNewChampionshipMenu()
                 driver.aiUpgrades(series);
             }
         }
-        reset();
-        showChampionshipMenu();
+        garage.playerIndex = 0;
+        showInitialCarLotMenu(garage.playerIndex);
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK | WidgetFlags::DISABLED);
 
     for (u32 i=0; i<4; ++i)
@@ -751,6 +745,22 @@ void Menu::showNewChampionshipMenu()
             }
         }
     });
+}
+
+void Menu::showInitialCarLotMenu(u32 playerIndex)
+{
+    garage.initialCarSelect = true;
+    garage.driver = &g_game.state.drivers[playerIndex];
+    garage.previewVehicleIndex = 0;
+    garage.previewVehicleConfig = VehicleConfiguration{};
+    garage.previewVehicleConfig.reloadMaterials();
+    g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+    garage.currentStats = garage.previewTuning.computeVehicleStats();
+    garage.upgradeStats = garage.currentStats;
+
+    reset();
+    createVehiclePreview();
+    createCarLotMenu();
 }
 
 void Menu::showChampionshipMenu()
@@ -1033,39 +1043,47 @@ void Menu::createMainGarageMenu()
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_spraycan"));
     y += size.y + gap;
 
+    i32 frontWeapon = garage.previewVehicleConfig.frontWeaponIndices[0];
     addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, [this]{
         resetTransient();
         createWeaponsMenu(WeaponType::FRONT_WEAPON,
                 garage.previewVehicleConfig.frontWeaponIndices[0],
                 garage.previewVehicleConfig.frontWeaponUpgradeLevel[0]);
-    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
+        frontWeapon == -1 ? iconbg : g_weapons[frontWeapon].info.icon);
     y += size.y + gap;
 
     if (g_vehicles[garage.previewVehicleIndex]->frontWeaponCount > 1)
     {
-        resetTransient();
+        i32 roofWeapon = garage.previewVehicleConfig.frontWeaponIndices[1];
         addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, [this]{
+            resetTransient();
             createWeaponsMenu(WeaponType::FRONT_WEAPON,
                 garage.previewVehicleConfig.frontWeaponIndices[1],
                 garage.previewVehicleConfig.frontWeaponUpgradeLevel[1]);
-        }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
+        }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
+            roofWeapon == -1 ? iconbg : g_weapons[roofWeapon].info.icon);
         y += size.y + gap;
     }
 
+    i32 rearWeapon = garage.previewVehicleConfig.rearWeaponIndices[0];
     addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, [this]{
         resetTransient();
         createWeaponsMenu(WeaponType::REAR_WEAPON,
                 garage.previewVehicleConfig.rearWeaponIndices[0],
                 garage.previewVehicleConfig.rearWeaponUpgradeLevel[0]);
-    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
+        rearWeapon == -1 ? iconbg : g_weapons[rearWeapon].info.icon);
     y += size.y + gap;
 
     addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, [this]{
         resetTransient();
-        static u32 upgradeLevel = 1;
+        static u32 upgradeLevel;
+        upgradeLevel = garage.previewVehicleConfig.specialAbilityIndex == -1 ? 0 : 1;
         createWeaponsMenu(WeaponType::SPECIAL_ABILITY,
                 garage.previewVehicleConfig.specialAbilityIndex, upgradeLevel);
-    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
+        garage.previewVehicleConfig.specialAbilityIndex == -1 ? iconbg : g_weapons[garage.previewVehicleIndex].info.icon);
     y += size.y + gap;
 
     addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, [this]{
@@ -1074,8 +1092,32 @@ void Menu::createMainGarageMenu()
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT);
     y += size.y + gap;
 
-    addButton("BACK", nullptr, {x, 350-size.y*0.5f}, size, [this]{
-        showChampionshipMenu();
+    addButton("DONE", nullptr, {x, 350-size.y*0.5f}, size, [this]{
+        if (garage.initialCarSelect)
+        {
+            garage.playerIndex += 1;
+            i32 playerCount = 0;
+            for (auto& driver : g_game.state.drivers)
+            {
+                if (driver.isPlayer)
+                {
+                    ++playerCount;
+                }
+            }
+            if (garage.playerIndex >= playerCount)
+            {
+                garage.initialCarSelect = false;
+                showChampionshipMenu();
+            }
+            else
+            {
+                showInitialCarLotMenu(garage.playerIndex);
+            }
+        }
+        else
+        {
+            showChampionshipMenu();
+        }
     }, WidgetFlags::FADE_OUT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 }
 
@@ -1221,10 +1263,10 @@ void Menu::createCarLotMenu()
     addButton("BUY CAR", nullptr, {280, 350-buttonSize.y*0.5f - buttonSize.y - 12}, buttonSize, [this]{
         garage.driver->vehicleIndex = garage.previewVehicleIndex;
         garage.driver->vehicleConfig = garage.previewVehicleConfig;
-        i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price;
+        i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue();
         garage.driver->credits -= totalCost;
     }, WidgetFlags::TRANSIENT, nullptr, [this]{
-        i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price;
+        i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue();
         return garage.previewVehicleIndex != garage.driver->vehicleIndex &&
             garage.driver->credits >= totalCost;
     });
@@ -1256,12 +1298,12 @@ void Menu::createCarLotMenu()
                         w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
 
                     g_game.renderer->push2D(TextRenderable(font,
-                        tstr("TRADE: ", g_vehicles[garage.driver->vehicleIndex]->price),
+                        tstr("TRADE: ", garage.driver->getVehicleValue()),
                         center + convertSize(pos + glm::vec2(0, 24)), glm::vec3(0.6f),
                         w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
 
                     g_game.renderer->push2D(TextRenderable(fontBold,
-                        tstr("TOTAL: ", g_vehicles[garage.previewVehicleIndex]->price - g_vehicles[garage.driver->vehicleIndex]->price),
+                        tstr("TOTAL: ", g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue()),
                         center + convertSize(pos + glm::vec2(0, 48)), glm::vec3(1.f),
                         w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
                 }

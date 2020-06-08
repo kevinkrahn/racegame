@@ -38,6 +38,10 @@ struct Driver
         return g_vehicles[vehicleIndex].get();
     }
 
+    i32 getVehicleValue()
+    {
+        return vehicleIndex == -1 ? 0 : g_vehicles[vehicleIndex]->price / 2;
+    }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
             i32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0, i32 aiIndex=-1);
