@@ -16,8 +16,9 @@ namespace WidgetFlags
         FADE_OUT            = 1 << 4, // all widgets will animate away when this widget is selected
         DISABLED            = 1 << 5, // it's as if the widget does not exist
         BACK                = 1 << 6, // triggered by escape or "X" or "O" on controller
-        TRANSIENT           = 1 << 7,
-        FADE_OUT_TRANSIENT  = 1 << 8,
+        CANNOT_ACTIVATE     = 1 << 7, // clicking on this widget will play nono sound and do nothing
+        TRANSIENT           = 1 << 8,
+        FADE_OUT_TRANSIENT  = 1 << 9,
     };
 }
 
@@ -121,7 +122,8 @@ class Menu
     Widget* addLogic(std::function<void()> onUpdate);
     Widget* addLogic(std::function<void(Widget&)> onUpdate);
     Widget* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
-            std::function<void()> onSelect, u32 flags=0, Texture* image=nullptr);
+            std::function<void()> onSelect, u32 flags=0, Texture* image=nullptr,
+            std::function<bool()> isEnabled=[]{ return true; });
     Widget* addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
             std::function<ImageButtonInfo(bool isSelected)> getInfo);
@@ -133,7 +135,8 @@ class Menu
     Widget* addHelpMessage(glm::vec2 pos);
     Widget* addLabel(std::function<const char*()> getText, glm::vec2 pos, class Font* font,
             HorizontalAlign halign=HorizontalAlign::CENTER,
-            VerticalAlign valign=VerticalAlign::CENTER, glm::vec3 const& color=glm::vec3(1.f));
+            VerticalAlign valign=VerticalAlign::CENTER, glm::vec3 const& color=glm::vec3(1.f),
+            u32 flags=0);
     Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
 
     void createVehiclePreview();

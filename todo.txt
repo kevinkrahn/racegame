@@ -48,6 +48,7 @@
   (beat a lap time, destroy n number of cars with a time limit). These challenges would be unlocked
   as you complete leagues in championship mode.
 - Add water
+- Think of a name for the game (Battlemobiles?)
 
 - Ideas:
     - Grenade launcher weapon
