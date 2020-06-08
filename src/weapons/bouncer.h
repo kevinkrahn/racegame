@@ -15,11 +15,11 @@ public:
     WBouncer()
     {
         info.name = "Bouncer";
-        info.description = "Medium damage.\nBounces off obstacles and follows slopes.";
+        info.description = "Medium damage. Bounces off obstacles and follows slopes.";
         info.icon = g_res.getTexture("icon_bouncer");
         info.price = 800;
         info.maxUpgradeLevel = 5;
-        info.weaponType = WeaponInfo::FRONT_WEAPON;
+        info.weaponType = WeaponType::FRONT_WEAPON;
 
         loadModelData("weapon_bouncer");
         mesh = g_res.getModel("weapon_bouncer")->getMeshByName("bouncer.Bouncer");

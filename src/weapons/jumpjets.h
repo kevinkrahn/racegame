@@ -18,7 +18,7 @@ public:
         info.icon = g_res.getTexture("icon_jumpjet");
         info.price = 900;
         info.maxUpgradeLevel = 5;
-        info.weaponType = WeaponInfo::REAR_WEAPON;
+        info.weaponType = WeaponType::REAR_WEAPON;
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

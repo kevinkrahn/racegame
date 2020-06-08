@@ -16,11 +16,11 @@ public:
     WPhantom()
     {
         info.name = "Phantom";
-        info.description = "Passes through targets!\n";
+        info.description = "Can hit multiple targets with a single shot by passing through vehicles!";
         info.icon = g_res.getTexture("icon_phantom");
         info.price = 1000;
         info.maxUpgradeLevel = 5;
-        info.weaponType = WeaponInfo::FRONT_WEAPON;
+        info.weaponType = WeaponType::FRONT_WEAPON;
 
         loadModelData("weapon_blaster");
         Model* model = g_res.getModel("weapon_blaster");

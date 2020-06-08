@@ -58,7 +58,7 @@ public:
         info.icon = g_res.getTexture("icon_rocketbooster");
         info.price = 1000;
         info.maxUpgradeLevel = 4;
-        info.weaponType = WeaponInfo::REAR_WEAPON;
+        info.weaponType = WeaponType::REAR_WEAPON;
 
         mesh = g_res.getModel("exhaust_cone")->getMeshByName("world.Cone");
     }

@@ -1033,20 +1033,39 @@ void Menu::createMainGarageMenu()
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_spraycan"));
     y += size.y + gap;
 
-    addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, []{
-    }, WidgetFlags::TRANSIENT, iconbg);
+    addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, [this]{
+        resetTransient();
+        createWeaponsMenu(WeaponType::FRONT_WEAPON,
+                garage.previewVehicleConfig.frontWeaponIndices[0],
+                garage.previewVehicleConfig.frontWeaponUpgradeLevel[0]);
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
     y += size.y + gap;
 
-    addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, []{
-    }, WidgetFlags::TRANSIENT, iconbg);
+    if (g_vehicles[garage.previewVehicleIndex]->frontWeaponCount > 1)
+    {
+        resetTransient();
+        addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, [this]{
+            createWeaponsMenu(WeaponType::FRONT_WEAPON,
+                garage.previewVehicleConfig.frontWeaponIndices[1],
+                garage.previewVehicleConfig.frontWeaponUpgradeLevel[1]);
+        }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
+        y += size.y + gap;
+    }
+
+    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, [this]{
+        resetTransient();
+        createWeaponsMenu(WeaponType::REAR_WEAPON,
+                garage.previewVehicleConfig.rearWeaponIndices[0],
+                garage.previewVehicleConfig.rearWeaponUpgradeLevel[0]);
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
     y += size.y + gap;
 
-    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, []{
-    }, WidgetFlags::TRANSIENT, iconbg);
-    y += size.y + gap;
-
-    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, []{
-    }, WidgetFlags::TRANSIENT, iconbg);
+    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, [this]{
+        resetTransient();
+        static u32 upgradeLevel = 1;
+        createWeaponsMenu(WeaponType::SPECIAL_ABILITY,
+                garage.previewVehicleConfig.specialAbilityIndex, upgradeLevel);
+    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, iconbg);
     y += size.y + gap;
 
     addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, [this]{
@@ -1137,17 +1156,6 @@ void Menu::createPerformanceMenu()
         {
             selectedWidget = w;
         }
-#if 0
-        if (isSelected)
-        {
-            messageStr = upgrade.description;
-            if (upgradeLevel < upgrade.maxUpgradeLevel ||
-                    (!isEquipped && upgrade.maxUpgradeLevel == 1))
-            {
-                vehicleConfig2.addUpgrade(i);
-            }
-        }
-#endif
     }
 }
 
@@ -1319,17 +1327,68 @@ void Menu::createCarLotMenu()
         {
             selectedWidget = w;
         }
-#if 0
-        if (isSelected)
+    }
+}
+
+void Menu::createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgradeLevel)
+{
+    glm::vec2 buttonSize(450, 75);
+    selectedWidget = addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+        garage.driver->vehicleConfig = garage.previewVehicleConfig;
+        resetTransient();
+        createMainGarageMenu();
+    }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
+
+    glm::vec2 size(150, 150);
+    f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
+    f32 y = -400 + size.y * 0.5f;
+    f32 gap = 6;
+    u32 buttonsPerRow = 3;
+
+    i32 buttonCount = 0;
+    for (i32 i=0; i<(i32)g_weapons.size(); ++i)
+    {
+        auto& weapon = g_weapons[i];
+        if (weapon.info.weaponType != weaponType)
         {
-            messageStr = upgrade.description;
-            if (upgradeLevel < upgrade.maxUpgradeLevel ||
-                    (!isEquipped && upgrade.maxUpgradeLevel == 1))
-            {
-                vehicleConfig2.addUpgrade(i);
-            }
+            continue;
         }
-#endif
+        glm::vec2 pos = { x + (buttonCount % buttonsPerRow) * (size.x + gap),
+                          y + (buttonCount / buttonsPerRow) * (size.y + gap) };
+        ++buttonCount;
+        Widget* w = addImageButton(weapon.info.name, weapon.info.description, pos, size,
+            [i, this, &weaponSlot, &upgradeLevel]{
+            u32 weaponUpgradeLevel = (weaponSlot == i) ? upgradeLevel: 0;
+            bool isPurchasable = garage.driver->credits >= g_weapons[i].info.price
+                && weaponUpgradeLevel < g_weapons[i].info.maxUpgradeLevel
+                && (weaponSlot == -1 || weaponSlot == i);
+            if (isPurchasable)
+            {
+                // TODO: Play sound that is more appropriate for a weapon
+                g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
+                garage.driver->credits -= g_weapons[i].info.price;
+                weaponSlot = i;
+                upgradeLevel += 1;
+            }
+            else
+            {
+                g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
+            }
+        }, WidgetFlags::TRANSIENT, weapon.info.icon, 48,
+            [i, this, &weaponSlot, &upgradeLevel](bool isSelected){
+            u32 weaponUpgradeLevel = (weaponSlot == i) ? upgradeLevel: 0;
+            bool isPurchasable = garage.driver->credits >= g_weapons[i].info.price
+                && weaponUpgradeLevel < g_weapons[i].info.maxUpgradeLevel
+                && (weaponSlot == -1 || weaponSlot == i);
+            return ImageButtonInfo{
+                isPurchasable, weaponSlot == i, (i32)g_weapons[i].info.maxUpgradeLevel,
+                (i32)weaponUpgradeLevel, tstr(g_weapons[i].info.price) };
+        });
+
+        if (i == 0)
+        {
+            selectedWidget = w;
+        }
     }
 }
 
@@ -1339,202 +1398,6 @@ void Menu::showGarageMenu()
     createVehiclePreview();
     createMainGarageMenu();
 }
-
-#if 0
-void Menu::championshipGarage()
-{
-    u32 previousMode = mode;
-    if (mode >= 4 && mode <= 6)
-    {
-        u32 weaponNumber = mode - 4;
-        g_gui.label(tstr("Front Weapon ", weaponNumber + 1));
-        i32 equippedWeaponIndex = vehicleConfig.frontWeaponIndices[weaponNumber];
-        bool hasWeapon = driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] != -1;
-        for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
-        {
-            auto& weapon = g_weapons[i];
-            if (weapon.info.weaponType != WeaponInfo::FRONT_WEAPON)
-            {
-                continue;
-            }
-
-            bool isSelected = false;
-
-            const char* extraText = nullptr;
-            u32 upgradeLevel = vehicleConfig.frontWeaponUpgradeLevel[weaponNumber];
-            bool isEquipped = equippedWeaponIndex != -1 && equippedWeaponIndex == i;
-            if (isEquipped)
-            {
-                extraText = tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
-            }
-            if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
-                        driver.credits >= weapon.info.price && (isEquipped || !hasWeapon) &&
-                            ((upgradeLevel < weapon.info.maxUpgradeLevel && isEquipped) || !isEquipped),
-                        weapon.info.icon, &isSelected))
-            {
-                driver.credits -= weapon.info.price;
-                if (driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] != i)
-                {
-                    driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] = i;
-                    driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber] = 1;
-                }
-                else
-                {
-                    ++driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber];
-                }
-                // TODO: Play upgrade sound
-            }
-            if (isSelected)
-            {
-                messageStr = weapon.info.description;
-            }
-        }
-
-        if (hasWeapon)
-        {
-            g_gui.gap(20);
-            auto& weapon = g_weapons[driver.getVehicleConfig()->frontWeaponIndices[weaponNumber]];
-            u32 upgradeLevel = driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber];
-            if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
-                        tstr("Value: ", weapon.info.price * upgradeLevel / 2), nullptr, true,
-                        g_res.getTexture("icon_sell"), nullptr, false))
-            {
-                driver.credits += weapon.info.price * upgradeLevel / 2;
-                driver.getVehicleConfig()->frontWeaponIndices[weaponNumber] = -1;
-                driver.getVehicleConfig()->frontWeaponUpgradeLevel[weaponNumber] = 0;
-            }
-        }
-    }
-    else if (mode == 7 || mode == 8)
-    {
-        u32 weaponNumber = mode - 7;
-        g_gui.label(tstr("Rear Weapon ", weaponNumber + 1));
-        i32 equippedWeaponIndex = vehicleConfig.rearWeaponIndices[weaponNumber];
-        bool hasWeapon = driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] != -1;
-        for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
-        {
-            auto& weapon = g_weapons[i];
-            if (weapon.info.weaponType != WeaponInfo::REAR_WEAPON)
-            {
-                continue;
-            }
-
-            bool isSelected = false;
-
-            const char* extraText = nullptr;
-            u32 upgradeLevel = vehicleConfig.rearWeaponUpgradeLevel[weaponNumber];
-            bool isEquipped = equippedWeaponIndex != -1 && equippedWeaponIndex == i;
-            if (isEquipped)
-            {
-                extraText = tstr(upgradeLevel, "/", weapon.info.maxUpgradeLevel);
-            }
-            if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
-                        driver.credits >= weapon.info.price && (isEquipped || !hasWeapon) &&
-                            ((upgradeLevel < weapon.info.maxUpgradeLevel && isEquipped) || !isEquipped),
-                        weapon.info.icon, &isSelected))
-            {
-                driver.credits -= weapon.info.price;
-                if (driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] != i)
-                {
-                    driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] = i;
-                    driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber] = 1;
-                }
-                else
-                {
-                    ++driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber];
-                }
-                // TODO: Play upgrade sound
-            }
-            if (isSelected)
-            {
-                messageStr = weapon.info.description;
-            }
-        }
-
-        if (hasWeapon)
-        {
-            g_gui.gap(20);
-            auto& weapon = g_weapons[driver.getVehicleConfig()->rearWeaponIndices[weaponNumber]];
-            u32 upgradeLevel = driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber];
-            if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
-                        tstr("Value: ", weapon.info.price * upgradeLevel / 2), nullptr, true,
-                        g_res.getTexture("icon_sell"), nullptr, false))
-            {
-                driver.credits += weapon.info.price * upgradeLevel / 2;
-                driver.getVehicleConfig()->rearWeaponIndices[weaponNumber] = -1;
-                driver.getVehicleConfig()->rearWeaponUpgradeLevel[weaponNumber] = 0;
-            }
-        }
-    }
-    else if (mode == 9)
-    {
-        g_gui.label("Passive Ability");
-        i32 equippedWeaponIndex = vehicleConfig.specialAbilityIndex;
-        bool hasWeapon = vehicleConfig.specialAbilityIndex != -1;
-        for (i32 i = 0; i<(i32)g_weapons.size(); ++i)
-        {
-            auto& weapon = g_weapons[i];
-            if (weapon.info.weaponType != WeaponInfo::SPECIAL_ABILITY)
-            {
-                continue;
-            }
-
-            bool isSelected = false;
-
-            const char* extraText = nullptr;
-            bool isEquipped = equippedWeaponIndex != -1 && equippedWeaponIndex == i;
-            if (isEquipped)
-            {
-                extraText = "Equipped";
-            }
-            if (g_gui.itemButton(weapon.info.name, tstr("Price: ", weapon.info.price), extraText,
-                        driver.credits >= weapon.info.price && !hasWeapon,
-                        weapon.info.icon, &isSelected))
-            {
-                driver.credits -= weapon.info.price;
-                driver.getVehicleConfig()->specialAbilityIndex = i;
-                // TODO: Play upgrade sound
-            }
-            if (isSelected)
-            {
-                messageStr = weapon.info.description;
-            }
-        }
-
-        if (hasWeapon)
-        {
-            g_gui.gap(20);
-            auto& weapon = g_weapons[driver.getVehicleConfig()->specialAbilityIndex];
-            if (g_gui.itemButton(tstr("Sell ", weapon.info.name),
-                        tstr("Value: ", weapon.info.price / 2), nullptr, true,
-                        g_res.getTexture("icon_sell"), nullptr, false))
-            {
-                driver.credits += weapon.info.price / 2;
-                driver.getVehicleConfig()->specialAbilityIndex = -1;
-            }
-        }
-    }
-
-    g_gui.gap(20);
-    if (previousMode != 1 && mode != 1)
-    {
-        if (g_gui.button("Done") || g_gui.didGoBack())
-        {
-            if (mode > 0)
-            {
-                mode = 0;
-            }
-            else
-            {
-                showChampionshipMenu();
-            }
-            g_gui.popSelection();
-            // TODO: fix the gui and remove this hack
-            g_gui.clearWidgetState("Done");
-        }
-    }
-}
-#endif
 
 void Menu::championshipStandings()
 {

@@ -239,6 +239,7 @@ struct VehicleConfiguration
     i32 rearWeaponIndices[3] = { -1, -1, -1 };
     u32 rearWeaponUpgradeLevel[3] = { 0, 0, 0 };
     i32 specialAbilityIndex = -1;
+    // TODO: should the special ability also have an upgrade level?
     SmallArray<VehicleDecal> decals;
 
     struct Upgrade

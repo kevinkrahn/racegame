@@ -14,7 +14,7 @@ public:
         info.icon = g_res.getTexture("icon_oil");
         info.price = 1000;
         info.maxUpgradeLevel = 4;
-        info.weaponType = WeaponInfo::REAR_WEAPON;
+        info.weaponType = WeaponType::REAR_WEAPON;
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

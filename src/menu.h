@@ -144,7 +144,7 @@ class Menu
     void createPerformanceMenu();
     void createCosmeticsMenu();
     void createCarLotMenu();
-    void createWeaponsMenu();
+    void createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgradeLevel);
 
 public:
     void startQuickRace();

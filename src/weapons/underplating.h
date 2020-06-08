@@ -14,7 +14,7 @@ public:
         info.icon = g_res.getTexture("icon_underplating");
         info.price = 2000;
         info.maxUpgradeLevel = 1;
-        info.weaponType = WeaponInfo::SPECIAL_ABILITY;
+        info.weaponType = WeaponType::SPECIAL_ABILITY;
     }
 
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,

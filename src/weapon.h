@@ -2,6 +2,13 @@
 
 #include "misc.h"
 
+enum struct WeaponType
+{
+    FRONT_WEAPON,
+    REAR_WEAPON,
+    SPECIAL_ABILITY,
+};
+
 struct WeaponInfo
 {
     const char* name;
@@ -9,13 +16,7 @@ struct WeaponInfo
     struct Texture* icon;
     i32 price = 0;
     u32 maxUpgradeLevel = 5;
-
-    enum WeaponType
-    {
-        FRONT_WEAPON,
-        REAR_WEAPON,
-        SPECIAL_ABILITY,
-    } weaponType = FRONT_WEAPON;
+    WeaponType weaponType = WeaponType::FRONT_WEAPON;
 };
 
 class Weapon

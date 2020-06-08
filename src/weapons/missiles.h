@@ -18,7 +18,7 @@ public:
         info.icon = g_res.getTexture("icon_missile");
         info.price = 1000;
         info.maxUpgradeLevel = 5;
-        info.weaponType = WeaponInfo::FRONT_WEAPON;
+        info.weaponType = WeaponType::FRONT_WEAPON;
 
         Model* model = g_res.getModel("weapon_missile");
         mesh = model->getMeshByName("missile.Missile");

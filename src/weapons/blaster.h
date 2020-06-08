@@ -16,11 +16,11 @@ public:
     WBlaster()
     {
         info.name = "Blaster";
-        info.description = "High damage split into two shots.\n";
+        info.description = "High damage split into two shots.";
         info.icon = g_res.getTexture("icon_blaster");
         info.price = 800;
         info.maxUpgradeLevel = 5;
-        info.weaponType = WeaponInfo::FRONT_WEAPON;
+        info.weaponType = WeaponType::FRONT_WEAPON;
 
         loadModelData("weapon_blaster");
         Model* model = g_res.getModel("weapon_blaster");

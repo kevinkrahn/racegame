@@ -21,7 +21,7 @@ public:
         info.icon = g_res.getTexture("icon_mg");
         info.price = 1000;
         info.maxUpgradeLevel = 5;
-        info.weaponType = WeaponInfo::FRONT_WEAPON;
+        info.weaponType = WeaponType::FRONT_WEAPON;
 
         ammoUnitCount = 12;
         fireMode = FireMode::CONTINUOUS;
