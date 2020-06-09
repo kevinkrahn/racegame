@@ -356,6 +356,11 @@ inline glm::vec3 srgb(f32 r, f32 g, f32 b)
     return glm::vec3(glm::pow(r, 2.2f), glm::pow(g, 2.2f), glm::pow(b, 2.2f));
 }
 
+inline glm::vec3 srgb(glm::vec3 const& rgb)
+{
+    return srgb(rgb.r, rgb.g, rgb.b);
+}
+
 inline glm::vec3 hsvToRgb(f32 h, f32 s, f32 v)
 {
     h *= 360;

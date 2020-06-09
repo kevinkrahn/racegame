@@ -46,6 +46,13 @@ struct ImageButtonInfo
     bool flipImage = false;
 };
 
+struct SliderInfo
+{
+    glm::vec3 color1;
+    glm::vec3 color2;
+    f32 val;
+};
+
 struct GarageData
 {
     Driver* driver = nullptr;
@@ -80,7 +87,7 @@ class Menu
 
     void drawBox(glm::vec2 pos, glm::vec2 size);
 
-    SmallArray<Widget, 100> widgets;
+    SmallArray<Widget, 32> widgets;
     Widget* selectedWidget = nullptr;
     f32 repeatTimer = 0.f;
     f32 fadeInTimer = 0.f;
@@ -130,8 +137,9 @@ class Menu
     Widget* addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
             std::function<ImageButtonInfo(bool isSelected)> getInfo);
-    Widget* addColorButton(glm::vec2 pos, glm::vec2 size, glm::vec3 const& color,
-            std::function<void()> onSelect, u32 flags=0);
+    Widget* addSlider(const char* text, glm::vec2 pos, glm::vec2 size,
+            u32 flags, std::function<void(f32)> onValueChanged,
+            std::function<SliderInfo()> getInfo);
     Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
