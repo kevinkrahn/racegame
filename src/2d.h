@@ -73,12 +73,13 @@ class Quad : public Renderable2D
     Texture* tex;
     Vertex points[4];
     glm::vec4 color;
+    glm::vec4 color2;
     f32 alpha = 1.f;
-    ShaderHandle shaderHandle = getShaderHandle("quad2D", { {"BLUR"} });
+    ShaderHandle shaderHandle = getShaderHandle("quad2D", { {"BLUR"}, {"GRADIENT"} });
 
 public:
     Quad(Texture* texture, glm::vec2 p1, glm::vec2 p2, glm::vec2 t1=glm::vec2(0), glm::vec2 t2=glm::vec2(1),
-            glm::vec4 color=glm::vec4(1.f), f32 alpha=1.f) : tex(texture), color(color), alpha(alpha)
+            glm::vec4 color=glm::vec4(1.f), f32 alpha=1.f) : tex(texture), color(color), color2(color), alpha(alpha)
     {
         points[0] = { p1, t1 };
         points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
@@ -88,7 +89,7 @@ public:
 
     Quad(Texture* texture, glm::vec2 p1, f32 width, f32 height,
             glm::vec4 color=glm::vec4(1.f), f32 alpha=1.f, bool mirror=false)
-        : tex(texture), color(color), alpha(alpha)
+        : tex(texture), color(color), color2(color), alpha(alpha)
     {
         glm::vec2 t1(mirror ? 1.f : 0.f);
         glm::vec2 t2(mirror ? 0.f : 1.f);
@@ -101,8 +102,22 @@ public:
 
     Quad(Texture* texture, glm::vec2 p1, f32 width, f32 height,
             glm::vec2 t1, glm::vec2 t2, glm::vec4 color=glm::vec4(1.f), f32 alpha=1.f)
-        : tex(texture), color(color), alpha(alpha)
+        : tex(texture), color(color), color2(color), alpha(alpha)
     {
+        glm::vec2 p2 = p1 + glm::vec2(width, height);
+        points[0] = { p1, t1 };
+        points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
+        points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };
+        points[3] = { p2, t2 };
+    }
+
+    Quad(Texture* texture, glm::vec2 p1, f32 width, f32 height,
+            glm::vec4 color=glm::vec4(1.f), glm::vec4 color2=glm::vec4(1.f),
+            f32 alpha=1.f, bool mirror=false)
+        : tex(texture), color(color), color2(color2), alpha(alpha)
+    {
+        glm::vec2 t1(mirror ? 1.f : 0.f);
+        glm::vec2 t2(mirror ? 0.f : 1.f);
         glm::vec2 p2 = p1 + glm::vec2(width, height);
         points[0] = { p1, t1 };
         points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
@@ -116,6 +131,7 @@ public:
         glBindTextureUnit(1, tex->handle);
         glUniform4fv(0, 4, (GLfloat*)&points);
         glUniform4fv(4, 1, (GLfloat*)&color);
+        glUniform4fv(6, 1, (GLfloat*)&color2);
         glUniform1f(5, alpha);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }

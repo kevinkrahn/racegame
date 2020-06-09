@@ -26,6 +26,9 @@ layout(binding = 0) uniform sampler2D texBlurBg;
 layout(binding = 1) uniform sampler2D tex;
 layout(location = 4) uniform vec4 uColor;
 layout(location = 5) uniform float uAlpha;
+#ifdef GRADIENT
+layout(location = 6) uniform vec4 uColor2;
+#endif
 
 layout(location = 0) out vec4 outColor;
 
@@ -36,14 +39,20 @@ layout(location = 2) in vec2 inScreenTexCoord;
 
 void main()
 {
+#ifdef GRADIENT
+    vec4 color = mix(uColor, uColor2, inTexCoord.x);
+#else
+    vec4 color = uColor;
+#endif
+
 #ifdef COLOR
-    outColor = uColor * texture(tex, inTexCoord);
+    outColor = color * texture(tex, inTexCoord);
 #elif defined BLUR
     vec4 texColor = texture(tex, inTexCoord);
-    vec4 color = uColor * texColor;
-    outColor = vec4(mix(texture(texBlurBg, inScreenTexCoord).rgb, color.rgb, color.a), texColor.a * uAlpha);
+    vec4 c = color * texColor;
+    outColor = vec4(mix(texture(texBlurBg, inScreenTexCoord).rgb, c.rgb, c.a), texColor.a * uAlpha);
 #else
-    outColor = uColor * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
+    outColor = color * vec4(1.0, 1.0, 1.0, texture(tex, inTexCoord).r);
 #endif
 }
 

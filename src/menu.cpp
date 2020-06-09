@@ -430,7 +430,8 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
         f32 alpha = (isSelected ? 1.f : 0.6f) * w.fadeInAlpha;
         g_game.renderer->push2D(TextRenderable(font, text, pos + glm::vec2(size.x * 0.5f, -convertSize(8)),
                     glm::vec3(1.f), alpha, w.fadeInScale, HorizontalAlign::CENTER, VerticalAlign::BOTTOM));
-        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y, glm::vec4(1.f), w.fadeInAlpha));
+        g_game.renderer->push2D(Quad(info.tex, pos, size.x, size.y,
+                    glm::vec4(info.color1, 1.f), glm::vec4(info.color2, 1.f), w.fadeInAlpha));
 
         if (isSelected)
         {
@@ -1246,7 +1247,7 @@ void Menu::createPerformanceMenu()
 
 void Menu::createCosmeticsMenu()
 {
-    glm::vec2 size(450, 75);
+    glm::vec2 size(450, 70);
     f32 x = 280;
     f32 y = -400 + size.y * 0.5f;
     f32 gap = 12;
@@ -1267,7 +1268,7 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
-        return SliderInfo{ hsvToRgb(0.f, saturation, value), hsvToRgb(1.f, saturation, value), hue };
+        return SliderInfo{ glm::vec3(1.f), glm::vec3(1.f), hue, g_res.getTexture("hues") };
     });
     y += size.y + gap;
 
@@ -1280,7 +1281,7 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
-        return SliderInfo{ hsvToRgb(hue, 0.f, value), hsvToRgb(hue, 1.f, value), saturation };
+        return SliderInfo{ hsvToRgb(hue, 0.f, value), hsvToRgb(hue, 1.f, value), saturation, &g_res.white };
     });
     y += size.y + gap;
 
@@ -1293,7 +1294,7 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
-        return SliderInfo{ hsvToRgb(hue, saturation, 0.f), hsvToRgb(hue, saturation, 1.f), value };
+        return SliderInfo{ hsvToRgb(hue, saturation, 0.f), hsvToRgb(hue, saturation, 1.f), value, &g_res.white };
     });
     y += size.y + gap;
 

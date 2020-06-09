@@ -49,6 +49,7 @@
   as you complete leagues in championship mode.
 - Add water
 - Think of a name for the game (Battlemobiles?)
+- Add vehicle reflection on the floor of garage
 
 - Ideas:
     - Grenade launcher weapon
