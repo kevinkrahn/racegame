@@ -439,7 +439,7 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
             f32 dir = didMoveX();
             if (dir != 0.f)
             {
-                info.val = clamp(info.val + dir * g_game.realDeltaTime, 0.f, 1.f);
+                info.val = clamp(info.val + dir * g_game.realDeltaTime * 0.5f, 0.f, 1.f);
                 onValueChanged(info.val);
             }
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
@@ -1128,7 +1128,8 @@ void Menu::createMainGarageMenu()
         createWeaponsMenu(WeaponType::SPECIAL_ABILITY,
                 garage.previewVehicleConfig.specialAbilityIndex, upgradeLevel);
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
-        garage.previewVehicleConfig.specialAbilityIndex == -1 ? iconbg : g_weapons[garage.previewVehicleIndex].info.icon);
+        garage.previewVehicleConfig.specialAbilityIndex == -1 ? iconbg
+            : g_weapons[garage.previewVehicleConfig.specialAbilityIndex].info.icon);
     y += size.y + gap;
 
     addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, [this]{
@@ -1450,6 +1451,20 @@ void Menu::createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgrad
         resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
+
+    selectedWidget = addButton("SELL", "Sell the currently equipped item for half the original value.",
+        {280, 350-buttonSize.y*0.5f-buttonSize.y-12}, buttonSize, [this, &weaponSlot, &upgradeLevel]{
+        garage.driver->credits += g_weapons[weaponSlot].info.price / 2;
+        upgradeLevel -= 1;
+        // TODO: use different sound for selling
+        g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
+        if (upgradeLevel == 0)
+        {
+            weaponSlot = -1;
+        }
+    }, WidgetFlags::TRANSIENT, nullptr, [&upgradeLevel]{
+        return upgradeLevel > 0;
+    });
 
     glm::vec2 size(150, 150);
     f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
