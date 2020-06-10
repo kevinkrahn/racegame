@@ -2,7 +2,6 @@
 #include "../renderer.h"
 #include "../scene.h"
 #include "../game.h"
-#include "../gui.h"
 #include "../vehicle.h"
 #include "../billboard.h"
 

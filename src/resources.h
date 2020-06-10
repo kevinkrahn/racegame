@@ -9,7 +9,6 @@
 #include "model.h"
 #include "audio.h"
 #include "trackdata.h"
-#include <map>
 #include <string>
 
 const char* DATA_DIRECTORY = "../editor_data";
@@ -20,11 +19,11 @@ class Resources
 {
 private:
     // TODO: convert fonts into resource
-    std::map<const char*, std::map<u32, Font>> fonts;
+    Map<const char*, Map<u32, Font>> fonts;
 
 public:
-    std::map<i64, OwnedPtr<Resource>> resources;
-    std::map<std::string, Resource*> resourceNameMap;
+    Map<i64, OwnedPtr<Resource>> resources;
+    Map<std::string, Resource*> resourceNameMap;
 
     void addResource(OwnedPtr<Resource>&& resource);
 
@@ -41,7 +40,7 @@ public:
             u32 guidHalf[2] = { xorshift32(series), xorshift32(series) };
             guid = *((i64*)guidHalf);
         }
-        while (guid == 0 || resources.find(guid) != resources.end());
+        while (guid == 0 || !resources.get(guid));
         return guid;
     }
 
@@ -50,127 +49,127 @@ public:
 
     Font& getFont(const char* name, u32 height)
     {
-        auto iter = fonts.find(name);
-        if (iter == fonts.end())
+        auto ptr = fonts.get(name);
+        if (!ptr)
         {
             return fonts[name][height] = Font(std::string(name) + ".ttf", (f32)height);
         }
 
-        auto iter2 = iter->second.find(height);
-        if (iter2 == iter->second.end())
+        auto ptr2 = ptr->get(height);
+        if (!ptr2)
         {
             return fonts[name][height] = Font(std::string(name) + ".ttf", (f32)height);
         }
 
-        return iter2->second;
+        return *ptr2;
     }
 
     Texture* getTexture(i64 guid)
     {
-        auto iter = resources.find(guid);
-        if (iter == resources.end() || iter->second->type != ResourceType::TEXTURE)
+        auto iter = resources.get(guid);
+        if (!iter || iter->get()->type != ResourceType::TEXTURE)
         {
             //FATAL_ERROR("Texture not found: ", guid);
             //print("Texture not found: ", guid, '\n');
             return &white;
         }
-        return (Texture*)iter->second.get();
+        return (Texture*)iter->get();
     }
 
     Texture* getTexture(const char* name)
     {
-        auto iter = resourceNameMap.find(name);
-        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::TEXTURE)
+        auto iter = resourceNameMap.get(name);
+        if (!iter || (*iter)->type != ResourceType::TEXTURE)
         {
             //FATAL_ERROR("Texture not found: ", guid);
             //print("Texture not found: ", guid, '\n');
             return &white;
         }
-        return (Texture*)iter->second;
+        return (Texture*)*iter;
     }
 
     Model* getModel(i64 guid)
     {
-        auto iter = resources.find(guid);
-        if (iter == resources.end() || iter->second->type != ResourceType::MODEL)
+        auto iter = resources.get(guid);
+        if (!iter || iter->get()->type != ResourceType::MODEL)
         {
             FATAL_ERROR("Model not found: ", guid);
         }
-        return (Model*)iter->second.get();
+        return (Model*)iter->get();
     }
 
     Model* getModel(const char* name)
     {
-        auto iter = resourceNameMap.find(name);
-        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::MODEL)
+        auto iter = resourceNameMap.get(name);
+        if (!iter || (*iter)->type != ResourceType::MODEL)
         {
             FATAL_ERROR("Model not found: ", name);
         }
-        return (Model*)iter->second;
+        return (Model*)*iter;
     }
 
     Sound* getSound(i64 guid)
     {
-        auto iter = resources.find(guid);
-        if (iter == resources.end() || iter->second->type != ResourceType::SOUND)
+        auto iter = resources.get(guid);
+        if (!iter || iter->get()->type != ResourceType::SOUND)
         {
             FATAL_ERROR("Sound not found: ", guid);
         }
-        return (Sound*)iter->second.get();
+        return (Sound*)iter->get();
     }
 
     Sound* getSound(const char* name)
     {
-        auto iter = resourceNameMap.find(name);
-        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::SOUND)
+        auto iter = resourceNameMap.get(name);
+        if (!iter || (*iter)->type != ResourceType::SOUND)
         {
             FATAL_ERROR("Sound not found: ", name);
         }
-        return (Sound*)iter->second;
+        return (Sound*)*iter;
     }
 
     Material* getMaterial(i64 guid)
     {
-        auto iter = resources.find(guid);
-        if (iter == resources.end() || iter->second->type != ResourceType::MATERIAL)
+        auto iter = resources.get(guid);
+        if (!iter || iter->get()->type != ResourceType::MATERIAL)
         {
             //FATAL_ERROR("Material not found: ", guid);
             //print("Material not found: ", guid, '\n');
             return &defaultMaterial;
         }
-        return (Material*)iter->second.get();
+        return (Material*)iter->get();
     }
 
     Material* getMaterial(const char* name)
     {
-        auto iter = resourceNameMap.find(name);
-        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::MATERIAL)
+        auto iter = resourceNameMap.get(name);
+        if (!iter || (*iter)->type != ResourceType::MATERIAL)
         {
             //FATAL_ERROR("Material not found: ", name);
             //print("Material not found: ", name, '\n');
             return &defaultMaterial;
         }
-        return (Material*)iter->second;
+        return (Material*)*iter;
     }
 
     TrackData* getTrackData(i64 guid)
     {
-        auto iter = resources.find(guid);
-        if (iter == resources.end() || iter->second->type != ResourceType::TRACK)
+        auto iter = resources.get(guid);
+        if (!iter || iter->get()->type != ResourceType::TRACK)
         {
             FATAL_ERROR("Track not found: ", guid);
         }
-        return (TrackData*)iter->second.get();
+        return (TrackData*)iter->get();
     }
 
     i64 getTrackGuid(const char* name)
     {
-        auto iter = resourceNameMap.find(name);
-        if (iter == resourceNameMap.end() || iter->second->type != ResourceType::TRACK)
+        auto iter = resourceNameMap.get(name);
+        if (!iter || (*iter)->type != ResourceType::TRACK)
         {
             FATAL_ERROR("Track not found: ", name);
         }
-        return iter->second->guid;
+        return (*iter)->guid;
     }
 } g_res;
 

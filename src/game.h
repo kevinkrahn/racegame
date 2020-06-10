@@ -95,8 +95,8 @@ public:
     bool isTrackGraphDebugVisualizationEnabled = false;
     bool isMotionGridDebugVisualizationEnabled = false;
     bool isPathVisualizationEnabled = false;
-    std::map<const char*, f64> timedBlocks;
-    std::map<const char*, f64> previousFrameTimedBlocks;
+    Map<const char*, f64> timedBlocks;
+    Map<const char*, f64> previousFrameTimedBlocks;
     f64 previousCpuTime = 1.f;
     bool isTimedBlockTrackingPaused = false;
     /*

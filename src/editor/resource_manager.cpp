@@ -8,7 +8,7 @@ static void sortResources(ResourceFolder& folder)
 {
     for (auto it = folder.childResources.begin(); it != folder.childResources.end();)
     {
-        if (g_res.resources.find(*it) == g_res.resources.end())
+        if (!g_res.resources.get(*it))
         {
             showError("Resource ", std::hex, *it, std::dec, " does not exist, removing.");
             it = folder.childResources.erase(it);
@@ -19,8 +19,8 @@ static void sortResources(ResourceFolder& folder)
         }
     }
     folder.childResources.sort([](i64 a, i64 b) {
-        Resource* rA = g_res.resources.find(a)->second.get();
-        Resource* rB = g_res.resources.find(b)->second.get();
+        Resource* rA = g_res.resources.get(a)->get();
+        Resource* rB = g_res.resources.get(b)->get();
         if (rA->type != rB->type) return (u32)rA->type < (u32)rB->type;
         return rA->name < rB->name;
     });
@@ -38,12 +38,12 @@ void ResourceManager::saveResources()
     }
     for (auto& r : resourcesModified)
     {
-        auto res = g_res.resources.find(r.first);
-        if (res != g_res.resources.end())
+        auto res = g_res.resources.get(r.key);
+        if (!res)
         {
-            std::string filename = str(DATA_DIRECTORY, "/", std::hex, r.first, ".dat", std::dec);
+            std::string filename = str(DATA_DIRECTORY, "/", std::hex, r.key, ".dat", std::dec);
             print("Saving resource ", filename, '\n');
-            Serializer::toFile(*res->second, filename);
+            Serializer::toFile(**res, filename);
         }
     }
     resourcesModified.clear();
@@ -54,7 +54,7 @@ ResourceManager::ResourceManager()
 {
     Serializer::fromFile(resources, str(DATA_DIRECTORY, "/", METADATA_FILE));
 
-    std::map<i64, bool> resourceFolderMap;
+    Map<i64, bool> resourceFolderMap;
     Array<ResourceFolder*> folders = { &resources };
     while (folders.size() > 0)
     {
@@ -72,9 +72,9 @@ ResourceManager::ResourceManager()
 
     for (auto& res : g_res.resources)
     {
-        if (resourceFolderMap.find(res.first) == resourceFolderMap.end())
+        if (!resourceFolderMap.get(res.key))
         {
-            resources.childResources.push_back(res.first);
+            resources.childResources.push_back(res.key);
         }
     }
 
@@ -217,7 +217,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
     const u32 selectedColor = 0x992299EE;
     for (auto it = folder->childResources.begin(); it != folder->childResources.end();)
     {
-        Resource* childResource = g_res.resources.find(*it)->second.get();
+        Resource* childResource = g_res.resources.get(*it)->get();
         bool removed = false;
         ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
         if (childResource == renameResource)
@@ -590,11 +590,11 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
 
         for (auto& res : g_res.resources)
         {
-            if (res.second->type != ResourceType::TEXTURE)
+            if (res.value->type != ResourceType::TEXTURE)
             {
                 continue;
             }
-            Texture* tex = (Texture*)res.second.get();
+            Texture* tex = (Texture*)res.value.get();
             if (tex->getTextureType() == type)
             {
                 if (searchString.empty() || tex->name.find(searchString) != std::string::npos)

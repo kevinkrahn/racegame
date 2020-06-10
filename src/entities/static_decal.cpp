@@ -2,7 +2,6 @@
 #include "../renderer.h"
 #include "../scene.h"
 #include "../game.h"
-#include "../gui.h"
 #include "../billboard.h"
 #include "../imgui.h"
 
@@ -148,11 +147,11 @@ Array<PropPrefabData> StaticDecal::generatePrefabProps()
 
     for (auto& res : g_res.resources)
     {
-        if (res.second->type != ResourceType::TEXTURE)
+        if (res.value->type != ResourceType::TEXTURE)
         {
             continue;
         }
-        Texture* tex = (Texture*)res.second.get();
+        Texture* tex = (Texture*)res.value.get();
         if (tex->name.find("decal_") != std::string::npos)
         {
             results.push_back({

@@ -10,7 +10,7 @@ constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
 
 ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines)
 {
-    return g_game.renderer->getShaderHandle(name, defines);
+    return g_game.renderer->getShaderHandle(name, 0, defines);
 }
 
 void glShaderSources(GLuint shader, std::string const& src,
@@ -46,18 +46,18 @@ void Renderer::loadShader(const char* filename, SmallArray<const char*> defines,
     {
         actualDefines.push_back({ name, "" });
     }
-    ShaderHandle handle = getShaderHandle(filename, actualDefines);
+    ShaderHandle handle = getShaderHandle(filename, 0, actualDefines);
     shaderNameMap[name ? name : filename] = handle;
 }
 
 void Renderer::loadShader(ShaderHandle handle)
 {
-    if (shaderPrograms[handle] != 0)
+    if (shaderPrograms[handle].program != 0)
     {
-        glDeleteProgram(shaderPrograms[handle]);
+        glDeleteProgram(shaderPrograms[handle].program);
     }
 
-    ShaderProgramData const& d = shaderProgramData[handle];
+    ShaderProgramSource const& d = shaderProgramSources[handle];
     std::string filename = str("shaders/", d.name, ".glsl");
 
     // TODO: remove dependency on stb_include
@@ -133,7 +133,7 @@ void Renderer::loadShader(ShaderHandle handle)
 #if 0
     glDeleteShader(geometryShader);
 #endif
-    shaderPrograms[handle] = program;
+    shaderPrograms[handle].program = program;
 }
 
 // TODO: remove
@@ -169,11 +169,11 @@ void Renderer::loadShaders()
     loadShader("highlight_id");
 }
 
-ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines)
+ShaderHandle Renderer::getShaderHandle(const char* name, u32 renderFlags, SmallArray<ShaderDefine> const& defines)
 {
-    for (u32 shaderIndex = 0; shaderIndex < shaderProgramData.size(); ++shaderIndex)
+    for (u32 shaderIndex = 0; shaderIndex < shaderProgramSources.size(); ++shaderIndex)
     {
-        ShaderProgramData& shaderData = shaderProgramData[shaderIndex];
+        ShaderProgramSource& shaderData = shaderProgramSources[shaderIndex];
         if (shaderData.name != name)
         {
             continue;
@@ -183,6 +183,10 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
             return shaderIndex;
         }
         if (shaderData.defines.size() != defines.size())
+        {
+            continue;
+        }
+        if (renderFlags != shaderPrograms[shaderIndex].renderFlags)
         {
             continue;
         }
@@ -201,8 +205,8 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
             return shaderIndex;
         }
     }
-    shaderPrograms.push_back(0);
-    shaderProgramData.push_back({ name, defines });
+    shaderPrograms.push_back({ 0, renderFlags });
+    shaderProgramSources.push_back({ name, defines });
     ShaderHandle handle = shaderPrograms.size() - 1;
     loadShader(handle);
     return handle;

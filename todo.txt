@@ -39,7 +39,6 @@
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
 - Fix depth issues with rumblestrip
-- Add hash table to replace std::map
 - Replace std::string with custom string type
 - Support multiple keyboards (not supported by SDL)
 - Show controller button icons on UI buttons when a controller is plugged in
@@ -50,6 +49,7 @@
 - Add water
 - Think of a name for the game (Battlemobiles?)
 - Add vehicle reflection on the floor of garage
+- Add garage menu for adding decals to vehicle
 
 - Ideas:
     - Grenade launcher weapon

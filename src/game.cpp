@@ -6,7 +6,6 @@
 #include "input.h"
 #include "resources.h"
 #include "audio.h"
-#include "gui.h"
 #include "weapon.h"
 #include "imgui.h"
 #include <imgui/examples/imgui_impl_sdl.h>
@@ -235,7 +234,6 @@ void Game::run()
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
 
-        g_gui.beginFrame();
         if (isEditing)
         {
             resourceManager->onUpdate(renderer.get(), deltaTime);
@@ -246,7 +244,6 @@ void Game::run()
         }
         menu.onUpdate(renderer.get(), deltaTime);
         checkDebugKeys();
-        g_gui.endFrame();
         ImGui::Render();
         renderer->render(deltaTime);
         if (currentScene)
@@ -450,7 +447,7 @@ void Game::checkDebugKeys()
         ImGui::Checkbox("Timing Collection Paused", &isTimedBlockTrackingPaused);
         for (auto& pair : previousFrameTimedBlocks)
         {
-            ImGui::Text("%5.2f %s", (pair.second / previousCpuTime) * 100.f, pair.first);
+            ImGui::Text("%5.2f %s", (pair.value / previousCpuTime) * 100.f, pair.key);
         }
 
         ImGui::Gap();

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -70,7 +69,7 @@ namespace DataFile
     class Value
     {
     public:
-        using Dict = std::map<std::string, Value>;
+        using Dict = Map<std::string, Value>;
         using Array = Array<Value>;
         using ByteArray = ::Array<u8>;
         using String = std::string;

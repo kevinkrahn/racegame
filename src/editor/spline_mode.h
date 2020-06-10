@@ -260,11 +260,11 @@ public:
     {
         for (auto& res : g_res.resources)
         {
-            if (res.second->type != ResourceType::MODEL)
+            if (res.value->type != ResourceType::MODEL)
             {
                 continue;
             }
-            Model* model = (Model*)res.second.get();
+            Model* model = (Model*)res.value.get();
             if (model->modelUsage == ModelUsage::SPLINE)
             {
                 splineModels.push_back({ model });

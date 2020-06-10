@@ -10,7 +10,6 @@
 #include "entities/static_decal.h"
 #include "entities/flash.h"
 #include "entities/booster.h"
-#include "gui.h"
 #include "imgui.h"
 
 Scene::Scene(TrackData* data)
@@ -281,7 +280,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         bool showPauseMenu = g_input.isKeyPressed(KEY_ESCAPE);
         for (auto& pair : g_input.getControllers())
         {
-            if (pair.second.isButtonPressed(BUTTON_START))
+            if (pair.value.isButtonPressed(BUTTON_START))
             {
                 showPauseMenu = true;
                 break;
@@ -407,7 +406,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             if (finishTimer >= 4.f && !g_game.isEditing)
             {
                 // TODO: Tell the player to press a button
-                if (g_gui.didSelect())
+                if (didSelect())
                 {
                     buildRaceResults();
                     stopRace();

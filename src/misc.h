@@ -12,6 +12,7 @@
 #include "ownedptr.h"
 #include "smallarray.h"
 #include "array.h"
+#include "map.h"
 
 template <typename T>
 void print(T const& val)

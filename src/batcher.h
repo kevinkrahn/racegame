@@ -12,7 +12,7 @@ class Batcher
         glm::mat4 transform;
         Mesh* mesh;
     };
-    std::map<Material*, Array<BatchableItem>> materialMap;
+    Map<Material*, Array<BatchableItem>> materialMap;
 
 public:
     struct Batch

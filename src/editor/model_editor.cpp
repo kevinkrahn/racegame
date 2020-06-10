@@ -306,11 +306,11 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
                 for (auto& res : g_res.resources)
                 {
-                    if (res.second->type != ResourceType::MATERIAL)
+                    if (res.value->type != ResourceType::MATERIAL)
                     {
                         continue;
                     }
-                    Material* mat = (Material*)res.second.get();
+                    Material* mat = (Material*)res.value.get();
                     if (searchString.empty() || mat->name.find(searchString) != std::string::npos)
                     {
                         searchResults.push_back(mat);
@@ -625,7 +625,7 @@ void ModelEditor::processBlenderData()
         });
     }
 
-    std::map<std::string, u32> meshesToLoad;
+    Map<std::string, u32> meshesToLoad;
     auto& objects = scene["objects"].array().val();
     for (auto& mesh : model->meshes)
     {
@@ -639,11 +639,11 @@ void ModelEditor::processBlenderData()
     {
         auto& obj = object.dict().val();
         auto& meshName = obj["data_name"].string().val();
-        auto meshIt = meshesToLoad.find(meshName);
-        if (meshIt == meshesToLoad.end())
+        auto meshIt = meshesToLoad.get(meshName);
+        if (!meshIt)
         {
             meshesToLoad[meshName] = model->meshes.size();
-            meshIt = meshesToLoad.find(meshName);
+            meshIt = meshesToLoad.get(meshName);
             Mesh mesh;
             Serializer s(meshDict[meshName], true);
             mesh.serialize(s);
@@ -662,7 +662,7 @@ void ModelEditor::processBlenderData()
             }
         }
 
-        modelObj->meshIndex = meshIt->second;
+        modelObj->meshIndex = *meshIt;
         modelObj->name = std::move(obj["name"]).string().val();
         glm::mat4 matrix = obj["matrix"].convertBytes<glm::mat4>().val();
         modelObj->position = translationOf(matrix);

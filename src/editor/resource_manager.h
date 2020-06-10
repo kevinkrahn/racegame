@@ -72,7 +72,7 @@ class ResourceManager
     bool isMaterialWindowOpen = false;
     Material* selectedMaterial = nullptr;
 
-    std::map<i64, bool> resourcesModified;
+    Map<i64, bool> resourcesModified;
 
     bool showFolder(ResourceFolder* folder);
     void showFolderContents(ResourceFolder* folder);
@@ -90,7 +90,7 @@ public:
     ResourceManager();
     void onUpdate(Renderer* renderer, f32 deltaTime);
     void markDirty(i64 guid) { resourcesModified[guid] = true; }
-    bool isResourceDirty(i64 guid) { return resourcesModified.find(guid) != resourcesModified.end(); }
+    bool isResourceDirty(i64 guid) const { return resourcesModified.get(guid); }
 
     Texture* getSelectedTexture() const { return selectedTexture; }
     Material* getSelectedMaterial() const { return selectedMaterial; }

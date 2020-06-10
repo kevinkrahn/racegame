@@ -4,6 +4,37 @@
 #include "config.h"
 #include "font.h"
 #include "vehicle_data.h"
+#include "input.h"
+
+bool didSelect()
+{
+    bool result = g_input.isKeyPressed(KEY_RETURN);
+    for (auto& pair : g_input.getControllers())
+    {
+        if (pair.value.isButtonPressed(BUTTON_A))
+        {
+            result = true;
+            break;
+        }
+    }
+    return result;
+}
+
+bool didGoBack()
+{
+    if (g_input.isKeyPressed(KEY_ESCAPE))
+    {
+        return true;
+    }
+    for (auto& c : g_input.getControllers())
+    {
+        if (c.value.isButtonPressed(BUTTON_B))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 namespace WidgetFlags
 {

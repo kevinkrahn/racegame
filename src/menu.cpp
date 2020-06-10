@@ -5,7 +5,6 @@
 #include "2d.h"
 #include "input.h"
 #include "scene.h"
-#include "gui.h"
 #include "mesh_renderables.h"
 #include "weapon.h"
 #include "vehicle.h"
@@ -98,39 +97,21 @@ f32 convertSize(f32 size)
     return glm::floor(size * (g_game.windowHeight / REFERENCE_HEIGHT));
 }
 
+// TODO: remove
+f32 convertSize720(f32 size)
+{
+    return size * (g_game.windowHeight / 720.f);
+}
+
+// TODO: remove
+f32 convertSize720i(f32 size)
+{
+    return glm::floor(size * (g_game.windowHeight / 720.f));
+}
+
 glm::vec2 convertSize(glm::vec2 size)
 {
     return glm::vec2(convertSize(size.x), convertSize(size.y));
-}
-
-bool didSelect()
-{
-    bool result = g_input.isKeyPressed(KEY_RETURN);
-    for (auto& pair : g_input.getControllers())
-    {
-        if (pair.second.isButtonPressed(BUTTON_A))
-        {
-            result = true;
-            break;
-        }
-    }
-    return result;
-}
-
-bool didGoBack()
-{
-    if (g_input.isKeyPressed(KEY_ESCAPE))
-    {
-        return true;
-    }
-    for (auto& c : g_input.getControllers())
-    {
-        if (c.second.isButtonPressed(BUTTON_B))
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 i32 Menu::didChangeSelectionX()
@@ -140,13 +121,13 @@ i32 Menu::didChangeSelectionX()
 
     for (auto& pair : g_input.getControllers())
     {
-        i32 tmpResult = pair.second.isButtonPressed(BUTTON_DPAD_RIGHT) -
-                        pair.second.isButtonPressed(BUTTON_DPAD_LEFT);
+        i32 tmpResult = pair.value.isButtonPressed(BUTTON_DPAD_RIGHT) -
+                        pair.value.isButtonPressed(BUTTON_DPAD_LEFT);
         if (!tmpResult)
         {
             if (repeatTimer == 0.f)
             {
-                f32 xaxis = pair.second.getAxis(AXIS_LEFT_X);
+                f32 xaxis = pair.value.getAxis(AXIS_LEFT_X);
                 if (xaxis < -0.2f)
                 {
                     tmpResult = -1;
@@ -176,13 +157,13 @@ i32 Menu::didChangeSelectionY()
 
     for (auto& pair : g_input.getControllers())
     {
-        i32 tmpResult = pair.second.isButtonPressed(BUTTON_DPAD_DOWN) -
-                        pair.second.isButtonPressed(BUTTON_DPAD_UP);
+        i32 tmpResult = pair.value.isButtonPressed(BUTTON_DPAD_DOWN) -
+                        pair.value.isButtonPressed(BUTTON_DPAD_UP);
         if (!tmpResult)
         {
             if (repeatTimer == 0.f)
             {
-                f32 yaxis = pair.second.getAxis(AXIS_LEFT_Y);
+                f32 yaxis = pair.value.getAxis(AXIS_LEFT_Y);
                 if (yaxis < -0.2f)
                 {
                     tmpResult = -1;
@@ -210,9 +191,9 @@ f32 didMoveX()
     f32 result = (f32)g_input.isKeyDown(KEY_RIGHT) - (f32)g_input.isKeyDown(KEY_LEFT);
     for (auto& pair : g_input.getControllers())
     {
-        result += (f32)pair.second.isButtonDown(BUTTON_DPAD_RIGHT) -
-                  (f32)pair.second.isButtonDown(BUTTON_DPAD_LEFT);
-        result += pair.second.getAxis(AXIS_LEFT_X);
+        result += (f32)pair.value.isButtonDown(BUTTON_DPAD_RIGHT) -
+                  (f32)pair.value.isButtonDown(BUTTON_DPAD_LEFT);
+        result += pair.value.getAxis(AXIS_LEFT_X);
     }
     return result;
 }
@@ -768,12 +749,12 @@ void Menu::showNewChampionshipMenu()
 
             for (auto& controller : g_input.getControllers())
             {
-                if (controller.second.isAnyButtonPressed())
+                if (controller.value.isAnyButtonPressed())
                 {
                     bool controllerPlayerExists = false;
                     for (auto& driver : g_game.state.drivers)
                     {
-                        if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.first)
+                        if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.key)
                         {
                             controllerPlayerExists = true;
                             break;
@@ -782,8 +763,8 @@ void Menu::showNewChampionshipMenu()
 
                     if (!controllerPlayerExists)
                     {
-                        g_game.state.drivers.push_back(Driver(true, true, false, controller.first));
-                        g_game.state.drivers.back().controllerGuid = controller.second.getGuid();
+                        g_game.state.drivers.push_back(Driver(true, true, false, controller.key));
+                        g_game.state.drivers.back().controllerGuid = controller.value.getGuid();
                         g_game.state.drivers.back().playerName = str("Player ", g_game.state.drivers.size());
                     }
                 }
@@ -1528,22 +1509,22 @@ void Menu::showGarageMenu()
 
 void Menu::championshipStandings()
 {
-    f32 w = g_gui.convertSizei(550);
+    f32 w = convertSize720i(550);
 
     f32 cw = (f32)(g_game.windowWidth/2);
     glm::vec2 menuPos = glm::vec2(cw - w/2, glm::floor(g_game.windowHeight * 0.1f));
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.8f);
     drawBox(menuPos, menuSize);
 
-    Font* bigfont = &g_res.getFont("font_bold", (u32)g_gui.convertSize(26));
-    Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
+    Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize720(26));
+    Font* smallfont = &g_res.getFont("font", (u32)convertSize720(16));
 
     g_game.renderer->push2D(TextRenderable(bigfont, "Championship Standings",
-                glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
+                glm::vec2(cw, menuPos.y + convertSize720i(32)), glm::vec3(1.f),
                 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
 
     g_game.renderer->push2D(TextRenderable(smallfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
-                glm::vec2(cw, menuPos.y + g_gui.convertSizei(58)), glm::vec3(1.f),
+                glm::vec2(cw, menuPos.y + convertSize720i(58)), glm::vec3(1.f),
                 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
 
     static RenderWorld renderWorlds[10];
@@ -1552,7 +1533,7 @@ void Menu::championshipStandings()
         32, 60, 150, 350
     };
 
-    u32 vehicleIconSize = (u32)g_gui.convertSize(48);
+    u32 vehicleIconSize = (u32)convertSize720(48);
     Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     SmallArray<Driver*, 20> sortedDrivers;
     for(auto& driver : g_game.state.drivers)
@@ -1588,25 +1569,25 @@ void Menu::championshipStandings()
         g_game.renderer->addRenderWorld(&rw);
 
         glm::vec2 pos = menuPos + glm::vec2(0.f,
-                        g_gui.convertSizei(100) + i * g_gui.convertSize(48));
+                        convertSize720i(100) + i * convertSize720(48));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(i + 1),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[0]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[0]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
 
         g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[1]),
+                    pos + glm::vec2(convertSize720i(columnOffset[1]),
                         -glm::floor(vehicleIconSize/2)),
                     (f32)vehicleIconSize, (f32)vehicleIconSize, glm::vec3(1.f), 1.f, false, true));
 
         g_game.renderer->push2D(TextRenderable(smallfont, driver->playerName.c_str(),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[2]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[2]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(driver->leaguePoints),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[3]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[3]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
     }
 
-    if (g_gui.didSelect())
+    if (didSelect())
     {
         g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
         showChampionshipMenu();
@@ -1623,31 +1604,30 @@ void Menu::championshipStandings()
             g_game.saveGame();
             g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         }
-        g_gui.popSelection();
     }
 }
 
 void Menu::raceResults()
 {
-    f32 w = g_gui.convertSizei(650);
+    f32 w = convertSize720i(650);
 
     f32 cw = (f32)(g_game.windowWidth/2);
     glm::vec2 menuPos = glm::vec2(cw - w/2, glm::floor(g_game.windowHeight * 0.2f));
     glm::vec2 menuSize = glm::vec2(w, (f32)g_game.windowHeight * 0.6f);
     drawBox(menuPos, menuSize);
 
-    Font* bigfont = &g_res.getFont("font_bold", (u32)g_gui.convertSize(26));
-    Font* smallfont = &g_res.getFont("font", (u32)g_gui.convertSize(16));
-    Font* tinyfont = &g_res.getFont("font", (u32)g_gui.convertSize(14));
+    Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize720(26));
+    Font* smallfont = &g_res.getFont("font", (u32)convertSize720(16));
+    Font* tinyfont = &g_res.getFont("font", (u32)convertSize720(14));
 
     g_game.renderer->push2D(TextRenderable(bigfont, "Race Results",
-                glm::vec2(cw, menuPos.y + g_gui.convertSizei(32)), glm::vec3(1.f),
+                glm::vec2(cw, menuPos.y + convertSize720i(32)), glm::vec3(1.f),
                 1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
 
     Texture* white = &g_res.white;
     g_game.renderer->push2D(QuadRenderable(white,
-                menuPos + glm::vec2(g_gui.convertSize(8), g_gui.convertSize(64)),
-                w - g_gui.convertSize(16), g_gui.convertSize(19), glm::vec3(0.f), 0.6f));
+                menuPos + glm::vec2(convertSize720(8), convertSize720(64)),
+                w - convertSize720(16), convertSize720(19), glm::vec3(0.f), 0.6f));
 
     f32 columnOffset[] = {
         32, 90, 225, 315, 400, 460, 520
@@ -1668,41 +1648,41 @@ void Menu::raceResults()
     for (u32 i=0; i<maxColumn; ++i)
     {
         g_game.renderer->push2D(TextRenderable(tinyfont, columnTitle[i],
-                    menuPos + glm::vec2(g_gui.convertSizei(columnOffset[i]), g_gui.convertSize(70)),
+                    menuPos + glm::vec2(convertSize720i(columnOffset[i]), convertSize720(70)),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
     }
 
     for (auto& row : g_game.currentScene->getRaceResults())
     {
         glm::vec2 pos = menuPos + glm::vec2(0.f,
-                        g_gui.convertSizei(100) + row.placement * g_gui.convertSize(24));
+                        convertSize720i(100) + row.placement * convertSize720(24));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.placement + 1),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[0]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[0]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         g_game.renderer->push2D(TextRenderable(smallfont, row.driver->playerName.c_str(),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[1]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[1]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.accidents),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[2]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[2]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.destroyed),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[3]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[3]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.frags),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[4]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[4]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getBonus()),
-                    pos + glm::vec2(g_gui.convertSizei(columnOffset[5]), 0),
+                    pos + glm::vec2(convertSize720i(columnOffset[5]), 0),
                     glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
             g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getCreditsEarned()),
-                        pos + glm::vec2(g_gui.convertSizei(columnOffset[6]), 0),
+                        pos + glm::vec2(convertSize720i(columnOffset[6]), 0),
                         glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
         }
     }
 
-    if (g_gui.didSelect())
+    if (didSelect())
     {
         for (auto& r : g_game.currentScene->getRaceResults())
         {
@@ -2141,7 +2121,7 @@ void Menu::showPauseMenu()
 
 void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 {
-    f32 border = glm::floor(g_gui.convertSize(3));
+    f32 border = glm::floor(convertSize720(3));
     g_game.renderer->push2D(QuadRenderable(&g_res.white,
                 pos - border, size.x + border * 2, size.y + border * 2,
                 glm::vec3(1.f), 0.4f, false));
@@ -2155,12 +2135,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
-        f32 h = g_gui.convertSize(tex->height * 0.5f);
+        f32 h = convertSize720(tex->height * 0.5f);
         renderer->push2D(QuadRenderable(tex, glm::vec2(0), w, h, glm::vec2(0.f, 0.999f),
-                    glm::vec2(g_game.windowWidth/g_gui.convertSize(tex->width * 0.5f), 0.001f)));
+                    glm::vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.001f)));
         renderer->push2D(QuadRenderable(tex, glm::vec2(0, g_game.windowHeight-h), w, h,
                     glm::vec2(0.f, 0.001f),
-                    glm::vec2(g_game.windowWidth/g_gui.convertSize(tex->width * 0.5f), 0.999f)));
+                    glm::vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.999f)));
     }
 
     switch (menuMode)

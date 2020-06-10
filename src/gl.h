@@ -19,12 +19,10 @@ namespace RenderFlags
 {
     enum
     {
-        CULLING,
+        BACKFACE_CULL,
         WIREFRAME,
         DEPTH_OFFSET,
-        NO_DEPTH_READ,
-        NO_DEPTH_WRITE,
-        TRANSPARENT,
-        HIGHLIGHT,
+        DEPTH_READ,
+        DEPTH_WRITE,
     };
 };

@@ -426,10 +426,10 @@ void Value::write(std::ofstream& stream) const
             stream.write((char*)&len, sizeof(len));
             for (auto& pair : dict_)
             {
-                u32 keyLen = (u32)pair.first.size();
+                u32 keyLen = (u32)pair.key.size();
                 stream.write((char*)&keyLen, sizeof(keyLen));
-                stream.write(pair.first.data(), keyLen);
-                pair.second.write(stream);
+                stream.write(pair.key.data(), keyLen);
+                pair.value.write(stream);
             }
         } break;
         case DataType::BOOL:
@@ -499,8 +499,8 @@ void Value::debugOutput(std::ostream& os, u32 indent, bool newline) const
                 for (auto const& pair : dict_)
                 {
                     os << std::string((indent + 1) * 2, ' ');
-                    os << pair.first << ": ";
-                    pair.second.debugOutput(os, indent + 1, false);
+                    os << pair.key << ": ";
+                    pair.value.debugOutput(os, indent + 1, false);
                     os << ",\n";
                 }
                 os << std::string(indent * 2, ' ') << "}";

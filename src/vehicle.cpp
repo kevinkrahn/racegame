@@ -1017,7 +1017,7 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
     {
         for (auto& c : g_input.getControllers())
         {
-            const Controller* controller = &c.second;
+            const Controller* controller = &c.value;
             f32 val = controller->getAxis(AXIS_TRIGGER_RIGHT);
             if (glm::abs(val) > 0.f)
             {

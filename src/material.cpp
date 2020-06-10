@@ -33,12 +33,14 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
         if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
         pickShaderHandle = getShaderHandle("lit", defines);
     }
+    /*
     renderFlags = 0;
     if (isCullingEnabled) { renderFlags |= RenderFlags::CULLING; }
     if (depthOffset != 0) { renderFlags |= RenderFlags::DEPTH_OFFSET; }
     if (!isDepthReadEnabled != 0) { renderFlags |= RenderFlags::NO_DEPTH_READ; }
     if (!isDepthWriteEnabled != 0) { renderFlags |= RenderFlags::NO_DEPTH_WRITE; }
     if (isTransparent) { renderFlags |= RenderFlags::TRANSPARENT; }
+    */
     textureColorHandle = colorTexture
         ? g_res.getTexture(colorTexture)->handle : g_res.white.handle;
     textureNormalHandle = normalMapTexture
@@ -60,6 +62,7 @@ struct MaterialRenderData
     f32 windAmount;
 };
 
+/*
 void addRenderItemFromMaterial(RenderWorld* rw, Material* material,
         glm::mat4 const& transform, Mesh* mesh)
 {
@@ -136,3 +139,4 @@ void addRenderItemFromMaterial(RenderWorld* rw, Material* material,
         });
     }
 }
+*/

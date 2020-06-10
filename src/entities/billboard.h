@@ -127,11 +127,11 @@ public:
         u32 buttonCount = 0;
         for (auto& res : g_res.resources)
         {
-            if (res.second->type != ResourceType::TEXTURE)
+            if (res.value->type != ResourceType::TEXTURE)
             {
                 continue;
             }
-            Texture* tex = (Texture*)res.second.get();
+            Texture* tex = (Texture*)res.value.get();
             if (tex->name.find("billboard") != std::string::npos)
             {
                 f32 w = glm::min(ImGui::GetColumnWidth(), 200.f);

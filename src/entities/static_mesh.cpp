@@ -267,11 +267,11 @@ Array<PropPrefabData> StaticMesh::generatePrefabProps()
     for (auto& res : g_res.resources)
     {
         // TODO: make a better way to iterate over resources of a specific type
-        if (res.second->type != ResourceType::MODEL)
+        if (res.value->type != ResourceType::MODEL)
         {
             continue;
         }
-        Model* model = (Model*)res.second.get();
+        Model* model = (Model*)res.value.get();
         if (model->modelUsage == ModelUsage::DYNAMIC_PROP
                 || model->modelUsage == ModelUsage::STATIC_PROP)
         {

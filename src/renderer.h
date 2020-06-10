@@ -7,18 +7,35 @@
 #include "renderable.h"
 #include "dynamic_buffer.h"
 #include "buffer.h"
+#include "map.h"
 
 struct RenderItem
 {
-    ShaderHandle program;
     GLuint vao;
     u32 indexCount;
-    u32 flags;
-    f32 depthOffset;
-    std::function<void()> setUniforms;
-    f32 pad[2];
 };
-static_assert(sizeof(RenderItem) == 64);
+
+struct HighlightPassRenderItem
+{
+    GLuint vao;
+    u32 indexCount;
+    u8 stencil;
+    u8 cameraIndex;
+};
+
+struct PickPassRenderItem
+{
+    GLuint vao;
+    u32 indexCount;
+    u32 pickID;
+};
+
+struct ShaderProgram
+{
+    GLuint program = 0;
+    u32 renderFlags = 0;
+    f32 depthOffset;
+};
 
 enum
 {
@@ -137,6 +154,16 @@ struct WorldInfo
     f32 pad2[2];
 };
 
+struct RenderItems
+{
+    Map<u32, Array<RenderItem>> depthPrepass;
+    Map<u32, Array<RenderItem>> shadowPass;
+    Map<u32, Array<RenderItem>> opaqueColorPass;
+    Map<u32, Array<RenderItem>> transparentPass;
+    Map<u32, Array<RenderItem>> highlightPass;
+    Map<u32, Array<RenderItem>> colorPickPass;
+};
+
 class RenderWorld
 {
     friend class Renderer;
@@ -163,18 +190,13 @@ class RenderWorld
     u32 firstBloomDivisor = 2;
     u32 lastBloomDivisor = 16;
 
+    // TODO: remove
     struct QueuedRenderable
     {
         i32 priority;
         Renderable* renderable;
     };
     Array<QueuedRenderable> renderables;
-
-    Array<RenderItem> depthPrepassRenderItems;
-    Array<RenderItem> shadowPassRenderItems;
-    Array<RenderItem> colorPassRenderItems;
-    Array<RenderItem> highlightPassRenderItems;
-    Array<RenderItem> colorPickRenderItems;
 
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
@@ -223,10 +245,6 @@ public:
         add(ptr);
         return ptr;
     }
-
-    void addDepthPrepassItem(RenderItem&& item) { depthPrepassRenderItems.push_back(std::move(item)); }
-    void addShadowPassItem(RenderItem&& item) { shadowPassRenderItems.push_back(std::move(item)); }
-    void addColorPassItem(RenderItem&& item) { colorPassRenderItems.push_back(std::move(item)); }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
     Texture releaseTexture(u32 cameraIndex=0);
@@ -305,16 +323,16 @@ private:
     u32 fullscreenBlurDivisor = 4;
     u32 settingsVersion = 0;
 
-    struct ShaderProgramData
+    struct ShaderProgramSource
     {
         const char* name;
         SmallArray<ShaderDefine> defines;
     };
-    Array<GLuint> shaderPrograms;
-    Array<ShaderProgramData> shaderProgramData;
+    Array<ShaderProgram> shaderPrograms;
+    Array<ShaderProgramSource> shaderProgramSources;
 
     // TODO: remove
-    std::map<const char*, ShaderHandle> shaderNameMap;
+    Map<const char*, ShaderHandle> shaderNameMap;
     void loadShaders();
     void loadShader(const char* filename, SmallArray<const char*> defines={}, const char* name=nullptr);
     void loadShader(ShaderHandle handle);
@@ -331,8 +349,8 @@ private:
 
 public:
     // TODO: remove
-    GLuint getShaderProgram(const char* name) { return shaderPrograms[shaderNameMap[name]]; }
-    GLuint getShaderProgram(ShaderHandle handle) { return shaderPrograms[handle]; }
+    GLuint getShaderProgram(const char* name) { return shaderPrograms[shaderNameMap[name]].program; }
+    GLuint getShaderProgram(ShaderHandle handle) { return shaderPrograms[handle].program; }
 
     void add2D(Renderable2D* renderable, i32 priority=0)
     {
@@ -354,7 +372,7 @@ public:
     void reloadShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines);
+    ShaderHandle getShaderHandle(const char* name, u32 renerFlags, SmallArray<ShaderDefine> const& defines);
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
     void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }

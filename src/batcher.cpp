@@ -5,7 +5,7 @@ void Batcher::end(bool keepMeshData)
     for (auto& itemsForThisMaterial : materialMap)
     {
         Mesh bigBatchedMesh;
-        bigBatchedMesh.name = itemsForThisMaterial.first->name + " Batch";
+        bigBatchedMesh.name = itemsForThisMaterial.key->name + " Batch";
         bigBatchedMesh.numVertices = 0;
         bigBatchedMesh.numIndices = 0;
         bigBatchedMesh.numColors = 1;
@@ -14,7 +14,7 @@ void Batcher::end(bool keepMeshData)
         bigBatchedMesh.calculateVertexFormat();
 
         u32 vertexElementCount = 0;
-        for (auto& item : itemsForThisMaterial.second)
+        for (auto& item : itemsForThisMaterial.value)
         {
             vertexElementCount += item.mesh->numVertices * (bigBatchedMesh.stride / sizeof(f32));
             bigBatchedMesh.numVertices += item.mesh->numVertices;
@@ -26,7 +26,7 @@ void Batcher::end(bool keepMeshData)
         u32 vertexElementIndex = 0;
         u32 indicesCopied = 0;
         u32 verticesCopied = 0;
-        for (auto& item : itemsForThisMaterial.second)
+        for (auto& item : itemsForThisMaterial.value)
         {
             for (u32 i=0; i<item.mesh->numIndices; ++i)
             {
@@ -95,7 +95,7 @@ void Batcher::end(bool keepMeshData)
             bigBatchedMesh.indices.shrink_to_fit();
         }
 
-        batches.push_back({ itemsForThisMaterial.first, std::move(bigBatchedMesh) });
+        batches.push_back({ itemsForThisMaterial.key, std::move(bigBatchedMesh) });
     }
     materialMap.clear();
 }
