@@ -89,7 +89,7 @@ void Menu::startQuickRace()
             championshipTracks[irandom(series, 0, (i32)ARRAY_SIZE(championshipTracks))]);
 #endif
     scene->startRace();
-    menuMode = HIDDEN;
+    reset();
 }
 
 constexpr f32 REFERENCE_HEIGHT = 1080.f;
@@ -217,15 +217,16 @@ f32 didMoveX()
     return result;
 }
 
-Widget* Menu::addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha)
+Widget* Menu::addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha, bool scaleOut)
 {
     Widget w;
     w.pos = pos;
     w.size = size;
     w.fadeInScale = 1.f;
-    w.onRender = [alpha](Widget& w, bool){
+    w.onRender = [alpha, scaleOut](Widget& w, bool){
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        glm::vec2 size = convertSize(w.size) * w.fadeInScale;
+        f32 scale = scaleOut ? w.fadeInScale : 1.f;
+        glm::vec2 size = convertSize(w.size) * scale;
         glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
         g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
                     glm::vec4(glm::vec3(0.f), alpha), w.fadeInAlpha), -100);
@@ -626,7 +627,7 @@ void Menu::showMainMenu()
     addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [this]{
         g_game.isEditing = true;
         g_game.unloadScene();
-        menuMode = HIDDEN;
+        reset();
     }, WidgetFlags::FADE_OUT);
     addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 },
             smallSize, []{}, WidgetFlags::FADE_OUT);
@@ -895,9 +896,9 @@ void Menu::showChampionshipMenu()
     f32 y = -170.f;
     glm::vec2 size(400, 80);
     selectedWidget = addButton("BEGIN RACE", "Start the next race.", {x,y}, size, [this]{
+        reset();
         Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         scene->startRace();
-        menuMode = HIDDEN;
     }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK, g_res.getTexture("icon_flag"));
     y += 100;
 
@@ -937,7 +938,7 @@ void Menu::showChampionshipMenu()
 static const glm::vec2 vehiclePreviewSize = {600,400};
 void Menu::createVehiclePreview()
 {
-    addBackgroundBox({0,0}, {1920,1080}, 0.3f);
+    addBackgroundBox({0,0}, {1920,1080}, 0.3f, false);
 
     Widget* box = addBackgroundBox({-260,200}, {vehiclePreviewSize.x, 300}, 0.8f);
     addHelpMessage({0, 400});
@@ -2102,30 +2103,17 @@ void Menu::graphicsOptions()
 void Menu::showPauseMenu()
 {
     reset();
-    menuMode = MenuMode::PAUSE_MENU;
     fadeInTimer = 400.f;
 
     addBackgroundBox({0,0}, {400, 400}, 0.8f);
-    addLogic([this]{
-        bool unpause = g_input.isKeyPressed(KEY_ESCAPE);
-        for (auto& c : g_input.getControllers())
-        {
-            unpause |= c.second.isButtonPressed(BUTTON_START);
-        }
-        if (fadeInTimer > 800.f && unpause)
-        {
-            menuMode = MenuMode::HIDDEN;
-            g_game.currentScene->setPaused(false);
-        }
-    });
 
     Font* font = &g_res.getFont("font_bold", (u32)convertSize(55));
     addLabel([]{ return "PAUSED"; }, {0, -160}, font);
     glm::vec2 size(350, 80);
     selectedWidget = addButton("RESUME", "", {0, -70}, size, [this]{
-        menuMode = MenuMode::HIDDEN;
+        reset();
         g_game.currentScene->setPaused(false);
-    });
+    }, WidgetFlags::BACK);
     addButton("FORFEIT RACE", "", {0, 30}, size, [this]{
         reset();
         g_game.currentScene->setPaused(false);
@@ -2148,7 +2136,7 @@ void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
-    if (menuMode == MenuMode::VISIBLE)
+    if (g_game.currentScene && !g_game.currentScene->isRaceInProgress && !g_game.isEditing)
     {
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
@@ -2162,9 +2150,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
     switch (menuMode)
     {
-        case MenuMode::HIDDEN:
         case MenuMode::VISIBLE:
-        case MenuMode::PAUSE_MENU:
             break;
         case MenuMode::CHAMPIONSHIP_STANDINGS:
             championshipStandings();
@@ -2172,11 +2158,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         case MenuMode::RACE_RESULTS:
             raceResults();
             break;
-    }
-
-    if (menuMode == MenuMode::HIDDEN || widgets.empty())
-    {
-        return;
     }
 
     repeatTimer = glm::max(repeatTimer - g_game.deltaTime, 0.f);
@@ -2196,7 +2177,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         }
 
         bool activated = false;
-        if (fadeIn && widget.flags & WidgetFlags::BACK && didGoBack())
+        if (fadeIn && fadeInTimer > 500.f && widget.flags & WidgetFlags::BACK && didGoBack())
         {
             activated = true;
             selectedWidget = &widget;
@@ -2307,7 +2288,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         activatedWidget->onSelect();
     }
-    else if (fadeIn)
+    else if (fadeIn && selectedWidget)
     {
         i32 selectDirX = (selectedWidget->flags & WidgetFlags::NAVIGATE_HORIZONTAL) ?
             didChangeSelectionX() : 0;

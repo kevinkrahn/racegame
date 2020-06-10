@@ -73,11 +73,9 @@ class Menu
 {
     enum MenuMode
     {
-        HIDDEN,
         VISIBLE,
         CHAMPIONSHIP_STANDINGS,
         RACE_RESULTS,
-        PAUSE_MENU,
     } menuMode;
 
     Config tmpConfig;
@@ -103,7 +101,6 @@ class Menu
         repeatTimer = 0.f;
         fadeIn = true;
         fadeInTimer = 0.f;
-        blackFadeAlpha = 0.f;
         menuMode = MenuMode::VISIBLE;
     }
 
@@ -129,7 +126,7 @@ class Menu
     i32 didChangeSelectionY();
     i32 didChangeSelectionX();
 
-    Widget* addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha=0.3f);
+    Widget* addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha=0.3f, bool scaleOut=true);
     Widget* addLogic(std::function<void()> onUpdate);
     Widget* addLogic(std::function<void(Widget&)> onUpdate);
     Widget* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
