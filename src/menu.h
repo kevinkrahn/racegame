@@ -83,6 +83,8 @@ struct SliderInfo
     glm::vec3 color2;
     f32 val;
     Texture* tex;
+    f32 min;
+    f32 max;
 };
 
 struct GarageData

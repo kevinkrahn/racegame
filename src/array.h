@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utility>
-#include <functional>
 #include "math.h"
 
 template <typename T>
@@ -42,8 +41,8 @@ class Array
         reallocate();
     }
 
-    void quickSort(i32 lowIndex, i32 highIndex,
-            std::function<bool(T const& a, T const& b)> const& compare)
+    template <typename COMPARE>
+    void quickSort(i32 lowIndex, i32 highIndex, COMPARE const& compare)
     {
         if (lowIndex < highIndex)
         {
@@ -418,7 +417,8 @@ public:
         return nullptr;
     }
 
-    T* find(std::function<bool(T const& e)> const& cb)
+    template <typename CALLBACK>
+    T* find(CALLBACK const& cb)
     {
         for (auto it = begin(); it != end(); ++it)
         {
@@ -448,7 +448,8 @@ public:
         sort([](T const& a, T const& b) { return a < b; });
     }
 
-    void sort(std::function<bool(T const& a, T const& b)> const& compare)
+    template <typename COMPARE>
+    void sort(COMPARE const& compare)
     {
         quickSort(0, (i32)size_ - 1, compare);
     }
@@ -458,7 +459,8 @@ public:
         stableSort([](T const& a, T const& b) { return a < b; });
     }
 
-    void stableSort(std::function<bool(T const& a, T const& b)> const& compare)
+    template <typename COMPARE>
+    void stableSort(COMPARE const& compare)
     {
         for (u32 i=0; i<size_; ++i)
         {

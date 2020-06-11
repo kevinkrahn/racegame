@@ -1,8 +1,6 @@
 #include "font.h"
 #include "renderer.h"
 #include "game.h"
-#include <fstream>
-#include <sstream>
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
@@ -10,19 +8,10 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
 {
     this->startingChar = startingChar;
 
-    std::ifstream file(filename, std::ios::binary | std::ios::in | std::ios::ate);
-    if(!file)
-    {
-        FATAL_ERROR("Failed to load file: ", filename);
-    }
-
-    auto size = file.tellg();
-    Array<u8> fontData((u32)size);
-    file.seekg(0, std::ios::beg);
-    file.read((char*)fontData.data(), size);
+    Buffer fontData = readFileBytes(filename.c_str());
 
     stbtt_fontinfo fontInfo;
-    stbtt_InitFont(&fontInfo, fontData.data(), stbtt_GetFontOffsetForIndex(fontData.data(), 0));
+    stbtt_InitFont(&fontInfo, fontData.data.get(), stbtt_GetFontOffsetForIndex(fontData.data.get(), 0));
 
     f32 scale = stbtt_ScaleForPixelHeight(&fontInfo, fontSize);
 
@@ -38,7 +27,7 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     const i32 padding = 4;
     stbtt_PackBegin(&c, texData.data(), w, h, 0, padding, nullptr);
 
-    if (!stbtt_PackFontRange(&c, fontData.data(), 0, fontSize, startingChar, numGlyphs, charData.data()))
+    if (!stbtt_PackFontRange(&c, fontData.data.get(), 0, fontSize, startingChar, numGlyphs, charData.data()))
     {
         // this might mean the atlas is too small
         FATAL_ERROR("Failed to pack font atlas.");

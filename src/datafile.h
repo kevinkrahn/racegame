@@ -1,10 +1,8 @@
 #pragma once
 
 #include <string>
-#include <fstream>
 #include <iostream>
-#include "misc.h"
-#include "math.h"
+#include "util.h"
 
 #define MAGIC_NUMBER 0x00001111
 
@@ -90,9 +88,9 @@ namespace DataFile
         };
 
     public:
-        static Value readValue(std::ifstream& stream);
+        static Value readValue(Buffer& buf);
         static Value readValue(std::string::const_iterator& ch, std::string::const_iterator end);
-        void write(std::ofstream& stream) const;
+        void write(Buffer& buf) const;
 
         ~Value()
         {

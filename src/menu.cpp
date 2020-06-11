@@ -420,19 +420,20 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
             f32 dir = didMoveX();
             if (dir != 0.f)
             {
-                info.val = clamp(info.val + dir * g_game.realDeltaTime * 0.5f, 0.f, 1.f);
-                onValueChanged(info.val);
+                f32 t = clamp(info.val + dir * g_game.realDeltaTime * 0.5f, 0.f, 1.f);
+                onValueChanged(glm::lerp(info.min, info.max, t));
             }
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
             {
                 glm::vec2 mousePos = g_input.getMousePosition();
                 f32 localX = mousePos.x - pos.x;
-                info.val = clamp(localX / size.x, 0.f, 1.f);
-                onValueChanged(info.val);
+                f32 t = clamp(localX / size.x, 0.f, 1.f);
+                onValueChanged(glm::lerp(info.min, info.max, t));
             }
         }
 
-        g_game.renderer->push2D(Quad(&g_res.white, pos + glm::vec2(info.val * size.x, 0.f), convertSize(4),
+        f32 t = (info.val - info.min) / (info.max - info.min);
+        g_game.renderer->push2D(Quad(&g_res.white, pos + glm::vec2(t * size.x, 0.f), convertSize(4),
                     size.y, glm::vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha));
     };
     w.fadeInScale = 0.7f;
@@ -1251,7 +1252,14 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
-        return SliderInfo{ glm::vec3(1.f), glm::vec3(1.f), hue, g_res.getTexture("hues") };
+        return SliderInfo{
+            glm::vec3(1.f),
+            glm::vec3(1.f),
+            hue,
+            g_res.getTexture("hues"),
+            0.01f,
+            0.99f,
+        };
     });
     y += size.y + gap;
 
@@ -1264,7 +1272,14 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
-        return SliderInfo{ hsvToRgb(hue, 0.f, value), hsvToRgb(hue, 1.f, value), saturation, &g_res.white };
+        return SliderInfo{
+            hsvToRgb(hue, 0.f, value),
+            hsvToRgb(hue, 1.f, value),
+            saturation,
+            &g_res.white,
+            0.f,
+            0.99f,
+        };
     });
     y += size.y + gap;
 
@@ -1277,7 +1292,14 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
-        return SliderInfo{ hsvToRgb(hue, saturation, 0.f), hsvToRgb(hue, saturation, 1.f), value, &g_res.white };
+        return SliderInfo{
+            hsvToRgb(hue, saturation, 0.f),
+            hsvToRgb(hue, saturation, 1.f),
+            value,
+            &g_res.white,
+            0.02f,
+            0.98f,
+        };
     });
     y += size.y + gap;
 

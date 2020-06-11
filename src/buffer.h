@@ -25,14 +25,12 @@ public:
     size_t pos;
     size_t alignment;
 
-    Buffer() : data(NULL), size(0), pos(0), alignment(1) {}
+    Buffer() : data(nullptr), size(0), pos(0), alignment(1) {}
 
-    Buffer(size_t size, size_t alignment=1) : size(size), pos(0),  alignment(alignment)
+    Buffer(size_t size, size_t alignment=1) : size(size), pos(0), alignment(alignment)
     {
-        if (size > 0)
-        {
-            data.reset(new u8[size]);
-        }
+        assert(size > 0);
+        data.reset(new u8[size]);
     }
 
     Buffer(Buffer&& other)
@@ -81,6 +79,12 @@ public:
     u8* writeBytes(void* d, size_t len)
     {
         assert(len > 0);
+        if (pos + len > size)
+        {
+            u8* newData = new u8[size * 2];
+            memcpy(newData, data.get(), size);
+            data.reset(newData);
+        }
         memcpy(data.get() + pos, d, len);
         return bump(len);
     }

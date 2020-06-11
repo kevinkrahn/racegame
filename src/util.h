@@ -7,6 +7,7 @@
 #endif
 
 #include "misc.h"
+#include "buffer.h"
 #include <string>
 #include <filesystem>
 
@@ -253,4 +254,47 @@ CommandResult runShellCommand(std::string const& command)
 
     return { code, output };
 #endif
+}
+
+Buffer readFileBytes(const char* filename)
+{
+    SDL_RWops* file = SDL_RWFromFile(filename, "r+b");
+    if (!file)
+    {
+        FATAL_ERROR("File ", filename, " does not exist.");
+    }
+    size_t size = SDL_RWsize(file);
+    Buffer buffer(size);
+    SDL_RWread(file, buffer.data.get(), size, 1);
+    SDL_RWclose(file);
+    return buffer;
+}
+
+std::string readFileString(const char* filename)
+{
+    SDL_RWops* file = SDL_RWFromFile(filename, "r+b");
+    if (!file)
+    {
+        FATAL_ERROR("File ", filename, " does not exist.");
+    }
+    size_t size = SDL_RWsize(file);
+    std::string buffer;
+    buffer.resize(size);
+    SDL_RWread(file, buffer.data(), size, 1);
+    SDL_RWclose(file);
+    return buffer;
+}
+
+void writeFile(const char* filename, void* data, size_t len)
+{
+    SDL_RWops* file = SDL_RWFromFile(filename, "w+b");
+    if (!file)
+    {
+        FATAL_ERROR("Failed to open file for writing: ", filename);
+    }
+    if (SDL_RWwrite(file, data, 1, len) != len)
+    {
+        FATAL_ERROR("Failed to complete file write: ", filename);
+    }
+    SDL_RWclose(file);
 }

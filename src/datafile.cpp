@@ -9,18 +9,7 @@ DataFile::Value DataFile::load(std::string const& filename)
     // text format
     if (filename.substr(filename.size()-4) == ".txt")
     {
-        std::ifstream file(filename);
-        if (!file)
-        {
-            error("Failed to load data file: ", filename, '\n');
-            return Value();
-        }
-
-        std::ostringstream stream;
-        stream << file.rdbuf();
-        file.close();
-
-        std::string str = stream.str();
+        std::string str = readFileString(filename.c_str());
 
         // strip comments
         for (;;)
@@ -41,24 +30,16 @@ DataFile::Value DataFile::load(std::string const& filename)
     }
 
     // binary format
-    std::ifstream file(filename, std::ios::binary);
-    if (!file)
-    {
-        error("Failed to load data file: ", filename, '\n');
-        return Value();
-    }
+    Buffer buf = readFileBytes(filename.c_str());
 
-    file.seekg(0);
-
-    u32 header;
-    file.read((char*)&header, sizeof(u32));
+    u32 header = *buf.bump<u32>();
     if (header != MAGIC_NUMBER)
     {
         error("Invalid data file: ", filename, '\n');
         return Value();
     }
 
-    Value val = Value::readValue(file);
+    Value val = Value::readValue(buf);
     return val;
 }
 
@@ -67,27 +48,19 @@ void DataFile::save(DataFile::Value const& val, std::string const& filename)
     // text format
     if (filename.substr(filename.size()-4) == ".txt")
     {
-        std::ofstream file(filename);
-        if (!file)
-        {
-            error("Failed to open data file for writing: ", filename, '\n');
-            return;
-        }
-        file << val;
+        std::ostringstream ss;
+        ss << val;
+        std::string fileStr = ss.str();
+        writeFile(filename.c_str(), fileStr.data(), fileStr.size());
         return;
     }
 
     // binary format
-    std::ofstream file(filename, std::ios::binary);
-    if (!file)
-    {
-        error("Failed to open binary data file for writing: ", filename, '\n');
-        return;
-    }
-
     u32 magic = MAGIC_NUMBER;
-    file.write((char*)&magic, sizeof(u32));
-    val.write(file);
+    Buffer buf(megabytes(20));
+    buf.write(magic);
+    val.write(buf);
+    writeFile(filename.c_str(), buf.data.get(), buf.pos);
 }
 
 // TODO: Add line numbers and more descriptive messages to parser errors
@@ -319,62 +292,67 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
     return Value();
 }
 
-Value Value::readValue(std::ifstream& stream)
+Value Value::readValue(Buffer& buf)
 {
     Value value;
-    stream.read((char*)&value.dataType, sizeof(DataType));
+    value.dataType = (DataType)*buf.bump<u32>();
     switch (value.dataType)
     {
         case DataType::I64:
         {
-            stream.read((char*)&value.integer_, sizeof(i64));
+            value.integer_ = *buf.bump<i64>();
         } break;
         case DataType::F32:
         {
-            stream.read((char*)&value.real_, sizeof(f32));
+            value.real_ = *buf.bump<f32>();
         } break;
         case DataType::STRING:
         {
-            u32 len;
-            stream.read((char*)&len, sizeof(len));
-            new (&value.str_) std::string(len, ' ');
-            stream.read(&value.str_[0], len);
+            u32 len = *buf.bump<u32>();
+            char* chars = buf.bump<char>(len);
+            new (&value.str_) std::string(chars, chars+len);
         } break;
         case DataType::BYTE_ARRAY:
         {
             // TODO: should byte array be 4-byte aligned?
-            u32 len;
-            stream.read((char*)&len, sizeof(len));
-            new (&value.bytearray_) ByteArray(len);
-            stream.read((char*)value.bytearray_.data(), len);
+            u32 len = *buf.bump<u32>();
+            u8* bytes = buf.bump<u8>(len);
+            new (&value.bytearray_) ByteArray(bytes, bytes+len);
         } break;
         case DataType::ARRAY:
         {
-            u32 len;
-            stream.read((char*)&len, sizeof(len));
+            u32 len = *buf.bump<u32>();
+#if 1
             new (&value.array_) Array(len);
             for (u32 i=0; i<len; ++i)
             {
-                value.array_[i] = readValue(stream);
+                value.array_[i] = readValue(buf);
             }
+#else
+            new (&value.array_) Array();
+            value.array_.reserve(len);
+            for (u32 i=0; i<len; ++i)
+            {
+                value.array_.push_back(readValue(buf));
+            }
+#endif
         } break;
         case DataType::DICT:
         {
-            u32 len;
-            stream.read((char*)&len, sizeof(len));
+            u32 len = *buf.bump<u32>();
             new (&value.dict_) Dict();
             for (u32 i=0; i<len; ++i)
             {
-                u32 keyLen;
-                stream.read((char*)&keyLen, sizeof(keyLen));
-                std::string key(keyLen, ' ');
-                stream.read(&key[0], keyLen);
-                value.dict_[key] = readValue(stream);
+                u32 keyLen = *buf.bump<u32>();
+                char* chars = buf.bump<char>(keyLen);
+                std::string key(chars, chars+keyLen);
+                value.dict_.set(key, readValue(buf));
             }
         } break;
         case DataType::BOOL:
         {
-            stream.read((char*)&value.bool_, sizeof(u32));
+            //value.bool_ = *buf.bump<u32>();
+            value.integer_ = *buf.bump<u32>();
         } break;
         default:
         {
@@ -386,55 +364,51 @@ Value Value::readValue(std::ifstream& stream)
     return value;
 }
 
-void Value::write(std::ofstream& stream) const
+void Value::write(Buffer& buf) const
 {
-    stream.write((char*)&dataType, sizeof(DataType));
+    buf.write(dataType);
     switch (dataType)
     {
         case DataType::I64:
         {
-            stream.write((char*)&integer_, sizeof(i64));
+            buf.write(integer_);
         } break;
         case DataType::F32:
         {
-            stream.write((char*)&real_, sizeof(f32));
+            buf.write(real_);
         } break;
         case DataType::STRING:
         {
-            u32 len = (u32)str_.size();
-            stream.write((char*)&len, sizeof(len));
-            stream.write(str_.data(), len);
+            buf.write((u32)str_.size());
+            buf.writeBytes((void*)str_.data(), (u32)str_.size());
         } break;
         case DataType::BYTE_ARRAY:
         {
-            u32 len = (u32)bytearray_.size();
-            stream.write((char*)&len, sizeof(len));
-            stream.write((char*)bytearray_.data(), len);
+            buf.write((u32)bytearray_.size());
+            buf.writeBytes(bytearray_.data(), (u32)bytearray_.size());
         } break;
         case DataType::ARRAY:
         {
-            u32 len = (u32)array_.size();
-            stream.write((char*)&len, sizeof(len));
-            for (u32 i=0; i<len; ++i)
+            buf.write((u32)array_.size());
+            for (u32 i=0; i<array_.size(); ++i)
             {
-                array_[i].write(stream);
+                array_[i].write(buf);
             }
         } break;
         case DataType::DICT:
         {
-            u32 len = (u32)dict_.size();
-            stream.write((char*)&len, sizeof(len));
+            buf.write((u32)dict_.size());
             for (auto& pair : dict_)
             {
                 u32 keyLen = (u32)pair.key.size();
-                stream.write((char*)&keyLen, sizeof(keyLen));
-                stream.write(pair.key.data(), keyLen);
-                pair.value.write(stream);
+                buf.write(keyLen);
+                buf.writeBytes((void*)pair.key.data(), keyLen);
+                pair.value.write(buf);
             }
         } break;
         case DataType::BOOL:
         {
-            stream.write((char*)&bool_, sizeof(u32));
+            buf.write((u32)bool_);
         } break;
         default:
         {

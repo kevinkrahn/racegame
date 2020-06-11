@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utility>
-#include <functional>
 #include "math.h"
 
 template <typename T, u32 maxSize=8>
@@ -285,7 +284,8 @@ public:
         return nullptr;
     }
 
-    T* find(std::function<bool(T const& e)> const& cb)
+    template <typename CALLBACK>
+    T* find(CALLBACK const& cb)
     {
         for (auto it = begin(); it != end(); ++it)
         {

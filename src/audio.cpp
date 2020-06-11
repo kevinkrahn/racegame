@@ -68,15 +68,9 @@ void Sound::loadFromFile(const char* filename)
     }
     else if (ext == ".ogg")
     {
-        std::ifstream file(filename, std::ios::binary | std::ios::ate);
-        if (!file)
-        {
-            error("Failed to load ogg vorbis file: ", filename, '\n');
-        }
-        auto pos = file.tellg();
-        file.seekg(0, std::ios::beg);
-        rawAudioData.resize(pos);
-        file.read((char*)rawAudioData.data(), pos);
+        Buffer oggData = readFileBytes(filename);
+        rawAudioData.resize(oggData.size);
+        rawAudioData.assign(oggData.data.get(), oggData.data.get() + oggData.size);
         decodeVorbisData();
         format = AudioFormat::VORBIS;
     }

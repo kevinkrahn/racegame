@@ -4,6 +4,8 @@ import os, sys, subprocess, urllib.request, zipfile, tempfile, errno, pickle, gl
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 
+start_time = time.time()
+
 repoPath = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).decode('utf-8').strip()
 
 def ensureDir(dir):
@@ -198,6 +200,7 @@ def build(build_type):
         except:
             print('Failed to copy compile_commands.json')
             pass
+    print('Compilation took {:.2f} seconds'.format(time.time() - start_time))
     return True
 
 def cleanBuild():
@@ -217,8 +220,6 @@ args = parser.parse_args()
 print('build_type:', args.build_type)
 
 os.chdir(repoPath)
-
-start_time = time.time()
 
 if args.command == 'compile':
     build(args.build_type)
