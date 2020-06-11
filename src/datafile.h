@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <iostream>
 #include "util.h"
 
 #define MAGIC_NUMBER 0x00001111

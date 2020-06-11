@@ -10,7 +10,6 @@
 #include "imgui.h"
 #include <imgui/examples/imgui_impl_sdl.h>
 #include <imgui/examples/imgui_impl_opengl3.h>
-#include <iostream>
 
 void Game::initPhysX()
 {

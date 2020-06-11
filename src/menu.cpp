@@ -420,7 +420,8 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
             f32 dir = didMoveX();
             if (dir != 0.f)
             {
-                f32 t = clamp(info.val + dir * g_game.realDeltaTime * 0.5f, 0.f, 1.f);
+                f32 t = (info.val - info.min) / (info.max - info.min);
+                t = clamp(t + dir * g_game.realDeltaTime * 0.5f, 0.f, 1.f);
                 onValueChanged(glm::lerp(info.min, info.max, t));
             }
             if (g_input.isMouseButtonDown(MOUSE_LEFT))
@@ -896,8 +897,7 @@ void Menu::showChampionshipMenu()
     }, WidgetFlags::FADE_OUT);
     y += 100;
 
-    //addBackgroundBox({0,0}, {1300, 850});
-    addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f);
+    addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f, false);
     Font* bigFont = &g_res.getFont("font_bold", (u32)convertSize(110));
     Widget* label = addLabel([]{ return tstr("League ", (char)('A' + g_game.state.currentLeague)); },
             {0, -370}, bigFont, HorizontalAlign::CENTER, VerticalAlign::CENTER);
