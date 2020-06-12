@@ -61,7 +61,7 @@ struct MaterialRenderData
     f32 reflectionStrength, reflectionLod, reflectionBias;
     f32 alphaCutoff, shadowAlphaCutoff;
     f32 windAmount;
-    glm::vec3 shieldColor;
+    glm::vec4 shield;
 };
 
 void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil)
@@ -143,16 +143,17 @@ void Material::drawHighlight(RenderWorld* rw, glm::mat4 const& transform, Mesh* 
 #ifndef NDEBUG
     d->material = this;
 #endif
+    d->textureColor = textureColorHandle;
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
     d->textureColor = textureColorHandle;
     d->alphaCutoff = alphaCutoff;
+    d->windAmount = windAmount;
 
     auto render = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
         if (d->alphaCutoff > 0.f)
         {
             glBindTextureUnit(0, d->textureColor);
@@ -163,11 +164,11 @@ void Material::drawHighlight(RenderWorld* rw, glm::mat4 const& transform, Mesh* 
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };
 
-    rw->highlightPass(colorShaderHandle, { d, render, stencil, cameraIndex });
+    rw->highlightPass(depthShaderHandle, { d, render, stencil, cameraIndex });
 }
 
 void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
-        u8 stencil, glm::vec3 const& shieldColor)
+        u8 stencil, glm::vec4 const& shield)
 {
     MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
@@ -189,7 +190,7 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->reflectionStrength = reflectionStrength;
     d->reflectionLod = reflectionLod;
     d->reflectionBias = reflectionBias;
-    d->shieldColor = shieldColor;
+    d->shield = shield;
 
     auto renderOpaque = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
@@ -203,7 +204,7 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
         glUniform3fv(6, 1, (GLfloat*)&d->emission);
         glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
         glUniform1f(8, 0.f);
-        glUniform3fv(10, 1, (GLfloat*)&d->shieldColor);
+        glUniform4fv(10, 1, (GLfloat*)&d->shield);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };

@@ -351,7 +351,7 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
 
 void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         glm::mat4* wheelTransforms, VehicleConfiguration& config, Vehicle* vehicle,
-        bool isBraking, bool isHidden, glm::vec3 const& shieldColor)
+        bool isBraking, bool isHidden, glm::vec4 const& shield)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     if (config.dirty)
@@ -377,13 +377,13 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         {
             mat = &config.paintMaterial;
         }
-        mat->drawVehicle(rw, transform, &m.mesh, 2, shieldColor);
+        mat->drawVehicle(rw, transform, &m.mesh, 2, shield);
     }
     if (isHidden)
     {
         for (auto& m : chassisOneMaterialBatch.batches)
         {
-            config.paintMaterial.drawHighlight(rw, transform, &m.mesh, 0, (u8)vehicle->cameraIndex);
+            g_res.defaultMaterial.drawHighlight(rw, transform, &m.mesh, 0, (u8)vehicle->cameraIndex);
         }
     }
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -403,10 +403,10 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
                 mat = &config.paintMaterial;
             }
             glm::mat4 transform = wheelTransform * m.transform;
-            mat->drawVehicle(rw, transform, m.mesh, 2, shieldColor);
+            mat->drawVehicle(rw, transform, m.mesh, 2, shield);
             if (isHidden)
             {
-                mat->drawHighlight(rw, transform, m.mesh, 0, (u8)vehicle->cameraIndex);
+                g_res.defaultMaterial.drawHighlight(rw, transform, m.mesh, 0, (u8)vehicle->cameraIndex);
             }
         }
     }
@@ -495,7 +495,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         }
         glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
         glm::mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
-        mat->drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec3(0.f));
+        mat->drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec4(0.f));
     }
 }
 

@@ -354,7 +354,7 @@ struct VehicleData
     virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
             glm::mat4* wheelTransforms, VehicleConfiguration& config,
             class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false,
-            glm::vec3 const& shieldColor={0,0,0});
+            glm::vec4 const& shield={0,0,0,0});
     virtual void renderDebris(class RenderWorld* rw,
             Array<VehicleDebris> const& debris, VehicleConfiguration& config);
 

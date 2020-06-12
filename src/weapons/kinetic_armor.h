@@ -22,8 +22,8 @@ public:
     {
         if (ammo > 0)
         {
-            //vehicle->shieldColor = glm::vec3(0.05f, 0.15f, 1.f);
-            vehicle->shieldColor = glm::vec3(1.f, 0.2f, 0.f);
+            vehicle->setShield(glm::vec3(1.f, 0.2f, 0.f), 1.f);
+            //glm::vec3(0.05f, 0.15f, 1.f);
         }
     }
 

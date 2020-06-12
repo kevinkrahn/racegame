@@ -101,7 +101,7 @@ public:
     void drawHighlight(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
             u8 stencil, u8 cameraIndex=0);
     void drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil,
-            glm::vec3 const& shieldColor);
+            glm::vec4 const& shield);
 };
 
 void drawSimple(RenderWorld* rw, Mesh* mesh, struct Texture* tex, glm::mat4 const& transform,

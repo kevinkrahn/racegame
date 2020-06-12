@@ -277,6 +277,7 @@ void Renderer::init()
     updateFramebuffers();
     updateFullscreenFramebuffers();
 
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glDisable(GL_DITHER);
 
@@ -1027,7 +1028,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World: ", name, ", Viewport #", index + 1));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_STENCIL_TEST);
 
     bool isEditorActive = g_game.isEditing
         && ((g_game.currentScene && !g_game.currentScene->isRaceInProgress) || !g_game.currentScene);
@@ -1219,7 +1219,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glBindTextureUnit(1, g_res.getTexture("sky_cubemap")->handle);
     glBindTextureUnit(3, g_res.getTexture("cloud_shadow")->handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glEnable(GL_STENCIL_TEST);
     glStencilMask(0xFF);
     glClearStencil(0);
     glClearColor(clearColor.x, clearColor.y, clearColor.y, clearColor.w);
@@ -1233,8 +1232,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glDepthFunc(GL_EQUAL);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
     glEnable(GL_CULL_FACE);
-    glStencilFunc(GL_ALWAYS, 0, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glDepthMask(GL_FALSE);
     for (auto& pair : renderItems.opaqueColorPass)
     {
         ShaderProgram const& program = renderer->getShader(pair.key);
@@ -1247,7 +1246,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     }
     glStencilMask(0x0);
 
-    glDepthMask(GL_FALSE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glDepthFunc(GL_LEQUAL);
@@ -1407,7 +1405,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glDisable(GL_STENCIL_TEST);
 	glPopDebugGroup();
 
     // color picking
@@ -1469,7 +1466,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     // resolve multi-sample color buffer
     if (g_game.config.graphics.msaaLevel > 0)
     {
-        glEnable(GL_STENCIL_TEST);
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "MSAA Color Resolve");
         glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.msaaResolveFromFramebuffer);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb.msaaResolveFramebuffer);
@@ -1479,7 +1475,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         glBindTextureUnit(0, fb.msaaResolveColorTexture);
 		glPopDebugGroup();
         this->tex[index].handle = fb.msaaResolveColorTexture;
-        glDisable(GL_STENCIL_TEST);
     }
     else
     {

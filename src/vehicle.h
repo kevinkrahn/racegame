@@ -84,6 +84,7 @@ public:
 	f32 airBonusGracePeriod = 0.f;
 	u32 totalAirBonuses = 0;
     glm::vec3 shieldColor = glm::vec3(0, 0, 0);
+    f32 shieldStrength = 0.f;
 
     // ai
     glm::vec3 targetOffset = glm::vec3(0);
@@ -195,5 +196,9 @@ public:
         motionBlurResetTimer = resetTimer;
     }
 
-    void setShieldColor(glm::vec3 const& shieldColor) { this->shieldColor = shieldColor; }
+    void setShield(glm::vec3 const& shieldColor, f32 strength)
+    {
+        this->shieldColor = shieldColor;
+        this->shieldStrength = strength;
+    }
 };

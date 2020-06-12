@@ -228,7 +228,6 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         glUniform3fv(3, 1, (GLfloat*)&terrain->brushSettings);
         glUniform3fv(4, 1, (GLfloat*)&terrain->brushPosition);
         glUniform4fv(5, 1, m.texScale);
-        glStencilMask(0x0);
         glBindVertexArray(terrain->vao);
         glDrawElements(GL_TRIANGLES, terrain->indexCount, GL_UNSIGNED_INT, 0);
 
