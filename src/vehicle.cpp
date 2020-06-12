@@ -5,7 +5,6 @@
 #include "renderer.h"
 #include "2d.h"
 #include "input.h"
-#include "mesh_renderables.h"
 #include "billboard.h"
 #include "weapon.h"
 #include "imgui.h"
@@ -304,10 +303,9 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         //Font* font = &g_res.getFont("font", 18);
         for (auto& p : motionPath)
         {
-            rw->push(LitRenderable(sphere,
+            drawSimple(rw, sphere, &g_res.white,
                         glm::translate(glm::mat4(1.f), p.p + glm::vec3(0, 0, 1))
-                            * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)),
-                        nullptr, glm::vec3(1, 1, 0)));
+                            * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)), glm::vec3(1, 1, 0)));
 
             /*
             glm::vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
@@ -1172,8 +1170,8 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     previousTargetPosition = targetPathPoint.position;
 #if 0
     Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
-    rw->push(LitRenderable(sphere, glm::translate(glm::mat4(1.f), targetP),
-                nullptr, glm::vec3(1, 0, 0)));
+    drawSimple(rw, sphere, &g_res.white, glm::translate(glm::mat4(1.f), targetP),
+                glm::vec3(1, 0, 0)));
 #endif
 
     input.accel = 1.f;

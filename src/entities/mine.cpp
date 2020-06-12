@@ -1,7 +1,6 @@
 #include "mine.h"
 #include "../renderer.h"
 #include "../scene.h"
-#include "../mesh_renderables.h"
 #include "../billboard.h"
 #include "../vehicle.h"
 

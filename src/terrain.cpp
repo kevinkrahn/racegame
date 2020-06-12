@@ -3,7 +3,6 @@
 #include "renderer.h"
 #include "debug_draw.h"
 #include "scene.h"
-#include "mesh_renderables.h"
 
 // TODO: switch to STB perlin
 #include <glm/gtc/noise.hpp>
@@ -214,7 +213,31 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         }
     }
     */
-    rw->add(this);
+    auto renderDepth = [](void* renderData){
+        Terrain* terrain = (Terrain*)renderData;
+        glBindVertexArray(terrain->vao);
+        glDrawElements(GL_TRIANGLES, terrain->indexCount, GL_UNSIGNED_INT, 0);
+    };
+    auto renderColor = [](void* renderData){
+        Terrain* terrain = (Terrain*)renderData;
+        auto& m = terrain->getSurfaceMaterial();
+        glBindTextureUnit(6, m.textures[0]->handle);
+        glBindTextureUnit(7, m.textures[1]->handle);
+        glBindTextureUnit(8, m.textures[2]->handle);
+        glBindTextureUnit(9, m.textures[3]->handle);
+        glUniform3fv(3, 1, (GLfloat*)&terrain->brushSettings);
+        glUniform3fv(4, 1, (GLfloat*)&terrain->brushPosition);
+        glUniform4fv(5, 1, m.texScale);
+        glStencilMask(0x0);
+        glBindVertexArray(terrain->vao);
+        glDrawElements(GL_TRIANGLES, terrain->indexCount, GL_UNSIGNED_INT, 0);
+
+        // reset the brush settings every frame
+        terrain->setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
+    };
+    rw->depthPrepass(depthShader, { this, renderDepth });
+    rw->shadowPass(depthShader, { this, renderDepth });
+    rw->opaqueColorPass(g_game.isEditing ? colorShaderWithBrush : colorShader, { this, renderColor });
 }
 
 bool Terrain::isOffroadAt(f32 x, f32 y) const
@@ -698,45 +721,6 @@ void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 mate
         }
     }
     setDirty();
-}
-
-void Terrain::onShadowPass(class Renderer* renderer)
-{
-    // TODO: should the terrain cast shadow?
-    glUseProgram(renderer->getShaderProgram(depthShader));
-    glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-}
-
-void Terrain::onDepthPrepass(class Renderer* renderer)
-{
-    glUseProgram(renderer->getShaderProgram(depthShader));
-    glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-}
-
-void Terrain::onLitPass(class Renderer* renderer)
-{
-    glDisable(GL_BLEND);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_EQUAL);
-    glEnable(GL_CULL_FACE);
-    auto& m = getSurfaceMaterial();
-    glBindTextureUnit(6, m.textures[0]->handle);
-    glBindTextureUnit(7, m.textures[1]->handle);
-    glBindTextureUnit(8, m.textures[2]->handle);
-    glBindTextureUnit(9, m.textures[3]->handle);
-    glUseProgram(renderer->getShaderProgram(g_game.isEditing ? colorShaderWithBrush : colorShader));
-    glUniform3fv(3, 1, (GLfloat*)&brushSettings);
-    glUniform3fv(4, 1, (GLfloat*)&brushPosition);
-    glUniform4fv(5, 1, m.texScale);
-    glStencilMask(0x0);
-    glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-
-    // reset the brush settings every frame
-    setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
 }
 
 void Terrain::serializeState(Serializer& s)

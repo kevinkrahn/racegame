@@ -1,7 +1,6 @@
 #pragma once
 
 #include "renderer.h"
-#include "mesh_renderables.h"
 #include "model.h"
 #include "material.h"
 

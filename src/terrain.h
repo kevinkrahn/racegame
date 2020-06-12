@@ -6,7 +6,7 @@
 #include "entity.h"
 #include "gl.h"
 
-class Terrain : public Renderable, public Entity
+class Terrain : public Entity
 {
     struct Vertex
     {
@@ -88,8 +88,6 @@ public:
     void regenerateMesh();
     void regenerateCollisionMesh(class Scene* scene);
 
-    i32 getPriority() const override { return 5; }
-
     enum TerrainType
     {
         GRASS,
@@ -118,13 +116,6 @@ public:
     void serializeState(Serializer& s) override;
     void applyDecal(class Decal& decal) override;
 
-    // renderable
-    //void onBeforeRender(f32 deltaTime) override {};
-    void onShadowPass(class Renderer* renderer) override;
-    void onDepthPrepass(class Renderer* renderer) override;
-    void onLitPass(class Renderer* renderer) override;
-
-    std::string getDebugString() const override { return "Terrain"; }
     void setBrushSettings(f32 brushRadius, f32 brushFalloff, f32 brushStrength, glm::vec3 brushPosition)
     {
         this->brushSettings = { brushRadius, brushFalloff, brushStrength };

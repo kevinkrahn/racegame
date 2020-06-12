@@ -1,7 +1,6 @@
 #pragma once
 
 #include "misc.h"
-#include "renderable.h"
 
 template <typename T>
 f32 getCurveValue(T const& curve, f32 t)
@@ -19,7 +18,7 @@ f32 getCurveValue(T const& curve, f32 t)
     return 0.f;
 }
 
-class ParticleSystem : public Renderable
+class ParticleSystem
 {
 private:
     struct Particle
@@ -78,12 +77,9 @@ public:
         });
     }
 
-    i32 getPriority() const override { return 10000; }
     void update(f32 deltaTime);
     void clear() { particles.clear(); }
-    void onLitPass(Renderer* renderer) override;
-
-    std::string getDebugString() const override { return "Particle System"; }
+    void draw(class RenderWorld* rw);
 };
 
 struct ParticleEmitter

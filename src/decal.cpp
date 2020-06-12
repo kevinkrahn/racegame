@@ -181,27 +181,18 @@ void Decal::end()
     mesh.indices.shrink_to_fit();
 }
 
-void Decal::onLitPassPriorityTransition(Renderer* renderer)
+void Decal::draw(RenderWorld* rw)
 {
-    glEnable(GL_BLEND);
-    glDepthMask(GL_FALSE);
-    glDepthFunc(GL_LEQUAL);
-    glUseProgram(renderer->getShaderProgram("mesh_decal"));
-    glEnable(GL_CULL_FACE);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-    glStencilMask(0);
-}
-
-void Decal::onLitPass(Renderer* renderer)
-{
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(0.f, -500.f);
-    glBindTextureUnit(0, tex->handle);
-    glBindTextureUnit(6, texNormal->handle);
-    glBindVertexArray(mesh.vao);
-    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(transform));
-    glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(normalTransform));
-    glUniform4f(2, color.x, color.y, color.z, color.a);
-    glDrawElements(GL_TRIANGLES, mesh.numIndices, GL_UNSIGNED_INT, 0);
-    glDisable(GL_POLYGON_OFFSET_FILL);
+    static ShaderHandle shader = getShaderHandle("mesh_decal", {}, RenderFlags::DEPTH_READ, -500.f);
+    auto render = [](void* renderData){
+        Decal* decal = (Decal*)renderData;
+        glBindTextureUnit(0, decal->tex->handle);
+        glBindTextureUnit(6, decal->texNormal->handle);
+        glBindVertexArray(decal->mesh.vao);
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(decal->transform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(decal->normalTransform));
+        glUniform4fv(2, 1, (f32*)&decal->color);
+        glDrawElements(GL_TRIANGLES, decal->mesh.numIndices, GL_UNSIGNED_INT, 0);
+    };
+    rw->transparentPass(shader, { this, render });
 }

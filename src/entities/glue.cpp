@@ -52,7 +52,7 @@ void Glue::updateTransform(Scene* scene)
 
 void Glue::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    rw->add(&decal);
+    decal.draw(rw);
 }
 
 void Glue::onPreview(RenderWorld* rw)

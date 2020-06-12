@@ -3,7 +3,6 @@
 #include "../math.h"
 #include "../entity.h"
 #include "../resources.h"
-#include "../mesh_renderables.h"
 #include "../scene.h"
 #include "../game.h"
 #include "../imgui.h"
@@ -57,8 +56,8 @@ public:
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
-        rw->push(LitRenderable(model->getMeshByName("billboard.BillboardSign"),
-                    transform, g_res.getTexture(billboardTextureGuid)));
+        drawSimple(rw, model->getMeshByName("billboard.BillboardSign"),
+                g_res.getTexture(billboardTextureGuid), transform);
         if (scene->isBatched)
         {
             return;
@@ -90,8 +89,8 @@ public:
         rw->setViewportCamera(0, glm::vec3(3.f, 1.f, 4.f) * 4.5f,
                 glm::vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
         transform = glm::mat4(1.f);
-        rw->push(LitRenderable(model->getMeshByName("billboard.BillboardSign"),
-                    transform, g_res.getTexture(billboardTextureGuid)));
+        drawSimple(rw, model->getMeshByName("billboard.BillboardSign"),
+                g_res.getTexture(billboardTextureGuid), transform);
         for (auto& obj : model->objects)
         {
             if (obj.isVisible)

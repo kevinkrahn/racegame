@@ -2,11 +2,11 @@
 
 #include "math.h"
 #include "dynamic_buffer.h"
-#include "renderable.h"
 #include "bounding_box.h"
 #include "renderer.h"
 
-class DebugDraw : public Renderable
+// TODO: this class should be part of RenderWorld
+class DebugDraw
 {
     struct Vertex
     {
@@ -36,8 +36,6 @@ public:
         buffer.destroy();
         glDeleteVertexArrays(1, &vao);
     }
-
-    i32 getPriority() const override { return 100000; }
 
     void line(glm::vec3 const& p1, glm::vec3 const& p2,
             glm::vec4 const& c1 = glm::vec4(1), glm::vec4 const& c2 = glm::vec4(1))
@@ -73,31 +71,30 @@ public:
         line(p[3], p[7], color, color);
     }
 
-    void onLitPass(Renderer* renderer) override
+    void draw(RenderWorld* rw)
     {
-        glDepthFunc(GL_LEQUAL);
-        glEnable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        glDisable(GL_CULL_FACE);
+        static ShaderHandle shader = getShaderHandle("debug", {}, RenderFlags::DEPTH_READ, 0.f);
+        static Camera camera;
+        camera = rw->getCamera(0);
 
-        if (verts.size() > 0)
+        if (verts.empty())
         {
-            // TODO: This should be changed because this camera matrix will be wrong
-            // in any RenderWorld that is not the main RenderWorld
-            Camera const& camera = renderer->getRenderWorld()->getCamera(0);
-            buffer.updateData(verts.data(), verts.size() * sizeof(Vertex));
-            glVertexArrayVertexBuffer(vao, 0, buffer.getBuffer(), 0, sizeof(Vertex));
+            return;
+        }
 
-            glUseProgram(renderer->getShaderProgram("debug"));
+        buffer.updateData(verts.data(), verts.size() * sizeof(Vertex));
+        glVertexArrayVertexBuffer(vao, 0, buffer.getBuffer(), 0, sizeof(Vertex));
+
+        auto render = [](void* renderData) {
+            DebugDraw* dd = (DebugDraw*)renderData;
+
             glUniform1i(3, 0);
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
 
-            glBindVertexArray(vao);
-            glDrawArrays(GL_LINES, 0, (GLsizei)verts.size());
-            verts.clear();
-        }
+            glBindVertexArray(dd->vao);
+            glDrawArrays(GL_LINES, 0, (GLsizei)dd->verts.size());
+            dd->verts.clear();
+        };
+        rw->transparentPass(shader, { this, render });
     }
-
-    std::string getDebugString() const override { return "DebugDraw"; }
 };

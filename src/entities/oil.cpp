@@ -52,7 +52,7 @@ void Oil::updateTransform(Scene* scene)
 
 void Oil::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    rw->add(&decal);
+    decal.draw(rw);
 }
 
 void Oil::onPreview(RenderWorld* rw)

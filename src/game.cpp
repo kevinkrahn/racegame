@@ -436,10 +436,11 @@ void Game::checkDebugKeys()
         ImGui::Text("Lowest Frame Time: %.3fms", g_game.allTimeLowestDeltaTime * 1000);
         ImGui::PlotLines("Frame Times", g_game.deltaTimeHistory, ARRAY_SIZE(g_game.deltaTimeHistory),
                 0, nullptr, 0.f, 0.04f, { 0, 80 });
-        ImGui::Text("Temp Render Memory: %.3fkb", renderer->getTempRenderBufferSize() / 1024.f);
+        ImGui::Text("Frame Temp-Memory Usage: %.3fkb", tempMem.pos / 1024.f);
         ImGui::Text("Resolution: %ix%i", g_game.config.graphics.resolutionX, g_game.config.graphics.resolutionY);
         ImGui::Text("Time Dilation: %f", g_game.timeDilation);
-        ImGui::Text("Renderables: %i", renderer->getRenderablesCount());
+        // TODO: count draw calls
+        //ImGui::Text("Renderables: %i", renderer->getRenderablesCount());
 
         ImGui::Gap();
 

@@ -11,19 +11,15 @@
 
 struct RenderItem
 {
-    GLuint vao;
-    u32 indexCount;
     void* renderData;
-    void (*setRenderData)(void*);
+    void (*render)(void*);
     u8 stencil = 0;
 };
 
 struct HighlightPassRenderItem
 {
-    GLuint vao;
-    u32 indexCount;
     void* renderData;
-    void (*setRenderData)(void*);
+    void (*render)(void*);
     u8 stencil;
     u8 cameraIndex;
 };
@@ -184,18 +180,9 @@ class RenderWorld
     u32 firstBloomDivisor = 2;
     u32 lastBloomDivisor = 16;
 
-    // TODO: remove
-    struct QueuedRenderable
-    {
-        i32 priority;
-        Renderable* renderable;
-    };
-    Array<QueuedRenderable> renderables;
-
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
     bool bloomEnabled = false;
-    Buffer tempRenderBuffer = Buffer(megabytes(400), 32);
     struct PickPixelResult
     {
         glm::vec2 pickPos;
@@ -224,20 +211,6 @@ public:
             tex[i].height = height;
         }
         createFramebuffers();
-    }
-
-    void add(Renderable* renderable)
-    {
-        renderables.push_back({ renderable->getPriority(), renderable });
-    }
-    template <typename T>
-    T* push(T&& renderable)
-    {
-        u8* mem = tempRenderBuffer.bump(sizeof(T));
-        new (mem) T(std::move(renderable));
-        T* ptr = reinterpret_cast<T*>(mem);
-        add(ptr);
-        return ptr;
     }
 
     void depthPrepass(ShaderHandle shaderHandle, RenderItem const& renderItem)
@@ -341,7 +314,7 @@ private:
     FullscreenFramebuffers fsfb = { 0 };
     RenderWorld renderWorld;
 
-    u32 renderablesCount = 0;
+    // TODO: count draw calls
     u32 currentRenderingCameraIndex = 0;
 
     u32 fullscreenBlurDivisor = 4;
@@ -370,6 +343,7 @@ private:
     Array<RenderWorld*> renderWorlds;
 
     void createFullscreenFramebuffers();
+    Buffer tempMem = Buffer(megabytes(50));
 
 public:
     // TODO: remove
@@ -385,7 +359,7 @@ public:
     template <typename T>
     T* push2D(T&& renderable, i32 priority=0)
     {
-        u8* mem = renderWorld.tempRenderBuffer.bump(sizeof(T));
+        u8* mem = tempMem.bump(sizeof(T));
         new (mem) T(std::move(renderable));
         T* ptr = reinterpret_cast<T*>(mem);
         add2D(ptr, priority);
@@ -410,7 +384,4 @@ public:
         updateFramebuffers();
         renderWorld.settingsVersion = settingsVersion;
     }
-
-    size_t getTempRenderBufferSize() const { return renderWorld.tempRenderBuffer.pos; }
-    u32 getRenderablesCount() { return renderablesCount; }
 };

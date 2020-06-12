@@ -21,39 +21,34 @@ void ParticleSystem::update(f32 deltaTime)
     }
 }
 
-void ParticleSystem::onLitPass(Renderer* renderer)
+void ParticleSystem::draw(RenderWorld* rw)
 {
     static ShaderHandle shaderLit = getShaderHandle("billboard", { {"LIT"} });
     static ShaderHandle shaderUnlit = getShaderHandle("billboard", {});
 
-    glDepthMask(GL_FALSE);
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-    glStencilMask(0);
+    auto render = [](void* renderData){
+        ParticleSystem* ps = (ParticleSystem*)renderData;
 
-    glUseProgram(renderer->getShaderProgram(lit ? shaderLit : shaderUnlit));
-    glBindVertexArray(emptyVAO);
-    glBindTextureUnit(0, texture->handle);
+        glBindVertexArray(emptyVAO);
+        glBindTextureUnit(0, ps->texture->handle);
 
-    for (auto p = particles.begin(); p != particles.end(); ++p)
-    {
-        f32 t = p->life / p->totalLife;
-        f32 alphaCurveValue = getCurveValue(alphaCurve, t);
-        f32 scaleCurveValue = getCurveValue(scaleCurve, t);
+        for (auto& p : ps->particles)
+        {
+            f32 t = p.life / p.totalLife;
+            f32 alphaCurveValue = getCurveValue(ps->alphaCurve, t);
+            f32 scaleCurveValue = getCurveValue(ps->scaleCurve, t);
 
-        //auto scale = glm::vec3(p->life * p->scale * 0.5f + 0.5f);
-        auto scale = glm::vec3(scaleCurveValue * p->scale);
-        auto color = p->color * glm::vec4(1, 1, 1, alphaCurveValue * p->alphaMultiplier);
+            auto scale = glm::vec3(scaleCurveValue * p.scale);
+            auto color = p.color * glm::vec4(1, 1, 1, alphaCurveValue * p.alphaMultiplier);
 
-        glUniform4fv(0, 1, (GLfloat*)&color);
-        glm::mat4 translation = glm::translate(glm::mat4(1.f), p->position);
-        glm::mat4 rotation = glm::rotate(glm::mat4(1.f), p->angle, { 0, 0, 1 });
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(translation));
-        glUniform3f(2, scale.x, scale.y, scale.z);
-        glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rotation));
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
+            glUniform4fv(0, 1, (GLfloat*)&color);
+            glm::mat4 translation = glm::translate(glm::mat4(1.f), p.position);
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.f), p.angle, { 0, 0, 1 });
+            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(translation));
+            glUniform3f(2, scale.x, scale.y, scale.z);
+            glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rotation));
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+    };
+    rw->transparentPass(lit ? shaderLit : shaderUnlit, { this, render });
 }

@@ -2,7 +2,6 @@
 #include "../scene.h"
 #include "../renderer.h"
 #include "../vehicle.h"
-#include "../mesh_renderables.h"
 #include "../billboard.h"
 
 void Projectile::onCreate(Scene* scene)
@@ -190,64 +189,59 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     m[2] = glm::vec4(glm::normalize(
                 glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
 
-    LitSettings settings;
-    settings.mesh = bulletMesh;
-    settings.fresnelScale = 0.3f;
-    settings.fresnelPower = 2.0f;
-    settings.fresnelBias = 0.1f;
-
     switch (projectileType)
     {
         case BLASTER:
-            settings.color = glm::vec3(0.2f, 0.9f, 0.2f);
-            settings.emit = glm::vec3(0.01f, 1.5f, 0.01f);
-            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+        {
+            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
-            rw->push(LitRenderable(settings));
+            drawSimple(rw, bulletMesh, &g_res.white, transform,
+                glm::vec3(0.2f, 0.9f, 0.2f), glm::vec3(0.01f, 1.5f, 0.01f));
             drawBillboard(rw, g_res.getTexture("flare"), position+glm::vec3(0,0,0.2f),
                     {0.01f,1.f,0.01f,0.2f}, 1.5f, 0.f, false);
-            rw->addPointLight(position, settings.color * 2.f, 4.f, 2.f);
-            break;
+            rw->addPointLight(position, glm::vec3(0.2f, 0.9f, 0.2f) * 2.f, 4.f, 2.f);
+        } break;
         case BULLET:
-            settings.color = glm::vec3(1.f, 0.5f, 0.01f);
-            settings.emit = glm::vec3(1.f, 0.5f, 0.01f) * 2.f;
-            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+        {
+            glm::vec3 color = glm::vec3(1.f, 0.5f, 0.01f);
+            glm::vec3 emit = glm::vec3(1.f, 0.5f, 0.01f) * 2.f;
+            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.35f));
-            rw->push(LitRenderable(settings));
+            drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
             drawBillboard(rw, g_res.getTexture("flare"),
-                        position, glm::vec4(settings.emit, 0.8f), 0.75f, 0.f, false);
-            rw->addPointLight(position, settings.color * 2.f, 4.f, 2.f);
-            break;
+                        position, glm::vec4(emit, 0.8f), 0.75f, 0.f, false);
+            rw->addPointLight(position, color * 2.f, 4.f, 2.f);
+        } break;
         case MISSILE:
-            settings.mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
-            settings.color = glm::vec3(1.f);
-            settings.worldTransform = glm::translate(glm::mat4(1.f), position) * m;
-            rw->push(LitRenderable(settings));
+        {
+            Mesh* mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
+            glm::mat4 transform = glm::translate(glm::mat4(1.f), position) * m;
+            drawSimple(rw, mesh, &g_res.white, transform, glm::vec3(1.f));
             drawBillboard(rw, g_res.getTexture("flare"), position,
                         glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false);
             rw->addPointLight(position, glm::vec3(1.f, 0.5f, 0.03f) * 5.f, 5.f, 2.f);
-            break;
+        } break;
         case BOUNCER:
-            settings.mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
-            settings.color = glm::vec3(1.f);
-            settings.emit = glm::vec3(0.5f);
-            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+        {
+            Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
+            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
                  * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
-            rw->push(LitRenderable(settings));
+            drawSimple(rw, mesh, &g_res.white, transform, glm::vec3(1.f), glm::vec3(0.5f));
             drawBillboard(rw, g_res.getTexture("flare"), position,
-                        glm::vec4(1.f), 1.75f, 0.f, false);
+                        glm::vec4(0.1f, 0.12f, 1.f, 0.8f), 1.75f, 0.f, false);
             rw->addPointLight(position, glm::vec3(0.1f, 0.15f, 1.f) * 7.f, 6.5f, 2.f);
-            break;
+        } break;
         case PHANTOM:
-            settings.color = glm::vec3(1.f, 0.01f, 0.95f);
-            settings.emit = settings.color * 1.5f;
-            settings.worldTransform = glm::translate(glm::mat4(1.f), position)
+        {
+            glm::vec3 color = glm::vec3(1.f, 0.01f, 0.95f);
+            glm::vec3 emit = glm::vec3(1.f, 0.01f, 0.95f) * 1.5f;
+            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
                 * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
-            rw->push(LitRenderable(settings));
+            drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
             drawBillboard(rw, g_res.getTexture("flare"),
-                    position+glm::vec3(0,0,0.2f), glm::vec4(settings.color, 0.4f), 1.5f, 0.f, false);
-            rw->addPointLight(position, settings.color * 2.f, 4.f, 2.f);
-            break;
+                    position+glm::vec3(0,0,0.2f), glm::vec4(color, 0.4f), 1.5f, 0.f, false);
+            rw->addPointLight(position, color * 2.f, 4.f, 2.f);
+        } break;
     }
 }
 

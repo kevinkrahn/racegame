@@ -80,7 +80,7 @@ void StaticDecal::updateTransform(Scene* scene)
 
 void StaticDecal::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    rw->add(&decal);
+    decal.draw(rw);
 }
 
 void StaticDecal::onPreview(RenderWorld* rw)

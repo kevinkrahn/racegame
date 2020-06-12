@@ -5,7 +5,6 @@
 #include "2d.h"
 #include "input.h"
 #include "scene.h"
-#include "mesh_renderables.h"
 #include "weapon.h"
 #include "vehicle.h"
 
@@ -813,7 +812,7 @@ void Menu::showChampionshipMenu()
                 RenderWorld& rw = renderWorlds[playerIndex];
                 rw.setName(tstr("Vehicle Icon ", playerIndex));
                 rw.setSize(vehicleIconSize, vehicleIconSize);
-                rw.push(LitRenderable(quadMesh, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), nullptr, glm::vec3(0.02f)));
+                drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
                 if (driver.vehicleIndex != -1)
                 {
                     glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
@@ -1031,8 +1030,7 @@ void Menu::createVehiclePreview()
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
         rw.setSize((u32)vehicleIconSize.x, (u32)vehicleIconSize.y);
-        rw.push(LitRenderable(quadMesh, glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
-                    nullptr, glm::vec3(0.02f)));
+        drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
 
         glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
         g_vehicles[garage.previewVehicleIndex]->render(&rw, glm::translate(glm::mat4(1.f),
@@ -1399,8 +1397,7 @@ void Menu::createCarLotMenu()
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
         rw.setSize((u32)convertSize(size.x), (u32)convertSize(size.y));
-        rw.push(LitRenderable(quadMesh, glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
-                    nullptr, glm::vec3(0.02f)));
+        drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
 
         VehicleTuning tuning;
         g_vehicles[i]->initTuning(vehicleConfig, tuning);
@@ -1573,9 +1570,7 @@ void Menu::championshipStandings()
         RenderWorld& rw = renderWorlds[i];
         rw.setName(tstr("Vehicle Icon ", i));
         rw.setSize(vehicleIconSize, vehicleIconSize);
-        rw.push(LitRenderable(quadMesh,
-                    glm::scale(glm::mat4(1.f), glm::vec3(20.f)),
-                    nullptr, glm::vec3(0.02f)));
+        drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
         if (driver->vehicleIndex != -1)
         {
             g_vehicles[driver->vehicleIndex]->render(&rw,

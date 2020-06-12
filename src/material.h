@@ -103,3 +103,9 @@ public:
     void drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil,
             glm::vec3 const& shieldColor);
 };
+
+void drawSimple(RenderWorld* rw, Mesh* mesh, struct Texture* tex, glm::mat4 const& transform,
+        glm::vec3 const& color=glm::vec3(1.f), glm::vec3 const& emit=glm::vec3(0.f));
+void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec4 color);
+void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec3 const& color,
+        bool onlyDepth=false);

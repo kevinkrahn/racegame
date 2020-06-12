@@ -2,7 +2,6 @@
 #include "../imgui.h"
 #include "../renderer.h"
 #include "../game.h"
-#include "../mesh_renderables.h"
 #include "../collision_flags.h"
 #include <filesystem>
 
@@ -453,8 +452,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (showFloor)
     {
-        rw->push(LitRenderable(g_res.getModel("misc")->getMeshByName("world.Quad"),
-                    glm::scale(glm::mat4(1.f), glm::vec3(40.f)), nullptr, glm::vec3(0.1f)));
+        drawSimple(rw, g_res.getModel("misc")->getMeshByName("world.Quad"), &g_res.white,
+                    glm::scale(glm::mat4(1.f), glm::vec3(40.f)), glm::vec3(0.1f));
     }
 
     for (u32 i=0; i<(u32)model->objects.size(); ++i)
@@ -466,8 +465,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         }
         if (obj.isCollider && showColliders)
         {
-            rw->push(WireframeRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                        { 1.f, 1.f, 0.1f, 0.5f }));
+            drawWireframe(rw, &model->meshes[obj.meshIndex], obj.getTransform(),
+                        { 1.f, 1.f, 0.1f, 0.5f });
         }
     }
     for (u32 selectedIndex : selectedObjects)
@@ -504,13 +503,13 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             if (tp.x < 0.f || tp.x > 1.f || tp.y < 0.f || tp.y > 1.f)
             {
                 allPointsVisible = false;
-                rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
-                            glm::translate(glm::mat4(1.f), p)));
+                drawSimple(rw, g_res.getMesh("world.Sphere"), &g_res,white,
+                            glm::translate(glm::mat4(1.f), p));
             }
             else
             {
-                rw->push(LitRenderable(g_res.getMesh("world.Sphere"),
-                            glm::translate(glm::mat4(1.f), p), nullptr, glm::vec4(0, 1, 0, 1)));
+                drawSimple(rw, g_res.getMesh("world.Sphere"), &g_res.white,
+                            glm::translate(glm::mat4(1.f), p), glm::vec4(0, 1, 0, 1));
             }
         }
 
@@ -521,7 +520,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 #endif
     }
 
-    rw->add(&debugDraw);
+    debugDraw.draw(rw);
 }
 
 void ModelEditor::loadBlenderFile(std::string const& filename)

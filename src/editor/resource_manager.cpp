@@ -1,7 +1,6 @@
 #include "resource_manager.h"
 #include "../game.h"
 #include "../scene.h"
-#include "../mesh_renderables.h"
 #include <filesystem>
 
 static void sortResources(ResourceFolder& folder)

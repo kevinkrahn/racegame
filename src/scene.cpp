@@ -2,7 +2,6 @@
 #include "game.h"
 #include "vehicle.h"
 #include "renderer.h"
-#include "mesh_renderables.h"
 #include "input.h"
 #include "terrain.h"
 #include "track.h"
@@ -349,6 +348,10 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             physicsScene->simulate(deltaTime);
             physicsScene->fetchResults(true);
         }
+        else
+        {
+            rw->setMotionBlur(0, glm::vec2(0.f));
+        }
 
         // update vehicles
         for (u32 i=0; i<vehicles.size(); ++i)
@@ -512,10 +515,10 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
-    rw->add(&ribbons);
-    rw->add(&smoke);
-    rw->add(&sparks);
-    rw->add(&debugDraw);
+    ribbons.draw(rw);
+    smoke.draw(rw);
+    sparks.draw(rw);
+    debugDraw.draw(rw);
 
     // draw HUD track
     if (isRaceInProgress)

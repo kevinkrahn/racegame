@@ -2,7 +2,6 @@
 #include "../scene.h"
 #include "../renderer.h"
 #include "../vehicle.h"
-#include "../mesh_renderables.h"
 #include "../game.h"
 #include "../billboard.h"
 
@@ -125,7 +124,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 &model->meshes[obj.meshIndex]);
     }
 
-    rw->add(&finishLineDecal);
+    finishLineDecal.draw(rw);
 }
 
 void Start::onPreview(RenderWorld* rw)

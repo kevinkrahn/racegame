@@ -2,7 +2,6 @@
 #include "game.h"
 #include "resources.h"
 #include "scene.h"
-#include "mesh_renderables.h"
 #include "vehicle.h"
 
 VehicleStats VehicleTuning::computeVehicleStats()
@@ -479,7 +478,7 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             d.dirty = false;
         }
         d.decal.setTransform(transform);
-        rw->add(&d.decal);
+        d.decal.draw(rw);
     }
 }
 

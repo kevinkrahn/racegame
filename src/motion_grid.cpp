@@ -1,7 +1,6 @@
 #include "motion_grid.h"
 #include "scene.h"
 #include "collision_flags.h"
-#include "mesh_renderables.h"
 #include "game.h"
 
 constexpr f32 D = 1.f;
@@ -203,8 +202,7 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
             rz += 2.f;
             color = glm::vec3(1.f, 0.f, 0.f);
         }
-        rw->push(LitRenderable(mesh, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, rz)),
-                    nullptr, color));
+        drawSimple(rw, mesh, &g_res.white, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, rz)), color);
     }
 #else
     glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
@@ -234,8 +232,8 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
                         color = glm::vec3(1, 0, 0);
                     }
 
-                    rw->push(LitRenderable(mesh, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, cell.z)),
-                                nullptr, color));
+                    drawSimple(rw, mesh, &g_res.white, glm::translate(glm::mat4(1.f),
+                            glm::vec3(rx, ry, cell.z)), color);
                 }
                 cellType = cell.dynamicCellType;
                 if (cellType != CellType::NONE && cell.generation == (u32)g_game.frameCount)
@@ -258,8 +256,8 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
                         color = glm::vec3(1, 0, 0);
                     }
 
-                    rw->push(LitRenderable(mesh, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, cell.z+4.f)) * scale,
-                                nullptr, color));
+                    drawSimple(rw, mesh, &g_res.white,
+                        glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, cell.z+4.f)) * scale, color);
                 }
             }
         }

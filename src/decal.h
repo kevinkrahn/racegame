@@ -4,7 +4,7 @@
 #include "resources.h"
 #include "entity.h"
 
-class Decal : public Renderable
+class Decal
 {
     glm::mat4 transform;
     glm::mat3 normalTransform;
@@ -34,14 +34,11 @@ public:
     void addMesh(Mesh* mesh, glm::mat4 const& meshTransform);
     void addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform);
     void end();
-    i32 getPriority() const override { return priority; }
-    std::string getDebugString() const override { return "Decal"; }
-    void onLitPassPriorityTransition(class Renderer* renderer) override;
-    void onLitPass(class Renderer* renderer) override;
     void setTransform(glm::mat4 const& transform)
     {
         this->transform = transform;
         this->normalTransform = glm::inverseTranspose(glm::mat3(transform));
     }
+    void draw(RenderWorld* rw);
 };
 

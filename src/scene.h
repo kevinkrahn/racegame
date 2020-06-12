@@ -133,7 +133,7 @@ public:
     SoundHandle backgroundSound = 0;
     ParticleSystem smoke;
     ParticleSystem sparks;
-    RibbonRenderable ribbons;
+    RibbonRenderer ribbons;
     DebugDraw debugDraw;
     Terrain* terrain = nullptr;
     Track* track = nullptr;

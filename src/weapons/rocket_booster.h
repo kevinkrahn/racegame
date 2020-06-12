@@ -3,46 +3,6 @@
 #include "../weapon.h"
 #include "../vehicle.h"
 #include "../entities/projectile.h"
-#include "../mesh_renderables.h"
-
-class Flames : public Renderable
-{
-    SmallArray<glm::mat4, 4> exhausts;
-    Mesh* mesh;
-    float alpha;
-    ShaderHandle shader = getShaderHandle("flames");
-
-public:
-    Flames(SmallArray<glm::mat4, 4> exhausts, Mesh* mesh, float alpha)
-        : exhausts(exhausts), mesh(mesh), alpha(alpha) {}
-
-    void onLitPassPriorityTransition(Renderer* renderer) override
-    {
-        glDisable(GL_POLYGON_OFFSET_FILL);
-        glEnable(GL_BLEND);
-        glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LEQUAL);
-        glUseProgram(renderer->getShaderProgram(shader));
-        glEnable(GL_CULL_FACE);
-        glBindTextureUnit(0, g_res.getTexture("flames")->handle);
-        glBindVertexArray(mesh->vao);
-    }
-
-    void onLitPass(Renderer* renderer) override
-    {
-        for (u32 i=0; i<exhausts.size(); ++i)
-        {
-            auto& m = exhausts[i];
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(m));
-            glUniform1f(1, (float)i * 0.3f);
-            glUniform1f(2, alpha);
-            glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
-        }
-    }
-
-    i32 getPriority() const override { return 15000; }
-    std::string getDebugString() const override{ return "Flames"; }
-};
 
 class WRocketBooster : public Weapon
 {
@@ -101,18 +61,47 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        f32 alpha = glm::min(boostTimer * 7.f, 1.f);
-        SmallArray<glm::mat4, 4> exhausts;
+        struct Flames
+        {
+            glm::mat4 exhausts[4];
+            u32 exhaustCount;
+            GLuint vao;
+            u32 indexCount;
+            float alpha;
+        };
+
+        Flames* renderData = g_game.tempMem.bump<Flames>();
+        renderData->alpha = glm::min(boostTimer * 7.f, 1.f);
+        renderData->exhaustCount = 0;
+        renderData->vao = mesh->vao;
+        renderData->indexCount = mesh->numIndices;
         for (auto& p : vehicleData.exhaustHoles)
         {
-            exhausts.push_back(vehicleTransform * glm::translate(glm::mat4(1.f), p));
-            if (alpha > 0.f)
+            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * glm::translate(glm::mat4(1.f), p);
+            renderData->exhaustCount++;
+            if (renderData->alpha > 0.f)
             {
                 rw->addPointLight(vehicleTransform * glm::vec4(p + glm::vec3(-0.25f, 0, 0.25f), 1.f),
-                        glm::vec3(1.f, 0.6f, 0.05f) * alpha, 3.f, 2.f);
+                        glm::vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 3.f, 2.f);
             }
         }
-        rw->push(Flames(exhausts, mesh, alpha));
+
+        auto render = [](void* renderData) {
+            Flames* flames = (Flames*)renderData;
+            glBindTextureUnit(0, g_res.getTexture("flames")->handle);
+            glBindVertexArray(flames->vao);
+            for (u32 i=0; i<flames->exhaustCount; ++i)
+            {
+                auto& m = flames->exhausts[i];
+                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(m));
+                glUniform1f(1, (float)i * 0.3f);
+                glUniform1f(2, flames->alpha);
+                glDrawElements(GL_TRIANGLES, flames->indexCount, GL_UNSIGNED_INT, 0);
+            }
+        };
+
+        static ShaderHandle shader = getShaderHandle("flames");
+        rw->transparentPass(shader, { renderData, render });
     }
 
     bool shouldUse(Scene* scene, Vehicle* vehicle) override

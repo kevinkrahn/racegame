@@ -536,21 +536,21 @@ public:
                 bool isSelected = !!selectedPoints.find([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i; });
                 glm::vec3 color = isSelected ? white : red;
-                rw->push(OverlayRenderable(sphereMesh, 0, transform, color));
+                drawOverlay(rw, sphereMesh, transform, color);
 
                 isSelected = !!selectedHandles.find([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && p.firstHandle; });
                 color = isSelected ? white : orange;
                 transform = glm::translate(glm::mat4(1.f), point.position + point.handleOffsetA) *
                             glm::scale(glm::mat4(1.f), glm::vec3(0.8f));
-                rw->push(OverlayRenderable(sphereMesh, 0, transform, color));
+                drawOverlay(rw, sphereMesh, transform, color);
 
                 isSelected = !!selectedHandles.find([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && !p.firstHandle; });
                 color = isSelected ? white : orange;
                 transform = glm::translate(glm::mat4(1.f), point.position + point.handleOffsetB) *
                             glm::scale(glm::mat4(1.f), glm::vec3(0.8f));
-                rw->push(OverlayRenderable(sphereMesh, 0, transform, color));
+                drawOverlay(rw, sphereMesh, transform, color);
 
                 glm::vec4 c(color, 1.f);
                 scene->debugDraw.line(point.position, point.position + point.handleOffsetA, c, c);
@@ -629,9 +629,9 @@ public:
                 renderWorld.setSize(iconSize*2, iconSize*2);
                 renderWorld.setClearColor(true, glm::vec4(0.15f, 0.15f, 0.15f, 1.f));
                 Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
-                renderWorld.push(LitRenderable(quadMesh,
+                drawSimple(&renderWorld, quadMesh, &g_res.white,
                             glm::translate(glm::mat4(1.f), glm::vec3(0, 0, -0.01f)) *
-                            glm::scale(glm::mat4(1.f), glm::vec3(120.f)), nullptr, glm::vec3(0.15f)));
+                            glm::scale(glm::mat4(1.f), glm::vec3(120.f)), glm::vec3(0.15f));
                 renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
                 renderWorld.setViewportCount(1);
                 renderWorld.updateWorldTime(30.f);

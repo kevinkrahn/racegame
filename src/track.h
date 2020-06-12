@@ -9,7 +9,7 @@
 #include "decal.h"
 #include "spline.h"
 
-class Track : public Renderable, public Entity
+class Track : public Entity
 {
 public:
     struct Vertex
@@ -236,11 +236,4 @@ public:
     void onCreate(Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;
     void serializeState(Serializer& s) override;
-
-    // renderable
-    std::string getDebugString() const override { return "Track"; }
-    i32 getPriority() const override { return 0; }
-    void onShadowPass(class Renderer* renderer) override;
-    void onDepthPrepass(class Renderer* renderer) override;
-    void onLitPass(class Renderer* renderer) override;
 };

@@ -228,7 +228,7 @@ public:
     }
 };
 
-class RibbonRenderable : public Renderable {
+class RibbonRenderer {
     struct Chunk
     {
         Ribbon* ribbon;
@@ -240,7 +240,7 @@ class RibbonRenderable : public Renderable {
     GLuint vao;
 
 public:
-    RibbonRenderable() : vertexBuffer(sizeof(RibbonVertex) * 40000)
+    RibbonRenderer() : vertexBuffer(sizeof(RibbonVertex) * 40000)
     {
         glCreateVertexArrays(1, &vao);
 
@@ -261,13 +261,11 @@ public:
         glVertexArrayAttribBinding(vao, 3, 0);
     }
 
-    ~RibbonRenderable()
+    ~RibbonRenderer()
     {
         vertexBuffer.destroy();
         glDeleteVertexArrays(1, &vao);
     }
-
-    i32 getPriority() const override { return 9000; }
 
     void addChunk(Ribbon* ribbon)
     {
@@ -294,35 +292,27 @@ public:
         chunks.clear();
     }
 
-    void onLitPass(Renderer* renderer) override
+    void draw(RenderWorld* rw)
     {
+        static ShaderHandle shader = getShaderHandle("ribbon", {}, RenderFlags::DEPTH_READ, -1000.f);
         if (chunks.empty())
         {
             return;
         }
+        auto render = [](void* renderData) {
+            RibbonRenderer* r = (RibbonRenderer*)renderData;
 
-        glEnable(GL_BLEND);
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(0.f, -1000.f);
-        glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LEQUAL);
-        glDisable(GL_CULL_FACE);
+            glBindTextureUnit(0, g_res.getTexture("tiremarks")->handle);
+            glVertexArrayVertexBuffer(r->vao, 0, r->vertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
+            glBindVertexArray(r->vao);
 
-        static ShaderHandle shader = getShaderHandle("ribbon");
-        glUseProgram(renderer->getShaderProgram(shader));
-
-        glVertexArrayVertexBuffer(vao, 0, vertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
-        glBindVertexArray(vao);
-
-        glBindTextureUnit(0, g_res.getTexture("tiremarks")->handle);
-
-        u32 offset = 0;
-        for (auto const& chunk : chunks)
-        {
-            glDrawArrays(GL_TRIANGLES, offset, chunk.count);
-            offset += chunk.count;
-        }
+            u32 offset = 0;
+            for (auto const& chunk : r->chunks)
+            {
+                glDrawArrays(GL_TRIANGLES, offset, chunk.count);
+                offset += chunk.count;
+            }
+        };
+        rw->transparentPass(shader, { this, render });
     }
-
-    std::string getDebugString() const override { return "RibbonRenderable"; }
 };

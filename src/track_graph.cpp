@@ -5,7 +5,6 @@
 #include "debug_draw.h"
 #include "font.h"
 #include "track.h"
-#include "mesh_renderables.h"
 #include "input.h"
 
 void TrackGraph::computeTravelTime(u32 toIndex, u32 fromIndex, u32 endIndex)
@@ -240,10 +239,10 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
     {
         Node const& c = nodes[i];
 
-        renderer->getRenderWorld()->push(LitRenderable(arrowMesh,
+        drawSimple(renderer->getRenderWorld(), arrowMesh, &g_res.white,
                 glm::translate(glm::mat4(1.f), c.position) *
                     glm::rotate(glm::mat4(1.f), c.angle, glm::vec3(0, 0, 1)) *
-                    glm::scale(glm::mat4(1.f), glm::vec3(1.25f)), nullptr));
+                    glm::scale(glm::mat4(1.f), glm::vec3(1.25f)));
 
         for (u32 connection : c.connections)
         {

@@ -17,7 +17,6 @@ void drawBillboard(RenderWorld* rw, Texture* texture, glm::vec3 const& position,
 {
     static ShaderHandle shaderLit = getShaderHandle("billboard", { {"LIT"} });
     static ShaderHandle shaderUnlit = getShaderHandle("billboard", {});
-    static Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
 
     BillboardRenderData* renderData = g_game.tempMem.bump<BillboardRenderData>();
     renderData->tex = texture->handle;
@@ -25,12 +24,14 @@ void drawBillboard(RenderWorld* rw, Texture* texture, glm::vec3 const& position,
     renderData->color = color;
     renderData->translation = glm::translate(glm::mat4(1.f), position);
     renderData->rotation = glm::rotate(glm::mat4(1.f), angle, { 0, 0, 1 });
-    rw->transparentPass(lit ? shaderLit : shaderUnlit, { mesh->vao, 6, renderData, [](void* renderData){
+
+    rw->transparentPass(lit ? shaderLit : shaderUnlit, { renderData, [](void* renderData){
         BillboardRenderData* rd = (BillboardRenderData*)renderData;
         glBindTextureUnit(0, rd->tex);
         glUniform4fv(0, 1, (GLfloat*)&rd->color);
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(rd->translation));
         glUniform3f(2, rd->scale, rd->scale, rd->scale);
         glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rd->rotation));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     } });
 }

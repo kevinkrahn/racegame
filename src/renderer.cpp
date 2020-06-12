@@ -305,7 +305,6 @@ void Renderer::render(f32 deltaTime)
 {
     TIMED_BLOCK();
 
-    renderablesCount = 0;
     for (RenderWorld* rw : renderWorlds)
     {
         if (rw->settingsVersion != settingsVersion)
@@ -314,12 +313,10 @@ void Renderer::render(f32 deltaTime)
             rw->createFramebuffers();
         }
         rw->render(this, deltaTime);
-        renderablesCount += rw->renderables.size();
         rw->clear();
     }
 
     renderWorld.render(this, deltaTime);
-    renderablesCount += renderWorld.renderables.size();
     //renderWorld.clear();
 
     // render to fullscreen texture
@@ -926,8 +923,6 @@ Texture RenderWorld::releaseTexture(u32 cameraIndex)
 
 void RenderWorld::clear()
 {
-    renderables.clear();
-    tempRenderBuffer.clear();
     pointLights.clear();
 
     auto clearRenderItems = [](auto& renderItems) {
@@ -987,7 +982,6 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
-    renderables.sort([](auto& a, auto& b) { return a.priority < b.priority; });
     for (u32 i=0; i<fbs.size(); ++i)
     {
         renderer->setCurrentRenderingCameraIndex(i);
@@ -1057,8 +1051,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 
     Framebuffers const& fb = fbs[index];
 
-    i32 prevPriority = INT32_MIN;
-
     // shadow map
     if (g_game.config.graphics.shadowsEnabled)
     {
@@ -1092,26 +1084,13 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         glPolygonOffset(2.f, 4096.f);
         glCullFace(GL_FRONT);
 
-        prevPriority = INT32_MIN;
-        for (auto const& r : renderables)
-        {
-            if (r.priority != prevPriority)
-            {
-                r.renderable->onShadowPassPriorityTransition(renderer);
-            }
-            r.renderable->onShadowPass(renderer);
-            prevPriority = r.priority;
-        }
-
         for (auto& pair : renderItems.shadowPass)
         {
             ShaderProgram const& program = renderer->getShader(pair.key);
             glUseProgram(program.program);
             for (auto& renderItem : pair.value)
             {
-                renderItem.setRenderData(renderItem.renderData);
-                glBindVertexArray(renderItem.vao);
-                glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+                renderItem.render(renderItem.renderData);
             }
         }
 
@@ -1137,28 +1116,13 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 	glDisable(GL_POLYGON_OFFSET_FILL);
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-    prevPriority = INT32_MIN;
-    for (auto const& r : renderables)
-    {
-        if (r.priority != prevPriority)
-        {
-            r.renderable->onDepthPrepassPriorityTransition(renderer);
-        }
-        r.renderable->onDepthPrepass(renderer);
-        prevPriority = r.priority;
-    }
-
-    glEnable(GL_CULL_FACE);
     for (auto& pair : renderItems.depthPrepass)
     {
         ShaderProgram const& program = renderer->getShader(pair.key);
         glUseProgram(program.program);
         for (auto& renderItem : pair.value)
         {
-            renderItem.setRenderData(renderItem.renderData);
-            glBindVertexArray(renderItem.vao);
-            glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+            renderItem.render(renderItem.renderData);
         }
     }
 
@@ -1282,25 +1246,12 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         clearBits |= GL_COLOR_BUFFER_BIT;
     }
     glClear(clearBits);
-    glDepthFunc(GL_EQUAL);
-    prevPriority = INT32_MIN;
-    for (auto const& r : renderables)
-    {
-        if (r.priority != prevPriority)
-        {
-            r.renderable->onLitPassPriorityTransition(renderer);
-        }
-        r.renderable->onLitPass(renderer);
-        prevPriority = r.priority;
-    }
-
     glDisable(GL_BLEND);
     glDepthFunc(GL_EQUAL);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
     glEnable(GL_CULL_FACE);
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-    glStencilMask(0xFF);
     for (auto& pair : renderItems.opaqueColorPass)
     {
         ShaderProgram const& program = renderer->getShader(pair.key);
@@ -1308,9 +1259,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         for (auto& renderItem : pair.value)
         {
             glStencilFunc(GL_ALWAYS, renderItem.stencil, 0xFF);
-            renderItem.setRenderData(renderItem.renderData);
-            glBindVertexArray(renderItem.vao);
-            glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+            renderItem.render(renderItem.renderData);
         }
     }
     glStencilMask(0x0);
@@ -1344,12 +1293,9 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glDisable(GL_DEPTH_TEST);
         }
 #endif
-        glDepthMask((program.renderFlags & RenderFlags::DEPTH_WRITE) ? GL_TRUE : GL_FALSE);
         for (auto& renderItem : pair.value)
         {
-            renderItem.setRenderData(renderItem.renderData);
-            glBindVertexArray(renderItem.vao);
-            glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+            renderItem.render(renderItem.renderData);
         }
     }
 
@@ -1413,10 +1359,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glUseProgram(program.program);
             for (auto& renderItem : pair.value)
             {
-                renderItem.setRenderData(renderItem.renderData);
-                glBindVertexArray(renderItem.vao);
                 glStencilFunc(GL_ALWAYS, renderItem.stencil, 0xFF);
-                glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+                renderItem.render(renderItem.renderData);
             }
         }
 
@@ -1434,10 +1378,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glUseProgram(program.program);
             for (auto& renderItem : pair.value)
             {
-                renderItem.setRenderData(renderItem.renderData);
-                glBindVertexArray(renderItem.vao);
                 glStencilFunc(GL_EQUAL, renderItem.stencil, 0xFF);
-                glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+                renderItem.render(renderItem.renderData);
             }
         }
 
@@ -1448,10 +1390,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glUseProgram(program.program);
             for (auto& renderItem : pair.value)
             {
-                renderItem.setRenderData(renderItem.renderData);
-                glBindVertexArray(renderItem.vao);
                 glStencilFunc(GL_ALWAYS, renderItem.stencil | 1, 0xFF);
-                glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+                renderItem.render(renderItem.renderData);
             }
         }
     }
@@ -1471,10 +1411,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
                 {
                     continue;
                 }
-                renderItem.setRenderData(renderItem.renderData);
                 glStencilFunc(GL_EQUAL, 0, 0xFF);
-                glBindVertexArray(renderItem.vao);
-                glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+                renderItem.render(renderItem.renderData);
             }
         }
     }
@@ -1500,38 +1438,17 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 	    glEnable(GL_DEPTH_TEST);
 	    glDisable(GL_CULL_FACE);
 	    glDisable(GL_BLEND);
-#if 0
-	    u32 clearValue = 0;
-	    glClearBufferuiv(GL_COLOR, fb.pickIDTexture, &clearValue);
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClear(GL_DEPTH_BUFFER_BIT);
-#else
 	    glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#endif
-        prevPriority = INT32_MIN;
-        for (auto const& r : renderables)
-        {
-            if (r.priority != prevPriority)
-            {
-                r.renderable->onPickPassPriorityTransition(renderer);
-            }
-            r.renderable->onPickPass(renderer);
-            prevPriority = r.priority;
-        }
-
         for (auto& pair : renderItems.pickPass)
         {
             ShaderProgram const& program = renderer->getShader(pair.key);
             glUseProgram(program.program);
             for (auto& renderItem : pair.value)
             {
-                renderItem.setRenderData(renderItem.renderData);
-                glBindVertexArray(renderItem.vao);
-                glDrawElements(GL_TRIANGLES, renderItem.indexCount, GL_UNSIGNED_INT, 0);
+                renderItem.render(renderItem.renderData);
             }
         }
-
         glPopDebugGroup();
         isPickPixelPending = false;
     }

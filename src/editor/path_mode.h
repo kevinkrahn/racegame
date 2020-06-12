@@ -7,7 +7,6 @@
 #include "../imgui.h"
 #include "../scene.h"
 #include "../game.h"
-#include "../mesh_renderables.h"
 
 class PathMode : public EditorMode, public TransformGizmoHandler
 {
@@ -194,17 +193,18 @@ public:
             scene->debugDraw.line(path.points.back().position + offset,
                                 path.points.front().position + offset, color, color);
 
+            RenderWorld* rw = renderer->getRenderWorld();
             for (u16 si : selectedPoints)
             {
-                renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+                drawOverlay(rw, sphere,
                             glm::translate(glm::mat4(1.f), path.points[si].position) *
-                            glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -2));
+                            glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -2);
             }
             for (u32 i=0; i<path.points.size(); ++i)
             {
-                renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+                drawOverlay(rw, sphere,
                             glm::translate(glm::mat4(1.f), path.points[i].position) *
-                            glm::scale(glm::mat4(1.f), glm::vec3(1.f)), { 1, 0, 0 }, -2));
+                            glm::scale(glm::mat4(1.f), glm::vec3(1.f)), { 1, 0, 0 }, -2);
             }
 
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))

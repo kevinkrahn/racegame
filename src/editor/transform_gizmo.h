@@ -5,7 +5,6 @@
 #include "../input.h"
 #include "../game.h"
 #include "../imgui.h"
-#include "../mesh_renderables.h"
 #include "../scene.h"
 #include "editor_camera.h"
 
@@ -227,12 +226,12 @@ public:
             Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
             if (drawCenter)
             {
-                rw->push(OverlayRenderable(centerMesh, 0,
-                        glm::translate(glm::mat4(1.f), p), centerCol, -1));
+                drawOverlay(rw, centerMesh,
+                        glm::translate(glm::mat4(1.f), p), centerCol, -1);
             }
 
-            rw->push(OverlayRenderable(arrowMesh, 0,
-                    glm::translate(glm::mat4(1.f), p), xCol));
+            drawOverlay(rw, arrowMesh,
+                    glm::translate(glm::mat4(1.f), p), xCol);
             if (entityDragAxis & DragAxis::X)
             {
                 scene->debugDraw.line(
@@ -240,9 +239,9 @@ public:
                         glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
             }
 
-            rw->push(OverlayRenderable(arrowMesh, 0,
+            drawOverlay(rw, arrowMesh,
                     glm::translate(glm::mat4(1.f), p) *
-                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
+                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol);
             if (entityDragAxis & DragAxis::Y)
             {
                 scene->debugDraw.line(
@@ -250,9 +249,9 @@ public:
                         glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
             }
 
-            rw->push(OverlayRenderable(arrowMesh, 0,
+            drawOverlay(rw, arrowMesh,
                     glm::translate(glm::mat4(1.f), p) *
-                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
+                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol);
             if (entityDragAxis & DragAxis::Z)
             {
                 scene->debugDraw.line(
@@ -324,13 +323,13 @@ public:
             {
                 Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.RotateArrow");
                 Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
-                rw->push(OverlayRenderable(sphereMesh, 0,
-                        glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f))
-                        , {0,0,0}, -1, true));
+                drawOverlay(rw, sphereMesh,
+                        glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f)),
+                        glm::vec3(1.f), true);
 
-                rw->push(OverlayRenderable(arrowMesh, 0,
+                drawOverlay(rw, arrowMesh,
                         glm::translate(glm::mat4(1.f), p) *
-                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 1, 0)), xCol));
+                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 1, 0)), xCol);
                 if (entityDragAxis & DragAxis::X)
                 {
                     scene->debugDraw.line(
@@ -338,9 +337,9 @@ public:
                             glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
                 }
 
-                rw->push(OverlayRenderable(arrowMesh, 0,
+                drawOverlay(rw, arrowMesh,
                         glm::translate(glm::mat4(1.f), p) *
-                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(1, 0, 0)), yCol));
+                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(1, 0, 0)), yCol);
                 if (entityDragAxis & DragAxis::Y)
                 {
                     scene->debugDraw.line(
@@ -348,8 +347,7 @@ public:
                             glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
                 }
 
-                rw->push(OverlayRenderable(arrowMesh, 0,
-                        glm::translate(glm::mat4(1.f), p), zCol));
+                drawOverlay(rw, arrowMesh, glm::translate(glm::mat4(1.f), p), zCol);
                 if (entityDragAxis & DragAxis::Z)
                 {
                     scene->debugDraw.line(
@@ -461,12 +459,12 @@ public:
             Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.UnitCube");
             if (drawCenter)
             {
-                rw->push(OverlayRenderable(centerMesh, 0,
-                        glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1));
+                drawOverlay(rw, centerMesh,
+                        glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1);
             }
 
-            rw->push(OverlayRenderable(arrowMesh, 0,
-                    glm::translate(glm::mat4(1.f), p) * orientation, xCol));
+            drawOverlay(rw, arrowMesh,
+                    glm::translate(glm::mat4(1.f), p) * orientation, xCol);
             if (entityDragAxis & DragAxis::X)
             {
                 scene->debugDraw.line(
@@ -474,10 +472,10 @@ public:
                         glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
             }
 
-            rw->push(OverlayRenderable(arrowMesh, 0,
+            drawOverlay(rw, arrowMesh,
                     glm::translate(glm::mat4(1.f), p) *
                     orientation *
-                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol));
+                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol);
             if (entityDragAxis & DragAxis::Y)
             {
                 scene->debugDraw.line(
@@ -485,10 +483,10 @@ public:
                         glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
             }
 
-            rw->push(OverlayRenderable(arrowMesh, 0,
+            drawOverlay(rw, arrowMesh,
                     glm::translate(glm::mat4(1.f), p) *
                     orientation *
-                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol));
+                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol);
             if (entityDragAxis & DragAxis::Z)
             {
                 scene->debugDraw.line(

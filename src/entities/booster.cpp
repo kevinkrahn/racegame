@@ -81,7 +81,7 @@ void Booster::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 void Booster::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     decal.setColor(backwards ? glm::vec4(intensity, 0.f, 0.f, 1.f) : glm::vec4(0.f, intensity, 0.f, 1.f));
-    rw->add(&decal);
+    decal.draw(rw);
 }
 
 void Booster::onPreview(RenderWorld* rw)

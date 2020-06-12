@@ -2,7 +2,6 @@
 #include "scene.h"
 #include "renderable.h"
 #include "renderer.h"
-#include "mesh_renderables.h"
 #include "input.h"
 #include "game.h"
 #include "track_graph.h"
@@ -63,7 +62,28 @@ void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         }
     }
 
-    rw->add(this);
+    auto renderDepth = [](void* renderData){
+        Track* track = (Track*)renderData;
+        for (auto& c : track->connections)
+        {
+            glBindVertexArray(c->vao);
+            glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
+        }
+    };
+    auto renderColor = [](void* renderData){
+        Track* track = (Track*)renderData;
+        glBindTextureUnit(0, g_res.getTexture("tarmac")->handle);
+        glBindTextureUnit(5, g_res.getTexture("tarmac_normal")->handle);
+        glBindTextureUnit(6, g_res.getTexture("tarmac_spec")->handle);
+        for (auto& c : track->connections)
+        {
+            glBindVertexArray(c->vao);
+            glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
+        }
+    };
+    rw->depthPrepass(depthShader, { this, renderDepth });
+    rw->shadowPass(depthShader, { this, renderDepth });
+    rw->opaqueColorPass(colorShader, { this, renderColor });
 }
 
 void Track::clearSelection()
@@ -73,9 +93,10 @@ void Track::clearSelection()
 
 void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, bool& isMouseHandled, GridSettings* gridSettings)
 {
+    RenderWorld* rw = renderer->getRenderWorld();
     Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
     glm::vec2 mousePos = g_input.getMousePosition();
-    Camera const& cam = renderer->getRenderWorld()->getCamera(0);
+    Camera const& cam = rw->getCamera(0);
     glm::vec3 rayDir = screenToWorldRay(mousePos,
             glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
     f32 radius = 18;
@@ -90,7 +111,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     for (i32 i=0; i<(i32)points.size();)
     {
         glm::vec3 point = points[i].position;
-        glm::vec2 pointScreen = project(point, renderer->getRenderWorld()->getCamera(0).viewProjection)
+        glm::vec2 pointScreen = project(point, rw->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
 
         auto it = selectedPoints.find([&i](auto& s) { return s.pointIndex == i; });
@@ -166,14 +187,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         }
         if (isSelected)
         {
-            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+            drawOverlay(rw, sphere,
                         glm::translate(glm::mat4(1.f), points[i].position) *
-                        glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
+                        glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -1);
         }
         glm::vec3 color = isSelected ? brightRed : red;
-        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+        drawOverlay(rw, sphere,
                     glm::translate(glm::mat4(1.f), points[i].position) *
-                    glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color));
+                    glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color);
         ++i;
     }
 
@@ -194,7 +215,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 
         glm::vec3 colorA = orange;
         glm::vec3 handleA = points[c->pointIndexA].position + c->handleOffsetA;
-        glm::vec2 handleAScreen = project(handleA, renderer->getRenderWorld()->getCamera(0).viewProjection)
+        glm::vec2 handleAScreen = project(handleA, rw->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
         if (!isDragging && glm::length(handleAScreen - mousePos) < radius)
         {
@@ -267,14 +288,14 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     c2->handleOffsetB = -c->handleOffsetA;
                 }
             }
-            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+            drawOverlay(rw, sphere,
                         glm::translate(glm::mat4(1.f), handleA) *
-                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
+                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1);
         }
 
         glm::vec3 colorB = orange;
         glm::vec3 handleB = points[c->pointIndexB].position + c->handleOffsetB;
-        glm::vec2 handleBScreen = project(handleB, renderer->getRenderWorld()->getCamera(0).viewProjection)
+        glm::vec2 handleBScreen = project(handleB, rw->getCamera(0).viewProjection)
             * glm::vec2(g_game.windowWidth, g_game.windowHeight);
         if (!isDragging && glm::length(handleBScreen - mousePos) < radius)
         {
@@ -348,16 +369,16 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     c2->handleOffsetB = -c->handleOffsetB;
                 }
             }
-            renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+            drawOverlay(rw, sphere,
                         glm::translate(glm::mat4(1.f), handleB) *
-                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1));
+                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1);
         }
-        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+        drawOverlay(rw, sphere,
                     glm::translate(glm::mat4(1.f), handleA) *
-                    glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorA));
-        renderer->getRenderWorld()->push(OverlayRenderable(sphere, 0,
+                    glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorA);
+        drawOverlay(rw, sphere,
                     glm::translate(glm::mat4(1.f), handleB) *
-                    glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorB));
+                    glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorB);
 
         scene->debugDraw.line(points[c->pointIndexA].position + glm::vec3(0, 0, 0.01f),
                 points[c->pointIndexA].position + c->handleOffsetA + glm::vec3(0, 0, 0.01f),
@@ -711,45 +732,6 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         c.collisionShape->setGeometry(PxTriangleMeshGeometry(triMesh));
     }
     triMesh->release();
-}
-
-void Track::onShadowPass(class Renderer* renderer)
-{
-    glUseProgram(renderer->getShaderProgram(depthShader));
-    for (auto& c : connections)
-    {
-        glBindVertexArray(c->vao);
-        glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
-    }
-}
-
-void Track::onDepthPrepass(class Renderer* renderer)
-{
-    glUseProgram(renderer->getShaderProgram(depthShader));
-    for (auto& c : connections)
-    {
-        glBindVertexArray(c->vao);
-        glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
-    }
-}
-
-void Track::onLitPass(class Renderer* renderer)
-{
-    glDisable(GL_BLEND);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_EQUAL);
-    glEnable(GL_CULL_FACE);
-    glBindTextureUnit(0, g_res.getTexture("tarmac")->handle);
-    glBindTextureUnit(5, g_res.getTexture("tarmac_normal")->handle);
-    glBindTextureUnit(6, g_res.getTexture("tarmac_spec")->handle);
-    glStencilMask(0x0);
-    glUseProgram(renderer->getShaderProgram(colorShader));
-    for (auto& c : connections)
-    {
-        glBindVertexArray(c->vao);
-        glDrawElements(GL_TRIANGLES, (GLsizei)c->indices.size(), GL_UNSIGNED_INT, 0);
-    }
 }
 
 void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransform)
