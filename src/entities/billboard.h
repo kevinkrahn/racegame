@@ -67,9 +67,8 @@ public:
         {
             if (obj.isVisible)
             {
-                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                            transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid),
-                            entityCounterID));
+                g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
+                        &model->meshes[obj.meshIndex]);
             }
         }
     }
@@ -97,8 +96,8 @@ public:
         {
             if (obj.isVisible)
             {
-                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                            transform * obj.getTransform(), g_res.getMaterial(obj.materialGuid)));
+                g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
+                        &model->meshes[obj.meshIndex]);
             }
         }
     }
@@ -109,15 +108,8 @@ public:
         {
             for (auto& obj : model->objects)
             {
-                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                            transform * obj.getTransform(),
-                            g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 0));
-                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                            transform * obj.getTransform(),
-                            g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 1));
-                rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                            transform * obj.getTransform(),
-                            g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 2));
+                g_res.getMaterial(obj.materialGuid)->drawHighlight(rw, transform * obj.getTransform(),
+                        &model->meshes[obj.meshIndex], selectIndex);
             }
         }
     }

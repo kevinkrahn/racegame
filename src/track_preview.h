@@ -94,7 +94,8 @@ public:
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         glDisable(GL_BLEND);
 
-        glUseProgram(renderer->getShaderProgram("mesh2D"));
+        static ShaderHandle shader = getShaderHandle("mesh2D");
+        glUseProgram(renderer->getShaderProgram(shader));
         glUniform3fv(5, 1, (GLfloat*)&camPosition);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(viewProjection));
     }

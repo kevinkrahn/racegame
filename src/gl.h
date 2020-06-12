@@ -13,7 +13,6 @@ namespace RenderFlags
     {
         BACKFACE_CULL,
         //WIREFRAME,
-        DEPTH_OFFSET,
         DEPTH_READ,
         DEPTH_WRITE,
     };
@@ -26,4 +25,4 @@ struct ShaderDefine
 };
 
 ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines={},
-        u32 renderFlags=RenderFlags::DEPTH_READ | RenderFlags::DEPTH_WRITE);
+        u32 renderFlags=RenderFlags::DEPTH_READ | RenderFlags::DEPTH_WRITE, f32 depthOffset=0.f);

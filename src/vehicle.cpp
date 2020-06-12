@@ -935,7 +935,7 @@ void Vehicle::blowUp()
         createVehicleDebris(VehicleDebris{
             &d,
             body,
-            random(scene->randomSeries, 5.f, 6.f)
+            random(scene->randomSeries, 6.f, 7.f)
         });
     }
     deadTimer = 0.8f;

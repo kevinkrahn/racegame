@@ -777,7 +777,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     rw.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
             glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
     glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(3.5f));
-    rw.push(LitMaterialRenderable(previewMesh, transform, selectedMaterial));
+    mat.draw(&rw, transform, previewMesh);
 
     renderer->addRenderWorld(&rw);
 

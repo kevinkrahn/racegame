@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.h"
+#include "misc.h"
 #include "renderable.h"
 
 template <typename T>

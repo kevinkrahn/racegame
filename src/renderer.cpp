@@ -8,9 +8,9 @@
 constexpr u32 viewportGapPixels = 1;
 constexpr GLuint colorFormat = GL_R11F_G11F_B10F;
 
-ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines, u32 renderFlags)
+ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines, u32 renderFlags, f32 depthOffset)
 {
-    return g_game.renderer->getShaderHandle(name, defines, renderFlags);
+    return g_game.renderer->getShaderHandle(name, defines, renderFlags, depthOffset);
 }
 
 void glShaderSources(GLuint shader, std::string const& src,
@@ -46,7 +46,7 @@ void Renderer::loadShader(const char* filename, SmallArray<const char*> defines,
     {
         actualDefines.push_back({ name, "" });
     }
-    ShaderHandle handle = getShaderHandle(filename, actualDefines, 0);
+    ShaderHandle handle = getShaderHandle(filename, actualDefines, 0, 0.f);
     shaderNameMap[name ? name : filename] = handle;
 }
 
@@ -156,10 +156,6 @@ void Renderer::loadShaders()
     loadShader("quad2D", { "BLUR" }, "texBlur2D");
     loadShader("quad2D", {}, "text2D");
     loadShader("post");
-    loadShader("mesh2D");
-    loadShader("billboard", { "LIT" });
-    loadShader("billboard", {}, "billboard_unlit");
-    loadShader("ribbon");
     loadShader("csz");
     loadShader("csz_minify");
     loadShader("sao");
@@ -169,7 +165,8 @@ void Renderer::loadShaders()
     loadShader("highlight_id");
 }
 
-ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines, u32 renderFlags)
+ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines,
+        u32 renderFlags, f32 depthOffset)
 {
     for (u32 shaderIndex = 0; shaderIndex < shaderProgramSources.size(); ++shaderIndex)
     {
@@ -190,6 +187,10 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
         {
             continue;
         }
+        if (depthOffset != shaderPrograms[shaderIndex].depthOffset)
+        {
+            continue;
+        }
         bool definesMatch = true;
         for (u32 i=0; i<defines.size(); ++i)
         {
@@ -205,7 +206,7 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
             return shaderIndex;
         }
     }
-    shaderPrograms.push_back({ 0, renderFlags });
+    shaderPrograms.push_back({ 0, renderFlags, depthOffset });
     shaderProgramSources.push_back({ name, defines });
     ShaderHandle handle = shaderPrograms.size() - 1;
     loadShader(handle);
@@ -1319,10 +1320,12 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glEnable(GL_BLEND);
     glDepthFunc(GL_LEQUAL);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glEnable(GL_POLYGON_OFFSET_FILL);
     for (auto& pair : renderItems.transparentPass)
     {
         ShaderProgram const& program = renderer->getShader(pair.key);
         glUseProgram(program.program);
+        glPolygonOffset(0.f, program.depthOffset);
 #if 0
         if (program.renderFlags & RenderFlags::BACKFACE_CULL)
         {
@@ -1331,15 +1334,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         else
         {
             glDisable(GL_CULL_FACE);
-        }
-        if (program.renderFlags & RenderFlags::DEPTH_OFFSET)
-        {
-            glEnable(GL_POLYGON_OFFSET_FILL);
-            glPolygonOffset(0.f, program.depthOffset);
-        }
-        else
-        {
-            glDisable(GL_POLYGON_OFFSET_FILL);
         }
         if (program.renderFlags & RenderFlags::DEPTH_READ)
         {
@@ -1359,10 +1353,50 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         }
     }
 
+    glDisable(GL_POLYGON_OFFSET_FILL);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_BLEND);
     glDisable(GL_CULL_FACE);
     glStencilMask(0xFF);
+
+    /*
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDisable(GL_CULL_FACE);
+    glStencilMask(0xFF);
+
+	if (highlightStep == 0)
+	{
+	    glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_EQUAL);
+	    glDepthMask(GL_FALSE);
+	}
+	else if (highlightStep < 3)
+	{
+	    glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+	    glDepthMask(GL_TRUE);
+	}
+
+
+    if (highlightStep == 0)
+    {
+        glStencilFunc(GL_ALWAYS, stencil, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+    else if (highlightStep == 1)
+    {
+        glStencilFunc(GL_EQUAL, stencil, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+    else if (highlightStep == 2)
+    {
+        glStencilFunc(GL_ALWAYS, stencil | 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
+    }
+    */
 
     // highlight selected objects in editor
     if (isEditorActive)

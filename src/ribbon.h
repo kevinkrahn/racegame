@@ -307,7 +307,9 @@ public:
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
         glDisable(GL_CULL_FACE);
-        glUseProgram(renderer->getShaderProgram("ribbon"));
+
+        static ShaderHandle shader = getShaderHandle("ribbon");
+        glUseProgram(renderer->getShaderProgram(shader));
 
         glVertexArrayVertexBuffer(vao, 0, vertexBuffer.getBuffer(), 0, sizeof(RibbonVertex));
         glBindVertexArray(vao);

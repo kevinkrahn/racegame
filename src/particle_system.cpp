@@ -23,6 +23,9 @@ void ParticleSystem::update(f32 deltaTime)
 
 void ParticleSystem::onLitPass(Renderer* renderer)
 {
+    static ShaderHandle shaderLit = getShaderHandle("billboard", { {"LIT"} });
+    static ShaderHandle shaderUnlit = getShaderHandle("billboard", {});
+
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
@@ -31,7 +34,7 @@ void ParticleSystem::onLitPass(Renderer* renderer)
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
     glStencilMask(0);
 
-    glUseProgram(renderer->getShaderProgram(lit ? "billboard" : "billboard_unlit"));
+    glUseProgram(renderer->getShaderProgram(lit ? shaderLit : shaderUnlit));
     glBindVertexArray(emptyVAO);
     glBindTextureUnit(0, texture->handle);
 

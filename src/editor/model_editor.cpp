@@ -462,8 +462,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         auto& obj = model->objects[i];
         if (obj.isVisible)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid), i+1));
+            g_res.getMaterial(obj.materialGuid)->draw(rw, obj.getTransform(), &model->meshes[obj.meshIndex]);
         }
         if (obj.isCollider && showColliders)
         {
@@ -477,12 +476,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         u8 selectIndexByte = (u8)((selectedIndex % 126) + 1) << 1;
         auto& obj = model->objects[selectedIndex];
         Material* material = g_res.getMaterial(obj.materialGuid);
-        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                    material, 0, selectIndexByte, true, 0));
-        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                    material, 0, selectIndexByte, true, 1));
-        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                    material, 0, selectIndexByte, true, 2));
+        material->drawHighlight(rw, obj.getTransform(), &model->meshes[obj.meshIndex], selectIndexByte);
     }
 
     if (showBoundingBox)

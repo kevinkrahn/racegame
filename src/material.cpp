@@ -5,7 +5,6 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
 {
     u32 renderFlags = 0;
     //if (isCullingEnabled) { renderFlags |= RenderFlags::BACKFACE_CULL; }
-    //if (depthOffset != 0.f) { renderFlags |= RenderFlags::DEPTH_OFFSET; }
     if (isDepthReadEnabled) { renderFlags |= RenderFlags::DEPTH_READ; }
     if (isDepthWriteEnabled) { renderFlags |= RenderFlags::DEPTH_WRITE; }
 
@@ -15,7 +14,7 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
         SmallArray<ShaderDefine> defines = additionalDefines;
         if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
         if (normalMapTexture != 0) { defines.push_back({ "NORMAL_MAP" }); }
-        colorShaderHandle = getShaderHandle("lit", defines, renderFlags);
+        colorShaderHandle = getShaderHandle("lit", defines, renderFlags, depthOffset);
     }
     shadowShaderHandle = 0;
     if (castsShadow)

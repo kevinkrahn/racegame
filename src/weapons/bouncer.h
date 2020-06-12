@@ -69,7 +69,7 @@ public:
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         glm::vec3 pos = vehicleTransform * mountTransform *
             glm::vec4(projectileSpawnPoints[0] + glm::vec3(0.01f, 0.f, 0.05f), 1.f);
-        rw->push(BillboardRenderable(g_res.getTexture("bouncer_projectile"),
-                    pos, glm::vec4(1.f), 0.7f * glow, 0.f, false));
+        drawBillboard(rw, g_res.getTexture("bouncer_projectile"),
+                    pos, glm::vec4(1.f), 0.7f * glow, 0.f, false);
     }
 };

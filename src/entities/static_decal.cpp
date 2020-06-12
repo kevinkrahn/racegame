@@ -85,10 +85,8 @@ void StaticDecal::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void StaticDecal::onPreview(RenderWorld* rw)
 {
-    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
-            glm::vec3(0.f), 1.f, 200.f, 50.f);
-    rw->push(BillboardRenderable(tex, glm::vec3(0, 0, 2.f),
-                glm::vec4(1.f), 8.f, 0.f, false));
+    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f), glm::vec3(0.f), 1.f, 200.f, 50.f);
+    drawBillboard(rw, tex, glm::vec3(0, 0, 2.f), glm::vec4(1.f), 8.f, 0.f, false);
 }
 
 void StaticDecal::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)

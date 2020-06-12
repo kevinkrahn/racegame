@@ -398,7 +398,8 @@ public:
     void reloadShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines, u32 renderFlags);
+    ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines,
+            u32 renderFlags, f32 depthOffset);
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
     void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }

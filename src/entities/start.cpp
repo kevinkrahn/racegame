@@ -109,8 +109,8 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
             for (auto& v : positions)
             {
-                rw->push(BillboardRenderable(flare, transform * glm::vec4(v, 1.f),
-                            col, countIndex == 2 ? 1.3f : 1.f, 0.f, false));
+                drawBillboard(rw, flare, transform * glm::vec4(v, 1.f),
+                            col, countIndex == 2 ? 1.3f : 1.f, 0.f, false);
             }
 
             glm::vec3 color = (countIndex == 2 ?

@@ -86,11 +86,10 @@ void Booster::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void Booster::onPreview(RenderWorld* rw)
 {
-    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f),
-            glm::vec3(0.f), 1.f, 200.f, 50.f);
+    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f), glm::vec3(0.f), 1.f, 200.f, 50.f);
     glm::vec3 color = backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f);
-    rw->push(BillboardRenderable(g_res.getTexture("booster"), glm::vec3(0, 0, 2.f),
-                glm::vec4(color, 1.f), 8.f, 0.f, false));
+    drawBillboard(rw, g_res.getTexture("booster"), glm::vec3(0, 0, 2.f),
+                glm::vec4(color, 1.f), 8.f, 0.f, false);
 }
 
 void Booster::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
