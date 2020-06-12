@@ -16,6 +16,14 @@ struct RenderItem
     u8 stencil = 0;
 };
 
+struct TransparentRenderItem
+{
+    ShaderHandle shader;
+    i32 priority;
+    void* renderData;
+    void (*render)(void*);
+};
+
 struct HighlightPassRenderItem
 {
     void* renderData;
@@ -147,7 +155,7 @@ struct RenderItems
     Map<ShaderHandle, Array<RenderItem>> depthPrepass;
     Map<ShaderHandle, Array<RenderItem>> shadowPass;
     Map<ShaderHandle, Array<RenderItem>> opaqueColorPass;
-    Map<ShaderHandle, Array<RenderItem>> transparentPass;
+    Array<TransparentRenderItem> transparentPass;
     Map<ShaderHandle, Array<HighlightPassRenderItem>> highlightPass;
     Map<ShaderHandle, Array<RenderItem>> pickPass;
 };
@@ -228,9 +236,9 @@ public:
         renderItems.opaqueColorPass[shaderHandle].push_back(renderItem);
     }
 
-    void transparentPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
+    void transparentPass(TransparentRenderItem const& renderItem)
     {
-        renderItems.transparentPass[shaderHandle].push_back(renderItem);
+        renderItems.transparentPass.push_back(renderItem);
     }
 
     void pickPass(ShaderHandle shaderHandle, RenderItem const& renderItem)

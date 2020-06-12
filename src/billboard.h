@@ -25,7 +25,7 @@ void drawBillboard(RenderWorld* rw, Texture* texture, glm::vec3 const& position,
     renderData->translation = glm::translate(glm::mat4(1.f), position);
     renderData->rotation = glm::rotate(glm::mat4(1.f), angle, { 0, 0, 1 });
 
-    rw->transparentPass(lit ? shaderLit : shaderUnlit, { renderData, [](void* renderData){
+    rw->transparentPass({ lit ? shaderLit : shaderUnlit, TransparentDepth::BILLBOARD, renderData, [](void* renderData){
         BillboardRenderData* rd = (BillboardRenderData*)renderData;
         glBindTextureUnit(0, rd->tex);
         glUniform4fv(0, 1, (GLfloat*)&rd->color);

@@ -95,6 +95,6 @@ public:
             glDrawArrays(GL_LINES, 0, (GLsizei)dd->verts.size());
             dd->verts.clear();
         };
-        rw->transparentPass(shader, { this, render });
+        rw->transparentPass({ shader, TransparentDepth::DEBUG_LINES, this, render });
     }
 };

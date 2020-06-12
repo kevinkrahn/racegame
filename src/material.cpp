@@ -123,7 +123,8 @@ void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 
 
     if (isTransparent || depthOffset > 0.f || !isDepthWriteEnabled || !isDepthReadEnabled)
     {
-        rw->transparentPass(colorShaderHandle, { d, renderColor });
+        i32 priority = depthOffset > 0.f ? TransparentDepth::FLAT_SPLINE : 0;
+        rw->transparentPass({ colorShaderHandle, priority, d, renderColor });
     }
     else
     {
@@ -305,7 +306,7 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm:
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     };
 
-    rw->transparentPass(shader, { d, renderOpaque });
+    rw->transparentPass({ shader, TransparentDepth::DEBUG_LINES, d, renderOpaque });
 }
 
 void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec3 const& color,

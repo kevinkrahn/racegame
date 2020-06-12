@@ -51,7 +51,7 @@ void StaticDecal::updateTransform(Scene* scene)
         }
     }
 
-    decal.setPriority(beforeMarking ? 14 : 8000);
+    decal.setPriority(beforeMarking ? TransparentDepth::TRACK_DECAL : TransparentDepth::SAND_DECAL);
 
     const u32 bufferSize = 32;
     PxOverlapHit hitBuffer[bufferSize];

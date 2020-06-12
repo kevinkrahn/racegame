@@ -44,7 +44,7 @@ void Oil::updateTransform(Scene* scene)
                         glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
     }
     decal.setTexture(g_res.getTexture("icon_oil"), g_res.getTexture("oil_normal"));
-    decal.setPriority(9001);
+    decal.setPriority(TransparentDepth::OIL_GLUE);
     decal.begin(transform);
     scene->track->applyDecal(decal);
     decal.end();

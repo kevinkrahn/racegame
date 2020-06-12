@@ -50,5 +50,5 @@ void ParticleSystem::draw(RenderWorld* rw)
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
     };
-    rw->transparentPass(lit ? shaderLit : shaderUnlit, { this, render });
+    rw->transparentPass({ lit ? shaderLit : shaderUnlit, TransparentDepth::PARTICLE_SYSTEM, this, render });
 }

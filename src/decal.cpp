@@ -194,5 +194,5 @@ void Decal::draw(RenderWorld* rw)
         glUniform4fv(2, 1, (f32*)&decal->color);
         glDrawElements(GL_TRIANGLES, decal->mesh.numIndices, GL_UNSIGNED_INT, 0);
     };
-    rw->transparentPass(shader, { this, render });
+    rw->transparentPass({ shader, priority, this, render });
 }

@@ -313,6 +313,6 @@ public:
                 offset += chunk.count;
             }
         };
-        rw->transparentPass(shader, { this, render });
+        rw->transparentPass({ shader, TransparentDepth::TIRE_MARKS, this, render });
     }
 };

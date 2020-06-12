@@ -101,7 +101,7 @@ public:
         };
 
         static ShaderHandle shader = getShaderHandle("flames");
-        rw->transparentPass(shader, { renderData, render });
+        rw->transparentPass({ shader, 1000, renderData, render });
     }
 
     bool shouldUse(Scene* scene, Vehicle* vehicle) override

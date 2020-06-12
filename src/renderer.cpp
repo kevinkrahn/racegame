@@ -919,7 +919,7 @@ void RenderWorld::clear()
     clearRenderItems(renderItems.depthPrepass);
     clearRenderItems(renderItems.shadowPass);
     clearRenderItems(renderItems.opaqueColorPass);
-    clearRenderItems(renderItems.transparentPass);
+    renderItems.transparentPass.clear();
     clearRenderItems(renderItems.highlightPass);
     clearRenderItems(renderItems.pickPass);
 }
@@ -966,6 +966,17 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
+    renderItems.transparentPass.sort([](auto& a, auto& b) {
+        if (a.priority != b.priority) return a.priority < b.priority;
+        return a.shader < b.shader;
+    });
+#if 0
+    print("BEGIN\n");
+    for (auto& ri : renderItems.transparentPass)
+    {
+        print(ri.priority, '\n');
+    }
+#endif
     for (u32 i=0; i<fbs.size(); ++i)
     {
         renderer->setCurrentRenderingCameraIndex(i);
@@ -1251,33 +1262,35 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glDepthFunc(GL_LEQUAL);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glEnable(GL_POLYGON_OFFSET_FILL);
-    for (auto& pair : renderItems.transparentPass)
+    ShaderHandle previousShader = -1;
+    for (auto& renderItem : renderItems.transparentPass)
     {
-        ShaderProgram const& program = renderer->getShader(pair.key);
-        glUseProgram(program.program);
-        glPolygonOffset(0.f, program.depthOffset);
+        if (previousShader != renderItem.shader)
+        {
+            previousShader = renderItem.shader;
+            ShaderProgram const& program = renderer->getShader(renderItem.shader);
+            glUseProgram(program.program);
+            glPolygonOffset(0.f, program.depthOffset);
 #if 0
-        if (program.renderFlags & RenderFlags::BACKFACE_CULL)
-        {
-            glEnable(GL_CULL_FACE);
-        }
-        else
-        {
-            glDisable(GL_CULL_FACE);
-        }
-        if (program.renderFlags & RenderFlags::DEPTH_READ)
-        {
-            glEnable(GL_DEPTH_TEST);
-        }
-        else
-        {
-            glDisable(GL_DEPTH_TEST);
-        }
+            if (program.renderFlags & RenderFlags::BACKFACE_CULL)
+            {
+                glEnable(GL_CULL_FACE);
+            }
+            else
+            {
+                glDisable(GL_CULL_FACE);
+            }
+            if (program.renderFlags & RenderFlags::DEPTH_READ)
+            {
+                glEnable(GL_DEPTH_TEST);
+            }
+            else
+            {
+                glDisable(GL_DEPTH_TEST);
+            }
 #endif
-        for (auto& renderItem : pair.value)
-        {
-            renderItem.render(renderItem.renderData);
         }
+        renderItem.render(renderItem.renderData);
     }
 
     glDisable(GL_POLYGON_OFFSET_FILL);

@@ -11,13 +11,13 @@ class Decal
     glm::vec4 color = { 1, 1, 1, 1 };
     Texture* tex = nullptr;
     Texture* texNormal = nullptr;
-    i32 priority = 8000;
+    i32 priority = TransparentDepth::TRACK_DECAL;
     Mesh mesh;
     bool worldSpace = false;
 
 public:
     Decal() {}
-    Decal(Texture* tex, glm::vec4 const& color = { 1, 1, 1, 1 }, i32 priority=8000)
+    Decal(Texture* tex, glm::vec4 const& color = { 1, 1, 1, 1 }, i32 priority=TransparentDepth::TRACK_DECAL)
         : color(color), tex(tex), priority(priority) {}
     Decal(Decal const& other) {}
     Decal(Decal&& other) = default;
