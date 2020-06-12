@@ -97,7 +97,7 @@ void main()
 #if defined NORMAL_MAP
     const float normalMapStrength = 1.8;
     normal = texture2D(normalSampler, inTexCoord).rgb * 2.0 - 1.0;
-    normal = normalize(normal * vec3(1.0, 1.0, normalMapStrength));
+    normal = normal * vec3(1.0, 1.0, normalMapStrength);
     normal = inTBN * normal;
 #endif
 #if defined OUT_ID

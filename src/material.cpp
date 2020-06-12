@@ -13,7 +13,7 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
         SmallArray<ShaderDefine> defines = additionalDefines;
         if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
         if (normalMapTexture != 0) { defines.push_back({ "NORMAL_MAP" }); }
-        colorShaderHandle = getShaderHandle("lit", defines, renderFlags, 100 * depthOffset);
+        colorShaderHandle = getShaderHandle("lit", defines, renderFlags, -100.f * depthOffset);
     }
     shadowShaderHandle = 0;
     if (castsShadow)
@@ -218,8 +218,8 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     };
 
     rw->depthPrepass(depthShaderHandle, { d, renderDepth });
+    rw->shadowPass(shadowShaderHandle, { d, renderDepth });
     rw->opaqueColorPass(colorShaderHandle, { d, renderOpaque, stencil });
-    rw->shadowPass(shadowShaderHandle, { d, renderOpaque });
 }
 
 struct SimpleRenderData
@@ -228,7 +228,7 @@ struct SimpleRenderData
     GLuint tex;
     u32 indexCount;
     glm::mat4 worldTransform;
-    glm::mat4 normalTransform;
+    glm::mat3 normalTransform;
     glm::vec3 color;
     glm::vec3 emit;
 };
@@ -273,8 +273,8 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, glm::mat4 const& tran
     };
 
     rw->depthPrepass(depthShader, { d, renderDepth });
+    rw->shadowPass(depthShader, { d, renderDepth });
     rw->opaqueColorPass(shader, { d, renderOpaque, 0 });
-    rw->shadowPass(depthShader, { d, renderOpaque });
 }
 
 void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec4 color)
@@ -310,7 +310,7 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm:
 void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec3 const& color,
         bool onlyDepth)
 {
-
+    // TODO: implement
 }
 
 #if 0

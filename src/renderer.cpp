@@ -149,9 +149,6 @@ void Renderer::loadShaders()
     loadShader("blur", { "VBLUR" }, "vblur");
     loadShader("blur2", { "HBLUR" }, "hblur2");
     loadShader("blur2", { "VBLUR" }, "vblur2");
-    loadShader("lit");
-    loadShader("lit", { "ALPHA_DISCARD" }, "lit_discard");
-    loadShader("debug");
     loadShader("quad2D", { "COLOR" }, "tex2D");
     loadShader("quad2D", { "BLUR" }, "texBlur2D");
     loadShader("quad2D", {}, "text2D");
@@ -160,8 +157,6 @@ void Renderer::loadShaders()
     loadShader("csz_minify");
     loadShader("sao");
     loadShader("sao_blur");
-    loadShader("overlay");
-    loadShader("mesh_decal");
     loadShader("highlight_id");
 }
 
@@ -171,23 +166,10 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
     for (u32 shaderIndex = 0; shaderIndex < shaderProgramSources.size(); ++shaderIndex)
     {
         ShaderProgramSource& shaderData = shaderProgramSources[shaderIndex];
-        if (shaderData.name != name)
-        {
-            continue;
-        }
-        if (shaderData.defines.empty() && defines.empty())
-        {
-            return shaderIndex;
-        }
-        if (shaderData.defines.size() != defines.size())
-        {
-            continue;
-        }
-        if (renderFlags != shaderPrograms[shaderIndex].renderFlags)
-        {
-            continue;
-        }
-        if (depthOffset != shaderPrograms[shaderIndex].depthOffset)
+        if (shaderData.name != name
+                || shaderData.defines.size() != defines.size()
+                || renderFlags != shaderPrograms[shaderIndex].renderFlags
+                || depthOffset != shaderPrograms[shaderIndex].depthOffset)
         {
             continue;
         }
@@ -461,6 +443,7 @@ void Renderer::render(f32 deltaTime)
     renderables2D.clear();
     renderWorlds.clear();
     renderWorld.clear();
+    tempMem.clear();
 }
 
 void RenderWorld::setViewportCount(u32 viewports)
@@ -1094,6 +1077,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             }
         }
 
+	    glDisable(GL_POLYGON_OFFSET_FILL);
         glCullFace(GL_BACK);
         glDisable(GL_DEPTH_CLAMP);
 		glPopDebugGroup();
@@ -1113,7 +1097,6 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	glDisable(GL_POLYGON_OFFSET_FILL);
     glClear(GL_DEPTH_BUFFER_BIT);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     for (auto& pair : renderItems.depthPrepass)

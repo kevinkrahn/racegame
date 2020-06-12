@@ -495,7 +495,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         }
         glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
         glm::mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
-        mat->draw(rw, transform, d.meshInfo->mesh, 0);
+        mat->drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec3(0.f));
     }
 }
 

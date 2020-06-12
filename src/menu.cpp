@@ -811,11 +811,12 @@ void Menu::showChampionshipMenu()
                 u32 vehicleIconSize = (u32)convertSize(w.size.y);
                 RenderWorld& rw = renderWorlds[playerIndex];
                 rw.setName(tstr("Vehicle Icon ", playerIndex));
-                rw.setSize(vehicleIconSize, vehicleIconSize);
+                rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
                 drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
                 if (driver.vehicleIndex != -1)
                 {
-                    glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
+                    //glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
+                    glm::mat4 vehicleTransform = glm::mat4(1.f);
                     driver.getVehicleData()->render(&rw, glm::translate(glm::mat4(1.f),
                             glm::vec3(0, 0, driver.getTuning().getRestOffset())) *
                         vehicleTransform, nullptr, *driver.getVehicleConfig());
@@ -1019,7 +1020,7 @@ void Menu::createVehiclePreview()
 
             g_game.renderer->push2D(Quad(&g_res.white,
                         statsPos + glm::vec2(0, i * barSep + barOffset),
-                        glm::min(upgradeBarWidth, barWidth), barHeight, glm::vec4(0.5f,0.5f,0.5f,1.f),
+                        glm::min(upgradeBarWidth, barWidth), barHeight, glm::vec4(glm::vec3(0.7f), 1.f),
                         box->fadeInAlpha));
         }
     });
@@ -1030,7 +1031,8 @@ void Menu::createVehiclePreview()
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
         rw.setSize((u32)vehicleIconSize.x, (u32)vehicleIconSize.y);
-        drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
+        drawSimple(&rw, quadMesh, &g_res.white,
+                glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
 
         glm::mat4 vehicleTransform = glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1));
         g_vehicles[garage.previewVehicleIndex]->render(&rw, glm::translate(glm::mat4(1.f),
@@ -1396,7 +1398,7 @@ void Menu::createCarLotMenu()
 
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
-        rw.setSize((u32)convertSize(size.x), (u32)convertSize(size.y));
+        rw.setSize((u32)convertSize(size.x)*2, (u32)convertSize(size.y)*2);
         drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
 
         VehicleTuning tuning;
@@ -1430,8 +1432,10 @@ void Menu::createCarLotMenu()
                 garage.upgradeStats = garage.currentStats;
             }
         }, WidgetFlags::TRANSIENT, rw.getTexture(), 0.f, [i,this](bool isSelected){
+            //bool buttonEnabled = garage.driver->credits >= g_vehicles[i]->price || i == garage.driver->vehicleIndex;
+            bool buttonEnabled = true;
             return ImageButtonInfo{
-                garage.driver->credits >= g_vehicles[i]->price || i == garage.driver->vehicleIndex,
+                buttonEnabled,
                 i == garage.previewVehicleIndex, 0, 0,
                 i == garage.driver->vehicleIndex ? "OWNED" : tstr(g_vehicles[i]->price), true };
         });

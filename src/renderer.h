@@ -343,7 +343,7 @@ private:
     Array<RenderWorld*> renderWorlds;
 
     void createFullscreenFramebuffers();
-    Buffer tempMem = Buffer(megabytes(50));
+    Buffer tempMem = Buffer(megabytes(10));
 
 public:
     // TODO: remove
