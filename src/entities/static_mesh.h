@@ -3,7 +3,6 @@
 #include "../math.h"
 #include "../entity.h"
 #include "../resources.h"
-#include "../mesh_renderables.h"
 
 class StaticMesh : public PlaceableEntity
 {

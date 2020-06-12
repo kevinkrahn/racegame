@@ -93,9 +93,13 @@ public:
     ShaderHandle depthShaderHandle = 0;
     ShaderHandle shadowShaderHandle = 0;
     ShaderHandle pickShaderHandle = 0;
-    u32 renderFlags = 0;
     GLuint textureColorHandle = 0;
     GLuint textureNormalHandle = 0;
 
     void loadShaderHandles(SmallArray<ShaderDefine> additionalDefines={});
+    void draw(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil=0);
+    void drawHighlight(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
+            u8 stencil, u8 cameraIndex=0);
+    void drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil,
+            glm::vec3 const& shieldColor);
 };

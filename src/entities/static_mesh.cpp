@@ -2,7 +2,6 @@
 #include "../scene.h"
 #include "../renderer.h"
 #include "../vehicle.h"
-#include "../mesh_renderables.h"
 #include "../game.h"
 
 void StaticMesh::loadModel()
@@ -122,10 +121,8 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         if (o.modelObject->isVisible)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
-                        t * o.modelObject->getTransform(),
-                        g_res.getMaterial(o.modelObject->materialGuid), entityCounterID));
-
+            g_res.getMaterial(o.modelObject->materialGuid)->draw(rw,
+                    t * o.modelObject->getTransform(), &model->meshes[o.modelObject->meshIndex]);
         }
     }
 }
@@ -193,9 +190,8 @@ void StaticMesh::onPreview(RenderWorld* rw)
     {
         if (o.modelObject->isVisible)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
-                        transform * o.modelObject->getTransform(),
-                        g_res.getMaterial(o.modelObject->materialGuid)));
+            g_res.getMaterial(o.modelObject->materialGuid)->draw(rw,
+                    transform * o.modelObject->getTransform(), &model->meshes[o.modelObject->meshIndex]);
 
         }
     }
@@ -209,15 +205,9 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
         {
             if (o.modelObject->isVisible)
             {
-                rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
-                            transform * o.modelObject->getTransform(),
-                            g_res.getMaterial(o.modelObject->materialGuid), 0, selectIndex, true, 0));
-                rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
-                            transform * o.modelObject->getTransform(),
-                            g_res.getMaterial(o.modelObject->materialGuid), 0, selectIndex, true, 1));
-                rw->push(LitMaterialRenderable(&model->meshes[o.modelObject->meshIndex],
-                            transform * o.modelObject->getTransform(),
-                            g_res.getMaterial(o.modelObject->materialGuid), 0, selectIndex, true, 2));
+                Material* mat = g_res.getMaterial(o.modelObject->materialGuid);
+                mat->drawHighlight(rw, transform * o.modelObject->getTransform(),
+                        &model->meshes[o.modelObject->meshIndex], selectIndex);
             }
         }
     }

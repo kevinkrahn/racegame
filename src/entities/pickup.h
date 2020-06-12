@@ -6,7 +6,6 @@
 #include "../game.h"
 #include "../scene.h"
 #include "../vehicle.h"
-#include "../mesh_renderables.h"
 
 namespace PickupType
 {
@@ -82,8 +81,8 @@ public:
         Model* model = getModel();
         for (auto& obj : model->objects)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], t * obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid)));
+            g_res.getMaterial(obj.materialGuid)->draw(rw, t * obj.getTransform(),
+                    &model->meshes[obj.meshIndex]);
         }
     }
 
@@ -94,8 +93,8 @@ public:
         Model* model = getModel();
         for (auto& obj : model->objects)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid)));
+            g_res.getMaterial(obj.materialGuid)->draw(rw, obj.getTransform(),
+                    &model->meshes[obj.meshIndex]);
         }
     }
 

@@ -13,34 +13,26 @@ struct RenderItem
 {
     GLuint vao;
     u32 indexCount;
+    void* renderData;
+    void (*setRenderData)(void*);
+    u8 stencil = 0;
 };
 
 struct HighlightPassRenderItem
 {
     GLuint vao;
     u32 indexCount;
+    void* renderData;
+    void (*setRenderData)(void*);
     u8 stencil;
     u8 cameraIndex;
-};
-
-struct PickPassRenderItem
-{
-    GLuint vao;
-    u32 indexCount;
-    u32 pickID;
 };
 
 struct ShaderProgram
 {
     GLuint program = 0;
     u32 renderFlags = 0;
-    f32 depthOffset;
-};
-
-enum
-{
-    STENCIL_ENVIRONMENT = 0,
-    STENCIL_HIDDEN = 1,
+    f32 depthOffset = 0.f;
 };
 
 GLuint emptyVAO;
@@ -156,12 +148,12 @@ struct WorldInfo
 
 struct RenderItems
 {
-    Map<u32, Array<RenderItem>> depthPrepass;
-    Map<u32, Array<RenderItem>> shadowPass;
-    Map<u32, Array<RenderItem>> opaqueColorPass;
-    Map<u32, Array<RenderItem>> transparentPass;
-    Map<u32, Array<RenderItem>> highlightPass;
-    Map<u32, Array<RenderItem>> colorPickPass;
+    Map<ShaderHandle, Array<RenderItem>> depthPrepass;
+    Map<ShaderHandle, Array<RenderItem>> shadowPass;
+    Map<ShaderHandle, Array<RenderItem>> opaqueColorPass;
+    Map<ShaderHandle, Array<RenderItem>> transparentPass;
+    Map<ShaderHandle, Array<HighlightPassRenderItem>> highlightPass;
+    Map<ShaderHandle, Array<RenderItem>> pickPass;
 };
 
 class RenderWorld
@@ -185,6 +177,8 @@ class RenderWorld
 
     BoundingBox shadowBounds;
     bool hasCustomShadowBounds = false;
+
+    RenderItems renderItems;
 
     // TODO: calculate these based on render resolution
     u32 firstBloomDivisor = 2;
@@ -244,6 +238,36 @@ public:
         T* ptr = reinterpret_cast<T*>(mem);
         add(ptr);
         return ptr;
+    }
+
+    void depthPrepass(ShaderHandle shaderHandle, RenderItem const& renderItem)
+    {
+        renderItems.depthPrepass[shaderHandle].push_back(renderItem);
+    }
+
+    void shadowPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
+    {
+        renderItems.shadowPass[shaderHandle].push_back(renderItem);
+    }
+
+    void opaqueColorPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
+    {
+        renderItems.opaqueColorPass[shaderHandle].push_back(renderItem);
+    }
+
+    void transparentPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
+    {
+        renderItems.transparentPass[shaderHandle].push_back(renderItem);
+    }
+
+    void pickPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
+    {
+        renderItems.pickPass[shaderHandle].push_back(renderItem);
+    }
+
+    void highlightPass(ShaderHandle shaderHandle, HighlightPassRenderItem const& renderItem)
+    {
+        renderItems.highlightPass[shaderHandle].push_back(renderItem);
     }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
@@ -352,6 +376,8 @@ public:
     GLuint getShaderProgram(const char* name) { return shaderPrograms[shaderNameMap[name]].program; }
     GLuint getShaderProgram(ShaderHandle handle) { return shaderPrograms[handle].program; }
 
+    ShaderProgram const& getShader(ShaderHandle handle) { return shaderPrograms[handle]; }
+
     void add2D(Renderable2D* renderable, i32 priority=0)
     {
         renderables2D.push_back({ priority, renderable });
@@ -372,7 +398,7 @@ public:
     void reloadShaders();
     void updateFramebuffers();
     void updateFullscreenFramebuffers();
-    ShaderHandle getShaderHandle(const char* name, u32 renerFlags, SmallArray<ShaderDefine> const& defines);
+    ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines, u32 renderFlags);
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
     void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }

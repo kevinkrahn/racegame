@@ -121,8 +121,8 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
     for (auto& obj : model->objects)
     {
-        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
-                    g_res.getMaterial(obj.materialGuid), entityCounterID));
+        g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
+                &model->meshes[obj.meshIndex]);
     }
 
     rw->add(&finishLineDecal);
@@ -134,8 +134,8 @@ void Start::onPreview(RenderWorld* rw)
             glm::vec3(0.f, 0.f, 2.f), 1.f, 200.f, 50.f);
     for (auto& obj : model->objects)
     {
-        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
-                    g_res.getMaterial(obj.materialGuid)));
+        g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
+                &model->meshes[obj.meshIndex]);
     }
 }
 
@@ -145,19 +145,8 @@ void Start::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 
     {
         for (auto& obj : model->objects)
         {
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                        transform * obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 0));
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                        transform * obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 1));
-            rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex],
-                        transform * obj.getTransform(),
-                        g_res.getMaterial(obj.materialGuid), 0, selectIndex, true, 2));
+            g_res.getMaterial(obj.materialGuid)->drawHighlight(rw, transform * obj.getTransform(),
+                    &model->meshes[obj.meshIndex], selectIndex);
         }
-        rw->push(LitRenderable(g_res.getModel("misc")->getMeshByName("world.Arrow"),
-                transform *
-                glm::translate(glm::mat4(1.f), {10, 0, -2}) *
-                glm::scale(glm::mat4(1.f), glm::vec3(3.f))));
     }
 }

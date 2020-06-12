@@ -3,7 +3,6 @@
 #include "../weapon.h"
 #include "../vehicle.h"
 #include "../entities/projectile.h"
-#include "../mesh_renderables.h"
 
 class WPhantom : public Weapon
 {
@@ -71,8 +70,9 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        rw->push(LitRenderable(mesh, vehicleTransform * mountTransform));
-        rw->push(LitRenderable(meshBarrel, vehicleTransform * mountTransform
-                    * glm::translate(glm::mat4(1.f), glm::vec3(recoil, 0.f, 0.f))));
+        Material* mat = g_res.getMaterial("plastic");
+        mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
+        mat->draw(rw, vehicleTransform * mountTransform
+                * glm::translate(glm::mat4(1.f), glm::vec3(recoil, 0.f, 0.f)), meshBarrel, 2);
     }
 };

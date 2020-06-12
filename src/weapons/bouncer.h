@@ -3,7 +3,6 @@
 #include "../weapon.h"
 #include "../vehicle.h"
 #include "../entities/projectile.h"
-#include "../mesh_renderables.h"
 #include "../billboard.h"
 
 class WBouncer : public Weapon
@@ -66,7 +65,8 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        rw->push(LitRenderable(mesh, vehicleTransform * mountTransform));
+        Material* mat = g_res.getMaterial("plastic");
+        mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         glm::vec3 pos = vehicleTransform * mountTransform *
             glm::vec4(projectileSpawnPoints[0] + glm::vec3(0.01f, 0.f, 0.05f), 1.f);
         rw->push(BillboardRenderable(g_res.getTexture("bouncer_projectile"),

@@ -361,26 +361,6 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         config.dirty = false;
     }
 
-    for (auto& m : chassisBatch.batches)
-    {
-        Material* mat = m.material;
-        if (mat == originalPaintMaterial)
-        {
-            mat = &config.paintMaterial;
-        }
-        rw->push(LitMaterialRenderable(&m.mesh, transform, mat, 0, 2, false, 0, 0, shieldColor,
-                    mat == &config.paintMaterial));
-    }
-
-    if (isHidden)
-    {
-        for (auto& m : chassisOneMaterialBatch.batches)
-        {
-            rw->push(LitMaterialRenderable(&m.mesh, transform, &g_res.defaultMaterial, 0, 2, true,
-                        3, (u8)vehicle->cameraIndex));
-        }
-    }
-
     glm::mat4 defaultWheelTransforms[NUM_WHEELS];
     if (!wheelTransforms)
     {
@@ -391,6 +371,22 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         }
     }
 
+    for (auto& m : chassisBatch.batches)
+    {
+        Material* mat = m.material;
+        if (mat == originalPaintMaterial)
+        {
+            mat = &config.paintMaterial;
+        }
+        mat->drawVehicle(rw, transform, &m.mesh, 2, shieldColor);
+    }
+    if (isHidden)
+    {
+        for (auto& m : chassisOneMaterialBatch.batches)
+        {
+            config.paintMaterial.drawHighlight(rw, transform, &m.mesh, 0, (u8)vehicle->cameraIndex);
+        }
+    }
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         glm::mat4 wheelTransform = transform *
@@ -407,11 +403,11 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             {
                 mat = &config.paintMaterial;
             }
-            rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2));
+            glm::mat4 transform = wheelTransform * m.transform;
+            mat->drawVehicle(rw, transform, m.mesh, 2, shieldColor);
             if (isHidden)
             {
-                rw->push(LitMaterialRenderable(m.mesh, wheelTransform * m.transform, mat, 0, 2, true,
-                            3, (u8)vehicle->cameraIndex));
+                mat->drawHighlight(rw, transform, m.mesh, 0, (u8)vehicle->cameraIndex);
             }
         }
     }
@@ -499,8 +495,8 @@ void VehicleData::renderDebris(RenderWorld* rw,
             mat = &config.paintMaterial;
         }
         glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
-        rw->push(LitMaterialRenderable(d.meshInfo->mesh,
-                    convert(d.rigidBody->getGlobalPose()) * scale, mat, 0, 2));
+        glm::mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
+        mat->draw(rw, transform, d.meshInfo->mesh, 0);
     }
 }
 

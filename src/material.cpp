@@ -3,13 +3,19 @@
 
 void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
 {
+    u32 renderFlags = 0;
+    //if (isCullingEnabled) { renderFlags |= RenderFlags::BACKFACE_CULL; }
+    //if (depthOffset != 0.f) { renderFlags |= RenderFlags::DEPTH_OFFSET; }
+    if (isDepthReadEnabled) { renderFlags |= RenderFlags::DEPTH_READ; }
+    if (isDepthWriteEnabled) { renderFlags |= RenderFlags::DEPTH_WRITE; }
+
     colorShaderHandle = 0;
     if (isVisible)
     {
         SmallArray<ShaderDefine> defines = additionalDefines;
         if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
         if (normalMapTexture != 0) { defines.push_back({ "NORMAL_MAP" }); }
-        colorShaderHandle = getShaderHandle("lit", defines);
+        colorShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
     shadowShaderHandle = 0;
     if (castsShadow)
@@ -17,7 +23,7 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
         SmallArray<ShaderDefine> defines = additionalDefines;
         defines.push_back({ "DEPTH_ONLY" });
         if (shadowAlphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
-        shadowShaderHandle = getShaderHandle("lit", defines);
+        shadowShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
     depthShaderHandle = 0;
     if (isDepthWriteEnabled)
@@ -25,22 +31,14 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
         SmallArray<ShaderDefine> defines = additionalDefines;
         defines.push_back({ "DEPTH_ONLY" });
         if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
-        depthShaderHandle = getShaderHandle("lit", defines);
+        depthShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
     {
         SmallArray<ShaderDefine> defines = additionalDefines;
         defines.push_back({ "OUT_ID" });
         if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
-        pickShaderHandle = getShaderHandle("lit", defines);
+        pickShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
-    /*
-    renderFlags = 0;
-    if (isCullingEnabled) { renderFlags |= RenderFlags::CULLING; }
-    if (depthOffset != 0) { renderFlags |= RenderFlags::DEPTH_OFFSET; }
-    if (!isDepthReadEnabled != 0) { renderFlags |= RenderFlags::NO_DEPTH_READ; }
-    if (!isDepthWriteEnabled != 0) { renderFlags |= RenderFlags::NO_DEPTH_WRITE; }
-    if (isTransparent) { renderFlags |= RenderFlags::TRANSPARENT; }
-    */
     textureColorHandle = colorTexture
         ? g_res.getTexture(colorTexture)->handle : g_res.white.handle;
     textureNormalHandle = normalMapTexture
@@ -49,6 +47,9 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
 
 struct MaterialRenderData
 {
+#ifndef NDEBUG
+    Material* material = nullptr;
+#endif
     glm::mat4 worldTransform;
     glm::mat3 normalTransform;
     GLuint textureColor;
@@ -60,83 +61,141 @@ struct MaterialRenderData
     f32 reflectionStrength, reflectionLod, reflectionBias;
     f32 alphaCutoff, shadowAlphaCutoff;
     f32 windAmount;
+    glm::vec3 shieldColor;
 };
 
-/*
-void addRenderItemFromMaterial(RenderWorld* rw, Material* material,
-        glm::mat4 const& transform, Mesh* mesh)
+void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil)
+{
+    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+#ifndef NDEBUG
+    d->material = this;
+#endif
+    d->worldTransform = transform;
+    d->normalTransform = glm::inverseTranspose(glm::mat3(transform));
+    d->textureColor = textureColorHandle;
+    d->textureNormal = textureNormalHandle;
+    d->color = color;
+    d->emission = emit * emitPower;
+    d->fresnelBias = fresnelBias;
+    d->fresnelPower = fresnelPower;
+    d->fresnelScale = fresnelScale;
+    d->specularPower = specularPower;
+    d->specularStrength = specularStrength;
+    d->reflectionStrength = reflectionStrength;
+    d->reflectionLod = reflectionLod;
+    d->reflectionBias = reflectionBias;
+    d->alphaCutoff = alphaCutoff;
+    d->shadowAlphaCutoff = shadowAlphaCutoff;
+    d->windAmount = windAmount;
+
+    auto setRenderData = [](void* renderData) {
+        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        glBindTextureUnit(0, d->textureColor);
+        glBindTextureUnit(5, d->textureNormal);
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniform3fv(2, 1, (GLfloat*)&d->color);
+        glUniform3f(3, d->fresnelBias, d->fresnelScale, d->fresnelPower);
+        glUniform3f(4, d->specularPower, d->specularStrength, 0.f);
+        if (d->alphaCutoff > 0.f) { glUniform1f(5, d->alphaCutoff); }
+        glUniform3fv(6, 1, (GLfloat*)&d->emission);
+        glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
+        glUniform1f(8, d->windAmount);
+    };
+
+    auto setDepthData = [](void* renderData) {
+        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        if (d->alphaCutoff > 0.f)
+        {
+            glBindTextureUnit(0, d->textureColor);
+            glUniform1f(5, d->alphaCutoff);
+        }
+        glUniform1f(8, d->windAmount);
+    };
+
+    if (isTransparent || depthOffset > 0.f || !isDepthWriteEnabled || !isDepthReadEnabled)
+    {
+        rw->transparentPass(colorShaderHandle, { mesh->vao, mesh->numIndices, d, setRenderData });
+    }
+    else
+    {
+        rw->depthPrepass(depthShaderHandle, { mesh->vao, mesh->numIndices, d, setDepthData });
+        rw->opaqueColorPass(colorShaderHandle, { mesh->vao, mesh->numIndices, d, setRenderData, stencil });
+    }
+
+    if (castsShadow)
+    {
+        rw->shadowPass(shadowShaderHandle, { mesh->vao, mesh->numIndices, d, setDepthData });
+    }
+}
+
+void Material::drawHighlight(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil, u8 cameraIndex)
+{
+    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+    d->worldTransform = transform;
+    d->textureColor = textureColorHandle;
+    d->alphaCutoff = alphaCutoff;
+
+    auto setRenderData = [](void* renderData) {
+        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        if (d->alphaCutoff > 0.f)
+        {
+            glBindTextureUnit(0, d->textureColor);
+            glUniform1f(5, d->alphaCutoff);
+        }
+        glUniform1f(8, d->windAmount);
+    };
+
+    rw->highlightPass(colorShaderHandle,
+            { mesh->vao, mesh->numIndices, d, setRenderData, stencil, cameraIndex });
+}
+
+void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
+        u8 stencil, glm::vec3 const& shieldColor)
 {
     MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
     d->worldTransform = transform;
     d->normalTransform = glm::inverseTranspose(glm::mat3(transform));
-    d->textureColor = material->textureColorHandle;
-    d->textureNormal = material->textureNormalHandle;
-    d->color = material->color;
-    d->emission = material->emit * material->emitPower;
-    d->fresnelBias = material->fresnelBias;
-    d->fresnelPower = material->fresnelPower;
-    d->fresnelScale = material->fresnelScale;
-    d->specularPower = material->specularPower;
-    d->specularStrength = material->specularStrength;
-    d->reflectionStrength = material->reflectionStrength;
-    d->reflectionLod = material->reflectionLod;
-    d->reflectionBias = material->reflectionBias;
-    d->alphaCutoff = material->alphaCutoff;
-    d->shadowAlphaCutoff = material->shadowAlphaCutoff;
-    d->windAmount = material->windAmount;
+    d->textureColor = textureColorHandle;
+    d->textureNormal = textureNormalHandle;
+    d->color = color;
+    d->fresnelBias = fresnelBias;
+    d->fresnelPower = fresnelPower;
+    d->fresnelScale = fresnelScale;
+    d->specularPower = specularPower;
+    d->specularStrength = specularStrength;
+    d->reflectionStrength = reflectionStrength;
+    d->reflectionLod = reflectionLod;
+    d->reflectionBias = reflectionBias;
+    d->shieldColor = shieldColor;
 
-    rw->addColorPassItem({
-        material->colorShaderHandle,
-        mesh->vao,
-        mesh->numIndices,
-        material->renderFlags,
-        material->depthOffset, [d] {
-            glBindTextureUnit(0, d->textureColor);
-            glBindTextureUnit(5, d->textureNormal);
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-            glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
-            glUniform3fv(2, 1, (GLfloat*)&d->color);
-            glUniform3f(3, d->fresnelBias, d->fresnelScale, d->fresnelPower);
-            glUniform3f(4, d->specularPower, d->specularStrength, 0.f);
-            if (d->alphaCutoff > 0.f) { glUniform1f(5, d->alphaCutoff); }
-            glUniform3fv(6, 1, (GLfloat*)&d->emission);
-            glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
-            glUniform1f(8, d->windAmount);
-        }
-    });
+    auto setRenderData = [](void* renderData) {
+        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        glBindTextureUnit(0, d->textureColor);
+        glBindTextureUnit(5, d->textureNormal);
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniform3fv(2, 1, (GLfloat*)&d->color);
+        glUniform3f(3, d->fresnelBias, d->fresnelScale, d->fresnelPower);
+        glUniform3f(4, d->specularPower, d->specularStrength, 0.f);
+        glUniform3f(6, 0.f, 0.f, 0.f);
+        glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
+        glUniform1f(8, 0.f);
+        glUniform3fv(10, 1, (GLfloat*)&d->shieldColor);
+    };
 
-    if (material->castsShadow)
-    {
-        rw->addShadowPassItem({
-            material->shadowShaderHandle,
-            mesh->vao,
-            mesh->numIndices,
-            material->renderFlags,
-            material->depthOffset, [d] {
-                glBindTextureUnit(0, d->textureColor);
-                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-                glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
-                if (d->shadowAlphaCutoff > 0.f) { glUniform1f(5, d->shadowAlphaCutoff); }
-                glUniform1f(8, d->windAmount);
-            }
-        });
-    }
+    auto setDepthData = [](void* renderData) {
+        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniform1f(8, 0.f);
+    };
 
-    if (material->isDepthWriteEnabled)
-    {
-        rw->addDepthPrepassItem({
-            material->depthShaderHandle,
-            mesh->vao,
-            mesh->numIndices,
-            material->renderFlags,
-            material->depthOffset, [d] {
-                glBindTextureUnit(0, d->textureColor);
-                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-                glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
-                if (d->alphaCutoff > 0.f) { glUniform1f(5, d->alphaCutoff); }
-                glUniform1f(8, d->windAmount);
-            }
-        });
-    }
+    rw->depthPrepass(depthShaderHandle, { mesh->vao, mesh->numIndices, d, setDepthData });
+    rw->opaqueColorPass(colorShaderHandle, { mesh->vao, mesh->numIndices, d, setRenderData, stencil });
+    rw->shadowPass(shadowShaderHandle, { mesh->vao, mesh->numIndices, d, setDepthData });
 }
-*/

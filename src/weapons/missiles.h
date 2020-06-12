@@ -3,7 +3,6 @@
 #include "../weapon.h"
 #include "../vehicle.h"
 #include "../entities/projectile.h"
-#include "../mesh_renderables.h"
 
 class WMissiles : public Weapon
 {
@@ -67,17 +66,18 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
+        Material* mat = g_res.getMaterial("plastic");
         for (u32 i=0; i<info.maxUpgradeLevel; ++i)
         {
             glm::mat4 t = vehicleTransform * mountTransform
                 * glm::translate(glm::mat4(1.f), missileSpawnPoint(i));
-            rw->push(LitRenderable(mountMesh, t));
+            mat->draw(rw, t, mountMesh, 2);
         }
         for (u32 i=0; i<ammo; ++i)
         {
             glm::mat4 t = vehicleTransform * mountTransform
                 * glm::translate(glm::mat4(1.f), missileSpawnPoint(i));
-            rw->push(LitRenderable(mesh, t));
+            mat->draw(rw, t, mesh, 2);
         }
     }
 };

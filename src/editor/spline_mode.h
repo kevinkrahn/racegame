@@ -641,9 +641,8 @@ public:
                 {
                     if (obj.isVisible)
                     {
-                        renderWorld.push(LitMaterialRenderable(
-                                    &splineModels[i].model->meshes[obj.meshIndex], obj.getTransform(),
-                                    g_res.getMaterial(obj.materialGuid)));
+                        g_res.getMaterial(obj.materialGuid)->draw(&renderWorld, obj.getTransform(),
+                                &splineModels[i].model->meshes[obj.meshIndex]);
                     }
                 }
                 g_game.renderer->addRenderWorld(&renderWorld);

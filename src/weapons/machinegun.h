@@ -3,7 +3,6 @@
 #include "../weapon.h"
 #include "../vehicle.h"
 #include "../entities/projectile.h"
-#include "../mesh_renderables.h"
 
 class WMachineGun : public Weapon
 {
@@ -85,9 +84,10 @@ public:
     void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        rw->push(LitRenderable(mesh, vehicleTransform * mountTransform));
-        rw->push(LitRenderable(meshBarrel, vehicleTransform * mountTransform
+        Material* mat = g_res.getMaterial("plastic");
+        mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
+        mat->draw(rw, vehicleTransform * mountTransform
                     * glm::translate(glm::mat4(1.f), glm::vec3(0.556007, 0, 0.397523f))
-                    * glm::rotate(glm::mat4(1.f), barrelSpin, glm::vec3(1, 0, 0))));
+                    * glm::rotate(glm::mat4(1.f), barrelSpin, glm::vec3(1, 0, 0)), meshBarrel, 2);
     }
 };

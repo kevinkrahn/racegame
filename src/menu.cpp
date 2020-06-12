@@ -2194,7 +2194,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         }
 
         bool activated = false;
-        if (fadeIn && fadeInTimer > 500.f && widget.flags & WidgetFlags::BACK && didGoBack())
+        if (fadeIn && fadeInTimer > 500.f && (widget.flags & WidgetFlags::BACK) && didGoBack())
         {
             activated = true;
             selectedWidget = &widget;
@@ -2239,7 +2239,18 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             }
             else
             {
+#if 0
+                if (widget.flags & WidgetFlags::BACK)
+                {
+                    g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
+                }
+                else
+                {
+                    g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+                }
+#else
                 g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+#endif
                 if (widget.flags & (WidgetFlags::FADE_OUT | WidgetFlags::FADE_OUT_TRANSIENT))
                 {
                     fadeIn = false;

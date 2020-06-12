@@ -84,8 +84,8 @@ void Mine::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
     for (auto& obj : model->objects)
     {
-        rw->push(LitMaterialRenderable(&model->meshes[obj.meshIndex], transform * obj.getTransform(),
-                    g_res.getMaterial(obj.materialGuid)));
+        g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
+                &model->meshes[obj.meshIndex]);
     }
     glm::vec3 p = translationOf(transform) + glm::vec3(0,0,0.7f);
     glm::vec4 color = {2.f,0.02f,0.02f,0.3f};

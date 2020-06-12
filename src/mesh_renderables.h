@@ -208,7 +208,7 @@ public:
             }
             else if (highlightStep == 2)
             {
-                glStencilFunc(GL_ALWAYS, stencil | STENCIL_HIDDEN, 0xFF);
+                glStencilFunc(GL_ALWAYS, stencil | 1, 0xFF);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
                 glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
             }

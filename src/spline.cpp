@@ -1,6 +1,5 @@
 #include "spline.h"
 #include "renderer.h"
-#include "mesh_renderables.h"
 #include "game.h"
 #include "scene.h"
 
@@ -47,7 +46,7 @@ void Spline::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         if (rm.material)
         {
-            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material));
+            rm.material->draw(rw, glm::mat4(1.f), &rm.mesh);
         }
     }
 }
@@ -69,9 +68,7 @@ void Spline::onRenderOutline(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         if (rm.material)
         {
-            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material, 0, 4, true, 0));
-            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material, 0, 4, true, 1));
-            rw->push(LitMaterialRenderable(&rm.mesh, glm::mat4(1.f), rm.material, 0, 4, true, 2));
+            rm.material->drawHighlight(rw, glm::mat4(1.f), &rm.mesh, 4);
         }
     }
 }

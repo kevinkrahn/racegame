@@ -51,7 +51,11 @@ public:
     {
         for (auto& batch : batches)
         {
+#if 0
             rw->push(LitMaterialRenderable(&batch.mesh, transform, batch.material));
+#else
+            batch.material->draw(rw, transform, &batch.mesh);
+#endif
         }
     }
 };
