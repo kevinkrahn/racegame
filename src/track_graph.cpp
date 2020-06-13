@@ -36,7 +36,7 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
 {
     Array<u32>& path = nodeIndexPaths[pathIndex];
     // never visit the same node twice
-    if (std::find(path.begin(), path.end(), toIndex) != path.end())
+    if (path.find(toIndex))
     {
         return;
     }

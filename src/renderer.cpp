@@ -38,7 +38,6 @@ void glShaderSources(GLuint shader, std::string const& src,
     glShaderSource(shader, 2, sources, 0);
 }
 
-// TODO: remove
 void Renderer::loadShader(const char* filename, SmallArray<const char*> defines, const char* name)
 {
     SmallArray<ShaderDefine> actualDefines;
@@ -136,7 +135,6 @@ void Renderer::loadShader(ShaderHandle handle)
     shaderPrograms[handle].program = program;
 }
 
-// TODO: remove
 void Renderer::loadShaders()
 {
     loadShader("bloom_filter");
@@ -154,7 +152,6 @@ void Renderer::loadShaders()
     loadShader("csz_minify");
     loadShader("sao");
     loadShader("sao_blur");
-    loadShader("highlight_id");
 }
 
 ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine> const& defines,
@@ -977,13 +974,6 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
         if (a.priority != b.priority) return a.priority < b.priority;
         return a.shader < b.shader;
     });
-#if 0
-    print("BEGIN\n");
-    for (auto& ri : renderItems.transparentPass)
-    {
-        print(ri.priority, '\n');
-    }
-#endif
     for (u32 i=0; i<fbs.size(); ++i)
     {
         renderer->setCurrentRenderingCameraIndex(i);
@@ -1306,51 +1296,12 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glDisable(GL_CULL_FACE);
     glStencilMask(0xFF);
 
-    /*
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glDisable(GL_CULL_FACE);
-    glStencilMask(0xFF);
-
-	if (highlightStep == 0)
-	{
-	    glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_EQUAL);
-	    glDepthMask(GL_FALSE);
-	}
-	else if (highlightStep < 3)
-	{
-	    glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-	    glDepthMask(GL_TRUE);
-	}
-
-
-    if (highlightStep == 0)
-    {
-        glStencilFunc(GL_ALWAYS, stencil, 0xFF);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
-    else if (highlightStep == 1)
-    {
-        glStencilFunc(GL_EQUAL, stencil, 0xFF);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
-    else if (highlightStep == 2)
-    {
-        glStencilFunc(GL_ALWAYS, stencil | 1, 0xFF);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
-    }
-    */
-
     // highlight selected objects in editor
     if (isEditorActive)
     {
         glEnable(GL_DEPTH_TEST);
-	    glDepthMask(GL_FALSE);
         glDepthFunc(GL_EQUAL);
+	    glDepthMask(GL_FALSE);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
         // draw into the stencil buffer where the depth is equal
@@ -1365,14 +1316,14 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             }
         }
 
+        glDepthFunc(GL_LESS);
+	    glDepthMask(GL_TRUE);
+
         // clear depth but not stencil
         glClear(GL_DEPTH_BUFFER_BIT);
 
         // draw into the stencil buffer when the existing stencil value is equal, cutting off the
         // parts of the object that were hidden
-	    glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-	    glDepthMask(GL_TRUE);
         for (auto& pair : renderItems.highlightPass)
         {
             ShaderProgram const& program = renderer->getShader(pair.key);

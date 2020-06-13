@@ -103,13 +103,16 @@ public:
 
     void onEditModeRender(RenderWorld* rw, class Scene* scene, bool isSelected, u8 selectIndex) override
     {
-        if (isSelected)
+        for (auto& obj : model->objects)
         {
-            for (auto& obj : model->objects)
+            Material* mat = g_res.getMaterial(obj.materialGuid);
+            glm::mat4 t = transform * obj.getTransform();
+            Mesh* mesh = &model->meshes[obj.meshIndex];
+            if (isSelected)
             {
-                g_res.getMaterial(obj.materialGuid)->drawHighlight(rw, transform * obj.getTransform(),
-                        &model->meshes[obj.meshIndex], selectIndex);
+                mat->drawHighlight(rw, t, mesh, selectIndex);
             }
+            mat->drawPick(rw, t, mesh, entityCounterID);
         }
     }
 

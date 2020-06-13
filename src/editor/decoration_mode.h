@@ -145,7 +145,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                 {
                     continue;
                 }
-                auto it = selectedEntities.find([&](PlaceableEntity* e) { return e == entity.get(); });
+                auto it = selectedEntities.find((PlaceableEntity*)entity.get());
                 ImGui::PushID((void*)entity.get());
                 if (ImGui::Selectable(((PlaceableEntity*)entity.get())->getName(), !!it))
                 {
@@ -263,17 +263,17 @@ public:
                 {
                     if (e->entityCounterID == *pixelID)
                     {
-                        auto it = std::find(selectedEntities.begin(), selectedEntities.end(), e.get());
+                        auto it = selectedEntities.find((PlaceableEntity*)e.get());
                         if (selectionStateShift)
                         {
-                            if (it != selectedEntities.end())
+                            if (it)
                             {
                                 selectedEntities.erase(it);
                             }
                         }
                         else
                         {
-                            if (it == selectedEntities.end())
+                            if (!it)
                             {
                                 selectedEntities.push_back((PlaceableEntity*)e.get());
                             }
@@ -293,18 +293,17 @@ public:
                         ActorUserData* userData = (ActorUserData*)hit.block.actor->userData;
                         if (userData->entityType == ActorUserData::SELECTABLE_ENTITY)
                         {
-                            auto it = std::find(selectedEntities.begin(),
-                                selectedEntities.end(), userData->placeableEntity);
+                            auto it = selectedEntities.find(userData->placeableEntity);
                             if (selectionStateShift)
                             {
-                                if (it != selectedEntities.end())
+                                if (it)
                                 {
                                     selectedEntities.erase(it);
                                 }
                             }
                             else
                             {
-                                if (it == selectedEntities.end())
+                                if (!it)
                                 {
                                     selectedEntities.push_back((PlaceableEntity*)userData->entity);
                                 }
@@ -357,17 +356,15 @@ public:
         for (u32 i=0; (u32)i<scene->getEntities().size(); ++i)
         {
             auto& e = scene->getEntities()[i];
-            auto it = std::find(selectedEntities.begin(),
-                    selectedEntities.end(), e.get());
+            auto it = selectedEntities.find((PlaceableEntity*)e.get());
             u8 selectIndexByte = 0;
-            bool isSelected = it != selectedEntities.end();
-            if (isSelected)
+            if (it)
             {
                 u32 selectIndex = it - selectedEntities.begin();
                 // NOTE: first byte is reserved for hidden flag
                 selectIndexByte = (u8)((selectIndex % 126) + 1) << 1;
             }
-            e->onEditModeRender(rw, scene, isSelected, selectIndexByte);
+            e->onEditModeRender(rw, scene, !!it, selectIndexByte);
         }
     }
 

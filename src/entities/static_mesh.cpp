@@ -199,16 +199,18 @@ void StaticMesh::onPreview(RenderWorld* rw)
 
 void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
-    if (isSelected)
+    for (auto& o : objects)
     {
-        for (auto& o : objects)
+        if (o.modelObject->isVisible)
         {
-            if (o.modelObject->isVisible)
+            Material* mat = g_res.getMaterial(o.modelObject->materialGuid);
+            glm::mat4 t = transform * o.modelObject->getTransform();
+            Mesh* mesh = &model->meshes[o.modelObject->meshIndex];
+            if (isSelected)
             {
-                Material* mat = g_res.getMaterial(o.modelObject->materialGuid);
-                mat->drawHighlight(rw, transform * o.modelObject->getTransform(),
-                        &model->meshes[o.modelObject->meshIndex], selectIndex);
+                mat->drawHighlight(rw, t, mesh, selectIndex);
             }
+            mat->drawPick(rw, t, mesh, entityCounterID);
         }
     }
 }

@@ -226,12 +226,10 @@ public:
             Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
             if (drawCenter)
             {
-                drawOverlay(rw, centerMesh,
-                        glm::translate(glm::mat4(1.f), p), centerCol, -1);
+                drawOverlay(rw, centerMesh, glm::translate(glm::mat4(1.f), p), centerCol, -1);
             }
 
-            drawOverlay(rw, arrowMesh,
-                    glm::translate(glm::mat4(1.f), p), xCol);
+            drawOverlay(rw, arrowMesh, glm::translate(glm::mat4(1.f), p), xCol);
             if (entityDragAxis & DragAxis::X)
             {
                 scene->debugDraw.line(
@@ -325,7 +323,7 @@ public:
                 Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
                 drawOverlay(rw, sphereMesh,
                         glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f)),
-                        glm::vec3(1.f), true);
+                        glm::vec3(1.f), -1, true);
 
                 drawOverlay(rw, arrowMesh,
                         glm::translate(glm::mat4(1.f), p) *
@@ -463,8 +461,7 @@ public:
                         glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1);
             }
 
-            drawOverlay(rw, arrowMesh,
-                    glm::translate(glm::mat4(1.f), p) * orientation, xCol);
+            drawOverlay(rw, arrowMesh, glm::translate(glm::mat4(1.f), p) * orientation, xCol);
             if (entityDragAxis & DragAxis::X)
             {
                 scene->debugDraw.line(

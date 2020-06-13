@@ -62,6 +62,7 @@ struct MaterialRenderData
     f32 alphaCutoff, shadowAlphaCutoff;
     f32 windAmount;
     glm::vec4 shield;
+    u32 pickValue;
 };
 
 void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil)
@@ -136,6 +137,37 @@ void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 
     {
         rw->shadowPass(shadowShaderHandle, { d, renderDepth });
     }
+}
+
+void Material::drawPick(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u32 pickValue)
+{
+    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+#ifndef NDEBUG
+    d->material = this;
+#endif
+    d->vao = mesh->vao;
+    d->indexCount = mesh->numIndices;
+    d->worldTransform = transform;
+    d->textureColor = textureColorHandle;
+    d->alphaCutoff = alphaCutoff;
+    d->windAmount = windAmount;
+    d->pickValue = pickValue;
+
+    auto render = [](void* renderData) {
+        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        if (d->alphaCutoff > 0.f)
+        {
+            glBindTextureUnit(0, d->textureColor);
+            glUniform1f(5, d->alphaCutoff);
+        }
+        glUniform1f(8, d->windAmount);
+        glUniform1ui(9, d->pickValue);
+        glBindVertexArray(d->vao);
+        glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
+    };
+    rw->pickPass(pickShaderHandle, { d, render });
 }
 
 void Material::drawHighlight(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil, u8 cameraIndex)
@@ -310,66 +342,47 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm:
 }
 
 void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec3 const& color,
-        bool onlyDepth)
+        i32 priorityOffset, bool onlyDepth)
 {
-    // TODO: implement
-}
+    static ShaderHandle shader = getShaderHandle("overlay", {},
+            RenderFlags::DEPTH_READ | RenderFlags::DEPTH_WRITE, -3000000.f);
 
-#if 0
-class OverlayRenderable : public Renderable
-{
-    glm::vec3 color = { 1, 1, 1 };
-    Mesh* mesh = nullptr;
-    glm::mat4 worldTransform;
-    u32 cameraIndex = 0;
-    i32 priorityOffset = 0;
-    bool onlyDepth = false;
-
-public:
-    OverlayRenderable(Mesh* mesh, u32 cameraIndex, glm::mat4 const& worldTransform,
-            glm::vec3 const& color, i32 priorityOffset = 0, bool onlyDepth=false)
-        : color(color), mesh(mesh), worldTransform(worldTransform),
-          cameraIndex(cameraIndex), priorityOffset(priorityOffset), onlyDepth(onlyDepth) {}
-
-    i32 getPriority() const override { return 400000 + priorityOffset; }
-
-    void onLitPassPriorityTransition(Renderer* renderer) override
+    struct OverlayRenderData
     {
-        glUseProgram(renderer->getShaderProgram("overlay"));
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glDisable(GL_BLEND);
-        glDepthFunc(GL_LEQUAL);
-        glEnable(GL_DEPTH_TEST);
+        glm::mat4 worldTransform;
+        glm::vec3 color;
+        GLuint vao;
+        u32 indexCount;
+        bool onlyDepth;
+    };
+
+    OverlayRenderData* d = g_game.tempMem.bump<OverlayRenderData>();
+    d->vao = mesh->vao;
+    d->indexCount = mesh->numIndices;
+    d->worldTransform = transform;
+    d->color = color;
+    d->onlyDepth = onlyDepth;
+
+    auto render = [](void* renderData) {
+        OverlayRenderData* d = (OverlayRenderData*)renderData;
+
         glDepthMask(GL_TRUE);
-        glStencilMask(0x0);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    }
 
-    void onLitPass(Renderer* renderer) override
-    {
-        if (renderer->getCurrentRenderingCameraIndex() != cameraIndex)
-        {
-            return;
-        }
-
-        if (onlyDepth)
+        if (d->onlyDepth)
         {
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         }
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(worldTransform));
-        glUniform3f(1, color.x, color.y, color.z);
-        glBindVertexArray(mesh->vao);
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(0.f, -2000000.f);
-        glDrawElements(GL_TRIANGLES, mesh->numIndices, GL_UNSIGNED_INT, 0);
-        glDisable(GL_POLYGON_OFFSET_FILL);
-        if (onlyDepth)
+
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniform3fv(1, 1, (f32*)&d->color);
+        glBindVertexArray(d->vao);
+        glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
+
+        if (d->onlyDepth)
         {
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         }
-    }
+    };
 
-    std::string getDebugString() const override { return "OverlayRenderable"; }
-};
-#endif
+    rw->transparentPass({ shader, TransparentDepth::OVERLAY + priorityOffset, d, render });
+}

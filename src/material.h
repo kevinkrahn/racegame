@@ -98,6 +98,7 @@ public:
 
     void loadShaderHandles(SmallArray<ShaderDefine> additionalDefines={});
     void draw(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil=0);
+    void drawPick(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u32 pickValue);
     void drawHighlight(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
             u8 stencil, u8 cameraIndex=0);
     void drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil,
@@ -107,5 +108,5 @@ public:
 void drawSimple(RenderWorld* rw, Mesh* mesh, struct Texture* tex, glm::mat4 const& transform,
         glm::vec3 const& color=glm::vec3(1.f), glm::vec3 const& emit=glm::vec3(0.f));
 void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec4 color);
-void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec3 const& color,
-        bool onlyDepth=false);
+void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform,
+        glm::vec3 const& color=glm::vec3(1.f), i32 priorityOffset=0, bool onlyDepth=false);

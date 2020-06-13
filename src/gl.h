@@ -39,5 +39,6 @@ namespace TransparentDepth
         DEBUG_LINES = 0,
         PARTICLE_SYSTEM = 10000,
         BILLBOARD = 20000,
+        OVERLAY = 1000000,
     };
 }

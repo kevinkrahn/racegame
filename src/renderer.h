@@ -343,7 +343,6 @@ private:
     Array<ShaderProgram> shaderPrograms;
     Array<ShaderProgramSource> shaderProgramSources;
 
-    // TODO: remove
     Map<const char*, ShaderHandle> shaderNameMap;
     void loadShaders();
     void loadShader(const char* filename, SmallArray<const char*> defines={}, const char* name=nullptr);
@@ -356,7 +355,6 @@ private:
     Buffer tempMem = Buffer(megabytes(10));
 
 public:
-    // TODO: remove
     GLuint getShaderProgram(const char* name) { return shaderPrograms[shaderNameMap[name]].program; }
     GLuint getShaderProgram(ShaderHandle handle) { return shaderPrograms[handle].program; }
 

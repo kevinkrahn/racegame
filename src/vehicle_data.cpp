@@ -223,8 +223,7 @@ void VehicleData::loadModelData(const char* modelName)
                 break;
             }
         }
-        bool isInDebrisCollection = std::find(obj.collectionIndexes.begin(),
-                obj.collectionIndexes.end(), debrisCollectionIndex) != obj.collectionIndexes.end();
+        bool isInDebrisCollection = !!obj.collectionIndexes.find(debrisCollectionIndex);
         if (name.find("debris") != std::string::npos ||
             name.find("Debris") != std::string::npos ||
             name.find("FL") != std::string::npos ||

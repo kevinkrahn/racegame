@@ -439,6 +439,15 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (!ImGui::GetIO().WantCaptureMouse && g_input.isMouseButtonPressed(MOUSE_LEFT))
     {
+        for (u32 i=0; i<(u32)model->objects.size(); ++i)
+        {
+            auto& obj = model->objects[i];
+            if (obj.isVisible)
+            {
+                g_res.getMaterial(obj.materialGuid)
+                    ->drawPick(rw, obj.getTransform(), &model->meshes[obj.meshIndex], i+1);
+            }
+        }
         rw->pickPixel(g_input.getMousePosition()
                 / glm::vec2(g_game.windowWidth, g_game.windowHeight));
         selectionStateCtrl = g_input.isKeyDown(KEY_LCTRL);
