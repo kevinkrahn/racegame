@@ -92,7 +92,7 @@ void MotionGrid::build(Scene* scene)
                             overlapHit, overlapFilter);
                     auto& contents = grid[y * width + x].contents;
                     contents.push_back({ tz, obstructed ? CellType::BLOCKED : CellType::OFFROAD });
-                    std::sort(contents.begin(), contents.end(), [](auto& a, auto& b) {
+                    contents.sort([](auto& a, auto& b) {
                         return a.z > b.z;
                     });
                 }

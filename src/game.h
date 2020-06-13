@@ -116,6 +116,15 @@ public:
     Scene* changeScene(i64 guid);
     bool shouldUnloadScene = false;
     void unloadScene() { shouldUnloadScene = true; }
+    void loadEditor()
+    {
+        if (!resourceManager)
+        {
+            resourceManager.reset(new ResourceManager());
+        }
+        isEditing = true;
+        unloadScene();
+    }
 
     void saveGame();
     void loadGame();

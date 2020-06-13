@@ -20,12 +20,42 @@ class Resources
 private:
     // TODO: convert fonts into resource
     Map<const char*, Map<u32, Font>> fonts;
-
-public:
     Map<i64, OwnedPtr<Resource>> resources;
     Map<std::string, Resource*> resourceNameMap;
 
-    void addResource(OwnedPtr<Resource>&& resource);
+public:
+
+    void load();
+    void loadResource(DataFile::Value& data);
+    Resource* newResource(ResourceType type, bool makeGUID);
+    void registerResource(OwnedPtr<Resource>&& resource);
+    void renameResource(Resource* resource, std::string const& newName)
+    {
+        resourceNameMap.erase(resource->name);
+        resource->name = newName;
+        resourceNameMap.set(resource->name, resource);
+    }
+
+    template <typename T>
+    void iterateResourceType(ResourceType type, T const& cb)
+    {
+        for (auto& res : resources)
+        {
+            if (res.value->type == type)
+            {
+                cb(res.value.get());
+            }
+        }
+    }
+
+    template <typename T>
+    void iterateResources(T const& cb)
+    {
+        for (auto& res : resources)
+        {
+            cb(res.value.get());
+        }
+    }
 
     Texture white;
     Texture identityNormal;
@@ -40,12 +70,15 @@ public:
             u32 guidHalf[2] = { xorshift32(series), xorshift32(series) };
             guid = *((i64*)guidHalf);
         }
-        while (guid == 0 || !resources.get(guid));
+        while (guid == 0 || resources.get(guid));
         return guid;
     }
 
-    void load();
-    void loadResource(DataFile::Value& data);
+    Resource* getResource(i64 guid)
+    {
+        auto ptr = resources.get(guid);
+        return ptr ? ptr->get() : nullptr;
+    }
 
     Font& getFont(const char* name, u32 height)
     {

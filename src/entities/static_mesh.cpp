@@ -253,15 +253,8 @@ void StaticMesh::serializeState(Serializer& s)
 Array<PropPrefabData> StaticMesh::generatePrefabProps()
 {
     Array<PropPrefabData> result;
-
-    for (auto& res : g_res.resources)
-    {
-        // TODO: make a better way to iterate over resources of a specific type
-        if (res.value->type != ResourceType::MODEL)
-        {
-            continue;
-        }
-        Model* model = (Model*)res.value.get();
+    g_res.iterateResourceType(ResourceType::MODEL, [&](Resource* res){
+        Model* model = (Model*)res;
         if (model->modelUsage == ModelUsage::DYNAMIC_PROP
                 || model->modelUsage == ModelUsage::STATIC_PROP)
         {
@@ -276,7 +269,6 @@ Array<PropPrefabData> StaticMesh::generatePrefabProps()
                 }
             });
         }
-    }
-
+    });
     return result;
 }

@@ -309,4 +309,23 @@ public:
         }
         return NONE;
     }
+
+    void sort()
+    {
+        stableSort([](T const& a, T const& b) { return a < b; });
+    }
+
+    template <typename COMPARE>
+    void sort(COMPARE const& compare)
+    {
+        for (u32 i=0; i<size_; ++i)
+        {
+            u32 j = i;
+            while (j > 0 && compare(data_[j], data_[j-1]))
+            {
+                std::swap(data_[j-1], data_[j]);
+                j--;
+            }
+        }
+    }
 };

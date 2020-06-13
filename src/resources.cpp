@@ -5,11 +5,57 @@
 #include "util.h"
 #include <filesystem>
 
-void Resources::addResource(OwnedPtr<Resource>&& resource)
+Resource* Resources::newResource(ResourceType type, bool makeGUID)
+{
+    Resource* resource = nullptr;
+    const char* namePrefix = "";
+    switch (type)
+    {
+        case ResourceType::TEXTURE:
+        {
+            resource = new Texture();
+            namePrefix = "Texture";
+        } break;
+        case ResourceType::SOUND:
+        {
+            resource = new Sound();
+            namePrefix = "Sound";
+        } break;
+        case ResourceType::MATERIAL:
+        {
+            resource = new Material();
+            namePrefix = "Material";
+        } break;
+        case ResourceType::MODEL:
+        {
+            resource = new Model();
+            namePrefix = "Model";
+        } break;
+        case ResourceType::TRACK:
+        {
+            resource = new TrackData();
+            namePrefix = "Track";
+        } break;
+        default:
+        {
+            error("Cannot create resource with unknown type: ", (u32)type);
+            return nullptr;
+        }
+    }
+    resource->type = type;
+    if (makeGUID)
+    {
+        resource->guid = generateGUID();
+        resource->name = str(namePrefix, ' ', resources.size());
+    }
+    return resource;
+}
+
+void Resources::registerResource(OwnedPtr<Resource>&& resource)
 {
     i64 guid = resource->guid;
-    resourceNameMap[resource->name] = resource.get();
-    resources[guid] = std::move(resource);
+    resourceNameMap.set(resource->name, resource.get());
+    resources.set(guid, std::move(resource));
 }
 
 void Resources::loadResource(DataFile::Value& data)
@@ -18,32 +64,12 @@ void Resources::loadResource(DataFile::Value& data)
     {
         auto& dict = data.dict().val();
         auto resourceType = (u32)dict["type"].integer().val();
-        Resource* resource = nullptr;
-        switch ((ResourceType)resourceType)
-        {
-            case ResourceType::TEXTURE:
-                resource = new Texture();
-                break;
-            case ResourceType::MODEL:
-                resource = new Model();
-                break;
-            case ResourceType::SOUND:
-                resource = new Sound();
-                break;
-            case ResourceType::FONT:
-                break;
-            case ResourceType::TRACK:
-                resource = new TrackData();
-                break;
-            case ResourceType::MATERIAL:
-                resource = new Material();
-                break;
-        }
+        Resource* resource = newResource((ResourceType)resourceType, false);
         if (resource != nullptr)
         {
             Serializer s(data, true);
             resource->serialize(s);
-            addResource(OwnedPtr<Resource>(resource));
+            registerResource(OwnedPtr<Resource>(resource));
         }
     }
 }

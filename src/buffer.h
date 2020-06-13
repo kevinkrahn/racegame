@@ -78,7 +78,10 @@ public:
 
     u8* writeBytes(void* d, size_t len)
     {
-        assert(len > 0);
+        if (len == 0)
+        {
+            return data.get() + pos;
+        }
         if (pos + len > size)
         {
             u8* newData = new u8[size * 2];

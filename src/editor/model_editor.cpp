@@ -303,19 +303,14 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     }
                 }
 
-                for (auto& res : g_res.resources)
-                {
-                    if (res.value->type != ResourceType::MATERIAL)
-                    {
-                        continue;
-                    }
-                    Material* mat = (Material*)res.value.get();
+                g_res.iterateResourceType(ResourceType::MODEL, [&](Resource* res){
+                    Material* mat = (Material*)res;
                     if (searchString.empty() || mat->name.find(searchString) != std::string::npos)
                     {
                         searchResults.push_back(mat);
                     }
-                }
-                std::sort(searchResults.begin(), searchResults.end(), [](auto a, auto b) {
+                });
+                searchResults.sort([](auto a, auto b) {
                     return a->name < b->name;
                 });
 

@@ -106,8 +106,7 @@ void Driver::aiUpgrades(RandomSeries& series)
         { MISC_PERFORMANCE, 10 + ai.drivingSkill, MAX_UPGRADE },
     };
 
-    std::sort(upgradeChoices.begin(), upgradeChoices.end(),
-            [&](auto& a, auto& b) { return a.priority > b.priority; });
+    upgradeChoices.sort([&](auto& a, auto& b) { return a.priority > b.priority; });
 
     Array<i32> frontWeapons;
     Array<i32> rearWeapons;

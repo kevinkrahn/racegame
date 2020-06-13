@@ -89,7 +89,7 @@ class ResourceManager
 public:
     ResourceManager();
     void onUpdate(Renderer* renderer, f32 deltaTime);
-    void markDirty(i64 guid) { resourcesModified[guid] = true; }
+    void markDirty(i64 guid) { resourcesModified.set(guid, true); }
     bool isResourceDirty(i64 guid) const { return resourcesModified.get(guid); }
 
     Texture* getSelectedTexture() const { return selectedTexture; }

@@ -183,20 +183,6 @@ u32 findColorIndexByName(const char* name)
     return 0;
 }
 
-enum struct PaintType : i32
-{
-    METALLIC,
-    DULL,
-    MATTE,
-    MAX
-};
-
-std::string g_paintTypeNames[(i32)PaintType::MAX] = {
-    "Metallic",
-    "Dull",
-    "Matte"
-};
-
 const char* g_decalTextures[] = {
     "vd_two",
     "vd_six",

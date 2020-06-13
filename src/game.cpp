@@ -166,7 +166,6 @@ void Game::run()
     g_res.load();
     initializeVehicleData();
     registerEntities();
-    resourceManager.reset(new ResourceManager());
 
     print("Loaded resources in ", getTime() - loadStartTime, " seconds\n");
 

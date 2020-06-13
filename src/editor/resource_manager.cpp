@@ -7,7 +7,7 @@ static void sortResources(ResourceFolder& folder)
 {
     for (auto it = folder.childResources.begin(); it != folder.childResources.end();)
     {
-        if (!g_res.resources.get(*it))
+        if (!g_res.getResource(*it))
         {
             showError("Resource ", std::hex, *it, std::dec, " does not exist, removing.");
             it = folder.childResources.erase(it);
@@ -18,8 +18,8 @@ static void sortResources(ResourceFolder& folder)
         }
     }
     folder.childResources.sort([](i64 a, i64 b) {
-        Resource* rA = g_res.resources.get(a)->get();
-        Resource* rB = g_res.resources.get(b)->get();
+        Resource* rA = g_res.getResource(a);
+        Resource* rB = g_res.getResource(b);
         if (rA->type != rB->type) return (u32)rA->type < (u32)rB->type;
         return rA->name < rB->name;
     });
@@ -37,12 +37,11 @@ void ResourceManager::saveResources()
     }
     for (auto& r : resourcesModified)
     {
-        auto res = g_res.resources.get(r.key);
-        if (!res)
+        if (auto res = g_res.getResource(r.key))
         {
             std::string filename = str(DATA_DIRECTORY, "/", std::hex, r.key, ".dat", std::dec);
             print("Saving resource ", filename, '\n');
-            Serializer::toFile(**res, filename);
+            Serializer::toFile(*res, filename);
         }
     }
     resourcesModified.clear();
@@ -69,13 +68,13 @@ ResourceManager::ResourceManager()
         }
     }
 
-    for (auto& res : g_res.resources)
-    {
-        if (!resourceFolderMap.get(res.key))
+    // find any resources that are not in any folder and append them to the root folder
+    g_res.iterateResources([&](Resource* res){
+        if (!resourceFolderMap.get(res->guid))
         {
-            resources.childResources.push_back(res.key);
+            resources.childResources.push_back(res->guid);
         }
-    }
+    });
 
     sortResources(resources);
 }
@@ -216,7 +215,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
     const u32 selectedColor = 0x992299EE;
     for (auto it = folder->childResources.begin(); it != folder->childResources.end();)
     {
-        Resource* childResource = g_res.resources.get(*it)->get();
+        Resource* childResource = g_res.getResource(*it);
         bool removed = false;
         ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
         if (childResource == renameResource)
@@ -236,9 +235,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             if (ImGui::InputText("", &renameText,
                     ImGuiInputTextFlags_EnterReturnsTrue))
             {
-                g_res.resourceNameMap.erase(renameText);
-                g_res.resourceNameMap[renameText] = renameResource;
-                renameResource->name = renameText;
+                g_res.renameResource(renameResource, renameText);
                 markDirty(renameResource->guid);
             }
             ImGui::PopStyleVar();
@@ -398,47 +395,9 @@ void ResourceManager::openResource(Resource* resource)
 
 Resource* ResourceManager::newResource(ResourceType type)
 {
-    Resource* resource = nullptr;
-    const char* namePrefix = "";
-    switch (type)
-    {
-        case ResourceType::TEXTURE:
-        {
-            resource = new Texture();
-            namePrefix = "Texture";
-        } break;
-        case ResourceType::SOUND:
-        {
-            resource = new Sound();
-            namePrefix = "Sound";
-        } break;
-        case ResourceType::MATERIAL:
-        {
-            resource = new Material();
-            namePrefix = "Material";
-        } break;
-        case ResourceType::MODEL:
-        {
-            resource = new Model();
-            namePrefix = "Model";
-        } break;
-        case ResourceType::TRACK:
-        {
-            resource = new TrackData();
-            namePrefix = "Track";
-        } break;
-        case ResourceType::FONT:
-        {
-        } break;
-    }
-    if (resource)
-    {
-        resource->type = type;
-        resource->guid = g_res.generateGUID();
-        resource->name = str(namePrefix, ' ', g_res.resources.size());
-        g_res.addResource(OwnedPtr<Resource>(resource));
-        markDirty(resource->guid);
-    }
+    Resource* resource = g_res.newResource(type, true);
+    g_res.registerResource(resource);
+    markDirty(resource->guid);
     return resource;
 }
 
@@ -587,13 +546,8 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
             }
         }
 
-        for (auto& res : g_res.resources)
-        {
-            if (res.value->type != ResourceType::TEXTURE)
-            {
-                continue;
-            }
-            Texture* tex = (Texture*)res.value.get();
+        g_res.iterateResourceType(ResourceType::TEXTURE, [type](Resource* resource){
+            Texture* tex = (Texture*)resource;
             if (tex->getTextureType() == type)
             {
                 if (searchString.empty() || tex->name.find(searchString) != std::string::npos)
@@ -601,7 +555,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
                     searchResults.push_back(tex);
                 }
             }
-        }
+        });
         searchResults.sort([](auto& a, auto& b) { return a->name < b->name; });
 
         if (enterPressed)

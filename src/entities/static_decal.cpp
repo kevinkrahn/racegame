@@ -143,14 +143,8 @@ void StaticDecal::showDetails(Scene* scene)
 Array<PropPrefabData> StaticDecal::generatePrefabProps()
 {
     Array<PropPrefabData> results;
-
-    for (auto& res : g_res.resources)
-    {
-        if (res.value->type != ResourceType::TEXTURE)
-        {
-            continue;
-        }
-        Texture* tex = (Texture*)res.value.get();
+    g_res.iterateResourceType(ResourceType::TEXTURE, [&](Resource* res){
+        Texture* tex = (Texture*)res;
         if (tex->name.find("decal_") != std::string::npos)
         {
             results.push_back({
@@ -164,7 +158,6 @@ Array<PropPrefabData> StaticDecal::generatePrefabProps()
                 }
             });
         }
-    }
-
+    });
     return results;
 }

@@ -602,9 +602,8 @@ void Menu::showMainMenu()
         showSettingsMenu();
     }, WidgetFlags::FADE_OUT);
     addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [this]{
-        g_game.isEditing = true;
-        g_game.unloadScene();
         reset();
+        g_game.loadEditor();
     }, WidgetFlags::FADE_OUT);
     addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 },
             smallSize, []{}, WidgetFlags::FADE_OUT);
@@ -1550,9 +1549,7 @@ void Menu::championshipStandings()
     {
         sortedDrivers.push_back(&driver);
     }
-    std::sort(sortedDrivers.begin(), sortedDrivers.end(), [](Driver* a, Driver* b) {
-        return a->leaguePoints > b->leaguePoints;
-    });
+    sortedDrivers.sort([](Driver* a, Driver* b) { return a->leaguePoints > b->leaguePoints; });
 
     for (u32 i=0; i<sortedDrivers.size(); ++i)
     {

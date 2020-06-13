@@ -258,18 +258,13 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
 public:
     SplineMode() : EditorMode("Splines")
     {
-        for (auto& res : g_res.resources)
-        {
-            if (res.value->type != ResourceType::MODEL)
-            {
-                continue;
-            }
-            Model* model = (Model*)res.value.get();
+        g_res.iterateResourceType(ResourceType::MODEL, [&](Resource* res){
+            Model* model = (Model*)res;
             if (model->modelUsage == ModelUsage::SPLINE)
             {
                 splineModels.push_back({ model });
             }
-        }
+        });
     }
 
     void onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime) override

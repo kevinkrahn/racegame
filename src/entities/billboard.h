@@ -115,14 +115,8 @@ public:
 
     void showDetails(Scene* scene) override
     {
-        u32 buttonCount = 0;
-        for (auto& res : g_res.resources)
-        {
-            if (res.value->type != ResourceType::TEXTURE)
-            {
-                continue;
-            }
-            Texture* tex = (Texture*)res.value.get();
+        g_res.iterateResourceType(ResourceType::TEXTURE, [&](Resource* res){
+            Texture* tex = (Texture*)res;
             if (tex->name.find("billboard") != std::string::npos)
             {
                 f32 w = glm::min(ImGui::GetColumnWidth(), 200.f);
@@ -133,9 +127,8 @@ public:
                     billboardTextureGuid = tex->guid;
                 }
                 ImGui::PopID();
-                ++buttonCount;
             }
-        }
+        });
     }
 
     void serializeState(Serializer& s) override
