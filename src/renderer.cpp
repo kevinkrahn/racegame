@@ -149,9 +149,6 @@ void Renderer::loadShaders()
     loadShader("blur", { "VBLUR" }, "vblur");
     loadShader("blur2", { "HBLUR" }, "hblur2");
     loadShader("blur2", { "VBLUR" }, "vblur2");
-    loadShader("quad2D", { "COLOR" }, "tex2D");
-    loadShader("quad2D", { "BLUR" }, "texBlur2D");
-    loadShader("quad2D", {}, "text2D");
     loadShader("post");
     loadShader("csz");
     loadShader("csz_minify");
@@ -404,10 +401,20 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_BLEND);
 
     // NOTE: stable sort to preserve the order the renderables were added
-    renderables2D.stableSort([](auto& a, auto& b) { return a.priority < b.priority; });
-    for (auto const& r : renderables2D)
+    renderItems2D.stableSort([](auto& a, auto& b) {
+        if (a.priority != b.priority) return a.priority < b.priority;
+        return a.shader < b.shader;
+    });
+    ShaderHandle previousShader = -1;
+    for (auto const& renderItem : renderItems2D)
     {
-        r.renderable->on2DPass(this);
+        if (previousShader != renderItem.shader)
+        {
+            previousShader = renderItem.shader;
+            ShaderProgram const& program = getShader(renderItem.shader);
+            glUseProgram(program.program);
+        }
+        renderItem.render(renderItem.renderData);
     }
 
 #if 0
@@ -441,7 +448,7 @@ void Renderer::render(f32 deltaTime)
 	glPopDebugGroup();
 	glPopDebugGroup();
 
-    renderables2D.clear();
+    renderItems2D.clear();
     renderWorlds.clear();
     renderWorld.clear();
     tempMem.clear();

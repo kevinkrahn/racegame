@@ -176,8 +176,7 @@ class Menu
             std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addHelpMessage(glm::vec2 pos);
     Widget* addLabel(std::function<const char*()> getText, glm::vec2 pos, class Font* font,
-            HorizontalAlign halign=HorizontalAlign::CENTER,
-            VerticalAlign valign=VerticalAlign::CENTER, glm::vec3 const& color=glm::vec3(1.f),
+            HAlign halign=HAlign::CENTER, VAlign valign=VAlign::CENTER, glm::vec3 const& color=glm::vec3(1.f),
             u32 flags=0);
     Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
 

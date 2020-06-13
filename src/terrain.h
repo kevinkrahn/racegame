@@ -2,7 +2,6 @@
 
 #include "misc.h"
 #include "math.h"
-#include "renderable.h"
 #include "entity.h"
 #include "gl.h"
 

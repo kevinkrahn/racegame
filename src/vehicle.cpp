@@ -130,20 +130,19 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
     if (showAmmo)
     {
         Texture* iconbg = g_res.getTexture("weapon_iconbg");
-        renderer->push2D(QuadRenderable(iconbg, pos, iconSize * 1.5f, iconSize));
+        ui::rect(-100, iconbg, pos, {iconSize * 1.5f, iconSize});
     }
     else
     {
         Texture* iconbg = g_res.getTexture("iconbg");
-        renderer->push2D(QuadRenderable(iconbg, pos, iconSize, iconSize));
+        ui::rect(-100, iconbg, pos, glm::vec2(iconSize));
     }
 
-    renderer->push2D(QuadRenderable(weapon->info.icon,
-                pos, iconSize, iconSize));
+    ui::rect(-90, weapon->info.icon, pos, glm::vec2(iconSize));
     if (selected)
     {
         Texture* selectedTex = g_res.getTexture("weapon_iconbg_selected");
-        renderer->push2D(QuadRenderable(selectedTex, pos, iconSize * 1.5f, iconSize));
+        ui::rect(-80, selectedTex, pos, glm::vec2(iconSize * 1.5f, iconSize));
     }
     if (showAmmo)
     {
@@ -154,10 +153,10 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
         Texture* ammoTickTex = g_res.getTexture("ammotick");
         for (u32 i=0; i<ammoTickCount; ++i)
         {
-            renderer->push2D(QuadRenderable(ammoTickTex,
+            ui::rect(-70, ammoTickTex,
                         pos + glm::vec2(iconSize + ammoTickMargin * 2.f,
                             ammoTickHeight * i + (iconSize * 0.1f) + ammoTickMargin * 0.5f),
-                        iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
+                        glm::vec2(iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
         }
     }
 }
@@ -196,12 +195,12 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         char* p = tstr(glm::min((u32)currentLap, scene->getTotalLaps()));
         const char* lapStr = "LAP";
         f32 lapWidth = font1.stringDimensions(lapStr).x;
-        renderer->push2D(TextRenderable(&font1, lapStr,
-                    offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f)));
-        renderer->push2D(TextRenderable(&font2, p,
-                    offset + glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f)));
-        renderer->push2D(TextRenderable(&font1, tstr('/', scene->getTotalLaps()),
-                    offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20), glm::vec3(1.f)));
+        ui::text(&font1, lapStr, offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
+        ui::text(&font2, p,
+                    offset + glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f));
+        ui::text(&font1, tstr('/', scene->getTotalLaps()),
+                    offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20),
+                    glm::vec3(1.f));
 
         const char* placementSuffix = "th";
         if (placement == 0) placementSuffix = "st";
@@ -211,9 +210,9 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
 
         p = tstr(placement + 1);
-        renderer->push2D(TextRenderable(&font2, p, offset + glm::vec2(o200, d.y*o20), col));
-        renderer->push2D(TextRenderable(&font1, placementSuffix,
-                    offset + glm::vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col));
+        ui::text(&font2, p, offset + glm::vec2(o200, d.y*o20), col);
+        ui::text(&font1, placementSuffix,
+                    offset + glm::vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col);
 
         // weapons
         f32 weaponIconX = g_game.windowHeight * 0.35f;
@@ -241,16 +240,16 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         }
 
         // healthbar
-        Texture* white = &g_res.white;
         const f32 healthPercentage = glm::clamp(hitPoints / tuning.maxHitPoints, 0.f, 1.f);
         const f32 maxHealthbarWidth = g_game.windowHeight * 0.14f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
         const f32 healthbarHeight = g_game.windowHeight * 0.009f;
         glm::vec2 pos = voffset + glm::vec2(vdim.x - o20, d.y*o20);
-        renderer->push2D(QuadRenderable(white, pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
-                pos, {}, {}, glm::vec3(0)));
-        renderer->push2D(QuadRenderable(white, pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
-                pos, {}, {}, glm::mix(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), healthPercentage)));
+        ui::rect(-100, nullptr, pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
+                glm::vec2(maxHealthbarWidth, healthbarHeight*d.y), glm::vec3(0));
+        ui::rect(-90, nullptr, pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
+                glm::vec2(healthbarWidth, healthbarHeight*d.y), glm::mix(glm::vec3(1, 0, 0),
+                glm::vec3(0, 1, 0), healthPercentage));
 
         // display notifications
         u32 count = 0;
@@ -258,10 +257,9 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             glm::vec2 p = glm::floor(layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
                     glm::vec2(0, layout.scale.y * dim.y * 0.3f) + glm::vec2(0, count * dim.y * 0.04f));
-            renderer->push2D(TextRenderable(&font3, it->text, p,
+            ui::text(&font3, it->text, p,
                 it->color, (glm::sin(it->time * 6.f) + 1.f) * 0.3f + 0.5f,
-                glm::max(1.7f - it->time * 3.f, 1.f),
-                HorizontalAlign::CENTER, VerticalAlign::CENTER));
+                glm::max(1.7f - it->time * 3.f, 1.f), HAlign::CENTER, VAlign::CENTER);
             ++count;
             it->time += deltaTime;
             if (it->time > it->secondsToKeepOnScreen)

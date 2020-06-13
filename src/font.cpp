@@ -113,54 +113,54 @@ glm::vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
     return { glm::max(currentWidth, maxWidth), currentHeight };
 }
 
-void TextRenderable::on2DPass(Renderer* renderer)
+void Font::draw(const char* text, glm::vec2 pos, glm::vec3 color, f32 alpha,
+            f32 scale, HAlign halign, VAlign valign)
 {
     char* str = (char*)text;
     glm::vec2 p = pos;
     f32 startX = p.x;
 
-    if (halign != HorizontalAlign::LEFT)
+    if (halign != HAlign::LEFT)
     {
-        f32 lineWidth = font->stringDimensions(str, true).x * scale;
-        if (halign == HorizontalAlign::CENTER)
+        f32 lineWidth = stringDimensions(str, true).x * scale;
+        if (halign == HAlign::CENTER)
         {
             p.x -= lineWidth * 0.5f;
         }
-        else if (halign == HorizontalAlign::RIGHT)
+        else if (halign == HAlign::RIGHT)
         {
             p.x -= lineWidth;
         }
     }
 
-    p.y += font->height * scale;
-    if (valign != VerticalAlign::TOP)
+    p.y += height * scale;
+    if (valign != VAlign::TOP)
     {
-        f32 stringHeight = font->stringDimensions(str).y * scale;
-        if (valign == VerticalAlign::BOTTOM)
+        f32 stringHeight = stringDimensions(str).y * scale;
+        if (valign == VAlign::BOTTOM)
         {
             p.y -= stringHeight;
         }
-        else if (valign == VerticalAlign::CENTER)
+        else if (valign == VAlign::CENTER)
         {
             p.y -= stringHeight * 0.5f;
         }
     }
 
-    glUseProgram(renderer->getShaderProgram("text2D"));
-    glBindTextureUnit(1, font->textureAtlas.handle);
+    glBindTextureUnit(1, textureAtlas.handle);
 
     while (*str)
     {
         if (*str == '\n')
         {
             ++str;
-            f32 nextLineWidth = font->stringDimensions(str, true).x * scale;
+            f32 nextLineWidth = stringDimensions(str, true).x * scale;
 
-            if (halign == HorizontalAlign::CENTER)
+            if (halign == HAlign::CENTER)
             {
                 p.x = startX - nextLineWidth * 0.5f;
             }
-            else if (halign == HorizontalAlign::LEFT)
+            else if (halign == HAlign::LEFT)
             {
                 p.x = startX;
             }
@@ -169,17 +169,17 @@ void TextRenderable::on2DPass(Renderer* renderer)
                 p.x = startX - nextLineWidth;
             }
 
-            p.y += font->lineHeight * scale;
+            p.y += lineHeight * scale;
 
             continue;
         }
 
-        auto &g = font->glyphs[(u32)(*str - font->startingChar)];
+        auto &g = glyphs[(u32)(*str - startingChar)];
 
         f32 x0 = glm::floor(p.x + g.xOff * scale);
         f32 y0 = glm::floor(p.y + g.yOff * scale);
-        //f32 x1 = glm::floor(x0 + (g.x1 - g.x0) * font->textureAtlas.width * scale);
-        //f32 y1 = glm::floor(y0 + (g.y1 - g.y0) * font->textureAtlas.height * scale);
+        //f32 x1 = glm::floor(x0 + (g.x1 - g.x0) * textureAtlas.width * scale);
+        //f32 y1 = glm::floor(y0 + (g.y1 - g.y0) * textureAtlas.height * scale);
         //f32 x1 = x0 + g.width * scale;
         //f32 y1 = y0 + g.height * scale;
         f32 x1 = glm::floor(x0 + g.width * scale);
@@ -211,11 +211,10 @@ void TextRenderable::on2DPass(Renderer* renderer)
         // kerning
         if (*(str+1) && *(str+1) != '\n')
         {
-            p.x += font->kerningTable[(*str - font->startingChar) * font->glyphs.size() +
-                (*(str+1) - font->startingChar)] * scale;
+            p.x += kerningTable[(*str - startingChar) * glyphs.size() +
+                (*(str+1) - startingChar)] * scale;
         }
 
         ++str;
     }
 }
-

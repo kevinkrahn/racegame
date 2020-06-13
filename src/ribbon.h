@@ -1,7 +1,6 @@
 #pragma once
 
 #include "math.h"
-#include "renderable.h"
 #include "gl.h"
 #include "dynamic_buffer.h"
 #include "resources.h"

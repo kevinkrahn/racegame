@@ -4,10 +4,17 @@
 #include "resources.h"
 #include "math.h"
 #include "decal.h"
-#include "renderable.h"
 #include "dynamic_buffer.h"
 #include "buffer.h"
 #include "map.h"
+
+struct RenderItem2D
+{
+    ShaderHandle shader;
+    i32 priority;
+    void* renderData;
+    void (*render)(void*);
+};
 
 struct RenderItem
 {
@@ -204,8 +211,8 @@ class RenderWorld
     bool isPickPixelPending = false;
 
     void setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex);
-    void renderViewport(Renderer* renderer, u32 cameraIndex, f32 deltaTime);
-    void render(Renderer* renderer, f32 deltaTime);
+    void renderViewport(class Renderer* renderer, u32 cameraIndex, f32 deltaTime);
+    void render(class Renderer* renderer, f32 deltaTime);
     void partitionPointLights(u32 viewportIndex);
 
 public:
@@ -342,12 +349,7 @@ private:
     void loadShader(const char* filename, SmallArray<const char*> defines={}, const char* name=nullptr);
     void loadShader(ShaderHandle handle);
 
-    struct QueuedRenderable2D
-    {
-        i32 priority;
-        Renderable2D* renderable;
-    };
-    Array<QueuedRenderable2D> renderables2D;
+    Array<RenderItem2D> renderItems2D;
     Array<RenderWorld*> renderWorlds;
 
     void createFullscreenFramebuffers();
@@ -360,18 +362,18 @@ public:
 
     ShaderProgram const& getShader(ShaderHandle handle) { return shaderPrograms[handle]; }
 
-    void add2D(Renderable2D* renderable, i32 priority=0)
+    void add2D(ShaderHandle shader, i32 priority, void* renderData, void(*render)(void*))
     {
-        renderables2D.push_back({ priority, renderable });
+        renderItems2D.push_back({ shader, priority, renderData, render });
     }
+
     template <typename T>
-    T* push2D(T&& renderable, i32 priority=0)
+    void add2D(ShaderHandle shader, i32 priority, T&& render)
     {
-        u8* mem = tempMem.bump(sizeof(T));
-        new (mem) T(std::move(renderable));
-        T* ptr = reinterpret_cast<T*>(mem);
-        add2D(ptr, priority);
-        return ptr;
+        T* data = tempMem.bump<T>();
+        new (data) T(std::move(render));
+        auto renderFunc = [](void* renderData){ (*((T*)renderData))(); };
+        renderItems2D.push_back({ shader, priority, (void*)data, renderFunc });
     }
 
     u32 getCurrentRenderingCameraIndex() const { return currentRenderingCameraIndex; }

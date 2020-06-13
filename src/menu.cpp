@@ -208,8 +208,7 @@ Widget* Menu::addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha, bool sc
         f32 scale = scaleOut ? w.fadeInScale : 1.f;
         glm::vec2 size = convertSize(w.size) * scale;
         glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
-        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                    glm::vec4(glm::vec3(0.f), alpha), w.fadeInAlpha), -100);
+        ui::rectBlur(-1000, nullptr, pos, size, glm::vec4(glm::vec3(0.f), alpha), w.fadeInAlpha);
     };
     w.flags = 0;
     widgets.push_back(w);
@@ -242,17 +241,17 @@ void drawSelectableBox(Widget& w, bool isSelected, bool isEnabled,
     glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
     glm::vec2 size = convertSize(w.size) * w.fadeInScale;
     glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
-    g_game.renderer->push2D(Quad(&g_res.white,
-                pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
+    ui::rectBlur(ui::BORDER, &g_res.white,
+                pos - borderSize, size + borderSize * 2,
+                borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha);
     if (!isEnabled)
     {
         color.a = 0.4f;
     }
     glm::vec3 col = glm::mix(glm::vec3(color), glm::vec3(1.f),
             (sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f);
-    g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-            glm::vec4(col, color.a), w.fadeInAlpha));
+    ui::rectBlur(ui::BG, &g_res.white, pos, size,
+            glm::vec4(col, color.a), w.fadeInAlpha);
 }
 
 Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
@@ -284,23 +283,22 @@ Widget* Menu::addButton(const char* text, const char* helpText, glm::vec2 pos, g
             f32 imageSize = convertSize(64) * btn.fadeInScale;
             f32 textOffsetX = imageSize + convertSize(40);
 #if 1
-            g_game.renderer->push2D(TextRenderable(font, text, pos + glm::vec2(textOffsetX, size.y * 0.5f),
+            ui::text(font, text, pos + glm::vec2(textOffsetX, size.y * 0.5f),
                         glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * btn.fadeInAlpha, btn.fadeInScale,
-                        HorizontalAlign::LEFT, VerticalAlign::CENTER));
+                        HAlign::LEFT, VAlign::CENTER);
 #else
-            g_game.renderer->push2D(TextRenderable(font, text, pos + size * 0.5f,
+            ui::text(font, text, pos + size * 0.5f,
                         glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * btn.fadeInAlpha, btn.fadeInScale,
-                        HorizontalAlign::CENTER, VerticalAlign::CENTER));
+                        HAlign::CENTER, VAlign::CENTER));
 #endif
-            g_game.renderer->push2D(Quad(image, pos + glm::vec2(convertSize(20), size.y*0.5f-imageSize*0.5f),
-                        imageSize, imageSize, glm::vec4(1.f), btn.fadeInAlpha));
+            ui::rectBlur(ui::IMAGE, image, pos + glm::vec2(convertSize(20), size.y*0.5f-imageSize*0.5f),
+                    glm::vec2(imageSize), glm::vec4(1.f), btn.fadeInAlpha);
         }
         else
         {
             f32 alpha = (enabled ? (isSelected ? 1.f : 0.5f) : 0.25f) * btn.fadeInAlpha;
-            g_game.renderer->push2D(TextRenderable(font, text, pos + size * 0.5f,
-                        glm::vec3(1.f), alpha, btn.fadeInScale,
-                        HorizontalAlign::CENTER, VerticalAlign::CENTER));
+            ui::text(font, text, pos + size * 0.5f,
+                    glm::vec3(1.f), alpha, btn.fadeInScale, HAlign::CENTER, VAlign::CENTER);
         }
     };
     button.fadeInScale = 0.7f;
@@ -340,19 +338,22 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 p
             - convertSize(16)) * btn.fadeInScale;
 
         f32 alpha = (info.isEnabled ? (isSelected ? 1.f : 0.8f) : 0.25f) * btn.fadeInAlpha;
-        g_game.renderer->push2D(Quad(image, pos, imageSize.x, imageSize.y,
-                    glm::vec4(1.f), alpha, info.flipImage));
+        if (info.flipImage)
+        {
+            ui::rectUVBlur(ui::IMAGE, image, pos, imageSize, {1,1}, {0,0}, glm::vec4(1.f), alpha);
+        }
+        else
+        {
+            ui::rectBlur(ui::IMAGE, image, pos, imageSize, glm::vec4(1.f), alpha);
+        }
 
-        g_game.renderer->push2D(TextRenderable(font, text, {pos.x + imageSize.x*0.5f, textOffsetY1},
-                    glm::vec3(1.f), alpha, btn.fadeInScale,
-                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        ui::text(font, text, {pos.x + imageSize.x*0.5f, textOffsetY1},
+                    glm::vec3(1.f), alpha, btn.fadeInScale, HAlign::CENTER, VAlign::CENTER);
 
         if (info.maxUpgradeLevel == 0 || info.upgradeLevel < info.maxUpgradeLevel)
         {
-            g_game.renderer->push2D(TextRenderable(font, info.bottomText,
-                        {pos.x + imageSize.x*0.5f, textOffsetY2},
-                        glm::vec3(1.f), alpha, btn.fadeInScale,
-                        HorizontalAlign::CENTER, VerticalAlign::CENTER));
+            ui::text(font, info.bottomText, {pos.x + imageSize.x*0.5f, textOffsetY2},
+                    glm::vec3(1.f), alpha, btn.fadeInScale, HAlign::CENTER, VAlign::CENTER);
         }
 
         if (info.maxUpgradeLevel > 0)
@@ -366,18 +367,16 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, glm::vec2 p
                 glm::vec2 pos = center + convertSize(btn.pos) - (convertSize({btn.size.x, 0}) * 0.5f
                     - glm::vec2(0, sep * info.maxUpgradeLevel * 0.5f) + glm::vec2(0, sep * i)
                     - convertSize({ 12, -10 })) * btn.fadeInScale;
-                g_game.renderer->push2D(Quad(tex1, pos - size*0.5f * btn.fadeInScale,
-                            size * btn.fadeInScale, size * btn.fadeInScale,
-                            glm::vec4(1.f), btn.fadeInAlpha));
+                ui::rectBlur(ui::IMAGE, tex1, pos - size*0.5f * btn.fadeInScale,
+                            glm::vec2(size * btn.fadeInScale), glm::vec4(1.f), btn.fadeInAlpha);
             }
             for (i32 i=0; i<info.upgradeLevel; ++i)
             {
                 glm::vec2 pos = center + convertSize(btn.pos) - (convertSize({btn.size.x, 0}) * 0.5f
                     - glm::vec2(0, sep * info.maxUpgradeLevel * 0.5f) + glm::vec2(0, sep * i)
                     - convertSize({ 12, -10 })) * btn.fadeInScale;
-                g_game.renderer->push2D(Quad(tex2, pos - size*0.5f * btn.fadeInScale,
-                            size * btn.fadeInScale, size * btn.fadeInScale,
-                            glm::vec4(1.f), btn.fadeInAlpha));
+                ui::rectBlur(ui::IMAGE, tex2, pos - size*0.5f * btn.fadeInScale,
+                            glm::vec2(size * btn.fadeInScale), glm::vec4(1.f), btn.fadeInAlpha);
             }
         }
     };
@@ -409,10 +408,10 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
         auto info = getInfo();
 
         f32 alpha = (isSelected ? 1.f : 0.6f) * w.fadeInAlpha;
-        g_game.renderer->push2D(TextRenderable(font, text, pos + glm::vec2(size.x * 0.5f, -convertSize(8)),
-                    glm::vec3(1.f), alpha, w.fadeInScale, HorizontalAlign::CENTER, VerticalAlign::BOTTOM));
-        g_game.renderer->push2D(Quad(info.tex, pos, size.x, size.y,
-                    glm::vec4(info.color1, 1.f), glm::vec4(info.color2, 1.f), w.fadeInAlpha));
+        ui::text(font, text, pos + glm::vec2(size.x * 0.5f, -convertSize(8)),
+                    glm::vec3(1.f), alpha, w.fadeInScale, HAlign::CENTER, VAlign::BOTTOM);
+        ui::rectBlur(ui::IMAGE, info.tex, pos, size,
+                glm::vec4(info.color1, 1.f), glm::vec4(info.color2, 1.f), w.fadeInAlpha);
 
         if (isSelected)
         {
@@ -433,8 +432,8 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
         }
 
         f32 t = (info.val - info.min) / (info.max - info.min);
-        g_game.renderer->push2D(Quad(&g_res.white, pos + glm::vec2(t * size.x, 0.f), convertSize(4),
-                    size.y, glm::vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha));
+        ui::rectBlur(ui::IMAGE, &g_res.white, pos + glm::vec2(t * size.x, 0.f),
+                {convertSize(4), size.y}, glm::vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha);
     };
     w.fadeInScale = 0.7f;
     widgets.push_back(w);
@@ -460,33 +459,32 @@ Widget* Menu::addSelector(const char* text, const char* helpText, glm::vec2 pos,
         {
             f32 borderSize = convertSize(isSelected ? 5 : 2);
             glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
-            g_game.renderer->push2D(Quad(&g_res.white,
-                        pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                        borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
+            ui::rectBlur(ui::BORDER, &g_res.white, pos - borderSize, size + borderSize * 2,
+                        borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha);
         }
-        g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+        ui::rectBlur(ui::BG, &g_res.white, pos, size,
                 glm::vec4(glm::vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
-                w.fadeInAlpha));
-        g_game.renderer->push2D(TextRenderable(font, text,
+                w.fadeInAlpha);
+        ui::text(font, text,
                     pos + glm::vec2(convertSize(20.f), size.y * 0.5f),
                     glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
-                    HorizontalAlign::LEFT, VerticalAlign::CENTER));
-        g_game.renderer->push2D(TextRenderable(font, tstr(values[valueIndex]),
+                    HAlign::LEFT, VAlign::CENTER);
+        ui::text(font, tstr(values[valueIndex]),
                     pos + glm::vec2(size.x * 0.75f, size.y * 0.5f),
                     glm::vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
-                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+                    HAlign::CENTER, VAlign::CENTER);
 
         if (isSelected)
         {
             Texture* cheveron = g_res.getTexture("cheveron");
             f32 cheveronSize = convertSize(36);
             f32 offset = convertSize(150.f);
-            g_game.renderer->push2D(Quad(cheveron,
+            ui::rectBlur(ui::ICON, cheveron,
                     pos + glm::vec2(size.x*0.75f - offset - cheveronSize, size.y*0.5f - cheveronSize*0.5f),
-                    cheveronSize, cheveronSize, glm::vec4(1.f), w.fadeInAlpha * w.hover));
-            g_game.renderer->push2D(Quad(cheveron,
+                    glm::vec2(cheveronSize), glm::vec4(1.f), w.fadeInAlpha * w.hover);
+            ui::rectUVBlur(ui::ICON, cheveron,
                     pos + glm::vec2(size.x*0.75f + offset, size.y*0.5f - cheveronSize*0.5f),
-                    cheveronSize, cheveronSize, {1,0}, {0,1}, glm::vec4(1.f), w.fadeInAlpha * w.hover));
+                    glm::vec2(cheveronSize), {1,0}, {0,1}, glm::vec4(1.f), w.fadeInAlpha * w.hover);
 
             i32 dir = didChangeSelectionX();
             if (dir)
@@ -534,11 +532,10 @@ Widget* Menu::addHelpMessage(glm::vec2 pos)
             glm::vec2 size = textSize * widget.fadeInScale;
             glm::vec2 pos = convertSize(widget.pos) + center - size * 0.5f;
             f32 alpha = selectedWidget->hover * widget.fadeInAlpha;
-            g_game.renderer->push2D(Quad(&g_res.white,
-                        pos, size.x, size.y, glm::vec4(0,0,0,0.5f), alpha));
-            g_game.renderer->push2D(TextRenderable(font, selectedWidget->helpText,
+            ui::rectBlur(ui::BG, &g_res.white, pos, size, glm::vec4(0,0,0,0.5f), alpha);
+            ui::text(font, selectedWidget->helpText,
                         pos + size * 0.5f, glm::vec3(1.f), alpha, widget.fadeInScale,
-                        HorizontalAlign::CENTER, VerticalAlign::CENTER));
+                        HAlign::CENTER, VAlign::CENTER);
         }
     };
     w.flags = 0;
@@ -547,15 +544,14 @@ Widget* Menu::addHelpMessage(glm::vec2 pos)
 }
 
 Widget* Menu::addLabel(std::function<const char*()> getText, glm::vec2 pos, Font* font,
-        HorizontalAlign halign, VerticalAlign valign, glm::vec3 const& color, u32 flags)
+        HAlign halign, VAlign valign, glm::vec3 const& color, u32 flags)
 {
     Widget w;
     w.pos = pos;
     w.onRender = [=](Widget& widget, bool isSelected) {
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-        g_game.renderer->push2D(TextRenderable(font, getText(),
-                    center + convertSize(w.pos), color,
-                    widget.fadeInAlpha, widget.fadeInScale, halign, valign));
+        ui::text(font, getText(), center + convertSize(w.pos), color,
+                    widget.fadeInAlpha, widget.fadeInScale, halign, valign);
     };
     w.flags = flags;
     widgets.push_back(w);
@@ -571,11 +567,10 @@ Widget* Menu::addTitle(const char* text, glm::vec2 pos)
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         glm::vec2 pos = convertSize(widget.pos) + center;
         glm::vec2 boxSize = convertSize({5000, 90});
-        g_game.renderer->push2D(Quad(&g_res.white,
-                    pos-boxSize*0.5f, boxSize.x, boxSize.y, glm::vec4(0,0,0,0.5f), widget.fadeInAlpha));
-        g_game.renderer->push2D(TextRenderable(font, text,
-                    pos, glm::vec3(1.f), widget.fadeInAlpha, widget.fadeInScale,
-                    HorizontalAlign::CENTER, VerticalAlign::CENTER));
+        ui::rectBlur(-500, &g_res.white,
+                pos-boxSize*0.5f, boxSize, glm::vec4(0,0,0,0.5f), widget.fadeInAlpha);
+        ui::text(font, text, pos, glm::vec3(1.f),
+                widget.fadeInAlpha, widget.fadeInScale, HAlign::CENTER, VAlign::CENTER);
     };
     w.flags = 0;
     widgets.push_back(w);
@@ -675,45 +670,43 @@ void Menu::showNewChampionshipMenu()
             bool enabled = g_game.state.drivers.size() > i;
             if (enabled)
             {
-                g_game.renderer->push2D(Quad(&g_res.white,
-                            pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                            borderColor, (0.5f + btn.hover * 0.5f) * btn.fadeInAlpha));
-                g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                ui::rectBlur(ui::BORDER, &g_res.white,
+                            pos - borderSize, size + borderSize * 2,
+                            borderColor, (0.5f + btn.hover * 0.5f) * btn.fadeInAlpha);
+                ui::rectBlur(ui::BORDER, &g_res.white, pos, size,
                             glm::vec4(glm::vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f),
-                            btn.fadeInAlpha));
+                            btn.fadeInAlpha);
 
                 Font* font = &g_res.getFont("font", (u32)convertSize(38));
                 const char* text = tstr(g_game.state.drivers[i].playerName);
                 f32 textAlpha = isSelected ? 1.f : 0.5f;
-                g_game.renderer->push2D(TextRenderable(font, text,
+                ui::text(font, text,
                             pos + glm::vec2(convertSize(20), size.y * 0.5f),
                             glm::vec3(1.f), textAlpha * btn.fadeInAlpha, btn.fadeInScale,
-                            HorizontalAlign::LEFT, VerticalAlign::CENTER));
+                            HAlign::LEFT, VAlign::CENTER);
 
                 const char* icon = g_game.state.drivers[i].useKeyboard
                         ? "icon_keyboard" : "icon_controller";
                 f32 iconSize = convertSize(75);
                 f32 margin = convertSize(20);
-                g_game.renderer->push2D(Quad(g_res.getTexture(icon),
+                ui::rectBlur(ui::IMAGE, g_res.getTexture(icon),
                             pos + glm::vec2(size.x - iconSize - margin, size.y * 0.5f - iconSize * 0.5f),
-                            iconSize, iconSize, glm::vec4(1.f), btn.fadeInAlpha));
+                            glm::vec2(iconSize), glm::vec4(1.f), btn.fadeInAlpha);
 
                 btn.flags = WidgetFlags::SELECTABLE | WidgetFlags::NAVIGATE_VERTICAL;
 
             }
             else
             {
-                g_game.renderer->push2D(Quad(&g_res.white,
-                            pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                            borderColor, 0.35f * btn.fadeInAlpha));
-                g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
-                            glm::vec4(glm::vec3(0.f), 0.3f), btn.fadeInAlpha));
+                ui::rectBlur(ui::BORDER, &g_res.white, pos - borderSize,
+                        size + borderSize * 2, borderColor, 0.35f * btn.fadeInAlpha);
+                ui::rectBlur(ui::BG, &g_res.white, pos, size,
+                            glm::vec4(glm::vec3(0.f), 0.3f), btn.fadeInAlpha);
                 Font* font = &g_res.getFont("font", (u32)convertSize(30));
                 f32 textAlpha = 0.3f;
-                g_game.renderer->push2D(TextRenderable(font, "Empty Player Slot",
-                            pos + glm::vec2(convertSize(20), size.y * 0.5f),
+                ui::text(font, "Empty Player Slot", pos + glm::vec2(convertSize(20), size.y * 0.5f),
                             glm::vec3(1.f), textAlpha * btn.fadeInAlpha, btn.fadeInScale,
-                            HorizontalAlign::LEFT, VerticalAlign::CENTER));
+                            HAlign::LEFT, VAlign::CENTER);
                 btn.flags = 0;
             }
         };
@@ -831,28 +824,27 @@ void Menu::showChampionshipMenu()
                 glm::vec2 pos = convertSize(w.pos) + center - size * 0.5f;
                 f32 borderSize = convertSize(isSelected ? 5 : 2);
                 glm::vec4 borderColor = glm::mix(COLOR_NOT_SELECTED, COLOR_SELECTED, w.hover);
-                g_game.renderer->push2D(Quad(&g_res.white,
-                            pos - borderSize, size.x + borderSize * 2, size.y + borderSize * 2,
-                            borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha));
-                g_game.renderer->push2D(Quad(&g_res.white, pos, size.x, size.y,
+                ui::rectBlur(ui::BORDER, &g_res.white, pos-borderSize, size+borderSize*2,
+                            borderColor, (0.5f + w.hover * 0.5f) * w.fadeInAlpha);
+                ui::rectBlur(ui::BG, &g_res.white, pos, size,
                         glm::vec4(glm::vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
-                        w.fadeInAlpha));
+                        w.fadeInAlpha);
 
                 f32 iconSize = vehicleIconSize * w.fadeInScale;
-                g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
-                            pos, iconSize, iconSize, glm::vec3(1.f), w.fadeInAlpha, false, true));
+                ui::rectUVBlur(ui::IMAGE, rw.getTexture(), pos, glm::vec2(iconSize), {1,1}, {0,0},
+                        glm::vec4(1.f), w.fadeInAlpha);
 
                 f32 textAlpha = (isSelected ? 1.f : 0.5f) * w.fadeInAlpha;
                 f32 margin = convertSize(15.f);
                 Font* font = &g_res.getFont("font", (u32)convertSize(34));
-                g_game.renderer->push2D(TextRenderable(font, tstr(driver.playerName, "'s Garage"),
+                ui::text(font, tstr(driver.playerName, "'s Garage"),
                             pos + glm::vec2(iconSize + margin, margin),
-                            glm::vec3(1.f), textAlpha, w.fadeInScale));
+                            glm::vec3(1.f), textAlpha, w.fadeInScale);
 
                 Font* fontSmall = &g_res.getFont("font", (u32)convertSize(28));
-                g_game.renderer->push2D(TextRenderable(fontSmall, tstr("Credits: ", driver.credits),
+                ui::text(fontSmall, tstr("Credits: ", driver.credits),
                             pos + glm::vec2(iconSize + margin, margin + convertSize(35.f)),
-                            glm::vec3(1.f), textAlpha, w.fadeInScale));
+                            glm::vec3(1.f), textAlpha, w.fadeInScale);
 
             };
             w.onSelect = [playerIndex, this]{
@@ -900,10 +892,10 @@ void Menu::showChampionshipMenu()
     addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f, false);
     Font* bigFont = &g_res.getFont("font_bold", (u32)convertSize(110));
     Widget* label = addLabel([]{ return tstr("League ", (char)('A' + g_game.state.currentLeague)); },
-            {0, -370}, bigFont, HorizontalAlign::CENTER, VerticalAlign::CENTER);
+            {0, -370}, bigFont, HAlign::CENTER, VAlign::CENTER);
     Font* mediumFont = &g_res.getFont("font", (u32)convertSize(60));
     addLabel([]{ return tstr("Race ", g_game.state.currentRace + 1, "/10"); }, {0, -290}, mediumFont,
-            HorizontalAlign::CENTER, VerticalAlign::CENTER);
+            HAlign::CENTER, VAlign::CENTER);
 
     addLogic([label]{
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
@@ -912,8 +904,8 @@ void Menu::showChampionshipMenu()
         f32 size = trackPreviewSize * label->fadeInScale;
         glm::vec2 trackPreviewPos = center + convertSize({ -450, -350 }) - size * 0.5f;
         Texture* trackTex = g_game.currentScene->getTrackPreview2D().getTexture();
-        g_game.renderer->push2D(QuadRenderable(trackTex, trackPreviewPos,
-                    size, size, {0,1}, {1,0}, glm::vec3(1.f), label->fadeInAlpha));
+        ui::rectUV(ui::IMAGE, trackTex, trackPreviewPos,
+                glm::vec2(size), {0,1}, {1,0}, glm::vec3(1.f), label->fadeInAlpha);
     });
 }
 
@@ -940,7 +932,7 @@ void Menu::createVehiclePreview()
     addLabel([this]{ return tstr("CREDITS: ", garage.driver->credits); },
             {-260 + vehiclePreviewSize.x * 0.5f
             - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375}, font2,
-            HorizontalAlign::CENTER, VerticalAlign::CENTER, COLOR_SELECTED);
+            HAlign::CENTER, VAlign::CENTER, COLOR_SELECTED);
 
     static RenderWorld rw;
 
@@ -991,37 +983,32 @@ void Menu::createVehiclePreview()
             stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
             statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
 
-            g_game.renderer->push2D(TextRenderable(tinyfont, stats[i].name,
-                        statsPos + glm::vec2(0, i * barSep),
-                        glm::vec3(1.f), box->fadeInAlpha));
+            ui::text(tinyfont, stats[i].name, statsPos + glm::vec2(0, i * barSep),
+                        glm::vec3(1.f), box->fadeInAlpha);
 
-            g_game.renderer->push2D(Quad(&g_res.white,
-                        statsPos + glm::vec2(0, i * barSep + barOffset),
-                        maxBarWidth, barHeight, glm::vec4(0,0,0,0.9f), box->fadeInAlpha));
+            ui::rectBlur(ui::ICON-1, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
+                        glm::vec2(maxBarWidth), glm::vec4(0,0,0,0.9f), box->fadeInAlpha);
 
             f32 barWidth = maxBarWidth * stats[i].value;
             f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
 
             if (upgradeBarWidth - barWidth > 0.01f)
             {
-                g_game.renderer->push2D(Quad(&g_res.white,
-                            statsPos + glm::vec2(0, i * barSep + barOffset),
-                            upgradeBarWidth, barHeight, glm::vec4(0.01f,0.7f,0.01f,0.9f),
-                            box->fadeInAlpha));
+                ui::rectBlur(ui::ICON+1, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
+                        glm::vec2(upgradeBarWidth, barHeight),
+                        glm::vec4(0.01f,0.7f,0.01f,0.9f), box->fadeInAlpha);
             }
 
             if (upgradeBarWidth - barWidth < -0.01f)
             {
-                g_game.renderer->push2D(Quad(&g_res.white,
-                            statsPos + glm::vec2(0, i * barSep + barOffset),
-                            upgradeBarWidth, barHeight, glm::vec4(0.8f, 0.01f, 0.01f, 0.9f),
-                            box->fadeInAlpha));
+                ui::rectBlur(ui::ICON+2, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
+                            glm::vec2(upgradeBarWidth, barHeight), glm::vec4(0.8f, 0.01f, 0.01f, 0.9f),
+                            box->fadeInAlpha);
             }
 
-            g_game.renderer->push2D(Quad(&g_res.white,
-                        statsPos + glm::vec2(0, i * barSep + barOffset),
-                        glm::min(upgradeBarWidth, barWidth), barHeight, glm::vec4(glm::vec3(0.7f), 1.f),
-                        box->fadeInAlpha));
+            ui::rectBlur(ui::ICON, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
+                        glm::vec2(glm::min(upgradeBarWidth, barWidth), barHeight),
+                        glm::vec4(glm::vec3(0.7f), 1.f), box->fadeInAlpha);
         }
     });
 
@@ -1046,8 +1033,8 @@ void Menu::createVehiclePreview()
         glm::vec2 size = vehicleIconSize * w.fadeInScale;
         glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         glm::vec2 pos = center + convertSize({-260, -150}) - size * 0.5f;
-        g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
-                    pos, size.x, size.y, glm::vec3(1.f), w.fadeInAlpha, false, true));
+        ui::rectUVBlur(ui::IMAGE, rw.getTexture(), pos, size, {1,1}, {0,0},
+                glm::vec4(1.f), w.fadeInAlpha);
     });
 }
 
@@ -1357,29 +1344,29 @@ void Menu::createCarLotMenu()
 
             if (garage.driver->vehicleIndex == -1)
             {
-                g_game.renderer->push2D(TextRenderable(fontBold,
+                ui::text(fontBold,
                     tstr("PRICE: ", g_vehicles[garage.previewVehicleIndex]->price),
                     center + convertSize(pos), glm::vec3(1.f),
-                    w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                    w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
             }
             else
             {
                 if (garage.driver->vehicleIndex != garage.previewVehicleIndex)
                 {
-                    g_game.renderer->push2D(TextRenderable(font,
+                    ui::text(font,
                         tstr("PRICE: ", g_vehicles[garage.previewVehicleIndex]->price),
                         center + convertSize(pos), glm::vec3(0.6f),
-                        w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                        w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
 
-                    g_game.renderer->push2D(TextRenderable(font,
+                    ui::text(font,
                         tstr("TRADE: ", garage.driver->getVehicleValue()),
                         center + convertSize(pos + glm::vec2(0, 24)), glm::vec3(0.6f),
-                        w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                        w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
 
-                    g_game.renderer->push2D(TextRenderable(fontBold,
+                    ui::text(fontBold,
                         tstr("TOTAL: ", g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue()),
                         center + convertSize(pos + glm::vec2(0, 48)), glm::vec3(1.f),
-                        w.fadeInAlpha, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                        w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
                 }
             }
         };
@@ -1542,13 +1529,13 @@ void Menu::championshipStandings()
     Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize720(26));
     Font* smallfont = &g_res.getFont("font", (u32)convertSize720(16));
 
-    g_game.renderer->push2D(TextRenderable(bigfont, "Championship Standings",
+    ui::text(bigfont, "Championship Standings",
                 glm::vec2(cw, menuPos.y + convertSize720i(32)), glm::vec3(1.f),
-                1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+                1.f, 1.f, HAlign::CENTER, VAlign::TOP);
 
-    g_game.renderer->push2D(TextRenderable(smallfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
+    ui::text(smallfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
                 glm::vec2(cw, menuPos.y + convertSize720i(58)), glm::vec3(1.f),
-                1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+                1.f, 1.f, HAlign::CENTER, VAlign::TOP);
 
     static RenderWorld renderWorlds[10];
 
@@ -1573,14 +1560,15 @@ void Menu::championshipStandings()
 
         RenderWorld& rw = renderWorlds[i];
         rw.setName(tstr("Vehicle Icon ", i));
-        rw.setSize(vehicleIconSize, vehicleIconSize);
+        rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
         drawSimple(&rw, quadMesh, &g_res.white, glm::scale(glm::mat4(1.f), glm::vec3(20.f)), glm::vec3(0.02f));
         if (driver->vehicleIndex != -1)
         {
             g_vehicles[driver->vehicleIndex]->render(&rw,
                 glm::translate(glm::mat4(1.f),
                     glm::vec3(0, 0, driver->getTuning().getRestOffset())) *
-                glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+                //glm::rotate(glm::mat4(1.f), (f32)getTime(), glm::vec3(0, 0, 1)),
+                glm::mat4(1.f),
                 nullptr, *driver->getVehicleConfig());
         }
         rw.setViewportCount(1);
@@ -1591,21 +1579,20 @@ void Menu::championshipStandings()
 
         glm::vec2 pos = menuPos + glm::vec2(0.f,
                         convertSize720i(100) + i * convertSize720(48));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(i + 1),
+        ui::text(smallfont, tstr(i + 1),
                     pos + glm::vec2(convertSize720i(columnOffset[0]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::CENTER);
 
-        g_game.renderer->push2D(QuadRenderable(rw.getTexture(),
-                    pos + glm::vec2(convertSize720i(columnOffset[1]),
-                        -glm::floor(vehicleIconSize/2)),
-                    (f32)vehicleIconSize, (f32)vehicleIconSize, glm::vec3(1.f), 1.f, false, true));
+        ui::rectUV(ui::IMAGE, rw.getTexture(),
+                    pos + glm::vec2(convertSize720i(columnOffset[1]), -glm::floor(vehicleIconSize/2)),
+                    {1,1}, {0,0}, glm::vec2(vehicleIconSize), glm::vec3(1.f), 1.f);
 
-        g_game.renderer->push2D(TextRenderable(smallfont, driver->playerName.c_str(),
+        ui::text(smallfont, driver->playerName.c_str(),
                     pos + glm::vec2(convertSize720i(columnOffset[2]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(driver->leaguePoints),
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::CENTER);
+        ui::text(smallfont, tstr(driver->leaguePoints),
                     pos + glm::vec2(convertSize720i(columnOffset[3]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::CENTER));
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::CENTER);
     }
 
     if (didSelect())
@@ -1641,14 +1628,13 @@ void Menu::raceResults()
     Font* smallfont = &g_res.getFont("font", (u32)convertSize720(16));
     Font* tinyfont = &g_res.getFont("font", (u32)convertSize720(14));
 
-    g_game.renderer->push2D(TextRenderable(bigfont, "Race Results",
+    ui::text(bigfont, "Race Results",
                 glm::vec2(cw, menuPos.y + convertSize720i(32)), glm::vec3(1.f),
-                1.f, 1.f, HorizontalAlign::CENTER, VerticalAlign::TOP));
+                1.f, 1.f, HAlign::CENTER, VAlign::TOP);
 
-    Texture* white = &g_res.white;
-    g_game.renderer->push2D(QuadRenderable(white,
+    ui::rect(ui::BG, nullptr,
                 menuPos + glm::vec2(convertSize720(8), convertSize720(64)),
-                w - convertSize720(16), convertSize720(19), glm::vec3(0.f), 0.6f));
+                glm::vec2(w - convertSize720(16), convertSize720(19)), glm::vec3(0.f), 0.6f);
 
     f32 columnOffset[] = {
         32, 90, 225, 315, 400, 460, 520
@@ -1668,38 +1654,38 @@ void Menu::raceResults()
 
     for (u32 i=0; i<maxColumn; ++i)
     {
-        g_game.renderer->push2D(TextRenderable(tinyfont, columnTitle[i],
+        ui::text(tinyfont, columnTitle[i],
                     menuPos + glm::vec2(convertSize720i(columnOffset[i]), convertSize720(70)),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
     }
 
     for (auto& row : g_game.currentScene->getRaceResults())
     {
         glm::vec2 pos = menuPos + glm::vec2(0.f,
                         convertSize720i(100) + row.placement * convertSize720(24));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.placement + 1),
+        ui::text(smallfont, tstr(row.placement + 1),
                     pos + glm::vec2(convertSize720i(columnOffset[0]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
-        g_game.renderer->push2D(TextRenderable(smallfont, row.driver->playerName.c_str(),
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
+        ui::text(smallfont, row.driver->playerName.c_str(),
                     pos + glm::vec2(convertSize720i(columnOffset[1]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.accidents),
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
+        ui::text(smallfont, tstr(row.statistics.accidents),
                     pos + glm::vec2(convertSize720i(columnOffset[2]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.destroyed),
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
+        ui::text(smallfont, tstr(row.statistics.destroyed),
                     pos + glm::vec2(convertSize720i(columnOffset[3]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.statistics.frags),
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
+        ui::text(smallfont, tstr(row.statistics.frags),
                     pos + glm::vec2(convertSize720i(columnOffset[4]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
-        g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getBonus()),
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
+        ui::text(smallfont, tstr(row.getBonus()),
                     pos + glm::vec2(convertSize720i(columnOffset[5]), 0),
-                    glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                    glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
-            g_game.renderer->push2D(TextRenderable(smallfont, tstr(row.getCreditsEarned()),
+            ui::text(smallfont, tstr(row.getCreditsEarned()),
                         pos + glm::vec2(convertSize720i(columnOffset[6]), 0),
-                        glm::vec3(1.f), 1.f, 1.f, HorizontalAlign::LEFT, VerticalAlign::TOP));
+                        glm::vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
         }
     }
 
@@ -2143,11 +2129,8 @@ void Menu::showPauseMenu()
 void Menu::drawBox(glm::vec2 pos, glm::vec2 size)
 {
     f32 border = glm::floor(convertSize720(3));
-    g_game.renderer->push2D(QuadRenderable(&g_res.white,
-                pos - border, size.x + border * 2, size.y + border * 2,
-                glm::vec3(1.f), 0.4f, false));
-    g_game.renderer->push2D(QuadRenderable(&g_res.white,
-                pos, size.x, size.y, glm::vec3(0.f), 0.8f, true));
+    ui::rectBlur(ui::BORDER, nullptr, pos-border, size+border*2, glm::vec4(glm::vec3(1.f), 0.4f), 1.f);
+    ui::rectBlur(ui::BG, nullptr, pos, size, glm::vec4(glm::vec3(0.f), 0.8f), 1.f);
 }
 
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
@@ -2157,11 +2140,11 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
         f32 h = convertSize720(tex->height * 0.5f);
-        renderer->push2D(QuadRenderable(tex, glm::vec2(0), w, h, glm::vec2(0.f, 0.999f),
-                    glm::vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.001f)));
-        renderer->push2D(QuadRenderable(tex, glm::vec2(0, g_game.windowHeight-h), w, h,
+        ui::rectUVBlur(-200, tex, glm::vec2(0), {w,h}, glm::vec2(0.f, 0.999f),
+                    glm::vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.001f));
+        ui::rectUVBlur(-200, tex, glm::vec2(0, g_game.windowHeight-h), {w,h},
                     glm::vec2(0.f, 0.001f),
-                    glm::vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.999f)));
+                    glm::vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.999f));
     }
 
     switch (menuMode)
@@ -2289,8 +2272,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (blackFadeAlpha > 0.f)
     {
-        g_game.renderer->push2D(Quad(&g_res.white, {0,0}, g_game.windowWidth, g_game.windowHeight,
-                    glm::vec4(0,0,0,1), blackFadeAlpha), 100);
+        ui::rectBlur(10000, &g_res.white, {0,0}, {g_game.windowWidth, g_game.windowHeight},
+                    glm::vec4(0,0,0,1), blackFadeAlpha);
     }
 
     if (fadeIn)

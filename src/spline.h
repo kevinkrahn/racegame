@@ -1,7 +1,6 @@
 #pragma once
 
 #include "entity.h"
-#include "renderable.h"
 #include "material.h"
 #include "resources.h"
 
