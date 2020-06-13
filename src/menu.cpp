@@ -987,7 +987,7 @@ void Menu::createVehiclePreview()
                         glm::vec3(1.f), box->fadeInAlpha);
 
             ui::rectBlur(ui::ICON-1, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
-                        glm::vec2(maxBarWidth), glm::vec4(0,0,0,0.9f), box->fadeInAlpha);
+                        glm::vec2(maxBarWidth, barHeight), glm::vec4(0,0,0,0.9f), box->fadeInAlpha);
 
             f32 barWidth = maxBarWidth * stats[i].value;
             f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
@@ -1006,7 +1006,7 @@ void Menu::createVehiclePreview()
                             box->fadeInAlpha);
             }
 
-            ui::rectBlur(ui::ICON, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
+            ui::rectBlur(ui::ICON+3, &g_res.white, statsPos + glm::vec2(0, i * barSep + barOffset),
                         glm::vec2(glm::min(upgradeBarWidth, barWidth), barHeight),
                         glm::vec4(glm::vec3(0.7f), 1.f), box->fadeInAlpha);
         }
