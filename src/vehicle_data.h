@@ -20,9 +20,10 @@ struct ComputerDriverData
     f32 aggression = 1.f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
     f32 awareness = 1.f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
     f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
-    u32 colorIndex = 0;
+    glm::vec3 color;
     u32 vehicleIndex = 0;
-    i32 decalIndex = -1;
+    i32 wrapIndex = -1;
+    glm::vec4 wrapColor;
 };
 
 struct RegisteredWeapon
@@ -136,83 +137,11 @@ struct VehicleTuning
     VehicleStats computeVehicleStats();
 };
 
-glm::vec3 g_vehicleColors[] = {
-    srgb(0.91f, 0.91f, 0.91f), // white
-    srgb(0.75f, 0.01f, 0.01f), // red
-    srgb(0.03f, 0.03f, 0.03f), // black
-    srgb(0.01f, 0.75f, 0.01f), // green
-    srgb(0.01f, 0.01f, 0.85f), // blue
-    srgb(0.95f, 0.47f, 0.02f), // orange
-    srgb(0.05f, 0.22f, 0.07f), // dark green
-    srgb(0.01f, 0.01f, 0.3f), // dark blue
-    srgb(0.78f, 0.01f, 0.78f), // magenta
-    srgb(0.01f, 0.7f, 0.8f), // aruba
-    srgb(0.9f, 0.9f, 0.f), // yellow
-    srgb(0.42f, 0.015f, 0.015f), // maroon
-    srgb(0.66f, 0.47f, 0.27f), // light brown
-    srgb(0.2f, 0.1f, 0.06f), // dark brown
-};
-
-std::string g_vehicleColorNames[ARRAY_SIZE(g_vehicleColors)] = {
-    "White",
-    "Red",
-    "Black",
-    "Green",
-    "Blue",
-    "Orange",
-    "Dark Green",
-    "Dark Blue",
-    "Magenta",
-    "Aruba",
-    "Yellow",
-    "Maroon",
-    "Light Brown",
-    "Dark Brown",
-};
-
-u32 findColorIndexByName(const char* name)
-{
-    for (u32 i=0; i<ARRAY_SIZE(g_vehicleColorNames); ++i)
-    {
-        if (name == g_vehicleColorNames[i])
-        {
-            return i;
-        }
-    }
-    error("No color exists with name: \"", name, "\"\n");
-    return 0;
-}
-
-const char* g_decalTextures[] = {
-    "vd_two",
-    "vd_six",
-    "vd_stripe",
-    "vd_stripes",
-    "vd_stripes2",
-    "vd_flames",
-};
-
-glm::quat FACING_DOWN = glm::rotate(glm::identity<glm::quat>(), PI * 0.5f, glm::vec3(0, 1, 0));
-glm::quat FACING_RIGHT = glm::rotate(glm::identity<glm::quat>(), PI * 0.5f, glm::vec3(0, 0, 1));
-glm::quat FACING_LEFT = glm::rotate(glm::identity<glm::quat>(), PI * -0.5f, glm::vec3(0, 0, 1));
-struct VehicleDecal
-{
-    glm::vec3 position = { 0, 0, 2 };
-    glm::vec3 scale = { 4, 3, 3 };
-    glm::quat rotation = glm::identity<glm::quat>();
-    glm::vec4 color = { 1, 1, 1, 1 };
-    u32 textureIndex = 0;
-    Decal decal;
-    bool dirty = true;
-
-    void serialize(Serializer& s)
-    {
-        s.field(position);
-        s.field(rotation);
-        s.field(scale);
-        s.field(color);
-        s.field(textureIndex);
-    }
+const char* g_wrapTextures[] = {
+    "p_flames",
+    "p_double_stripes",
+    "p_splat",
+    "p_test",
 };
 
 struct VehicleConfiguration
@@ -221,13 +150,16 @@ struct VehicleConfiguration
     glm::vec3 hsv = glm::vec3(0.f, 0.f, 0.95f);
     i32 paintTypeIndex = 0;
 
+    i32 wrapTextureIndex = -1;
+    glm::vec2 wrapOffset = glm::vec2(0.f);
+    glm::vec4 wrapColor = glm::vec4(0.f);
+
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
     i32 rearWeaponIndices[3] = { -1, -1, -1 };
     u32 rearWeaponUpgradeLevel[3] = { 0, 0, 0 };
     i32 specialAbilityIndex = -1;
     // TODO: should the special ability also have an upgrade level?
-    SmallArray<VehicleDecal> decals;
 
     struct Upgrade
     {
@@ -251,7 +183,9 @@ struct VehicleConfiguration
         s.field(color);
         s.field(hsv);
         s.field(paintTypeIndex);
-        s.field(decals);
+        s.field(wrapTextureIndex);
+        s.field(wrapOffset);
+        s.field(wrapColor);
         s.fieldName("frontWeapon0", frontWeaponIndices[0]);
         s.fieldName("frontWeapon1", frontWeaponIndices[1]);
         s.fieldName("frontWeapon2", frontWeaponIndices[2]);
@@ -326,7 +260,6 @@ struct VehicleData
 
     Array<VehicleCollisionsMesh> collisionMeshes;
     Array<PerformanceUpgrade> availableUpgrades;
-    SmallArray<VehicleDecal> availableDecals;
 
     const char* name ="";
     const char* description ="";
@@ -383,7 +316,7 @@ void registerVehicle()
 }
 
 void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear,
-    const char* colorName, const char* vehicleName, i32 decalIndex=-1)
+    glm::vec3 const& color, const char* vehicleName, i32 wrapIndex=-1, glm::vec4 const& wrapColor=glm::vec4(1.f))
 {
     g_ais.push_back({
         name,
@@ -391,9 +324,10 @@ void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awarenes
         aggression,
         awareness,
         fear,
-        findColorIndexByName(colorName),
+        color,
         findVehicleIndexByName(vehicleName),
-        decalIndex,
+        wrapIndex,
+        wrapColor,
     });
 }
 

@@ -16,10 +16,6 @@ public:
 
         loadModelData("vehicle_stationwagon");
         initStandardUpgrades();
-
-        availableDecals.push_back({ {-0.5f,0,2}, {4,3,3}, FACING_DOWN, {1,1,1,1}, 0 });
-        availableDecals.push_back({ {-0.5f,0,2}, {4,3,3}, FACING_DOWN, {1,1,1,1}, 1 });
-        availableDecals.push_back({ {0,0,2}, {8,7,7}, FACING_DOWN, {1,1,1,1}, 2 });
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override

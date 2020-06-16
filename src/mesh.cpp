@@ -352,3 +352,8 @@ void Mesh::calculateVertexFormat()
         vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
     }
 }
+
+void Mesh::computeBoundingBox()
+{
+    // TODO
+}

@@ -61,7 +61,6 @@ struct MaterialRenderData
     f32 reflectionStrength, reflectionLod, reflectionBias;
     f32 alphaCutoff, shadowAlphaCutoff;
     f32 windAmount;
-    glm::vec4 shield;
     u32 pickValue;
 };
 
@@ -200,10 +199,31 @@ void Material::drawHighlight(RenderWorld* rw, glm::mat4 const& transform, Mesh* 
     rw->highlightPass(depthShaderHandle, { d, render, stencil, cameraIndex });
 }
 
-void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
-        u8 stencil, glm::vec4 const& shield)
+struct VehicleRenderData
 {
-    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+#ifndef NDEBUG
+    Material* material = nullptr;
+#endif
+    GLuint vao;
+    u32 indexCount;
+    glm::mat4 worldTransform;
+    glm::mat3 normalTransform;
+    glm::vec3 color;
+    glm::vec3 emission;
+    f32 fresnelBias, fresnelScale, fresnelPower;
+    f32 specularPower, specularStrength;
+    f32 reflectionStrength, reflectionLod, reflectionBias;
+    glm::vec4 shield;
+    GLuint wrapTexture;
+    glm::vec2 wrapOffset;
+    glm::vec4 wrapColor;
+};
+
+void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
+        u8 stencil, glm::vec4 const& shield, Texture* wrapTexture, glm::vec2 const& wrapOffset,
+        glm::vec4 const& wrapColor)
+{
+    VehicleRenderData* d = g_game.tempMem.bump<VehicleRenderData>();
 #ifndef NDEBUG
     d->material = this;
 #endif
@@ -211,8 +231,6 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
     d->normalTransform = glm::inverseTranspose(glm::mat3(transform));
-    d->textureColor = textureColorHandle;
-    d->textureNormal = textureNormalHandle;
     d->color = color;
     d->emission = emit * emitPower;
     d->fresnelBias = fresnelBias;
@@ -224,11 +242,13 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->reflectionLod = reflectionLod;
     d->reflectionBias = reflectionBias;
     d->shield = shield;
+    d->wrapTexture = wrapTexture->handle,
+    d->wrapOffset = wrapOffset;
+    d->wrapColor = wrapColor;
 
     auto renderOpaque = [](void* renderData) {
-        MaterialRenderData* d = (MaterialRenderData*)renderData;
-        glBindTextureUnit(0, d->textureColor);
-        glBindTextureUnit(5, d->textureNormal);
+        VehicleRenderData* d = (VehicleRenderData*)renderData;
+        glBindTextureUnit(0, d->wrapTexture);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
         glUniform3fv(2, 1, (GLfloat*)&d->color);
@@ -236,17 +256,17 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
         glUniform3f(4, d->specularPower, d->specularStrength, 0.f);
         glUniform3fv(6, 1, (GLfloat*)&d->emission);
         glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
-        glUniform1f(8, 0.f);
         glUniform4fv(10, 1, (GLfloat*)&d->shield);
+        glUniform2f(11, d->wrapOffset.x, d->wrapOffset.y);
+        glUniform4fv(12, 1, (GLfloat*)&d->wrapColor);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };
 
     auto renderDepth = [](void* renderData) {
-        MaterialRenderData* d = (MaterialRenderData*)renderData;
+        VehicleRenderData* d = (VehicleRenderData*)renderData;
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
-        glUniform1f(8, 0.f);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };

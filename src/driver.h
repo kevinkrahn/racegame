@@ -44,7 +44,7 @@ struct Driver
     }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-            i32 controllerID=0, i32 vehicleIndex=-1, i32 colorIndex=0, i32 aiIndex=-1);
+            i32 controllerID=0, i32 vehicleIndex=-1, i32 aiIndex=-1);
 
     Driver() = default;
     Driver(Driver&& other) = default;

@@ -16,10 +16,6 @@ public:
 
         loadModelData("vehicle_coolcar");
         initStandardUpgrades();
-
-        availableDecals.push_back({ {0,0,2}, {7,7,7}, FACING_DOWN, {0.94f,0.45f,0.02f,0.5f}, 3 });
-        availableDecals.push_back({ {0.4f,-2,0}, {10,1.7f,1.7f}, FACING_RIGHT, {0,0,1,1}, 4 });
-        availableDecals.push_back({ {0,0.2f,2}, {8,2.1f,8}, FACING_DOWN, {1,1,1,1}, 2 });
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override

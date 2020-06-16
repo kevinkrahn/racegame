@@ -2,18 +2,13 @@
 #include "resources.h"
 
 Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-        i32 controllerID, i32 vehicleIndex, i32 colorIndex, i32 aiIndex)
+        i32 controllerID, i32 vehicleIndex, i32 aiIndex)
 {
     this->hasCamera = hasCamera;
     this->vehicleIndex = vehicleIndex;
     this->useKeyboard = useKeyboard;
     this->controllerID = controllerID;
     this->isPlayer = isPlayer;
-
-    if (vehicleIndex != -1)
-    {
-        vehicleConfig.color = g_vehicleColors[colorIndex];
-    }
 
     this->aiIndex = aiIndex;
     if (aiIndex != -1 && !isPlayer)
@@ -32,13 +27,10 @@ void Driver::aiUpgrades(RandomSeries& series)
 
     if (vehicleIndex == -1)
     {
-        vehicleConfig.color = g_vehicleColors[ai.colorIndex];
+        vehicleConfig.color = ai.color;
         vehicleIndex = (i32)ai.vehicleIndex;
-        if (ai.decalIndex != -1
-                && (i32)g_vehicles[vehicleIndex]->availableDecals.size() > ai.decalIndex)
-        {
-            vehicleConfig.decals.push_back(g_vehicles[vehicleIndex]->availableDecals[ai.decalIndex]);
-        }
+        vehicleConfig.wrapTextureIndex = ai.wrapIndex;
+        vehicleConfig.wrapColor = ai.wrapIndex != -1 ? ai.wrapColor : glm::vec4(0.f);
         credits -= g_vehicles[vehicleIndex]->price;
         AI_DEBUG_PRINT(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');
     }

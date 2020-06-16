@@ -17,7 +17,9 @@ layout(location = 1) out vec2 outTexCoord;
 layout(location = 2) out vec3 outWorldPosition;
 layout(location = 3) out vec3 outShadowCoord;
 layout(location = 4) out vec3 outColor;
+#if defined VEHICLE
 layout(location = 5) out vec3 outLocalPosition;
+#endif
 #if defined NORMAL_MAP
 layout(location = 6) out mat3 outTBN;
 #endif
@@ -25,7 +27,9 @@ layout(location = 6) out mat3 outTBN;
 void main()
 {
     outWorldPosition = (worldMatrix * vec4(attrPosition, 1.0)).xyz;
+#if !defined VEHICLE
     outWorldPosition.x += sin(outWorldPosition.x + outWorldPosition.y * 0.5f + outWorldPosition.z * 0.2f + time * 0.8f) * windAmount * attrTexCoord.y;
+#endif
     //outWorldPosition.x += sin(outWorldPosition.x * 0.5f + outWorldPosition.y * 0.1f + outWorldPosition.z * 0.25f + time * 0.2f) * 0.15f * windAmount * attrTexCoord.y;
     gl_Position = cameraViewProjection * vec4(outWorldPosition, 1.0);
 
@@ -37,7 +41,9 @@ void main()
     outNormal = normalize(normalMatrix * attrNormal);
     outShadowCoord = (shadowViewProjectionBias * vec4(outWorldPosition, 1.0)).xyz;
     outColor = attrColor;
+#if defined VEHICLE
     outLocalPosition = attrPosition;
+#endif
 #if defined NORMAL_MAP
     vec3 normalWorldSpace    = normalize(normalMatrix * attrNormal);
     vec3 tangentWorldSpace   = normalize(normalMatrix * attrTangent.xyz);
@@ -63,7 +69,9 @@ layout(location = 1) in vec2 inTexCoord;
 layout(location = 2) in vec3 inWorldPosition;
 layout(location = 3) in vec3 inShadowCoord;
 layout(location = 4) in vec3 inColor;
+#if defined VEHICLE
 layout(location = 5) in vec3 inLocalPosition;
+#endif
 #if defined NORMAL_MAP
 layout(location = 6) in mat3 inTBN;
 #endif
@@ -74,7 +82,12 @@ layout(location = 4) uniform vec3 specular; // x: power, y: strength
 layout(location = 5) uniform float minAlpha;
 layout(location = 6) uniform vec3 emit;
 layout(location = 7) uniform vec3 reflection;
+
+#if defined VEHICLE
 layout(location = 10) uniform vec4 shield;
+layout(location = 11) uniform vec2 wrapOffset;
+layout(location = 12) uniform vec4 wrapColor;
+#endif
 
 layout(binding = 0) uniform sampler2D texSampler;
 #if defined NORMAL_MAP
@@ -83,12 +96,14 @@ layout(binding = 5) uniform sampler2D normalSampler;
 
 void main()
 {
+#if !defined VEHICLE
 #if defined ALPHA_DISCARD || !defined DEPTH_ONLY
     vec4 tex = texture(texSampler, inTexCoord);
 #endif
 
 #if defined ALPHA_DISCARD
     if (tex.a < minAlpha) { discard; }
+#endif
 #endif
 
 #if !defined DEPTH_ONLY
@@ -100,10 +115,53 @@ void main()
     normal = normal * vec3(1.0, 1.0, normalMapStrength);
     normal = inTBN * normal;
 #endif
+
 #if defined OUT_ID
     outID = highlightID;
 #else
-    outColor = lighting(tex * vec4(inColor * color, 1.0),
+#if defined VEHICLE
+    /*
+    vec3 blend = abs(normalize(inNormal));
+    blend = max(blend - 0.2, 0.0);
+    blend /= dot(blend, vec3(1));
+    vec3 texOffset = paintPatternParams.xyz;
+    float texScale = paintPatternParams.w;
+    vec3 localPos = (inLocalPosition + texOffset) * texScale;
+    vec2 uvX = localPos.zy;
+    vec2 uvY = localPos.xz;
+    vec2 uvZ = localPos.xy;
+    vec4 xColor = texture(paintPatternSampler, uvX);
+    vec4 yColor = texture(paintPatternSampler, uvY);
+    vec4 zColor = texture(paintPatternSampler, uvZ);
+    vec4 patternColor =
+        vec4(xColor * blend.x + yColor * blend.y + zColor * blend.z) * paintPatternColor;
+    vec4 baseColor = vec4(mix(color, patternColor.rgb, patternColor.a), 1.0);
+    */
+
+    /*
+    float vehicleLength = 4.5;
+    float vehicleWidth = 0.98;
+    float vehicleHeight = 1.02;
+    float vehicleTopZ = 0.72;
+
+    float tX = inLocalPosition.x / vehicleLength;
+    float tY = inLocalPosition.y / vehicleWidth;
+    float tZ = -(inLocalPosition.z - vehicleTopZ) / vehicleHeight;
+
+    float texU = 0.5 + tX;
+    float texV = 0.5 + tY + sign(tY) * tZ * abs(tY) * 2.0;
+
+    float zz = inLocalPosition.z - 0.42;
+    vec4 patternColor = texture(paintPatternSampler, vec2(texU, texV)) * paintPatternColor;
+    vec4 baseColor = vec4(mix(color, patternColor.rgb, patternColor.a), 1.0);
+    */
+
+    vec4 wrapOverlay = texture(texSampler, inTexCoord) * wrapColor;
+    vec4 baseColor = vec4(mix(color, wrapOverlay.rgb, wrapOverlay.a), 1.0);
+#else
+    vec4 baseColor = tex * vec4(inColor * color, 1.0);
+#endif
+    outColor = lighting(baseColor,
             normalize(normal), inShadowCoord, inWorldPosition, specular.x, specular.y, vec3(1.0),
             fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
 #if defined VEHICLE

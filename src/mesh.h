@@ -74,6 +74,7 @@ struct Mesh
     OwnedPtr<OctreeNode> octree = nullptr;
     void buildOctree();
     void calculateVertexFormat();
+    void computeBoundingBox();
 
     bool intersect(glm::mat4 const& transform, BoundingBox bb, Array<u32>& output) const;
     void createVAO();

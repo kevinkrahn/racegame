@@ -58,7 +58,7 @@ void Menu::startQuickRace()
     for (u32 i=0; i<driverCount; ++i)
     {
         drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
-                    0, (driverIndexOffset + i) % g_ais.size()));
+                    (driverIndexOffset + i) % g_ais.size()));
         drivers.back().credits = driverCredits;
         drivers.back().aiUpgrades(series);
     }
@@ -638,7 +638,7 @@ void Menu::showNewChampionshipMenu()
         // add AI drivers
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
-            g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, i, i));
+            g_game.state.drivers.push_back(Driver(false, false, false, -1, i, i));
         }
         RandomSeries series = randomSeed();
         for (auto& driver : g_game.state.drivers)

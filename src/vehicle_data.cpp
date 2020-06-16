@@ -369,14 +369,19 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         }
     }
 
+    Texture* wrapTexture = config.wrapTextureIndex == -1
+        ? &g_res.white : g_res.getTexture(g_wrapTextures[config.wrapTextureIndex]);
     for (auto& m : chassisBatch.batches)
     {
-        Material* mat = m.material;
-        if (mat == originalPaintMaterial)
+        if (m.material == originalPaintMaterial)
         {
-            mat = &config.paintMaterial;
+            config.paintMaterial.drawVehicle(rw, transform, &m.mesh, 2, shield, wrapTexture,
+                    config.wrapOffset, config.wrapColor);
         }
-        mat->drawVehicle(rw, transform, &m.mesh, 2, shield);
+        else
+        {
+            m.material->draw(rw, transform, &m.mesh, 2);
+        }
     }
     if (isHidden)
     {
@@ -396,13 +401,8 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
 
         for (auto& m : wheelMeshes[i])
         {
-            Material* mat = m.material;
-            if (mat == originalPaintMaterial)
-            {
-                mat = &config.paintMaterial;
-            }
             glm::mat4 transform = wheelTransform * m.transform;
-            mat->drawVehicle(rw, transform, m.mesh, 2, shield);
+            m.material->draw(rw, transform, m.mesh, 2);
             if (isHidden)
             {
                 g_res.defaultMaterial.drawHighlight(rw, transform, m.mesh, 0, (u8)vehicle->cameraIndex);
@@ -454,47 +454,27 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
             w->render(rw, transform, config, *this);
         }
     }
-
-    for (VehicleDecal& d : config.decals)
-    {
-        glm::mat4 decalTransform = glm::translate(glm::mat4(1.f), d.position)
-            * glm::mat4_cast(d.rotation)
-            * glm::scale(glm::mat4(1.f), d.scale);
-        if (d.dirty)
-        {
-            d.decal.begin(decalTransform, true);
-            for (auto& batch : chassisBatch.batches)
-            {
-                if (batch.material == originalPaintMaterial)
-                {
-                    d.decal.addMesh(&batch.mesh, glm::mat4(1.f));
-                    break;
-                }
-            }
-            d.decal.end();
-            d.decal.setTexture(g_res.getTexture(g_decalTextures[d.textureIndex]));
-            d.decal.setColor(d.color);
-            d.dirty = false;
-        }
-        d.decal.setTransform(transform);
-        d.decal.draw(rw);
-    }
 }
 
 void VehicleData::renderDebris(RenderWorld* rw,
         Array<VehicleDebris> const& debris, VehicleConfiguration& config)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
+    Texture* wrapTexture = config.wrapTextureIndex == -1
+        ? &g_res.white : g_res.getTexture(g_wrapTextures[config.wrapTextureIndex]);
     for (auto const& d : debris)
     {
-        Material* mat = d.meshInfo->material;
-        if (mat == originalPaintMaterial)
-        {
-            mat = &config.paintMaterial;
-        }
         glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
         glm::mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
-        mat->drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec4(0.f));
+        if (d.meshInfo->material == originalPaintMaterial)
+        {
+            config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec4(0.f),
+                    wrapTexture, config.wrapOffset, config.wrapColor);
+        }
+        else
+        {
+            d.meshInfo->material->draw(rw, transform, d.meshInfo->mesh, 0);
+        }
     }
 }
 
@@ -544,16 +524,16 @@ void initializeVehicleData()
     //registerVehicle<VTruck>();
     //registerVehicle<VRacecar>();
 
-    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   "Red",         "Station Wagon", 2);
-    registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   "Red",         "Muscle Car", 2);
-    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, "Orange",      "Cool Car", 0);
-    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  "Yellow",      "Cool Car", 1);
-    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, "Blue",        "Muscle Car", 0);
-    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   "Dark Blue",   "Muscle Car", 1);
-    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   "Aruba",       "Station Wagon", 1);
-    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  "White",       "Cool Car", -1);
-    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  "Black",       "Station Wagon", 0);
-    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  "Green",       "Muscle Car", 2);
-    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  "Maroon",      "Cool Car", 2);
-    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f,  "Dark Brown",  "Station Wagon", -1);
+    registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   srgb(0.75f, 0.01f, 0.01f),   "Station Wagon", -1);
+    registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   srgb(0.75f, 0.01f, 0.01f),   "Muscle Car", 1);
+    registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, srgb(0.95f, 0.47f, 0.02f),   "Cool Car", 1);
+    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  srgb(0.9f, 0.9f, 0.f),       "Cool Car", 2, glm::vec4(0,0,0,1));
+    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, srgb(0.01f, 0.01f, 0.85f),   "Muscle Car", 2, glm::vec4(0.7,0.7,0.01,1));
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   srgb(0.01f, 0.01f, 0.3f),    "Muscle Car", 1, glm::vec4(0.5,0,0,1));
+    registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   srgb(0.01f, 0.7f, 0.8f),     "Station Wagon", -1);
+    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  srgb(0.91f, 0.91f, 0.91f),   "Cool Car", 2, glm::vec4(0,0,0,1));
+    registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  srgb(0.03f, 0.03f, 0.03f),   "Station Wagon", 0);
+    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  srgb(0.01f, 0.75f, 0.01f),   "Muscle Car", -1);
+    registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  srgb(0.42f, 0.015f, 0.015f), "Cool Car", 0);
+    registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f,  srgb(0.2f, 0.1f, 0.06f),     "Station Wagon", -1);
 }

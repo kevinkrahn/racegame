@@ -15,10 +15,6 @@ public:
 
         loadModelData("vehicle_muscle");
         initStandardUpgrades();
-
-        availableDecals.push_back({ {1.25f,0,2}, {4,3,3}, FACING_DOWN, {1,1,1,1}, 5 });
-        availableDecals.push_back({ {-0.7f,0,2}, {4,2,2}, FACING_DOWN, {1,1,1,1}, 1 });
-        availableDecals.push_back({ {0,0.2f,2}, {8,2.1f,8}, FACING_DOWN, {1,1,1,1}, 2 });
     }
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
