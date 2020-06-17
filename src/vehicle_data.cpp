@@ -369,14 +369,12 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         }
     }
 
-    Texture* wrapTexture = config.wrapTextureIndex == -1
-        ? &g_res.white : g_res.getTexture(g_wrapTextures[config.wrapTextureIndex]);
     for (auto& m : chassisBatch.batches)
     {
         if (m.material == originalPaintMaterial)
         {
-            config.paintMaterial.drawVehicle(rw, transform, &m.mesh, 2, shield, wrapTexture,
-                    config.wrapOffset, config.wrapColor);
+            config.paintMaterial.drawVehicle(rw, transform, &m.mesh, 2, shield,
+                    config.wrapTextureGuids, config.wrapColors);
         }
         else
         {
@@ -460,8 +458,6 @@ void VehicleData::renderDebris(RenderWorld* rw,
         Array<VehicleDebris> const& debris, VehicleConfiguration& config)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
-    Texture* wrapTexture = config.wrapTextureIndex == -1
-        ? &g_res.white : g_res.getTexture(g_wrapTextures[config.wrapTextureIndex]);
     for (auto const& d : debris)
     {
         glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
@@ -469,7 +465,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         if (d.meshInfo->material == originalPaintMaterial)
         {
             config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec4(0.f),
-                    wrapTexture, config.wrapOffset, config.wrapColor);
+                    config.wrapTextureGuids, config.wrapColors);
         }
         else
         {

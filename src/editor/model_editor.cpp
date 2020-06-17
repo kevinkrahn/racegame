@@ -303,7 +303,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     }
                 }
 
-                g_res.iterateResourceType(ResourceType::MODEL, [&](Resource* res){
+                g_res.iterateResourceType(ResourceType::MATERIAL, [&](Resource* res){
                     Material* mat = (Material*)res;
                     if (searchString.empty() || mat->name.find(searchString) != std::string::npos)
                     {

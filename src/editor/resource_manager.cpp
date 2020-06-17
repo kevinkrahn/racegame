@@ -715,6 +715,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     }
 
     Material& mat = *selectedMaterial;
+    mat.loadShaderHandles();
 
     static RenderWorld rw;
     static i32 previewMeshIndex = 0;

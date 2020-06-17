@@ -668,7 +668,10 @@ public:
                 }
                 dest = (T)v.val();
             }
-            else val = (i64)dest;
+            else
+            {
+                val = (i64)dest;
+            }
         }
         else if constexpr (std::is_integral<T>::value)
         {
@@ -685,7 +688,41 @@ public:
                     error(context, ": deserialized integer overflow");
                 }
             }
-            else val = (i64)dest;
+            else
+            {
+                val = (i64)dest;
+            }
+        }
+        else if constexpr (std::is_array<T>::value)
+        {
+            auto arraySize = std::extent<T>::value;
+            if (deserialize)
+            {
+                auto v = val.array();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                }
+                if (v.val().size() < arraySize)
+                {
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                }
+                for (u32 i=0; i<(u32)arraySize; ++i)
+                {
+                    element(name, v.val()[i], dest[i]);
+                }
+            }
+            else
+            {
+                val = DataFile::makeArray();
+                val.array().val().reserve(arraySize);
+                for (u32 i=0; i<(u32)arraySize; ++i)
+                {
+                    DataFile::Value el;
+                    element(name, el, dest[i]);
+                    val.array().val().push_back(std::move(el));
+                }
+            }
         }
         else
         {

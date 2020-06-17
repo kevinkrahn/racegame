@@ -29,8 +29,11 @@ void Driver::aiUpgrades(RandomSeries& series)
     {
         vehicleConfig.color = ai.color;
         vehicleIndex = (i32)ai.vehicleIndex;
-        vehicleConfig.wrapTextureIndex = ai.wrapIndex;
-        vehicleConfig.wrapColor = ai.wrapIndex != -1 ? ai.wrapColor : glm::vec4(0.f);
+        if (ai.wrapIndex != -1)
+        {
+            vehicleConfig.wrapTextureGuids[0] = g_res.getTexture(g_wrapTextures[ai.wrapIndex])->guid;
+            vehicleConfig.wrapColors[0] = ai.wrapColor;
+        }
         credits -= g_vehicles[vehicleIndex]->price;
         AI_DEBUG_PRINT(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');
     }

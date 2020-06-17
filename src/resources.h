@@ -70,7 +70,7 @@ public:
             u32 guidHalf[2] = { xorshift32(series), xorshift32(series) };
             guid = *((i64*)guidHalf);
         }
-        while (guid == 0 || resources.get(guid));
+        while (guid <= 1 || resources.get(guid));
         return guid;
     }
 

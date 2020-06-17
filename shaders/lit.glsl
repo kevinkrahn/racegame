@@ -85,8 +85,10 @@ layout(location = 7) uniform vec3 reflection;
 
 #if defined VEHICLE
 layout(location = 10) uniform vec4 shield;
-layout(location = 11) uniform vec2 wrapOffset;
-layout(location = 12) uniform vec4 wrapColor;
+layout(location = 11) uniform vec4 wrapColor[3];
+layout(binding = 6) uniform sampler2D wrapSampler1;
+layout(binding = 7) uniform sampler2D wrapSampler2;
+layout(binding = 8) uniform sampler2D wrapSampler3;
 #endif
 
 layout(binding = 0) uniform sampler2D texSampler;
@@ -156,8 +158,11 @@ void main()
     vec4 baseColor = vec4(mix(color, patternColor.rgb, patternColor.a), 1.0);
     */
 
-    vec4 wrapOverlay = texture(texSampler, inTexCoord) * wrapColor;
-    vec4 baseColor = vec4(mix(color, wrapOverlay.rgb, wrapOverlay.a), 1.0);
+    vec4 wrap1 = texture(wrapSampler1, inTexCoord) * wrapColor[0];
+    vec4 wrap2 = texture(wrapSampler2, inTexCoord) * wrapColor[1];
+    vec4 wrap3 = texture(wrapSampler3, inTexCoord) * wrapColor[2];
+    vec4 baseColor =
+        vec4(mix(mix(mix(color, wrap1.rgb, wrap1.a), wrap2.rgb, wrap2.a), wrap3.rgb, wrap3.a), 1.0);
 #else
     vec4 baseColor = tex * vec4(inColor * color, 1.0);
 #endif

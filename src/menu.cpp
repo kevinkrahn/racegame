@@ -1289,6 +1289,25 @@ void Menu::createCosmeticsMenu()
     });
     y += size.y + gap;
 
+    addSlider("PAINT SHININESS", {x,y}, size, WidgetFlags::TRANSIENT, [this](f32 val){
+        garage.previewVehicleConfig.paintShininess = val;
+        garage.previewVehicleConfig.reloadMaterials();
+        garage.driver->getVehicleConfig()->paintShininess = garage.previewVehicleConfig.paintShininess;
+        garage.driver->getVehicleConfig()->reloadMaterials();
+    }, [&]{
+        return SliderInfo{ glm::vec3(0.f), glm::vec3(1.f),
+            garage.previewVehicleConfig.paintShininess, &g_res.white, 0.f, 1.f };
+    });
+    y += size.y + gap;
+
+    for (u32 i=0; i<3; ++i)
+    {
+        const char* text[3] = { "LAYER 1", "LAYER 2", "LAYER 3" };
+        addButton(text[i], "Add graphics to your vehicle.", {x,y}, size, [&]{
+        }, WidgetFlags::TRANSIENT);
+        y+= size.y + gap;
+    }
+
     glm::vec2 buttonSize(450, 75);
     addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
         resetTransient();

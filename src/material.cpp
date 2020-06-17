@@ -214,14 +214,12 @@ struct VehicleRenderData
     f32 specularPower, specularStrength;
     f32 reflectionStrength, reflectionLod, reflectionBias;
     glm::vec4 shield;
-    GLuint wrapTexture;
-    glm::vec2 wrapOffset;
-    glm::vec4 wrapColor;
+    GLuint wrapTexture[3];
+    glm::vec4 wrapColor[3];
 };
 
 void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
-        u8 stencil, glm::vec4 const& shield, Texture* wrapTexture, glm::vec2 const& wrapOffset,
-        glm::vec4 const& wrapColor)
+        u8 stencil, glm::vec4 const& shield, i64 wrapTextureGuids[3], glm::vec4 wrapColor[3])
 {
     VehicleRenderData* d = g_game.tempMem.bump<VehicleRenderData>();
 #ifndef NDEBUG
@@ -242,13 +240,18 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->reflectionLod = reflectionLod;
     d->reflectionBias = reflectionBias;
     d->shield = shield;
-    d->wrapTexture = wrapTexture->handle,
-    d->wrapOffset = wrapOffset;
-    d->wrapColor = wrapColor;
+    d->wrapTexture[0] = g_res.getTexture(wrapTextureGuids[0])->handle;
+    d->wrapTexture[1] = g_res.getTexture(wrapTextureGuids[1])->handle;
+    d->wrapTexture[2] = g_res.getTexture(wrapTextureGuids[2])->handle;
+    d->wrapColor[0] = wrapColor[0];
+    d->wrapColor[1] = wrapColor[1];
+    d->wrapColor[2] = wrapColor[2];
 
     auto renderOpaque = [](void* renderData) {
         VehicleRenderData* d = (VehicleRenderData*)renderData;
-        glBindTextureUnit(0, d->wrapTexture);
+        glBindTextureUnit(6, d->wrapTexture[0]);
+        glBindTextureUnit(7, d->wrapTexture[1]);
+        glBindTextureUnit(8, d->wrapTexture[2]);
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
         glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
         glUniform3fv(2, 1, (GLfloat*)&d->color);
@@ -257,8 +260,7 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
         glUniform3fv(6, 1, (GLfloat*)&d->emission);
         glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
         glUniform4fv(10, 1, (GLfloat*)&d->shield);
-        glUniform2f(11, d->wrapOffset.x, d->wrapOffset.y);
-        glUniform4fv(12, 1, (GLfloat*)&d->wrapColor);
+        glUniform4fv(11, 3, (GLfloat*)&d->wrapColor);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };

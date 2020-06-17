@@ -148,11 +148,10 @@ struct VehicleConfiguration
 {
     glm::vec3 color = glm::vec3(0.95f);
     glm::vec3 hsv = glm::vec3(0.f, 0.f, 0.95f);
-    i32 paintTypeIndex = 0;
+    f32 paintShininess = 1.f;
 
-    i32 wrapTextureIndex = -1;
-    glm::vec2 wrapOffset = glm::vec2(0.f);
-    glm::vec4 wrapColor = glm::vec4(0.f);
+    i64 wrapTextureGuids[3] = { 0, 0, 0 };
+    glm::vec4 wrapColors[3] = {};
 
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
@@ -182,22 +181,13 @@ struct VehicleConfiguration
     {
         s.field(color);
         s.field(hsv);
-        s.field(paintTypeIndex);
-        s.field(wrapTextureIndex);
-        s.field(wrapOffset);
-        s.field(wrapColor);
-        s.fieldName("frontWeapon0", frontWeaponIndices[0]);
-        s.fieldName("frontWeapon1", frontWeaponIndices[1]);
-        s.fieldName("frontWeapon2", frontWeaponIndices[2]);
-        s.fieldName("frontWeapon0UpgradeLevel", frontWeaponUpgradeLevel[0]);
-        s.fieldName("frontWeapon1UpgradeLevel", frontWeaponUpgradeLevel[1]);
-        s.fieldName("frontWeapon2UpgradeLevel", frontWeaponUpgradeLevel[2]);
-        s.fieldName("rearWeapon0", rearWeaponIndices[0]);
-        s.fieldName("rearWeapon1", rearWeaponIndices[1]);
-        s.fieldName("rearWeapon2", rearWeaponIndices[2]);
-        s.fieldName("rearWeapon0UpgradeLevel", rearWeaponUpgradeLevel[0]);
-        s.fieldName("rearWeapon1UpgradeLevel", rearWeaponUpgradeLevel[1]);
-        s.fieldName("rearWeapon2UpgradeLevel", rearWeaponUpgradeLevel[2]);
+        s.field(paintShininess);
+        s.field(wrapTextureGuids);
+        s.field(wrapColors);
+        s.field(frontWeaponIndices);
+        s.field(frontWeaponUpgradeLevel);
+        s.field(rearWeaponIndices);
+        s.field(rearWeaponUpgradeLevel);
         s.field(specialAbilityIndex);
         s.field(performanceUpgrades);
     }
@@ -208,9 +198,18 @@ struct VehicleConfiguration
     void reloadMaterials()
     {
         Material* originalPaintMaterial = g_res.getMaterial("paint_material");
+        Material* mattePaintMaterial = g_res.getMaterial("paint_material_matte");
         paintMaterial = *originalPaintMaterial;
         paintMaterial.color = color;
         paintMaterial.loadShaderHandles({ {"VEHICLE"} });
+        paintMaterial.reflectionLod = glm::lerp(mattePaintMaterial->reflectionLod, originalPaintMaterial->reflectionLod, paintShininess);
+        paintMaterial.reflectionBias = glm::lerp(mattePaintMaterial->reflectionBias, originalPaintMaterial->reflectionBias, paintShininess);
+        paintMaterial.reflectionStrength = glm::lerp(mattePaintMaterial->reflectionStrength, originalPaintMaterial->reflectionStrength, paintShininess);
+        paintMaterial.specularPower = glm::lerp(mattePaintMaterial->specularPower, originalPaintMaterial->specularPower, paintShininess);
+        paintMaterial.specularStrength = glm::lerp(mattePaintMaterial->specularStrength, originalPaintMaterial->specularStrength, paintShininess);
+        paintMaterial.fresnelBias = glm::lerp(mattePaintMaterial->fresnelBias, originalPaintMaterial->fresnelBias, paintShininess);
+        paintMaterial.fresnelPower = glm::lerp(mattePaintMaterial->fresnelPower, originalPaintMaterial->fresnelPower, paintShininess);
+        paintMaterial.fresnelScale = glm::lerp(mattePaintMaterial->fresnelScale, originalPaintMaterial->fresnelScale, paintShininess);
         dirty = false;
     }
 };
