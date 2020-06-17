@@ -38,7 +38,6 @@
 - Vehicle respawn angles are awkward sometimes
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
-- Fix depth issues with rumblestrip
 - Replace std::string with custom string type
 - Support multiple keyboards (not supported by SDL)
 - Show controller button icons on UI buttons when a controller is plugged in

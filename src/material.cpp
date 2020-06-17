@@ -243,9 +243,9 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->wrapTexture[0] = g_res.getTexture(wrapTextureGuids[0])->handle;
     d->wrapTexture[1] = g_res.getTexture(wrapTextureGuids[1])->handle;
     d->wrapTexture[2] = g_res.getTexture(wrapTextureGuids[2])->handle;
-    d->wrapColor[0] = wrapColor[0];
-    d->wrapColor[1] = wrapColor[1];
-    d->wrapColor[2] = wrapColor[2];
+    d->wrapColor[0] = wrapTextureGuids[0] != 0 ? wrapColor[0] : glm::vec4(0);
+    d->wrapColor[1] = wrapTextureGuids[1] != 0 ? wrapColor[1] : glm::vec4(0);
+    d->wrapColor[2] = wrapTextureGuids[2] != 0 ? wrapColor[2] : glm::vec4(0);
 
     auto renderOpaque = [](void* renderData) {
         VehicleRenderData* d = (VehicleRenderData*)renderData;

@@ -137,12 +137,24 @@ struct VehicleTuning
     VehicleStats computeVehicleStats();
 };
 
+// TODO: remove these arrays and generate the list from resources
 const char* g_wrapTextures[] = {
+    "p_none",
     "p_flames",
     "p_double_stripes",
     "p_splat",
     "p_test",
 };
+
+const char* g_wrapTextureNames[] = {
+    "None",
+    "Flames",
+    "Double Stripe",
+    "Splat",
+    "Test",
+};
+
+static_assert(ARRAY_SIZE(g_wrapTextureNames) == ARRAY_SIZE(g_wrapTextureNames));
 
 struct VehicleConfiguration
 {
@@ -151,7 +163,8 @@ struct VehicleConfiguration
     f32 paintShininess = 1.f;
 
     i64 wrapTextureGuids[3] = { 0, 0, 0 };
-    glm::vec4 wrapColors[3] = {};
+    glm::vec4 wrapColors[3] = { glm::vec4(1.f), glm::vec4(1.f), glm::vec4(1.f) };
+    glm::vec3 wrapColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
 
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
@@ -184,6 +197,7 @@ struct VehicleConfiguration
         s.field(paintShininess);
         s.field(wrapTextureGuids);
         s.field(wrapColors);
+        s.field(wrapColorsHSV);
         s.field(frontWeaponIndices);
         s.field(frontWeaponUpgradeLevel);
         s.field(rearWeaponIndices);

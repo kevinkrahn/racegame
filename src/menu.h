@@ -87,6 +87,12 @@ struct SliderInfo
     f32 max;
 };
 
+struct SelectorInfo
+{
+    i32 currentIndex;
+    const char* selectedItemText;
+};
+
 struct GarageData
 {
     Driver* driver = nullptr;
@@ -171,6 +177,9 @@ class Menu
     Widget* addSlider(const char* text, glm::vec2 pos, glm::vec2 size,
             u32 flags, std::function<void(f32)> onValueChanged,
             std::function<SliderInfo()> getInfo);
+    Widget* addSelector2(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+            u32 flags, std::function<SelectorInfo()> getInfo,
+            std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
@@ -184,6 +193,7 @@ class Menu
     void createMainGarageMenu();
     void createPerformanceMenu();
     void createCosmeticsMenu();
+    void createCosmeticLayerMenu(i32 layerIndex);
     void createCarLotMenu();
     void createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgradeLevel);
 

@@ -413,7 +413,7 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
         ui::rectBlur(ui::IMAGE, info.tex, pos, size,
                 glm::vec4(info.color1, 1.f), glm::vec4(info.color2, 1.f), w.fadeInAlpha);
 
-        if (isSelected)
+        if (isSelected && w.fadeInAlpha > 0.5f)
         {
             f32 dir = didMoveX();
             if (dir != 0.f)
@@ -434,6 +434,67 @@ Widget* Menu::addSlider(const char* text, glm::vec2 pos, glm::vec2 size, u32 fla
         f32 t = (info.val - info.min) / (info.max - info.min);
         ui::rectBlur(ui::IMAGE, &g_res.white, pos + glm::vec2(t * size.x, 0.f),
                 {convertSize(4), size.y}, glm::vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha);
+    };
+    w.fadeInScale = 0.7f;
+    widgets.push_back(w);
+    return &widgets.back();
+}
+
+Widget* Menu::addSelector2(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+        u32 flags, std::function<SelectorInfo()> getInfo,
+        std::function<void(i32 valueIndex)> onValueChanged)
+{
+    Font* font = &g_res.getFont("font", (u32)convertSize(28));
+    Font* fontBig = &g_res.getFont("font", (u32)convertSize(34));
+
+    Widget w;
+    w.pos = pos;
+    w.size = size;
+    w.flags = WidgetFlags::SELECTABLE | WidgetFlags::NAVIGATE_VERTICAL | flags;
+    w.onSelect = []{};
+    w.onRender = [=](Widget& w, bool isSelected) {
+        drawSelectableBox(w, isSelected, true, {0,0,0,0.5f});
+
+        glm::vec2 center = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        glm::vec2 size = convertSize({w.size.x, w.size.y * 0.5f}) * w.fadeInScale;
+        glm::vec2 pos = convertSize(w.pos) + center - glm::vec2(size.x * 0.5f, 0.f);
+
+        auto info = getInfo();
+
+        f32 alpha = (isSelected ? 1.f : 0.6f) * w.fadeInAlpha;
+        ui::text(font, text, pos + glm::vec2(size.x * 0.5f, -convertSize(8)),
+                    glm::vec3(1.f), alpha, w.fadeInScale, HAlign::CENTER, VAlign::BOTTOM);
+        ui::text(fontBig, info.selectedItemText, pos + size * 0.5f, glm::vec3(1.f), alpha, w.fadeInScale,
+                HAlign::CENTER, VAlign::CENTER);
+
+        if (isSelected)
+        {
+            Texture* cheveron = g_res.getTexture("cheveron");
+            f32 cheveronSize = convertSize(32);
+            f32 offset = convertSize(150.f);
+            ui::rectBlur(ui::ICON, cheveron,
+                    pos + glm::vec2(size.x*0.5f - offset - cheveronSize, size.y*0.5f - cheveronSize*0.5f),
+                    glm::vec2(cheveronSize), glm::vec4(1.f), w.fadeInAlpha * w.hover);
+            ui::rectUVBlur(ui::ICON, cheveron,
+                    pos + glm::vec2(size.x*0.5f + offset, size.y*0.5f - cheveronSize*0.5f),
+                    glm::vec2(cheveronSize), {1,0}, {0,1}, glm::vec4(1.f), w.fadeInAlpha * w.hover);
+
+            i32 dir = didChangeSelectionX();
+            if (dir)
+            {
+                g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
+            }
+            if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+            {
+                glm::vec2 mousePos = g_input.getMousePosition();
+                f32 x = convertSize(pos.x + size.x * 0.5f);
+                dir = mousePos.x - x < 0 ? -1 : 1;
+            }
+            if (dir)
+            {
+                onValueChanged(info.currentIndex + dir);
+            }
+        }
     };
     w.fadeInScale = 0.7f;
     widgets.push_back(w);
@@ -1300,11 +1361,14 @@ void Menu::createCosmeticsMenu()
     });
     y += size.y + gap;
 
-    for (u32 i=0; i<3; ++i)
+    for (i32 i=0; i<3; ++i)
     {
         const char* text[3] = { "LAYER 1", "LAYER 2", "LAYER 3" };
-        addButton(text[i], "Add graphics to your vehicle.", {x,y}, size, [&]{
-        }, WidgetFlags::TRANSIENT);
+        addButton(text[i], "Add graphics to your vehicle.", {x,y}, size, [this,i]{
+            i32 layerIndex = i;
+            resetTransient();
+            createCosmeticLayerMenu(layerIndex);
+        }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT);
         y+= size.y + gap;
     }
 
@@ -1314,6 +1378,142 @@ void Menu::createCosmeticsMenu()
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 
+}
+
+void Menu::createCosmeticLayerMenu(i32 layerIndex)
+{
+    glm::vec2 size(450, 70);
+    f32 x = 280;
+    f32 y = -400 + size.y * 0.5f;
+    f32 gap = 12;
+
+    static f32 hue;
+    static f32 saturation;
+    static f32 value;
+    static f32 alpha;
+    static i32 textureIndex;
+    hue = garage.previewVehicleConfig.wrapColorsHSV[layerIndex].x;
+    saturation = garage.previewVehicleConfig.wrapColorsHSV[layerIndex].y;
+    value = garage.previewVehicleConfig.wrapColorsHSV[layerIndex].z;
+    alpha = garage.previewVehicleConfig.wrapColors[layerIndex].a;
+
+    textureIndex = 0;
+    for (i32 i = 0; i<ARRAY_SIZE(g_wrapTextures); ++i)
+    {
+        if (g_res.getTexture(g_wrapTextures[i])->guid
+                == garage.previewVehicleConfig.wrapTextureGuids[layerIndex])
+        {
+            textureIndex = i;
+            break;
+        }
+    }
+
+    selectedWidget = addSelector2("LAYER IMAGE", "Add a thing to your vehicle.", {x,y}, size,
+        WidgetFlags::TRANSIENT, []{
+        return SelectorInfo{textureIndex, g_wrapTextureNames[textureIndex]};
+    }, [this, layerIndex](i32 valueIndex){
+        textureIndex = valueIndex;
+        if (textureIndex < 0)
+        {
+            textureIndex = ARRAY_SIZE(g_wrapTextures) - 1;
+        }
+        if (textureIndex >= ARRAY_SIZE(g_wrapTextures))
+        {
+            textureIndex = 0;
+        }
+        garage.previewVehicleConfig.wrapTextureGuids[layerIndex] =
+            g_res.getTexture(g_wrapTextures[textureIndex])->guid;
+        garage.driver->getVehicleConfig()->wrapTextureGuids[layerIndex] =
+            garage.previewVehicleConfig.wrapTextureGuids[layerIndex];
+    });
+    y += size.y + gap;
+
+    addSlider("LAYER HUE", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
+        hue = val;
+        garage.previewVehicleConfig.wrapColorsHSV[layerIndex].x = hue;
+        garage.previewVehicleConfig.wrapColors[layerIndex]
+            = glm::vec4(srgb(hsvToRgb(hue, saturation, value)), alpha);
+        garage.previewVehicleConfig.reloadMaterials();
+        garage.driver->getVehicleConfig()->wrapColorsHSV[layerIndex]
+            = garage.previewVehicleConfig.wrapColorsHSV[layerIndex];
+        garage.driver->getVehicleConfig()->wrapColors[layerIndex]
+            = garage.previewVehicleConfig.wrapColors[layerIndex];
+        garage.driver->getVehicleConfig()->reloadMaterials();
+    }, []{
+        return SliderInfo{
+            glm::vec3(1.f),
+            glm::vec3(1.f),
+            hue,
+            g_res.getTexture("hues"),
+            0.f,
+            1.f,
+        };
+    });
+    y += size.y + gap;
+
+    addSlider("LAYER SATURATION", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
+        saturation = val;
+        garage.previewVehicleConfig.wrapColorsHSV[layerIndex].y = saturation;
+        garage.previewVehicleConfig.wrapColors[layerIndex]
+            = glm::vec4(srgb(hsvToRgb(hue, saturation, value)), alpha);
+        garage.previewVehicleConfig.reloadMaterials();
+        garage.driver->getVehicleConfig()->wrapColorsHSV[layerIndex]
+            = garage.previewVehicleConfig.wrapColorsHSV[layerIndex];
+        garage.driver->getVehicleConfig()->wrapColors[layerIndex]
+            = garage.previewVehicleConfig.wrapColors[layerIndex];
+        garage.driver->getVehicleConfig()->reloadMaterials();
+    }, []{
+        return SliderInfo{
+            hsvToRgb(hue, 0.f, value),
+            hsvToRgb(hue, 1.f, value),
+            saturation,
+            &g_res.white,
+            0.f,
+            1.f,
+        };
+    });
+    y += size.y + gap;
+
+    addSlider("LAYER BRIGHTNESS", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
+        value = val;
+        garage.previewVehicleConfig.wrapColorsHSV[layerIndex].z = value;
+        garage.previewVehicleConfig.wrapColors[layerIndex]
+            = glm::vec4(srgb(hsvToRgb(hue, saturation, value)), alpha);
+        garage.previewVehicleConfig.reloadMaterials();
+        garage.driver->getVehicleConfig()->wrapColorsHSV[layerIndex]
+            = garage.previewVehicleConfig.wrapColorsHSV[layerIndex];
+        garage.driver->getVehicleConfig()->wrapColors[layerIndex]
+            = garage.previewVehicleConfig.wrapColors[layerIndex];
+        garage.driver->getVehicleConfig()->reloadMaterials();
+    }, []{
+        return SliderInfo{
+            hsvToRgb(hue, saturation, 0.f),
+            hsvToRgb(hue, saturation, 1.f),
+            value,
+            &g_res.white,
+            0.f,
+            1.f,
+        };
+    });
+    y += size.y + gap;
+
+    addSlider("LAYER TRANSPARENCY", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
+        alpha = val;
+        garage.previewVehicleConfig.wrapColors[layerIndex].a = val;
+        garage.previewVehicleConfig.reloadMaterials();
+        garage.driver->getVehicleConfig()->wrapColors[layerIndex].a
+            = garage.previewVehicleConfig.wrapColors[layerIndex].a;
+        garage.driver->getVehicleConfig()->reloadMaterials();
+    }, [&]{
+        return SliderInfo{ glm::vec3(0.f), glm::vec3(1.f), alpha, &g_res.white, 0.f, 1.f };
+    });
+    y += size.y + gap;
+
+    glm::vec2 buttonSize(450, 75);
+    addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
+        resetTransient();
+        createCosmeticsMenu();
+    }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 }
 
 void Menu::createCarLotMenu()
