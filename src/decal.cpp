@@ -36,13 +36,13 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 c
         {  0.f,  0.f, -1.f }
     };
 
-    Mat3 worldSpaceNormalTransform = glm::inverseTranspose(transform);
+    Mat3 worldSpaceNormalTransform = inverseTranspose(Mat3(transform));
     auto addVertex = [&](DecalVertex vert)
     {
         vert.uv = Vec2(vert.pos.y, vert.pos.z) + 0.5f;
         if (worldSpace)
         {
-            vert.pos = transform * Vec4(vert.pos, 1.f);
+            vert.pos = Vec3(transform * Vec4(vert.pos, 1.f));
             vert.normal = worldSpaceNormalTransform * vert.normal;
         }
 
@@ -58,8 +58,8 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 c
         mesh.indices.push_back(mesh.indices.size());
     };
 
-    Mat4 vertTransform = glm::inverse(transform) * meshTransform;
-    Mat3 normalTransform = glm::inverseTranspose(Mat3(vertTransform));
+    Mat4 vertTransform = inverse(transform) * meshTransform;
+    Mat3 normalTransform = inverseTranspose(Mat3(vertTransform));
 
     for (u32 i=0; i<indexCount; i+=3)
     {
@@ -74,9 +74,9 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 c
         Vec3 n3(verts[j+3], verts[j+4], verts[j+5]);
 
         // convert vertex positions to decal local space
-        v1 = vertTransform * Vec4(v1, 1.0);
-        v2 = vertTransform * Vec4(v2, 1.0);
-        v3 = vertTransform * Vec4(v3, 1.0);
+        v1 = Vec3(vertTransform * Vec4(v1, 1.0));
+        v2 = Vec3(vertTransform * Vec4(v2, 1.0));
+        v3 = Vec3(vertTransform * Vec4(v3, 1.0));
 
         // skip triangles that are facing away
         // TODO: fix this calculation, as it appears to remove triangles that is should not
@@ -189,8 +189,8 @@ void Decal::draw(RenderWorld* rw)
         glBindTextureUnit(0, decal->tex->handle);
         glBindTextureUnit(6, decal->texNormal->handle);
         glBindVertexArray(decal->mesh.vao);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(decal->transform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(decal->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, decal->transform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, decal->normalTransform.valuePtr());
         glUniform4fv(2, 1, (f32*)&decal->color);
         glDrawElements(GL_TRIANGLES, decal->mesh.numIndices, GL_UNSIGNED_INT, 0);
     };

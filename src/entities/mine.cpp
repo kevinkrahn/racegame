@@ -17,7 +17,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     filter.data = PxFilterData(COLLISION_FLAG_CHASSIS, 0, 0, 0);
     f32 radius = 1.2f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
-            PxTransform(convert(translationOf(transform)), PxIdentity), hit, filter))
+            PxTransform(convert(transform.position()), PxIdentity), hit, filter))
     {
         for (u32 i=0; i<hit.getNbTouches(); ++i)
         {
@@ -41,7 +41,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
     if (activated)
     {
-        scene->createExplosion(translationOf(transform), Vec3(0.f), 10.f);
+        scene->createExplosion(transform.position(), Vec3(0.f), 10.f);
         this->destroy();
         const char* sounds[] = {
             "explosion2",
@@ -49,7 +49,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         };
         u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(sounds));
         g_audio.playSound3D(g_res.getSound(sounds[index]), SoundType::GAME_SFX,
-                translationOf(transform), false, 1.f, 0.95f);
+                transform.position(), false, 1.f, 0.95f);
 
         PxOverlapHit hitBuffer[8];
         PxOverlapBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
@@ -58,7 +58,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         filter.data = PxFilterData(COLLISION_FLAG_CHASSIS, 0, 0, 0);
         f32 radius = 3.f;
         if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
-                PxTransform(convert(translationOf(transform)), PxIdentity), hit, filter))
+                PxTransform(convert(transform.position()), PxIdentity), hit, filter))
         {
             for (u32 i=0; i<hit.getNbTouches(); ++i)
             {
@@ -71,7 +71,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                     {
                         vehicle->applyDamage(50.f, instigator);
                     }
-                    vehicle->getRigidBody()->addForce(convert(zAxisOf(transform) * 6000.f),
+                    vehicle->getRigidBody()->addForce(convert(transform.zAxis() * 6000.f),
                             PxForceMode::eIMPULSE);
                 }
             }
@@ -86,9 +86,9 @@ void Mine::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
                 &model->meshes[obj.meshIndex]);
     }
-    Vec3 p = translationOf(transform) + Vec3(0,0,0.7f);
+    Vec3 p = transform.position() + Vec3(0,0,0.7f);
     Vec4 color = {2.f,0.02f,0.02f,0.3f};
     f32 t = (sinf(aliveTime * 2.f) + 2.f);
     drawBillboard(rw, g_res.getTexture("flare"), p, color, t * 0.3f, 0.f, false);
-    rw->addPointLight(p, color, 1.5f * t, 2.f);
+    rw->addPointLight(p, Vec3(color), 1.5f * t, 2.f);
 }

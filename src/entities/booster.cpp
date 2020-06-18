@@ -8,7 +8,7 @@
 
 Booster::Booster()
 {
-    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, Vec3(0, 1, 0));
+    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
     scale = Vec3(8.f);
 }
 
@@ -58,7 +58,7 @@ void Booster::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     filter.data = PxFilterData(COLLISION_FLAG_CHASSIS, 0, 0, 0);
     f32 radius = 2.5f;
     if (scene->getPhysicsScene()->overlap(PxSphereGeometry(radius),
-            PxTransform(convert(translationOf(transform)), PxIdentity), hit, filter))
+            PxTransform(convert(transform.position()), PxIdentity), hit, filter))
     {
         for (u32 i=0; i<hit.getNbTouches(); ++i)
         {
@@ -67,7 +67,7 @@ void Booster::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             if (userData && (userData->entityType == ActorUserData::VEHICLE))
             {
                 Vehicle* vehicle = (Vehicle*)userData->vehicle;
-                vehicle->getRigidBody()->addForce(convert(yAxisOf(transform)) * 15.f,
+                vehicle->getRigidBody()->addForce(convert(transform.yAxis()) * 15.f,
                         PxForceMode::eACCELERATION);
                 vehicle->setMotionBlur(1.f, 1.5f);
                 active = true;

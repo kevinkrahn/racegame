@@ -48,7 +48,7 @@ public:
                     cross(up, Vec3(m[0]))), m[1].w);
         m[2] = Vec4(normalize(
                 cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
-        scene->addEntity(new Mine(glm::translate(Mat4(1.f), pos) * m, vehicle->vehicleIndex));
+        scene->addEntity(new Mine(Mat4::translation(pos) * m, vehicle->vehicleIndex));
         g_audio.playSound3D(g_res.getSound("thunk"), SoundType::GAME_SFX,
                 vehicle->getPosition(), false, 1.f, 0.9f);
 

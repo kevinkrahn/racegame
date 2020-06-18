@@ -48,16 +48,16 @@ public:
         f32 minSpeed = 40.f;
         Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (length2(vel) < square(minSpeed))
+        if (lengthSquared(vel) < square(minSpeed))
         {
             vel = normalize(vel) * minSpeed;
         }
 
-        Vec3 pos1 = transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f);
-        Vec3 pos2 = transform * mountTransform * Vec4(projectileSpawnPoints[1], 1.f);
-        scene->addEntity(new Projectile(pos1, vel, zAxisOf(transform), vehicle->vehicleIndex,
+        Vec3 pos1 = Vec3(transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f));
+        Vec3 pos2 = Vec3(transform * mountTransform * Vec4(projectileSpawnPoints[1], 1.f));
+        scene->addEntity(new Projectile(pos1, vel, transform.zAxis(), vehicle->vehicleIndex,
                     Projectile::BLASTER));
-        scene->addEntity(new Projectile(pos2, vel, zAxisOf(transform), vehicle->vehicleIndex,
+        scene->addEntity(new Projectile(pos2, vel, transform.zAxis(), vehicle->vehicleIndex,
                     Projectile::BLASTER));
         g_audio.playSound3D(g_res.getSound("blaster"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
@@ -73,6 +73,6 @@ public:
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         mat->draw(rw, vehicleTransform * mountTransform
-                * glm::translate(Mat4(1.f), Vec3(recoil, 0.f, 0.f)), meshBarrel, 2);
+                * Mat4::translation(Vec3(recoil, 0.f, 0.f)), meshBarrel, 2);
     }
 };

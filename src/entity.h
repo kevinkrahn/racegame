@@ -159,9 +159,7 @@ public:
 
     virtual void updateTransform(class Scene* scene)
     {
-        transform = glm::translate(Mat4(1.f), position)
-            * glm::mat4_cast(rotation)
-            * glm::scale(Mat4(1.f), scale);
+        transform = Mat4::translation(position) * Mat4(rotation) * Mat4::scaling(scale);
         if (actor)
         {
             actor->setGlobalPose(PxTransform(convert(position), convert(rotation)));

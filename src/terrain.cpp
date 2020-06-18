@@ -4,9 +4,6 @@
 #include "debug_draw.h"
 #include "scene.h"
 
-// TODO: switch to STB perlin
-#include <glm/gtc/noise.hpp>
-
 void Terrain::createBuffers()
 {
     glCreateBuffers(1, &vbo);
@@ -42,9 +39,11 @@ void Terrain::generate(f32 heightScale, f32 scale)
     {
         for (i32 y = 0; y < height; ++y)
         {
+#if 0
             heightBuffer[y * width + x] =
                 glm::perlin(Vec2(x, y) * scale) * heightScale +
                 glm::perlin(Vec2(x, y) * scale * 4.f) * 0.5f;
+#endif
         }
     }
     setDirty();
@@ -431,11 +430,13 @@ void Terrain::perturb(Vec2 pos, f32 radius, f32 falloff, f32 amount)
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
+#if 0
             Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
             f32 scale = 0.1f;
             f32 noise = glm::perlin(Vec2(x, y) * scale);
             f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             heightBuffer[y * width + x] += t * noise * amount;
+#endif
         }
     }
     setDirty();

@@ -39,7 +39,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
 
     // create vehicle
     // TODO: add a few timesteps of delay to make sure that suspension is at rest position
-    Mat4 startTransform = glm::translate(Mat4(1.f), { 0, 0, getRestOffset() });
+    Mat4 startTransform = Mat4::translation({ 0, 0, getRestOffset() });
     VehiclePhysics v;
     v.setup(nullptr, physicsScene, startTransform, this);
 
@@ -235,7 +235,7 @@ void VehicleData::loadModelData(const char* modelName)
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
             PxShape* shape = g_game.physx.physics->createShape(
-                    PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(scaleOf(transform)))), *material);
+                    PxConvexMeshGeometry(collisionMesh, PxMeshScale(convert(transform.scale()))), *material);
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
                         COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
@@ -262,41 +262,41 @@ void VehicleData::loadModelData(const char* modelName)
         {
             wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
                 mesh,
-                glm::scale(Mat4(1.f), obj.scale),
+                Mat4::scaling(obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
             frontWheelMeshRadius = max(frontWheelMeshRadius, obj.bounds.z * 0.5f);
             frontWheelMeshWidth = max(frontWheelMeshWidth, obj.bounds.y);
-            wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
+            wheelPositions[WHEEL_FRONT_RIGHT] = transform.position();
         }
         else if (name.find("RL") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_RIGHT].push_back({
                 mesh,
-                glm::scale(Mat4(1.f), scaleOf(transform)),
+                Mat4::scaling(transform.scale()),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
             rearWheelMeshRadius = max(rearWheelMeshRadius, obj.bounds.z * 0.5f);
             rearWheelMeshWidth = max(rearWheelMeshWidth, obj.bounds.y);
-            wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
+            wheelPositions[WHEEL_REAR_RIGHT] = transform.position();
         }
         else if (name.find("FR") != std::string::npos)
         {
             wheelMeshes[WHEEL_FRONT_LEFT].push_back({
                 mesh,
-                glm::scale(Mat4(1.f), obj.scale),
+                Mat4::scaling(obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            wheelPositions[WHEEL_FRONT_LEFT] = transform[3];
+            wheelPositions[WHEEL_FRONT_LEFT] = transform.position();
         }
         else if (name.find("RR") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_LEFT].push_back({
                 mesh,
-                glm::scale(Mat4(1.f), obj.scale),
+                Mat4::scaling(obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
@@ -313,15 +313,15 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("WeaponMount1") != std::string::npos)
         {
-            weaponMounts[0] = glm::translate(Mat4(1.f), obj.position) * rotationOf(transform);
+            weaponMounts[0] = Mat4::translation(obj.position) * transform.rotation();
         }
         else if (name.find("WeaponMount2") != std::string::npos)
         {
-            weaponMounts[1] = glm::translate(Mat4(1.f), obj.position) * rotationOf(transform);
+            weaponMounts[1] = Mat4::translation(obj.position) * transform.rotation();
         }
         else if (name.find("WeaponMount3") != std::string::npos)
         {
-            weaponMounts[2] = glm::translate(Mat4(1.f), obj.position) * rotationOf(transform);
+            weaponMounts[2] = Mat4::translation(obj.position) * transform.rotation();
         }
         else if (name.find("ExhaustHole") != std::string::npos)
         {
@@ -364,8 +364,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
     {
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
-            defaultWheelTransforms[i] = glm::translate(Mat4(1.f),
-                    this->wheelPositions[i]);
+            defaultWheelTransforms[i] = Mat4::translation(this->wheelPositions[i]);
         }
     }
 
@@ -394,7 +393,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
             (wheelTransforms ? wheelTransforms[i] : defaultWheelTransforms[i]);
         if ((i & 1) == 0)
         {
-            wheelTransform = glm::rotate(wheelTransform, PI, Vec3(0, 0, 1));
+            wheelTransform = wheelTransform * Mat4::rotationZ(PI);
         }
 
         for (auto& m : wheelMeshes[i])
@@ -460,8 +459,8 @@ void VehicleData::renderDebris(RenderWorld* rw,
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     for (auto const& d : debris)
     {
-        Mat4 scale = glm::scale(Mat4(1.f), scaleOf(d.meshInfo->transform));
-        Mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
+        Mat4 scale = Mat4::scaling(d.meshInfo->transform.scale());
+        Mat4 transform = Mat4(d.rigidBody->getGlobalPose()) * scale;
         if (d.meshInfo->material == originalPaintMaterial)
         {
             config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, Vec4(0.f),

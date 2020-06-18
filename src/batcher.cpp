@@ -34,7 +34,7 @@ void Batcher::end(bool keepMeshData)
             }
             indicesCopied += item.mesh->numIndices;
 
-            Mat3 normalMatrix = glm::inverseTranspose(Mat3(item.transform));
+            Mat3 normalMatrix = inverseTranspose(Mat3(item.transform));
             for (u32 i=0; i<item.mesh->numVertices; ++i)
             {
                 u32 j = i * item.mesh->stride / sizeof(f32);
@@ -42,7 +42,7 @@ void Batcher::end(bool keepMeshData)
                 Vec3 n(item.mesh->vertices[j+3], item.mesh->vertices[j+4], item.mesh->vertices[j+5]);
                 Vec3 t(item.mesh->vertices[j+6], item.mesh->vertices[j+7], item.mesh->vertices[j+8]);
 
-                p = item.transform * Vec4(p, 1.f);
+                p = Vec3(item.transform * Vec4(p, 1.f));
                 n = normalize(normalMatrix * n);
 
                 bigBatchedMesh.vertices[vertexElementIndex + 0] = p.x;

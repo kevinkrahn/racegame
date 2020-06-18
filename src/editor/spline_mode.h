@@ -527,24 +527,24 @@ public:
             {
                 auto& point = spline->points[i];
 
-                Mat4 transform = glm::translate(Mat4(1.f), point.position);
+                Mat4 transform = Mat4::translation(point.position);
                 bool isSelected = !!selectedPoints.find([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i; });
-                Vec3 color = isSelected ? white : red;
+                Vec3 color = Vec3(isSelected ? white : red);
                 drawOverlay(rw, sphereMesh, transform, color);
 
                 isSelected = !!selectedHandles.find([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && p.firstHandle; });
-                color = isSelected ? white : orange;
-                transform = glm::translate(Mat4(1.f), point.position + point.handleOffsetA) *
-                            glm::scale(Mat4(1.f), Vec3(0.8f));
+                color = Vec3(isSelected ? white : orange);
+                transform = Mat4::translation(point.position + point.handleOffsetA) *
+                            Mat4::translation(Vec3(0.8f));
                 drawOverlay(rw, sphereMesh, transform, color);
 
                 isSelected = !!selectedHandles.find([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && !p.firstHandle; });
-                color = isSelected ? white : orange;
-                transform = glm::translate(Mat4(1.f), point.position + point.handleOffsetB) *
-                            glm::scale(Mat4(1.f), Vec3(0.8f));
+                color = Vec3(isSelected ? white : orange);
+                transform = Mat4::translation(point.position + point.handleOffsetB) *
+                            Mat4::translation(Vec3(0.8f));
                 drawOverlay(rw, sphereMesh, transform, color);
 
                 Vec4 c(color, 1.f);
@@ -625,8 +625,8 @@ public:
                 renderWorld.setClearColor(true, Vec4(0.15f, 0.15f, 0.15f, 1.f));
                 Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
                 drawSimple(&renderWorld, quadMesh, &g_res.white,
-                            glm::translate(Mat4(1.f), Vec3(0, 0, -0.01f)) *
-                            glm::scale(Mat4(1.f), Vec3(120.f)), Vec3(0.15f));
+                            Mat4::translation(Vec3(0, 0, -0.01f)) *
+                            Mat4::translation(Vec3(120.f)), Vec3(0.15f));
                 renderWorld.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));
                 renderWorld.setViewportCount(1);
                 renderWorld.updateWorldTime(30.f);
@@ -765,21 +765,20 @@ public:
 
     void gizmoRotate(f32 angleDiff, Vec3 const& rotatePivot, i32 dragAxis) override
     {
-        Vec3 rotationAxis(1, 0, 0);
+        Mat4 rot;
         if (dragAxis & DragAxis::X)
         {
-            rotationAxis = Vec3(1, 0, 0);
+            rot = Mat4::rotationX(angleDiff);
         }
         else if (dragAxis & DragAxis::Y)
         {
-            rotationAxis = Vec3(0, 1, 0);
+            rot = Mat4::rotationY(angleDiff);
         }
         else if (dragAxis & DragAxis::Z)
         {
-            rotationAxis = Vec3(0, 0, 1);
+            rot = Mat4::rotationZ(angleDiff);
         }
-        Mat4 transform = glm::rotate(Mat4(1.f), angleDiff, rotationAxis) *
-            glm::translate(Mat4(1.f), -rotatePivot);
+        Mat4 transform = rot * Mat4::translation(-rotatePivot);
         for (auto& selection : selectedPoints)
         {
             selection.spline->isDirty = true;
@@ -798,15 +797,15 @@ public:
         // TODO: Scale along the axis chosen, not all of them
         if (selectedPoints.size() > 1)
         {
-            Mat4 transform = glm::scale(Mat4(1.f), Vec3(scaleFactor))
-                * glm::translate(Mat4(1.f), -scaleCenter);
+            Mat4 transform = Mat4::translation(Vec3(scaleFactor))
+                * Mat4::translation(-scaleCenter);
             for (auto& selection : selectedPoints)
             {
                 selection.spline->isDirty = true;
 
                 Mat4 t = transform
-                    * glm::translate(Mat4(1.f), selection.spline->points[selection.pointIndex].position);
-                selection.spline->points[selection.pointIndex].position = translationOf(t) + scaleCenter;
+                    * Mat4::translation(selection.spline->points[selection.pointIndex].position);
+                selection.spline->points[selection.pointIndex].position = t.position() + scaleCenter;
                 // TODO: scale attached handles
             }
         }

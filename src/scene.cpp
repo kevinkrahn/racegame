@@ -106,7 +106,7 @@ void Scene::startRace()
     Mat4 const& start = this->start->transform;
 
     u32 driversPerRow = 5;
-    f32 width = 16 * scaleOf(this->start->transform).y;
+    f32 width = 16 * this->start->transform.scale().y;
     i32 cameraIndex = 0;
 
     track->buildTrackGraph(&trackGraph, start);
@@ -174,10 +174,10 @@ void Scene::startRace()
                 6 + i / driversPerRow * 8,
                 -(width/2) + (i % driversPerRow) * (width / (driversPerRow - 1)),
                 0.f);
-        Vec3 zdir = normalize(zAxisOf(start));
+        Vec3 zdir = normalize(start.zAxis());
 
         PxRaycastBuffer hit;
-        if (!raycastStatic(translationOf(glm::translate(start, offset + zdir * 10.f)),
+        if (!raycastStatic((start * Mat4::translation(offset + zdir * 10.f)).position(),
                 -zdir, 200.f, &hit))
         {
             error("The starting point is too high in the air!");
@@ -186,9 +186,8 @@ void Scene::startRace()
         }
 
         VehicleTuning tuning = driverInfo.driver->getTuning();
-        Mat4 vehicleTransform = glm::translate(Mat4(1.f),
-                convert(hit.block.position + hit.block.normal *
-                    tuning.getRestOffset())) * rotationOf(start);
+        Mat4 vehicleTransform = Mat4::translation(convert(hit.block.position + hit.block.normal *
+                    tuning.getRestOffset())) * start.rotation();
 
         vehicles.push_back(new Vehicle(this, vehicleTransform, -offset,
             driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
@@ -316,7 +315,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             auto path = trackGraph.getPaths()[0];
             Vec3 targetP = path[currentTrackPreviewPoint]->position;
             Vec3 diff = targetP - trackPreviewPosition;
-            if (length2(diff) < square(30.f))
+            if (lengthSquared(diff) < square(30.f))
             {
                 currentTrackPreviewPoint = (currentTrackPreviewPoint + 1) % (u32)path.size();
             }
@@ -475,7 +474,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         physicsScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 2.0f);
 
         Camera const& cam = rw->getCamera(0);
-        BoundingBox bb = computeCameraFrustumBoundingBox(glm::inverse(cam.viewProjection));
+        BoundingBox bb = computeCameraFrustumBoundingBox(inverse(cam.viewProjection));
         debugDraw.boundingBox(bb, Mat4(1.f), Vec4(1.f));
 
         physicsScene->setVisualizationCullingBox(PxBounds3(convert(bb.min), convert(bb.max)));
@@ -679,7 +678,7 @@ void Scene::vehicleFinish(u32 n)
 
     auto& v = vehicles[n];
     g_audio.playSound3D(v->placement < 5 ? g_res.getSound("cheer") : g_res.getSound("clapping"),
-            SoundType::GAME_SFX, translationOf(getStart()));
+            SoundType::GAME_SFX, getStart().position());
 }
 
 void Scene::updateTrackPreview(Renderer* renderer, u32 size)
@@ -699,8 +698,8 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
         for (u32 i=1; i<150; ++i)
         {
             camPosition = (bbCenter - Vec3(0, 0, 20)) + dir * dist;
-            Mat4 view = lookAt(camPosition, bbCenter, Vec3(0, 0, 1));
-            Mat4 projection = perspective(radians(26.f), 1.f, 1.f, 2500.f);
+            Mat4 view = Mat4::lookAt(camPosition, bbCenter, Vec3(0, 0, 1));
+            Mat4 projection = Mat4::perspective(radians(26.f), 1.f, 1.f, 2500.f);
             viewProjection = projection * view;
 
             Vec3 points[] = {
@@ -748,14 +747,14 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, Mat4(1.f),
             Vec3(1.f), true, 1);
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices,
-            glm::translate(Mat4(1.f), { 0, 0, -5 }), Vec3(0.2f), true, 0);
+            Mat4::translation({ 0, 0, -5 }), Vec3(0.2f), true, 0);
     /*
     for (u32 i=0; i<20; ++i)
     {
         trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices,
-                glm::translate(Mat4(1.f),
+                Mat4::translation(
                     { 0, 0, track->getBoundingBox().min.z - 7.f + (i/20.f * 7.f)})
-                    * glm::scale(Mat4(1.f), { 1, 1, i/20.f }), Vec3(0.18f), true, 0);
+                    * Mat4::scaling({ 1, 1, i/20.f }), Vec3(0.18f), true, 0);
     }
     */
 
@@ -764,8 +763,8 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     for (auto const& v : vehicles)
     {
         trackPreview2D.drawItem(sphereMesh->vao, sphereMesh->numIndices,
-            glm::translate(Mat4(1.f), Vec3(0, 0, 2.1f) + v->getPosition())
-                * glm::scale(Mat4(1.f), Vec3(5.1f)),
+            Mat4::translation(Vec3(0, 0, 2.1f) + v->getPosition())
+                * Mat4::scaling(Vec3(5.1f)),
             v->getDriver()->getVehicleConfig()->color, false, 2);
         /*
         trackPreview2D.drawItem(cubeMesh->vao, cubeMesh->numIndices, v->getTransform(),
@@ -783,8 +782,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     Vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
 
     f32 rot = PI * 0.25f;
-    Mat4 transform = glm::rotate(Mat4(1.f), f32(rot), { 0, 0, 1 })
-            * glm::translate(Mat4(1.f), offset);
+    Mat4 transform = glm::rotate(Mat4(1.f), f32(rot), { 0, 0, 1 }) * Mat4::translation(offset);
     bb = bb.transform(transform);
     f32 radius = max(bb.max.x, max(bb.max.y, bb.max.z));
     bb.min = Vec3(-radius);
@@ -799,8 +797,8 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     trackPreview2D.drawItem(
         quadMesh->vao, quadMesh->numIndices,
-        start->transform * glm::translate(Mat4(1.f), { 0, 0, -2 })
-            * glm::scale(Mat4(1.f), { 4, 24, 1 }), Vec3(0.03f), true);
+        start->transform * Mat4::translation({ 0, 0, -2 })
+            * Mat4::scaling({ 4, 24, 1 }), Vec3(0.03f), true);
 
     Mesh* trackMesh = track->getPreviewMesh(this);
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, Mat4(1.f),
@@ -811,9 +809,9 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     {
         Vec3 pos = v->getPosition();
         trackPreview2D.drawItem(mesh->vao, mesh->numIndices,
-            glm::translate(Mat4(1.f), Vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
+            Mat4::translation(Vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
                 * glm::rotate(Mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
-                * glm::scale(Mat4(1.f), Vec3(10.f)),
+                * Mat4::scaling(Vec3(10.f)),
             v->getDriver()->getVehicleConfig()->color, false, 0);
     }
 #endif

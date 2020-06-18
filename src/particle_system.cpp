@@ -42,11 +42,11 @@ void ParticleSystem::draw(RenderWorld* rw)
             auto color = p.color * Vec4(1, 1, 1, alphaCurveValue * p.alphaMultiplier);
 
             glUniform4fv(0, 1, (GLfloat*)&color);
-            Mat4 translation = glm::translate(Mat4(1.f), p.position);
-            Mat4 rotation = glm::rotate(Mat4(1.f), p.angle, { 0, 0, 1 });
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(translation));
+            Mat4 translation = Mat4::translation(p.position);
+            Mat4 rotation = Mat4::rotationZ(p.angle);
+            glUniformMatrix4fv(1, 1, GL_FALSE, translation.valuePtr());
             glUniform3f(2, scale.x, scale.y, scale.z);
-            glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rotation));
+            glUniformMatrix4fv(3, 1, GL_FALSE, rotation.valuePtr());
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
     };

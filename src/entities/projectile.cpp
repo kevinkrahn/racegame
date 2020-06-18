@@ -121,7 +121,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             Vec3 dir = normalize(velocity);
             Vec3 diff = v->getPosition() - position;
             f32 vDot = dot(dir, normalize(diff));
-            f32 targetPriority = length2(diff);
+            f32 targetPriority = lengthSquared(diff);
             if (vDot > 0.25f && targetPriority < lowestTargetPriority)
             {
                 targetPosition = v->getPosition();
@@ -193,8 +193,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         case BLASTER:
         {
-            Mat4 transform = glm::translate(Mat4(1.f), position)
-                * m * glm::scale(Mat4(1.f), Vec3(0.75f));
+            Mat4 transform = Mat4::translation(position) * m * Mat4::scaling(Vec3(0.75f));
             drawSimple(rw, bulletMesh, &g_res.white, transform,
                 Vec3(0.2f, 0.9f, 0.2f), Vec3(0.01f, 1.5f, 0.01f));
             drawBillboard(rw, g_res.getTexture("flare"), position+Vec3(0,0,0.2f),
@@ -205,8 +204,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             Vec3 color = Vec3(1.f, 0.5f, 0.01f);
             Vec3 emit = Vec3(1.f, 0.5f, 0.01f) * 2.f;
-            Mat4 transform = glm::translate(Mat4(1.f), position)
-                * m * glm::scale(Mat4(1.f), Vec3(0.35f));
+            Mat4 transform = Mat4::translation(position) * m * Mat4::scaling(Vec3(0.35f));
             drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
             drawBillboard(rw, g_res.getTexture("flare"),
                         position, Vec4(emit, 0.8f), 0.75f, 0.f, false);
@@ -215,7 +213,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         case MISSILE:
         {
             Mesh* mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
-            Mat4 transform = glm::translate(Mat4(1.f), position) * m;
+            Mat4 transform = Mat4::translation(position) * m;
             drawSimple(rw, mesh, &g_res.white, transform, Vec3(1.f));
             drawBillboard(rw, g_res.getTexture("flare"), position,
                         Vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false);
@@ -224,8 +222,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         case BOUNCER:
         {
             Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
-            Mat4 transform = glm::translate(Mat4(1.f), position)
-                 * glm::scale(Mat4(1.f), Vec3(0.4f));
+            Mat4 transform = Mat4::translation(position) * Mat4::scaling(Vec3(0.4f));
             drawSimple(rw, mesh, &g_res.white, transform, Vec3(1.f), Vec3(0.5f));
             drawBillboard(rw, g_res.getTexture("flare"), position,
                         Vec4(0.1f, 0.12f, 1.f, 0.8f), 1.75f, 0.f, false);
@@ -235,8 +232,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         {
             Vec3 color = Vec3(1.f, 0.01f, 0.95f);
             Vec3 emit = Vec3(1.f, 0.01f, 0.95f) * 1.5f;
-            Mat4 transform = glm::translate(Mat4(1.f), position)
-                * m * glm::scale(Mat4(1.f), Vec3(0.75f));
+            Mat4 transform = Mat4::translation(position) * m * Mat4::scaling(Vec3(0.75f));
             drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
             drawBillboard(rw, g_res.getTexture("flare"),
                     position+Vec3(0,0,0.2f), Vec4(color, 0.4f), 1.5f, 0.f, false);

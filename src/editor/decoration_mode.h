@@ -116,7 +116,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     renderWorld.setClearColor(true, Vec4(0.15f, 0.15f, 0.15f, 1.f));
                     Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
                     drawSimple(&renderWorld, quadMesh, &g_res.white,
-                                glm::scale(Mat4(1.f), Vec3(200.f)), Vec3(0.15f));
+                                Mat4::scaling(Vec3(200.f)), Vec3(0.15f));
                     renderWorld.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));
                     renderWorld.setViewportCount(1);
                     renderWorld.updateWorldTime(30.f);
@@ -219,7 +219,7 @@ public:
             Mat4 orientation(1.f);
             if (selectedEntities.size() == 1)
             {
-                orientation = glm::mat4_cast(selectedEntities[0]->rotation);
+                orientation = Mat4(selectedEntities[0]->rotation);
             }
             isMouseClickHandled = transformGizmo.update(p, scene, rw, deltaTime, orientation, this);
         }
@@ -237,12 +237,15 @@ public:
             {
                 selectedEntities[0]->updateTransform(scene);
             }
+            // TODO: implement Mat4::eulerAngles
+#if 0
             Vec3 eulerAngles = degrees(glm::eulerAngles(selectedEntities[0]->rotation));
             if (ImGui::InputFloat3("Rotation", (f32*)&eulerAngles))
             {
                 selectedEntities[0]->rotation = Quat(radians(eulerAngles));
                 selectedEntities[0]->updateTransform(scene);
             }
+#endif
             ImGui::Gap();
             selectedEntities.front()->showDetails(scene);
             ImGui::End();
@@ -332,7 +335,7 @@ public:
                         propPrefabs[propTypeIndex].prefabData.doThing(newEntity);
                         newEntity->position = hitPoint;
                         newEntity->scale *= random(scene->randomSeries, randomizeScaleMin, randomizeScaleMax);;
-                        Vec3 eulerAngles =  {
+                        glm::vec3 eulerAngles =  {
                             randomizeRotationX ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationY ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationZ ? random(scene->randomSeries, 0.f, PI2) : 0,
@@ -480,26 +483,28 @@ public:
 
     void gizmoRotate(f32 angleDiff, Vec3 const& rotatePivot, i32 dragAxis) override
     {
-        Vec3 rotationAxis(1, 0, 0);
+        Mat4 rot;
+        glm::vec3 rotationAxis(1, 0, 0);
         if (dragAxis & DragAxis::X)
         {
-            rotationAxis = Vec3(1, 0, 0);
+            rot = Mat4::rotationX(angleDiff);
+            rotationAxis = glm::vec3(1, 0, 0);
         }
         else if (dragAxis & DragAxis::Y)
         {
-            rotationAxis = Vec3(0, 1, 0);
+            rot = Mat4::rotationY(angleDiff);
+            rotationAxis = glm::vec3(0, 1, 0);
         }
         else if (dragAxis & DragAxis::Z)
         {
-            rotationAxis = Vec3(0, 0, 1);
+            rot = Mat4::rotationZ(angleDiff);
+            rotationAxis = glm::vec3(0, 0, 1);
         }
-        Mat4 transform = glm::rotate(Mat4(1.f), angleDiff, rotationAxis) *
-            glm::translate(Mat4(1.f), -rotatePivot);
+        Mat4 transform = rot * Mat4::translation(-rotatePivot);
         for (PlaceableEntity* e : selectedEntities)
         {
             e->position = Vec3(transform * Vec4(e->position, 1.f)) + rotatePivot;
-            e->rotation = glm::rotate(glm::identity<Quat>(),
-                    angleDiff, rotationAxis) * e->rotation;
+            e->rotation = glm::rotate(glm::identity<Quat>(), angleDiff, rotationAxis) * e->rotation;
             e->updateTransform(scene);
         }
     }
@@ -511,11 +516,11 @@ public:
         {
             for (PlaceableEntity* e : selectedEntities)
             {
-                Mat4 t = glm::translate(Mat4(1.f), e->position)
-                    * glm::scale(Mat4(1.f), Vec3(e->scale));
-                Mat4 transform = glm::scale(Mat4(1.f), Vec3(scaleFactor))
-                    * glm::translate(Mat4(1.f), -scaleCenter) * t;
-                e->position = translationOf(transform) + scaleCenter;
+                Mat4 t = Mat4::translation(e->position)
+                    * Mat4::scaling(Vec3(e->scale));
+                Mat4 transform = Mat4::scaling(Vec3(scaleFactor))
+                    * Mat4::translation(-scaleCenter) * t;
+                e->position = transform.position() + scaleCenter;
                 e->scale *= scaleFactor;
             }
         }

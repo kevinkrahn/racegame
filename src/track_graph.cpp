@@ -81,7 +81,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     for (u32 i=0; i<nodes.size(); ++i)
     {
         Node const& node = nodes[i];
-        f32 dist = length2(node.position - translationOf(startTransform));
+        f32 dist = lengthSquared(node.position - startTransform.position());
         if (dist < minDist)
         {
             minDist = dist;
@@ -95,7 +95,8 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
         valid = false;
     }
 
-    nodes[startIndex].position = Vec3(Vec2(translationOf(startTransform)), nodes[startIndex].position.z) + xAxisOf(startTransform) * 2.f;
+    nodes[startIndex].position = Vec3(Vec2(startTransform.position()), nodes[startIndex].position.z)
+            + startTransform.xAxis() * 2.f;
     u32 endIndex = (u32)nodes.size();
 
     // copy the start node to make the end node
@@ -107,7 +108,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     for (auto c = start.connections.begin(); c != start.connections.end();)
     {
         Node& connection = nodes[*c];
-        if (dot(normalize(connection.position - start.position), xAxisOf(startTransform)) <= 0.f)
+        if (dot(normalize(connection.position - start.position), startTransform.xAxis()) <= 0.f)
         {
             for (auto o = connection.connections.begin(); o != connection.connections.end(); ++o)
             {
@@ -240,9 +241,7 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
         Node const& c = nodes[i];
 
         drawSimple(renderer->getRenderWorld(), arrowMesh, &g_res.white,
-                glm::translate(Mat4(1.f), c.position) *
-                    glm::rotate(Mat4(1.f), c.angle, Vec3(0, 0, 1)) *
-                    glm::scale(Mat4(1.f), Vec3(1.25f)));
+                Mat4::translation(c.position) * Mat4::rotationZ(c.angle) * Mat4::scaling(Vec3(1.25f)));
 
         for (u32 connection : c.connections)
         {
@@ -306,13 +305,13 @@ void TrackGraph::findLapDistance(Vec3 const& p, QueryResult& queryResult, f32 ma
 
             Vec3 ap = p - a;
             Vec3 ab = b - a;
-            f32 distanceAlongLine = clamp(dot(ap, ab) / length2(ab), 0.f, 1.f);
+            f32 distanceAlongLine = clamp(dot(ap, ab) / lengthSquared(ab), 0.f, 1.f);
             f32 t = nodeA->t + distanceAlongLine * (nodeB->t - nodeA->t);
 
             if (queryResult.lapDistanceLowMark - t < maxSkippableDistance)
             {
                 Vec3 result = a + distanceAlongLine * ab;
-                f32 distance = length2(p - result);
+                f32 distance = lengthSquared(p - result);
                 // prioritize points that don't loose progress
                 if (queryResult.lapDistanceLowMark - t < -10.f)
                 {
@@ -354,13 +353,13 @@ f32 TrackGraph::findTrackProgressAtPoint(Vec3 const& p, f32 referenceValue) cons
 
             Vec3 ap = p - a;
             Vec3 ab = b - a;
-            f32 distanceAlongLine = clamp(dot(ap, ab) / length2(ab), 0.f, 1.f);
+            f32 distanceAlongLine = clamp(dot(ap, ab) / lengthSquared(ab), 0.f, 1.f);
             f32 t = nodeA->t + distanceAlongLine * (nodeB->t - nodeA->t);
 
             if (referenceValue - t < 150.f)
             {
                 Vec3 result = a + distanceAlongLine * ab;
-                f32 distance = length2(p - result);
+                f32 distance = lengthSquared(p - result);
                 // prioritize points that don't loose progress
                 if (referenceValue - t < -10.f)
                 {

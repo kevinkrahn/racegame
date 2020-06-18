@@ -128,12 +128,12 @@ public:
         Vec2 terrainMax(scene->terrain->x2, scene->terrain->y2);
         if (ImGui::InputFloat2("Terrain Min", (f32*)&terrainMin, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            terrainMin = max(min(terrainMin, terrainMax - 10.f), -400.f);
+            terrainMin = max(min(terrainMin, terrainMax - 10.f), Vec2(-400.f));
             scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y, true);
         }
         if (ImGui::InputFloat2("Terrain Max", (f32*)&terrainMax, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            terrainMax = min(max(terrainMax, terrainMin + 10.f), 400.f);
+            terrainMax = min(max(terrainMax, terrainMin + 10.f), Vec2(400.f));
             scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y, true);
         }
 

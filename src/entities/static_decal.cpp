@@ -8,7 +8,7 @@
 StaticDecal::StaticDecal()
 {
     scale = Vec3(16.f);
-    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, Vec3(0, 1, 0));
+    rotation = glm::rotate(rotation, PI * 0.5f, glm::vec3(0, 1, 0));
 }
 
 void StaticDecal::onCreateEnd(Scene* scene)

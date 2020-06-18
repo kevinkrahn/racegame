@@ -259,9 +259,9 @@ struct VehicleData
 
     Vec3 wheelPositions[NUM_WHEELS] = {};
     Mat4 weaponMounts[3] = {
-        glm::translate(Mat4(1.f), { 3.f, 0.f, 0.6f }),
-        glm::translate(Mat4(1.f), { 0.f, 0.f, 2.f }),
-        glm::translate(Mat4(1.f), { -2.f, 0.f, 2.f }),
+        Mat4::translation({ 3.f, 0.f, 0.6f }),
+        Mat4::translation({ 0.f, 0.f, 2.f }),
+        Mat4::translation({ -2.f, 0.f, 2.f }),
     };
     SmallArray<Vec3> exhaustHoles;
     f32 frontWheelMeshRadius = 0.f;

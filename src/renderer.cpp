@@ -306,7 +306,7 @@ void Renderer::render(f32 deltaTime)
 
     glUseProgram(getShaderProgram("post"));
     Vec2 res(g_game.windowWidth, g_game.windowHeight);
-    Mat4 fullscreenOrtho = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
+    Mat4 fullscreenOrtho = Mat4::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[renderWorld.cameras.size() - 1];
     glBindVertexArray(emptyVAO);
     for (u32 i=0; i<renderWorld.cameras.size(); ++i)
@@ -315,11 +315,11 @@ void Renderer::render(f32 deltaTime)
         dir.x = glm::sign(dir.x);
         dir.y = glm::sign(dir.y);
         Mat4 matrix = fullscreenOrtho *
-                           glm::translate(Mat4(1.f), Vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
-                           glm::scale(Mat4(1.f), Vec3(layout.scale * res -
+                           Mat4::translation(Vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
+                           Mat4::scaling(Vec3(layout.scale * res -
                                        Vec2(layout.scale.x < 1.f ? viewportGapPixels : 0,
                                                  layout.scale.y < 1.f ? viewportGapPixels : 0), 1.0));
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix4fv(0, 1, GL_FALSE, matrix.valuePtr());
         glBindTextureUnit(0, renderWorld.getTexture(i)->handle);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
@@ -375,7 +375,7 @@ void Renderer::render(f32 deltaTime)
 
     glUseProgram(getShaderProgram("post"));
     Vec2 res(g_game.windowWidth, g_game.windowHeight);
-    Mat4 fullscreenOrtho = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
+    Mat4 fullscreenOrtho = Mat4::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     ViewportLayout& layout = viewportLayout[renderWorld.cameras.size() - 1];
     glBindVertexArray(emptyVAO);
     for (u32 i=0; i<renderWorld.cameras.size(); ++i)
@@ -384,11 +384,11 @@ void Renderer::render(f32 deltaTime)
         dir.x = glm::sign(dir.x);
         dir.y = glm::sign(dir.y);
         Mat4 matrix = fullscreenOrtho *
-                           glm::translate(Mat4(1.f), Vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
-                           glm::scale(Mat4(1.f), Vec3(layout.scale * res -
+                           Mat4::translation(Vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
+                           Mat4::scaling(Vec3(layout.scale * res -
                                        Vec2(layout.scale.x < 1.f ? viewportGapPixels : 0,
                                                  layout.scale.y < 1.f ? viewportGapPixels : 0), 1.0));
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(matrix));
+        glUniformMatrix4fv(0, 1, GL_FALSE, matrix.valuePtr());
         glBindTextureUnit(0, renderWorld.getTexture(i)->handle);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
@@ -427,11 +427,11 @@ void Renderer::render(f32 deltaTime)
         f32 screenSpaceLightRadius = g_game.windowHeight
             * renderWorld.cameras[0].projection[1][1] * p.radius / tp.w;
 
-        Mat4 transform = glm::translate(Mat4(1.f), Vec3(tp.x, tp.y, 0.f))
-            * glm::scale(Mat4(1.f), Vec3(screenSpaceLightRadius, screenSpaceLightRadius, 0.01f));
+        Mat4 transform = Mat4::translation(Vec3(tp.x, tp.y, 0.f))
+            * Mat4::scaling(Vec3(screenSpaceLightRadius, screenSpaceLightRadius, 0.01f));
         glUseProgram(getShaderProgram("mesh2D"));
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(fullscreenOrtho));
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, fullscreenOrtho.valuePtr());
+        glUniformMatrix4fv(1, 1, GL_FALSE, transform.valuePtr());
         Vec3 color(1.f);
         glUniform3fv(2, 1, (GLfloat*)&color);
         glUniform1i(3, 0);
@@ -470,10 +470,10 @@ Camera& RenderWorld::setViewportCamera(u32 index, Vec3 const& from,
     cam.fov = fov > 0.f ? fov : layout.fov;
     cam.nearPlane = nearPlane;
     cam.farPlane = farPlane;
-    cam.view = lookAt(from, to, Vec3(0, 0, 1));
+    cam.view = Mat4::lookAt(from, to, Vec3(0, 0, 1));
     Vec2 dim = Vec2(width, height) * layout.scale;
     cam.aspectRatio = dim.x / dim.y;
-    cam.projection = perspective(radians(cam.fov), cam.aspectRatio, nearPlane, farPlane);
+    cam.projection = Mat4::perspective(radians(cam.fov), cam.aspectRatio, nearPlane, farPlane);
     cam.viewProjection = cam.projection * cam.view;
     return cam;
 }
@@ -791,7 +791,7 @@ void RenderWorld::createFramebuffers()
                 assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
                 fb.bloomFramebuffers.push_back(framebuffer);
-                fb.bloomBufferSize.push_back({ fb.renderWidth/i, fb.renderHeight/i });
+                fb.bloomBufferSize.push_back({ (i32)fb.renderWidth/(i32)i, (i32)fb.renderHeight/(i32)i });
             }
 
             glGenTextures(1, &fb.finalColorTexture);
@@ -930,7 +930,7 @@ void RenderWorld::clear()
 void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)
 {
     Vec3 inverseLightDir = worldInfo.sunDirection;
-    Mat4 depthView = lookAt(inverseLightDir, Vec3(0), Vec3(0, 0, 1));
+    Mat4 depthView = Mat4::lookAt(inverseLightDir, Vec3(0), Vec3(0, 0, 1));
     if (!g_game.config.graphics.shadowsEnabled)
     {
         worldInfo.shadowViewProjectionBias = Mat4(0.f);
@@ -941,7 +941,7 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
     {
 	    // TODO: adjust znear and zfar for better shadow quality
         Camera const& cam = cameras[cameraIndex];
-        Mat4 inverseViewProj = depthView * glm::inverse(cam.viewProjection);
+        Mat4 inverseViewProj = depthView * inverse(cam.viewProjection);
         shadowBounds = computeCameraFrustumBoundingBox(inverseViewProj);
     }
 
@@ -953,18 +953,19 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
     center.x = snap(center.x, snapMultiple);
     center.y = snap(center.y, snapMultiple);
     center.z = snap(center.z, snapMultiple);
-    Mat4 depthProjection = glm::ortho(center.x-extent, center.x+extent,
+    Mat4 depthProjection = Mat4::ortho(center.x-extent, center.x+extent,
                                         center.y+extent, center.y-extent,
                                         -shadowBounds.max.z, -shadowBounds.min.z);
     Mat4 viewProj = depthProjection * depthView;
 
     worldInfoShadow.cameraViewProjection = viewProj;
-    worldInfo.shadowViewProjectionBias = Mat4(
+    f32 shadowMatrix[] = {
         0.5f, 0.0f, 0.0f, 0.0f,
         0.0f, 0.5f, 0.0f, 0.0f,
         0.0f, 0.0f, 0.5f, 0.0f,
         0.5f, 0.5f, 0.5f, 1.0f
-    ) * viewProj;
+    };
+    worldInfo.shadowViewProjectionBias = Mat4(shadowMatrix) * viewProj;
 }
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
@@ -1026,7 +1027,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 
     // update worldinfo uniform buffer
     partitionPointLights(index);
-    worldInfo.orthoProjection = glm::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
+    worldInfo.orthoProjection = Mat4::ortho(0.f, (f32)g_game.windowWidth, (f32)g_game.windowHeight, 0.f);
     worldInfo.cameraViewProjection = cameras[index].viewProjection;
     worldInfo.cameraProjection = cameras[index].projection;
     worldInfo.cameraView = cameras[index].view;

@@ -102,12 +102,12 @@ public:
 
             Vec3 ap = position - pointA.position;
             Vec3 ab = pointB.position - pointA.position;
-            f32 distanceAlongLine = clamp(dot(ap, ab) / length2(ab), 0.f, 1.f);
+            f32 distanceAlongLine = clamp(dot(ap, ab) / lengthSquared(ab), 0.f, 1.f);
             Vec3 pointPosition = pointA.position
                 + (pointB.position - pointA.position) * distanceAlongLine;
             f32 trackProgress = pointA.trackProgress
                 + (pointB.trackProgress - pointA.trackProgress) * distanceAlongLine;
-            f32 distanceSquaredToTestPosition = distance2(pointPosition, position);
+            f32 distanceSquaredToTestPosition = distanceSquared(pointPosition, position);
             if (absolute(currentTrackProgress - trackProgress) > 55.f)
             {
                 distanceSquaredToTestPosition += square(30);

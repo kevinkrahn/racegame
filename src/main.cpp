@@ -1,5 +1,6 @@
 // unity build
 
+#include "math.cpp"
 #include "game.cpp"
 #include "scene.cpp"
 #include "renderer.cpp"

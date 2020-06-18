@@ -187,13 +187,12 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         if (isSelected)
         {
             drawOverlay(rw, sphere,
-                        glm::translate(Mat4(1.f), points[i].position) *
-                        glm::scale(Mat4(1.08f), Vec3(1.f)), { 1, 1, 1 }, -1);
+                        Mat4::translation(points[i].position) *
+                        Mat4::scaling(Vec3(1.08f)), { 1, 1, 1 }, -1);
         }
-        Vec3 color = isSelected ? brightRed : red;
-        drawOverlay(rw, sphere,
-                    glm::translate(Mat4(1.f), points[i].position) *
-                    glm::scale(Mat4(1.f), Vec3(1.f)), color);
+        Vec3 color = Vec3(isSelected ? brightRed : red);
+        drawOverlay(rw, sphere, Mat4::translation(points[i].position) *
+                    Mat4::scaling(Vec3(1.f)), color);
         ++i;
     }
 
@@ -212,13 +211,13 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 
         f32 widthDiff = ((i32)g_input.isKeyPressed(KEY_Q) - (i32)g_input.isKeyPressed(KEY_E)) * 1.f;
 
-        Vec3 colorA = orange;
+        Vec3 colorA = Vec3(orange);
         Vec3 handleA = points[c->pointIndexA].position + c->handleOffsetA;
         Vec2 handleAScreen = project(handleA, rw->getCamera(0).viewProjection)
             * Vec2(g_game.windowWidth, g_game.windowHeight);
         if (!isDragging && length(handleAScreen - mousePos) < radius)
         {
-            colorA = brightOrange;
+            colorA = Vec3(brightOrange);
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 isMouseHandled = true;
@@ -262,7 +261,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         {
             c->widthA += widthDiff;
             c->isDirty = true;
-            colorA = brightOrange;
+            colorA = Vec3(brightOrange);
             f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), handleA);
             Vec3 p = cam.position + rayDir * t + dragOffset;
             if (gridSettings->snap)
@@ -288,17 +287,16 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
             }
             drawOverlay(rw, sphere,
-                        glm::translate(Mat4(1.f), handleA) *
-                        glm::scale(Mat4(0.9f), Vec3(1.f)), { 1, 1, 1 }, -1);
+                        Mat4::translation(handleA) * Mat4::scaling(Vec3(0.9f)), { 1, 1, 1 }, -1);
         }
 
-        Vec3 colorB = orange;
+        Vec3 colorB = Vec3(orange);
         Vec3 handleB = points[c->pointIndexB].position + c->handleOffsetB;
         Vec2 handleBScreen = project(handleB, rw->getCamera(0).viewProjection)
             * Vec2(g_game.windowWidth, g_game.windowHeight);
         if (!isDragging && length(handleBScreen - mousePos) < radius)
         {
-            colorB = brightOrange;
+            colorB = Vec3(brightOrange);
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
                 isMouseHandled = true;
@@ -343,7 +341,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         {
             c->widthB += widthDiff;
             c->isDirty = true;
-            colorB = brightOrange;
+            colorB = Vec3(brightOrange);
             f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), handleB);
             Vec3 p = cam.position + rayDir * t + dragOffset;
             if (gridSettings->snap)
@@ -369,15 +367,12 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
             }
             drawOverlay(rw, sphere,
-                        glm::translate(Mat4(1.f), handleB) *
-                        glm::scale(Mat4(0.9f), Vec3(1.f)), { 1, 1, 1 }, -1);
+                        Mat4::translation(handleB) * Mat4::scaling(Vec3(0.9f)), { 1, 1, 1 }, -1);
         }
         drawOverlay(rw, sphere,
-                    glm::translate(Mat4(1.f), handleA) *
-                    glm::scale(Mat4(0.8f), Vec3(1.f)), colorA);
+                    Mat4::translation(handleA) * Mat4::scaling(Vec3(0.8f)), colorA);
         drawOverlay(rw, sphere,
-                    glm::translate(Mat4(1.f), handleB) *
-                    glm::scale(Mat4(0.8f), Vec3(1.f)), colorB);
+                    Mat4::translation(handleB) * Mat4::scaling(Vec3(0.8f)), colorB);
 
         scene->debugDraw.line(points[c->pointIndexA].position + Vec3(0, 0, 0.01f),
                 points[c->pointIndexA].position + c->handleOffsetA + Vec3(0, 0, 0.01f),
@@ -419,7 +414,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
             if (gridSettings->snap)
             {
-                Vec2 p = snapXY(points[s.pointIndex].position, gridSettings->cellSize);
+                Vec2 p = snapXY(points[s.pointIndex].position, gridSettings->cellSize).xy;
                 points[s.pointIndex].position = Vec3(p, points[s.pointIndex].position.z);
             }
         }

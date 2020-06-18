@@ -856,7 +856,7 @@ void Menu::showChampionshipMenu()
         {
             Widget w;
             w.helpText = "Buy, sell, or upgrade your vehicle";
-            w.pos = { 55, -135 + playerIndex * 170 };
+            w.pos = { 55.f, -135.f + playerIndex * 170 };
             w.size = { 450, 150 };
             w.fadeInScale = 0.7f;
             w.onRender = [&driver, playerIndex](Widget& w, bool isSelected){
@@ -865,12 +865,12 @@ void Menu::showChampionshipMenu()
                 RenderWorld& rw = renderWorlds[playerIndex];
                 rw.setName(tstr("Vehicle Icon ", playerIndex));
                 rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
-                drawSimple(&rw, quadMesh, &g_res.white, glm::scale(Mat4(1.f), Vec3(20.f)), Vec3(0.02f));
+                drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
                 if (driver.vehicleIndex != -1)
                 {
-                    //Mat4 vehicleTransform = glm::rotate(Mat4(1.f), (f32)getTime(), Vec3(0, 0, 1));
+                    //Mat4 vehicleTransform = Mat4::rotationZ((f32)getTime());
                     Mat4 vehicleTransform = Mat4(1.f);
-                    driver.getVehicleData()->render(&rw, glm::translate(Mat4(1.f),
+                    driver.getVehicleData()->render(&rw, Mat4::translation(
                             Vec3(0, 0, driver.getTuning().getRestOffset())) *
                         vehicleTransform, nullptr, *driver.getVehicleConfig());
                 }
@@ -992,7 +992,7 @@ void Menu::createVehiclePreview()
     addLabel([this]{ return tstr("CREDITS: ", garage.driver->credits); },
             {-260 + vehiclePreviewSize.x * 0.5f
             - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375}, font2,
-            HAlign::CENTER, VAlign::CENTER, COLOR_SELECTED);
+            HAlign::CENTER, VAlign::CENTER, Vec3(COLOR_SELECTED));
 
     static RenderWorld rw;
 
@@ -1078,11 +1078,10 @@ void Menu::createVehiclePreview()
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
         rw.setSize((u32)vehicleIconSize.x, (u32)vehicleIconSize.y);
-        drawSimple(&rw, quadMesh, &g_res.white,
-                glm::scale(Mat4(1.f), Vec3(20.f)), Vec3(0.02f));
+        drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
-        Mat4 vehicleTransform = glm::rotate(Mat4(1.f), (f32)getTime(), Vec3(0, 0, 1));
-        g_vehicles[garage.previewVehicleIndex]->render(&rw, glm::translate(Mat4(1.f),
+        Mat4 vehicleTransform = Mat4::rotationZ((f32)getTime());
+        g_vehicles[garage.previewVehicleIndex]->render(&rw, Mat4::translation(
                 Vec3(0, 0, garage.previewTuning.getRestOffset())) *
             vehicleTransform, nullptr, garage.previewVehicleConfig);
         rw.setViewportCount(1);
@@ -1604,13 +1603,13 @@ void Menu::createCarLotMenu()
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
         rw.setSize((u32)convertSize(size.x)*2, (u32)convertSize(size.y)*2);
-        drawSimple(&rw, quadMesh, &g_res.white, glm::scale(Mat4(1.f), Vec3(20.f)), Vec3(0.02f));
+        drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
         VehicleTuning tuning;
         g_vehicles[i]->initTuning(vehicleConfig, tuning);
         f32 vehicleAngle = 0.f;
-        Mat4 vehicleTransform = glm::rotate(Mat4(1.f), vehicleAngle, Vec3(0, 0, 1));
-        g_vehicles[i]->render(&rw, glm::translate(Mat4(1.f), Vec3(0, 0, tuning.getRestOffset())) *
+        Mat4 vehicleTransform = Mat4::rotationZ(vehicleAngle);
+        g_vehicles[i]->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())) *
             vehicleTransform, nullptr, vehicleConfig);
         rw.setViewportCount(1);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
@@ -1777,13 +1776,13 @@ void Menu::championshipStandings()
         RenderWorld& rw = renderWorlds[i];
         rw.setName(tstr("Vehicle Icon ", i));
         rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
-        drawSimple(&rw, quadMesh, &g_res.white, glm::scale(Mat4(1.f), Vec3(20.f)), Vec3(0.02f));
+        drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
         if (driver->vehicleIndex != -1)
         {
             g_vehicles[driver->vehicleIndex]->render(&rw,
-                glm::translate(Mat4(1.f),
+                Mat4::translation(
                     Vec3(0, 0, driver->getTuning().getRestOffset())) *
-                //glm::rotate(Mat4(1.f), (f32)getTime(), Vec3(0, 0, 1)),
+                //Mat4::rotationZ((f32)getTime()),
                 Mat4(1.f),
                 nullptr, *driver->getVehicleConfig());
         }
@@ -2488,7 +2487,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (blackFadeAlpha > 0.f)
     {
-        ui::rectBlur(10000, &g_res.white, {0,0}, {g_game.windowWidth, g_game.windowHeight},
+        ui::rectBlur(10000, &g_res.white, {0,0}, Vec2(g_game.windowWidth, g_game.windowHeight),
                     Vec4(0,0,0,1), blackFadeAlpha);
     }
 

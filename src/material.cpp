@@ -73,7 +73,7 @@ void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stenc
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->normalTransform = glm::inverseTranspose(Mat3(transform));
+    d->normalTransform = inverseTranspose(Mat3(transform));
     d->textureColor = textureColorHandle;
     d->textureNormal = textureNormalHandle;
     d->color = color;
@@ -94,8 +94,8 @@ void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stenc
         MaterialRenderData* d = (MaterialRenderData*)renderData;
         glBindTextureUnit(0, d->textureColor);
         glBindTextureUnit(5, d->textureNormal);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform3fv(2, 1, (GLfloat*)&d->color);
         glUniform3f(3, d->fresnelBias, d->fresnelScale, d->fresnelPower);
         glUniform3f(4, d->specularPower, d->specularStrength, 0.f);
@@ -109,8 +109,8 @@ void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stenc
 
     auto renderDepth = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         if (d->alphaCutoff > 0.f)
         {
             glBindTextureUnit(0, d->textureColor);
@@ -154,8 +154,8 @@ void Material::drawPick(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u32 
 
     auto render = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         if (d->alphaCutoff > 0.f)
         {
             glBindTextureUnit(0, d->textureColor);
@@ -185,7 +185,7 @@ void Material::drawHighlight(RenderWorld* rw, Mat4 const& transform, Mesh* mesh,
 
     auto render = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
         if (d->alphaCutoff > 0.f)
         {
             glBindTextureUnit(0, d->textureColor);
@@ -228,7 +228,7 @@ void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct 
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->normalTransform = glm::inverseTranspose(Mat3(transform));
+    d->normalTransform = inverseTranspose(Mat3(transform));
     d->color = color;
     d->emission = emit * emitPower;
     d->fresnelBias = fresnelBias;
@@ -252,8 +252,8 @@ void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct 
         glBindTextureUnit(6, d->wrapTexture[0]);
         glBindTextureUnit(7, d->wrapTexture[1]);
         glBindTextureUnit(8, d->wrapTexture[2]);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform3fv(2, 1, (GLfloat*)&d->color);
         glUniform3f(3, d->fresnelBias, d->fresnelScale, d->fresnelPower);
         glUniform3f(4, d->specularPower, d->specularStrength, 0.f);
@@ -267,8 +267,8 @@ void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct 
 
     auto renderDepth = [](void* renderData) {
         VehicleRenderData* d = (VehicleRenderData*)renderData;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };
@@ -300,15 +300,15 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, Mat4 const& transform
     d->tex = tex->handle;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->normalTransform = glm::inverseTranspose(Mat3(transform));
+    d->normalTransform = inverseTranspose(Mat3(transform));
     d->color = color;
     d->emit = emit;
 
     auto renderOpaque = [](void* renderData) {
         SimpleRenderData* d = (SimpleRenderData*)renderData;
         glBindTextureUnit(0, d->tex);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform3fv(2, 1, (GLfloat*)&d->color);
         glUniform3f(3, 0.f, 0.f, 0.f);
         glUniform3f(4, 300.f, 0.1f, 0.f);
@@ -321,8 +321,8 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, Mat4 const& transform
 
     auto renderDepth = [](void* renderData) {
         SimpleRenderData* d = (SimpleRenderData*)renderData;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
-        glUniformMatrix3fv(1, 1, GL_FALSE, glm::value_ptr(d->normalTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
+        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform1f(8, 0.f);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
@@ -341,7 +341,7 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec4 colo
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->color = color;
+    d->color = color.rgb;
     d->emit.r = color.a;
 
     auto renderOpaque = [](void* renderData) {
@@ -350,7 +350,8 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec4 colo
         Camera const& camera = g_game.renderer->getRenderWorld()->getCamera(0);
         glUniform4f(2, d->color.x, d->color.y, d->color.z, d->emit.r);
         glUniform1i(3, 1);
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection * d->worldTransform));
+        Mat4 t = camera.viewProjection * d->worldTransform;
+        glUniformMatrix4fv(1, 1, GL_FALSE, t.valuePtr());
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -395,7 +396,7 @@ void drawOverlay(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec3 const&
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         }
 
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(d->worldTransform));
+        glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
         glUniform3fv(1, 1, (f32*)&d->color);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);

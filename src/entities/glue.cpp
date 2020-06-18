@@ -8,7 +8,7 @@
 Glue* Glue::setup(Vec3 const& pos)
 {
     position = pos;
-    rotation = glm::rotate(rotation, PI * 0.5f, Vec3(0, 1, 0));
+    rotation = glm::rotate(rotation, PI * 0.5f, glm::vec3(0, 1, 0));
     scale = Vec3(6.f);
     return this;
 }
@@ -16,7 +16,7 @@ Glue* Glue::setup(Vec3 const& pos)
 void Glue::onCreateEnd(Scene* scene)
 {
     rotation = glm::rotate(rotation,
-            random(scene->randomSeries, 0.f, PI * 2.f), Vec3(1, 0, 0));
+            random(scene->randomSeries, 0.f, PI * 2.f), glm::vec3(1, 0, 0));
 
     actor = g_game.physx.physics->createRigidStatic(PxTransform(convert(position), convert(rotation)));
     physicsUserData.entityType = ActorUserData::SELECTABLE_ENTITY;

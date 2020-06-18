@@ -181,7 +181,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, Mat4 const& transform, Boundi
 
 bool Mesh::intersect(Mat4 const& transform, BoundingBox bb, Array<u32>& output) const
 {
-    bb = bb.transform(glm::inverse(transform));
+    bb = bb.transform(inverse(transform));
     if (octree)
     {
         return octree->intersect(*this, transform, bb, output);

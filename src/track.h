@@ -189,7 +189,7 @@ public:
         }
         i32 pointIndex = selectedPoints.back().pointIndex;
         Vec3 xDir = getPointDir(pointIndex);
-        return length2(xDir) > 0.f;
+        return lengthSquared(xDir) > 0.f;
     }
     void matchZ(bool lowest);
     void extendTrack(i32 prefabCurveIndex);

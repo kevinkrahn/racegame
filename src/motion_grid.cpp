@@ -202,10 +202,10 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
             rz += 2.f;
             color = Vec3(1.f, 0.f, 0.f);
         }
-        drawSimple(rw, mesh, &g_res.white, glm::translate(Mat4(1.f), Vec3(rx, ry, rz)), color);
+        drawSimple(rw, mesh, &g_res.white, Mat4::translation(Vec3(rx, ry, rz)), color);
     }
 #else
-    Mat4 scale = glm::scale(Mat4(1.f), Vec3(0.4f));
+    Mat4 scale = Mat4::translation(Vec3(0.4f));
     for (i32 x = 0; x<width; ++x)
     {
         for (i32 y = 0; y<height; ++y)
@@ -232,8 +232,7 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
                         color = Vec3(1, 0, 0);
                     }
 
-                    drawSimple(rw, mesh, &g_res.white, glm::translate(Mat4(1.f),
-                            Vec3(rx, ry, cell.z)), color);
+                    drawSimple(rw, mesh, &g_res.white, Mat4::translation(Vec3(rx, ry, cell.z)), color);
                 }
                 cellType = cell.dynamicCellType;
                 if (cellType != CellType::NONE && cell.generation == (u32)g_game.frameCount)
@@ -257,7 +256,7 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
                     }
 
                     drawSimple(rw, mesh, &g_res.white,
-                        glm::translate(Mat4(1.f), Vec3(rx, ry, cell.z+4.f)) * scale, color);
+                        Mat4::translation(Vec3(rx, ry, cell.z+4.f)) * scale, color);
                 }
             }
         }

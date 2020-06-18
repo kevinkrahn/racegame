@@ -656,10 +656,10 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         auto info = wheelQueryResults[i];
-        Vec3 wheelPosition = transform * Vec4(convert(info.localPose.p), 1.f);
+        Vec3 wheelPosition = Vec3(transform * Vec4(convert(info.localPose.p), 1.f));
         f32 wheelRadius = i < 2 ? tuning->wheelRadiusFront : tuning->wheelRadiusRear;
 
-        wheelInfo[i].transform = convert(info.localPose);
+        wheelInfo[i].transform = Mat4(info.localPose);
         wheelInfo[i].position = wheelPosition;
         wheelInfo[i].contactNormal = convert(info.tireContactNormal);
         wheelInfo[i].contactPosition = wheelPosition - wheelInfo[i].contactNormal * wheelRadius;
@@ -706,7 +706,7 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
                 {
                     if (d.groundType == GroundSpot::OIL)
                     {
-                        f32 dist = distance2(d.p, wheelPosition);
+                        f32 dist = distanceSquared(d.p, wheelPosition);
                         if (dist < square(d.radius))
                         {
                             wheelInfo[i].oilCoverage = 2.f;
@@ -714,7 +714,7 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
                     }
                     else if (d.groundType == GroundSpot::GLUE)
                     {
-                        f32 dist = distance2(d.p, wheelPosition);
+                        f32 dist = distanceSquared(d.p, wheelPosition);
                         if (dist < square(d.radius))
                         {
                             wheelInfo[i].isTouchingGlue = true;

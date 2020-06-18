@@ -40,8 +40,7 @@ void Start::updateTransform(Scene* scene)
     PlaceableEntity::updateTransform(scene);
     f32 size = 21.f;
     Mat4 decalTransform = transform *
-        glm::scale(Mat4(1.f), { size * 0.0625f, size, 30.f }) *
-        glm::rotate(Mat4(1.f), f32(M_PI * 0.5), { 0, 1, 0 });
+        Mat4::scaling(Vec3(size * 0.0625f, size, 30.f)) * Mat4::rotationY(PI * 0.5);
     finishLineDecal.begin(decalTransform);
     scene->track->applyDecal(finishLineDecal);
     finishLineDecal.end();
@@ -108,7 +107,7 @@ void Start::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
             for (auto& v : positions)
             {
-                drawBillboard(rw, flare, transform * Vec4(v, 1.f),
+                drawBillboard(rw, flare, Vec3(transform * Vec4(v, 1.f)),
                             col, countIndex == 2 ? 1.3f : 1.f, 0.f, false);
             }
 

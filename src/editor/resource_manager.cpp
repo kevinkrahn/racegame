@@ -730,7 +730,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     rw.setClearColor(true, { 0.05f, 0.05f, 0.05f, 1.f });
     rw.setViewportCamera(0, Vec3(8.f, 8.f, 10.f),
             Vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
-    Mat4 transform = glm::scale(Mat4(1.f), Vec3(3.5f));
+    Mat4 transform = Mat4::scaling(Vec3(3.5f));
     mat.draw(&rw, transform, previewMesh);
 
     renderer->addRenderWorld(&rw);

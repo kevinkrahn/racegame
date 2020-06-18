@@ -37,7 +37,7 @@ public:
     void setTransform(Mat4 const& transform)
     {
         this->transform = transform;
-        this->normalTransform = glm::inverseTranspose(Mat3(transform));
+        this->normalTransform = inverseTranspose(Mat3(transform));
     }
     void draw(RenderWorld* rw);
 };

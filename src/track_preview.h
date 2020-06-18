@@ -97,7 +97,7 @@ public:
         static ShaderHandle shader = getShaderHandle("mesh2D");
         glUseProgram(renderer->getShaderProgram(shader));
         glUniform3fv(5, 1, (GLfloat*)&camPosition);
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(viewProjection));
+        glUniformMatrix4fv(0, 1, GL_FALSE, viewProjection.valuePtr());
     }
 
     void setCamViewProjection(Mat4 const& viewProjection)
@@ -113,7 +113,7 @@ public:
     void drawItem(GLuint vao, u32 numIndices, Mat4 const& worldTransform,
             Vec3 const& color=Vec3(1.0), bool overwriteColor=false, i32 shadeMode=0)
     {
-        glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(worldTransform));
+        glUniformMatrix4fv(1, 1, GL_FALSE, worldTransform.valuePtr());
         glUniform3fv(2, 1, (GLfloat*)&color);
         glUniform1i(3, overwriteColor);
         glUniform1i(4, shadeMode);
@@ -141,5 +141,5 @@ public:
 
     Texture* getTexture() { return &outputTexture; }
 
-    Vec2 getSize() const { return { width, height }; }
+    Vec2 getSize() const { return Vec2(width, height); }
 };

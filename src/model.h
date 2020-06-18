@@ -45,10 +45,7 @@ public:
 
     Mat4 getTransform() const
     {
-        Mat4 transform = glm::translate(Mat4(1.f), position)
-            * glm::mat4_cast(rotation)
-            * glm::scale(Mat4(1.f), scale);
-        return transform;
+        return Mat4::translation(position) * Mat4(rotation) * Mat4::scaling(scale);
     }
 };
 

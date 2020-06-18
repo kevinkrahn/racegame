@@ -42,13 +42,13 @@ public:
         f32 minSpeed = 10.f;
         Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (length2(vel) < square(minSpeed))
+        if (lengthSquared(vel) < square(minSpeed))
         {
             vel = normalize(vel) * minSpeed;
         }
-        Vec3 pos = transform * mountTransform * Vec4(missileSpawnPoint(ammo - 1), 1.f);
+        Vec3 pos = Vec3(transform * mountTransform * Vec4(missileSpawnPoint(ammo - 1), 1.f));
         scene->addEntity(new Projectile(pos,
-                vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::MISSILE));
+                vel, transform.zAxis(), vehicle->vehicleIndex, Projectile::MISSILE));
         g_audio.playSound3D(g_res.getSound("missile"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
@@ -70,13 +70,13 @@ public:
         for (u32 i=0; i<info.maxUpgradeLevel; ++i)
         {
             Mat4 t = vehicleTransform * mountTransform
-                * glm::translate(Mat4(1.f), missileSpawnPoint(i));
+                * Mat4::translation(missileSpawnPoint(i));
             mat->draw(rw, t, mountMesh, 2);
         }
         for (u32 i=0; i<ammo; ++i)
         {
             Mat4 t = vehicleTransform * mountTransform
-                * glm::translate(Mat4(1.f), missileSpawnPoint(i));
+                * Mat4::translation(missileSpawnPoint(i));
             mat->draw(rw, t, mesh, 2);
         }
     }

@@ -124,7 +124,7 @@ public:
     f32 getForwardSpeed() const { return vehicle4W->computeForwardSpeed(); }
     f32 getSidewaysSpeed() const { return vehicle4W->computeSidewaysSpeed(); }
     PxRigidDynamic* getRigidBody() const { return vehicle4W->getRigidDynamicActor(); }
-    Mat4 getTransform() const { return convert(PxMat44(getRigidBody()->getGlobalPose())); }
+    Mat4 getTransform() const { return Mat4(PxMat44(getRigidBody()->getGlobalPose())); }
     Vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
     Vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
     Vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }

@@ -34,7 +34,7 @@ public:
         actor->userData = &physicsUserData;
 
         PxShape* collisionShape = PxRigidActorExt::createExclusiveShape(*actor,
-            PxSphereGeometry((scale * scaleOf(transform)).z), *g_game.physx.materials.generic);
+            PxSphereGeometry((scale * transform.scale()).z), *g_game.physx.materials.generic);
         collisionShape->setQueryFilterData(PxFilterData(COLLISION_FLAG_SELECTABLE | COLLISION_FLAG_PICKUP,
                     DECAL_NONE, 0, UNDRIVABLE_SURFACE));
         collisionShape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_PICKUP, -1, 0, 0));
@@ -75,9 +75,8 @@ public:
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
-        Mat4 t =
-            glm::translate(Mat4(1.f), Vec3(0, 0, sinf((f32)scene->getWorldTime()) * 0.2f)) *
-            transform * glm::rotate(Mat4(1.f), (f32)scene->getWorldTime(), Vec3(0, 0, 1));
+        Mat4 t = Mat4::translation(Vec3(0, 0, sinf((f32)scene->getWorldTime()) * 0.2f)) *
+            transform * Mat4::rotationZ((f32)scene->getWorldTime());
         Model* model = getModel();
         for (auto& obj : model->objects)
         {

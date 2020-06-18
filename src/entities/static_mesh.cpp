@@ -68,9 +68,7 @@ void StaticMesh::onCreate(Scene* scene)
 
 void StaticMesh::updateTransform(Scene* scene)
 {
-    transform = glm::translate(Mat4(1.f), position)
-        * glm::mat4_cast(rotation)
-        * glm::scale(Mat4(1.f), scale);
+    transform = Mat4::translation(position) * Mat4(rotation) * Mat4::scaling(scale);
 
     if (actor)
     {
@@ -84,7 +82,7 @@ void StaticMesh::updateTransform(Scene* scene)
                     PxConvexMeshGeometry geom;
                     if (o.shape->getConvexMeshGeometry(geom))
                     {
-                        Mat4 t = glm::scale(Mat4(1.f), scale) * o.modelObject->getTransform();
+                        Mat4 t = Mat4::scaling(scale) * o.modelObject->getTransform();
                         o.shape->setLocalPose(convert(t));
                         geom.scale = convert(scale * o.modelObject->scale);
                         o.shape->setGeometry(geom);
@@ -95,7 +93,7 @@ void StaticMesh::updateTransform(Scene* scene)
                     PxTriangleMeshGeometry geom;
                     if (o.shape->getTriangleMeshGeometry(geom))
                     {
-                        Mat4 t = glm::scale(Mat4(1.f), scale) * o.modelObject->getTransform();
+                        Mat4 t = Mat4::scaling(scale) * o.modelObject->getTransform();
                         o.shape->setLocalPose(convert(t));
                         geom.scale = convert(scale * o.modelObject->scale);
                         o.shape->setGeometry(geom);
@@ -115,7 +113,7 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     Mat4 t = transform;
     if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
     {
-        t = convert(actor->getGlobalPose());
+        t = Mat4(actor->getGlobalPose());
     }
     for (auto& o : objects)
     {

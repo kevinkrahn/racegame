@@ -89,7 +89,7 @@ public:
             DebugDraw* dd = (DebugDraw*)renderData;
 
             glUniform1i(3, 0);
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(camera.viewProjection));
+            glUniformMatrix4fv(1, 1, GL_FALSE, camera.viewProjection.valuePtr());
 
             glBindVertexArray(dd->vao);
             glDrawArrays(GL_LINES, 0, (GLsizei)dd->verts.size());

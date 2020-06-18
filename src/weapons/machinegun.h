@@ -63,13 +63,13 @@ public:
         f32 minSpeed = 90.f;
         Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (length2(vel) < square(minSpeed))
+        if (lengthSquared(vel) < square(minSpeed))
         {
             vel = normalize(vel) * minSpeed;
         }
-        Vec3 pos = transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f);
+        Vec3 pos = Vec3(transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f));
         scene->addEntity(new Projectile(pos,
-                vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BULLET));
+                vel, transform.zAxis(), vehicle->vehicleIndex, Projectile::BULLET));
 
         g_audio.playSound3D(g_res.getSound("mg2"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
@@ -87,7 +87,7 @@ public:
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         mat->draw(rw, vehicleTransform * mountTransform
-                    * glm::translate(Mat4(1.f), Vec3(0.556007, 0, 0.397523f))
-                    * glm::rotate(Mat4(1.f), barrelSpin, Vec3(1, 0, 0)), meshBarrel, 2);
+                    * Mat4::translation(Vec3(0.556007, 0, 0.397523f))
+                    * Mat4::rotationX(barrelSpin), meshBarrel, 2);
     }
 };

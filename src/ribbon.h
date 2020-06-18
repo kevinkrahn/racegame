@@ -65,7 +65,7 @@ public:
         if (endChain ||
             points.empty() ||
             points.back().isEnd ||
-            length2(position - points.back().position) > square(minDistanceBetweenPoints))
+            lengthSquared(position - points.back().position) > square(minDistanceBetweenPoints))
         {
             if (points.empty() || points.back().isEnd)
             {
@@ -142,7 +142,7 @@ public:
             countPoint(v);
         }
         if (!points.back().isEnd &&
-            length2(points.back().position - lastPoint.position) > square(0.1f))
+            lengthSquared(points.back().position - lastPoint.position) > square(0.1f))
         {
             countPoint(lastPoint);
         }
@@ -218,7 +218,7 @@ public:
             writePoint(v);
         }
         if (!points.back().isEnd &&
-            length2(points.back().position - lastPoint.position) > square(0.1f))
+            lengthSquared(points.back().position - lastPoint.position) > square(0.1f))
         {
             writePoint(lastPoint);
         }

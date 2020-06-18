@@ -157,7 +157,7 @@ struct BoundingBox
         };
         for (Vec3& v : corners)
         {
-            v = Vec3(transform * Vec4(v, 1.0));
+            v = (transform * Vec4(v, 1.f)).xyz;
             if (v.x < minP.x) minP.x = v.x;
             if (v.y < minP.y) minP.y = v.y;
             if (v.z < minP.z) minP.z = v.z;
@@ -208,7 +208,7 @@ BoundingBox computeCameraFrustumBoundingBox(Mat4 const& inverseViewProj)
     for (auto& v : ndc)
     {
         Vec4 b = inverseViewProj * Vec4(v, 1.f);
-        v = Vec3(b) / b.w;
+        v = b.xyz / b.w;
 
         if (v.x < minx) minx = v.x;
         if (v.x > maxx) maxx = v.x;

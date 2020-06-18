@@ -15,28 +15,539 @@ typedef double   f64;
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/norm.hpp>
-#include <glm/gtx/compatibility.hpp>
-
-#include <iostream>
-
-using Vec2i = glm::ivec2;
-using Vec2 = glm::vec2;
-using Vec3 = glm::vec3;
-using Vec4 = glm::vec4;
-using Mat3 = glm::mat3;
-using Mat4 = glm::mat4;
-using Quat = glm::quat;
 
 #include <PxPhysicsAPI.h>
 using namespace physx;
 
 #define PI PxPi
 #define PI2 (PxPi * 2.f)
+
+using Quat = glm::quat;
+
+struct Vec2i
+{
+    i32 x, y;
+
+    Vec2i(i32 x, i32 y) : x(x), y(y) {}
+    explicit Vec2i(i32 x) : x(x), y(x) {}
+    Vec2i() = default;
+};
+
+struct Vec2
+{
+    union
+    {
+        struct
+        {
+            f32 x, y;
+        };
+
+        struct
+        {
+            f32 u, v;
+        };
+    };
+
+    Vec2(f32 x, f32 y) : x(x), y(y) {}
+    explicit Vec2(f32 x) : x(x), y(x) {}
+    Vec2() = default;
+    explicit Vec2(struct Vec3 const& v);
+
+    f32 direction() const
+    {
+        return -atan2f(x, y);
+    }
+
+    Vec2 perpendicular() const
+    {
+        return Vec2(-y, x);
+    }
+
+    Vec2& operator+=(Vec2 const& rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+
+    Vec2& operator+=(f32 rhs)
+    {
+        x += rhs;
+        y += rhs;
+        return *this;
+    }
+
+    Vec2& operator-=(Vec2 const& rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+
+    Vec2& operator-=(f32 rhs)
+    {
+        x -= rhs;
+        y -= rhs;
+        return *this;
+    }
+
+    Vec2& operator*=(f32 rhs)
+    {
+        x *= rhs;
+        y *= rhs;
+        return *this;
+    }
+
+    Vec2& operator*=(Vec2 const& rhs)
+    {
+        x *= rhs.x;
+        y *= rhs.y;
+        return *this;
+    }
+
+    Vec2& operator/=(f32 rhs)
+    {
+        x /= rhs;
+        y /= rhs;
+        return *this;
+    }
+
+    Vec2& operator/=(Vec2 const& rhs)
+    {
+        x /= rhs.x;
+        y /= rhs.y;
+        return *this;
+    }
+
+    Vec2 operator-() const
+    {
+        return { -x, -y };
+    }
+};
+
+inline Vec2 operator+(Vec2 lhs, Vec2 const& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Vec2 operator+(Vec2 lhs, f32 rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Vec2 operator-(Vec2 lhs, Vec2 const& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec2 operator-(Vec2 lhs, f32 rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec2 operator*(Vec2 lhs, f32 rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Vec2 operator*(f32 lhs, Vec2 rhs)
+{
+    rhs *= lhs;
+    return rhs;
+}
+
+inline Vec2 operator*(Vec2 lhs, Vec2 const& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Vec2 operator/(Vec2 lhs, f32 rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline Vec2 operator/(f32 lhs, Vec2 rhs)
+{
+    return Vec2(lhs / rhs.x, lhs / rhs.y);
+}
+
+inline Vec2 operator/(Vec2 lhs, Vec2 const& rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline bool operator==(Vec2 const& lhs, Vec2 const& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+inline bool operator!=(Vec2 const& lhs, Vec2 const& rhs)
+{
+    return !operator==(lhs, rhs);
+}
+
+struct Vec3
+{
+    union
+    {
+        struct
+        {
+            f32 x, y, z;
+        };
+        struct
+        {
+            f32 r, g, b;
+        };
+        Vec2 xy;
+        Vec2 uv;
+        f32 data[3];
+    };
+
+    Vec3(f32 x, f32 y, f32 z) : x(x), y(y), z(z) {}
+    explicit Vec3(f32 x) : x(x), y(x), z(x) {}
+    Vec3(Vec2 const& v, f32 z) : x(v.x), y(v.y), z(z) {}
+    Vec3() = default;
+    explicit Vec3(struct Vec4 const& v);
+
+    void operator=(Vec3 const& rhs)
+    {
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+    }
+
+    f32& operator[](u32 index)
+    {
+        return data[index];
+    }
+
+    const f32& operator[](u32 index) const
+    {
+        return data[index];
+    }
+
+    Vec3& operator+=(Vec3 const& rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        return *this;
+    }
+
+    Vec3& operator+=(f32 rhs)
+    {
+        x += rhs;
+        y += rhs;
+        z += rhs;
+        return *this;
+    }
+
+    Vec3& operator-=(Vec3 const& rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        z -= rhs.z;
+        return *this;
+    }
+
+    Vec3& operator-=(f32 rhs)
+    {
+        x -= rhs;
+        y -= rhs;
+        z -= rhs;
+        return *this;
+    }
+
+    Vec3& operator*=(f32 rhs)
+    {
+        x *= rhs;
+        y *= rhs;
+        z *= rhs;
+        return *this;
+    }
+
+    Vec3& operator*=(Vec3 const& rhs)
+    {
+        x *= rhs.x;
+        y *= rhs.y;
+        z *= rhs.z;
+        return *this;
+    }
+
+    Vec3& operator/=(f32 rhs)
+    {
+        x /= rhs;
+        y /= rhs;
+        z /= rhs;
+        return *this;
+    }
+
+    Vec3& operator/=(Vec3 const& rhs)
+    {
+        x /= rhs.x;
+        y /= rhs.y;
+        z /= rhs.z;
+        return *this;
+    }
+
+    Vec3 operator-() const
+    {
+        return { -x, -y, -z };
+    }
+};
+using Rgb = Vec3;
+
+inline Vec3 operator+(Vec3 lhs, Vec3 const& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Vec3 operator+(Vec3 lhs, f32 rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Vec3 operator-(Vec3 lhs, Vec3 const& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec3 operator-(Vec3 lhs, f32 rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec3 operator*(Vec3 lhs, f32 rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Vec3 operator*(f32 lhs, Vec3 rhs)
+{
+    rhs *= lhs;
+    return rhs;
+}
+
+inline Vec3 operator*(Vec3 lhs, Vec3 const& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Vec3 operator/(Vec3 lhs, f32 rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline Vec3 operator/(Vec3 lhs, Vec3 const& rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline bool operator==(Vec3 const& lhs, Vec3 const& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+
+inline bool operator!=(Vec3 const& lhs, Vec3 const& rhs)
+{
+    return !operator==(lhs, rhs);
+}
+
+struct Vec4
+{
+    union
+    {
+        struct
+        {
+            f32 x, y, z, w;
+        };
+        struct
+        {
+            f32 r, g, b, a;
+        };
+        Vec3 xyz;
+        Rgb rgb;
+        f32 data[4];
+    };
+
+    Vec4(f32 x, f32 y, f32 z, f32 w) : x(x), y(y), z(z), w(w) {}
+    explicit Vec4(f32 x) : x(x), y(x), z(x), w(x) {}
+    Vec4(Vec3 const& v, f32 w) : x(v.x), y(v.y), z(v.z), w(w) {}
+    Vec4() = default;
+
+    void operator=(Vec4 const& rhs)
+    {
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+        w = rhs.w;
+    }
+
+    f32& operator[](u32 index)
+    {
+        return data[index];
+    }
+
+    const f32& operator[](u32 index) const
+    {
+        return data[index];
+    }
+
+    Vec4& operator+=(Vec4 const& rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        w += rhs.w;
+        return *this;
+    }
+
+    Vec4& operator+=(f32 rhs)
+    {
+        x += rhs;
+        y += rhs;
+        z += rhs;
+        w += rhs;
+        return *this;
+    }
+
+    Vec4& operator-=(Vec4 const& rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        z -= rhs.z;
+        w -= rhs.w;
+        return *this;
+    }
+
+    Vec4& operator-=(f32 rhs)
+    {
+        x -= rhs;
+        y -= rhs;
+        z -= rhs;
+        w -= rhs;
+        return *this;
+    }
+
+    Vec4& operator*=(f32 rhs)
+    {
+        x *= rhs;
+        y *= rhs;
+        z *= rhs;
+        w *= rhs;
+        return *this;
+    }
+
+    Vec4& operator*=(Vec4 const& rhs)
+    {
+        x *= rhs.x;
+        y *= rhs.y;
+        z *= rhs.z;
+        w *= rhs.w;
+        return *this;
+    }
+
+    Vec4& operator/=(f32 rhs)
+    {
+        x /= rhs;
+        y /= rhs;
+        z /= rhs;
+        w /= rhs;
+        return *this;
+    }
+
+    Vec4& operator/=(Vec4 const& rhs)
+    {
+        x /= rhs.x;
+        y /= rhs.y;
+        z /= rhs.z;
+        w /= rhs.w;
+        return *this;
+    }
+
+    Vec4 operator-() const
+    {
+        return { -x, -y, -z, -w };
+    }
+};
+using Rgba = Vec4;
+
+inline Vec4 operator+(Vec4 lhs, Vec4 const& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Vec4 operator+(Vec4 lhs, f32 rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Vec4 operator-(Vec4 lhs, Vec4 const& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec4 operator-(Vec4 lhs, f32 rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec4 operator*(Vec4 lhs, f32 rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Vec4 operator*(Vec4 lhs, Vec4 const& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Vec4 operator/(Vec4 lhs, f32 rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline Vec4 operator/(Vec4 lhs, Vec4 const& rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline bool operator==(Vec4 const& lhs, Vec4 const& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
+}
+
+inline bool operator!=(Vec4 const& lhs, Vec4 const& rhs)
+{
+    return !operator==(lhs, rhs);
+}
 
 inline f32 radians(f32 deg)
 {
@@ -98,67 +609,6 @@ inline f32 length(Vec4 const& v)
     return sqrtf(lengthSquared(v));
 }
 
-inline Vec3 xAxisOf(Mat4 const& m)
-{
-    return m[0];
-}
-
-inline Vec3 yAxisOf(Mat4 const& m)
-{
-    return m[1];
-}
-
-inline Vec3 zAxisOf(Mat4 const& m)
-{
-    return m[2];
-}
-
-inline Vec3 translationOf(Mat4 const& m)
-{
-    return m[3];
-}
-
-inline Vec3 scaleOf(Mat4 const& m)
-{
-    return Vec3(length(Vec3(m[0])), length(Vec3(m[1])), length(Vec3(m[2])));
-}
-
-inline Mat4 rotationOf(Mat4 m)
-{
-    m[0] /= length(Vec3(m[0]));
-    m[1] /= length(Vec3(m[1]));
-    m[2] /= length(Vec3(m[2]));
-    m[3] = Vec4(0, 0, 0, 1);
-    return m;
-}
-
-inline Vec3 convert(PxVec3 const& v)
-{
-    return Vec3(v.x, v.y, v.z);
-}
-
-inline PxVec3 convert(Vec3 const& v)
-{
-    return PxVec3(v.x, v.y, v.z);
-}
-
-inline Mat4 convert(PxMat44 const& m)
-{
-    return glm::make_mat4(m.front());
-}
-
-inline PxTransform convert(Mat4 const& m)
-{
-    Vec3 pos(m[3]);
-    Quat rot = glm::quat_cast(Mat3(rotationOf(m)));
-    return PxTransform(convert(pos), PxQuat(rot.x, rot.y, rot.z, rot.w));
-}
-
-inline PxQuat convert(Quat const& q)
-{
-    return PxQuat(q.x, q.y, q.z, q.w);
-}
-
 inline f32 square(f32 v)
 {
     return v * v;
@@ -212,7 +662,7 @@ inline f32 smoothMove(f32 from, f32 to, f32 amount, f32 deltaTime)
     return lerp(from, to, 1.f-expf(-amount * deltaTime));
 }
 
-inline Vec3 smoothMove(const Vec3& from, const Vec3& to, f32 amount, f32 deltaTime)
+inline Vec3 smoothMove(Vec3 const& from, Vec3 const& to, f32 amount, f32 deltaTime)
 {
     return lerp(from, to, 1.f-exp(-amount * deltaTime));
 }
@@ -308,7 +758,7 @@ inline Vec2 snap(Vec2 val, f32 multiple)
 
 inline Vec3 snapXY(Vec3 const& val, f32 multiple)
 {
-    return Vec3(snap(Vec2(val) + Vec2(multiple * 0.5f), multiple), val.z);
+    return Vec3(snap(val.xy + Vec2(multiple * 0.5f), multiple), val.z);
 }
 
 inline Vec2 lengthdir(f32 angle, f32 len)
@@ -329,17 +779,17 @@ inline f32 min(f32 a, f32 b)
 
 inline Vec2 min(Vec2 a, Vec2 b)
 {
-    return Vec2(min(a.x, b.x), min(a.x, b.y));
+    return Vec2(min(a.x, b.x), min(a.y, b.y));
 }
 
 inline Vec3 min(Vec3 const& a, Vec3 const& b)
 {
-    return Vec3(min(a.x, b.x), min(a.x, b.y), min(a.z, b.z));
+    return Vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
 }
 
 inline Vec4 min(Vec4 const& a, Vec4 const& b)
 {
-    return Vec4(min(a.x, b.x), min(a.x, b.y), min(a.z, b.z), min(a.w, b.w));
+    return Vec4(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w));
 }
 
 inline f32 max(f32 a, f32 b)
@@ -349,17 +799,17 @@ inline f32 max(f32 a, f32 b)
 
 inline Vec2 max(Vec2 a, Vec2 b)
 {
-    return Vec2(max(a.x, b.x), max(a.x, b.y));
+    return Vec2(max(a.x, b.x), max(a.y, b.y));
 }
 
 inline Vec3 max(Vec3 const& a, Vec3 const& b)
 {
-    return Vec3(max(a.x, b.x), max(a.x, b.y), max(a.z, b.z));
+    return Vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z));
 }
 
 inline Vec4 max(Vec4 const& a, Vec4 const& b)
 {
-    return Vec4(max(a.x, b.x), max(a.x, b.y), max(a.z, b.z), max(a.w, b.w));
+    return Vec4(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w));
 }
 
 inline Vec2 normalize(Vec2 const& v)
@@ -438,16 +888,443 @@ inline Vec3 cross(Vec3 const& a, Vec3 const& b)
     return Vec3(a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x);
 }
 
+struct Mat3
+{
+    Vec3 value[3];
+
+    Mat3() {}
+    explicit Mat3(f32 n)
+    {
+        value[0] = Vec3(n, 0.f, 0.f);
+        value[1] = Vec3(0.f, n, 0.f);
+        value[2] = Vec3(0.f, 0.f, n);
+    }
+    explicit Mat3(struct Mat4 const& m);
+
+    f32* valuePtr() const { return (f32*)value; }
+
+    Vec3& operator[](u32 row)
+    {
+        return value[row];
+    }
+
+    Vec3 const& operator[](u32 row) const
+    {
+        return value[row];
+    }
+
+    void operator=(const Mat3& rhs)
+    {
+        value[0] = rhs[0];
+        value[1] = rhs[1];
+        value[2] = rhs[2];
+    }
+
+    Mat3& operator*=(f32 rhs)
+    {
+        value[0] *= rhs;
+        value[1] *= rhs;
+        value[2] *= rhs;
+        return *this;
+    }
+
+    Mat3& operator/=(f32 rhs)
+    {
+        value[0] /= rhs;
+        value[1] /= rhs;
+        value[2] /= rhs;
+        return *this;
+    }
+
+    Mat3& operator+=(f32 rhs)
+    {
+        value[0] += Vec3(rhs);
+        value[1] += Vec3(rhs);
+        value[2] += Vec3(rhs);
+        return *this;
+    }
+
+    Mat3& operator-=(f32 rhs)
+    {
+        value[0] -= Vec3(rhs);
+        value[1] -= Vec3(rhs);
+        value[2] -= Vec3(rhs);
+        return *this;
+    }
+
+    Mat3& operator-=(const Mat3& rhs)
+    {
+        value[0] -= rhs[0];
+        value[1] -= rhs[1];
+        value[2] -= rhs[2];
+        return *this;
+    }
+
+    Mat3& operator+=(const Mat3& rhs)
+    {
+        value[0] += rhs[0];
+        value[1] += rhs[1];
+        value[2] += rhs[2];
+        return *this;
+    }
+
+    Mat3& operator*=(const Mat3& rhs)
+    {
+        Mat3 result;
+        for (u32 i=0; i<3; ++i)
+        {
+            for (u32 j=0; j<3; ++j)
+            {
+                result[i][j] = 0.f;
+                for (u32 k=0; k<3; ++k)
+                {
+                    result[i][j] += value[k][j] * rhs[i][k];
+                }
+            }
+        }
+        *this = result;
+        return *this;
+    }
+
+};
+
+Mat3 inverse(Mat3 const& m);
+Mat3 transpose(Mat3 const& m);
+Mat3 inverseTranspose(Mat3 const& m);
+
+inline Mat3 operator*(Mat3 lhs, f32 rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Mat3 operator+(Mat3 lhs, f32 rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Mat3 operator-(Mat3 lhs, f32 rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Mat3 operator/(Mat3 lhs, f32 rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline Mat3 operator*(Mat3 lhs, const Mat3& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Mat3 operator+(Mat3 lhs, const Mat3& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Mat3 operator-(Mat3 lhs, const Mat3& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec3 operator*(const Mat3& m, const Vec3& v)
+{
+    return Vec3(
+        m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2],
+        m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2],
+        m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2]);
+}
+
+struct alignas(16) Mat4
+{
+    union
+    {
+        Vec4 value[4];
+        f32 f[16];
+    };
+
+    Mat4() {}
+    explicit Mat4(f32 n)
+    {
+        value[0] = Vec4(n,   0.f, 0.f, 0.f);
+        value[1] = Vec4(0.f, n,   0.f, 0.f);
+        value[2] = Vec4(0.f, 0.f, n,   0.f);
+        value[3] = Vec4(0.f, 0.f, 0.f, n  );
+    }
+    explicit Mat4(const f32 * const m)
+    {
+        for (u32 i=0; i<16; ++i) f[i] = m[i];
+    }
+    explicit Mat4(Mat3 const& m)
+    {
+        value[0] = Vec4(m[0], 0.f);
+        value[1] = Vec4(m[1], 0.f);
+        value[2] = Vec4(m[2], 0.f);
+        value[3] = { 0, 0, 0, 1 };
+    }
+
+    explicit Mat4(PxMat44 const& m) : Mat4(m.front()) {}
+
+    explicit Mat4(Quat const& q)
+    {
+        glm::mat4 tmp = glm::mat4_cast(q);
+        *this = Mat4(glm::value_ptr(tmp));
+    }
+
+    f32* valuePtr() const { return (f32*)f; }
+
+    /*
+    PxTransform toTransform()
+    {
+        Vec3 pos(m[3]);
+        Quat rot = glm::quat_cast(*((glm::mat3*)(&Mat3(m.rotation()))));
+        return PxTransform(PxVec3(pos.x, pos.y, pos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
+    }
+    */
+
+    static Mat4 ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near=0.f, f32 far=100.f);
+    static Mat4 perspective(f32 fov, f32 aspect, f32 near, f32 far);
+    static Mat4 lookAt(Vec3 const& eye, Vec3 const& center, const Vec3 &up);
+    static Mat4 rotation(f32 rotX, f32 rotY, f32 rotZ);
+    static Mat4 rotation(Vec3 const& angles);
+    static Mat4 rotation(f32 angle, Vec3 axis);
+    static Mat4 rotationX(f32 angle);
+    static Mat4 rotationY(f32 angle);
+    static Mat4 rotationZ(f32 angle);
+    static Mat4 scaling(Vec3 const& scale);
+    static Mat4 translation(Vec3 const& trans);
+
+    Vec3 const& xAxis() const
+    {
+        return value[0].xyz;
+    }
+
+    Vec3 const& yAxis() const
+    {
+        return value[1].xyz;
+    }
+
+    Vec3 const& zAxis() const
+    {
+        return value[2].xyz;
+    }
+
+    Vec3 position() const
+    {
+        return value[3].xyz;
+    }
+
+    Vec3 scale() const
+    {
+        return Vec3(length(value[0].xyz), length(value[1].xyz), length(value[2].xyz));
+    }
+
+    Mat4 rotation() const
+    {
+        Mat4 m = *this;
+        Vec3 s = scale();
+        m[0] /= s.x;
+        m[1] /= s.y;
+        m[2] /= s.z;
+        m[3] = Vec4(0, 0, 0, 1);
+        return m;
+    }
+
+    // NOTE: [] operator accesses row (0..4)
+    Vec4& operator[](u32 row)
+    {
+        return value[row];
+    }
+
+    const Vec4& operator[](u32 row) const
+    {
+        return value[row];
+    }
+
+    // NOTE: () operator accesses value (0..16)
+    f32& operator()(u32 index)
+    {
+        return f[index];
+    }
+
+    f32 const& operator()(u32 index) const
+    {
+        return f[index];
+    }
+
+    void operator=(const Mat4& rhs)
+    {
+        value[0] = rhs[0];
+        value[1] = rhs[1];
+        value[2] = rhs[2];
+        value[3] = rhs[3];
+    }
+
+    Mat4& operator*=(f32 rhs)
+    {
+        value[0] *= rhs;
+        value[1] *= rhs;
+        value[2] *= rhs;
+        value[3] *= rhs;
+        return *this;
+    }
+
+    Mat4& operator/=(f32 rhs)
+    {
+        value[0] /= rhs;
+        value[1] /= rhs;
+        value[2] /= rhs;
+        value[3] /= rhs;
+        return *this;
+    }
+
+    Mat4& operator+=(f32 rhs)
+    {
+        value[0] += Vec4(rhs);
+        value[1] += Vec4(rhs);
+        value[2] += Vec4(rhs);
+        value[3] += Vec4(rhs);
+        return *this;
+    }
+
+    Mat4& operator-=(f32 rhs)
+    {
+        value[0] -= Vec4(rhs);
+        value[1] -= Vec4(rhs);
+        value[2] -= Vec4(rhs);
+        value[3] -= Vec4(rhs);
+        return *this;
+    }
+
+    Mat4& operator-=(Mat4 const& rhs)
+    {
+        value[0] -= rhs[0];
+        value[1] -= rhs[1];
+        value[2] -= rhs[2];
+        value[3] -= rhs[3];
+        return *this;
+    }
+
+    Mat4& operator+=(Mat4 const& rhs)
+    {
+        value[0] += rhs[0];
+        value[1] += rhs[1];
+        value[2] += rhs[2];
+        value[3] += rhs[3];
+        return *this;
+    }
+
+#if 1
+    Mat4& operator*=(Mat4 const& rhs)
+    {
+        Mat4 result;
+        for (u32 i=0; i<4; ++i)
+        {
+            for (u32 j=0; j<4; ++j)
+            {
+                result[i][j] = 0.f;
+                for (u32 k=0; k<4; ++k)
+                {
+                    result[i][j] += value[k][j] * rhs[i][k];
+                }
+            }
+        }
+        *this = result;
+        return *this;
+    }
+#else
+    Mat4& operator*=(Mat4 const& rhs)
+    {
+        Mat4 result;
+        __m128 row1 = _mm_load_ps(&f[0]);
+        __m128 row2 = _mm_load_ps(&f[4]);
+        __m128 row3 = _mm_load_ps(&f[8]);
+        __m128 row4 = _mm_load_ps(&f[12]);
+        for(u32 i=0; i<4; ++i)
+        {
+            __m128 brod1 = _mm_set1_ps(rhs(4*i + 0));
+            __m128 brod2 = _mm_set1_ps(rhs(4*i + 1));
+            __m128 brod3 = _mm_set1_ps(rhs(4*i + 2));
+            __m128 brod4 = _mm_set1_ps(rhs(4*i + 3));
+            __m128 row = _mm_add_ps(
+                            _mm_add_ps(_mm_mul_ps(brod1, row1), _mm_mul_ps(brod2, row2)),
+                            _mm_add_ps( _mm_mul_ps(brod3, row3), _mm_mul_ps(brod4, row4)));
+            _mm_store_ps(&result(4*i), row);
+        }
+        *this = result;
+        return *this;
+    }
+#endif
+};
+
+Mat4 inverse(Mat4 const& m);
+Mat4 transpose(Mat4 const& m);
+
+inline Mat4 operator*(Mat4 lhs, f32 rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Mat4 operator+(Mat4 lhs, f32 rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Mat4 operator-(Mat4 lhs, f32 rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Mat4 operator/(Mat4 lhs, f32 rhs)
+{
+    lhs /= rhs;
+    return lhs;
+}
+
+inline Mat4 operator*(Mat4 lhs, Mat4 const& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
+inline Mat4 operator+(Mat4 lhs, Mat4 const& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+inline Mat4 operator-(Mat4 lhs, Mat4 const& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+inline Vec4 operator*(Mat4 const& m, Vec4 const& v)
+{
+    return Vec4(
+        m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2] + m[3][0] * v[3],
+        m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2] + m[3][1] * v[3],
+        m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2] + m[3][2] * v[3],
+        m[0][3] * v[0] + m[1][3] * v[1] + m[2][3] * v[2] + m[3][3] * v[3]);
+}
+
 inline Vec3 screenToWorldRay(Vec2 screenPos, Vec2 screenSize, Mat4 const& view, Mat4 const& projection)
 {
-    Vec3 pos(
-        (2.f * screenPos.x) / screenSize.x - 1.f,
-        (1.f - (2.f * screenPos.y) / screenSize.y), 1.f
-    );
+    Vec3 pos((2.f * screenPos.x)/screenSize.x - 1.f, (1.f - (2.f * screenPos.y)/screenSize.y), 1.f);
     Vec4 rayClip(pos.x, pos.y, 0.f, 1.f);
-    Vec4 rayEye = glm::inverse(projection) * rayClip;
+    Vec4 rayEye = inverse(projection) * rayClip;
     rayEye = Vec4(rayEye.x, rayEye.y, -1.f, 0.f);
-    Vec3 rayWorld = normalize(Vec3(glm::inverse(view) * rayEye));
+    Vec3 rayWorld = normalize((inverse(view) * rayEye).xyz);
     return rayWorld;
 }
 
@@ -461,7 +1338,7 @@ inline Vec2 project(Vec3 const& pos, Mat4 const& viewProj)
 
 inline Vec2 projectScale(Vec3 const& pos, Vec3 const& offset, Mat4 const& viewProj, f32 scaleFactor = 0.01f)
 {
-    Mat4 mvp = viewProj * glm::translate(Mat4(1.f), pos);
+    Mat4 mvp = viewProj * Mat4::translation(pos);
     f32 w = (mvp * Vec4(0, 0, 0, 1)).w * scaleFactor;
     Vec4 p = mvp * Vec4(offset * w, 1.f);
     f32 x = ((p.x / p.w) + 1.f) / 2.f;
@@ -587,53 +1464,28 @@ inline Vec3 hsvToRgb(f32 h, f32 s, f32 v)
     return out;
 }
 
-inline Mat4 perspective(f32 fov, f32 aspect, f32 near, f32 far)
+inline Vec3 convert(PxVec3 const& v)
 {
-    const f32 tanHalfFov = tanf(fov / 2.f);
-
-    Mat4 result(0.f);
-
-    result[0][0] = 1.f / (aspect * tanHalfFov);
-#if 0
-    result[1][1] = -1.f / tanHalfFov; // flipped
-#else
-    result[1][1] = 1.f / tanHalfFov;
-#endif
-
-#if 0
-    // depth zero to one
-    result[2][2] = far / (near - far);
-    result[2][3] = -1.f;
-    result[3][2] = -(far * near) / (far - near);
-#else
-    result[2][2] = -(far + near) / (far - near);
-    result[2][3] = -1.f;
-    result[3][2] = -(2.f * far * near) / (far - near);
-#endif
-
-    return result;
+    return Vec3(v.x, v.y, v.z);
 }
 
-inline Mat4 lookAt(Vec3 const& eye, Vec3 const& center, Vec3 const& up)
+inline PxVec3 convert(Vec3 const& v)
 {
-    const Vec3 f = normalize(center - eye);
-    const Vec3 s = normalize(cross(f, up));
-    const Vec3 u = cross(s, f);
+    return PxVec3(v.x, v.y, v.z);
+}
 
-    Mat4 result(1.f);
+inline PxTransform convert(Mat4 const& m)
+{
+    Mat3 rotation = Mat3(m.rotation());
+    glm::mat3 r;
+    r[0] = { rotation[0].x, rotation[0].y, rotation[0].z };
+    r[1] = { rotation[1].x, rotation[1].y, rotation[1].z };
+    r[2] = { rotation[2].x, rotation[2].y, rotation[2].z };
+    Quat rot = glm::quat_cast(r);
+    return PxTransform(convert(m.position()), PxQuat(rot.x, rot.y, rot.z, rot.w));
+}
 
-    result[0][0] = s.x;
-    result[1][0] = s.y;
-    result[2][0] = s.z;
-    result[0][1] = u.x;
-    result[1][1] = u.y;
-    result[2][1] = u.z;
-    result[0][2] = -f.x;
-    result[1][2] = -f.y;
-    result[2][2] = -f.z;
-    result[3][0] = -dot(s, eye);
-    result[3][1] = -dot(u, eye);
-    result[3][2] =  dot(f, eye);
-
-    return result;
+inline PxQuat convert(Quat const& q)
+{
+    return PxQuat(q.x, q.y, q.z, q.w);
 }

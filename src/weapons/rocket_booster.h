@@ -77,11 +77,11 @@ public:
         renderData->indexCount = mesh->numIndices;
         for (auto& p : vehicleData.exhaustHoles)
         {
-            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * glm::translate(Mat4(1.f), p);
+            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * Mat4::translation(p);
             renderData->exhaustCount++;
             if (renderData->alpha > 0.f)
             {
-                rw->addPointLight(vehicleTransform * Vec4(p + Vec3(-0.25f, 0, 0.25f), 1.f),
+                rw->addPointLight(Vec3(vehicleTransform * Vec4(p + Vec3(-0.25f, 0, 0.25f), 1.f)),
                         Vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 3.f, 2.f);
             }
         }
@@ -93,7 +93,7 @@ public:
             for (u32 i=0; i<flames->exhaustCount; ++i)
             {
                 auto& m = flames->exhausts[i];
-                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(m));
+                glUniformMatrix4fv(0, 1, GL_FALSE, m.valuePtr());
                 glUniform1f(1, (float)i * 0.3f);
                 glUniform1f(2, flames->alpha);
                 glDrawElements(GL_TRIANGLES, flames->indexCount, GL_UNSIGNED_INT, 0);

@@ -457,7 +457,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     if (showFloor)
     {
         drawSimple(rw, g_res.getModel("misc")->getMeshByName("world.Quad"), &g_res.white,
-                    glm::scale(Mat4(1.f), Vec3(40.f)), Vec3(0.1f));
+                    Mat4::scaling(Vec3(40.f)), Vec3(0.1f));
     }
 
     for (u32 i=0; i<(u32)model->objects.size(); ++i)
@@ -508,12 +508,12 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 allPointsVisible = false;
                 drawSimple(rw, g_res.getMesh("world.Sphere"), &g_res,white,
-                            glm::translate(Mat4(1.f), p));
+                            Mat4::translation(p));
             }
             else
             {
                 drawSimple(rw, g_res.getMesh("world.Sphere"), &g_res.white,
-                            glm::translate(Mat4(1.f), p), Vec4(0, 1, 0, 1));
+                            Mat4::translation(p), Vec4(0, 1, 0, 1));
             }
         }
 
@@ -662,9 +662,10 @@ void ModelEditor::processBlenderData()
         modelObj->meshIndex = *meshIt;
         modelObj->name = std::move(obj["name"]).string().val();
         Mat4 matrix = obj["matrix"].convertBytes<Mat4>().val();
-        modelObj->position = translationOf(matrix);
-        modelObj->rotation = glm::quat_cast(Mat3(rotationOf(matrix)));
-        modelObj->scale = scaleOf(matrix);
+        modelObj->position = matrix.position();
+        Mat3 rot = Mat3(matrix.rotation());
+        modelObj->rotation = glm::quat_cast(*((glm::mat3*)&rot));
+        modelObj->scale = matrix.scale();
         modelObj->bounds = obj["bounds"].vec3().val();
 
         modelObj->collectionIndexes.clear();

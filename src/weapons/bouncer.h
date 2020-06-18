@@ -47,13 +47,13 @@ public:
         f32 minSpeed = 34.f;
         Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (length2(vel) < square(minSpeed))
+        if (lengthSquared(vel) < square(minSpeed))
         {
             vel = normalize(vel) * minSpeed;
         }
-        Vec3 pos = transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f);
+        Vec3 pos = Vec3(transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f));
         scene->addEntity(new Projectile(pos,
-                vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BOUNCER));
+                vel, transform.zAxis(), vehicle->vehicleIndex, Projectile::BOUNCER));
         g_audio.playSound3D(g_res.getSound("bouncer_fire"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
@@ -67,8 +67,8 @@ public:
     {
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
-        Vec3 pos = vehicleTransform * mountTransform *
-            Vec4(projectileSpawnPoints[0] + Vec3(0.01f, 0.f, 0.05f), 1.f);
+        Vec3 pos = Vec3(vehicleTransform * mountTransform *
+            Vec4(projectileSpawnPoints[0] + Vec3(0.01f, 0.f, 0.05f), 1.f));
         drawBillboard(rw, g_res.getTexture("bouncer_projectile"),
                     pos, Vec4(1.f), 0.7f * glow, 0.f, false);
     }
