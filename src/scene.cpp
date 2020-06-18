@@ -186,8 +186,8 @@ void Scene::startRace()
         }
 
         VehicleTuning tuning = driverInfo.driver->getTuning();
-        Mat4 vehicleTransform = Mat4::translation(convert(hit.block.position + hit.block.normal *
-                    tuning.getRestOffset())) * start.rotation();
+        Mat4 vehicleTransform = Mat4::translation(
+                hit.block.position + hit.block.normal * tuning.getRestOffset()) * start.rotation();
 
         vehicles.push_back(new Vehicle(this, vehicleTransform, -offset,
             driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
@@ -483,7 +483,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         for(PxU32 i=0; i < rb.getNbLines(); ++i)
         {
             const PxDebugLine& line = rb.getLines()[i];
-            debugDraw.line(convert(line.pos0), convert(line.pos1), rgbaFromU32(line.color0), rgbaFromU32(line.color1));
+            debugDraw.line(line.pos0, line.pos1, rgbaFromU32(line.color0), rgbaFromU32(line.color1));
         }
     }
     else
@@ -599,7 +599,7 @@ void Scene::physicsMouseDrag(Renderer* renderer)
             {
                 if (hit.block.actor->getType() == PxActorType::eRIGID_DYNAMIC)
                 {
-                    dragPlaneOffset = convert(hit.block.position) - editorCamera.getCameraFrom();
+                    dragPlaneOffset = Vec3(hit.block.position) - editorCamera.getCameraFrom();
                     PxTransform localFrame(PxIdentity);
                     localFrame.p = hit.block.actor->getGlobalPose().transformInv(hit.block.position);
                     PxTransform globalFrame(PxIdentity);
@@ -782,13 +782,13 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     Vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
 
     f32 rot = PI * 0.25f;
-    Mat4 transform = glm::rotate(Mat4(1.f), f32(rot), { 0, 0, 1 }) * Mat4::translation(offset);
+    Mat4 transform = Mat4::rotationZ(f32(rot)) * Mat4::translation(offset);
     bb = bb.transform(transform);
     f32 radius = max(bb.max.x, max(bb.max.y, bb.max.z));
     bb.min = Vec3(-radius);
     bb.max = Vec3(radius);
 
-    Mat4 trackOrtho = glm::ortho(bb.max.x, bb.min.x, bb.min.y,
+    Mat4 trackOrtho = ortho(bb.max.x, bb.min.x, bb.min.y,
                 bb.max.y, -bb.max.z - 10.f, -bb.min.z + 10.f) * transform;
 
     trackPreview2D.setCamViewProjection(trackOrtho);
@@ -810,7 +810,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
         Vec3 pos = v->getPosition();
         trackPreview2D.drawItem(mesh->vao, mesh->numIndices,
             Mat4::translation(Vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
-                * glm::rotate(Mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
+                * Mat4::rotationZ(pointDirection(pos, pos + v->getForwardVector()) + PI * 0.5f)
                 * Mat4::scaling(Vec3(10.f)),
             v->getDriver()->getVehicleConfig()->color, false, 0);
     }
@@ -1147,7 +1147,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                 }
 
                 g_audio.playSound3D(g_res.getSound("impact"),
-                        SoundType::GAME_SFX, convert(contactPoints[j].position));
+                        SoundType::GAME_SFX, contactPoints[j].position);
             }
 
             PxMaterial* materialA = pairs[i].shapes[0]->getMaterialFromInternalFaceIndex(
@@ -1174,10 +1174,9 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                 if (magnitude > minMagnitude)
                 {
                     f32 alpha = min((magnitude - minMagnitude) * 0.25f, 1.f);
-                    Vec3 collisionVelocity = convert(velA + velB) * 0.5f;
-                    sparks.spawn(
-                            convert(contactPoints[j].position),
-                            (convert(contactPoints[j].normal) + velOffset)
+                    Vec3 collisionVelocity = velA + velB * 0.5f;
+                    sparks.spawn(contactPoints[j].position,
+                            (contactPoints[j].normal + velOffset)
                                 * random(randomSeries, 4.f, 5.f) + collisionVelocity * 0.4f, 1.f,
                             Vec4(Vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f) * 2.f, alpha));
                 }
@@ -1363,7 +1362,7 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
             }
             if (onTrack)
             {
-                return convert(transform.p);
+                return transform.p;
             }
         }
 

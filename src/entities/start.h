@@ -15,7 +15,7 @@ public:
     Start()
     {
         position = Vec3(0, 0, 3);
-        rotation = glm::rotate(glm::identity<Quat>(), glm::vec3(0, 0, PI));
+        rotation = Quat::rotationZ(PI);
         model = g_res.getModel("start");
     }
 

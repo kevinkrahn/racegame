@@ -335,12 +335,12 @@ public:
                         propPrefabs[propTypeIndex].prefabData.doThing(newEntity);
                         newEntity->position = hitPoint;
                         newEntity->scale *= random(scene->randomSeries, randomizeScaleMin, randomizeScaleMax);;
-                        glm::vec3 eulerAngles =  {
+                        Vec3 eulerAngles =  {
                             randomizeRotationX ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationY ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationZ ? random(scene->randomSeries, 0.f, PI2) : 0,
                         };
-                        newEntity->rotation = Quat(eulerAngles) * newEntity->rotation;
+                        newEntity->rotation = Quat::fromEulerAngles(eulerAngles) * newEntity->rotation;
                         newEntity->updateTransform(scene);
                         newEntity->setPersistent(true);
                         scene->addEntity(newEntity);
@@ -484,27 +484,27 @@ public:
     void gizmoRotate(f32 angleDiff, Vec3 const& rotatePivot, i32 dragAxis) override
     {
         Mat4 rot;
-        glm::vec3 rotationAxis(1, 0, 0);
+        Vec3 rotationAxis(1, 0, 0);
         if (dragAxis & DragAxis::X)
         {
             rot = Mat4::rotationX(angleDiff);
-            rotationAxis = glm::vec3(1, 0, 0);
+            rotationAxis = Vec3(1, 0, 0);
         }
         else if (dragAxis & DragAxis::Y)
         {
             rot = Mat4::rotationY(angleDiff);
-            rotationAxis = glm::vec3(0, 1, 0);
+            rotationAxis = Vec3(0, 1, 0);
         }
         else if (dragAxis & DragAxis::Z)
         {
             rot = Mat4::rotationZ(angleDiff);
-            rotationAxis = glm::vec3(0, 0, 1);
+            rotationAxis = Vec3(0, 0, 1);
         }
         Mat4 transform = rot * Mat4::translation(-rotatePivot);
         for (PlaceableEntity* e : selectedEntities)
         {
             e->position = Vec3(transform * Vec4(e->position, 1.f)) + rotatePivot;
-            e->rotation = glm::rotate(glm::identity<Quat>(), angleDiff, rotationAxis) * e->rotation;
+            e->rotation = Quat::rotationAxis(angleDiff, rotationAxis) * e->rotation;
             e->updateTransform(scene);
         }
     }

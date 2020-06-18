@@ -1,4 +1,5 @@
 #include "math.h"
+#include <assert.h>
 
 Vec2::Vec2(Vec3 const& v) : x(v.x), y(v.y) {}
 Vec3::Vec3(Vec4 const& v) : x(v.x), y(v.y), z(v.z) {}
@@ -162,7 +163,7 @@ Mat4 Mat4::translation(Vec3 const& trans)
     return r;
 }
 
-Mat4 inverse(const Mat4& m)
+Mat4 inverse(Mat4 const& m)
 {
     Mat4 inv;
 
@@ -290,7 +291,7 @@ Mat4 inverse(const Mat4& m)
     return invOut;
 }
 
-Mat4 transpose(const Mat4& m)
+Mat4 transpose(Mat4 const& m)
 {
     Mat4 result;
     for (u32 i=0; i<4; ++i)
@@ -301,6 +302,34 @@ Mat4 transpose(const Mat4& m)
         }
     }
     return result;
+}
+
+Mat4::Mat4(Quat const& q)
+{
+	Mat3 result(1.f);
+	f32 qxx(q.x * q.x);
+	f32 qyy(q.y * q.y);
+	f32 qzz(q.z * q.z);
+	f32 qxz(q.x * q.z);
+	f32 qxy(q.x * q.y);
+	f32 qyz(q.y * q.z);
+	f32 qwx(q.w * q.x);
+	f32 qwy(q.w * q.y);
+	f32 qwz(q.w * q.z);
+
+	result[0][0] = 1.f - 2.f * (qyy +  qzz);
+	result[0][1] = 2.f * (qxy + qwz);
+	result[0][2] = 2.f * (qxz - qwy);
+
+	result[1][0] = 2.f * (qxy - qwz);
+	result[1][1] = 1.f - 2.f * (qxx +  qzz);
+	result[1][2] = 2.f * (qyz + qwx);
+
+	result[2][0] = 2.f * (qxz + qwy);
+	result[2][1] = 2.f * (qyz - qwx);
+	result[2][2] = 1.f - 2.f * (qxx +  qyy);
+
+    *this = Mat4(result);
 }
 
 Mat3::Mat3(Mat4 const& m)
@@ -366,3 +395,92 @@ Mat3 inverseTranspose(Mat3 const& m)
     return out;
 }
 
+Quat Quat::rotationAxis(f32 angle, Vec3 const& axis)
+{
+    // axis is assumed to be normalized
+	f32 s = sinf(angle * 0.5f);
+	Quat result;
+	result.x = axis.x * s;
+	result.y = axis.y * s;
+	result.z = axis.z * s;
+	result.w = cosf(angle * 0.5f);
+	return result;
+}
+
+Quat Quat::fromEulerAngles(Vec3 const& eulerAngles)
+{
+	Vec3 c = Vec3(cosf(eulerAngles.x * 0.5f),
+		          cosf(eulerAngles.y * 0.5f),
+		          cosf(eulerAngles.z * 0.5f));
+	Vec3 s = Vec3(sinf(eulerAngles.x * 0.5f),
+		          sinf(eulerAngles.y * 0.5f),
+		          sinf(eulerAngles.z * 0.5f));
+	Quat result;
+	result.w = c.x * c.y * c.z + s.x * s.y * s.z;
+	result.x = s.x * c.y * c.z - c.x * s.y * s.z;
+	result.y = c.x * s.y * c.z + s.x * c.y * s.z;
+	result.z = c.x * c.y * s.z - s.x * s.y * c.z;
+	return result;
+}
+
+Quat Quat::rotationX(f32 angle)
+{
+    return Quat::rotationAxis(angle, Vec3(1,0,0));
+}
+
+Quat Quat::rotationY(f32 angle)
+{
+    return Quat::rotationAxis(angle, Vec3(0,1,0));
+}
+
+Quat Quat::rotationZ(f32 angle)
+{
+    return Quat::rotationAxis(angle, Vec3(0,0,1));
+}
+
+Quat::Quat(Mat3 const& m)
+{
+	f32 fourXSquaredMinus1 = m[0][0] - m[1][1] - m[2][2];
+	f32 fourYSquaredMinus1 = m[1][1] - m[0][0] - m[2][2];
+	f32 fourZSquaredMinus1 = m[2][2] - m[0][0] - m[1][1];
+	f32 fourWSquaredMinus1 = m[0][0] + m[1][1] + m[2][2];
+
+	int biggestIndex = 0;
+	f32 fourBiggestSquaredMinus1 = fourWSquaredMinus1;
+	if (fourXSquaredMinus1 > fourBiggestSquaredMinus1)
+	{
+		fourBiggestSquaredMinus1 = fourXSquaredMinus1;
+		biggestIndex = 1;
+	}
+	if (fourYSquaredMinus1 > fourBiggestSquaredMinus1)
+	{
+		fourBiggestSquaredMinus1 = fourYSquaredMinus1;
+		biggestIndex = 2;
+	}
+	if (fourZSquaredMinus1 > fourBiggestSquaredMinus1)
+	{
+		fourBiggestSquaredMinus1 = fourZSquaredMinus1;
+		biggestIndex = 3;
+	}
+
+	f32 biggestVal = sqrt(fourBiggestSquaredMinus1 + 1.f) * 0.5f;
+	f32 mult = 0.25f / biggestVal;
+
+	switch(biggestIndex)
+	{
+	case 0:
+		*this = Quat(biggestVal, (m[1][2] - m[2][1]) * mult, (m[2][0] - m[0][2]) * mult, (m[0][1] - m[1][0]) * mult);
+		return;
+	case 1:
+		*this = Quat((m[1][2] - m[2][1]) * mult, biggestVal, (m[0][1] + m[1][0]) * mult, (m[2][0] + m[0][2]) * mult);
+		return;
+	case 2:
+		*this = Quat((m[2][0] - m[0][2]) * mult, (m[0][1] + m[1][0]) * mult, biggestVal, (m[1][2] + m[2][1]) * mult);
+		return;
+	case 3:
+		*this = Quat((m[0][1] - m[1][0]) * mult, (m[2][0] + m[0][2]) * mult, (m[1][2] + m[2][1]) * mult, biggestVal);
+		return;
+	default:
+	    assert(false);
+	}
+}

@@ -312,8 +312,8 @@ void Renderer::render(f32 deltaTime)
     for (u32 i=0; i<renderWorld.cameras.size(); ++i)
     {
         Vec2 dir = layout.offsets[i];
-        dir.x = glm::sign(dir.x);
-        dir.y = glm::sign(dir.y);
+        dir.x = sign(dir.x);
+        dir.y = sign(dir.y);
         Mat4 matrix = fullscreenOrtho *
                            Mat4::translation(Vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
                            Mat4::scaling(Vec3(layout.scale * res -
@@ -381,8 +381,8 @@ void Renderer::render(f32 deltaTime)
     for (u32 i=0; i<renderWorld.cameras.size(); ++i)
     {
         Vec2 dir = layout.offsets[i];
-        dir.x = glm::sign(dir.x);
-        dir.y = glm::sign(dir.y);
+        dir.x = sign(dir.x);
+        dir.y = sign(dir.y);
         Mat4 matrix = fullscreenOrtho *
                            Mat4::translation(Vec3(layout.offsets[i] * res + dir * (f32)viewportGapPixels, 0.f)) *
                            Mat4::scaling(Vec3(layout.scale * res -

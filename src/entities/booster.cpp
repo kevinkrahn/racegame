@@ -8,7 +8,7 @@
 
 Booster::Booster()
 {
-    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
+    rotation *= Quat::rotationY(PI * 0.5f);
     scale = Vec3(8.f);
 }
 

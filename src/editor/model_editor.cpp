@@ -663,8 +663,7 @@ void ModelEditor::processBlenderData()
         modelObj->name = std::move(obj["name"]).string().val();
         Mat4 matrix = obj["matrix"].convertBytes<Mat4>().val();
         modelObj->position = matrix.position();
-        Mat3 rot = Mat3(matrix.rotation());
-        modelObj->rotation = glm::quat_cast(*((glm::mat3*)&rot));
+        modelObj->rotation = Quat(Mat3(matrix.rotation()));
         modelObj->scale = matrix.scale();
         modelObj->bounds = obj["bounds"].vec3().val();
 

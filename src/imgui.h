@@ -1,9 +1,5 @@
 #pragma once
 
-#include <glm/vec4.hpp>
-#include <glm/vec2.hpp>
-
-
 #define IMGUI_STB_TRUETYPE_FILENAME   <stb_truetype.h>
 #define IMGUI_STB_RECT_PACK_FILENAME  <stb_rect_pack.h>
 #define IMGUI_DISABLE_STB_TRUETYPE_IMPLEMENTATION

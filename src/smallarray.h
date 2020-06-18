@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <assert.h>
 #include "math.h"
 
 template <typename T, u32 maxSize=8>

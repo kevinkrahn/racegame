@@ -125,10 +125,10 @@ public:
     f32 getSidewaysSpeed() const { return vehicle4W->computeSidewaysSpeed(); }
     PxRigidDynamic* getRigidBody() const { return vehicle4W->getRigidDynamicActor(); }
     Mat4 getTransform() const { return Mat4(PxMat44(getRigidBody()->getGlobalPose())); }
-    Vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
-    Vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
-    Vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
-    Vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
+    Vec3 getPosition() const { return Vec3(getRigidBody()->getGlobalPose().p); }
+    Vec3 getForwardVector() const { return getRigidBody()->getGlobalPose().q.getBasisVector0(); }
+    Vec3 getRightVector() const { return getRigidBody()->getGlobalPose().q.getBasisVector1(); }
+    Vec3 getUpVector() const { return getRigidBody()->getGlobalPose().q.getBasisVector2(); }
     u32 getCurrentGear()  const{ return vehicle4W->mDriveDynData.mCurrentGear; }
     f32 getCurrentGearRatio()  const{ return tuning->gearRatios[getCurrentGear()]; }
     f32 getAverageWheelRotationSpeed() const;

@@ -656,12 +656,12 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         auto info = wheelQueryResults[i];
-        Vec3 wheelPosition = Vec3(transform * Vec4(convert(info.localPose.p), 1.f));
+        Vec3 wheelPosition = Vec3(transform * Vec4(info.localPose.p, 1.f));
         f32 wheelRadius = i < 2 ? tuning->wheelRadiusFront : tuning->wheelRadiusRear;
 
         wheelInfo[i].transform = Mat4(info.localPose);
         wheelInfo[i].position = wheelPosition;
-        wheelInfo[i].contactNormal = convert(info.tireContactNormal);
+        wheelInfo[i].contactNormal = info.tireContactNormal;
         wheelInfo[i].contactPosition = wheelPosition - wheelInfo[i].contactNormal * wheelRadius;
         wheelInfo[i].rotationSpeed = vehicle4W->mWheelsDynData.getWheelRotationSpeed(i);
         wheelInfo[i].lateralSlip = info.lateralSlip;

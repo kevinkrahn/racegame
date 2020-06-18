@@ -31,7 +31,7 @@ struct ECS_Entity
     SmallArray<ECS_Component*, 8> components;
     Vec3 position;
     u32 flags = ENTITY_NONE;
-    Quat rotation = glm::identity<Quat>();
+    Quat rotation;
     Vec3 scale = Vec3(1.f);
 
     /*
@@ -144,7 +144,7 @@ class PlaceableEntity : public Entity
 {
 public:
     Vec3 position;
-    Quat rotation = glm::identity<Quat>();
+    Quat rotation;
     Vec3 scale = Vec3(1.f);
     Mat4 transform;
     PxRigidActor* actor = nullptr;

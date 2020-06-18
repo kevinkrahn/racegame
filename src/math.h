@@ -13,19 +13,11 @@ typedef int64_t  i64;
 typedef float    f32;
 typedef double   f64;
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/vec3.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/norm.hpp>
-
 #include <PxPhysicsAPI.h>
 using namespace physx;
 
 #define PI PxPi
 #define PI2 (PxPi * 2.f)
-
-using Quat = glm::quat;
 
 struct Vec2i
 {
@@ -219,6 +211,9 @@ struct Vec3
     Vec3(Vec2 const& v, f32 z) : x(v.x), y(v.y), z(z) {}
     Vec3() = default;
     explicit Vec3(struct Vec4 const& v);
+
+    Vec3(PxVec3 const& v) : x(v.x), y(v.y), z(v.z) {}
+    //operator PxVec3() { return PxVec3(x, y, z); }
 
     void operator=(Vec3 const& rhs)
     {
@@ -577,6 +572,11 @@ inline Vec3 absolute(Vec3 const& v)
 inline Vec4 absolute(Vec4 const& v)
 {
     return { absolute(v.x), absolute(v.y), absolute(v.z), absolute(v.w) };
+}
+
+inline f32 sign(f32 v)
+{
+    return v < 0.f ? -1.f : (v == 0.f ? 0.f : 1.f);
 }
 
 inline f32 lengthSquared(Vec2 v)
@@ -1071,23 +1071,9 @@ struct alignas(16) Mat4
     }
 
     explicit Mat4(PxMat44 const& m) : Mat4(m.front()) {}
-
-    explicit Mat4(Quat const& q)
-    {
-        glm::mat4 tmp = glm::mat4_cast(q);
-        *this = Mat4(glm::value_ptr(tmp));
-    }
+    explicit Mat4(struct Quat const& q);
 
     f32* valuePtr() const { return (f32*)f; }
-
-    /*
-    PxTransform toTransform()
-    {
-        Vec3 pos(m[3]);
-        Quat rot = glm::quat_cast(*((glm::mat3*)(&Mat3(m.rotation()))));
-        return PxTransform(PxVec3(pos.x, pos.y, pos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
-    }
-    */
 
     static Mat4 ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near=0.f, f32 far=100.f);
     static Mat4 perspective(f32 fov, f32 aspect, f32 near, f32 far);
@@ -1318,6 +1304,64 @@ inline Vec4 operator*(Mat4 const& m, Vec4 const& v)
         m[0][3] * v[0] + m[1][3] * v[1] + m[2][3] * v[2] + m[3][3] * v[3]);
 }
 
+struct Quat
+{
+    union
+    {
+        struct
+        {
+            f32 x, y, z, w;
+        };
+
+        f32 data[4];
+    };
+
+    Quat(f32 w, f32 x, f32 y, f32 z) : x(x), y(y), z(z), w(w) {}
+    Quat() : x(0.f), y(0.f), z(0.f), w(1.f) {}
+    Quat(Quat const& other) :x(other.x), y(other.y), z(other.z), w(other.w) {}
+    Quat(Mat3 const& m);
+
+    void operator=(Quat const& rhs)
+    {
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+        w = rhs.w;
+    }
+
+    f32& operator[](u32 index)
+    {
+        return data[index];
+    }
+
+    const f32& operator[](u32 index) const
+    {
+        return data[index];
+    }
+
+    inline static Quat rotationAxis(f32 angle, Vec3 const& axis);
+    inline static Quat fromEulerAngles(Vec3 const& eulerAngles);
+    inline static Quat rotationX(f32 angle);
+    inline static Quat rotationY(f32 angle);
+    inline static Quat rotationZ(f32 angle);
+
+    Quat& operator*=(Quat const& q)
+    {
+        Quat p = *this;
+		w = p.w * q.w - p.x * q.x - p.y * q.y - p.z * q.z;
+		x = p.w * q.x + p.x * q.w + p.y * q.z - p.z * q.y;
+		y = p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z;
+		z = p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x;
+        return *this;
+    }
+};
+
+Quat operator*(Quat lhs, Quat const& rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
 inline Vec3 screenToWorldRay(Vec2 screenPos, Vec2 screenSize, Mat4 const& view, Mat4 const& projection)
 {
     Vec3 pos((2.f * screenPos.x)/screenSize.x - 1.f, (1.f - (2.f * screenPos.y)/screenSize.y), 1.f);
@@ -1464,28 +1508,17 @@ inline Vec3 hsvToRgb(f32 h, f32 s, f32 v)
     return out;
 }
 
-inline Vec3 convert(PxVec3 const& v)
-{
-    return Vec3(v.x, v.y, v.z);
-}
-
 inline PxVec3 convert(Vec3 const& v)
 {
     return PxVec3(v.x, v.y, v.z);
 }
 
-inline PxTransform convert(Mat4 const& m)
-{
-    Mat3 rotation = Mat3(m.rotation());
-    glm::mat3 r;
-    r[0] = { rotation[0].x, rotation[0].y, rotation[0].z };
-    r[1] = { rotation[1].x, rotation[1].y, rotation[1].z };
-    r[2] = { rotation[2].x, rotation[2].y, rotation[2].z };
-    Quat rot = glm::quat_cast(r);
-    return PxTransform(convert(m.position()), PxQuat(rot.x, rot.y, rot.z, rot.w));
-}
-
 inline PxQuat convert(Quat const& q)
 {
     return PxQuat(q.x, q.y, q.z, q.w);
+}
+
+inline PxTransform convert(Mat4 const& m)
+{
+    return PxTransform(convert(m.position()), convert(Quat(Mat3(m.rotation()))));
 }
