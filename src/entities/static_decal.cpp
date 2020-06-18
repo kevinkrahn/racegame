@@ -7,8 +7,8 @@
 
 StaticDecal::StaticDecal()
 {
-    scale = glm::vec3(16.f);
-    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
+    scale = Vec3(16.f);
+    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, Vec3(0, 1, 0));
 }
 
 void StaticDecal::onCreateEnd(Scene* scene)
@@ -38,7 +38,7 @@ void StaticDecal::updateTransform(Scene* scene)
         PxShape* shape = nullptr;
         actor->getShapes(&shape, 1);
         shape->setGeometry(PxBoxGeometry(convert(
-                        glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
+                        absolute(max(Vec3(0.01f), scale) * 0.5f))));
 
         if (isDust)
         {
@@ -61,7 +61,7 @@ void StaticDecal::updateTransform(Scene* scene)
     filter.flags |= PxQueryFlag::eSTATIC;
     filter.data = PxFilterData(0, decalFilter, 0, 0);
     decal.begin(transform);
-    if (scene->getPhysicsScene()->overlap(PxBoxGeometry(convert(glm::abs(scale * 0.5f))),
+    if (scene->getPhysicsScene()->overlap(PxBoxGeometry(convert(absolute(scale * 0.5f))),
                 PxTransform(convert(position), convert(rotation)), hit, filter))
     {
         for (u32 i=0; i<hit.getNbTouches(); ++i)
@@ -86,20 +86,20 @@ void StaticDecal::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void StaticDecal::onPreview(RenderWorld* rw)
 {
-    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f), glm::vec3(0.f), 1.f, 200.f, 50.f);
-    drawBillboard(rw, tex, glm::vec3(0, 0, 2.f), glm::vec4(1.f), 8.f, 0.f, false);
+    rw->setViewportCamera(0, Vec3(0.f, 0.1f, 20.f), Vec3(0.f), 1.f, 200.f, 50.f);
+    drawBillboard(rw, tex, Vec3(0, 0, 2.f), Vec4(1.f), 8.f, 0.f, false);
 }
 
 void StaticDecal::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
-    BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
+    BoundingBox decalBoundingBox{ Vec3(-0.5f), Vec3(0.5f) };
     if (isSelected)
     {
-        scene->debugDraw.boundingBox(decalBoundingBox, transform, glm::vec4(1, 1, 1, 1));
+        scene->debugDraw.boundingBox(decalBoundingBox, transform, Vec4(1, 1, 1, 1));
     }
     else
     {
-        scene->debugDraw.boundingBox(decalBoundingBox, transform, glm::vec4(1, 0.5f, 0, 1));
+        scene->debugDraw.boundingBox(decalBoundingBox, transform, Vec4(1, 0.5f, 0, 1));
     }
 }
 

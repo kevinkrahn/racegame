@@ -68,9 +68,9 @@ void StaticMesh::onCreate(Scene* scene)
 
 void StaticMesh::updateTransform(Scene* scene)
 {
-    transform = glm::translate(glm::mat4(1.f), position)
+    transform = glm::translate(Mat4(1.f), position)
         * glm::mat4_cast(rotation)
-        * glm::scale(glm::mat4(1.f), scale);
+        * glm::scale(Mat4(1.f), scale);
 
     if (actor)
     {
@@ -84,7 +84,7 @@ void StaticMesh::updateTransform(Scene* scene)
                     PxConvexMeshGeometry geom;
                     if (o.shape->getConvexMeshGeometry(geom))
                     {
-                        glm::mat4 t = glm::scale(glm::mat4(1.f), scale) * o.modelObject->getTransform();
+                        Mat4 t = glm::scale(Mat4(1.f), scale) * o.modelObject->getTransform();
                         o.shape->setLocalPose(convert(t));
                         geom.scale = convert(scale * o.modelObject->scale);
                         o.shape->setGeometry(geom);
@@ -95,7 +95,7 @@ void StaticMesh::updateTransform(Scene* scene)
                     PxTriangleMeshGeometry geom;
                     if (o.shape->getTriangleMeshGeometry(geom))
                     {
-                        glm::mat4 t = glm::scale(glm::mat4(1.f), scale) * o.modelObject->getTransform();
+                        Mat4 t = glm::scale(Mat4(1.f), scale) * o.modelObject->getTransform();
                         o.shape->setLocalPose(convert(t));
                         geom.scale = convert(scale * o.modelObject->scale);
                         o.shape->setGeometry(geom);
@@ -112,7 +112,7 @@ void StaticMesh::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         return;
     }
-    glm::mat4 t = transform;
+    Mat4 t = transform;
     if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
     {
         t = convert(actor->getGlobalPose());
@@ -145,15 +145,15 @@ void StaticMesh::onBatch(Batcher& batcher)
 
 void StaticMesh::onPreview(RenderWorld* rw)
 {
-    transform = glm::mat4(1.f);
+    transform = Mat4(1.f);
     BoundingBox bb = model->getBoundingbox(transform);
-    glm::vec3 dir = glm::normalize(glm::vec3(3.f, 1.f, 4.f));
+    Vec3 dir = normalize(Vec3(3.f, 1.f, 4.f));
     f32 dist = 3.f;
     for (u32 i=1; i<200; ++i)
     {
         rw->setViewportCamera(0, dir * dist, (bb.max + bb.min) * 0.5f, 1.f, 200.f, 32.f);
 
-        glm::vec3 points[] = {
+        Vec3 points[] = {
             { bb.min.x, bb.min.y, bb.min.z },
             { bb.min.x, bb.max.y, bb.min.z },
             { bb.max.x, bb.min.y, bb.min.z },
@@ -168,7 +168,7 @@ void StaticMesh::onPreview(RenderWorld* rw)
         f32 margin = 0.01f;
         for (auto& p : points)
         {
-            glm::vec4 tp = rw->getCamera(0).viewProjection * glm::vec4(p, 1.f);
+            Vec4 tp = rw->getCamera(0).viewProjection * Vec4(p, 1.f);
             tp.x = (((tp.x / tp.w) + 1.f) / 2.f);
             tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f);
             if (tp.x < margin || tp.x > 1.f - margin || tp.y < margin || tp.y > 1.f - margin)
@@ -204,7 +204,7 @@ void StaticMesh::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected
         if (o.modelObject->isVisible)
         {
             Material* mat = g_res.getMaterial(o.modelObject->materialGuid);
-            glm::mat4 t = transform * o.modelObject->getTransform();
+            Mat4 t = transform * o.modelObject->getTransform();
             Mesh* mesh = &model->meshes[o.modelObject->meshIndex];
             if (isSelected)
             {

@@ -50,12 +50,12 @@ struct MaterialRenderData
 #endif
     GLuint vao;
     u32 indexCount;
-    glm::mat4 worldTransform;
-    glm::mat3 normalTransform;
+    Mat4 worldTransform;
+    Mat3 normalTransform;
     GLuint textureColor;
     GLuint textureNormal;
-    glm::vec3 color;
-    glm::vec3 emission;
+    Vec3 color;
+    Vec3 emission;
     f32 fresnelBias, fresnelScale, fresnelPower;
     f32 specularPower, specularStrength;
     f32 reflectionStrength, reflectionLod, reflectionBias;
@@ -64,7 +64,7 @@ struct MaterialRenderData
     u32 pickValue;
 };
 
-void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil)
+void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stencil)
 {
     MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
@@ -73,7 +73,7 @@ void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->normalTransform = glm::inverseTranspose(glm::mat3(transform));
+    d->normalTransform = glm::inverseTranspose(Mat3(transform));
     d->textureColor = textureColorHandle;
     d->textureNormal = textureNormalHandle;
     d->color = color;
@@ -138,7 +138,7 @@ void Material::draw(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 
     }
 }
 
-void Material::drawPick(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u32 pickValue)
+void Material::drawPick(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u32 pickValue)
 {
     MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
@@ -169,7 +169,7 @@ void Material::drawPick(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh,
     rw->pickPass(pickShaderHandle, { d, render });
 }
 
-void Material::drawHighlight(RenderWorld* rw, glm::mat4 const& transform, Mesh* mesh, u8 stencil, u8 cameraIndex)
+void Material::drawHighlight(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stencil, u8 cameraIndex)
 {
     MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
@@ -206,20 +206,20 @@ struct VehicleRenderData
 #endif
     GLuint vao;
     u32 indexCount;
-    glm::mat4 worldTransform;
-    glm::mat3 normalTransform;
-    glm::vec3 color;
-    glm::vec3 emission;
+    Mat4 worldTransform;
+    Mat3 normalTransform;
+    Vec3 color;
+    Vec3 emission;
     f32 fresnelBias, fresnelScale, fresnelPower;
     f32 specularPower, specularStrength;
     f32 reflectionStrength, reflectionLod, reflectionBias;
-    glm::vec4 shield;
+    Vec4 shield;
     GLuint wrapTexture[3];
-    glm::vec4 wrapColor[3];
+    Vec4 wrapColor[3];
 };
 
-void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
-        u8 stencil, glm::vec4 const& shield, i64 wrapTextureGuids[3], glm::vec4 wrapColor[3])
+void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh,
+        u8 stencil, Vec4 const& shield, i64 wrapTextureGuids[3], Vec4 wrapColor[3])
 {
     VehicleRenderData* d = g_game.tempMem.bump<VehicleRenderData>();
 #ifndef NDEBUG
@@ -228,7 +228,7 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->normalTransform = glm::inverseTranspose(glm::mat3(transform));
+    d->normalTransform = glm::inverseTranspose(Mat3(transform));
     d->color = color;
     d->emission = emit * emitPower;
     d->fresnelBias = fresnelBias;
@@ -243,9 +243,9 @@ void Material::drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, st
     d->wrapTexture[0] = g_res.getTexture(wrapTextureGuids[0])->handle;
     d->wrapTexture[1] = g_res.getTexture(wrapTextureGuids[1])->handle;
     d->wrapTexture[2] = g_res.getTexture(wrapTextureGuids[2])->handle;
-    d->wrapColor[0] = wrapTextureGuids[0] != 0 ? wrapColor[0] : glm::vec4(0);
-    d->wrapColor[1] = wrapTextureGuids[1] != 0 ? wrapColor[1] : glm::vec4(0);
-    d->wrapColor[2] = wrapTextureGuids[2] != 0 ? wrapColor[2] : glm::vec4(0);
+    d->wrapColor[0] = wrapTextureGuids[0] != 0 ? wrapColor[0] : Vec4(0);
+    d->wrapColor[1] = wrapTextureGuids[1] != 0 ? wrapColor[1] : Vec4(0);
+    d->wrapColor[2] = wrapTextureGuids[2] != 0 ? wrapColor[2] : Vec4(0);
 
     auto renderOpaque = [](void* renderData) {
         VehicleRenderData* d = (VehicleRenderData*)renderData;
@@ -283,14 +283,14 @@ struct SimpleRenderData
     GLuint vao;
     GLuint tex;
     u32 indexCount;
-    glm::mat4 worldTransform;
-    glm::mat3 normalTransform;
-    glm::vec3 color;
-    glm::vec3 emit;
+    Mat4 worldTransform;
+    Mat3 normalTransform;
+    Vec3 color;
+    Vec3 emit;
 };
 
-void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, glm::mat4 const& transform,
-        glm::vec3 const& color, glm::vec3 const& emit)
+void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, Mat4 const& transform,
+        Vec3 const& color, Vec3 const& emit)
 {
     static ShaderHandle shader = getShaderHandle("lit");
     static ShaderHandle depthShader = getShaderHandle("lit", { { "DEPTH_ONLY" } });
@@ -300,7 +300,7 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, glm::mat4 const& tran
     d->tex = tex->handle;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
-    d->normalTransform = glm::inverseTranspose(glm::mat3(transform));
+    d->normalTransform = glm::inverseTranspose(Mat3(transform));
     d->color = color;
     d->emit = emit;
 
@@ -333,7 +333,7 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, glm::mat4 const& tran
     rw->opaqueColorPass(shader, { d, renderOpaque, 0 });
 }
 
-void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec4 color)
+void drawWireframe(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec4 color)
 {
     static ShaderHandle shader = getShaderHandle("debug");
 
@@ -363,7 +363,7 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm:
     rw->transparentPass({ shader, TransparentDepth::DEBUG_LINES, d, renderOpaque });
 }
 
-void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec3 const& color,
+void drawOverlay(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec3 const& color,
         i32 priorityOffset, bool onlyDepth)
 {
     static ShaderHandle shader = getShaderHandle("overlay", {},
@@ -371,8 +371,8 @@ void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::v
 
     struct OverlayRenderData
     {
-        glm::mat4 worldTransform;
-        glm::vec3 color;
+        Mat4 worldTransform;
+        Vec3 color;
         GLuint vao;
         u32 indexCount;
         bool onlyDepth;

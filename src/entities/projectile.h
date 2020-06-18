@@ -47,9 +47,9 @@ public:
 
 private:
     Mesh* bulletMesh;
-    glm::vec3 position;
-    glm::vec3 velocity;
-    glm::vec3 upVector;
+    Vec3 position;
+    Vec3 velocity;
+    Vec3 upVector;
     u32 damage;
     u32 instigator;
     f32 life;
@@ -72,8 +72,8 @@ private:
     void createImpactParticles(Scene* scene, PxSweepHit* hit);
 
 public:
-    Projectile(glm::vec3 const& position, glm::vec3 const& velocity,
-            glm::vec3 const& upVector, u32 instigator, ProjectileType projectileType)
+    Projectile(Vec3 const& position, Vec3 const& velocity,
+            Vec3 const& upVector, u32 instigator, ProjectileType projectileType)
         : position(position), velocity(velocity), upVector(upVector),
             instigator(instigator), projectileType(projectileType) {}
 

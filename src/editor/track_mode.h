@@ -31,7 +31,7 @@ public:
         }
 
         //RenderWorld* rw = renderer->getRenderWorld();
-        //glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
+        //Vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
         //Camera const& cam = scene->getEditorCamera().getCamera();
 
         scene->track->trackModeUpdate(renderer, scene, deltaTime, isMouseClickHandled,

@@ -8,8 +8,8 @@
 
 Booster::Booster()
 {
-    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, glm::vec3(0, 1, 0));
-    scale = glm::vec3(8.f);
+    rotation = glm::rotate(rotation, (f32)M_PI * 0.5f, Vec3(0, 1, 0));
+    scale = Vec3(8.f);
 }
 
 void Booster::onCreateEnd(Scene* scene)
@@ -38,7 +38,7 @@ void Booster::updateTransform(Scene* scene)
         PxShape* shape = nullptr;
         actor->getShapes(&shape, 1);
         shape->setGeometry(PxBoxGeometry(convert(
-                        glm::abs(glm::max(glm::vec3(0.01f), scale) * 0.5f))));
+                        absolute(max(Vec3(0.01f), scale) * 0.5f))));
     }
     tex = g_res.getTexture("booster");
     decal.setTexture(tex);
@@ -80,28 +80,28 @@ void Booster::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void Booster::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    decal.setColor(backwards ? glm::vec4(intensity, 0.f, 0.f, 1.f) : glm::vec4(0.f, intensity, 0.f, 1.f));
+    decal.setColor(backwards ? Vec4(intensity, 0.f, 0.f, 1.f) : Vec4(0.f, intensity, 0.f, 1.f));
     decal.draw(rw);
 }
 
 void Booster::onPreview(RenderWorld* rw)
 {
-    rw->setViewportCamera(0, glm::vec3(0.f, 0.1f, 20.f), glm::vec3(0.f), 1.f, 200.f, 50.f);
-    glm::vec3 color = backwards ? glm::vec3(intensity, 0.f, 0.f) : glm::vec3(0.f, intensity, 0.f);
-    drawBillboard(rw, g_res.getTexture("booster"), glm::vec3(0, 0, 2.f),
-                glm::vec4(color, 1.f), 8.f, 0.f, false);
+    rw->setViewportCamera(0, Vec3(0.f, 0.1f, 20.f), Vec3(0.f), 1.f, 200.f, 50.f);
+    Vec3 color = backwards ? Vec3(intensity, 0.f, 0.f) : Vec3(0.f, intensity, 0.f);
+    drawBillboard(rw, g_res.getTexture("booster"), Vec3(0, 0, 2.f),
+                Vec4(color, 1.f), 8.f, 0.f, false);
 }
 
 void Booster::onEditModeRender(RenderWorld* rw, Scene* scene, bool isSelected, u8 selectIndex)
 {
-    BoundingBox decalBoundingBox{ glm::vec3(-0.5f), glm::vec3(0.5f) };
+    BoundingBox decalBoundingBox{ Vec3(-0.5f), Vec3(0.5f) };
     if (isSelected)
     {
-        scene->debugDraw.boundingBox(decalBoundingBox, transform, glm::vec4(1, 1, 1, 1));
+        scene->debugDraw.boundingBox(decalBoundingBox, transform, Vec4(1, 1, 1, 1));
     }
     else
     {
-        scene->debugDraw.boundingBox(decalBoundingBox, transform, glm::vec4(1, 0.5f, 0, 1));
+        scene->debugDraw.boundingBox(decalBoundingBox, transform, Vec4(1, 0.5f, 0, 1));
     }
 }
 

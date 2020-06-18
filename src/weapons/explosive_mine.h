@@ -32,7 +32,7 @@ public:
         }
 
         PxRaycastBuffer hit;
-        glm::vec3 down = convert(vehicle->getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
+        Vec3 down = convert(vehicle->getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
         if (!scene->raycastStatic(vehicle->getPosition(), down, 2.f, &hit,
                     COLLISION_FLAG_TERRAIN | COLLISION_FLAG_TRACK))
         {
@@ -40,15 +40,15 @@ public:
             return;
         }
 
-        glm::vec3 pos = convert(hit.block.position);
-        glm::vec3 up = convert(hit.block.normal);
-        glm::mat4 m(1.f);
-        m[0] = glm::vec4(vehicle->getForwardVector(), m[0].w);
-        m[1] = glm::vec4(glm::normalize(
-                    glm::cross(up, glm::vec3(m[0]))), m[1].w);
-        m[2] = glm::vec4(glm::normalize(
-                glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
-        scene->addEntity(new Mine(glm::translate(glm::mat4(1.f), pos) * m, vehicle->vehicleIndex));
+        Vec3 pos = convert(hit.block.position);
+        Vec3 up = convert(hit.block.normal);
+        Mat4 m(1.f);
+        m[0] = Vec4(vehicle->getForwardVector(), m[0].w);
+        m[1] = Vec4(normalize(
+                    cross(up, Vec3(m[0]))), m[1].w);
+        m[2] = Vec4(normalize(
+                cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
+        scene->addEntity(new Mine(glm::translate(Mat4(1.f), pos) * m, vehicle->vehicleIndex));
         g_audio.playSound3D(g_res.getSound("thunk"), SoundType::GAME_SFX,
                 vehicle->getPosition(), false, 1.f, 0.9f);
 

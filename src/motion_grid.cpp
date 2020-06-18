@@ -69,16 +69,16 @@ void MotionGrid::build(Scene* scene)
                         ++hitCount;
                     }
                 }
-                highestLayerCount = glm::max(grid[y * width + x].contents.size(), highestLayerCount);
+                highestLayerCount = max(grid[y * width + x].contents.size(), highestLayerCount);
             }
 
             if (scene->terrain->isOffroadAt(rx, ry))
             {
-                f32 tz = scene->terrain->getZ(glm::vec2(rx, ry));
+                f32 tz = scene->terrain->getZ(Vec2(rx, ry));
                 bool onSameLayerAsTrack = false;
                 for (auto& layer : grid[y * width + x].contents)
                 {
-                    if (glm::abs(layer.z - tz) < 10.f)
+                    if (absolute(layer.z - tz) < 10.f)
                     {
                         onSameLayerAsTrack = true;
                         break;
@@ -106,7 +106,7 @@ void MotionGrid::build(Scene* scene)
             ", Layers: ", highestLayerCount, '\n');
 }
 
-void MotionGrid::setCell(glm::vec3 p, CellType cellType, bool permanent)
+void MotionGrid::setCell(Vec3 p, CellType cellType, bool permanent)
 {
     p.x = clamp(p.x, x1, x2);
     p.y = clamp(p.y, y1, y2);
@@ -118,7 +118,7 @@ void MotionGrid::setCell(glm::vec3 p, CellType cellType, bool permanent)
     for (u32 i=0; i<contents.size(); ++i)
     {
         CellContents& cell = contents[i];
-        if (glm::abs(cell.z - p.z) < 4.f)
+        if (absolute(cell.z - p.z) < 4.f)
         {
             z = (i32)i;
             break;
@@ -142,12 +142,12 @@ void MotionGrid::setCell(glm::vec3 p, CellType cellType, bool permanent)
     }
 }
 
-void MotionGrid::setCells(glm::vec3 p, f32 radius, CellType cellType, bool permanent)
+void MotionGrid::setCells(Vec3 p, f32 radius, CellType cellType, bool permanent)
 {
     p.x = clamp(p.x, x1, x2);
     p.y = clamp(p.y, y1, y2);
-    glm::vec3 v1(p.x - radius, p.y - radius, p.z);
-    glm::vec3 v2(p.x + radius, p.y + radius, p.z);
+    Vec3 v1(p.x - radius, p.y - radius, p.z);
+    Vec3 v2(p.x + radius, p.y + radius, p.z);
     i32 v1x = (i32)((v1.x - x1) / CELL_SIZE);
     i32 v1y = (i32)((v1.y - y1) / CELL_SIZE);
     i32 v2x = (i32)((v2.x - x1) / CELL_SIZE);
@@ -161,7 +161,7 @@ void MotionGrid::setCells(glm::vec3 p, f32 radius, CellType cellType, bool perma
             for (u32 i=0; i<contents.size(); ++i)
             {
                 CellContents& cell = contents[i];
-                if (glm::abs(cell.z - p.z) < 4.f)
+                if (absolute(cell.z - p.z) < 4.f)
                 {
                     z = (i32)i;
                     break;
@@ -195,17 +195,17 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
     {
         f32 rx = x1 + node.x * CELL_SIZE;
         f32 ry = y1 + node.y * CELL_SIZE;
-        glm::vec3 color(0.f, 0.f, 1.f);
+        Vec3 color(0.f, 0.f, 1.f);
         f32 rz = grid[node.y * width + node.x].contents[node.z].z;
         if (node.isBlocked)
         {
             rz += 2.f;
-            color = glm::vec3(1.f, 0.f, 0.f);
+            color = Vec3(1.f, 0.f, 0.f);
         }
-        drawSimple(rw, mesh, &g_res.white, glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, rz)), color);
+        drawSimple(rw, mesh, &g_res.white, glm::translate(Mat4(1.f), Vec3(rx, ry, rz)), color);
     }
 #else
-    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
+    Mat4 scale = glm::scale(Mat4(1.f), Vec3(0.4f));
     for (i32 x = 0; x<width; ++x)
     {
         for (i32 y = 0; y<height; ++y)
@@ -218,46 +218,46 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
                 auto cellType = cell.staticCellType;
                 if (cellType != CellType::NONE)
                 {
-                    glm::vec3 color;
+                    Vec3 color;
                     if (cellType == CellType::TRACK)
                     {
-                        color = glm::vec3(0, 1, 0);
+                        color = Vec3(0, 1, 0);
                     }
                     else if (cellType == CellType::OFFROAD)
                     {
-                        color = glm::vec3(0, 0, 1);
+                        color = Vec3(0, 0, 1);
                     }
                     else if (cellType == CellType::BLOCKED)
                     {
-                        color = glm::vec3(1, 0, 0);
+                        color = Vec3(1, 0, 0);
                     }
 
-                    drawSimple(rw, mesh, &g_res.white, glm::translate(glm::mat4(1.f),
-                            glm::vec3(rx, ry, cell.z)), color);
+                    drawSimple(rw, mesh, &g_res.white, glm::translate(Mat4(1.f),
+                            Vec3(rx, ry, cell.z)), color);
                 }
                 cellType = cell.dynamicCellType;
                 if (cellType != CellType::NONE && cell.generation == (u32)g_game.frameCount)
                 {
-                    glm::vec3 color;
+                    Vec3 color;
                     if (cellType == CellType::VEHICLE)
                     {
-                        color = glm::vec3(0, 1, 1);
+                        color = Vec3(0, 1, 1);
                     }
                     else if (cellType == CellType::TRACK)
                     {
-                        color = glm::vec3(0, 1, 0);
+                        color = Vec3(0, 1, 0);
                     }
                     else if (cellType == CellType::OFFROAD)
                     {
-                        color = glm::vec3(0, 0, 1);
+                        color = Vec3(0, 0, 1);
                     }
                     else if (cellType == CellType::BLOCKED)
                     {
-                        color = glm::vec3(1, 0, 0);
+                        color = Vec3(1, 0, 0);
                     }
 
                     drawSimple(rw, mesh, &g_res.white,
-                        glm::translate(glm::mat4(1.f), glm::vec3(rx, ry, cell.z+4.f)) * scale, color);
+                        glm::translate(Mat4(1.f), Vec3(rx, ry, cell.z+4.f)) * scale, color);
                 }
             }
         }
@@ -265,7 +265,7 @@ void MotionGrid::debugDraw(class RenderWorld* rw)
 #endif
 }
 
-i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
+i32 MotionGrid::getCellLayerIndex(Vec3 const& p) const
 {
     i32 x = (i32)((p.x - x1) / CELL_SIZE);
     i32 y = (i32)((p.y - y1) / CELL_SIZE);
@@ -273,7 +273,7 @@ i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
     for (u32 i=0; i<contents.size(); ++i)
     {
         CellContents& cell = contents[i];
-        if (glm::abs(cell.z - p.z) < 4.f)
+        if (absolute(cell.z - p.z) < 4.f)
         {
             return (i32)i;
         }
@@ -283,12 +283,12 @@ i32 MotionGrid::getCellLayerIndex(glm::vec3 const& p) const
 
 static f32 octileDistance(i32 x1, i32 y1, i32 x2, i32 y2)
 {
-    f32 dx = abs(x1 - x2);
-    f32 dy = abs(y1 - y2);
-    return D * (dx + dy) + (D2 - 2 * D) * glm::min(dx, dy);
+    f32 dx = absolute(x1 - x2);
+    f32 dy = absolute(y1 - y2);
+    return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy);
 }
 
-void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::vec2 forward,
+void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
         Array<PathNode>& outPath)
 {
     outPath.clear();
@@ -370,7 +370,7 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
             return;
         }
 
-        glm::ivec2 offsets[] = {
+        Vec2i offsets[] = {
             { 0, -1 },
             { 0, 1 },
             { -1, 0 },
@@ -406,7 +406,7 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
                 {
                     break;
                 }
-                if (glm::abs(cell.z - grid[currentNode->y * width + currentNode->x].contents[currentNode->z].z) < 4.f)
+                if (absolute(cell.z - grid[currentNode->y * width + currentNode->x].contents[currentNode->z].z) < 4.f)
                 {
                     if (cell.staticCellType > CellType::BLOCKED &&
                         cell.dynamicCellType != CellType::BLOCKED)
@@ -438,11 +438,11 @@ void MotionGrid::findPath(glm::vec3& from, glm::vec3& to, bool isBlocking, glm::
             {
                 costMultiplier = 1.75f;
             }
-            glm::vec2 currentCellWorldPosition(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE);
-            glm::vec2 targetCellWorldPosition(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE);
-            glm::vec2 diff = targetCellWorldPosition - glm::vec2(from);
-            f32 length = glm::length(diff);
-            if (isBlocking && length < 20.f && glm::dot(diff / length, forward) > 0.9f)
+            Vec2 currentCellWorldPosition(x1 + currentNode->x * CELL_SIZE, y1 + currentNode->y * CELL_SIZE);
+            Vec2 targetCellWorldPosition(x1 + newNode.x * CELL_SIZE, y1 + newNode.y * CELL_SIZE);
+            Vec2 diff = targetCellWorldPosition - Vec2(from);
+            f32 len = length(diff);
+            if (isBlocking && len < 20.f && dot(diff / len, forward) > 0.9f)
             {
                 costMultiplier = 3.f;
 #if DEBUG_INFO

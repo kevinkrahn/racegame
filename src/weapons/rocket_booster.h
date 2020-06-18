@@ -36,9 +36,9 @@ public:
             vehicle->getRigidBody()->addForce(
                     convert(vehicle->getForwardVector() * 9.f),
                     PxForceMode::eACCELERATION);
-            boostTimer = glm::max(boostTimer - deltaTime, 0.f);
+            boostTimer = max(boostTimer - deltaTime, 0.f);
             g_audio.setSoundPosition(boostSound, vehicle->getPosition());
-            vehicle->setMotionBlur(glm::min(boostTimer, 1.f), 0.1f);
+            vehicle->setMotionBlur(min(boostTimer, 1.f), 0.1f);
             return;
         }
 
@@ -58,12 +58,12 @@ public:
         }
     }
 
-    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
         struct Flames
         {
-            glm::mat4 exhausts[4];
+            Mat4 exhausts[4];
             u32 exhaustCount;
             GLuint vao;
             u32 indexCount;
@@ -71,18 +71,18 @@ public:
         };
 
         Flames* renderData = g_game.tempMem.bump<Flames>();
-        renderData->alpha = glm::min(boostTimer * 7.f, 1.f);
+        renderData->alpha = min(boostTimer * 7.f, 1.f);
         renderData->exhaustCount = 0;
         renderData->vao = mesh->vao;
         renderData->indexCount = mesh->numIndices;
         for (auto& p : vehicleData.exhaustHoles)
         {
-            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * glm::translate(glm::mat4(1.f), p);
+            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * glm::translate(Mat4(1.f), p);
             renderData->exhaustCount++;
             if (renderData->alpha > 0.f)
             {
-                rw->addPointLight(vehicleTransform * glm::vec4(p + glm::vec3(-0.25f, 0, 0.25f), 1.f),
-                        glm::vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 3.f, 2.f);
+                rw->addPointLight(vehicleTransform * Vec4(p + Vec3(-0.25f, 0, 0.25f), 1.f),
+                        Vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 3.f, 2.f);
             }
         }
 

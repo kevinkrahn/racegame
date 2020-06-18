@@ -59,10 +59,10 @@ PxFilterFlags vehicleFilterShader(
 
 struct WheelInfo
 {
-    glm::mat4 transform;
-    glm::vec3 position;
-    glm::vec3 contactNormal;
-    glm::vec3 contactPosition;
+    Mat4 transform;
+    Vec3 position;
+    Vec3 contactNormal;
+    Vec3 contactPosition;
     f32 rotationSpeed = 0.f;
     f32 lateralSlip = 0.f;
     f32 longitudinalSlip = 0.f;
@@ -83,7 +83,7 @@ struct GroundSpot
         GLUE,
     };
     u32 groundType;
-    glm::vec3 p;
+    Vec3 p;
     f32 radius;
 };
 
@@ -114,21 +114,21 @@ class VehiclePhysics
 public:
     WheelInfo wheelInfo[NUM_WHEELS];
 
-    void setup(void* userData, PxScene* scene, glm::mat4 const& transform, VehicleTuning* tuning);
+    void setup(void* userData, PxScene* scene, Mat4 const& transform, VehicleTuning* tuning);
     ~VehiclePhysics();
 
     void update(PxScene* scene, f32 timestep, bool digital, f32 accel, f32 brake, f32 steer,
             bool handbrake, bool canGo, bool onlyBrake);
-    void reset(glm::mat4 const& transform);
+    void reset(Mat4 const& transform);
     f32 getEngineRPM() const { return vehicle4W->mDriveDynData.getEngineRotationSpeed() * 9.5493f + 900.f; }
     f32 getForwardSpeed() const { return vehicle4W->computeForwardSpeed(); }
     f32 getSidewaysSpeed() const { return vehicle4W->computeSidewaysSpeed(); }
     PxRigidDynamic* getRigidBody() const { return vehicle4W->getRigidDynamicActor(); }
-    glm::mat4 getTransform() const { return convert(PxMat44(getRigidBody()->getGlobalPose())); }
-    glm::vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
-    glm::vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
-    glm::vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
-    glm::vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
+    Mat4 getTransform() const { return convert(PxMat44(getRigidBody()->getGlobalPose())); }
+    Vec3 getPosition() const { return convert(getRigidBody()->getGlobalPose().p); }
+    Vec3 getForwardVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector0()); }
+    Vec3 getRightVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector1()); }
+    Vec3 getUpVector() const { return convert(getRigidBody()->getGlobalPose().q.getBasisVector2()); }
     u32 getCurrentGear()  const{ return vehicle4W->mDriveDynData.mCurrentGear; }
     f32 getCurrentGearRatio()  const{ return tuning->gearRatios[getCurrentGear()]; }
     f32 getAverageWheelRotationSpeed() const;

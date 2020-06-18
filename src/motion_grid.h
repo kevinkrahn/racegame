@@ -36,7 +36,7 @@ public:
 
     struct PathNode
     {
-        glm::vec3 p;
+        Vec3 p;
         f32 f, g, h;
     };
 
@@ -79,12 +79,12 @@ public:
 
     void build(class Scene* scene);
 
-    void setCell(glm::vec3 p, CellType cellType, bool permanent=false);
-    void setCells(glm::vec3 p, f32 radius, CellType cellType, bool permanent=false);
+    void setCell(Vec3 p, CellType cellType, bool permanent=false);
+    void setCells(Vec3 p, f32 radius, CellType cellType, bool permanent=false);
 
-    i32 getCellLayerIndex(glm::vec3 const& p) const;
+    i32 getCellLayerIndex(Vec3 const& p) const;
 
-    void findPath(glm::vec3& from, glm::vec3& to, bool isBlockedAhead, glm::vec2 forward,
+    void findPath(Vec3& from, Vec3& to, bool isBlockedAhead, Vec2 forward,
             Array<PathNode>& outPath);
 
     CellType getCellBleed(i32 x, i32 y, f32 z, CellType cellType);

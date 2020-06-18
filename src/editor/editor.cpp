@@ -42,12 +42,12 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 {
     modes[activeModeIndex]->onUpdate(scene, renderer, deltaTime);
 
-    glm::vec3 cameraTarget = scene->getEditorCamera().getCameraTarget();
+    Vec3 cameraTarget = scene->getEditorCamera().getCameraTarget();
     if (gridSettings.show)
     {
         i32 count = (i32)(40.f / gridSettings.cellSize);
         f32 gridSize = count * gridSettings.cellSize;
-        glm::vec4 color = { 1.f, 1.f, 1.f, 0.2f };
+        Vec4 color = { 1.f, 1.f, 1.f, 0.2f };
         for (i32 i=-count; i<=count; i++)
         {
             f32 x = i * gridSettings.cellSize;
@@ -77,7 +77,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             g_game.state.drivers.clear();
             g_game.state.drivers.push_back(Driver(true, true, true, 0, 1));
             auto conf = g_game.state.drivers.back().getVehicleConfig();
-            conf->color = glm::vec3(0.85f, 0.1f, 0.1f);
+            conf->color = Vec3(0.85f, 0.1f, 0.1f);
             conf->frontWeaponIndices[0] = 1;
             conf->frontWeaponUpgradeLevel[0] = 5;
             conf->rearWeaponIndices[0] = 4;
@@ -96,7 +96,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         ImGui::InputTextMultiline("Notes", &scene->notes, {0, 70});
         i32 totalLaps = (i32)scene->totalLaps;
         ImGui::InputInt("Laps", &totalLaps);
-        scene->totalLaps = (u32)glm::clamp(totalLaps, 1, 10);
+        scene->totalLaps = (u32)clamp(totalLaps, 1, 10);
         ImGui::Gap();
         ImGui::Checkbox("Show Grid", &gridSettings.show);
         ImGui::Checkbox("Snap to Grid", &gridSettings.snap);

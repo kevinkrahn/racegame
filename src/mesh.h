@@ -67,8 +67,8 @@ struct Mesh
         Array<u32> triangleIndices;
 
         void subdivide(Mesh const& mesh);
-        void debugDraw(class DebugDraw* dbg, glm::mat4 const& transform, glm::vec4 const& col=glm::vec4(1.f));
-        bool intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, Array<u32>& output) const;
+        void debugDraw(class DebugDraw* dbg, Mat4 const& transform, Vec4 const& col=Vec4(1.f));
+        bool intersect(Mesh const& mesh, Mat4 const& transform, BoundingBox const& bb, Array<u32>& output) const;
     };
 
     OwnedPtr<OctreeNode> octree = nullptr;
@@ -76,7 +76,7 @@ struct Mesh
     void calculateVertexFormat();
     void computeBoundingBox();
 
-    bool intersect(glm::mat4 const& transform, BoundingBox bb, Array<u32>& output) const;
+    bool intersect(Mat4 const& transform, BoundingBox bb, Array<u32>& output) const;
     void createVAO();
 
     PxTriangleMesh* collisionMesh = nullptr;
@@ -88,15 +88,16 @@ struct Mesh
     void destroy();
 };
 
+#if 0
 inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
 {
     struct Vertex
     {
-        glm::vec3 pos;
-        glm::vec3 normal;
-        glm::vec4 tangent;
-        glm::vec2 uv;
-        glm::vec3 color;
+        Vec3 pos;
+        Vec3 normal;
+        Vec4 tangent;
+        Vec2 uv;
+        Vec3 color;
     };
     for (u32 i=0; i<rhs.numVertices; ++i)
     {
@@ -109,4 +110,4 @@ inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
     }
     return lhs;
 }
-
+#endif

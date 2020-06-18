@@ -7,12 +7,12 @@
 #include "2d.h"
 #include "entities/start.h"
 
-glm::vec4 red = { 1.f, 0.f, 0.f, 1.f };
-glm::vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
-glm::vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
-glm::vec4 brightOrange = { 1.f, 0.65f, 0.1f, 1.f };
-glm::vec4 blue = { 0.f, 0.0f, 1.f, 1.f };
-glm::vec4 brightBlue = { 0.25f, 0.25f, 1.0f, 1.f };
+Vec4 red = { 1.f, 0.f, 0.f, 1.f };
+Vec4 brightRed = { 1.f, 0.25f, 0.25f, 1.f };
+Vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
+Vec4 brightOrange = { 1.f, 0.65f, 0.1f, 1.f };
+Vec4 blue = { 0.f, 0.0f, 1.f, 1.f };
+Vec4 brightBlue = { 0.25f, 0.25f, 1.0f, 1.f };
 
 void Track::onCreate(Scene* scene)
 {
@@ -40,10 +40,10 @@ void Track::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     for (auto& c : connections)
     {
         /*
-        glm::vec3 prevP;
+        Vec3 prevP;
         for (f32 t=0.f; t<=1.f; t+=0.01f)
         {
-            glm::vec3 p = pointOnBezierCurve(
+            Vec3 p = pointOnBezierCurve(
                     points[c.pointIndexA].position,
                     points[c.pointIndexA].position + c.handleOffsetA,
                     points[c.pointIndexB].position + c.handleOffsetB,
@@ -94,10 +94,10 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 {
     RenderWorld* rw = renderer->getRenderWorld();
     Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
-    glm::vec2 mousePos = g_input.getMousePosition();
+    Vec2 mousePos = g_input.getMousePosition();
     Camera const& cam = rw->getCamera(0);
-    glm::vec3 rayDir = screenToWorldRay(mousePos,
-            glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
+    Vec3 rayDir = screenToWorldRay(mousePos,
+            Vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
     f32 radius = 18;
 
     if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT)
@@ -109,9 +109,9 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
     // track points
     for (i32 i=0; i<(i32)points.size();)
     {
-        glm::vec3 point = points[i].position;
-        glm::vec2 pointScreen = project(point, rw->getCamera(0).viewProjection)
-            * glm::vec2(g_game.windowWidth, g_game.windowHeight);
+        Vec3 point = points[i].position;
+        Vec2 pointScreen = project(point, rw->getCamera(0).viewProjection)
+            * Vec2(g_game.windowWidth, g_game.windowHeight);
 
         auto it = selectedPoints.find([&i](auto& s) { return s.pointIndex == i; });
         bool isSelected = !!it;
@@ -162,7 +162,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             gridSettings->z = point.z + 0.15f;
         }
 
-        if (glm::length(pointScreen - mousePos) < radius && !isDragging)
+        if (length(pointScreen - mousePos) < radius && !isDragging)
         {
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
@@ -187,13 +187,13 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         if (isSelected)
         {
             drawOverlay(rw, sphere,
-                        glm::translate(glm::mat4(1.f), points[i].position) *
-                        glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -1);
+                        glm::translate(Mat4(1.f), points[i].position) *
+                        glm::scale(Mat4(1.08f), Vec3(1.f)), { 1, 1, 1 }, -1);
         }
-        glm::vec3 color = isSelected ? brightRed : red;
+        Vec3 color = isSelected ? brightRed : red;
         drawOverlay(rw, sphere,
-                    glm::translate(glm::mat4(1.f), points[i].position) *
-                    glm::scale(glm::mat4(1.f), glm::vec3(1.f)), color);
+                    glm::translate(Mat4(1.f), points[i].position) *
+                    glm::scale(Mat4(1.f), Vec3(1.f)), color);
         ++i;
     }
 
@@ -212,11 +212,11 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
 
         f32 widthDiff = ((i32)g_input.isKeyPressed(KEY_Q) - (i32)g_input.isKeyPressed(KEY_E)) * 1.f;
 
-        glm::vec3 colorA = orange;
-        glm::vec3 handleA = points[c->pointIndexA].position + c->handleOffsetA;
-        glm::vec2 handleAScreen = project(handleA, rw->getCamera(0).viewProjection)
-            * glm::vec2(g_game.windowWidth, g_game.windowHeight);
-        if (!isDragging && glm::length(handleAScreen - mousePos) < radius)
+        Vec3 colorA = orange;
+        Vec3 handleA = points[c->pointIndexA].position + c->handleOffsetA;
+        Vec2 handleAScreen = project(handleA, rw->getCamera(0).viewProjection)
+            * Vec2(g_game.windowWidth, g_game.windowHeight);
+        if (!isDragging && length(handleAScreen - mousePos) < radius)
         {
             colorA = brightOrange;
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -224,8 +224,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 isMouseHandled = true;
                 dragConnectionIndex = i;
                 dragConnectionHandle = 0;
-                f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleA);
-                glm::vec3 p = cam.position + rayDir * t;
+                f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), handleA);
+                Vec3 p = cam.position + rayDir * t;
                 dragOffset = handleA - p;
                 isDragging = true;
                 // TODO: don't move the other handle if a certain key is pressed (ALT?)
@@ -236,8 +236,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     {
                         if (c2->pointIndexB == c->pointIndexA)
                         {
-                            if (1.f - glm::dot(-glm::normalize(c2->handleOffsetB),
-                                        glm::normalize(c->handleOffsetA)) < 0.01f)
+                            if (1.f - dot(-normalize(c2->handleOffsetB),
+                                        normalize(c->handleOffsetA)) < 0.01f)
                             {
                                 dragOppositeConnectionIndex = connectionIndex;
                                 dragOppositeConnectionHandle = 1;
@@ -246,8 +246,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                         }
                         else if (c2->pointIndexA == c->pointIndexA)
                         {
-                            if (1.f - glm::dot(-glm::normalize(c2->handleOffsetA),
-                                        glm::normalize(c->handleOffsetA)) < 0.01f)
+                            if (1.f - dot(-normalize(c2->handleOffsetA),
+                                        normalize(c->handleOffsetA)) < 0.01f)
                             {
                                 dragOppositeConnectionIndex = connectionIndex;
                                 dragOppositeConnectionHandle = 0;
@@ -263,8 +263,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             c->widthA += widthDiff;
             c->isDirty = true;
             colorA = brightOrange;
-            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleA);
-            glm::vec3 p = cam.position + rayDir * t + dragOffset;
+            f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), handleA);
+            Vec3 p = cam.position + rayDir * t + dragOffset;
             if (gridSettings->snap)
             {
                 c->handleOffsetA = snapXY(p, gridSettings->cellSize) - points[c->pointIndexA].position;
@@ -288,15 +288,15 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
             }
             drawOverlay(rw, sphere,
-                        glm::translate(glm::mat4(1.f), handleA) *
-                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1);
+                        glm::translate(Mat4(1.f), handleA) *
+                        glm::scale(Mat4(0.9f), Vec3(1.f)), { 1, 1, 1 }, -1);
         }
 
-        glm::vec3 colorB = orange;
-        glm::vec3 handleB = points[c->pointIndexB].position + c->handleOffsetB;
-        glm::vec2 handleBScreen = project(handleB, rw->getCamera(0).viewProjection)
-            * glm::vec2(g_game.windowWidth, g_game.windowHeight);
-        if (!isDragging && glm::length(handleBScreen - mousePos) < radius)
+        Vec3 colorB = orange;
+        Vec3 handleB = points[c->pointIndexB].position + c->handleOffsetB;
+        Vec2 handleBScreen = project(handleB, rw->getCamera(0).viewProjection)
+            * Vec2(g_game.windowWidth, g_game.windowHeight);
+        if (!isDragging && length(handleBScreen - mousePos) < radius)
         {
             colorB = brightOrange;
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -304,8 +304,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 isMouseHandled = true;
                 dragConnectionIndex = i;
                 dragConnectionHandle = 1;
-                f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleB);
-                glm::vec3 p = cam.position + rayDir * t;
+                f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), handleB);
+                Vec3 p = cam.position + rayDir * t;
                 dragOffset = handleB - p;
                 isDragging = true;
                 // TODO: don't move the other handle if a certain key is pressed (ALT?)
@@ -318,8 +318,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     }
                     if (c2->pointIndexB == c->pointIndexB)
                     {
-                        if (1.f - glm::dot(-glm::normalize(c2->handleOffsetB),
-                                    glm::normalize(c->handleOffsetB)) < 0.01f)
+                        if (1.f - dot(-normalize(c2->handleOffsetB),
+                                    normalize(c->handleOffsetB)) < 0.01f)
                         {
                             dragOppositeConnectionIndex = connectionIndex;
                             dragOppositeConnectionHandle = 1;
@@ -328,8 +328,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     }
                     else if (c2->pointIndexA == c->pointIndexB)
                     {
-                        if (1.f - glm::dot(-glm::normalize(c2->handleOffsetA),
-                                    glm::normalize(c->handleOffsetB)) < 0.01f)
+                        if (1.f - dot(-normalize(c2->handleOffsetA),
+                                    normalize(c->handleOffsetB)) < 0.01f)
                         {
                             dragOppositeConnectionIndex = connectionIndex;
                             dragOppositeConnectionHandle = 0;
@@ -344,8 +344,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             c->widthB += widthDiff;
             c->isDirty = true;
             colorB = brightOrange;
-            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), handleB);
-            glm::vec3 p = cam.position + rayDir * t + dragOffset;
+            f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), handleB);
+            Vec3 p = cam.position + rayDir * t + dragOffset;
             if (gridSettings->snap)
             {
                 c->handleOffsetB = snapXY(p, gridSettings->cellSize) - points[c->pointIndexB].position;
@@ -369,46 +369,46 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                 }
             }
             drawOverlay(rw, sphere,
-                        glm::translate(glm::mat4(1.f), handleB) *
-                        glm::scale(glm::mat4(0.9f), glm::vec3(1.f)), { 1, 1, 1 }, -1);
+                        glm::translate(Mat4(1.f), handleB) *
+                        glm::scale(Mat4(0.9f), Vec3(1.f)), { 1, 1, 1 }, -1);
         }
         drawOverlay(rw, sphere,
-                    glm::translate(glm::mat4(1.f), handleA) *
-                    glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorA);
+                    glm::translate(Mat4(1.f), handleA) *
+                    glm::scale(Mat4(0.8f), Vec3(1.f)), colorA);
         drawOverlay(rw, sphere,
-                    glm::translate(glm::mat4(1.f), handleB) *
-                    glm::scale(glm::mat4(0.8f), glm::vec3(1.f)), colorB);
+                    glm::translate(Mat4(1.f), handleB) *
+                    glm::scale(Mat4(0.8f), Vec3(1.f)), colorB);
 
-        scene->debugDraw.line(points[c->pointIndexA].position + glm::vec3(0, 0, 0.01f),
-                points[c->pointIndexA].position + c->handleOffsetA + glm::vec3(0, 0, 0.01f),
-                glm::vec4(colorA, 1.f), glm::vec4(colorA, 1.f));
-        scene->debugDraw.line(points[c->pointIndexB].position + glm::vec3(0, 0, 0.01f),
-                points[c->pointIndexB].position + c->handleOffsetB + glm::vec3(0, 0, 0.01f),
-                glm::vec4(colorB, 1.f), glm::vec4(colorB, 1.f));
+        scene->debugDraw.line(points[c->pointIndexA].position + Vec3(0, 0, 0.01f),
+                points[c->pointIndexA].position + c->handleOffsetA + Vec3(0, 0, 0.01f),
+                Vec4(colorA, 1.f), Vec4(colorA, 1.f));
+        scene->debugDraw.line(points[c->pointIndexB].position + Vec3(0, 0, 0.01f),
+                points[c->pointIndexB].position + c->handleOffsetB + Vec3(0, 0, 0.01f),
+                Vec4(colorB, 1.f), Vec4(colorB, 1.f));
     }
 
     // handle dragging of points
     if (dragConnectionHandle == -1
         && selectedPoints.size() > 0
         && (g_input.isMouseButtonDown(MOUSE_LEFT) && !isMouseHandled)
-        && glm::length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
+        && length(mousePos - selectMousePos) > g_game.windowHeight * 0.005f)
     {
         f32 t = 0.f;
         f32 startZ = 0.f;
         if (selectedPoints.size() > 0)
         {
-            t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1),
+            t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1),
                     points[selectedPoints.back().pointIndex].position);
             startZ = points[selectedPoints.back().pointIndex].position.z;
         }
 
-        glm::vec3 hitPoint = cam.position + rayDir * t;
+        Vec3 hitPoint = cam.position + rayDir * t;
         if (!isDragging)
         {
             dragStartPoint = hitPoint;
         }
 
-        glm::vec3 dragTranslation = hitPoint - dragStartPoint;
+        Vec3 dragTranslation = hitPoint - dragStartPoint;
         for (auto& s : selectedPoints)
         {
             if (!isDragging)
@@ -419,8 +419,8 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
             points[s.pointIndex].position = s.dragStartPoint + dragTranslation;
             if (gridSettings->snap)
             {
-                glm::vec2 p = snapXY(points[s.pointIndex].position, gridSettings->cellSize);
-                points[s.pointIndex].position = glm::vec3(p, points[s.pointIndex].position.z);
+                Vec2 p = snapXY(points[s.pointIndex].position, gridSettings->cellSize);
+                points[s.pointIndex].position = Vec3(p, points[s.pointIndex].position.z);
             }
         }
 
@@ -470,25 +470,25 @@ void Track::extendTrack(i32 prefabCurveIndex)
 {
     i32 pointIndex = getSelectedPointIndex();
     BezierSegment* bezierConnection = getPointConnection(pointIndex);
-    glm::vec3 fromHandleOffset = (bezierConnection->pointIndexA == pointIndex)
+    Vec3 fromHandleOffset = (bezierConnection->pointIndexA == pointIndex)
         ? bezierConnection->handleOffsetA : bezierConnection->handleOffsetB;
     f32 fromWidth = (bezierConnection->pointIndexA == pointIndex)
         ? bezierConnection->widthA : bezierConnection->widthB;
-    glm::vec3 xDir = getPointDir(pointIndex);
-    glm::vec3 yDir = glm::cross(xDir, glm::vec3(0, 0, 1));
-    glm::vec3 zDir = glm::cross(yDir, xDir);
-    glm::mat4 m(1.f);
-    m[0] = glm::vec4(xDir, m[0].w);
-    m[1] = glm::vec4(yDir, m[1].w);
-    m[2] = glm::vec4(zDir, m[2].w);
+    Vec3 xDir = getPointDir(pointIndex);
+    Vec3 yDir = cross(xDir, Vec3(0, 0, 1));
+    Vec3 zDir = cross(yDir, xDir);
+    Mat4 m(1.f);
+    m[0] = Vec4(xDir, m[0].w);
+    m[1] = Vec4(yDir, m[1].w);
+    m[2] = Vec4(zDir, m[2].w);
     i32 pIndex = pointIndex;
     selectedPoints.clear();
     for (u32 c = 0; c<prefabTrackItems[prefabCurveIndex].curves.size(); ++c)
     {
-        glm::vec3 p = glm::vec3(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].offset, 1.f))
+        Vec3 p = Vec3(m * Vec4(prefabTrackItems[prefabCurveIndex].curves[c].offset, 1.f))
             + points[pIndex].position;
         points.push_back({ p });
-        glm::vec3 h(m * glm::vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
+        Vec3 h(m * Vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
 
         OwnedPtr<BezierSegment> segment(new BezierSegment);
         segment->track = this;
@@ -523,8 +523,8 @@ void Track::connectPoints()
     Point const& p1 = points[index1];
     Point const& p2 = points[index2];
 
-    glm::vec3 handle1 = (p1.position - p2.position) * 0.3f;
-    glm::vec3 handle2 = -handle1;
+    Vec3 handle1 = (p1.position - p2.position) * 0.3f;
+    Vec3 handle2 = -handle1;
 
     u32 connectionCount1 = 0;
     u32 connectionCount2 = 0;
@@ -581,9 +581,9 @@ Track::BezierSegment* Track::getPointConnection(i32 pointIndex)
     return nullptr;
 }
 
-glm::vec3 Track::getPointDir(i32 pointIndex) const
+Vec3 Track::getPointDir(i32 pointIndex) const
 {
-    glm::vec3 dir;
+    Vec3 dir;
     u32 count = 0;
     for (auto& c : connections)
     {
@@ -594,7 +594,7 @@ glm::vec3 Track::getPointDir(i32 pointIndex) const
             {
                 break;
             }
-            dir = -glm::normalize(
+            dir = -normalize(
                     pointOnBezierCurve(
                         points[c->pointIndexA].position,
                         points[c->pointIndexA].position + c->handleOffsetA,
@@ -609,7 +609,7 @@ glm::vec3 Track::getPointDir(i32 pointIndex) const
             {
                 break;
             }
-            dir = -glm::normalize(
+            dir = -normalize(
                     pointOnBezierCurve(
                         points[c->pointIndexA].position,
                         points[c->pointIndexA].position + c->handleOffsetA,
@@ -654,28 +654,28 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
 
     f32 totalLength = c.getLength();
 
-    c.boundingBox = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
+    c.boundingBox = { Vec3(FLT_MAX), Vec3(-FLT_MAX) };
     c.vertices.clear();
     c.indices.clear();
     // TODO: find the maximum viable step size
     const f32 stepSize = 2.f;
     u32 totalSteps = (u32)(totalLength / stepSize);
-    glm::vec3 prevP = points[c.pointIndexA].position;
+    Vec3 prevP = points[c.pointIndexA].position;
     for (u32 i=0; i<=totalSteps; ++i)
     {
         f32 t = (f32)i / (f32)totalSteps;
-        glm::vec3 p = pointOnBezierCurve(
+        Vec3 p = pointOnBezierCurve(
                 points[c.pointIndexA].position,
                 points[c.pointIndexA].position + c.handleOffsetA,
                 points[c.pointIndexB].position + c.handleOffsetB,
                 points[c.pointIndexB].position, t);
-        glm::vec3 xDir = glm::normalize(i == 0 ? c.handleOffsetA :
-                (i == totalSteps ? -c.handleOffsetB : glm::normalize(p - prevP)));
-        glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
-        glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
-        f32 width = glm::lerp(c.widthA, c.widthB, t);
-        glm::vec3 p1 = p + yDir * width;
-        glm::vec3 p2 = p - yDir * width;
+        Vec3 xDir = normalize(i == 0 ? c.handleOffsetA :
+                (i == totalSteps ? -c.handleOffsetB : normalize(p - prevP)));
+        Vec3 yDir = normalize(cross(xDir, Vec3(0, 0, 1)));
+        Vec3 zDir = normalize(cross(yDir, xDir));
+        f32 width = lerp(c.widthA, c.widthB, t);
+        Vec3 p1 = p + yDir * width;
+        Vec3 p2 = p - yDir * width;
         c.vertices.push_back(Vertex{ p1, zDir });
         c.vertices.push_back(Vertex{ p2, zDir });
         if (i > 0)
@@ -687,8 +687,8 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
             c.indices.push_back(i * 2 + 1);
             c.indices.push_back(i * 2 - 1);
         }
-        c.boundingBox.min = glm::min(c.boundingBox.min, glm::min(p1, p2));
-        c.boundingBox.max = glm::max(c.boundingBox.max, glm::max(p1, p2));
+        c.boundingBox.min = min(c.boundingBox.min, min(p1, p2));
+        c.boundingBox.max = max(c.boundingBox.max, max(p1, p2));
         prevP = p;
     }
     computeBoundingBox();
@@ -733,7 +733,7 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
     triMesh->release();
 }
 
-void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransform)
+void Track::buildTrackGraph(TrackGraph* trackGraph, Mat4 const& startTransform)
 {
     trackGraph->clear();
     for (Point& p : points)
@@ -747,12 +747,12 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
         c->trackGraphNodeIndexB = points[c->pointIndexB].trackGraphNodeIndex;
         f32 totalLength = c->getLength();
         f32 stepSize = 20.f;
-        u32 totalSteps = glm::max(2u, (u32)(totalLength / stepSize));
+        u32 totalSteps = max(2u, (u32)(totalLength / stepSize));
         u32 startNodeIndex = nodeIndex;
         // TODO: distribute points more evenly
         for (u32 i=1; i<totalSteps; ++i)
         {
-            glm::vec3 p = c->pointOnCurve(i / (f32)totalSteps);
+            Vec3 p = c->pointOnCurve(i / (f32)totalSteps);
             trackGraph->addNode(p);
             if (i > 1)
             {
@@ -768,16 +768,16 @@ void Track::buildTrackGraph(TrackGraph* trackGraph, glm::mat4 const& startTransf
 
 void Track::computeBoundingBox()
 {
-    boundingBox = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
+    boundingBox = { Vec3(FLT_MAX), Vec3(-FLT_MAX) };
     for (auto& c : connections)
     {
         boundingBox = boundingBox.growToFit(c->boundingBox);
     }
     f32 minSize = 100.f;
-    glm::vec2 addSize = glm::max(glm::vec2(0.f),
-        glm::vec2(minSize) - (glm::vec2(boundingBox.max) - glm::vec2(boundingBox.min)));
-    boundingBox.min -= glm::vec3(addSize * 0.5f, 0.f);
-    boundingBox.max += glm::vec3(addSize * 0.5f, 0.f);
+    Vec2 addSize = max(Vec2(0.f),
+        Vec2(minSize) - (Vec2(boundingBox.max) - Vec2(boundingBox.min)));
+    boundingBox.min -= Vec3(addSize * 0.5f, 0.f);
+    boundingBox.max += Vec3(addSize * 0.5f, 0.f);
 }
 
 void Track::buildPreviewMesh(Scene* scene)
@@ -801,12 +801,12 @@ void Track::buildPreviewMesh(Scene* scene)
     u32 indexIndex = 0;
     const f32 stepSize = 4.f;
     TrackGraph& trackGraph = scene->getTrackGraph();
-    glm::vec3 finishLinePosition = translationOf(scene->getStart());
+    Vec3 finishLinePosition = translationOf(scene->getStart());
     for (auto& c : connections)
     {
         f32 totalLength = c->getLength();
         u32 totalSteps = (u32)(totalLength / stepSize);
-        glm::vec3 prevP = points[c->pointIndexA].position;
+        Vec3 prevP = points[c->pointIndexA].position;
         f32 dA = trackGraph.getNode(c->trackGraphNodeIndexA)->t;
         f32 dB = trackGraph.getNode(c->trackGraphNodeIndexB)->t;
 
@@ -815,12 +815,12 @@ void Track::buildPreviewMesh(Scene* scene)
         for (u32 i=0; i<=totalSteps; ++i)
         {
             f32 t = (f32)i / (f32)totalSteps;
-            glm::vec3 p = pointOnBezierCurve(
+            Vec3 p = pointOnBezierCurve(
                     points[c->pointIndexA].position,
                     points[c->pointIndexA].position + c->handleOffsetA,
                     points[c->pointIndexB].position + c->handleOffsetB,
                     points[c->pointIndexB].position, t);
-            if (glm::distance2(p, finishLinePosition) < square(6.f))
+            if (distance2(p, finishLinePosition) < square(6.f))
             {
                 crossesFinishLine = true;
                 finishLineStepIndex = i;
@@ -838,18 +838,18 @@ void Track::buildPreviewMesh(Scene* scene)
         for (u32 i=0; i<=totalSteps; ++i)
         {
             f32 t = (f32)i / (f32)totalSteps;
-            glm::vec3 p = pointOnBezierCurve(
+            Vec3 p = pointOnBezierCurve(
                     points[c->pointIndexA].position,
                     points[c->pointIndexA].position + c->handleOffsetA,
                     points[c->pointIndexB].position + c->handleOffsetB,
                     points[c->pointIndexB].position, t);
-            glm::vec3 xDir = glm::normalize(i == 0 ? c->handleOffsetA :
-                    (i == totalSteps ? -c->handleOffsetB : glm::normalize(p - prevP)));
-            glm::vec3 yDir = glm::normalize(glm::cross(xDir, glm::vec3(0, 0, 1)));
-            glm::vec3 zDir = glm::normalize(glm::cross(yDir, xDir));
-            f32 width = glm::lerp(c->widthA, c->widthB, t);
-            glm::vec3 p1 = p + yDir * width;
-            glm::vec3 p2 = p - yDir * width;
+            Vec3 xDir = normalize(i == 0 ? c->handleOffsetA :
+                    (i == totalSteps ? -c->handleOffsetB : normalize(p - prevP)));
+            Vec3 yDir = normalize(cross(xDir, Vec3(0, 0, 1)));
+            Vec3 zDir = normalize(cross(yDir, xDir));
+            f32 width = lerp(c->widthA, c->widthB, t);
+            Vec3 p1 = p + yDir * width;
+            Vec3 p2 = p - yDir * width;
 
             f32 distance = 0.f;
             f32 lerpT = t;
@@ -863,11 +863,11 @@ void Track::buildPreviewMesh(Scene* scene)
                 {
                     lerpT = (f32)(i - finishLineStepIndex) / (f32)(totalSteps - finishLineStepIndex);
                 }
-                distance = glm::lerp(ddA, ddB, lerpT);
+                distance = lerp(ddA, ddB, lerpT);
             }
             else
             {
-                distance = trackGraph.findTrackProgressAtPoint(p, glm::lerp(ddA, ddB, lerpT));
+                distance = trackGraph.findTrackProgressAtPoint(p, lerp(ddA, ddB, lerpT));
             }
 
             previewMesh.vertices[vertexIndex + 0]  = p1.x;

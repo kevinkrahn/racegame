@@ -29,10 +29,10 @@ public:
         tuning.wheelMassRear = 15;
         tuning.wheelDampingRate = 0.1f;
         tuning.wheelOffroadDampingRate = 28;
-        //tuning.frontToeAngle = glm::radians(-0.5f); // more responsive to inputs
-        tuning.frontToeAngle = glm::radians(0.f);
-        //tuning.rearToeAngle = glm::radians(4.5f); // faster recovery from slide
-        tuning.rearToeAngle = glm::radians(0.9f); // faster recovery from slide
+        //tuning.frontToeAngle = radians(-0.5f); // more responsive to inputs
+        tuning.frontToeAngle = radians(0.f);
+        //tuning.rearToeAngle = radians(4.5f); // faster recovery from slide
+        tuning.rearToeAngle = radians(0.9f); // faster recovery from slide
         tuning.trackTireFriction = 2.4f;
         tuning.offroadTireFriction = 1.7f;
 
@@ -48,7 +48,7 @@ public:
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 6000.f;
-        tuning.maxSteerAngle = glm::radians(52.f);
+        tuning.maxSteerAngle = radians(52.f);
         tuning.clutchStrength = 5.f;
         tuning.gearSwitchTime = 0.16f;
         tuning.autoBoxSwitchTime = 1.2f;

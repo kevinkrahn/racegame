@@ -12,11 +12,11 @@ class TransformGizmoHandler
 {
 public:
     virtual ~TransformGizmoHandler() {}
-    virtual void gizmoDrag(glm::vec3 const& dragCenter, glm::vec3 const& dragDest,
-            glm::vec3 const& dragDestZ, glm::vec3 dragOffset, i32 dragAxis) = 0;
-    virtual void gizmoRotate(f32 angleDiff, glm::vec3 const& rotatePivot, i32 dragAxis) = 0;
-    virtual void gizmoScale(f32 scaleFactor, i32 dragAxis, glm::vec3 const& scaleCenter,
-            glm::vec3 const& dragOffset, glm::vec3 const& hitPos, glm::vec3& hitPosZ) = 0;
+    virtual void gizmoDrag(Vec3 const& dragCenter, Vec3 const& dragDest,
+            Vec3 const& dragDestZ, Vec3 dragOffset, i32 dragAxis) = 0;
+    virtual void gizmoRotate(f32 angleDiff, Vec3 const& rotatePivot, i32 dragAxis) = 0;
+    virtual void gizmoScale(f32 scaleFactor, i32 dragAxis, Vec3 const& scaleCenter,
+            Vec3 const& dragOffset, Vec3 const& hitPos, Vec3& hitPosZ) = 0;
 };
 
 namespace DragAxis
@@ -43,8 +43,8 @@ class TransformGizmo
 {
     TransformMode transformMode = TransformMode::TRANSLATE;
     i32 entityDragAxis = DragAxis::NONE;
-    glm::vec3 entityDragOffset;
-    glm::vec3 rotatePivot;
+    Vec3 entityDragOffset;
+    Vec3 rotatePivot;
 
 public:
     TransformMode getTransformMode() const { return transformMode; }
@@ -55,17 +55,17 @@ public:
         entityDragAxis = DragAxis::NONE;
     }
 
-    bool update(glm::vec3 const& p, Scene* scene, RenderWorld* rw, f32 deltaTime,
-            glm::mat4 const& orientation, TransformGizmoHandler* handler, bool drawCenter=true)
+    bool update(Vec3 const& p, Scene* scene, RenderWorld* rw, f32 deltaTime,
+            Mat4 const& orientation, TransformGizmoHandler* handler, bool drawCenter=true)
     {
         bool isMouseClickHandled = ImGui::GetIO().WantCaptureMouse;
         bool isKeyboardHandled = ImGui::GetIO().WantCaptureKeyboard;
 
         f32 rot = (f32)M_PI * 0.5f;
-        glm::vec2 windowSize(g_game.windowWidth, g_game.windowHeight);
-        glm::mat4 viewProj = rw->getCamera(0).viewProjection;
+        Vec2 windowSize(g_game.windowWidth, g_game.windowHeight);
+        Mat4 viewProj = rw->getCamera(0).viewProjection;
 
-        glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
+        Vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
         Camera const& cam = scene->getEditorCamera().getCamera();
 
         if (g_input.isKeyPressed(KEY_ESCAPE))
@@ -101,7 +101,7 @@ public:
             transformMode = TransformMode::ROTATE;
             entityDragAxis = DragAxis::Z;
             rotatePivot = p;
-            glm::vec2 mousePos = g_input.getMousePosition();
+            Vec2 mousePos = g_input.getMousePosition();
             entityDragOffset.x = pointDirection(mousePos, project(rotatePivot, viewProj) * windowSize);
         }
 
@@ -111,35 +111,35 @@ public:
             entityDragAxis = DragAxis::MIDDLE;
         }
 
-        glm::vec3 xCol = glm::vec3(0.95f, 0, 0);
-        glm::vec3 xColHighlight = glm::vec3(1, 0.1f, 0.1f);
-        glm::vec3 yCol = glm::vec3(0, 0.85f, 0);
-        glm::vec3 yColHighlight = glm::vec3(0.2f, 1, 0.2f);
-        glm::vec3 zCol = glm::vec3(0, 0, 0.95f);
-        glm::vec3 zColHighlight = glm::vec3(0.1f, 0.1f, 1.f);
-        glm::vec3 centerCol = glm::vec3(0.8f, 0.8f, 0.8f);
+        Vec3 xCol = Vec3(0.95f, 0, 0);
+        Vec3 xColHighlight = Vec3(1, 0.1f, 0.1f);
+        Vec3 yCol = Vec3(0, 0.85f, 0);
+        Vec3 yColHighlight = Vec3(0.2f, 1, 0.2f);
+        Vec3 zCol = Vec3(0, 0, 0.95f);
+        Vec3 zColHighlight = Vec3(0.1f, 0.1f, 1.f);
+        Vec3 centerCol = Vec3(0.8f, 0.8f, 0.8f);
 
         if (transformMode == TransformMode::TRANSLATE)
         {
-            f32 xyT = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), p);
-            glm::vec3 hitPos = cam.position + rayDir * xyT;
+            f32 xyT = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), p);
+            Vec3 hitPos = cam.position + rayDir * xyT;
             f32 zT = rayPlaneIntersection(cam.position, rayDir,
-                    glm::normalize(glm::vec3(glm::vec2(-rayDir), 0.f)), p);
-            glm::vec3 hitPosZ = cam.position + rayDir * zT;
+                    normalize(Vec3(Vec2(-rayDir), 0.f)), p);
+            Vec3 hitPosZ = cam.position + rayDir * zT;
 
             if (!isMouseClickHandled)
             {
                 f32 offset = 4.5f;
-                glm::vec2 size(g_game.windowWidth, g_game.windowHeight);
-                glm::vec2 xHandle = projectScale(p, glm::vec3(offset, 0, 0), viewProj) * size;
-                glm::vec2 yHandle = projectScale(p, glm::vec3(0, offset, 0), viewProj) * size;
-                glm::vec2 zHandle = projectScale(p, glm::vec3(0, 0, offset), viewProj) * size;
-                glm::vec2 center = project(p, viewProj) * size;
+                Vec2 size(g_game.windowWidth, g_game.windowHeight);
+                Vec2 xHandle = projectScale(p, Vec3(offset, 0, 0), viewProj) * size;
+                Vec2 yHandle = projectScale(p, Vec3(0, offset, 0), viewProj) * size;
+                Vec2 zHandle = projectScale(p, Vec3(0, 0, offset), viewProj) * size;
+                Vec2 center = project(p, viewProj) * size;
 
                 f32 radius = 18.f;
-                glm::vec2 mousePos = g_input.getMousePosition();
+                Vec2 mousePos = g_input.getMousePosition();
 
-                if (glm::length(xHandle - mousePos) < radius)
+                if (length(xHandle - mousePos) < radius)
                 {
                     xCol = xColHighlight;
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -150,7 +150,7 @@ public:
                     }
                 }
 
-                if (glm::length(yHandle - mousePos) < radius)
+                if (length(yHandle - mousePos) < radius)
                 {
                     yCol = yColHighlight;
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -161,7 +161,7 @@ public:
                     }
                 }
 
-                if (glm::length(zHandle - mousePos) < radius)
+                if (length(zHandle - mousePos) < radius)
                 {
                     zCol = zColHighlight;
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -173,9 +173,9 @@ public:
                 }
 
                 bool shortcut = !isKeyboardHandled && g_input.isKeyPressed(KEY_G);
-                if (glm::length(center - mousePos) < radius || shortcut)
+                if (length(center - mousePos) < radius || shortcut)
                 {
-                    centerCol = glm::vec3(1.f);
+                    centerCol = Vec3(1.f);
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT) || shortcut)
                     {
                         entityDragAxis = DragAxis::MIDDLE;
@@ -226,54 +226,54 @@ public:
             Mesh* centerMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
             if (drawCenter)
             {
-                drawOverlay(rw, centerMesh, glm::translate(glm::mat4(1.f), p), centerCol, -1);
+                drawOverlay(rw, centerMesh, glm::translate(Mat4(1.f), p), centerCol, -1);
             }
 
-            drawOverlay(rw, arrowMesh, glm::translate(glm::mat4(1.f), p), xCol);
+            drawOverlay(rw, arrowMesh, glm::translate(Mat4(1.f), p), xCol);
             if (entityDragAxis & DragAxis::X)
             {
                 scene->debugDraw.line(
-                        p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
-                        glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                        p - Vec3(100.f, 0.f, 0.f), p + Vec3(100.f, 0.f, 0.f),
+                        Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
             }
 
             drawOverlay(rw, arrowMesh,
-                    glm::translate(glm::mat4(1.f), p) *
-                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol);
+                    glm::translate(Mat4(1.f), p) *
+                    glm::rotate(Mat4(1.f), rot, Vec3(0, 0, 1)), yCol);
             if (entityDragAxis & DragAxis::Y)
             {
                 scene->debugDraw.line(
-                        p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
-                        glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                        p - Vec3(0.f, 100.f, 0.f), p + Vec3(0.f, 100.f, 0.f),
+                        Vec4(0, 1, 0, 1), Vec4(0, 1, 0, 1));
             }
 
             drawOverlay(rw, arrowMesh,
-                    glm::translate(glm::mat4(1.f), p) *
-                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol);
+                    glm::translate(Mat4(1.f), p) *
+                    glm::rotate(Mat4(1.f), -rot, Vec3(0, 1, 0)), zCol);
             if (entityDragAxis & DragAxis::Z)
             {
                 scene->debugDraw.line(
-                        p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
-                        glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
+                        p - Vec3(0.f, 0.f, 100.f), p + Vec3(0.f, 0.f, 100.f),
+                        Vec4(0, 0, 1, 1), Vec4(0, 0, 1, 1));
             }
         }
         if (transformMode == TransformMode::ROTATE)
         {
-            f32 dist = glm::length(cam.position - p);
+            f32 dist = length(cam.position - p);
             f32 fixedSize = 0.085f;
-            f32 size = dist * fixedSize * glm::radians(cam.fov);
-            glm::vec2 mousePos = g_input.getMousePosition();
+            f32 size = dist * fixedSize * radians(cam.fov);
+            Vec2 mousePos = g_input.getMousePosition();
 
             f32 sphereT = raySphereIntersection(cam.position, rayDir, p, size);
             if (sphereT > 0.f)
             {
-                glm::vec2 centerPos = project(p, viewProj) * windowSize;
-                glm::vec3 sphereHitPos = cam.position + rayDir * sphereT;
-                glm::vec3 localHitPos = glm::normalize(sphereHitPos - p);
+                Vec2 centerPos = project(p, viewProj) * windowSize;
+                Vec3 sphereHitPos = cam.position + rayDir * sphereT;
+                Vec3 localHitPos = normalize(sphereHitPos - p);
 
                 if (!isMouseClickHandled)
                 {
-                    if (glm::abs(localHitPos.x) < 0.2f)
+                    if (absolute(localHitPos.x) < 0.2f)
                     {
                         xCol = xColHighlight;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -284,7 +284,7 @@ public:
                             rotatePivot = p;
                         }
                     }
-                    else if (glm::abs(localHitPos.y) < 0.2f)
+                    else if (absolute(localHitPos.y) < 0.2f)
                     {
                         yCol = yColHighlight;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -295,7 +295,7 @@ public:
                             rotatePivot = p;
                         }
                     }
-                    else if (glm::abs(localHitPos.z) < 0.2f)
+                    else if (absolute(localHitPos.z) < 0.2f)
                     {
                         zCol = zColHighlight;
                         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -311,7 +311,7 @@ public:
 
             if (entityDragAxis)
             {
-                glm::vec2 centerPos = project(rotatePivot, viewProj) * windowSize;
+                Vec2 centerPos = project(rotatePivot, viewProj) * windowSize;
                 f32 angle = pointDirection(mousePos, centerPos);
                 f32 angleDiff = angleDifference(angle, entityDragOffset.x);
                 entityDragOffset.x = angle;
@@ -322,63 +322,63 @@ public:
                 Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.RotateArrow");
                 Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
                 drawOverlay(rw, sphereMesh,
-                        glm::translate(glm::mat4(1.f), p) * glm::scale(glm::mat4(1.f), glm::vec3(4.4f)),
-                        glm::vec3(1.f), -1, true);
+                        glm::translate(Mat4(1.f), p) * glm::scale(Mat4(1.f), Vec3(4.4f)),
+                        Vec3(1.f), -1, true);
 
                 drawOverlay(rw, arrowMesh,
-                        glm::translate(glm::mat4(1.f), p) *
-                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 1, 0)), xCol);
+                        glm::translate(Mat4(1.f), p) *
+                        glm::rotate(Mat4(1.f), rot, Vec3(0, 1, 0)), xCol);
                 if (entityDragAxis & DragAxis::X)
                 {
                     scene->debugDraw.line(
-                            p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
-                            glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                            p - Vec3(100.f, 0.f, 0.f), p + Vec3(100.f, 0.f, 0.f),
+                            Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
                 }
 
                 drawOverlay(rw, arrowMesh,
-                        glm::translate(glm::mat4(1.f), p) *
-                        glm::rotate(glm::mat4(1.f), rot, glm::vec3(1, 0, 0)), yCol);
+                        glm::translate(Mat4(1.f), p) *
+                        glm::rotate(Mat4(1.f), rot, Vec3(1, 0, 0)), yCol);
                 if (entityDragAxis & DragAxis::Y)
                 {
                     scene->debugDraw.line(
-                            p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
-                            glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                            p - Vec3(0.f, 100.f, 0.f), p + Vec3(0.f, 100.f, 0.f),
+                            Vec4(0, 1, 0, 1), Vec4(0, 1, 0, 1));
                 }
 
-                drawOverlay(rw, arrowMesh, glm::translate(glm::mat4(1.f), p), zCol);
+                drawOverlay(rw, arrowMesh, glm::translate(Mat4(1.f), p), zCol);
                 if (entityDragAxis & DragAxis::Z)
                 {
                     scene->debugDraw.line(
-                            p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
-                            glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
+                            p - Vec3(0.f, 0.f, 100.f), p + Vec3(0.f, 0.f, 100.f),
+                            Vec4(0, 0, 1, 1), Vec4(0, 0, 1, 1));
                 }
             }
         }
         if (transformMode == TransformMode::SCALE)
         {
-            f32 t = rayPlaneIntersection(cam.position, rayDir, glm::vec3(0, 0, 1), p);
-            glm::vec3 hitPos = cam.position + rayDir * t;
+            f32 t = rayPlaneIntersection(cam.position, rayDir, Vec3(0, 0, 1), p);
+            Vec3 hitPos = cam.position + rayDir * t;
             t = rayPlaneIntersection(cam.position, rayDir,
-                    glm::normalize(glm::vec3(glm::vec2(-rayDir), 0.f)), p);
-            glm::vec3 hitPosZ = cam.position + rayDir * t;
+                    normalize(Vec3(Vec2(-rayDir), 0.f)), p);
+            Vec3 hitPosZ = cam.position + rayDir * t;
 
             f32 offset = 4.5f;
-            glm::vec3 xAxis = xAxisOf(orientation) * offset;
-            glm::vec3 yAxis = yAxisOf(orientation) * offset;
-            glm::vec3 zAxis = zAxisOf(orientation) * offset;
+            Vec3 xAxis = xAxisOf(orientation) * offset;
+            Vec3 yAxis = yAxisOf(orientation) * offset;
+            Vec3 zAxis = zAxisOf(orientation) * offset;
 
             if (!isMouseClickHandled)
             {
-                glm::vec2 size(g_game.windowWidth, g_game.windowHeight);
-                glm::vec2 xHandle = projectScale(p, xAxis, viewProj) * size;
-                glm::vec2 yHandle = projectScale(p, yAxis, viewProj) * size;
-                glm::vec2 zHandle = projectScale(p, zAxis, viewProj) * size;
-                glm::vec2 center = project(p, viewProj) * size;
+                Vec2 size(g_game.windowWidth, g_game.windowHeight);
+                Vec2 xHandle = projectScale(p, xAxis, viewProj) * size;
+                Vec2 yHandle = projectScale(p, yAxis, viewProj) * size;
+                Vec2 zHandle = projectScale(p, zAxis, viewProj) * size;
+                Vec2 center = project(p, viewProj) * size;
 
                 f32 radius = 18.f;
-                glm::vec2 mousePos = g_input.getMousePosition();
+                Vec2 mousePos = g_input.getMousePosition();
 
-                if (glm::length(xHandle - mousePos) < radius)
+                if (length(xHandle - mousePos) < radius)
                 {
                     xCol = xColHighlight;
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -389,7 +389,7 @@ public:
                     }
                 }
 
-                if (glm::length(yHandle - mousePos) < radius)
+                if (length(yHandle - mousePos) < radius)
                 {
                     yCol = yColHighlight;
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -400,7 +400,7 @@ public:
                     }
                 }
 
-                if (glm::length(zHandle - mousePos) < radius)
+                if (length(zHandle - mousePos) < radius)
                 {
                     zCol = zColHighlight;
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -412,9 +412,9 @@ public:
                 }
 
                 bool shortcut = !isKeyboardHandled && g_input.isKeyPressed(KEY_F);
-                if (glm::length(center - mousePos) < radius || shortcut)
+                if (length(center - mousePos) < radius || shortcut)
                 {
-                    centerCol = glm::vec3(1.f);
+                    centerCol = Vec3(1.f);
                     if (g_input.isMouseButtonPressed(MOUSE_LEFT) || shortcut)
                     {
                         entityDragAxis = DragAxis::MIDDLE;
@@ -426,8 +426,8 @@ public:
 
             if (entityDragAxis)
             {
-                f32 startDistance = glm::length(entityDragOffset);
-                f32 scaleFactor = glm::length(p - hitPos) / startDistance;
+                f32 startDistance = length(entityDragOffset);
+                f32 scaleFactor = length(p - hitPos) / startDistance;
                 handler->gizmoScale(scaleFactor, entityDragAxis, p, entityDragOffset, hitPos, hitPosZ);
                 if ((entityDragAxis & DragAxis::MIDDLE) == DragAxis::MIDDLE)
                 {
@@ -458,37 +458,37 @@ public:
             if (drawCenter)
             {
                 drawOverlay(rw, centerMesh,
-                        glm::translate(glm::mat4(1.f), p) * orientation, centerCol, -1);
+                        glm::translate(Mat4(1.f), p) * orientation, centerCol, -1);
             }
 
-            drawOverlay(rw, arrowMesh, glm::translate(glm::mat4(1.f), p) * orientation, xCol);
+            drawOverlay(rw, arrowMesh, glm::translate(Mat4(1.f), p) * orientation, xCol);
             if (entityDragAxis & DragAxis::X)
             {
                 scene->debugDraw.line(
-                        p - glm::vec3(100.f, 0.f, 0.f), p + glm::vec3(100.f, 0.f, 0.f),
-                        glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                        p - Vec3(100.f, 0.f, 0.f), p + Vec3(100.f, 0.f, 0.f),
+                        Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
             }
 
             drawOverlay(rw, arrowMesh,
-                    glm::translate(glm::mat4(1.f), p) *
+                    glm::translate(Mat4(1.f), p) *
                     orientation *
-                    glm::rotate(glm::mat4(1.f), rot, glm::vec3(0, 0, 1)), yCol);
+                    glm::rotate(Mat4(1.f), rot, Vec3(0, 0, 1)), yCol);
             if (entityDragAxis & DragAxis::Y)
             {
                 scene->debugDraw.line(
-                        p - glm::vec3(0.f, 100.f, 0.f), p + glm::vec3(0.f, 100.f, 0.f),
-                        glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                        p - Vec3(0.f, 100.f, 0.f), p + Vec3(0.f, 100.f, 0.f),
+                        Vec4(0, 1, 0, 1), Vec4(0, 1, 0, 1));
             }
 
             drawOverlay(rw, arrowMesh,
-                    glm::translate(glm::mat4(1.f), p) *
+                    glm::translate(Mat4(1.f), p) *
                     orientation *
-                    glm::rotate(glm::mat4(1.f), -rot, glm::vec3(0, 1, 0)), zCol);
+                    glm::rotate(Mat4(1.f), -rot, Vec3(0, 1, 0)), zCol);
             if (entityDragAxis & DragAxis::Z)
             {
                 scene->debugDraw.line(
-                        p - glm::vec3(0.f, 0.f, 100.f), p + glm::vec3(0.f, 0.f, 100.f),
-                        glm::vec4(0, 0, 1, 1), glm::vec4(0, 0, 1, 1));
+                        p - Vec3(0.f, 0.f, 100.f), p + Vec3(0.f, 0.f, 100.f),
+                        Vec4(0, 0, 1, 1), Vec4(0, 0, 1, 1));
             }
         }
 

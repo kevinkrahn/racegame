@@ -6,13 +6,13 @@
 
 class Mine : public Entity
 {
-    glm::mat4 transform;
+    Mat4 transform;
     u32 instigator;
     Model* model;
     f32 aliveTime = 0.f;
 
 public:
-    Mine(glm::mat4 const& transform, u32 instigator)
+    Mine(Mat4 const& transform, u32 instigator)
         : transform(transform), instigator(instigator)
     {
         model = g_res.getModel("mine");

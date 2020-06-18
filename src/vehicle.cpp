@@ -12,7 +12,7 @@
 // TODO: play with this value to find best distance
 const f32 camDistance = 80.f;
 
-Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& startOffset,
+Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
         Driver* driver, VehicleTuning&& tuning, u32 vehicleIndex, i32 cameraIndex)
 {
     this->cameraTarget = translationOf(transform) - camDistance * 0.5f;
@@ -28,7 +28,7 @@ Vehicle::Vehicle(Scene* scene, glm::mat4 const& transform, glm::vec3 const& star
 		auto& ai = g_ais[driver->aiIndex];
 		f32 skill = clamp(1.f - ai.drivingSkill
 				+ random(scene->randomSeries, -0.2f, 0.2f), 0.f, 0.99999f);
-		this->preferredFollowPathIndex = (u32)(glm::max(0, (i32)scene->getPaths().size()) * skill);
+		this->preferredFollowPathIndex = (u32)(max(0, (i32)scene->getPaths().size()) * skill);
 		this->currentFollowPathIndex = this->preferredFollowPathIndex;
 		// TODO: change preferredFollowPathIndex per lap?
 	}
@@ -103,7 +103,7 @@ void Vehicle::resetAmmo()
     }
 }
 
-void Vehicle::reset(glm::mat4 const& transform)
+void Vehicle::reset(Mat4 const& transform)
 {
     airTime = 0.f;
     airBonusGracePeriod = 0.f;
@@ -123,10 +123,10 @@ void Vehicle::reset(glm::mat4 const& transform)
     vehiclePhysics.reset(transform);
 }
 
-void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
+void Vehicle::drawWeaponAmmo(Renderer* renderer, Vec2 pos, Weapon* weapon,
         bool showAmmo, bool selected)
 {
-    f32 iconSize = glm::floor(g_game.windowHeight * 0.05f);
+    f32 iconSize = floorf(g_game.windowHeight * 0.05f);
     if (showAmmo)
     {
         Texture* iconbg = g_res.getTexture("weapon_iconbg");
@@ -135,14 +135,14 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
     else
     {
         Texture* iconbg = g_res.getTexture("iconbg");
-        ui::rect(-100, iconbg, pos, glm::vec2(iconSize));
+        ui::rect(-100, iconbg, pos, Vec2(iconSize));
     }
 
-    ui::rect(-90, weapon->info.icon, pos, glm::vec2(iconSize));
+    ui::rect(-90, weapon->info.icon, pos, Vec2(iconSize));
     if (selected)
     {
         Texture* selectedTex = g_res.getTexture("weapon_iconbg_selected");
-        ui::rect(-80, selectedTex, pos, glm::vec2(iconSize * 1.5f, iconSize));
+        ui::rect(-80, selectedTex, pos, Vec2(iconSize * 1.5f, iconSize));
     }
     if (showAmmo)
     {
@@ -154,9 +154,9 @@ void Vehicle::drawWeaponAmmo(Renderer* renderer, glm::vec2 pos, Weapon* weapon,
         for (u32 i=0; i<ammoTickCount; ++i)
         {
             ui::rect(-70, ammoTickTex,
-                        pos + glm::vec2(iconSize + ammoTickMargin * 2.f,
+                        pos + Vec2(iconSize + ammoTickMargin * 2.f,
                             ammoTickHeight * i + (iconSize * 0.1f) + ammoTickMargin * 0.5f),
-                        glm::vec2(iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
+                        Vec2(iconSize * 0.32f, ammoTickHeight - ammoTickMargin));
         }
     }
 }
@@ -173,16 +173,16 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         ViewportLayout const& layout =
             viewportLayout[renderer->getRenderWorld()->getViewportCount() - 1];
-        glm::vec2 dim(g_game.windowWidth, g_game.windowHeight);
-        glm::vec2 offset = layout.offsets[cameraIndex] * dim;
-        glm::vec2 d(1.f, 1.f);
+        Vec2 dim(g_game.windowWidth, g_game.windowHeight);
+        Vec2 offset = layout.offsets[cameraIndex] * dim;
+        Vec2 d(1.f, 1.f);
         if (offset.y > 0.f)
         {
             offset.y = g_game.windowHeight - font2.getHeight();
             d.y = -1;
         }
-        glm::vec2 vdim = dim * layout.scale;
-        glm::vec2 voffset = layout.offsets[cameraIndex] * dim;
+        Vec2 vdim = dim * layout.scale;
+        Vec2 voffset = layout.offsets[cameraIndex] * dim;
         if (voffset.y > 0.f)
         {
             voffset.y = (f32)g_game.windowHeight;
@@ -192,27 +192,27 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         f32 o25 = (f32)g_game.windowHeight * 0.03f;
         f32 o200 = (f32)g_game.windowHeight * 0.21f;
 
-        char* p = tstr(glm::min((u32)currentLap, scene->getTotalLaps()));
+        char* p = tstr(min((u32)currentLap, scene->getTotalLaps()));
         const char* lapStr = "LAP";
         f32 lapWidth = font1.stringDimensions(lapStr).x;
-        ui::text(&font1, lapStr, offset + glm::vec2(o20, d.y*o20), glm::vec3(1.f));
+        ui::text(&font1, lapStr, offset + Vec2(o20, d.y*o20), Vec3(1.f));
         ui::text(&font2, p,
-                    offset + glm::vec2(o25 + lapWidth, d.y*o20), glm::vec3(1.f));
+                    offset + Vec2(o25 + lapWidth, d.y*o20), Vec3(1.f));
         ui::text(&font1, tstr('/', scene->getTotalLaps()),
-                    offset + glm::vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20),
-                    glm::vec3(1.f));
+                    offset + Vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20),
+                    Vec3(1.f));
 
         const char* placementSuffix = "th";
         if (placement == 0) placementSuffix = "st";
         else if (placement == 1) placementSuffix = "nd";
         else if (placement == 2) placementSuffix = "rd";
 
-        glm::vec3 col = glm::mix(glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), placement / 8.f);
+        Vec3 col = mix(Vec3(0, 1, 0), Vec3(1, 0, 0), placement / 8.f);
 
         p = tstr(placement + 1);
-        ui::text(&font2, p, offset + glm::vec2(o200, d.y*o20), col);
+        ui::text(&font2, p, offset + Vec2(o200, d.y*o20), col);
         ui::text(&font1, placementSuffix,
-                    offset + glm::vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col);
+                    offset + Vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col);
 
         // weapons
         f32 weaponIconX = g_game.windowHeight * 0.35f;
@@ -220,7 +220,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             auto& w = frontWeapons[i];
             drawWeaponAmmo(renderer, offset +
-                    glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                    Vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
                     w.get(), true, i == currentFrontWeaponIndex && frontWeapons[i]->ammo > 0);
             weaponIconX += g_game.windowHeight * 0.1f;
         }
@@ -228,38 +228,38 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             auto& w = rearWeapons[i];
             drawWeaponAmmo(renderer, offset +
-                    glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                    Vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
                     w.get(), true, i == currentRearWeaponIndex && rearWeapons[i]->ammo > 0);
             weaponIconX += g_game.windowHeight * 0.1f;
         }
         if (specialAbility)
         {
             drawWeaponAmmo(renderer, offset +
-                    glm::vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
+                    Vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
                     specialAbility.get(), false, false);
         }
 
         // healthbar
-        const f32 healthPercentage = glm::clamp(hitPoints / tuning.maxHitPoints, 0.f, 1.f);
+        const f32 healthPercentage = clamp(hitPoints / tuning.maxHitPoints, 0.f, 1.f);
         const f32 maxHealthbarWidth = g_game.windowHeight * 0.14f;
         const f32 healthbarWidth = maxHealthbarWidth * healthPercentage;
         const f32 healthbarHeight = g_game.windowHeight * 0.009f;
-        glm::vec2 pos = voffset + glm::vec2(vdim.x - o20, d.y*o20);
-        ui::rect(-100, nullptr, pos + glm::vec2(-maxHealthbarWidth, healthbarHeight*d.y),
-                glm::vec2(maxHealthbarWidth, healthbarHeight*d.y), glm::vec3(0));
-        ui::rect(-90, nullptr, pos + glm::vec2(-healthbarWidth, healthbarHeight*d.y),
-                glm::vec2(healthbarWidth, healthbarHeight*d.y), glm::mix(glm::vec3(1, 0, 0),
-                glm::vec3(0, 1, 0), healthPercentage));
+        Vec2 pos = voffset + Vec2(vdim.x - o20, d.y*o20);
+        ui::rect(-100, nullptr, pos + Vec2(-maxHealthbarWidth, healthbarHeight*d.y),
+                Vec2(maxHealthbarWidth, healthbarHeight*d.y), Vec3(0));
+        ui::rect(-90, nullptr, pos + Vec2(-healthbarWidth, healthbarHeight*d.y),
+                Vec2(healthbarWidth, healthbarHeight*d.y), mix(Vec3(1, 0, 0),
+                Vec3(0, 1, 0), healthPercentage));
 
         // display notifications
         u32 count = 0;
         for (auto it = notifications.begin(); it != notifications.end();)
         {
-            glm::vec2 p = glm::floor(layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
-                    glm::vec2(0, layout.scale.y * dim.y * 0.3f) + glm::vec2(0, count * dim.y * 0.04f));
+            Vec2 p = floor(layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
+                    Vec2(0, layout.scale.y * dim.y * 0.3f) + Vec2(0, count * dim.y * 0.04f));
             ui::text(&font3, it->text, p,
-                it->color, (glm::sin(it->time * 6.f) + 1.f) * 0.3f + 0.5f,
-                glm::max(1.7f - it->time * 3.f, 1.f), HAlign::CENTER, VAlign::CENTER);
+                it->color, (sinf(it->time * 6.f) + 1.f) * 0.3f + 0.5f,
+                max(1.7f - it->time * 3.f, 1.f), HAlign::CENTER, VAlign::CENTER);
             ++count;
             it->time += deltaTime;
             if (it->time > it->secondsToKeepOnScreen)
@@ -281,15 +281,15 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         scene->ribbons.addChunk(&tireMarkRibbons[i]);
     }
 
-    glm::mat4 wheelTransforms[NUM_WHEELS];
+    Mat4 wheelTransforms[NUM_WHEELS];
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         wheelTransforms[i] = vehiclePhysics.wheelInfo[i].transform;
     }
-    glm::mat4 transform = vehiclePhysics.getTransform();
+    Mat4 transform = vehiclePhysics.getTransform();
     driver->getVehicleData()->render(rw, transform,
             wheelTransforms, *driver->getVehicleConfig(), this, isBraking, cameraIndex >= 0,
-            glm::vec4(shieldColor, shieldStrength));
+            Vec4(shieldColor, shieldStrength));
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
 
@@ -302,17 +302,17 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
         for (auto& p : motionPath)
         {
             drawSimple(rw, sphere, &g_res.white,
-                        glm::translate(glm::mat4(1.f), p.p + glm::vec3(0, 0, 1))
-                            * glm::scale(glm::mat4(1.f), glm::vec3(0.25f)), glm::vec3(1, 1, 0)));
+                        glm::translate(Mat4(1.f), p.p + Vec3(0, 0, 1))
+                            * glm::scale(Mat4(1.f), Vec3(0.25f)), Vec3(1, 1, 0)));
 
             /*
-            glm::vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
-                glm::vec4(p.p + glm::vec3(0, 0, 1), 1.f);
+            Vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
+                Vec4(p.p + Vec3(0, 0, 1), 1.f);
             tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * g_game.windowWidth;
             tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * g_game.windowHeight;
             g_game.renderer->push2D(TextRenderable(font,
                 tstr(std::fixed, std::setprecision(1), p.g, ", ", p.h), { tp.x, tp.y },
-                glm::vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
+                Vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
             */
         }
     }
@@ -321,43 +321,43 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
 
 void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
 {
-    glm::vec3 pos = lastValidPosition;
-    pos.z = glm::max(pos.z, -10.f);
+    Vec3 pos = lastValidPosition;
+    pos.z = max(pos.z, -10.f);
 
 #if 0
-    cameraTarget = pos + glm::vec3(0, 0, 2.f);
+    cameraTarget = pos + Vec3(0, 0, 2.f);
     cameraFrom = smoothMove(cameraFrom,
-            cameraTarget - getForwardVector() * 10.f + glm::vec3(0, 0, 3.f), 8.f, deltaTime);
+            cameraTarget - getForwardVector() * 10.f + Vec3(0, 0, 3.f), 8.f, deltaTime);
     rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
 #else
-    glm::vec3 forwardVector = vehiclePhysics.getForwardVector();
+    Vec3 forwardVector = vehiclePhysics.getForwardVector();
     f32 forwardSpeed = vehiclePhysics.getForwardSpeed();
     cameraTarget = smoothMove(cameraTarget,
-            pos + glm::vec3(glm::normalize(glm::vec2(forwardVector)), 0.f) * forwardSpeed * 0.3f,
+            pos + Vec3(normalize(Vec2(forwardVector)), 0.f) * forwardSpeed * 0.3f,
             5.f, deltaTime);
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
-    glm::vec3 cameraDir = glm::normalize(glm::vec3(1.f, 1.f, 1.25f));
+    Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
     cameraFrom = cameraTarget + cameraDir * camDistance;
     rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 18.f, 250.f);
     if (cameraIndex >= 0)
     {
         rw->setHighlightColor(cameraIndex,
-                glm::vec4(driver->getVehicleConfig()->color, 1.f));
+                Vec4(driver->getVehicleConfig()->color, 1.f));
 
-        glm::mat4 m = glm::mat4(1.f);
-        m[0] = glm::vec4(-cameraDir, m[0].w);
-        m[1] = glm::vec4(glm::normalize(
-                    glm::cross(glm::vec3(0, 0, 1), glm::vec3(m[0]))), m[1].w);
-        m[2] = glm::vec4(glm::normalize(
-                    glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
+        Mat4 m = Mat4(1.f);
+        m[0] = Vec4(-cameraDir, m[0].w);
+        m[1] = Vec4(normalize(
+                    cross(Vec3(0, 0, 1), Vec3(m[0]))), m[1].w);
+        m[2] = Vec4(normalize(
+                    cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
 
         motionBlurStrength = smoothMove(motionBlurStrength, targetMotionBlurStrength, 2.f, deltaTime);
 
-        glm::vec3 vel = m * glm::vec4(convert(getRigidBody()->getLinearVelocity()), 1.f);
-        glm::vec2 motionBlur = glm::vec2(vel) * motionBlurStrength * 0.01f;
+        Vec3 vel = m * Vec4(convert(getRigidBody()->getLinearVelocity()), 1.f);
+        Vec2 motionBlur = Vec2(vel) * motionBlurStrength * 0.01f;
         rw->setMotionBlur(cameraIndex, motionBlur);
 
-        motionBlurResetTimer = glm::max(motionBlurResetTimer - deltaTime, 0.f);
+        motionBlurResetTimer = max(motionBlurResetTimer - deltaTime, 0.f);
         if (motionBlurResetTimer <= 0.f)
         {
             targetMotionBlurStrength = 0.f;
@@ -400,10 +400,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 if ((u32)(debris.life * 1000) % 2 == 0)
                 {
-                    glm::vec3 vel = convert(debris.rigidBody->getLinearVelocity());
-                    glm::vec3 pos = convert(debris.rigidBody->getGlobalPose().p);
-                    scene->smoke.spawn(pos, vel * 0.5f, glm::min(debris.life - 4.f, 1.f),
-                            glm::vec4(glm::vec3(0.06f), 1.f), random(scene->randomSeries, 0.5f, 1.f));
+                    Vec3 vel = convert(debris.rigidBody->getLinearVelocity());
+                    Vec3 pos = convert(debris.rigidBody->getGlobalPose().p);
+                    scene->smoke.spawn(pos, vel * 0.5f, min(debris.life - 4.f, 1.f),
+                            Vec4(Vec3(0.06f), 1.f), random(scene->randomSeries, 0.5f, 1.f));
                 }
             }
 #endif
@@ -412,16 +412,16 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
     if (screenShakeTimer > 0.f)
     {
-        screenShakeTimer = glm::max(screenShakeTimer - deltaTime, 0.f);
+        screenShakeTimer = max(screenShakeTimer - deltaTime, 0.f);
         screenShakeDirChangeTimer -= screenShakeDirChangeTimer;
         if (screenShakeDirChangeTimer <= 0.f)
         {
             screenShakeDirChangeTimer = random(scene->randomSeries, 0.01f, 0.025f);
-            glm::vec3 targetOffset = glm::normalize(glm::vec3(
+            Vec3 targetOffset = normalize(Vec3(
                 random(scene->randomSeries, -1.f, 1.f),
                 random(scene->randomSeries, -1.f, 1.f),
                 random(scene->randomSeries, -1.f, 1.f))) * random(scene->randomSeries, 0.75f, 1.5f);
-            screenShakeVelocity = glm::normalize(targetOffset - screenShakeOffset) *
+            screenShakeVelocity = normalize(targetOffset - screenShakeOffset) *
                 random(scene->randomSeries, 20.f, 30.f);
         }
         screenShakeOffset += screenShakeVelocity * deltaTime;
@@ -444,31 +444,31 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             deadTimer = 0.f;
             hitPoints = tuning.maxHitPoints;
 
-            glm::vec3 pos = graphResult.position;
+            Vec3 pos = graphResult.position;
             const TrackGraph::Node* node = graphResult.lastNode;
             if (!graphResult.lastNode)
             {
                 node = scene->getTrackGraph().getEndNode();
             }
-            pos += glm::vec3(random(scene->randomSeries, -5.f, 5.f),
+            pos += Vec3(random(scene->randomSeries, -5.f, 5.f),
                     random(scene->randomSeries, -5.f, 5.f), 0.f);
             pos = scene->findValidPosition(pos, 5.f);
 
-            glm::mat4 resetTransform = glm::translate(glm::mat4(1.f), pos + glm::vec3(0, 0, 7.f)) *
-                  glm::rotate(glm::mat4(1.f), node->angle, glm::vec3(0, 0, 1));
+            Mat4 resetTransform = glm::translate(Mat4(1.f), pos + Vec3(0, 0, 7.f)) *
+                  glm::rotate(Mat4(1.f), node->angle, Vec3(0, 0, 1));
 
             PxRaycastBuffer hit;
-            if (scene->raycastStatic(pos + glm::vec3(0, 0, 8.f), { 0, 0, -1 }, 20.f, &hit))
+            if (scene->raycastStatic(pos + Vec3(0, 0, 8.f), { 0, 0, -1 }, 20.f, &hit))
             {
-                glm::vec3 up = convert(hit.block.normal);
-                glm::vec3 forwardTmp = glm::vec3(lengthdir(node->angle, 1.f), 0.f);
-                glm::vec3 right = glm::normalize(glm::cross(up, forwardTmp));
-                glm::vec3 forward = glm::normalize(glm::cross(right, up));
-                glm::mat4 m(1.f);
-                m[0] = glm::vec4(forward, m[0].w);
-                m[1] = glm::vec4(right, m[1].w);
-                m[2] = glm::vec4(up, m[2].w);
-                resetTransform = glm::translate(glm::mat4(1.f), pos + up * 7.f) * m;
+                Vec3 up = convert(hit.block.normal);
+                Vec3 forwardTmp = Vec3(lengthdir(node->angle, 1.f), 0.f);
+                Vec3 right = normalize(cross(up, forwardTmp));
+                Vec3 forward = normalize(cross(right, up));
+                Mat4 m(1.f);
+                m[0] = Vec4(forward, m[0].w);
+                m[1] = Vec4(right, m[1].w);
+                m[2] = Vec4(up, m[2].w);
+                resetTransform = glm::translate(Mat4(1.f), pos + up * 7.f) * m;
             }
 
             reset(resetTransform);
@@ -489,7 +489,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         return;
     }
 
-    //rw->addPointLight(getPosition() + getForwardVector() * 3.f, glm::vec3(1.f, 0.9f, 0.8f), 5.f, 2.f);
+    //rw->addPointLight(getPosition() + getForwardVector() * 3.f, Vec3(1.f, 0.9f, 0.8f), 5.f, 2.f);
 
     input = {};
     if (isPlayerControlled)
@@ -501,7 +501,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         updateAiInput(deltaTime, rw);
     }
 
-    shieldColor = glm::vec3(0, 0, 0);
+    shieldColor = Vec3(0, 0, 0);
     shieldStrength = 0.f;
 
     // update weapons
@@ -552,15 +552,15 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 controlledBrakingTimer < 0.5f ? 0.f : 0.5f, 0.f, 0.f, true, true);
         if (vehiclePhysics.getForwardSpeed() > 1.f)
         {
-            controlledBrakingTimer = glm::min(controlledBrakingTimer + deltaTime, 1.f);
+            controlledBrakingTimer = min(controlledBrakingTimer + deltaTime, 1.f);
         }
         else
         {
-            controlledBrakingTimer = glm::max(controlledBrakingTimer - deltaTime, 0.f);
+            controlledBrakingTimer = max(controlledBrakingTimer - deltaTime, 0.f);
         }
     }
 
-    glm::vec3 currentPosition = getPosition();
+    Vec3 currentPosition = getPosition();
     lastValidPosition = currentPosition;
 
     // periodically choose random offset
@@ -584,10 +584,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     // check if crossed finish line
     if (!finishedRace && graphResult.lapDistanceLowMark < maxSkippableDistance)
     {
-        glm::vec3 finishLinePosition = translationOf(scene->getStart());
-        glm::vec3 dir = glm::normalize(currentPosition - finishLinePosition);
-        if (glm::dot(xAxisOf(scene->getStart()), dir) > 0.f
-                && glm::length2(currentPosition - finishLinePosition) < square(40.f))
+        Vec3 finishLinePosition = translationOf(scene->getStart());
+        Vec3 dir = normalize(currentPosition - finishLinePosition);
+        if (dot(xAxisOf(scene->getStart()), dir) > 0.f
+                && length2(currentPosition - finishLinePosition) < square(40.f))
         {
             if (!finishedRace && (u32)currentLap >= scene->getTotalLaps())
             {
@@ -601,7 +601,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             ++currentLap;
             if ((u32)currentLap == scene->getTotalLaps())
             {
-                addNotification("LAST LAP!", 2.f, glm::vec3(1, 0, 0));
+                addNotification("LAST LAP!", 2.f, Vec3(1, 0, 0));
             }
             graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
             graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
@@ -620,15 +620,15 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
 
             f32 lapDistance = scene->getTrackGraph().getStartNode()->t;
-            f32 myDistance = glm::max((i32)currentLap - 1, 0) * lapDistance
+            f32 myDistance = max((i32)currentLap - 1, 0) * lapDistance
                 + (lapDistance - graphResult.lapDistanceLowMark);
-            f32 otherDistance = glm::max((i32)v->currentLap - 1, 0) * lapDistance
+            f32 otherDistance = max((i32)v->currentLap - 1, 0) * lapDistance
                 + (lapDistance - v->graphResult.lapDistanceLowMark);
 
             if (myDistance - otherDistance > lapDistance + lappingOffset[v->vehicleIndex])
             {
                 lappingOffset[v->vehicleIndex] += lapDistance;
-                addBonus("LAPPING BONUS!", LAPPING_BONUS_AMOUNT, glm::vec3(1, 1, 0));
+                addBonus("LAPPING BONUS!", LAPPING_BONUS_AMOUNT, Vec3(1, 1, 0));
                 // TODO: play sound
             }
         }
@@ -637,8 +637,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (engineSound)
     {
         f32 rotationSpeed = vehiclePhysics.getAverageWheelRotationSpeed();
-        f32 gearRatio = glm::abs(vehiclePhysics.getCurrentGearRatio());
-        engineRPM = smoothMove(engineRPM, glm::min(rotationSpeed * gearRatio, 150.f), 1.9f, deltaTime);
+        f32 gearRatio = absolute(vehiclePhysics.getCurrentGearRatio());
+        engineRPM = smoothMove(engineRPM, min(rotationSpeed * gearRatio, 150.f), 1.9f, deltaTime);
 
         //g_audio.setSoundPitch(engineSound, 0.8f + getEngineRPM() * 0.0007f);
         g_audio.setSoundPitch(engineSound, 1.f + engineRPM * 0.04f);
@@ -694,7 +694,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
 
     // update wheels
-    smokeTimer = glm::max(0.f, smokeTimer - deltaTime);
+    smokeTimer = max(0.f, smokeTimer - deltaTime);
     const f32 smokeInterval = 0.015f;
     bool smoked = false;
     u32 numWheelsOnTrack = 0;
@@ -730,26 +730,26 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             isInAir = false;
         }
 
-        f32 slip = glm::max(
-                glm::abs(info.lateralSlip) - 0.4f,
-                glm::abs(info.longitudinalSlip) - 0.6f);
+        f32 slip = max(
+                absolute(info.lateralSlip) - 0.4f,
+                absolute(info.longitudinalSlip) - 0.6f);
         bool wasWheelSlipping = isWheelSlipping[i];
         isWheelSlipping[i] = (slip > 0.f || info.oilCoverage > 0.f) && !info.isInAir;
-        maxSlip = glm::max(maxSlip, slip);
+        maxSlip = max(maxSlip, slip);
 
         // create smoke
         if (slip > 0.f && info.isTouchingTrack)
         {
             if (smokeTimer == 0.f)
             {
-                glm::vec3 vel(glm::normalize(glm::vec3(
+                Vec3 vel(normalize(Vec3(
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f))));
                 scene->smoke.spawn(
-                    info.position - glm::vec3(0, 0, 0.2f),
-                    (vel + glm::vec3(0, 0, 1)) * 0.8f,
-                    glm::min(1.f, slip * 0.4f));
+                    info.position - Vec3(0, 0, 0.2f),
+                    (vel + Vec3(0, 0, 1)) * 0.8f,
+                    min(1.f, slip * 0.4f));
                 smoked = true;
             }
         }
@@ -758,17 +758,17 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             if (info.rotationSpeed > 5.f || slip > 0.f)
             {
-                glm::vec3 vel(glm::normalize(glm::vec3(
+                Vec3 vel(normalize(Vec3(
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f),
                     random(scene->randomSeries, -1.f, 1.f))));
                 scene->smoke.spawn(
-                    info.position - glm::vec3(0, 0, 0.2f),
-                    (vel + glm::vec3(0, 0, 1)) * 0.8f,
-                    glm::clamp(
-                        glm::max(slip, glm::abs(info.rotationSpeed * 0.022f)) * info.dustAmount,
+                    info.position - Vec3(0, 0, 0.2f),
+                    (vel + Vec3(0, 0, 1)) * 0.8f,
+                    clamp(
+                        max(slip, absolute(info.rotationSpeed * 0.022f)) * info.dustAmount,
                         0.f, 1.f),
-                    glm::vec4(0.58f, 0.50f, 0.22f, 1.f));
+                    Vec4(0.58f, 0.50f, 0.22f, 1.f));
                 smoked = true;
             }
         }
@@ -777,10 +777,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         if (isWheelSlipping[i] && info.isTouchingTrack)
         {
             f32 wheelWidth = i < 2 ? tuning.wheelWidthFront : tuning.wheelWidthRear;
-            f32 alpha = glm::clamp(glm::max(slip * 3.f, info.oilCoverage), 0.f, 1.f);
-            glm::vec3 color(1.f - glm::clamp(info.oilCoverage, 0.f, 1.f));
+            f32 alpha = clamp(max(slip * 3.f, info.oilCoverage), 0.f, 1.f);
+            Vec3 color(1.f - clamp(info.oilCoverage, 0.f, 1.f));
             tireMarkRibbons[i].addPoint(info.contactPosition, info.contactNormal, wheelWidth / 2,
-                    glm::vec4(color, alpha));
+                    Vec4(color, alpha));
         }
         else if (wasWheelSlipping)
         {
@@ -789,11 +789,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
     if (!isTouchingAnyGlue)
     {
-        glueSoundTimer = glm::max(glueSoundTimer - deltaTime, 0.f);
+        glueSoundTimer = max(glueSoundTimer - deltaTime, 0.f);
     }
 
     g_audio.setSoundVolume(tireSound,
-            isOnTrack ? glm::min(1.f, glm::min(maxSlip * 1.2f,
+            isOnTrack ? min(1.f, min(maxSlip * 1.2f,
                     getRigidBody()->getLinearVelocity().magnitude() * 0.1f)) : 0.f);
 
     if (smoked)
@@ -823,20 +823,20 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     }
 
     // spawn smoke when critically damaged
-    smokeTimerDamage = glm::max(0.f, smokeTimerDamage - deltaTime);
+    smokeTimerDamage = max(0.f, smokeTimerDamage - deltaTime);
     f32 damagePercent = hitPoints / tuning.maxHitPoints;
     if (smokeTimerDamage <= 0.f && damagePercent < 0.3f)
     {
         // TODO: make the effect more intense the more critical the damage (fire and sparks?)
-        glm::vec3 vehicleVel = previousVelocity + vehiclePhysics.getForwardVector();
-        glm::vec3 vel = glm::vec3(glm::normalize(glm::vec3(
+        Vec3 vehicleVel = previousVelocity + vehiclePhysics.getForwardVector();
+        Vec3 vel = Vec3(normalize(Vec3(
                 random(scene->randomSeries, -1.f, 1.f),
                 random(scene->randomSeries, -1.f, 1.f),
                 random(scene->randomSeries, -1.f, 1.f))))
-            + glm::vec3(0, 0, 1)
+            + Vec3(0, 0, 1)
             + vehicleVel * 0.5f;
-        scene->smoke.spawn(currentPosition + glm::vec3(0, 0, 0.5f),
-            vel, 1.f - damagePercent, glm::vec4(glm::vec3(0.5f), 1.f), 0.5f);
+        scene->smoke.spawn(currentPosition + Vec3(0, 0, 0.5f),
+            vel, 1.f - damagePercent, Vec4(Vec3(0.5f), 1.f), 0.5f);
         smokeTimerDamage = 0.015f;
     }
     if (g_input.isKeyPressed(KEY_R) && isPlayerControlled)
@@ -862,12 +862,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             if (savedAirTime > 4.f)
             {
-                addBonus("BIG AIR BONUS!", BIG_AIR_BONUS_AMOUNT, glm::vec3(1, 0.6f, 0.05f));
+                addBonus("BIG AIR BONUS!", BIG_AIR_BONUS_AMOUNT, Vec3(1, 0.6f, 0.05f));
                 ++totalAirBonuses;
             }
             else if (savedAirTime > 2.f)
             {
-                addBonus("AIR BONUS!", AIR_BONUS_AMOUNT, glm::vec3(1, 0.7f, 0.05f));
+                addBonus("AIR BONUS!", AIR_BONUS_AMOUNT, Vec3(1, 0.7f, 0.05f));
                 ++totalAirBonuses;
             }
             airBonusGracePeriod = 0.f;
@@ -883,7 +883,7 @@ void Vehicle::shakeScreen(f32 intensity)
     if (intensity * 0.08f > screenShakeTimer)
     {
         screenShakeTimer = intensity * 0.08f;
-        screenShakeOffset = glm::vec3(0.f);
+        screenShakeOffset = Vec3(0.f);
     }
 }
 
@@ -911,7 +911,7 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
 
 void Vehicle::blowUp()
 {
-    glm::mat4 transform = vehiclePhysics.getTransform();
+    Mat4 transform = vehiclePhysics.getTransform();
     for (auto& d : g_vehicles[driver->vehicleIndex]->debrisChunks)
     {
         PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
@@ -921,9 +921,9 @@ void Vehicle::blowUp()
         scene->getPhysicsScene()->addActor(*body);
         body->setLinearVelocity(
                 convert(previousVelocity) +
-                convert(glm::vec3(glm::normalize(rotationOf(transform)
-                            * glm::vec4(translationOf(d.transform), 1.f)))
-                    * random(scene->randomSeries, 3.f, 14.f) + glm::vec3(0, 0, 9.f)));
+                convert(Vec3(normalize(rotationOf(transform)
+                            * Vec4(translationOf(d.transform), 1.f)))
+                    * random(scene->randomSeries, 3.f, 14.f) + Vec3(0, 0, 9.f)));
         body->setAngularVelocity(PxVec3(
                     random(scene->randomSeries, 0.f, 9.f),
                     random(scene->randomSeries, 0.f, 9.f),
@@ -953,10 +953,10 @@ void Vehicle::blowUp()
     };
     u32 index = irandom(scene->randomSeries, 0, ARRAY_SIZE(sounds));
     g_audio.playSound3D(g_res.getSound(sounds[index]), SoundType::GAME_SFX, getPosition(), false, 1.f, 0.95f);
-    reset(glm::translate(glm::mat4(1.f), { 0, 0, 1000 }));
+    reset(glm::translate(Mat4(1.f), { 0, 0, 1000 }));
     if (raceStatistics.destroyed + raceStatistics.accidents == 10)
     {
-        addBonus("VICTIM BONUS", VICTIM_BONUS_AMOUNT, glm::vec3(1.f, 0.3f, 0.02f));
+        addBonus("VICTIM BONUS", VICTIM_BONUS_AMOUNT, Vec3(1.f, 0.3f, 0.02f));
     }
 }
 
@@ -1016,19 +1016,19 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
         {
             const Controller* controller = &c.value;
             f32 val = controller->getAxis(AXIS_TRIGGER_RIGHT);
-            if (glm::abs(val) > 0.f)
+            if (absolute(val) > 0.f)
             {
                 input.accel = val;
                 input.digital = false;
             }
             val = controller->getAxis(AXIS_TRIGGER_LEFT);
-            if (glm::abs(val) > 0.f)
+            if (absolute(val) > 0.f)
             {
                 input.brake = val;
                 input.digital = false;
             }
             val = -controller->getAxis(AXIS_LEFT_X);
-            if (glm::abs(val) > 0.f)
+            if (absolute(val) > 0.f)
             {
                 input.steer = val;
                 input.digital = false;
@@ -1074,14 +1074,14 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
     if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
     {
         Camera const& cam = rw->getCamera(0);
-        glm::vec2 mousePos = g_input.getMousePosition();
-        glm::vec3 rayDir = screenToWorldRay(mousePos,
-                glm::vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
+        Vec2 mousePos = g_input.getMousePosition();
+        Vec3 rayDir = screenToWorldRay(mousePos,
+                Vec2(g_game.windowWidth, g_game.windowHeight), cam.view, cam.projection);
         PxRaycastBuffer hit;
         if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
         {
-            glm::vec3 hitPoint = convert(hit.block.position);
-            glm::vec3 forwardVector = getForwardVector();
+            Vec3 hitPoint = convert(hit.block.position);
+            Vec3 forwardVector = getForwardVector();
             bool isSomethingBlockingMe = isBlocking(tuning.collisionWidth / 2 + 0.05f,
                     forwardVector, 20.f);
             scene->getMotionGrid().findPath(currentPosition, hitPoint, isSomethingBlockingMe,
@@ -1095,9 +1095,9 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 {
     auto& ai = g_ais[driver->aiIndex];
 
-    glm::vec3 currentPosition = vehiclePhysics.getPosition();
-    glm::vec3 forwardVector = vehiclePhysics.getForwardVector();
-    glm::vec3 rightVector = vehiclePhysics.getRightVector();
+    Vec3 currentPosition = vehiclePhysics.getPosition();
+    Vec3 forwardVector = vehiclePhysics.getForwardVector();
+    Vec3 rightVector = vehiclePhysics.getRightVector();
     f32 forwardSpeed = vehiclePhysics.getForwardSpeed();
 
     RacingLine::Point targetPathPoint =
@@ -1105,16 +1105,16 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 
     // look for other paths if too far off course
     const f32 pathStepSize = 14.f;
-    f32 facingBias = glm::dot(forwardVector, glm::normalize(targetPathPoint.position - currentPosition)) * 5.f;
+    f32 facingBias = dot(forwardVector, normalize(targetPathPoint.position - currentPosition)) * 5.f;
     if (currentFollowPathIndex != preferredFollowPathIndex ||
-            glm::distance(currentPosition, targetPathPoint.position) - facingBias > 26.f)
+            distance(currentPosition, targetPathPoint.position) - facingBias > 26.f)
     {
         f32 minPathScore = FLT_MAX;
         for (u32 i=0; i<scene->getPaths().size(); ++i)
         {
             RacingLine::Point testPoint =
                 scene->getPaths()[i].getNearestPoint(currentPosition, graphResult.currentLapDistance);
-            f32 pathScore = glm::distance(testPoint.position, currentPosition);
+            f32 pathScore = distance(testPoint.position, currentPosition);
 
             // prioritize the preferred path
             if (i == preferredFollowPathIndex)
@@ -1123,7 +1123,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             }
 
             // prioritize this path if the vehicle is facing the targeted point
-            pathScore -= glm::dot(forwardVector, glm::normalize(testPoint.position - currentPosition))
+            pathScore -= dot(forwardVector, normalize(testPoint.position - currentPosition))
                 * 18.f;
 
             if (minPathScore > pathScore)
@@ -1135,12 +1135,12 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
         f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
         distanceAlongPath = targetPathPoint.distanceToHere
-            + (pathLength * glm::max(0, currentLap - 1)) + pathStepSize;
+            + (pathLength * max(0, currentLap - 1)) + pathStepSize;
         targetPathPoint = scene->getPaths()[currentFollowPathIndex].getPointAt(distanceAlongPath);
     }
     else
     {
-        if (glm::distance2(currentPosition, targetPathPoint.position) < square(16.f))
+        if (distance2(currentPosition, targetPathPoint.position) < square(16.f))
         {
             distanceAlongPath += pathStepSize;
         }
@@ -1149,7 +1149,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             f32 pathLength = scene->getPaths()[currentFollowPathIndex].length;
             f32 distanceToHere = scene->getPaths()[currentFollowPathIndex]
                     .getNearestPoint(currentPosition, graphResult.currentLapDistance).distanceToHere
-                    + (pathLength * glm::max(0, currentLap - 1));
+                    + (pathLength * max(0, currentLap - 1));
             if (distanceToHere > distanceAlongPath)
             {
                 distanceAlongPath = distanceToHere + pathStepSize;
@@ -1161,22 +1161,22 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 
     // TODO: Use targetSpeed of the racingLine to modulate throttle
 
-    glm::vec2 diff = glm::vec2(previousTargetPosition) - glm::vec2(targetPathPoint.position);
-    glm::vec2 dir = glm::length2(diff) > 0.f ? glm::normalize(diff) : glm::vec2(forwardVector);
-    glm::vec3 targetP = targetPathPoint.position -
-        glm::vec3(targetOffset.x * dir + targetOffset.y * glm::vec2(-dir.y, dir.x), 0);
-    glm::vec2 dirToTargetP = glm::normalize(glm::vec2(currentPosition) - glm::vec2(targetP));
+    Vec2 diff = Vec2(previousTargetPosition) - Vec2(targetPathPoint.position);
+    Vec2 dir = length2(diff) > 0.f ? normalize(diff) : Vec2(forwardVector);
+    Vec3 targetP = targetPathPoint.position -
+        Vec3(targetOffset.x * dir + targetOffset.y * Vec2(-dir.y, dir.x), 0);
+    Vec2 dirToTargetP = normalize(Vec2(currentPosition) - Vec2(targetP));
     previousTargetPosition = targetPathPoint.position;
 #if 0
     Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
-    drawSimple(rw, sphere, &g_res.white, glm::translate(glm::mat4(1.f), targetP),
-                glm::vec3(1, 0, 0)));
+    drawSimple(rw, sphere, &g_res.white, glm::translate(Mat4(1.f), targetP),
+                Vec3(1, 0, 0)));
 #endif
 
     input.accel = 1.f;
     input.brake = 0.f;
-    input.steer = clamp(glm::dot(glm::vec2(rightVector), dirToTargetP) * 1.2f, -1.f, 1.f);
-    f32 aggression = glm::min(glm::max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
+    input.steer = clamp(dot(Vec2(rightVector), dirToTargetP) * 1.2f, -1.f, 1.f);
+    f32 aggression = min(max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
             ai.aggression);
 
     // obstacle avoidance
@@ -1191,7 +1191,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     isNearHazard = false;
     f32 mySpeed = getRigidBody()->getLinearVelocity().magnitude();
     if (mySpeed < 35.f && scene->sweep(tuning.collisionWidth * 0.5f + 0.05f,
-            currentPosition + glm::vec3(0, 0, 0.25f), forwardVector, sweepLength,
+            currentPosition + Vec3(0, 0, 0.25f), forwardVector, sweepLength,
             &hit, ignoreBody, flags) && scene->getWorldTime() > 5.f)
     {
         bool shouldAvoid = true;
@@ -1202,7 +1202,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             f32 mySpeed = this->vehiclePhysics.getForwardSpeed();
             f32 dot = ((PxRigidDynamic*)hit.block.actor)->getLinearVelocity().dot(
                     getRigidBody()->getLinearVelocity());
-            if (mySpeed > 5.f && glm::abs(dot - mySpeed) < 5.f)
+            if (mySpeed > 5.f && absolute(dot - mySpeed) < 5.f)
             {
                 shouldAvoid = false;
             }
@@ -1221,8 +1221,8 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         // TODO: fix this (it seems to have the wrong effect; the ai drive toward the backwards boosters)
         if (userData && userData->flags & ActorUserData::BOOSTER)
         {
-            if (glm::dot(-dirToTargetP,
-                    glm::normalize(glm::vec2(yAxisOf(userData->placeableEntity->transform)))) > 0.5f)
+            if (dot(-dirToTargetP,
+                    normalize(Vec2(yAxisOf(userData->placeableEntity->transform)))) > 0.5f)
             {
                 shouldAvoid = false;
             }
@@ -1243,7 +1243,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                         continue;
                     }
                     f32 cw = tuning.collisionWidth * 0.25f;
-                    glm::vec3 sweepFrom = currentPosition
+                    Vec3 sweepFrom = currentPosition
                         + rightVector * (f32)sweepSide * (sweepOffsetCount * tuning.collisionWidth * 0.6f);
                     u32 collisionFlags = COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_OIL  |
                                          COLLISION_FLAG_GLUE    | COLLISION_FLAG_MINE |
@@ -1264,7 +1264,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
     }
     /*
-    glm::vec4 c = isBlocked ? glm::vec4(1, 0, 0, 1) : glm::vec4(0, 1, 0, 1);
+    Vec4 c = isBlocked ? Vec4(1, 0, 0, 1) : Vec4(0, 1, 0, 1);
     scene->debugDraw.line(currentPosition, currentPosition + forwardVector * sweepLength, c, c);
     */
 #endif
@@ -1285,13 +1285,13 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                     continue;
                 }
 
-                glm::vec2 diff = glm::vec2(v->getPosition()) - glm::vec2(currentPosition);
-                glm::vec2 targetDiff = glm::normalize(-diff);
-                f32 d = glm::length2(diff);
-                f32 dot = glm::dot(glm::vec2(forwardVector), targetDiff);
-                f32 targetPriority = d + dot * 4.f;
-                // TODO: dot < aggression seems like the wrong calculation
-                if (dot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
+                Vec2 diff = Vec2(v->getPosition()) - Vec2(currentPosition);
+                Vec2 targetDiff = normalize(-diff);
+                f32 d = length2(diff);
+                f32 vDot = dot(Vec2(forwardVector), targetDiff);
+                f32 targetPriority = d + vDot * 4.f;
+                // TODO: vDot < aggression seems like the wrong calculation
+                if (vDot < aggression && d < square(maxTargetDist) && targetPriority < lowestTargetPriority)
                 {
                     target = v.get();
                     lowestTargetPriority = targetPriority;
@@ -1303,17 +1303,17 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         if (target && !target->isDead())
         {
             targetTimer += deltaTime;
-            glm::vec3 diff = target->getPosition() - currentPosition;
-            f32 dist = glm::length(diff);
+            Vec3 diff = target->getPosition() - currentPosition;
+            f32 dist = length(diff);
             if (!scene->raycastStatic(currentPosition, diff / dist, dist))
             {
                 if (targetTimer > (1.f - aggression) * 2.f)
                 {
-                    glm::vec2 dirToTarget = glm::normalize(currentPosition - target->getPosition());
+                    Vec2 dirToTarget = normalize(currentPosition - target->getPosition());
                     // only steer toward the target if doing so would not result in veering off course
-                    if (glm::dot(dirToTarget, dirToTargetP) > 0.6f - (aggression * 0.4f))
+                    if (dot(dirToTarget, dirToTargetP) > 0.6f - (aggression * 0.4f))
                     {
-                        f32 targetSteerAngle = glm::dot(glm::vec2(rightVector), dirToTarget) * 0.4f;
+                        f32 targetSteerAngle = dot(Vec2(rightVector), dirToTarget) * 0.4f;
                         input.steer = clamp(targetSteerAngle, -0.5f, 0.5f);
                     }
                     else
@@ -1349,7 +1349,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
             fearTimer += deltaTime;
             if (fearTimer > 1.f * (1.f - ai.fear) + 0.5f)
             {
-                input.steer += glm::sin((f32)scene->getWorldTime() * 3.f)
+                input.steer += sinf((f32)scene->getWorldTime() * 3.f)
                     * (ai.fear * 0.25f);
             }
             isFollowed = true;
@@ -1363,7 +1363,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         scene->debugDraw.line(
                 currentPosition,
                 currentPosition-getForwardVector()*fearRayLength,
-                glm::vec4(1, 0, 0, 1), glm::vec4(1, 0, 0, 1));
+                Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
         */
     }
 #endif
@@ -1433,7 +1433,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         scene->debugDraw.line(
                 currentPosition,
                 currentPosition+getForwardVector()*rayLength,
-                glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1));
+                Vec4(0, 1, 0, 1), Vec4(0, 1, 0, 1));
         */
         PxSweepBuffer hit;
         if (scene->sweep(0.5f, currentPosition, forwardVector, rayLength, &hit, getRigidBody(),
@@ -1445,7 +1445,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
         else
         {
-            attackTimer = glm::max(attackTimer - deltaTime * 4.f, 0.f);
+            attackTimer = max(attackTimer - deltaTime * 4.f, 0.f);
         }
 
         if (frontWeapons[currentFrontWeaponIndex]->fireMode == Weapon::CONTINUOUS)

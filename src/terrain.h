@@ -9,8 +9,8 @@ class Terrain : public Entity
 {
     struct Vertex
     {
-        glm::vec3 position;
-        glm::vec3 normal;
+        Vec3 position;
+        Vec3 normal;
         u32 blend;
     };
 
@@ -22,8 +22,8 @@ class Terrain : public Entity
 	u32 indexCount = 0;
 
     GLuint vao = 0, vbo = 0, ebo = 0;
-    glm::vec3 brushSettings = { 1.f, 1.f, 1.f };
-    glm::vec3 brushPosition = { 0, 0, 1000000 };
+    Vec3 brushSettings = { 1.f, 1.f, 1.f };
+    Vec3 brushPosition = { 0, 0, 1000000 };
 
     RandomSeries randomSeries;
 
@@ -68,22 +68,22 @@ public:
         glDeleteVertexArrays(0, &vao);
     }
 
-    void raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
-    void perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
-    void flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z);
-    void smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
-    void erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount);
-    void matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, class Scene* scene);
-    void paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 materialIndex);
+    void raise(Vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void perturb(Vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void flatten(Vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z);
+    void smooth(Vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void erode(Vec2 pos, f32 radius, f32 falloff, f32 amount);
+    void matchTrack(Vec2 pos, f32 radius, f32 falloff, f32 amount, class Scene* scene);
+    void paint(Vec2 pos, f32 radius, f32 falloff, f32 amount, u32 materialIndex);
 
     void generate(f32 heightScale=4.f, f32 scale=0.05f);
     void createBuffers();
     void resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve=false);
-    f32 getZ(glm::vec2 pos) const;
-    //bool containsPoint(glm::vec2 p) const { return p.x >= x1 && p.y >= y1 && p.x <= x2 && p.y <= y2; };
+    f32 getZ(Vec2 pos) const;
+    //bool containsPoint(Vec2 p) const { return p.x >= x1 && p.y >= y1 && p.x <= x2 && p.y <= y2; };
     i32 getCellX(f32 x) const;
     i32 getCellY(f32 y) const;
-    glm::vec3 computeNormal(u32 width, u32 height, u32 x, u32 y);
+    Vec3 computeNormal(u32 width, u32 height, u32 x, u32 y);
     void regenerateMesh();
     void regenerateCollisionMesh(class Scene* scene);
 
@@ -115,7 +115,7 @@ public:
     void serializeState(Serializer& s) override;
     void applyDecal(class Decal& decal) override;
 
-    void setBrushSettings(f32 brushRadius, f32 brushFalloff, f32 brushStrength, glm::vec3 brushPosition)
+    void setBrushSettings(f32 brushRadius, f32 brushFalloff, f32 brushStrength, Vec3 brushPosition)
     {
         this->brushSettings = { brushRadius, brushFalloff, brushStrength };
         this->brushPosition = brushPosition;

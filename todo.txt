@@ -60,3 +60,5 @@
     - Shield ability
     - Ability that creates huge explosion when vehicle is destoyed, damaging nearby vehicles
     - Deathmatch mode, or a mode where everybody races around a map to pickup an item that spawns randomly
+    - Ability that gives immediate burst of speed and big bonus to ramming damage
+    - Shock wave ability

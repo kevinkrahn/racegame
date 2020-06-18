@@ -113,15 +113,15 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                 {
                     renderWorld.setName("Entity Icon");
                     renderWorld.setSize(iconSize*2, iconSize*2);
-                    renderWorld.setClearColor(true, glm::vec4(0.15f, 0.15f, 0.15f, 1.f));
+                    renderWorld.setClearColor(true, Vec4(0.15f, 0.15f, 0.15f, 1.f));
                     Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
                     drawSimple(&renderWorld, quadMesh, &g_res.white,
-                                glm::scale(glm::mat4(1.f), glm::vec3(200.f)), glm::vec3(0.15f));
-                    renderWorld.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
+                                glm::scale(Mat4(1.f), Vec3(200.f)), Vec3(0.15f));
+                    renderWorld.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));
                     renderWorld.setViewportCount(1);
                     renderWorld.updateWorldTime(30.f);
-                    renderWorld.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
-                            glm::vec3(0.f, 0.f, 1.f), 1.f, 220.f, 39.f);
+                    renderWorld.setViewportCamera(0, Vec3(8.f, 8.f, 10.f),
+                            Vec3(0.f, 0.f, 1.f), 1.f, 220.f, 39.f);
                     static OwnedPtr<PlaceableEntity> ptr;
                     ptr.reset((PlaceableEntity*)
                             g_entities[propPrefabs[itemIndex].entityIndex].create());
@@ -203,20 +203,20 @@ public:
         bool isMouseClickHandled = ImGui::GetIO().WantCaptureMouse;
 
         RenderWorld* rw = renderer->getRenderWorld();
-        glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
+        Vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
         Camera const& cam = scene->getEditorCamera().getCamera();
 
         if (selectedEntities.size() > 0)
         {
-            glm::vec3 minP(FLT_MAX);
-            glm::vec3 maxP(-FLT_MAX);
+            Vec3 minP(FLT_MAX);
+            Vec3 maxP(-FLT_MAX);
             for (PlaceableEntity* e : selectedEntities)
             {
-                minP = glm::min(minP, e->position);
-                maxP = glm::max(maxP, e->position);
+                minP = min(minP, e->position);
+                maxP = max(maxP, e->position);
             }
-            glm::vec3 p = minP + (maxP - minP) * 0.5f;
-            glm::mat4 orientation(1.f);
+            Vec3 p = minP + (maxP - minP) * 0.5f;
+            Mat4 orientation(1.f);
             if (selectedEntities.size() == 1)
             {
                 orientation = glm::mat4_cast(selectedEntities[0]->rotation);
@@ -237,10 +237,10 @@ public:
             {
                 selectedEntities[0]->updateTransform(scene);
             }
-            glm::vec3 eulerAngles = glm::degrees(glm::eulerAngles(selectedEntities[0]->rotation));
+            Vec3 eulerAngles = degrees(glm::eulerAngles(selectedEntities[0]->rotation));
             if (ImGui::InputFloat3("Rotation", (f32*)&eulerAngles))
             {
-                selectedEntities[0]->rotation = glm::quat(glm::radians(eulerAngles));
+                selectedEntities[0]->rotation = Quat(radians(eulerAngles));
                 selectedEntities[0]->updateTransform(scene);
             }
             ImGui::Gap();
@@ -326,18 +326,18 @@ public:
                     {
                         u32 propTypeIndex = selectedPropTypes[
                             irandom(scene->randomSeries, 0, (u32)selectedPropTypes.size())];
-                        glm::vec3 hitPoint = convert(hit.block.position);
+                        Vec3 hitPoint = convert(hit.block.position);
                         PlaceableEntity* newEntity =
                             (PlaceableEntity*)g_entities[propPrefabs[propTypeIndex].entityIndex].create();
                         propPrefabs[propTypeIndex].prefabData.doThing(newEntity);
                         newEntity->position = hitPoint;
                         newEntity->scale *= random(scene->randomSeries, randomizeScaleMin, randomizeScaleMax);;
-                        glm::vec3 eulerAngles =  {
+                        Vec3 eulerAngles =  {
                             randomizeRotationX ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationY ? random(scene->randomSeries, 0.f, PI2) : 0,
                             randomizeRotationZ ? random(scene->randomSeries, 0.f, PI2) : 0,
                         };
-                        newEntity->rotation = glm::quat(eulerAngles) * newEntity->rotation;
+                        newEntity->rotation = Quat(eulerAngles) * newEntity->rotation;
                         newEntity->updateTransform(scene);
                         newEntity->setPersistent(true);
                         scene->addEntity(newEntity);
@@ -346,7 +346,7 @@ public:
                 else
                 {
                     rw->pickPixel(g_input.getMousePosition()
-                            / glm::vec2(g_game.windowWidth, g_game.windowHeight));
+                            / Vec2(g_game.windowWidth, g_game.windowHeight));
                     selectionStateCtrl = g_input.isKeyDown(KEY_LCTRL);
                     selectionStateShift = g_input.isKeyDown(KEY_LSHIFT);
                 }
@@ -451,8 +451,8 @@ public:
         transformGizmo.reset();
     }
 
-    void gizmoDrag(glm::vec3 const& dragCenter, glm::vec3 const& dragDest, glm::vec3 const& dragDestZ,
-            glm::vec3 dragOffset, i32 dragAxis) override
+    void gizmoDrag(Vec3 const& dragCenter, Vec3 const& dragDest, Vec3 const& dragDestZ,
+            Vec3 dragOffset, i32 dragAxis) override
     {
         for (PlaceableEntity* e : selectedEntities)
         {
@@ -478,43 +478,43 @@ public:
         }
     }
 
-    void gizmoRotate(f32 angleDiff, glm::vec3 const& rotatePivot, i32 dragAxis) override
+    void gizmoRotate(f32 angleDiff, Vec3 const& rotatePivot, i32 dragAxis) override
     {
-        glm::vec3 rotationAxis(1, 0, 0);
+        Vec3 rotationAxis(1, 0, 0);
         if (dragAxis & DragAxis::X)
         {
-            rotationAxis = glm::vec3(1, 0, 0);
+            rotationAxis = Vec3(1, 0, 0);
         }
         else if (dragAxis & DragAxis::Y)
         {
-            rotationAxis = glm::vec3(0, 1, 0);
+            rotationAxis = Vec3(0, 1, 0);
         }
         else if (dragAxis & DragAxis::Z)
         {
-            rotationAxis = glm::vec3(0, 0, 1);
+            rotationAxis = Vec3(0, 0, 1);
         }
-        glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, rotationAxis) *
-            glm::translate(glm::mat4(1.f), -rotatePivot);
+        Mat4 transform = glm::rotate(Mat4(1.f), angleDiff, rotationAxis) *
+            glm::translate(Mat4(1.f), -rotatePivot);
         for (PlaceableEntity* e : selectedEntities)
         {
-            e->position = glm::vec3(transform * glm::vec4(e->position, 1.f)) + rotatePivot;
-            e->rotation = glm::rotate(glm::identity<glm::quat>(),
+            e->position = Vec3(transform * Vec4(e->position, 1.f)) + rotatePivot;
+            e->rotation = glm::rotate(glm::identity<Quat>(),
                     angleDiff, rotationAxis) * e->rotation;
             e->updateTransform(scene);
         }
     }
 
-    void gizmoScale(f32 scaleFactor, i32 entityDragAxis, glm::vec3 const& scaleCenter,
-            glm::vec3 const& dragOffset, glm::vec3 const& hitPos, glm::vec3& hitPosZ) override
+    void gizmoScale(f32 scaleFactor, i32 entityDragAxis, Vec3 const& scaleCenter,
+            Vec3 const& dragOffset, Vec3 const& hitPos, Vec3& hitPosZ) override
     {
         if (selectedEntities.size() > 1)
         {
             for (PlaceableEntity* e : selectedEntities)
             {
-                glm::mat4 t = glm::translate(glm::mat4(1.f), e->position)
-                    * glm::scale(glm::mat4(1.f), glm::vec3(e->scale));
-                glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(scaleFactor))
-                    * glm::translate(glm::mat4(1.f), -scaleCenter) * t;
+                Mat4 t = glm::translate(Mat4(1.f), e->position)
+                    * glm::scale(Mat4(1.f), Vec3(e->scale));
+                Mat4 transform = glm::scale(Mat4(1.f), Vec3(scaleFactor))
+                    * glm::translate(Mat4(1.f), -scaleCenter) * t;
                 e->position = translationOf(transform) + scaleCenter;
                 e->scale *= scaleFactor;
             }
@@ -525,18 +525,18 @@ public:
         }
         else if (entityDragAxis & DragAxis::X)
         {
-            f32 startDistance = glm::dot(dragOffset, glm::vec3(1, 0, 0));
-            selectedEntities[0]->scale.x *= glm::dot(scaleCenter - hitPos, glm::vec3(1, 0, 0)) / startDistance;
+            f32 startDistance = dot(dragOffset, Vec3(1, 0, 0));
+            selectedEntities[0]->scale.x *= dot(scaleCenter - hitPos, Vec3(1, 0, 0)) / startDistance;
         }
         else if (entityDragAxis & DragAxis::Y)
         {
-            f32 startDistance = glm::dot(dragOffset, glm::vec3(0, 1, 0));
-            selectedEntities[0]->scale.y *= glm::dot(scaleCenter - hitPos, glm::vec3(0, 1, 0)) / startDistance;
+            f32 startDistance = dot(dragOffset, Vec3(0, 1, 0));
+            selectedEntities[0]->scale.y *= dot(scaleCenter - hitPos, Vec3(0, 1, 0)) / startDistance;
         }
         else if (entityDragAxis & DragAxis::Z)
         {
-            f32 startDistance = glm::dot(dragOffset, glm::vec3(0, 0, 1));
-            selectedEntities[0]->scale.z *= glm::dot(scaleCenter - hitPosZ, glm::vec3(0, 0, 1)) / startDistance;
+            f32 startDistance = dot(dragOffset, Vec3(0, 0, 1));
+            selectedEntities[0]->scale.z *= dot(scaleCenter - hitPosZ, Vec3(0, 0, 1)) / startDistance;
         }
 
         for (PlaceableEntity* e : selectedEntities)

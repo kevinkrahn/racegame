@@ -30,8 +30,8 @@ public:
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
-        recoilVel = glm::min(recoilVel + deltaTime * 30.f, 10.f);
-        recoil = glm::clamp(recoil + recoilVel * deltaTime, -0.5f, 0.f);
+        recoilVel = min(recoilVel + deltaTime * 30.f, 10.f);
+        recoil = clamp(recoil + recoilVel * deltaTime, -0.5f, 0.f);
 
         if (!fireBegin)
         {
@@ -44,17 +44,17 @@ public:
             return;
         }
 
-        glm::mat4 transform = vehicle->getTransform();
+        Mat4 transform = vehicle->getTransform();
         f32 minSpeed = 45.f;
-        glm::vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
+        Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (glm::length2(vel) < square(minSpeed))
+        if (length2(vel) < square(minSpeed))
         {
-            vel = glm::normalize(vel) * minSpeed;
+            vel = normalize(vel) * minSpeed;
         }
 
-        glm::vec3 pos1 = transform * mountTransform * glm::vec4(projectileSpawnPoints[0], 1.f);
-        glm::vec3 pos2 = transform * mountTransform * glm::vec4(projectileSpawnPoints[1], 1.f);
+        Vec3 pos1 = transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f);
+        Vec3 pos2 = transform * mountTransform * Vec4(projectileSpawnPoints[1], 1.f);
         scene->addEntity(new Projectile(pos1, vel, zAxisOf(transform), vehicle->vehicleIndex,
                     Projectile::PHANTOM));
         scene->addEntity(new Projectile(pos2, vel, zAxisOf(transform), vehicle->vehicleIndex,
@@ -67,12 +67,12 @@ public:
         recoilVel = -8.f;
     }
 
-    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         mat->draw(rw, vehicleTransform * mountTransform
-                * glm::translate(glm::mat4(1.f), glm::vec3(recoil, 0.f, 0.f)), meshBarrel, 2);
+                * glm::translate(Mat4(1.f), Vec3(recoil, 0.f, 0.f)), meshBarrel, 2);
     }
 };

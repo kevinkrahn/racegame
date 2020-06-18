@@ -3,12 +3,12 @@
 
 struct DecalVertex
 {
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 uv;
+    Vec3 pos;
+    Vec3 normal;
+    Vec2 uv;
 };
 
-void Decal::begin(glm::mat4 const& transform, bool worldSpace)
+void Decal::begin(Mat4 const& transform, bool worldSpace)
 {
     setTransform(transform);
     this->worldSpace = worldSpace;
@@ -23,11 +23,11 @@ void Decal::setTexture(Texture* tex, Texture* texNormal)
     this->texNormal = texNormal ? texNormal : &g_res.identityNormal;
 }
 
-void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::mat4 const& meshTransform)
+void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 const& meshTransform)
 {
     //print("Adding mesh with ", indexCount * 3, " vertices\n");
 
-    const glm::vec3 planes[] = {
+    const Vec3 planes[] = {
         {  1.f,  0.f,  0.f },
         { -1.f,  0.f,  0.f },
         {  0.f,  1.f,  0.f },
@@ -36,13 +36,13 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
         {  0.f,  0.f, -1.f }
     };
 
-    glm::mat3 worldSpaceNormalTransform = glm::inverseTranspose(transform);
+    Mat3 worldSpaceNormalTransform = glm::inverseTranspose(transform);
     auto addVertex = [&](DecalVertex vert)
     {
-        vert.uv = glm::vec2(vert.pos.y, vert.pos.z) + 0.5f;
+        vert.uv = Vec2(vert.pos.y, vert.pos.z) + 0.5f;
         if (worldSpace)
         {
-            vert.pos = transform * glm::vec4(vert.pos, 1.f);
+            vert.pos = transform * Vec4(vert.pos, 1.f);
             vert.normal = worldSpaceNormalTransform * vert.normal;
         }
 
@@ -58,30 +58,30 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
         mesh.indices.push_back(mesh.indices.size());
     };
 
-    glm::mat4 vertTransform = glm::inverse(transform) * meshTransform;
-    glm::mat3 normalTransform = glm::inverseTranspose(glm::mat3(vertTransform));
+    Mat4 vertTransform = glm::inverse(transform) * meshTransform;
+    Mat3 normalTransform = glm::inverseTranspose(Mat3(vertTransform));
 
     for (u32 i=0; i<indexCount; i+=3)
     {
         u32 j = indices[i+0] * stride / sizeof(f32);
-        glm::vec3 v1(verts[j+0], verts[j+1], verts[j+2]);
-        glm::vec3 n1(verts[j+3], verts[j+4], verts[j+5]);
+        Vec3 v1(verts[j+0], verts[j+1], verts[j+2]);
+        Vec3 n1(verts[j+3], verts[j+4], verts[j+5]);
         j = indices[i+1] * stride / sizeof(f32);
-        glm::vec3 v2(verts[j+0], verts[j+1], verts[j+2]);
-        glm::vec3 n2(verts[j+3], verts[j+4], verts[j+5]);
+        Vec3 v2(verts[j+0], verts[j+1], verts[j+2]);
+        Vec3 n2(verts[j+3], verts[j+4], verts[j+5]);
         j = indices[i+2] * stride / sizeof(f32);
-        glm::vec3 v3(verts[j+0], verts[j+1], verts[j+2]);
-        glm::vec3 n3(verts[j+3], verts[j+4], verts[j+5]);
+        Vec3 v3(verts[j+0], verts[j+1], verts[j+2]);
+        Vec3 n3(verts[j+3], verts[j+4], verts[j+5]);
 
         // convert vertex positions to decal local space
-        v1 = vertTransform * glm::vec4(v1, 1.0);
-        v2 = vertTransform * glm::vec4(v2, 1.0);
-        v3 = vertTransform * glm::vec4(v3, 1.0);
+        v1 = vertTransform * Vec4(v1, 1.0);
+        v2 = vertTransform * Vec4(v2, 1.0);
+        v3 = vertTransform * Vec4(v3, 1.0);
 
         // skip triangles that are facing away
         // TODO: fix this calculation, as it appears to remove triangles that is should not
         /*
-        glm::vec3 normal = glm::cross(v2 - v1, v3 - v1);
+        Vec3 normal = cross(v2 - v1, v3 - v1);
         if (normal.x > 0.f) continue;
         */
 
@@ -107,10 +107,10 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
 
             for (auto const& v : in)
             {
-                glm::vec3 n = planes[i];
-                glm::vec3 p = n * -0.5f;
-                f32 d1 = glm::dot(n, p - lastVert.pos);
-                f32 d2 = glm::dot(n, p - v.pos);
+                Vec3 n = planes[i];
+                Vec3 p = n * -0.5f;
+                f32 d1 = dot(n, p - lastVert.pos);
+                f32 d2 = dot(n, p - v.pos);
                 f32 d = d1 / (d1 - d2);
                 if (d2 <= 0.f)
                 {
@@ -146,7 +146,7 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, glm::m
     }
 }
 
-void Decal::addMesh(Mesh* mesh, glm::mat4 const& meshTransform)
+void Decal::addMesh(Mesh* mesh, Mat4 const& meshTransform)
 {
     if (mesh->octree)
     {

@@ -8,9 +8,9 @@ class TrackGraph
 public:
     struct Node
     {
-        glm::vec3 position = {};
+        Vec3 position = {};
         f32 t = FLT_MAX;
-        glm::vec3 direction = {};
+        Vec3 direction = {};
         f32 angle = 0.f;
         SmallArray<u32, 4> connections;
     };
@@ -38,9 +38,9 @@ public:
         startNode = nullptr;
         endNode = nullptr;
     }
-    u32 addNode(glm::vec3 const& position);
+    u32 addNode(Vec3 const& position);
     void addConnection(u32 fromIndex, u32 toIndex);
-    void rebuild(glm::mat4 const& startTransform);
+    void rebuild(Mat4 const& startTransform);
 
     Node* getStartNode() const { return startNode; }
     Node* getEndNode() const { return endNode; }
@@ -56,11 +56,11 @@ public:
         const Node* lastNode = nullptr;
         f32 currentLapDistance = 0.f;
         f32 lapDistanceLowMark = 0.f;
-        glm::vec3 position = { 0, 0, 0 };
+        Vec3 position = { 0, 0, 0 };
     };
 
-    f32 findTrackProgressAtPoint(glm::vec3 const& p, f32 referenceValue) const;
-    void findLapDistance(glm::vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const;
+    f32 findTrackProgressAtPoint(Vec3 const& p, f32 referenceValue) const;
+    void findLapDistance(Vec3 const& p, QueryResult& queryResult, f32 maxSkippableDistance) const;
     bool isValid() const { return valid; }
 
     Array<Array<Node*>> const& getPaths() const { return paths; }

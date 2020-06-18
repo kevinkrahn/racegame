@@ -13,13 +13,13 @@ class Track : public Entity
 public:
     struct Vertex
     {
-        glm::vec3 position;
-        glm::vec3 normal;
+        Vec3 position;
+        Vec3 normal;
     };
 
     struct Point
     {
-        glm::vec3 position;
+        Vec3 position;
 
         u32 trackGraphNodeIndex = UINT32_MAX;
 
@@ -34,8 +34,8 @@ public:
         const char* icon;
         struct Curve
         {
-            glm::vec3 offset;
-            glm::vec3 handleOffset;
+            Vec3 offset;
+            Vec3 handleOffset;
         };
         SmallArray<Curve> curves;
     };
@@ -57,9 +57,9 @@ public:
 private:
     struct BezierSegment
     {
-        glm::vec3 handleOffsetA;
+        Vec3 handleOffsetA;
         i32 pointIndexA;
-        glm::vec3 handleOffsetB;
+        Vec3 handleOffsetB;
         i32 pointIndexB;
         f32 widthA = 12.f;
         f32 widthB = 12.f;
@@ -98,30 +98,30 @@ private:
             }
         }
 
-        glm::vec3 pointOnCurve(f32 t) const
+        Vec3 pointOnCurve(f32 t) const
         {
-            glm::vec3 p0 = track->points[pointIndexA].position;
-            glm::vec3 p1 = track->points[pointIndexA].position + handleOffsetA;
-            glm::vec3 p2 = track->points[pointIndexB].position + handleOffsetB;
-            glm::vec3 p3 = track->points[pointIndexB].position;
+            Vec3 p0 = track->points[pointIndexA].position;
+            Vec3 p1 = track->points[pointIndexA].position + handleOffsetA;
+            Vec3 p2 = track->points[pointIndexB].position + handleOffsetB;
+            Vec3 p3 = track->points[pointIndexB].position;
             return pointOnBezierCurve(p0, p1, p2, p3, t);
         }
 
-        glm::vec3 directionOnCurve(f32 t) const
+        Vec3 directionOnCurve(f32 t) const
         {
-            glm::vec3 p0 = pointOnCurve(t);
-            glm::vec3 p1 = pointOnCurve(t - 0.01f);
-            return glm::normalize(p0 - p1);
+            Vec3 p0 = pointOnCurve(t);
+            Vec3 p1 = pointOnCurve(t - 0.01f);
+            return normalize(p0 - p1);
         }
 
         f32 getLength() const
         {
             f32 totalLength = 0.f;
-            glm::vec3 prevP = track->points[pointIndexA].position;
+            Vec3 prevP = track->points[pointIndexA].position;
             for (u32 i=1; i<=10; ++i)
             {
-                glm::vec3 p = pointOnCurve(i / 10.f);
-                totalLength += glm::length(prevP - p);
+                Vec3 p = pointOnCurve(i / 10.f);
+                totalLength += length(prevP - p);
                 prevP = p;
             }
             return totalLength;
@@ -134,17 +134,17 @@ private:
     struct Selection
     {
         i32 pointIndex;
-        glm::vec3 dragStartPoint;
+        Vec3 dragStartPoint;
     };
 
-    glm::vec2 selectMousePos;
-    glm::vec3 dragStartPoint;
+    Vec2 selectMousePos;
+    Vec3 dragStartPoint;
     i32 dragConnectionIndex = -1;
     i32 dragConnectionHandle = -1;
     i32 dragOppositeConnectionIndex = -1;
     i32 dragOppositeConnectionHandle = -1;
     bool isDragging = false;
-    glm::vec3 dragOffset;
+    Vec3 dragOffset;
     Array<Selection> selectedPoints;
     Scene* scene = nullptr;
 
@@ -164,13 +164,13 @@ private:
 public:
     Track()
     {
-        points.push_back(Point{ glm::vec3(50, 0, 0.05f) });
-        points.push_back(Point{ glm::vec3(-50, 0, 0.05f) });
+        points.push_back(Point{ Vec3(50, 0, 0.05f) });
+        points.push_back(Point{ Vec3(-50, 0, 0.05f) });
         OwnedPtr<BezierSegment> segment(new BezierSegment);
         segment->track = this;
-        segment->handleOffsetA = glm::vec3(-10, 0, 0);
+        segment->handleOffsetA = Vec3(-10, 0, 0);
         segment->pointIndexA = 0;
-        segment->handleOffsetB = glm::vec3(10, 0, 0);
+        segment->handleOffsetB = Vec3(10, 0, 0);
         segment->pointIndexB = 1;
         connections.push_back(std::move(segment));
     }
@@ -188,8 +188,8 @@ public:
             return false;
         }
         i32 pointIndex = selectedPoints.back().pointIndex;
-        glm::vec3 xDir = getPointDir(pointIndex);
-        return glm::length2(xDir) > 0.f;
+        Vec3 xDir = getPointDir(pointIndex);
+        return length2(xDir) > 0.f;
     }
     void matchZ(bool lowest);
     void extendTrack(i32 prefabCurveIndex);
@@ -206,9 +206,9 @@ public:
         assert((i32)points.size() > index);
         return points[index];
     }
-    glm::vec3 getPointDir(i32 pointIndex) const;
+    Vec3 getPointDir(i32 pointIndex) const;
     void clearSelection();
-    void buildTrackGraph(class TrackGraph* trackGraph, glm::mat4 const& startTransform);
+    void buildTrackGraph(class TrackGraph* trackGraph, Mat4 const& startTransform);
     BoundingBox getBoundingBox() const { return boundingBox; }
     void applyDecal(Decal& decal) override
     {
@@ -218,7 +218,7 @@ public:
             if (decalBoundingBox.intersects(c->boundingBox))
             {
                 decal.addMesh((f32*)c->vertices.data(), sizeof(Vertex),
-                        c->indices.data(), (u32)c->indices.size(), glm::mat4(1.f));
+                        c->indices.data(), (u32)c->indices.size(), Mat4(1.f));
             }
         }
     }

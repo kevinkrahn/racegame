@@ -38,12 +38,12 @@ void ParticleSystem::draw(RenderWorld* rw)
             f32 alphaCurveValue = getCurveValue(ps->alphaCurve, t);
             f32 scaleCurveValue = getCurveValue(ps->scaleCurve, t);
 
-            auto scale = glm::vec3(scaleCurveValue * p.scale);
-            auto color = p.color * glm::vec4(1, 1, 1, alphaCurveValue * p.alphaMultiplier);
+            auto scale = Vec3(scaleCurveValue * p.scale);
+            auto color = p.color * Vec4(1, 1, 1, alphaCurveValue * p.alphaMultiplier);
 
             glUniform4fv(0, 1, (GLfloat*)&color);
-            glm::mat4 translation = glm::translate(glm::mat4(1.f), p.position);
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.f), p.angle, { 0, 0, 1 });
+            Mat4 translation = glm::translate(Mat4(1.f), p.position);
+            Mat4 rotation = glm::rotate(Mat4(1.f), p.angle, { 0, 0, 1 });
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(translation));
             glUniform3f(2, scale.x, scale.y, scale.z);
             glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(rotation));

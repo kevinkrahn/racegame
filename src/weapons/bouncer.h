@@ -29,7 +29,7 @@ public:
     {
         if (ammo > 0)
         {
-            glow = glm::min(glow + deltaTime * 3.f, 1.f);
+            glow = min(glow + deltaTime * 3.f, 1.f);
         }
 
         if (!fireBegin)
@@ -43,15 +43,15 @@ public:
             return;
         }
 
-        glm::mat4 transform = vehicle->getTransform();
+        Mat4 transform = vehicle->getTransform();
         f32 minSpeed = 34.f;
-        glm::vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
+        Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (glm::length2(vel) < square(minSpeed))
+        if (length2(vel) < square(minSpeed))
         {
-            vel = glm::normalize(vel) * minSpeed;
+            vel = normalize(vel) * minSpeed;
         }
-        glm::vec3 pos = transform * mountTransform * glm::vec4(projectileSpawnPoints[0], 1.f);
+        Vec3 pos = transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BOUNCER));
         g_audio.playSound3D(g_res.getSound("bouncer_fire"),
@@ -62,14 +62,14 @@ public:
         glow = 0.f;
     }
 
-    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
-        glm::vec3 pos = vehicleTransform * mountTransform *
-            glm::vec4(projectileSpawnPoints[0] + glm::vec3(0.01f, 0.f, 0.05f), 1.f);
+        Vec3 pos = vehicleTransform * mountTransform *
+            Vec4(projectileSpawnPoints[0] + Vec3(0.01f, 0.f, 0.05f), 1.f);
         drawBillboard(rw, g_res.getTexture("bouncer_projectile"),
-                    pos, glm::vec4(1.f), 0.7f * glow, 0.f, false);
+                    pos, Vec4(1.f), 0.7f * glow, 0.f, false);
     }
 };

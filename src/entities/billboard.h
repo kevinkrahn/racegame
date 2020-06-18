@@ -86,9 +86,9 @@ public:
 
     void onPreview(RenderWorld* rw) override
     {
-        rw->setViewportCamera(0, glm::vec3(3.f, 1.f, 4.f) * 4.5f,
-                glm::vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
-        transform = glm::mat4(1.f);
+        rw->setViewportCamera(0, Vec3(3.f, 1.f, 4.f) * 4.5f,
+                Vec3(0, 0, 3.5f), 1.f, 200.f, 32.f);
+        transform = Mat4(1.f);
         drawSimple(rw, model->getMeshByName("billboard.BillboardSign"),
                 g_res.getTexture(billboardTextureGuid), transform);
         for (auto& obj : model->objects)
@@ -106,7 +106,7 @@ public:
         for (auto& obj : model->objects)
         {
             Material* mat = g_res.getMaterial(obj.materialGuid);
-            glm::mat4 t = transform * obj.getTransform();
+            Mat4 t = transform * obj.getTransform();
             Mesh* mesh = &model->meshes[obj.meshIndex];
             if (isSelected)
             {
@@ -122,7 +122,7 @@ public:
             Texture* tex = (Texture*)res;
             if (tex->name.find("billboard") != std::string::npos)
             {
-                f32 w = glm::min(ImGui::GetColumnWidth(), 200.f);
+                f32 w = min(ImGui::GetColumnWidth(), 200.f);
                 f32 h = w * 0.5f;
                 ImGui::PushID(tex->name.c_str());
                 if (ImGui::ImageButton((void*)(uintptr_t)tex->getPreviewHandle(), { w, h }))

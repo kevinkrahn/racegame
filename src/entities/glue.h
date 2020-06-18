@@ -8,13 +8,13 @@ class Glue : public PlaceableEntity
     Decal decal;
 
 public:
-    Glue() { setup(glm::vec3(0.f)); }
-    Glue(glm::vec3 const& pos)
+    Glue() { setup(Vec3(0.f)); }
+    Glue(Vec3 const& pos)
     {
         setup(pos);
-        scale = glm::vec3(3.25f);
+        scale = Vec3(3.25f);
     }
-    Glue* setup(glm::vec3 const& pos={0,0,0});
+    Glue* setup(Vec3 const& pos={0,0,0});
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;

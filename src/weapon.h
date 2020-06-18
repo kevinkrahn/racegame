@@ -33,8 +33,8 @@ public:
     u32 ammo = 0;
     u32 ammoUnitCount = 1;
     u32 upgradeLevel;
-    glm::mat4 mountTransform;
-    SmallArray<glm::vec3, 3> projectileSpawnPoints;
+    Mat4 mountTransform;
+    SmallArray<Vec3, 3> projectileSpawnPoints;
 
     void loadModelData(const char* modelName);
     void outOfAmmo(class Vehicle* vehicle);
@@ -44,7 +44,7 @@ public:
     void refillAmmo() { ammo = getMaxAmmo(); }
     virtual void update(class Scene* scene, class Vehicle* vehicle,
             bool fireBegin, bool fireHold, f32 deltaTime) = 0;
-    virtual void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    virtual void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             struct VehicleConfiguration const& config, struct VehicleData const& vehicleData) {}
     virtual void reset() {}
     virtual f32 onDamage(f32 damage, class Vehicle* vehicle) { return damage; }

@@ -168,22 +168,22 @@ public:
                 }
                 ImGui::End();
 
-                glm::vec3 minP(FLT_MAX);
-                glm::vec3 maxP(-FLT_MAX);
+                Vec3 minP(FLT_MAX);
+                Vec3 maxP(-FLT_MAX);
                 for (auto& index : selectedPoints)
                 {
-                    minP = glm::min(minP, path.points[index].position);
-                    maxP = glm::max(maxP, path.points[index].position);
+                    minP = min(minP, path.points[index].position);
+                    maxP = max(maxP, path.points[index].position);
                 }
-                glm::vec3 gizmoPosition = minP + (maxP - minP) * 0.5f;
+                Vec3 gizmoPosition = minP + (maxP - minP) * 0.5f;
                 isMouseHandled = transformGizmo.update(gizmoPosition, scene, renderer->getRenderWorld(),
-                        deltaTime, glm::mat4(1.f), this, false);
+                        deltaTime, Mat4(1.f), this, false);
             }
 
-            glm::vec3 offset(0, 0, 0.05f);
-            glm::vec4 color(1, 1, 0, 1);
+            Vec3 offset(0, 0, 0.05f);
+            Vec4 color(1, 1, 0, 1);
             Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
-            glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(renderer->getRenderWorld());
+            Vec3 rayDir = scene->getEditorCamera().getMouseRay(renderer->getRenderWorld());
             Camera const& cam = scene->getEditorCamera().getCamera();
             for (u32 i=0; i<path.points.size()-1; ++i)
             {
@@ -197,14 +197,14 @@ public:
             for (u16 si : selectedPoints)
             {
                 drawOverlay(rw, sphere,
-                            glm::translate(glm::mat4(1.f), path.points[si].position) *
-                            glm::scale(glm::mat4(1.08f), glm::vec3(1.f)), { 1, 1, 1 }, -2);
+                            glm::translate(Mat4(1.f), path.points[si].position) *
+                            glm::scale(Mat4(1.08f), Vec3(1.f)), { 1, 1, 1 }, -2);
             }
             for (u32 i=0; i<path.points.size(); ++i)
             {
                 drawOverlay(rw, sphere,
-                            glm::translate(glm::mat4(1.f), path.points[i].position) *
-                            glm::scale(glm::mat4(1.f), glm::vec3(1.f)), { 1, 0, 0 }, -2);
+                            glm::translate(Mat4(1.f), path.points[i].position) *
+                            glm::scale(Mat4(1.f), Vec3(1.f)), { 1, 0, 0 }, -2);
             }
 
             if (!isMouseHandled && g_input.isMouseButtonPressed(MOUSE_LEFT))
@@ -216,9 +216,9 @@ public:
                 bool hit = false;
                 for (u32 i=0; i<path.points.size(); ++i)
                 {
-                    f32 dist = glm::length(cam.position - path.points[i].position);
+                    f32 dist = length(cam.position - path.points[i].position);
                     f32 fixedSize = 0.02f;
-                    f32 size = dist * fixedSize * glm::radians(cam.fov);
+                    f32 size = dist * fixedSize * radians(cam.fov);
                     if (!isMouseHandled &&
                         raySphereIntersection(cam.position, rayDir, path.points[i].position, size) > 0.f)
                     {
@@ -368,8 +368,8 @@ public:
         transformGizmo.reset();
     }
 
-    void gizmoDrag(glm::vec3 const& dragCenter, glm::vec3 const& dragDest, glm::vec3 const& dragDestZ,
-            glm::vec3 dragOffset, i32 dragAxis) override
+    void gizmoDrag(Vec3 const& dragCenter, Vec3 const& dragDest, Vec3 const& dragDestZ,
+            Vec3 dragOffset, i32 dragAxis) override
     {
         auto& path = scene->getPaths()[selectedPathIndex];
         for (u16 pointIndex : selectedPoints)
@@ -394,44 +394,44 @@ public:
         }
     }
 
-    void gizmoRotate(f32 angleDiff, glm::vec3 const& rotatePivot, i32 dragAxis) override
+    void gizmoRotate(f32 angleDiff, Vec3 const& rotatePivot, i32 dragAxis) override
     {
         auto& path = scene->getPaths()[selectedPathIndex];
-        glm::vec3 rotationAxis(1, 0, 0);
+        Vec3 rotationAxis(1, 0, 0);
         if (dragAxis & DragAxis::X)
         {
-            rotationAxis = glm::vec3(1, 0, 0);
+            rotationAxis = Vec3(1, 0, 0);
         }
         else if (dragAxis & DragAxis::Y)
         {
-            rotationAxis = glm::vec3(0, 1, 0);
+            rotationAxis = Vec3(0, 1, 0);
         }
         else if (dragAxis & DragAxis::Z)
         {
-            rotationAxis = glm::vec3(0, 0, 1);
+            rotationAxis = Vec3(0, 0, 1);
         }
-        glm::mat4 transform = glm::rotate(glm::mat4(1.f), angleDiff, rotationAxis) *
-            glm::translate(glm::mat4(1.f), -rotatePivot);
+        Mat4 transform = glm::rotate(Mat4(1.f), angleDiff, rotationAxis) *
+            glm::translate(Mat4(1.f), -rotatePivot);
         for (u16 pointIndex : selectedPoints)
         {
             path.points[pointIndex].position =
-                glm::vec3(transform * glm::vec4(path.points[pointIndex].position, 1.f)) + rotatePivot;
+                Vec3(transform * Vec4(path.points[pointIndex].position, 1.f)) + rotatePivot;
         }
     }
 
-    void gizmoScale(f32 scaleFactor, i32 entityDragAxis, glm::vec3 const& scaleCenter,
-            glm::vec3 const& dragOffset, glm::vec3 const& hitPos, glm::vec3& hitPosZ) override
+    void gizmoScale(f32 scaleFactor, i32 entityDragAxis, Vec3 const& scaleCenter,
+            Vec3 const& dragOffset, Vec3 const& hitPos, Vec3& hitPosZ) override
     {
         // TODO: Scale along the axis chosen, not all of them
         if (selectedPoints.size() > 1)
         {
             auto& path = scene->getPaths()[selectedPathIndex];
-            glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(scaleFactor))
-                * glm::translate(glm::mat4(1.f), -scaleCenter);
+            Mat4 transform = glm::scale(Mat4(1.f), Vec3(scaleFactor))
+                * glm::translate(Mat4(1.f), -scaleCenter);
             for (u16 pointIndex : selectedPoints)
             {
-                glm::mat4 t = transform
-                    * glm::translate(glm::mat4(1.f), path.points[pointIndex].position);
+                Mat4 t = transform
+                    * glm::translate(Mat4(1.f), path.points[pointIndex].position);
                 path.points[pointIndex].position = translationOf(t) + scaleCenter;
             }
         }

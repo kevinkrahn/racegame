@@ -11,15 +11,15 @@ void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
     {
         f32 right = (f32)g_input.isKeyDown(KEY_D) - (f32)g_input.isKeyDown(KEY_A);
         f32 up = (f32)g_input.isKeyDown(KEY_S) - (f32)g_input.isKeyDown(KEY_W);
-        glm::vec3 moveDir = (right != 0.f || up != 0.f)
-            ? glm::normalize(glm::vec3(right, up, 0.f)) : glm::vec3(0, 0, 0);
-        glm::vec3 forward(-lengthdir(cameraYaw, 1.f), 0.f);
-        glm::vec3 sideways(-lengthdir(cameraYaw + PI / 2.f, 1.f), 0.f);
+        Vec3 moveDir = (right != 0.f || up != 0.f)
+            ? normalize(Vec3(right, up, 0.f)) : Vec3(0, 0, 0);
+        Vec3 forward(-lengthdir(cameraYaw, 1.f), 0.f);
+        Vec3 sideways(-lengthdir(cameraYaw + PI / 2.f, 1.f), 0.f);
 
         cameraVelocity += (((forward * moveDir.y) + (sideways * moveDir.x)) * (deltaTime * (120.f + cameraDistance * 1.5f)));
     }
     cameraTarget += cameraVelocity * deltaTime;
-    cameraVelocity = smoothMove(cameraVelocity, glm::vec3(0, 0, 0), 7.f, deltaTime);
+    cameraVelocity = smoothMove(cameraVelocity, Vec3(0, 0, 0), 7.f, deltaTime);
 
     if (g_input.isMouseButtonPressed(MOUSE_RIGHT))
     {
@@ -45,19 +45,19 @@ void EditorCamera::update(f32 deltaTime, RenderWorld* rw)
     cameraDistance = clamp(cameraDistance - zoomSpeed, 3.f, 250.f);
     zoomSpeed = smoothMove(zoomSpeed, 0.f, 10.f, deltaTime);
 
-    glm::vec3 cameraDir(
-            glm::cos(cameraYaw) * glm::cos(cameraPitch),
-            glm::sin(cameraYaw) * glm::cos(cameraPitch),
-            glm::sin(cameraPitch));
+    Vec3 cameraDir(
+            cosf(cameraYaw) * cosf(cameraPitch),
+            sinf(cameraYaw) * cosf(cameraPitch),
+            sinf(cameraPitch));
     cameraFrom = cameraTarget - cameraDir * cameraDistance;
     rw->setViewportCamera(0, cameraFrom, cameraTarget, nearDistance, farDistance, 53.f);
     camera = rw->getCamera(0);
 }
 
-glm::vec3 EditorCamera::getMouseRay(RenderWorld* rw) const
+Vec3 EditorCamera::getMouseRay(RenderWorld* rw) const
 {
-    glm::vec2 mousePos = g_input.getMousePosition();
-    glm::vec3 rayDir = screenToWorldRay(mousePos,
-            glm::vec2(g_game.windowWidth, g_game.windowHeight), camera.view, camera.projection);
+    Vec2 mousePos = g_input.getMousePosition();
+    Vec3 rayDir = screenToWorldRay(mousePos,
+            Vec2(g_game.windowWidth, g_game.windowHeight), camera.view, camera.projection);
     return rayDir;
 }

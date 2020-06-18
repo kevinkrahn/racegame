@@ -23,13 +23,13 @@ class ParticleSystem
 private:
     struct Particle
     {
-        glm::vec3 position;
-        glm::vec3 velocity;
+        Vec3 position;
+        Vec3 velocity;
         f32 scale = 1.f;
         f32 angle = 0.f;
         f32 life = 0.f;
         f32 totalLife = 0.f;
-        glm::vec4 color = glm::vec4(1.f);
+        Vec4 color = Vec4(1.f);
         f32 alphaMultiplier = 1.f;
     };
 
@@ -62,8 +62,8 @@ public:
         { 1.f, 1.f },
     };
 
-    void spawn(glm::vec3 const& position, glm::vec3 const& velocity, f32 alpha,
-            glm::vec4 const& color = glm::vec4(1.f), f32 scale = 1.f)
+    void spawn(Vec3 const& position, Vec3 const& velocity, f32 alpha,
+            Vec4 const& color = Vec4(1.f), f32 scale = 1.f)
     {
         particles.push_back({
             position,
@@ -89,13 +89,13 @@ struct ParticleEmitter
     ParticleSystem* particleSystem;
     i32 minCount = 0;
     i32 maxCount = 0;
-    glm::vec4 color;
+    Vec4 color;
     f32 velocityVariance;
     f32 minVel = 4.f;
     f32 maxVel = 8.f;
 
     ParticleEmitter(ParticleSystem* particleSystem, i32 minCount, i32 maxCount,
-            glm::vec4 const& color, f32 velocityVariance, f32 minVel, f32 maxVel) :
+            Vec4 const& color, f32 velocityVariance, f32 minVel, f32 maxVel) :
         particleSystem(particleSystem),
         minCount(minCount),
         maxCount(maxCount),
@@ -105,12 +105,12 @@ struct ParticleEmitter
 
     ParticleEmitter() {}
 
-    void emit(glm::vec3 const& position, glm::vec3 const& inheritedVelocity)
+    void emit(Vec3 const& position, Vec3 const& inheritedVelocity)
     {
         i32 count = irandom(series, minCount, maxCount);
         for (i32 i=0; i<count; ++i)
         {
-            glm::vec3 vel = inheritedVelocity + glm::normalize(glm::vec3(
+            Vec3 vel = inheritedVelocity + normalize(Vec3(
                 random(series, -velocityVariance, velocityVariance),
                 random(series, -velocityVariance, velocityVariance),
                 random(series, -velocityVariance, velocityVariance))) * random(series, minVel, maxVel);

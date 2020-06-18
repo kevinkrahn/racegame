@@ -13,7 +13,7 @@ class TerrainMode : public EditorMode
     f32 brushFalloff = 1.f;
     f32 brushStrength = 15.f;
     f32 brushStartZ = 0.f;
-    glm::vec3 mousePosition;
+    Vec3 mousePosition;
 
     enum struct TerrainTool : i32
     {
@@ -47,7 +47,7 @@ public:
         }
 
         RenderWorld* rw = renderer->getRenderWorld();
-        glm::vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
+        Vec3 rayDir = scene->getEditorCamera().getMouseRay(rw);
         Camera const& cam = scene->getEditorCamera().getCamera();
 
         if (g_input.isKeyDown(KEY_LCTRL) && g_input.getMouseScroll() != 0)
@@ -56,9 +56,9 @@ public:
         }
 
         const f32 step = 0.01f;
-        glm::vec3 p = cam.position;
+        Vec3 p = cam.position;
         u32 count = 50000;
-        while (p.z > scene->terrain->getZ(glm::vec2(p)) && --count > 0)
+        while (p.z > scene->terrain->getZ(Vec2(p)) && --count > 0)
         {
             p += rayDir * step;
         }
@@ -69,11 +69,11 @@ public:
             scene->terrain->setBrushSettings(brushRadius, brushFalloff, brushStrength, p);
             if (g_input.isMouseButtonPressed(MOUSE_LEFT))
             {
-                brushStartZ = scene->terrain->getZ(glm::vec2(p));
+                brushStartZ = scene->terrain->getZ(Vec2(p));
                 PxRaycastBuffer hit;
                 if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit, COLLISION_FLAG_TRACK))
                 {
-                    brushStartZ = glm::max(brushStartZ, hit.block.position.z - 0.06f);
+                    brushStartZ = max(brushStartZ, hit.block.position.z - 0.06f);
                 }
             }
             if (g_input.isMouseButtonDown(MOUSE_LEFT) && canUseTerrainTool)
@@ -81,25 +81,25 @@ public:
                 switch (terrainTool)
                 {
                 case TerrainTool::RAISE:
-                    scene->terrain->raise(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+                    scene->terrain->raise(Vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
                     break;
                 case TerrainTool::PERTURB:
-                    scene->terrain->perturb(glm::vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
+                    scene->terrain->perturb(Vec2(p), brushRadius, brushFalloff, brushStrength * deltaTime);
                     break;
                 case TerrainTool::FLATTEN:
-                    scene->terrain->flatten(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime, brushStartZ);
+                    scene->terrain->flatten(Vec2(p), brushRadius, brushFalloff, absolute(brushStrength) * deltaTime, brushStartZ);
                     break;
                 case TerrainTool::SMOOTH:
-                    scene->terrain->smooth(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime);
+                    scene->terrain->smooth(Vec2(p), brushRadius, brushFalloff, absolute(brushStrength) * deltaTime);
                     break;
                 case TerrainTool::ERODE:
-                    scene->terrain->erode(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime);
+                    scene->terrain->erode(Vec2(p), brushRadius, brushFalloff, absolute(brushStrength) * deltaTime);
                     break;
                 case TerrainTool::MATCH_TRACK:
-                    scene->terrain->matchTrack(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength) * deltaTime, scene);
+                    scene->terrain->matchTrack(Vec2(p), brushRadius, brushFalloff, absolute(brushStrength) * deltaTime, scene);
                     break;
                 case TerrainTool::PAINT:
-                    scene->terrain->paint(glm::vec2(p), brushRadius, brushFalloff, glm::abs(brushStrength * 1.f) * deltaTime, paintMaterialIndex);
+                    scene->terrain->paint(Vec2(p), brushRadius, brushFalloff, absolute(brushStrength * 1.f) * deltaTime, paintMaterialIndex);
                     break;
                 default:
                     break;
@@ -124,16 +124,16 @@ public:
             ImGui::EndCombo();
         }
 
-        glm::vec2 terrainMin(scene->terrain->x1, scene->terrain->y1);
-        glm::vec2 terrainMax(scene->terrain->x2, scene->terrain->y2);
+        Vec2 terrainMin(scene->terrain->x1, scene->terrain->y1);
+        Vec2 terrainMax(scene->terrain->x2, scene->terrain->y2);
         if (ImGui::InputFloat2("Terrain Min", (f32*)&terrainMin, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            terrainMin = glm::max(glm::min(terrainMin, terrainMax - 10.f), -400.f);
+            terrainMin = max(min(terrainMin, terrainMax - 10.f), -400.f);
             scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y, true);
         }
         if (ImGui::InputFloat2("Terrain Max", (f32*)&terrainMax, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue))
         {
-            terrainMax = glm::min(glm::max(terrainMax, terrainMin + 10.f), 400.f);
+            terrainMax = min(max(terrainMax, terrainMin + 10.f), 400.f);
             scene->terrain->resize(terrainMin.x, terrainMin.y, terrainMax.x, terrainMax.y, true);
         }
 

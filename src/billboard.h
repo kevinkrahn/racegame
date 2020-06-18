@@ -7,12 +7,12 @@ struct BillboardRenderData
 {
     GLuint tex;
     f32 scale;
-    glm::vec4 color;
-    glm::mat4 translation;
-    glm::mat4 rotation;
+    Vec4 color;
+    Mat4 translation;
+    Mat4 rotation;
 };
 
-void drawBillboard(RenderWorld* rw, Texture* texture, glm::vec3 const& position, glm::vec4 const& color,
+void drawBillboard(RenderWorld* rw, Texture* texture, Vec3 const& position, Vec4 const& color,
         f32 scale=1.f, f32 angle=0.f, bool lit=true)
 {
     static ShaderHandle shaderLit = getShaderHandle("billboard", { {"LIT"} });
@@ -22,8 +22,8 @@ void drawBillboard(RenderWorld* rw, Texture* texture, glm::vec3 const& position,
     renderData->tex = texture->handle;
     renderData->scale = scale;
     renderData->color = color;
-    renderData->translation = glm::translate(glm::mat4(1.f), position);
-    renderData->rotation = glm::rotate(glm::mat4(1.f), angle, { 0, 0, 1 });
+    renderData->translation = glm::translate(Mat4(1.f), position);
+    renderData->rotation = glm::rotate(Mat4(1.f), angle, { 0, 0, 1 });
 
     rw->transparentPass({ lit ? shaderLit : shaderUnlit, TransparentDepth::BILLBOARD, renderData, [](void* renderData){
         BillboardRenderData* rd = (BillboardRenderData*)renderData;

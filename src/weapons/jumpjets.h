@@ -24,7 +24,7 @@ public:
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
-        t = glm::max(t - deltaTime, 0.f);
+        t = max(t - deltaTime, 0.f);
         if (t > 0.f)
         {
             PxVec3 vel = vehicle->getRigidBody()->getAngularVelocity();

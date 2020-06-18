@@ -8,7 +8,7 @@ class Batcher
 {
     struct BatchableItem
     {
-        glm::mat4 transform;
+        Mat4 transform;
         Mesh* mesh;
     };
     Map<Material*, Array<BatchableItem>> materialMap;
@@ -39,14 +39,14 @@ public:
         materialMap.clear();
     }
 
-    void add(Material* material, glm::mat4 const& transform, Mesh* mesh)
+    void add(Material* material, Mat4 const& transform, Mesh* mesh)
     {
         materialMap[material].push_back({ transform, mesh });
     }
 
     void end(bool keepMeshData=false);
 
-    void render(RenderWorld* rw, glm::mat4 const& transform=glm::mat4(1.f))
+    void render(RenderWorld* rw, Mat4 const& transform=Mat4(1.f))
     {
         for (auto& batch : batches)
         {

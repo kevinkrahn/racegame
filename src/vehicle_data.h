@@ -20,10 +20,10 @@ struct ComputerDriverData
     f32 aggression = 1.f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
     f32 awareness = 1.f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
     f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
-    glm::vec3 color;
+    Vec3 color;
     u32 vehicleIndex = 0;
     i32 wrapIndex = -1;
-    glm::vec4 wrapColor;
+    Vec4 wrapColor;
 };
 
 struct RegisteredWeapon
@@ -35,7 +35,7 @@ struct RegisteredWeapon
 struct VehicleMesh
 {
     Mesh* mesh;
-    glm::mat4 transform;
+    Mat4 transform;
     PxShape* collisionShape;
     Material* material;
 };
@@ -50,7 +50,7 @@ struct VehicleDebris
 struct VehicleCollisionsMesh
 {
     PxConvexMesh* convexMesh;
-    glm::mat4 transform;
+    Mat4 transform;
 };
 
 struct VehicleStats
@@ -69,7 +69,7 @@ struct VehicleTuning
     Array<VehicleCollisionsMesh> collisionMeshes;
 
     f32 chassisMass = 1400.f;
-    glm::vec3 centerOfMass = { 0.f, 0.f, -0.2f };
+    Vec3 centerOfMass = { 0.f, 0.f, -0.2f };
 
     f32 wheelMassFront = 30.f;
     f32 wheelWidthFront = 0.4f;
@@ -123,7 +123,7 @@ struct VehicleTuning
 
     PxVehicleDifferential4WData::Enum differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
 
-    glm::vec3 wheelPositions[NUM_WHEELS];
+    Vec3 wheelPositions[NUM_WHEELS];
 
     f32 collisionWidth = 0.f;
     f32 maxHitPoints;
@@ -158,13 +158,13 @@ static_assert(ARRAY_SIZE(g_wrapTextureNames) == ARRAY_SIZE(g_wrapTextureNames));
 
 struct VehicleConfiguration
 {
-    glm::vec3 color = glm::vec3(0.95f);
-    glm::vec3 hsv = glm::vec3(0.f, 0.f, 0.95f);
+    Vec3 color = Vec3(0.95f);
+    Vec3 hsv = Vec3(0.f, 0.f, 0.95f);
     f32 paintShininess = 1.f;
 
     i64 wrapTextureGuids[3] = { 0, 0, 0 };
-    glm::vec4 wrapColors[3] = { glm::vec4(1.f), glm::vec4(1.f), glm::vec4(1.f) };
-    glm::vec3 wrapColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
+    Vec4 wrapColors[3] = { Vec4(1.f), Vec4(1.f), Vec4(1.f) };
+    Vec3 wrapColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
 
     i32 frontWeaponIndices[3] = { -1, -1, -1 };
     u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
@@ -216,14 +216,14 @@ struct VehicleConfiguration
         paintMaterial = *originalPaintMaterial;
         paintMaterial.color = color;
         paintMaterial.loadShaderHandles({ {"VEHICLE"} });
-        paintMaterial.reflectionLod = glm::lerp(mattePaintMaterial->reflectionLod, originalPaintMaterial->reflectionLod, paintShininess);
-        paintMaterial.reflectionBias = glm::lerp(mattePaintMaterial->reflectionBias, originalPaintMaterial->reflectionBias, paintShininess);
-        paintMaterial.reflectionStrength = glm::lerp(mattePaintMaterial->reflectionStrength, originalPaintMaterial->reflectionStrength, paintShininess);
-        paintMaterial.specularPower = glm::lerp(mattePaintMaterial->specularPower, originalPaintMaterial->specularPower, paintShininess);
-        paintMaterial.specularStrength = glm::lerp(mattePaintMaterial->specularStrength, originalPaintMaterial->specularStrength, paintShininess);
-        paintMaterial.fresnelBias = glm::lerp(mattePaintMaterial->fresnelBias, originalPaintMaterial->fresnelBias, paintShininess);
-        paintMaterial.fresnelPower = glm::lerp(mattePaintMaterial->fresnelPower, originalPaintMaterial->fresnelPower, paintShininess);
-        paintMaterial.fresnelScale = glm::lerp(mattePaintMaterial->fresnelScale, originalPaintMaterial->fresnelScale, paintShininess);
+        paintMaterial.reflectionLod = lerp(mattePaintMaterial->reflectionLod, originalPaintMaterial->reflectionLod, paintShininess);
+        paintMaterial.reflectionBias = lerp(mattePaintMaterial->reflectionBias, originalPaintMaterial->reflectionBias, paintShininess);
+        paintMaterial.reflectionStrength = lerp(mattePaintMaterial->reflectionStrength, originalPaintMaterial->reflectionStrength, paintShininess);
+        paintMaterial.specularPower = lerp(mattePaintMaterial->specularPower, originalPaintMaterial->specularPower, paintShininess);
+        paintMaterial.specularStrength = lerp(mattePaintMaterial->specularStrength, originalPaintMaterial->specularStrength, paintShininess);
+        paintMaterial.fresnelBias = lerp(mattePaintMaterial->fresnelBias, originalPaintMaterial->fresnelBias, paintShininess);
+        paintMaterial.fresnelPower = lerp(mattePaintMaterial->fresnelPower, originalPaintMaterial->fresnelPower, paintShininess);
+        paintMaterial.fresnelScale = lerp(mattePaintMaterial->fresnelScale, originalPaintMaterial->fresnelScale, paintShininess);
         dirty = false;
     }
 };
@@ -257,19 +257,19 @@ struct VehicleData
 
     SmallArray<VehicleMesh> wheelMeshes[NUM_WHEELS];
 
-    glm::vec3 wheelPositions[NUM_WHEELS] = {};
-    glm::mat4 weaponMounts[3] = {
-        glm::translate(glm::mat4(1.f), { 3.f, 0.f, 0.6f }),
-        glm::translate(glm::mat4(1.f), { 0.f, 0.f, 2.f }),
-        glm::translate(glm::mat4(1.f), { -2.f, 0.f, 2.f }),
+    Vec3 wheelPositions[NUM_WHEELS] = {};
+    Mat4 weaponMounts[3] = {
+        glm::translate(Mat4(1.f), { 3.f, 0.f, 0.6f }),
+        glm::translate(Mat4(1.f), { 0.f, 0.f, 2.f }),
+        glm::translate(Mat4(1.f), { -2.f, 0.f, 2.f }),
     };
-    SmallArray<glm::vec3> exhaustHoles;
+    SmallArray<Vec3> exhaustHoles;
     f32 frontWheelMeshRadius = 0.f;
     f32 frontWheelMeshWidth = 0.f;
     f32 rearWheelMeshRadius = 0.f;
     f32 rearWheelMeshWidth = 0.f;
     f32 collisionWidth = 0.f;
-    glm::vec3 sceneCenterOfMass = glm::vec3(0.f);
+    Vec3 sceneCenterOfMass = Vec3(0.f);
 
     Array<VehicleCollisionsMesh> collisionMeshes;
     Array<PerformanceUpgrade> availableUpgrades;
@@ -283,10 +283,10 @@ struct VehicleData
     Array<VehicleMesh> debrisChunks;
 
     virtual ~VehicleData() {}
-    virtual void render(class RenderWorld* rw, glm::mat4 const& transform,
-            glm::mat4* wheelTransforms, VehicleConfiguration& config,
+    virtual void render(class RenderWorld* rw, Mat4 const& transform,
+            Mat4* wheelTransforms, VehicleConfiguration& config,
             class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false,
-            glm::vec4 const& shield={0,0,0,0});
+            Vec4 const& shield={0,0,0,0});
     virtual void renderDebris(class RenderWorld* rw,
             Array<VehicleDebris> const& debris, VehicleConfiguration& config);
 
@@ -329,7 +329,7 @@ void registerVehicle()
 }
 
 void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear,
-    glm::vec3 const& color, const char* vehicleName, i32 wrapIndex=-1, glm::vec4 const& wrapColor=glm::vec4(1.f))
+    Vec3 const& color, const char* vehicleName, i32 wrapIndex=-1, Vec4 const& wrapColor=Vec4(1.f))
 {
     g_ais.push_back({
         name,

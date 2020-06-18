@@ -13,7 +13,7 @@ void Mesh::buildOctree()
     }
 }
 
-void Mesh::OctreeNode::debugDraw(DebugDraw* dbg, glm::mat4 const& transform, glm::vec4 const& col)
+void Mesh::OctreeNode::debugDraw(DebugDraw* dbg, Mat4 const& transform, Vec4 const& col)
 {
     if (triangleIndices.size() > 0 || children.size() > 0)
     {
@@ -21,32 +21,32 @@ void Mesh::OctreeNode::debugDraw(DebugDraw* dbg, glm::mat4 const& transform, glm
     }
     else
     {
-        dbg->boundingBox(aabb, transform, glm::vec4(1, 0, 0, 1));
+        dbg->boundingBox(aabb, transform, Vec4(1, 0, 0, 1));
     }
     for (auto& child : children)
     {
-        child.debugDraw(dbg, transform, glm::vec4(glm::vec3(col) * 0.7f, 1.f));
+        child.debugDraw(dbg, transform, Vec4(Vec3(col) * 0.7f, 1.f));
     }
 }
 
 void Mesh::OctreeNode::subdivide(Mesh const& mesh)
 {
     u32 crossCount[3] = {};
-    glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
+    Vec3 center = (aabb.min + aabb.max) * 0.5f;
     for (u32 i=0; i<triangleIndices.size(); i+=3)
     {
         u32 j = triangleIndices[i+0] * mesh.stride / sizeof(f32);
-        glm::vec3 v0(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
+        Vec3 v0(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
         j = triangleIndices[i+1] * mesh.stride / sizeof(f32);
-        glm::vec3 v1(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
+        Vec3 v1(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
         j = triangleIndices[i+2] * mesh.stride / sizeof(f32);
-        glm::vec3 v2(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
+        Vec3 v2(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
 
-        glm::vec3 min = glm::min(glm::min(v0, v1), v2);
-        glm::vec3 max = glm::max(glm::max(v0, v1), v2);
+        Vec3 minP = min(min(v0, v1), v2);
+        Vec3 maxP = max(max(v0, v1), v2);
         for (u32 i=0; i<3; ++i)
         {
-            if (min[i] <= center[i] && max[i] >= center[i])
+            if (minP[i] <= center[i] && maxP[i] >= center[i])
             {
                 ++crossCount[i];
             }
@@ -75,9 +75,9 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
             f32 diff = (bb.max[i] - bb.min[i]) * 0.5f;
             if (diff * 2.f > MIN_SIZE)
             {
-                glm::vec3 dim = bb.max - bb.min;
+                Vec3 dim = bb.max - bb.min;
                 dim[i] *= 0.5f;
-                glm::vec3 off(0.f);
+                Vec3 off(0.f);
                 off[i] = diff;
 
                 splits.push_back({ bb.min, bb.min + dim});
@@ -99,7 +99,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
     for (u32 i=0; i<childBoxes.size(); ++i)
     {
         children[i].aabb = childBoxes[i];
-        childBoxes[i] = { glm::vec3(FLT_MAX), glm::vec3(-FLT_MAX) };
+        childBoxes[i] = { Vec3(FLT_MAX), Vec3(-FLT_MAX) };
     }
 
     Array<u32> indices(std::move(triangleIndices));
@@ -107,11 +107,11 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
     for (u32 i=0; i<indices.size(); i+=3)
     {
         u32 j = indices[i+0] * mesh.stride / sizeof(f32);
-        glm::vec3 v0(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
+        Vec3 v0(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
         j = indices[i+1] * mesh.stride / sizeof(f32);
-        glm::vec3 v1(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
+        Vec3 v1(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
         j = indices[i+2] * mesh.stride / sizeof(f32);
-        glm::vec3 v2(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
+        Vec3 v2(mesh.vertices[j+0], mesh.vertices[j+1], mesh.vertices[j+2]);
 
         u32 hitCount = 0;
         u32 hitIndex = 0;
@@ -141,8 +141,8 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
             children[hitIndex].triangleIndices.push_back(indices[i+0]);
             children[hitIndex].triangleIndices.push_back(indices[i+1]);
             children[hitIndex].triangleIndices.push_back(indices[i+2]);
-            childBoxes[hitIndex].min = glm::min(childBoxes[hitIndex].min, glm::min(glm::min(v0, v1), v2));
-            childBoxes[hitIndex].max = glm::max(childBoxes[hitIndex].max, glm::max(glm::max(v0, v1), v2));
+            childBoxes[hitIndex].min = min(childBoxes[hitIndex].min, min(min(v0, v1), v2));
+            childBoxes[hitIndex].max = max(childBoxes[hitIndex].max, max(max(v0, v1), v2));
         }
     }
 
@@ -162,7 +162,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
     }
 }
 
-bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, BoundingBox const& bb, Array<u32>& output) const
+bool Mesh::OctreeNode::intersect(Mesh const& mesh, Mat4 const& transform, BoundingBox const& bb, Array<u32>& output) const
 {
     if (aabb.intersects(bb))
     {
@@ -179,7 +179,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, glm::mat4 const& transform, B
     return false;
 }
 
-bool Mesh::intersect(glm::mat4 const& transform, BoundingBox bb, Array<u32>& output) const
+bool Mesh::intersect(Mat4 const& transform, BoundingBox bb, Array<u32>& output) const
 {
     bb = bb.transform(glm::inverse(transform));
     if (octree)

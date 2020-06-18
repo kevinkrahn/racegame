@@ -34,16 +34,16 @@ void Batcher::end(bool keepMeshData)
             }
             indicesCopied += item.mesh->numIndices;
 
-            glm::mat3 normalMatrix = glm::inverseTranspose(glm::mat3(item.transform));
+            Mat3 normalMatrix = glm::inverseTranspose(Mat3(item.transform));
             for (u32 i=0; i<item.mesh->numVertices; ++i)
             {
                 u32 j = i * item.mesh->stride / sizeof(f32);
-                glm::vec3 p(item.mesh->vertices[j+0], item.mesh->vertices[j+1], item.mesh->vertices[j+2]);
-                glm::vec3 n(item.mesh->vertices[j+3], item.mesh->vertices[j+4], item.mesh->vertices[j+5]);
-                glm::vec3 t(item.mesh->vertices[j+6], item.mesh->vertices[j+7], item.mesh->vertices[j+8]);
+                Vec3 p(item.mesh->vertices[j+0], item.mesh->vertices[j+1], item.mesh->vertices[j+2]);
+                Vec3 n(item.mesh->vertices[j+3], item.mesh->vertices[j+4], item.mesh->vertices[j+5]);
+                Vec3 t(item.mesh->vertices[j+6], item.mesh->vertices[j+7], item.mesh->vertices[j+8]);
 
-                p = item.transform * glm::vec4(p, 1.f);
-                n = glm::normalize(normalMatrix * n);
+                p = item.transform * Vec4(p, 1.f);
+                n = normalize(normalMatrix * n);
 
                 bigBatchedMesh.vertices[vertexElementIndex + 0] = p.x;
                 bigBatchedMesh.vertices[vertexElementIndex + 1] = p.y;
@@ -54,7 +54,7 @@ void Batcher::end(bool keepMeshData)
 
                 if (item.mesh->hasTangents)
                 {
-                    t = glm::normalize(normalMatrix * t);
+                    t = normalize(normalMatrix * t);
                     bigBatchedMesh.vertices[vertexElementIndex + 6] = t.x;
                     bigBatchedMesh.vertices[vertexElementIndex + 7] = t.y;
                     bigBatchedMesh.vertices[vertexElementIndex + 8] = t.z;

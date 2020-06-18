@@ -16,16 +16,16 @@ namespace ui
 
     struct Vertex
     {
-        glm::vec2 xy;
-        glm::vec2 uv;
+        Vec2 xy;
+        Vec2 uv;
     };
 
     struct Quad
     {
         Texture* tex;
         Vertex points[4];
-        glm::vec4 color1;
-        glm::vec4 color2;
+        Vec4 color1;
+        Vec4 color2;
         f32 alpha = 1.f;
     };
 
@@ -39,14 +39,14 @@ namespace ui
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
-    void rect(i32 priority, Texture* tex, glm::vec2 pos, glm::vec2 size,
-            glm::vec3 const& color=glm::vec3(1.f), f32 alpha=1.f)
+    void rect(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
+            Vec3 const& color=Vec3(1.f), f32 alpha=1.f)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", { {"GRADIENT"}, {"COLOR"} });
-        glm::vec2 t1(0.f);
-        glm::vec2 t2(1.f);
-        glm::vec2 p1 = pos;
-        glm::vec2 p2 = p1 + size;
+        Vec2 t1(0.f);
+        Vec2 t2(1.f);
+        Vec2 p1 = pos;
+        Vec2 p2 = p1 + size;
 
         Quad q;
         q.tex = tex ? tex : &g_res.white;
@@ -54,19 +54,19 @@ namespace ui
         q.points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
         q.points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };
         q.points[3] = { p2, t2 };
-        q.color1 = glm::vec4(color, 1.f);
-        q.color2 = glm::vec4(color, 1.f);
+        q.color1 = Vec4(color, 1.f);
+        q.color2 = Vec4(color, 1.f);
         q.alpha = alpha;
 
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
-    void rectUV(i32 priority, Texture* tex, glm::vec2 pos, glm::vec2 size,
-            glm::vec2 t1, glm::vec2 t2, glm::vec3 const& color=glm::vec3(1.f), f32 alpha=1.f)
+    void rectUV(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
+            Vec2 t1, Vec2 t2, Vec3 const& color=Vec3(1.f), f32 alpha=1.f)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", { {"GRADIENT"}, {"COLOR"} });
-        glm::vec2 p1 = pos;
-        glm::vec2 p2 = p1 + size;
+        Vec2 p1 = pos;
+        Vec2 p2 = p1 + size;
 
         Quad q;
         q.tex = tex ? tex : &g_res.white;
@@ -74,21 +74,21 @@ namespace ui
         q.points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
         q.points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };
         q.points[3] = { p2, t2 };
-        q.color1 = glm::vec4(color, 1.f);
-        q.color2 = glm::vec4(color, 1.f);
+        q.color1 = Vec4(color, 1.f);
+        q.color2 = Vec4(color, 1.f);
         q.alpha = alpha;
 
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
-    void rectBlur(i32 priority, Texture* tex, glm::vec2 pos, glm::vec2 size,
-            glm::vec4 const& color=glm::vec4(1.f), f32 alpha=1.f)
+    void rectBlur(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
+            Vec4 const& color=Vec4(1.f), f32 alpha=1.f)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", { {"GRADIENT"}, {"BLUR"} });
-        glm::vec2 t1(0.f);
-        glm::vec2 t2(1.f);
-        glm::vec2 p1 = pos;
-        glm::vec2 p2 = p1 + size;
+        Vec2 t1(0.f);
+        Vec2 t2(1.f);
+        Vec2 p1 = pos;
+        Vec2 p2 = p1 + size;
 
         Quad q;
         q.tex = tex ? tex : &g_res.white;
@@ -103,14 +103,14 @@ namespace ui
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
-    void rectBlur(i32 priority, Texture* tex, glm::vec2 pos, glm::vec2 size,
-            glm::vec4 const& color1, glm::vec4 const& color2, f32 alpha=1.f)
+    void rectBlur(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
+            Vec4 const& color1, Vec4 const& color2, f32 alpha=1.f)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", { {"GRADIENT"}, {"BLUR"} });
-        glm::vec2 t1(0.f);
-        glm::vec2 t2(1.f);
-        glm::vec2 p1 = pos;
-        glm::vec2 p2 = p1 + size;
+        Vec2 t1(0.f);
+        Vec2 t2(1.f);
+        Vec2 p1 = pos;
+        Vec2 p2 = p1 + size;
 
         Quad q;
         q.tex = tex ? tex : &g_res.white;
@@ -125,12 +125,12 @@ namespace ui
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
-    void rectUVBlur(i32 priority, Texture* tex, glm::vec2 pos, glm::vec2 size,
-            glm::vec2 t1, glm::vec2 t2, glm::vec4 const& color=glm::vec4(1.f), f32 alpha=1.f)
+    void rectUVBlur(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
+            Vec2 t1, Vec2 t2, Vec4 const& color=Vec4(1.f), f32 alpha=1.f)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", { {"GRADIENT"}, {"BLUR"} });
-        glm::vec2 p1 = pos;
-        glm::vec2 p2 = p1 + size;
+        Vec2 p1 = pos;
+        Vec2 p2 = p1 + size;
 
         Quad q;
         q.tex = tex ? tex : &g_res.white;
@@ -149,15 +149,15 @@ namespace ui
     {
         Font* font;
         const char* text;
-        glm::vec2 pos;
-        glm::vec3 color;
+        Vec2 pos;
+        Vec3 color;
         f32 alpha = 1.f;
         f32 scale = 1.f;
         HAlign halign;
         VAlign valign;
     };
 
-    void text(Font* font, const char* s, glm::vec2 pos, glm::vec3 color, f32 alpha=1.f,
+    void text(Font* font, const char* s, Vec2 pos, Vec3 color, f32 alpha=1.f,
             f32 scale=1.f, HAlign halign=HAlign::LEFT, VAlign valign=VAlign::TOP)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", {});

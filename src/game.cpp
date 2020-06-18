@@ -278,7 +278,7 @@ void Game::run()
         tempMem.clear();
 
         const f64 maxDeltaTime = 1.f / 30.f;
-        f64 delta = glm::min(getTime() - frameStartTime, maxDeltaTime);
+        f64 delta = min(getTime() - frameStartTime, maxDeltaTime);
         realDeltaTime = (f32)delta;
         deltaTime = (f32)(delta * timeDilation);
         currentTime += delta * timeDilation;

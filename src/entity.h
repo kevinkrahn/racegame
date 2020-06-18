@@ -29,10 +29,10 @@ struct ECS_Entity
 {
     std::string name;
     SmallArray<ECS_Component*, 8> components;
-    glm::vec3 position;
+    Vec3 position;
     u32 flags = ENTITY_NONE;
-    glm::quat rotation = glm::identity<glm::quat>();
-    glm::vec3 scale = glm::vec3(1.f);
+    Quat rotation = glm::identity<Quat>();
+    Vec3 scale = Vec3(1.f);
 
     /*
     void serialize(Serializer& s)
@@ -143,10 +143,10 @@ struct PropPrefabData
 class PlaceableEntity : public Entity
 {
 public:
-    glm::vec3 position;
-    glm::quat rotation = glm::identity<glm::quat>();
-    glm::vec3 scale = glm::vec3(1.f);
-    glm::mat4 transform;
+    Vec3 position;
+    Quat rotation = glm::identity<Quat>();
+    Vec3 scale = Vec3(1.f);
+    Mat4 transform;
     PxRigidActor* actor = nullptr;
     ActorUserData physicsUserData;
 
@@ -159,9 +159,9 @@ public:
 
     virtual void updateTransform(class Scene* scene)
     {
-        transform = glm::translate(glm::mat4(1.f), position)
+        transform = glm::translate(Mat4(1.f), position)
             * glm::mat4_cast(rotation)
-            * glm::scale(glm::mat4(1.f), scale);
+            * glm::scale(Mat4(1.f), scale);
         if (actor)
         {
             actor->setGlobalPose(PxTransform(convert(position), convert(rotation)));

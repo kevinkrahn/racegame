@@ -6,9 +6,9 @@
 
 struct SplinePoint
 {
-    glm::vec3 position;
-    glm::vec3 handleOffsetA;
-    glm::vec3 handleOffsetB;
+    Vec3 position;
+    Vec3 handleOffsetA;
+    Vec3 handleOffsetB;
 
     void serialize(Serializer& s)
     {
@@ -68,9 +68,9 @@ public:
 
     struct PolyLinePoint
     {
-        glm::vec3 pos;
+        Vec3 pos;
         f32 distanceToHere;
-        glm::vec3 dir;
+        Vec3 dir;
         f32 distance; // distance at next point
     };
 

@@ -20,10 +20,10 @@ void Spline::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         SplinePoint const& point = points[i];
         SplinePoint const& prevPoint = points[i-1];
-        glm::vec3 prevP;
+        Vec3 prevP;
         for (f32 t=0.f; t<=1.f; t+=0.01f)
         {
-            glm::vec3 p = pointOnBezierCurve(
+            Vec3 p = pointOnBezierCurve(
                     prevPoint.position,
                     prevPoint.position + prevPoint.handleOffsetB,
                     point.position + point.handleOffsetA,
@@ -46,7 +46,7 @@ void Spline::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         if (rm.material)
         {
-            rm.material->draw(rw, glm::mat4(1.f), &rm.mesh);
+            rm.material->draw(rw, Mat4(1.f), &rm.mesh);
         }
     }
 }
@@ -57,7 +57,7 @@ void Spline::onBatch(Batcher& batcher)
     {
         if (rm.material)
         {
-            batcher.add(rm.material, glm::mat4(1.f), &rm.mesh);
+            batcher.add(rm.material, Mat4(1.f), &rm.mesh);
         }
     }
 }
@@ -68,7 +68,7 @@ void Spline::onRenderOutline(RenderWorld* rw, Scene* scene, f32 deltaTime)
     {
         if (rm.material)
         {
-            rm.material->drawHighlight(rw, glm::mat4(1.f), &rm.mesh, 4);
+            rm.material->drawHighlight(rw, Mat4(1.f), &rm.mesh, 4);
         }
     }
 }
@@ -116,15 +116,15 @@ void Spline::updateMesh(Scene* scene)
         SplinePoint const& nextPoint = points[i+1];
         for (u32 step=0; step<steps; ++step)
         {
-            glm::vec3 pos = pointOnBezierCurve(
+            Vec3 pos = pointOnBezierCurve(
                     point.position,
                     point.position + point.handleOffsetB,
                     nextPoint.position + nextPoint.handleOffsetA,
                     nextPoint.position, step / (f32)steps);
 
             PxRaycastBuffer hit;
-            if (scene->raycastStatic(pos + glm::vec3(0, 0, 3),
-                        glm::vec3(0, 0, -1), 6.f, &hit, stickToGroundCollisionFlags))
+            if (scene->raycastStatic(pos + Vec3(0, 0, 3),
+                        Vec3(0, 0, -1), 6.f, &hit, stickToGroundCollisionFlags))
             {
                 pos.z = hit.block.position.z + zGroundOffset;
             }
@@ -133,10 +133,10 @@ void Spline::updateMesh(Scene* scene)
         }
     }
 
-    glm::vec3 lastPos = points.back().position;
+    Vec3 lastPos = points.back().position;
     PxRaycastBuffer hit;
-    if (scene->raycastStatic(lastPos + glm::vec3(0, 0, 3),
-                glm::vec3(0, 0, -1), 6.f, &hit, stickToGroundCollisionFlags))
+    if (scene->raycastStatic(lastPos + Vec3(0, 0, 3),
+                Vec3(0, 0, -1), 6.f, &hit, stickToGroundCollisionFlags))
     {
         lastPos.z = hit.block.position.z;
     }
@@ -145,12 +145,12 @@ void Spline::updateMesh(Scene* scene)
     f32 pathLength = 0;
     for (size_t i=0; i<polyLine.size()-1; ++i)
     {
-        glm::vec3 diff = polyLine[i+1].pos - polyLine[i].pos;
+        Vec3 diff = polyLine[i+1].pos - polyLine[i].pos;
         f32 thisPathLength = pathLength;
-        pathLength += glm::length(diff);
+        pathLength += length(diff);
         polyLine[i].distanceToHere = thisPathLength;
         polyLine[i].distance = pathLength;
-        polyLine[i].dir = glm::normalize(diff);
+        polyLine[i].dir = normalize(diff);
     }
     polyLine.pop_back();
 
@@ -223,9 +223,9 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
         for (u32 i=0; i<sourceMesh->numVertices; ++i)
         {
             u32 j = i * sourceMesh->stride / sizeof(f32);
-            glm::vec3 p(sourceMesh->vertices[j+0], sourceMesh->vertices[j+1], sourceMesh->vertices[j+2]);
-            glm::vec3 n(sourceMesh->vertices[j+3], sourceMesh->vertices[j+4], sourceMesh->vertices[j+5]);
-            glm::vec3 t(sourceMesh->vertices[j+6], sourceMesh->vertices[j+7], sourceMesh->vertices[j+8]);
+            Vec3 p(sourceMesh->vertices[j+0], sourceMesh->vertices[j+1], sourceMesh->vertices[j+2]);
+            Vec3 n(sourceMesh->vertices[j+3], sourceMesh->vertices[j+4], sourceMesh->vertices[j+5]);
+            Vec3 t(sourceMesh->vertices[j+6], sourceMesh->vertices[j+7], sourceMesh->vertices[j+8]);
             p.x -= sourceMesh->aabb.min.x;
             p *= meshScale;
             p.x *= sourceMeshScaleFactor;
@@ -241,21 +241,21 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
             }
             PolyLinePoint const& line = polyLine[pointIndex];
 
-            glm::vec3 xDir = line.dir;
-            glm::vec3 yDir = glm::normalize(glm::cross(glm::vec3(0, 0, 1), xDir));
-            glm::vec3 zDir = glm::normalize(glm::cross(xDir, yDir));
+            Vec3 xDir = line.dir;
+            Vec3 yDir = normalize(cross(Vec3(0, 0, 1), xDir));
+            Vec3 zDir = normalize(cross(xDir, yDir));
 
-            glm::mat3 m(1.f);
+            Mat3 m(1.f);
             m[0] = xDir;
             m[1] = yDir;
             m[2] = zDir;
 
-            glm::vec3 dp = line.pos + line.dir *
+            Vec3 dp = line.pos + line.dir *
                 (distanceAlongPath - line.distanceToHere) + m * p;
 
             // bend normal and tangent
-            glm::vec3 dn = glm::normalize(m * n);
-            glm::vec3 dt = glm::normalize(m * t);
+            Vec3 dn = normalize(m * n);
+            Vec3 dt = normalize(m * t);
 
 #if 0
             uv.x = (distanceAlongPath + p.x) * invMeshWidth;

@@ -44,7 +44,7 @@ void ModelEditor::setModel(Model* model)
     physicsScene->addActor(*body);
 #endif
 
-    BoundingBox bb = model->getBoundingbox(glm::mat4(1.f));
+    BoundingBox bb = model->getBoundingbox(Mat4(1.f));
     f32 height = bb.max.z - bb.min.z;
     camera.setCameraDistance(18 + height);
 }
@@ -364,8 +364,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         f32 cellSize = 4.f;
         i32 count = (i32)(40.f / cellSize);
         f32 gridSize = count * cellSize;
-        glm::vec4 color = { 1.f, 1.f, 1.f, 0.2f };
-        glm::vec3 gridPos = { 0, 0, 0 };
+        Vec4 color = { 1.f, 1.f, 1.f, 0.2f };
+        Vec3 gridPos = { 0, 0, 0 };
         for (i32 i=-count; i<=count; i++)
         {
             f32 x = i * cellSize;
@@ -406,11 +406,11 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 #endif
 
     RenderWorld* rw = renderer->getRenderWorld();
-    //glm::vec3 rayDir = camera.getMouseRay(rw);
+    //Vec3 rayDir = camera.getMouseRay(rw);
     //Camera const& cam = camera.getCamera();
     rw->updateWorldTime(g_game.currentTime);
-    //rw->setShadowBounds(model->getBoundingbox(glm::mat4(1.f)).expand(5.f));
-    rw->setShadowBounds(BoundingBox{ glm::vec3(-50), glm::vec3(50) });
+    //rw->setShadowBounds(model->getBoundingbox(Mat4(1.f)).expand(5.f));
+    rw->setShadowBounds(BoundingBox{ Vec3(-50), Vec3(50) });
 
     if (const u32* pixelID = rw->getPickPixelResult())
     {
@@ -449,7 +449,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             }
         }
         rw->pickPixel(g_input.getMousePosition()
-                / glm::vec2(g_game.windowWidth, g_game.windowHeight));
+                / Vec2(g_game.windowWidth, g_game.windowHeight));
         selectionStateCtrl = g_input.isKeyDown(KEY_LCTRL);
         selectionStateShift = g_input.isKeyDown(KEY_LSHIFT);
     }
@@ -457,7 +457,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     if (showFloor)
     {
         drawSimple(rw, g_res.getModel("misc")->getMeshByName("world.Quad"), &g_res.white,
-                    glm::scale(glm::mat4(1.f), glm::vec3(40.f)), glm::vec3(0.1f));
+                    glm::scale(Mat4(1.f), Vec3(40.f)), Vec3(0.1f));
     }
 
     for (u32 i=0; i<(u32)model->objects.size(); ++i)
@@ -484,10 +484,10 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
     if (showBoundingBox)
     {
-        BoundingBox bb = model->getBoundingbox(glm::mat4(1.f));
+        BoundingBox bb = model->getBoundingbox(Mat4(1.f));
 
 #if 0
-        glm::vec3 points[] = {
+        Vec3 points[] = {
             { bb.min.x, bb.min.y, bb.min.z },
             { bb.min.x, bb.max.y, bb.min.z },
             { bb.max.x, bb.min.y, bb.min.z },
@@ -501,26 +501,26 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         bool allPointsVisible = true;
         for (auto& p : points)
         {
-            glm::vec4 tp = rw->getCamera(0).viewProjection * glm::vec4(p, 1.f);
+            Vec4 tp = rw->getCamera(0).viewProjection * Vec4(p, 1.f);
             tp.x = (((tp.x / tp.w) + 1.f) / 2.f);
             tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f);
             if (tp.x < 0.f || tp.x > 1.f || tp.y < 0.f || tp.y > 1.f)
             {
                 allPointsVisible = false;
                 drawSimple(rw, g_res.getMesh("world.Sphere"), &g_res,white,
-                            glm::translate(glm::mat4(1.f), p));
+                            glm::translate(Mat4(1.f), p));
             }
             else
             {
                 drawSimple(rw, g_res.getMesh("world.Sphere"), &g_res.white,
-                            glm::translate(glm::mat4(1.f), p), glm::vec4(0, 1, 0, 1));
+                            glm::translate(Mat4(1.f), p), Vec4(0, 1, 0, 1));
             }
         }
 
-        debugDraw.boundingBox(bb, glm::mat4(1.f),
-                allPointsVisible ? glm::vec4(0, 1, 0, 1) : glm::vec4(1));
+        debugDraw.boundingBox(bb, Mat4(1.f),
+                allPointsVisible ? Vec4(0, 1, 0, 1) : Vec4(1));
 #else
-        debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1));
+        debugDraw.boundingBox(bb, Mat4(1.f), Vec4(1));
 #endif
     }
 
@@ -661,9 +661,9 @@ void ModelEditor::processBlenderData()
 
         modelObj->meshIndex = *meshIt;
         modelObj->name = std::move(obj["name"]).string().val();
-        glm::mat4 matrix = obj["matrix"].convertBytes<glm::mat4>().val();
+        Mat4 matrix = obj["matrix"].convertBytes<Mat4>().val();
         modelObj->position = translationOf(matrix);
-        modelObj->rotation = glm::quat_cast(glm::mat3(rotationOf(matrix)));
+        modelObj->rotation = glm::quat_cast(Mat3(rotationOf(matrix)));
         modelObj->scale = scaleOf(matrix);
         modelObj->bounds = obj["bounds"].vec3().val();
 

@@ -50,10 +50,10 @@ GLuint emptyVAO;
 
 struct Camera
 {
-    glm::vec3 position;
-    glm::mat4 view;
-    glm::mat4 projection;
-    glm::mat4 viewProjection;
+    Vec3 position;
+    Mat4 view;
+    Mat4 projection;
+    Mat4 viewProjection;
     f32 fov;
     f32 nearPlane;
     f32 farPlane;
@@ -64,8 +64,8 @@ const u32 MAX_VIEWPORTS = 4;
 struct ViewportLayout
 {
     f32 fov;
-    glm::vec2 scale;
-    glm::vec2 offsets[MAX_VIEWPORTS];
+    Vec2 scale;
+    Vec2 offsets[MAX_VIEWPORTS];
 };
 
 ViewportLayout viewportLayout[MAX_VIEWPORTS] = {
@@ -94,7 +94,7 @@ struct Framebuffers
 
     SmallArray<GLuint> bloomFramebuffers;
     SmallArray<GLuint> bloomColorTextures;
-    SmallArray<glm::ivec2> bloomBufferSize;
+    SmallArray<Vec2i> bloomBufferSize;
 
     GLuint shadowFramebuffer;
     GLuint shadowDepthTexture;
@@ -127,9 +127,9 @@ const u32 LIGHT_SPLITS = 12;
 
 struct PointLight
 {
-    glm::vec3 position;
+    Vec3 position;
     f32 radius;
-    glm::vec3 color;
+    Vec3 color;
     f32 falloff;
 };
 
@@ -142,18 +142,18 @@ struct LightPartition
 
 struct WorldInfo
 {
-    glm::mat4 orthoProjection;
-    glm::vec3 sunDirection;
+    Mat4 orthoProjection;
+    Vec3 sunDirection;
     f32 time;
-    glm::vec3 sunColor;
+    Vec3 sunColor;
     f32 pad;
-    glm::mat4 cameraViewProjection;
-    glm::mat4 cameraProjection;
-    glm::mat4 cameraView;
-    glm::vec4 cameraPosition;
-    glm::mat4 shadowViewProjectionBias;
+    Mat4 cameraViewProjection;
+    Mat4 cameraProjection;
+    Mat4 cameraView;
+    Vec4 cameraPosition;
+    Mat4 shadowViewProjectionBias;
     LightPartition lightPartitions[LIGHT_SPLITS][LIGHT_SPLITS];
-    glm::vec2 invResolution;
+    Vec2 invResolution;
     f32 pad2[2];
 };
 
@@ -173,7 +173,7 @@ class RenderWorld
 
     u32 width = 0, height = 0;
     u32 settingsVersion = 0;
-    glm::vec4 clearColor = { 0.15f, 0.35f, 0.9f, 1.f };
+    Vec4 clearColor = { 0.15f, 0.35f, 0.9f, 1.f };
     bool clearColorEnabled = false;
 
     const char* name = "";
@@ -182,8 +182,8 @@ class RenderWorld
     SmallArray<Camera, MAX_VIEWPORTS> cameras = { {} };
     SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
     SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
-    glm::vec4 highlightColor[MAX_VIEWPORTS] = {};
-    glm::vec2 motionBlur[MAX_VIEWPORTS];
+    Vec4 highlightColor[MAX_VIEWPORTS] = {};
+    Vec2 motionBlur[MAX_VIEWPORTS];
     Array<PointLight> pointLights;
 
     BoundingBox shadowBounds;
@@ -200,7 +200,7 @@ class RenderWorld
     bool bloomEnabled = false;
     struct PickPixelResult
     {
-        glm::vec2 pickPos;
+        Vec2 pickPos;
         GLuint pbo = 0;
         GLsync fence = 0;
         u32 pickID = 0;
@@ -264,7 +264,7 @@ public:
     void setName(const char* name) { this->name = name; }
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const { return cameras.size(); }
-    Camera& setViewportCamera(u32 index, glm::vec3 const& from, glm::vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
+    Camera& setViewportCamera(u32 index, Vec3 const& from, Vec3 const& to, f32 nearPlane=0.5f, f32 farPlane=500.f, f32 fov=0.f);
     Camera& getCamera(u32 index) { return cameras[index]; }
     u32 getWidth() const { return width; }
     u32 getHeight() const { return height; }
@@ -277,26 +277,26 @@ public:
             createFramebuffers();
         }
     }
-    void setClearColor(bool enabled, glm::vec4 const& color={ 0.15f, 0.35f, 0.9f, 1.f })
+    void setClearColor(bool enabled, Vec4 const& color={ 0.15f, 0.35f, 0.9f, 1.f })
     {
         clearColorEnabled = enabled;
         clearColor = color;
     }
 
-    void addPointLight(glm::vec3 const& position, glm::vec3 const& color, f32 radius, f32 falloff);
-    //void addSpotLight(glm::vec3 const& position, glm::vec3 const& direction, glm::vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
-    void addDirectionalLight(glm::vec3 const& direction, glm::vec3 const& color);
-    void setMotionBlur(u32 viewportIndex, glm::vec2 const& motionBlur);
+    void addPointLight(Vec3 const& position, Vec3 const& color, f32 radius, f32 falloff);
+    //void addSpotLight(Vec3 const& position, Vec3 const& direction, Vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
+    void addDirectionalLight(Vec3 const& direction, Vec3 const& color);
+    void setMotionBlur(u32 viewportIndex, Vec2 const& motionBlur);
 
     void updateWorldTime(f64 time);
     void createFramebuffers();
     void clear();
-    void setHighlightColor(u32 viewportIndex, glm::vec4 const& color)
+    void setHighlightColor(u32 viewportIndex, Vec4 const& color)
     {
         highlightColor[viewportIndex] = color;
     }
 
-    void pickPixel(glm::vec2 pos)
+    void pickPixel(Vec2 pos)
     {
         PickPixelResult result;
         result.pickPos = pos;

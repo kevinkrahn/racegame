@@ -14,8 +14,8 @@ class Start : public PlaceableEntity
 public:
     Start()
     {
-        position = glm::vec3(0, 0, 3);
-        rotation = glm::rotate(glm::identity<glm::quat>(), glm::vec3(0, 0, PI));
+        position = Vec3(0, 0, 3);
+        rotation = glm::rotate(glm::identity<Quat>(), Vec3(0, 0, PI));
         model = g_res.getModel("start");
     }
 

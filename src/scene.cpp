@@ -79,7 +79,7 @@ Scene::Scene(TrackData* data)
     track->buildTrackGraph(&trackGraph, start->transform);
     trackPreviewPosition = start->position;
     trackPreviewCameraTarget = trackPreviewPosition;
-    trackPreviewCameraFrom = trackPreviewPosition + glm::vec3(0, 0, 5);
+    trackPreviewCameraFrom = trackPreviewPosition + Vec3(0, 0, 5);
 
     if (!g_game.isEditing)
     {
@@ -103,7 +103,7 @@ void Scene::startRace()
         error("There is no starting point!");
         return;
     }
-    glm::mat4 const& start = this->start->transform;
+    Mat4 const& start = this->start->transform;
 
     u32 driversPerRow = 5;
     f32 width = 16 * scaleOf(this->start->transform).y;
@@ -169,12 +169,12 @@ void Scene::startRace()
             ++numHumanDrivers;
         }
 
-        //glm::vec3 offset = -glm::vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
-        glm::vec3 offset = -glm::vec3(
+        //Vec3 offset = -Vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
+        Vec3 offset = -Vec3(
                 6 + i / driversPerRow * 8,
                 -(width/2) + (i % driversPerRow) * (width / (driversPerRow - 1)),
                 0.f);
-        glm::vec3 zdir = glm::normalize(zAxisOf(start));
+        Vec3 zdir = normalize(zAxisOf(start));
 
         PxRaycastBuffer hit;
         if (!raycastStatic(translationOf(glm::translate(start, offset + zdir * 10.f)),
@@ -186,7 +186,7 @@ void Scene::startRace()
         }
 
         VehicleTuning tuning = driverInfo.driver->getTuning();
-        glm::mat4 vehicleTransform = glm::translate(glm::mat4(1.f),
+        Mat4 vehicleTransform = glm::translate(Mat4(1.f),
                 convert(hit.block.position + hit.block.normal *
                     tuning.getRestOffset())) * rotationOf(start);
 
@@ -294,9 +294,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
             [](auto& d) { return d.hasCamera; });
     rw->setViewportCount(viewportCount);
-    //rw->addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.0));
+    //rw->addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
     // TODO: make light direction configurable in editor
-    rw->addDirectionalLight(glm::vec3(0.2f, 0.5f, -0.8f), glm::vec3(1.0));
+    rw->addDirectionalLight(Vec3(0.2f, 0.5f, -0.8f), Vec3(1.0));
 
     if (!isPaused)
     {
@@ -308,30 +308,30 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             readyToGo = true;
         }
 
-        SmallArray<glm::vec3> listenerPositions;
+        SmallArray<Vec3> listenerPositions;
         if (!g_game.isEditing && !isRaceInProgress && isCameraTourEnabled
                 && trackGraph.getPaths().size() > 0)
         {
             // move the camera around the track
             auto path = trackGraph.getPaths()[0];
-            glm::vec3 targetP = path[currentTrackPreviewPoint]->position;
-            glm::vec3 diff = targetP - trackPreviewPosition;
-            if (glm::length2(diff) < square(30.f))
+            Vec3 targetP = path[currentTrackPreviewPoint]->position;
+            Vec3 diff = targetP - trackPreviewPosition;
+            if (length2(diff) < square(30.f))
             {
                 currentTrackPreviewPoint = (currentTrackPreviewPoint + 1) % (u32)path.size();
             }
             f32 accel = 8.0f;
-            trackPreviewVelocity += glm::normalize(diff) * deltaTime * accel;
+            trackPreviewVelocity += normalize(diff) * deltaTime * accel;
             f32 maxSpeed = 15.f;
-            if (glm::length(trackPreviewVelocity) > maxSpeed)
+            if (length(trackPreviewVelocity) > maxSpeed)
             {
-                trackPreviewVelocity = glm::normalize(trackPreviewVelocity) * maxSpeed;
+                trackPreviewVelocity = normalize(trackPreviewVelocity) * maxSpeed;
             }
             trackPreviewPosition += trackPreviewVelocity * deltaTime;
 
             f32 camDistance = 100.f;
-            glm::vec3 cameraTarget = trackPreviewPosition;
-            glm::vec3 cameraFrom = cameraTarget + glm::normalize(glm::vec3(1.f, 1.f, 1.25f)) * camDistance;
+            Vec3 cameraTarget = trackPreviewPosition;
+            Vec3 cameraFrom = cameraTarget + normalize(Vec3(1.f, 1.f, 1.25f)) * camDistance;
 
             trackPreviewCameraTarget = smoothMove(trackPreviewCameraTarget, cameraTarget, 5.f, deltaTime);
             trackPreviewCameraFrom = smoothMove(trackPreviewCameraFrom, cameraFrom, 5.f, deltaTime);
@@ -350,7 +350,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
         else
         {
-            rw->setMotionBlur(0, glm::vec2(0.f));
+            rw->setMotionBlur(0, Vec2(0.f));
         }
 
         // update vehicles
@@ -476,7 +476,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
         Camera const& cam = rw->getCamera(0);
         BoundingBox bb = computeCameraFrustumBoundingBox(glm::inverse(cam.viewProjection));
-        debugDraw.boundingBox(bb, glm::mat4(1.f), glm::vec4(1.f));
+        debugDraw.boundingBox(bb, Mat4(1.f), Vec4(1.f));
 
         physicsScene->setVisualizationCullingBox(PxBounds3(convert(bb.min), convert(bb.max)));
 
@@ -506,7 +506,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         for (auto& path : paths)
         {
-            glm::vec4 color(1.f, 1.f, 0.f, 1.f);
+            Vec4 color(1.f, 1.f, 0.f, 1.f);
             for (u32 i=1; i<path.points.size(); ++i)
             {
                 debugDraw.line(path.points[i-1].position, path.points[i].position, color, color);
@@ -524,34 +524,34 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     if (isRaceInProgress)
     {
         u32 size = (u32)(g_game.windowHeight * 0.39f * g_game.config.gameplay.hudTrackScale);
-        glm::vec2 hudTrackPos;
+        Vec2 hudTrackPos;
         if (viewportCount == 1)
         {
-            hudTrackPos = glm::vec2(size * 0.5f + 15.f) + glm::vec2(0, 15);
+            hudTrackPos = Vec2(size * 0.5f + 15.f) + Vec2(0, 15);
         }
         else if (viewportCount == 2)
         {
-            hudTrackPos = glm::vec2(g_game.windowWidth * 0.5f, size * 0.5f + 15.f);
+            hudTrackPos = Vec2(g_game.windowWidth * 0.5f, size * 0.5f + 15.f);
         }
         /*
         else if (viewportCount == 2)
         {
-            hudTrackPos = glm::vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
+            hudTrackPos = Vec2(size * 0.5f + 60, g_game.windowHeight * 0.5f);
         }
         */
         else if (viewportCount == 3)
         {
-            hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
+            hudTrackPos = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.75f;
         }
         else if (viewportCount == 4)
         {
-            hudTrackPos = glm::vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+            hudTrackPos = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
         }
 
         updateTrackPreview(renderer, size);
         if (!(isPaused && renderer->getRenderWorld()->getViewportCount() == 4))
         {
-            glm::vec2 size = trackPreview2D.getSize();
+            Vec2 size = trackPreview2D.getSize();
             ui::rectUV(ui::IMAGE, trackPreview2D.getTexture(), hudTrackPos-size*0.5f,
                         size, {0,1}, {1,0});
         }
@@ -566,7 +566,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
 void Scene::physicsMouseDrag(Renderer* renderer)
 {
-    static glm::vec3 dragPlaneOffset;
+    static Vec3 dragPlaneOffset;
     static Vehicle* dragVehicle = nullptr;
     static f32 previousLinearDamping;
     static f32 previousAngularDamping;
@@ -592,7 +592,7 @@ void Scene::physicsMouseDrag(Renderer* renderer)
             }
         }
 
-        glm::vec3 rayDir = editorCamera.getMouseRay(renderer->getRenderWorld());
+        Vec3 rayDir = editorCamera.getMouseRay(renderer->getRenderWorld());
         if (g_input.isMouseButtonPressed(MOUSE_LEFT))
         {
             PxRaycastBuffer hit;
@@ -630,7 +630,7 @@ void Scene::physicsMouseDrag(Renderer* renderer)
             {
                 f32 hitDist = rayPlaneIntersection(editorCamera.getCameraFrom(), rayDir,
                         -rayDir, editorCamera.getCameraFrom() + dragPlaneOffset);
-                glm::vec3 hitPoint = editorCamera.getCameraFrom() + rayDir * hitDist;
+                Vec3 hitPoint = editorCamera.getCameraFrom() + rayDir * hitDist;
                 PxTransform globalFrame(PxIdentity);
                 globalFrame.p = convert(hitPoint);
                 dragJoint->setLocalPose(PxJointActorIndex::eACTOR1, globalFrame);
@@ -691,19 +691,19 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     {
         hasTrackPreview = true;
 
-        glm::vec3 bbCenter = (bb.min + bb.max) * 0.5f;
-        glm::vec3 dir = glm::normalize(glm::vec3(1.f));
+        Vec3 bbCenter = (bb.min + bb.max) * 0.5f;
+        Vec3 dir = normalize(Vec3(1.f));
         f32 dist = 850.f;
-        glm::vec3 camPosition;
-        glm::mat4 viewProjection;
+        Vec3 camPosition;
+        Mat4 viewProjection;
         for (u32 i=1; i<150; ++i)
         {
-            camPosition = (bbCenter - glm::vec3(0, 0, 20)) + dir * dist;
-            glm::mat4 view = glm::lookAt(camPosition, bbCenter, glm::vec3(0, 0, 1));
-            glm::mat4 projection = glm::perspective(glm::radians(26.f), 1.f, 1.f, 2500.f);
+            camPosition = (bbCenter - Vec3(0, 0, 20)) + dir * dist;
+            Mat4 view = lookAt(camPosition, bbCenter, Vec3(0, 0, 1));
+            Mat4 projection = perspective(radians(26.f), 1.f, 1.f, 2500.f);
             viewProjection = projection * view;
 
-            glm::vec3 points[] = {
+            Vec3 points[] = {
                 { bb.min.x, bb.min.y, bb.min.z },
                 { bb.min.x, bb.max.y, bb.min.z },
                 { bb.max.x, bb.min.y, bb.min.z },
@@ -718,7 +718,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
             f32 margin = 0.01f;
             for (auto& p : points)
             {
-                glm::vec4 tp = viewProjection * glm::vec4(p, 1.f);
+                Vec4 tp = viewProjection * Vec4(p, 1.f);
                 tp.x = (((tp.x / tp.w) + 1.f) / 2.f);
                 tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f);
                 if (tp.x < margin || tp.x > 1.f - margin || tp.y < margin || tp.y > 1.f - margin)
@@ -742,20 +742,20 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     //Mesh* startMesh = &g_res.getModel("misc")->meshes.front();
     Mesh* startMesh = &g_res.getModel("HUDStart")->meshes.back();
     trackPreview2D.drawItem(
-        startMesh->vao, startMesh->numIndices, start->transform, glm::vec3(1.f), false);
+        startMesh->vao, startMesh->numIndices, start->transform, Vec3(1.f), false);
 
     Mesh* trackMesh = track->getPreviewMesh(this);
-    trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, glm::mat4(1.f),
-            glm::vec3(1.f), true, 1);
+    trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, Mat4(1.f),
+            Vec3(1.f), true, 1);
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices,
-            glm::translate(glm::mat4(1.f), { 0, 0, -5 }), glm::vec3(0.2f), true, 0);
+            glm::translate(Mat4(1.f), { 0, 0, -5 }), Vec3(0.2f), true, 0);
     /*
     for (u32 i=0; i<20; ++i)
     {
         trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices,
-                glm::translate(glm::mat4(1.f),
+                glm::translate(Mat4(1.f),
                     { 0, 0, track->getBoundingBox().min.z - 7.f + (i/20.f * 7.f)})
-                    * glm::scale(glm::mat4(1.f), { 1, 1, i/20.f }), glm::vec3(0.18f), true, 0);
+                    * glm::scale(Mat4(1.f), { 1, 1, i/20.f }), Vec3(0.18f), true, 0);
     }
     */
 
@@ -764,8 +764,8 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     for (auto const& v : vehicles)
     {
         trackPreview2D.drawItem(sphereMesh->vao, sphereMesh->numIndices,
-            glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2.1f) + v->getPosition())
-                * glm::scale(glm::mat4(1.f), glm::vec3(5.1f)),
+            glm::translate(Mat4(1.f), Vec3(0, 0, 2.1f) + v->getPosition())
+                * glm::scale(Mat4(1.f), Vec3(5.1f)),
             v->getDriver()->getVehicleConfig()->color, false, 2);
         /*
         trackPreview2D.drawItem(cubeMesh->vao, cubeMesh->numIndices, v->getTransform(),
@@ -780,17 +780,17 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     bb.max.x += pad;
     bb.max.y += pad;
 
-    glm::vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
+    Vec3 offset = -(bb.min + (bb.max - bb.min) * 0.5f);
 
     f32 rot = PI * 0.25f;
-    glm::mat4 transform = glm::rotate(glm::mat4(1.f), f32(rot), { 0, 0, 1 })
-            * glm::translate(glm::mat4(1.f), offset);
+    Mat4 transform = glm::rotate(Mat4(1.f), f32(rot), { 0, 0, 1 })
+            * glm::translate(Mat4(1.f), offset);
     bb = bb.transform(transform);
-    f32 radius = glm::max(bb.max.x, glm::max(bb.max.y, bb.max.z));
-    bb.min = glm::vec3(-radius);
-    bb.max = glm::vec3(radius);
+    f32 radius = max(bb.max.x, max(bb.max.y, bb.max.z));
+    bb.min = Vec3(-radius);
+    bb.max = Vec3(radius);
 
-    glm::mat4 trackOrtho = glm::ortho(bb.max.x, bb.min.x, bb.min.y,
+    Mat4 trackOrtho = glm::ortho(bb.max.x, bb.min.x, bb.min.y,
                 bb.max.y, -bb.max.z - 10.f, -bb.min.z + 10.f) * transform;
 
     trackPreview2D.setCamViewProjection(trackOrtho);
@@ -799,21 +799,21 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
     trackPreview2D.drawItem(
         quadMesh->vao, quadMesh->numIndices,
-        start->transform * glm::translate(glm::mat4(1.f), { 0, 0, -2 })
-            * glm::scale(glm::mat4(1.f), { 4, 24, 1 }), glm::vec3(0.03f), true);
+        start->transform * glm::translate(Mat4(1.f), { 0, 0, -2 })
+            * glm::scale(Mat4(1.f), { 4, 24, 1 }), Vec3(0.03f), true);
 
     Mesh* trackMesh = track->getPreviewMesh(this);
-    trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, glm::mat4(1.f),
-            glm::vec3(1.f), true, 1);
+    trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, Mat4(1.f),
+            Vec3(1.f), true, 1);
 
     Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.TrackArrow");
     for (auto const& v : vehicles)
     {
-        glm::vec3 pos = v->getPosition();
+        Vec3 pos = v->getPosition();
         trackPreview2D.drawItem(mesh->vao, mesh->numIndices,
-            glm::translate(glm::mat4(1.f), glm::vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
-                * glm::rotate(glm::mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
-                * glm::scale(glm::mat4(1.f), glm::vec3(10.f)),
+            glm::translate(Mat4(1.f), Vec3(0, 0, 2 + v->vehicleIndex*0.01) + pos)
+                * glm::rotate(Mat4(1.f), pointDirection(pos, pos + v->getForwardVector()) + f32(M_PI) * 0.5f, { 0, 0, 1 })
+                * glm::scale(Mat4(1.f), Vec3(10.f)),
             v->getDriver()->getVehicleConfig()->color, false, 0);
     }
 #endif
@@ -850,13 +850,13 @@ void Scene::attackCredit(u32 instigator, u32 victim)
         {
             ++vehicles[victim]->raceStatistics.destroyed;
             ++vehicles[instigator]->raceStatistics.frags;
-            vehicles[instigator]->addBonus("ATTACK BONUS", ATTACK_BONUS_AMOUNT, glm::vec3(1.f));
+            vehicles[instigator]->addBonus("ATTACK BONUS", ATTACK_BONUS_AMOUNT, Vec3(1.f));
             std::string instigatorName = vehicles[instigator]->driver->playerName;
             for (auto& ch : instigatorName)
             {
                 ch = toupper(ch);
             }
-            vehicles[victim]->addNotification("DESTROYED", 2.f, glm::vec3(1.f, 0.3f, 0.02f));
+            vehicles[victim]->addNotification("DESTROYED", 2.f, Vec3(1.f, 0.3f, 0.02f));
         }
     }
 }
@@ -927,53 +927,53 @@ void Scene::buildRaceResults()
     }
 }
 
-void Scene::applyAreaForce(glm::vec3 const& position, f32 strength) const
+void Scene::applyAreaForce(Vec3 const& position, f32 strength) const
 {
     for (auto& v : vehicles)
     {
-        f32 dist = glm::distance(v->getPosition(), position);
+        f32 dist = distance(v->getPosition(), position);
         f32 radius = strength * 1.5f;
         if (dist < radius)
         {
-            v->shakeScreen(glm::pow(
-                        glm::clamp(1.f - dist / radius, 0.f, 1.f), 0.5f) * radius);
+            v->shakeScreen(powf(
+                        clamp(1.f - dist / radius, 0.f, 1.f), 0.5f) * radius);
         }
     }
     // TODO: apply force to nearby physics bodies
 }
 
-void Scene::createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength)
+void Scene::createExplosion(Vec3 const& position, Vec3 const& velocity, f32 strength)
 {
     applyAreaForce(position, strength);
     for (u32 i=0; i<8; ++i)
     {
         f32 s = random(randomSeries, 0.3f, 0.9f);
         f32 size = strength * 0.1f;
-        glm::vec3 offset = glm::vec3(
+        Vec3 offset = Vec3(
             random(randomSeries, -1.f, 1.f),
             random(randomSeries, -1.f, 1.f),
             random(randomSeries, -1.f, 1.f)) * size;
-        glm::vec3 vel = glm::normalize(glm::vec3(
+        Vec3 vel = normalize(Vec3(
             random(randomSeries, -1.f, 1.f),
             random(randomSeries, -1.f, 1.f),
             random(randomSeries, -1.f, 1.f))) * random(randomSeries, 0.75f, 1.5f)
-            + glm::vec3(0, 0, random(randomSeries, 2.f, 3.f)) + velocity * 0.9f;
-        smoke.spawn(position + offset, vel, 1.f, glm::vec4(s, s, s, 1.f), random(randomSeries, 3.f, 5.f));
+            + Vec3(0, 0, random(randomSeries, 2.f, 3.f)) + velocity * 0.9f;
+        smoke.spawn(position + offset, vel, 1.f, Vec4(s, s, s, 1.f), random(randomSeries, 3.f, 5.f));
     }
     for (u32 i=0; i<8; ++i)
     {
-        glm::vec3 vel = velocity + glm::normalize(glm::vec3(
+        Vec3 vel = velocity + normalize(Vec3(
             random(randomSeries, -0.5f, 0.5f),
             random(randomSeries, -0.5f, 0.5f),
             random(randomSeries, -0.25f, 0.75f))) * random(randomSeries, 5.f, 12.f);
         sparks.spawn(position, vel, 1.f,
-                glm::vec4(glm::vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f), 1.f) * 2.f);
+                Vec4(Vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f), 1.f) * 2.f);
     }
 
-    addEntity(new Flash(position + glm::vec3(0, 0, 1.f), velocity * 0.8f, strength * 0.5f));
+    addEntity(new Flash(position + Vec3(0, 0, 1.f), velocity * 0.8f, strength * 0.5f));
 }
 
-bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit, u32 flags) const
+bool Scene::raycastStatic(Vec3 const& from, Vec3 const& dir, f32 dist, PxRaycastBuffer* hit, u32 flags) const
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
@@ -991,7 +991,7 @@ bool Scene::raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
     }
 }
 
-bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit)
+bool Scene::raycast(Vec3 const& from, Vec3 const& dir, f32 dist, PxRaycastBuffer* hit)
 {
     PxQueryFilterData filter;
     filter.flags |= PxQueryFlag::eSTATIC;
@@ -1009,7 +1009,7 @@ bool Scene::raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRay
     }
 }
 
-bool Scene::sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir,
+bool Scene::sweepStatic(f32 radius, Vec3 const& from, Vec3 const& dir,
         f32 dist, PxSweepBuffer* hit, u32 flags) const
 {
     PxQueryFilterData filter;
@@ -1047,7 +1047,7 @@ public:
     }
 };
 
-bool Scene::sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
+bool Scene::sweep(f32 radius, Vec3 const& from, Vec3 const& dir, f32 dist,
         PxSweepBuffer* hit, PxRigidActor* ignore, u32 flags) const
 {
     PxQueryFilterData filter;
@@ -1095,7 +1095,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
             {
                 ActorUserData* a = (ActorUserData*)pairHeader.actors[0]->userData;
                 ActorUserData* b = (ActorUserData*)pairHeader.actors[1]->userData;
-                f32 damage = glm::min(magnitude * 0.00058f, 100.f);
+                f32 damage = min(magnitude * 0.00058f, 100.f);
 
                 // apply damage
                 if (a && a->entityType == ActorUserData::VEHICLE)
@@ -1161,7 +1161,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                     materialB != g_game.physx.materials.offroad)
                     // && pairs[i].events & PxPairFlag::eNOTIFY_TOUCH_PERSISTS)
             {
-                glm::vec3 velOffset = glm::vec3(
+                Vec3 velOffset = Vec3(
                     random(randomSeries, -0.25f, 0.25f),
                     random(randomSeries, -0.25f, 0.25f),
                     random(randomSeries, 1.f, 2.f));
@@ -1175,13 +1175,13 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                 f32 minMagnitude = 10.f;
                 if (magnitude > minMagnitude)
                 {
-                    f32 alpha = glm::min((magnitude - minMagnitude) * 0.25f, 1.f);
-                    glm::vec3 collisionVelocity = convert(velA + velB) * 0.5f;
+                    f32 alpha = min((magnitude - minMagnitude) * 0.25f, 1.f);
+                    Vec3 collisionVelocity = convert(velA + velB) * 0.5f;
                     sparks.spawn(
                             convert(contactPoints[j].position),
                             (convert(contactPoints[j].normal) + velOffset)
                                 * random(randomSeries, 4.f, 5.f) + collisionVelocity * 0.4f, 1.f,
-                            glm::vec4(glm::vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f) * 2.f, alpha));
+                            Vec4(Vec3(1.f, random(randomSeries, 0.55f, 0.7f), 0.02f) * 2.f, alpha));
                 }
             }
         }
@@ -1324,7 +1324,7 @@ void Scene::showDebugInfo()
     }
 }
 
-glm::vec3 Scene::findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f32 checkRadius)
+Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRadius)
 {
     PxTransform transform(PxIdentity);
     transform.p = convert(pos);
@@ -1369,7 +1369,7 @@ glm::vec3 Scene::findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f3
             }
         }
 
-        glm::vec3 offset(
+        Vec3 offset(
                 random(randomSeries, -checkRadius, checkRadius),
                 random(randomSeries, -checkRadius, checkRadius), 0.f);
         transform.p = convert(pos + offset);

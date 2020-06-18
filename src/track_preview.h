@@ -9,8 +9,8 @@ class TrackPreview2D
     GLuint destFramebuffer, destTex;
     u32 width = 0;
     u32 height = 0;
-    glm::vec3 camPosition;
-    glm::mat4 viewProjection;
+    Vec3 camPosition;
+    Mat4 viewProjection;
 
     Texture outputTexture;
 
@@ -100,18 +100,18 @@ public:
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(viewProjection));
     }
 
-    void setCamViewProjection(glm::mat4 const& viewProjection)
+    void setCamViewProjection(Mat4 const& viewProjection)
     {
         this->viewProjection = viewProjection;
     }
 
-    void setCamPosition(glm::vec3 camPosition)
+    void setCamPosition(Vec3 camPosition)
     {
         this->camPosition = camPosition;
     }
 
-    void drawItem(GLuint vao, u32 numIndices, glm::mat4 const& worldTransform,
-            glm::vec3 const& color=glm::vec3(1.0), bool overwriteColor=false, i32 shadeMode=0)
+    void drawItem(GLuint vao, u32 numIndices, Mat4 const& worldTransform,
+            Vec3 const& color=Vec3(1.0), bool overwriteColor=false, i32 shadeMode=0)
     {
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(worldTransform));
         glUniform3fv(2, 1, (GLfloat*)&color);
@@ -141,5 +141,5 @@ public:
 
     Texture* getTexture() { return &outputTexture; }
 
-    glm::vec2 getSize() const { return { width, height }; }
+    Vec2 getSize() const { return { width, height }; }
 };

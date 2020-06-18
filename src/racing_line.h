@@ -9,7 +9,7 @@ public:
     struct Point
     {
         // serialized
-        glm::vec3 position;
+        Vec3 position;
         f32 targetSpeed;
 
         // not serialized
@@ -40,12 +40,12 @@ public:
         points[0].distanceToHere = 0.f;
         for (u32 i=1; i<points.size(); ++i)
         {
-            length += glm::distance(points[i].position, points[i-1].position);
+            length += distance(points[i].position, points[i-1].position);
             points[i].distanceToHere = length;
         }
         if (length > 0.f)
         {
-            length += glm::distance(points[0].position, points[1].position);
+            length += distance(points[0].position, points[1].position);
         }
         endPoint = points[0];
         endPoint.distanceToHere = length;
@@ -64,7 +64,7 @@ public:
         assert(points.size() > 2);
 
         // if the distance exceeds the length then wrap around
-        distance -= (length * glm::floor(distance / length));
+        distance -= (length * floorf(distance / length));
 
         i32 pointIndex = points.size() - 1;
         while (pointIndex > 0 && distance < points[pointIndex].distanceToHere)
@@ -80,7 +80,7 @@ public:
 
         f32 percentageBetween = (distance - pointA.distanceToHere)
             / (pointB.distanceToHere - pointA.distanceToHere);
-        glm::vec3 position = pointA.position
+        Vec3 position = pointA.position
             + (pointB.position - pointA.position) * percentageBetween;
         f32 targetSpeed = pointA.targetSpeed
             + (pointB.targetSpeed - pointA.targetSpeed) * percentageBetween;
@@ -89,7 +89,7 @@ public:
         return { position, targetSpeed, distance, trackProgress };
     }
 
-    Point getNearestPoint(glm::vec3 const& position, f32 currentTrackProgress) const
+    Point getNearestPoint(Vec3 const& position, f32 currentTrackProgress) const
     {
         assert(points.size() > 2);
 
@@ -100,15 +100,15 @@ public:
             Point const& pointA = points[i];
             Point const& pointB = (i != points.size() - 1) ? points[i+1] : endPoint;
 
-            glm::vec3 ap = position - pointA.position;
-            glm::vec3 ab = pointB.position - pointA.position;
-            f32 distanceAlongLine = glm::clamp(glm::dot(ap, ab) / glm::length2(ab), 0.f, 1.f);
-            glm::vec3 pointPosition = pointA.position
+            Vec3 ap = position - pointA.position;
+            Vec3 ab = pointB.position - pointA.position;
+            f32 distanceAlongLine = clamp(dot(ap, ab) / length2(ab), 0.f, 1.f);
+            Vec3 pointPosition = pointA.position
                 + (pointB.position - pointA.position) * distanceAlongLine;
             f32 trackProgress = pointA.trackProgress
                 + (pointB.trackProgress - pointA.trackProgress) * distanceAlongLine;
-            f32 distanceSquaredToTestPosition = glm::distance2(pointPosition, position);
-            if (glm::abs(currentTrackProgress - trackProgress) > 55.f)
+            f32 distanceSquaredToTestPosition = distance2(pointPosition, position);
+            if (absolute(currentTrackProgress - trackProgress) > 55.f)
             {
                 distanceSquaredToTestPosition += square(30);
             }

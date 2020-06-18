@@ -16,7 +16,7 @@ void Projectile::onCreate(Scene* scene)
             damage = 50;
             this->velocity -= upVector * 0.7f;
             impactEmitter = ParticleEmitter(&scene->sparks, 5, 5,
-                    glm::vec4(glm::vec3(0.04f, 1.f, 0.04f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
+                    Vec4(Vec3(0.04f, 1.f, 0.04f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
             environmentImpactSounds = { "blaster_hit" };
             break;
         case PHANTOM:
@@ -27,7 +27,7 @@ void Projectile::onCreate(Scene* scene)
             damage = 50;
             this->velocity -= upVector * 0.7f;
             impactEmitter = ParticleEmitter(&scene->sparks, 5, 5,
-                    glm::vec4(glm::vec3(1.f, 0.02f, 0.95f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
+                    Vec4(Vec3(1.f, 0.02f, 0.95f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
             environmentImpactSounds = { "blaster_hit" };
             break;
         case BULLET:
@@ -37,7 +37,7 @@ void Projectile::onCreate(Scene* scene)
             damage = 12;
             this->velocity -= upVector;
             impactEmitter = ParticleEmitter(&scene->sparks, 1, 1,
-                    glm::vec4(glm::vec3(1.f, 0.6f, 0.02f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
+                    Vec4(Vec3(1.f, 0.6f, 0.02f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
             environmentImpactSounds = {
                 "richochet1",
                 "richochet2",
@@ -69,7 +69,7 @@ void Projectile::onCreate(Scene* scene)
             damage = 75;
             bounceOffEnvironment = true;
             impactEmitter = ParticleEmitter(&scene->sparks, 5, 5,
-                    glm::vec4(glm::vec3(0.3f, 0.3f, 1.f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
+                    Vec4(Vec3(0.3f, 0.3f, 1.f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
             environmentImpactSounds = { "bouncer_bounce" };
             break;
     }
@@ -80,11 +80,11 @@ void Projectile::onCreate(Scene* scene)
 
 void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    glm::vec3 prevPosition = position;
+    Vec3 prevPosition = position;
 
     if (groundFollow)
     {
-        f32 speed = glm::length(velocity);
+        f32 speed = length(velocity);
         PxRaycastBuffer rayHit;
         f32 dist = 1.4f;
         velocity.z -= deltaTime * 15.f;
@@ -96,13 +96,13 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 f32 compression = (dist - rayHit.block.distance) / dist;
                 velocity.z += compression * 400.f * deltaTime;
                 velocity.z = smoothMove(velocity.z, 0.f, 8.f, deltaTime);
-                f32 velAgainstHit = glm::dot(-velocity, convert(rayHit.block.normal));
+                f32 velAgainstHit = dot(-velocity, convert(rayHit.block.normal));
                 if (velAgainstHit > 0.f)
                 {
                     velocity += convert(rayHit.block.normal) *
-                        glm::min(velAgainstHit * deltaTime * 20.f, velAgainstHit);
+                        min(velAgainstHit * deltaTime * 20.f, velAgainstHit);
                 }
-                velocity = glm::normalize(velocity) * glm::min(speed + accel * deltaTime, maxSpeed);
+                velocity = normalize(velocity) * min(speed + accel * deltaTime, maxSpeed);
             }
         }
     }
@@ -110,7 +110,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     if (homingSpeed > 0.f)
     {
         f32 lowestTargetPriority = FLT_MAX;
-        glm::vec3 targetPosition;
+        Vec3 targetPosition;
         for (auto& v : scene->getVehicles())
         {
             if (v->getRigidBody() == ignoreActors.front())
@@ -118,11 +118,11 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
                 continue;
             }
 
-            glm::vec3 dir = glm::normalize(velocity);
-            glm::vec3 diff = v->getPosition() - position;
-            f32 dot = glm::dot(dir, glm::normalize(diff));
-            f32 targetPriority = glm::length2(diff);
-            if (dot > 0.25f && targetPriority < lowestTargetPriority)
+            Vec3 dir = normalize(velocity);
+            Vec3 diff = v->getPosition() - position;
+            f32 vDot = dot(dir, normalize(diff));
+            f32 targetPriority = length2(diff);
+            if (vDot > 0.25f && targetPriority < lowestTargetPriority)
             {
                 targetPosition = v->getPosition();
                 lowestTargetPriority = targetPriority;
@@ -131,9 +131,9 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
         if (lowestTargetPriority != FLT_MAX)
         {
-            f32 speed = glm::length(velocity);
-            velocity += glm::normalize(targetPosition - position) * (homingSpeed * deltaTime);
-            velocity = glm::normalize(velocity) * speed;
+            f32 speed = length(velocity);
+            velocity += normalize(targetPosition - position) * (homingSpeed * deltaTime);
+            velocity = normalize(velocity) * speed;
         }
     }
 
@@ -144,12 +144,12 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         // TODO: play sound while missile is traveling
         if (((u32)(life * 100.f) & 1) == 0)
         {
-            scene->smoke.spawn(position, glm::vec3(0,0,1), 0.8f,
-                    glm::vec4(glm::vec3(0.6f), 1.f), 1.75f);
+            scene->smoke.spawn(position, Vec3(0,0,1), 0.8f,
+                    Vec4(Vec3(0.6f), 1.f), 1.75f);
         }
     }
 
-    glm::vec3 sweepDir = glm::normalize(position - prevPosition);
+    Vec3 sweepDir = normalize(position - prevPosition);
     PxSweepHit hitBuffer[8];
     PxSweepBuffer hit(hitBuffer, ARRAY_SIZE(hitBuffer));
     PxQueryFilterData filter;
@@ -158,7 +158,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
             COLLISION_FLAG_TRACK | COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT, 0, 0, 0);
     PxTransform initialPose(convert(prevPosition), PxQuat(PxIdentity));
     scene->getPhysicsScene()->sweep(PxSphereGeometry(collisionRadius), initialPose, convert(sweepDir),
-            glm::length(position - prevPosition), hit, PxHitFlags(PxHitFlag::eDEFAULT), filter, this);
+            length(position - prevPosition), hit, PxHitFlags(PxHitFlag::eDEFAULT), filter, this);
     for (u32 i=0; i<hit.nbTouches; ++i)
     {
         onHit(scene, &hit.touches[i]);
@@ -182,64 +182,64 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    glm::mat4 m(1.f);
-    m[0] = glm::vec4(glm::normalize(velocity), m[0].w);
-    m[1] = glm::vec4(glm::normalize(
-                glm::cross(upVector, glm::vec3(m[0]))), m[1].w);
-    m[2] = glm::vec4(glm::normalize(
-                glm::cross(glm::vec3(m[0]), glm::vec3(m[1]))), m[2].w);
+    Mat4 m(1.f);
+    m[0] = Vec4(normalize(velocity), m[0].w);
+    m[1] = Vec4(normalize(
+                cross(upVector, Vec3(m[0]))), m[1].w);
+    m[2] = Vec4(normalize(
+                cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
 
     switch (projectileType)
     {
         case BLASTER:
         {
-            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
-                * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
+            Mat4 transform = glm::translate(Mat4(1.f), position)
+                * m * glm::scale(Mat4(1.f), Vec3(0.75f));
             drawSimple(rw, bulletMesh, &g_res.white, transform,
-                glm::vec3(0.2f, 0.9f, 0.2f), glm::vec3(0.01f, 1.5f, 0.01f));
-            drawBillboard(rw, g_res.getTexture("flare"), position+glm::vec3(0,0,0.2f),
+                Vec3(0.2f, 0.9f, 0.2f), Vec3(0.01f, 1.5f, 0.01f));
+            drawBillboard(rw, g_res.getTexture("flare"), position+Vec3(0,0,0.2f),
                     {0.01f,1.f,0.01f,0.2f}, 1.5f, 0.f, false);
-            rw->addPointLight(position, glm::vec3(0.2f, 0.9f, 0.2f) * 2.f, 4.f, 2.f);
+            rw->addPointLight(position, Vec3(0.2f, 0.9f, 0.2f) * 2.f, 4.f, 2.f);
         } break;
         case BULLET:
         {
-            glm::vec3 color = glm::vec3(1.f, 0.5f, 0.01f);
-            glm::vec3 emit = glm::vec3(1.f, 0.5f, 0.01f) * 2.f;
-            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
-                * m * glm::scale(glm::mat4(1.f), glm::vec3(0.35f));
+            Vec3 color = Vec3(1.f, 0.5f, 0.01f);
+            Vec3 emit = Vec3(1.f, 0.5f, 0.01f) * 2.f;
+            Mat4 transform = glm::translate(Mat4(1.f), position)
+                * m * glm::scale(Mat4(1.f), Vec3(0.35f));
             drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
             drawBillboard(rw, g_res.getTexture("flare"),
-                        position, glm::vec4(emit, 0.8f), 0.75f, 0.f, false);
+                        position, Vec4(emit, 0.8f), 0.75f, 0.f, false);
             rw->addPointLight(position, color * 2.f, 4.f, 2.f);
         } break;
         case MISSILE:
         {
             Mesh* mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
-            glm::mat4 transform = glm::translate(glm::mat4(1.f), position) * m;
-            drawSimple(rw, mesh, &g_res.white, transform, glm::vec3(1.f));
+            Mat4 transform = glm::translate(Mat4(1.f), position) * m;
+            drawSimple(rw, mesh, &g_res.white, transform, Vec3(1.f));
             drawBillboard(rw, g_res.getTexture("flare"), position,
-                        glm::vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false);
-            rw->addPointLight(position, glm::vec3(1.f, 0.5f, 0.03f) * 5.f, 5.f, 2.f);
+                        Vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false);
+            rw->addPointLight(position, Vec3(1.f, 0.5f, 0.03f) * 5.f, 5.f, 2.f);
         } break;
         case BOUNCER:
         {
             Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
-            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
-                 * glm::scale(glm::mat4(1.f), glm::vec3(0.4f));
-            drawSimple(rw, mesh, &g_res.white, transform, glm::vec3(1.f), glm::vec3(0.5f));
+            Mat4 transform = glm::translate(Mat4(1.f), position)
+                 * glm::scale(Mat4(1.f), Vec3(0.4f));
+            drawSimple(rw, mesh, &g_res.white, transform, Vec3(1.f), Vec3(0.5f));
             drawBillboard(rw, g_res.getTexture("flare"), position,
-                        glm::vec4(0.1f, 0.12f, 1.f, 0.8f), 1.75f, 0.f, false);
-            rw->addPointLight(position, glm::vec3(0.1f, 0.15f, 1.f) * 7.f, 6.5f, 2.f);
+                        Vec4(0.1f, 0.12f, 1.f, 0.8f), 1.75f, 0.f, false);
+            rw->addPointLight(position, Vec3(0.1f, 0.15f, 1.f) * 7.f, 6.5f, 2.f);
         } break;
         case PHANTOM:
         {
-            glm::vec3 color = glm::vec3(1.f, 0.01f, 0.95f);
-            glm::vec3 emit = glm::vec3(1.f, 0.01f, 0.95f) * 1.5f;
-            glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
-                * m * glm::scale(glm::mat4(1.f), glm::vec3(0.75f));
+            Vec3 color = Vec3(1.f, 0.01f, 0.95f);
+            Vec3 emit = Vec3(1.f, 0.01f, 0.95f) * 1.5f;
+            Mat4 transform = glm::translate(Mat4(1.f), position)
+                * m * glm::scale(Mat4(1.f), Vec3(0.75f));
             drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
             drawBillboard(rw, g_res.getTexture("flare"),
-                    position+glm::vec3(0,0,0.2f), glm::vec4(color, 0.4f), 1.5f, 0.f, false);
+                    position+Vec3(0,0,0.2f), Vec4(color, 0.4f), 1.5f, 0.f, false);
             rw->addPointLight(position, color * 2.f, 4.f, 2.f);
         } break;
     }
@@ -248,7 +248,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 void Projectile::onHit(Scene* scene, PxSweepHit* hit)
 {
     ActorUserData* data = (ActorUserData*)hit->actor->userData;
-    glm::vec3 hitPos = convert(hit->position);
+    Vec3 hitPos = convert(hit->position);
 
     createImpactParticles(scene, hit);
 
@@ -288,8 +288,8 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
 
         if (bounceOffEnvironment)
         {
-            glm::vec3 n = convert(hit->normal);
-            velocity = -2.f * glm::dot(velocity, n) * n + velocity;
+            Vec3 n = convert(hit->normal);
+            velocity = -2.f * dot(velocity, n) * n + velocity;
             position = convert(hit->position) + n * (collisionRadius + 0.001f);
         }
         else
@@ -301,7 +301,7 @@ void Projectile::onHit(Scene* scene, PxSweepHit* hit)
 
 void Projectile::createImpactParticles(Scene* scene, PxSweepHit* hit)
 {
-    glm::vec3 normal = hit ? convert(hit->normal) : glm::vec3(0, 0, 1);
-    glm::vec3 pos = hit ? convert(hit->position) : position;
+    Vec3 normal = hit ? convert(hit->normal) : Vec3(0, 0, 1);
+    Vec3 pos = hit ? convert(hit->position) : position;
     impactEmitter.emit(pos, normal);
 }

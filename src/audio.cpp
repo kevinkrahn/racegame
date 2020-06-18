@@ -105,14 +105,14 @@ static f32 sampleAudio(Sound* sound, f32 position, u32 channel, bool looping)
     f32 sample2 = (f32)sound->audioData[sampleIndex2] / 32767.0f;
 
     f64 intpart;
-    f32 result = glm::lerp(sample1, sample2, (f32)glm::abs(modf(position, &intpart)));
+    f32 result = lerp(sample1, sample2, (f32)absolute(modf(position, &intpart)));
 
     return result;
 }
 
 void Audio::audioCallback(u8* buf, i32 len)
 {
-    SmallArray<glm::vec3> listeners;
+    SmallArray<Vec3> listeners;
 
     bool pauseGameplaySounds;
     {
@@ -244,13 +244,13 @@ void Audio::audioCallback(u8* buf, i32 len)
             if (s->is3D)
             {
                 attenuation = 0.f;
-                for (glm::vec3 const& camPos : listeners)
+                for (Vec3 const& camPos : listeners)
                 {
-                    f32 distance = glm::length(s->position - camPos);
-                    attenuation = glm::max(attenuation,
-                        glm::clamp(1.f - (distance / s->sound->falloffDistance), 0.f, 1.f));
+                    f32 distance = length(s->position - camPos);
+                    attenuation = max(attenuation,
+                        clamp(1.f - (distance / s->sound->falloffDistance), 0.f, 1.f));
                 }
-                //attenuation = glm::pow(attenuation, 2.f);
+                //attenuation = powf(attenuation, 2.f);
                 attenuation *= attenuation;
             }
 
@@ -269,14 +269,14 @@ void Audio::audioCallback(u8* buf, i32 len)
                     break;
             }
 
-            left  = glm::clamp(left  + sampleLeft
+            left  = clamp(left  + sampleLeft
                     * ((s->volume * masterVolume * s->sound->volume)
                     * (soundTypeVolume * attenuation)) * panLeft, -1.0f, 1.0f);
-            right = glm::clamp(right + sampleRight
+            right = clamp(right + sampleRight
                     * ((s->volume * masterVolume * s->sound->volume)
                     * (soundTypeVolume * attenuation)) * panRight, -1.0f, 1.0f);
 
-            f32 pitch = glm::lerp(s->pitch, s->targetPitch, bufferPercent);
+            f32 pitch = lerp(s->pitch, s->targetPitch, bufferPercent);
             s->playPosition += pitch  * (f32)g_game.timeDilation;
             s++;
         }
@@ -337,7 +337,7 @@ SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
 }
 
 SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
-        glm::vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
+        Vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
 {
     PlayingSound ps;
     ps.sound = sound;
@@ -403,7 +403,7 @@ void Audio::setSoundPan(SoundHandle handle, f32 pan)
     playbackModifications.push_back(pm);
 }
 
-void Audio::setSoundPosition(SoundHandle handle, glm::vec3 const& position)
+void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
 {
     std::lock_guard<std::mutex> lock(audioMutex);
     PlaybackModification pm;
@@ -423,7 +423,7 @@ void Audio::setSoundPaused(SoundHandle handle, bool paused)
     playbackModifications.push_back(pm);
 }
 
-void Audio::setListeners(SmallArray<glm::vec3>const& listeners)
+void Audio::setListeners(SmallArray<Vec3>const& listeners)
 {
     std::lock_guard<std::mutex> lock(audioMutex);
     listenerPositions.clear();

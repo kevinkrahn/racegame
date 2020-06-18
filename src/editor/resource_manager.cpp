@@ -413,7 +413,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         return;
     }
 
-    renderer->getRenderWorld()->setHighlightColor(0, glm::vec4(1.f, 0.65f, 0.1f, 1.f));
+    renderer->getRenderWorld()->setHighlightColor(0, Vec4(1.f, 0.65f, 0.1f, 1.f));
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -631,7 +631,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
         if (tex.getSourceFileCount() == 1 && tex.getPreviewHandle())
         {
             ImGui::BeginChild("Texture Preview",
-                    { ImGui::GetWindowWidth(), (f32)glm::min(tex.height, 300u) }, false,
+                    { ImGui::GetWindowWidth(), (f32)min(tex.height, 300u) }, false,
                     ImGuiWindowFlags_HorizontalScrollbar);
             // TODO: Add controls to pan the image view and zoom in and out
             ImGui::Image((void*)(uintptr_t)tex.getPreviewHandle(), ImVec2(tex.width, tex.height));
@@ -724,13 +724,13 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
     rw.setSize(200, 200);
     const char* previewMeshes[] = { "world.Sphere", "world.UnitCube", "world.Quad" };
     Mesh* previewMesh = g_res.getModel("misc")->getMeshByName(previewMeshes[previewMeshIndex]);
-    rw.addDirectionalLight(glm::vec3(-0.5f, 0.2f, -1.f), glm::vec3(1.5f));
+    rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));
     rw.setViewportCount(1);
     rw.updateWorldTime(30.f);
     rw.setClearColor(true, { 0.05f, 0.05f, 0.05f, 1.f });
-    rw.setViewportCamera(0, glm::vec3(8.f, 8.f, 10.f),
-            glm::vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
-    glm::mat4 transform = glm::scale(glm::mat4(1.f), glm::vec3(3.5f));
+    rw.setViewportCamera(0, Vec3(8.f, 8.f, 10.f),
+            Vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
+    Mat4 transform = glm::scale(Mat4(1.f), Vec3(3.5f));
     mat.draw(&rw, transform, previewMesh);
 
     renderer->addRenderWorld(&rw);

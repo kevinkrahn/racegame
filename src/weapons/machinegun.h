@@ -34,7 +34,7 @@ public:
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
-        barrelSpinSpeed = glm::max(barrelSpinSpeed - deltaTime * 8.f, 0.f);
+        barrelSpinSpeed = max(barrelSpinSpeed - deltaTime * 8.f, 0.f);
         barrelSpin += barrelSpinSpeed * deltaTime;
 
         if (!fireHold)
@@ -55,19 +55,19 @@ public:
 
         if (repeatTimer > 0.f)
         {
-            repeatTimer = glm::max(repeatTimer - deltaTime, 0.f);
+            repeatTimer = max(repeatTimer - deltaTime, 0.f);
             return;
         }
 
-        glm::mat4 transform = vehicle->getTransform();
+        Mat4 transform = vehicle->getTransform();
         f32 minSpeed = 90.f;
-        glm::vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
+        Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (glm::length2(vel) < square(minSpeed))
+        if (length2(vel) < square(minSpeed))
         {
-            vel = glm::normalize(vel) * minSpeed;
+            vel = normalize(vel) * minSpeed;
         }
-        glm::vec3 pos = transform * mountTransform * glm::vec4(projectileSpawnPoints[0], 1.f);
+        Vec3 pos = transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::BULLET));
 
@@ -81,13 +81,13 @@ public:
         repeatTimer = 0.09f;
     }
 
-    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         mat->draw(rw, vehicleTransform * mountTransform
-                    * glm::translate(glm::mat4(1.f), glm::vec3(0.556007, 0, 0.397523f))
-                    * glm::rotate(glm::mat4(1.f), barrelSpin, glm::vec3(1, 0, 0)), meshBarrel, 2);
+                    * glm::translate(Mat4(1.f), Vec3(0.556007, 0, 0.397523f))
+                    * glm::rotate(Mat4(1.f), barrelSpin, Vec3(1, 0, 0)), meshBarrel, 2);
     }
 };

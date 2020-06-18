@@ -43,8 +43,8 @@ void Terrain::generate(f32 heightScale, f32 scale)
         for (i32 y = 0; y < height; ++y)
         {
             heightBuffer[y * width + x] =
-                glm::perlin(glm::vec2(x, y) * scale) * heightScale +
-                glm::perlin(glm::vec2(x, y) * scale * 4.f) * 0.5f;
+                glm::perlin(Vec2(x, y) * scale) * heightScale +
+                glm::perlin(Vec2(x, y) * scale * 4.f) * 0.5f;
         }
     }
     setDirty();
@@ -84,10 +84,10 @@ void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve)
     // copy over old
     if (preserve)
     {
-        i32 startOffsetX = glm::max(0, -xOffset);
-        i32 startOffsetY = glm::max(0, -yOffset);
-        i32 w = glm::min(width - xOffset, ow);
-        i32 h = glm::min(height - yOffset, oh);
+        i32 startOffsetX = max(0, -xOffset);
+        i32 startOffsetY = max(0, -yOffset);
+        i32 w = min(width - xOffset, ow);
+        i32 h = min(height - yOffset, oh);
         for (i32 x=startOffsetX; x<w; ++x)
         {
             for (i32 y=startOffsetY; y<h; ++y)
@@ -199,15 +199,15 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         for (i32 y = 0; y < height - 1; ++y)
         {
             f32 z1 = heightBuffer[(y * width) + x];
-            glm::vec3 pos1(x1 + x * tileSize, y1 + y * tileSize, z1);
+            Vec3 pos1(x1 + x * tileSize, y1 + y * tileSize, z1);
 
             f32 z2 = heightBuffer[((y + 1) * width) + x];
-            glm::vec3 pos2(x1 + x * tileSize, y1 + (y + 1) * tileSize, z2);
+            Vec3 pos2(x1 + x * tileSize, y1 + (y + 1) * tileSize, z2);
 
             f32 z3 = heightBuffer[(y * width) + x + 1];
-            glm::vec3 pos3(x1 + (x + 1) * tileSize, y1 + y * tileSize, z3);
+            Vec3 pos3(x1 + (x + 1) * tileSize, y1 + y * tileSize, z3);
 
-            const glm::vec4 color(0.f, 1.f, 0.f, 1.f);
+            const Vec4 color(0.f, 1.f, 0.f, 1.f);
             scene->debugDraw.line(pos1, pos2, color, color);
             scene->debugDraw.line(pos1, pos3, color, color);
         }
@@ -247,7 +247,7 @@ bool Terrain::isOffroadAt(f32 x, f32 y) const
     return (blend[uy * width + ux] & 0x00FF0000) > OFFROAD_THRESHOLD;
 }
 
-glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
+Vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
 {
     x = clamp(x, 1u, width - 2);
     y = clamp(y, 1u, height - 2);
@@ -255,8 +255,8 @@ glm::vec3 Terrain::computeNormal(u32 width, u32 height, u32 x, u32 y)
     f32 hr = heightBuffer[y * width + x + 1];
     f32 hd = heightBuffer[(y - 1) * width + x];
     f32 hu = heightBuffer[(y + 1) * width + x];
-    glm::vec3 normal(hl - hr, hd - hu, 2.f);
-    return glm::normalize(normal);
+    Vec3 normal(hl - hr, hd - hu, 2.f);
+    return normalize(normal);
 }
 
 void Terrain::regenerateMesh()
@@ -272,8 +272,8 @@ void Terrain::regenerateMesh()
         for (i32 y = 0; y < height; ++y)
         {
             f32 z = heightBuffer[(y * width) + x];
-            glm::vec3 pos(x1 + x * tileSize, y1 + y * tileSize, z);
-            glm::vec3 normal = computeNormal(width, height, x, y);
+            Vec3 pos(x1 + x * tileSize, y1 + y * tileSize, z);
+            Vec3 normal = computeNormal(width, height, x, y);
             u32 i = y * width + x;
             vertices[i] = {
                 pos,
@@ -368,7 +368,7 @@ void Terrain::regenerateCollisionMesh(Scene* scene)
     triMesh->release();
 }
 
-f32 Terrain::getZ(glm::vec2 pos) const
+f32 Terrain::getZ(Vec2 pos) const
 {
     u32 width = (u32)((x2 - x1) / tileSize);
     u32 height = (u32)((y2 - y1) / tileSize);
@@ -401,7 +401,7 @@ i32 Terrain::getCellY(f32 y) const
     return clamp((i32)((y - y1) / tileSize), 0, height - 1);
 }
 
-void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+void Terrain::raise(Vec2 pos, f32 radius, f32 falloff, f32 amount)
 {
     i32 minX = getCellX(pos.x - radius);
     i32 minY = getCellY(pos.y - radius);
@@ -412,15 +412,15 @@ void Terrain::raise(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
-            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             heightBuffer[y * width + x] += t * amount;
         }
     }
     setDirty();
 }
 
-void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+void Terrain::perturb(Vec2 pos, f32 radius, f32 falloff, f32 amount)
 {
     i32 minX = getCellX(pos.x - radius);
     i32 minY = getCellY(pos.y - radius);
@@ -431,17 +431,17 @@ void Terrain::perturb(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
-            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
             f32 scale = 0.1f;
-            f32 noise = glm::perlin(glm::vec2(x, y) * scale);
-            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            f32 noise = glm::perlin(Vec2(x, y) * scale);
+            f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             heightBuffer[y * width + x] += t * noise * amount;
         }
     }
     setDirty();
 }
 
-void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
+void Terrain::flatten(Vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
 {
     i32 minX = getCellX(pos.x - radius);
     i32 minY = getCellY(pos.y - radius);
@@ -452,8 +452,8 @@ void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
-            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             f32 currentZ = heightBuffer[y * width + x];
             heightBuffer[y * width + x] += (z - currentZ) * t * amount;
         }
@@ -461,7 +461,7 @@ void Terrain::flatten(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, f32 z)
     setDirty();
 }
 
-void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+void Terrain::smooth(Vec2 pos, f32 radius, f32 falloff, f32 amount)
 {
     i32 minX = getCellX(pos.x - radius);
     i32 minY = getCellY(pos.y - radius);
@@ -473,8 +473,8 @@ void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
-            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             f32 hl = heightBuffer[y * width + clamp(x - 1, 0, width - 1)];
             f32 hr = heightBuffer[y * width + clamp(x + 1, 0, width - 1)];
             f32 hd = heightBuffer[clamp(y - 1, 0, height - 1) * width + x];
@@ -488,7 +488,7 @@ void Terrain::smooth(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
 }
 
 // adapted from http://ranmantaru.com/blog/2011/10/08/water-erosion-on-heightmap-terrain/
-void Terrain::erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
+void Terrain::erode(Vec2 pos, f32 radius, f32 falloff, f32 amount)
 {
     amount *= 0.03f;
 
@@ -509,7 +509,7 @@ void Terrain::erode(glm::vec2 pos, f32 radius, f32 falloff, f32 amount)
     f32 Kg = g * 2;
     f32 scale = 40.f;
 
-    OwnedPtr<glm::vec2[]> erosion(new glm::vec2[width * height]);
+    OwnedPtr<Vec2[]> erosion(new Vec2[width * height]);
 
     const u32 MAX_PATH_LEN = 10;
 
@@ -568,8 +568,8 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
             f32 nxp = xp + dx;
             f32 nzp = zp + dz;
 
-            i32 nxi = (i32)glm::floor(nxp);
-            i32 nzi = (i32)glm::floor(nzp);
+            i32 nxi = (i32)floorf(nxp);
+            i32 nzi = (i32)floorf(nzp);
             f32 nxf = nxp - nxi;
             f32 nzf = nzp - nzi;
 
@@ -596,7 +596,7 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
 
             f32 dh = h - nh;
             f32 slope = dh;
-            f32 q = glm::max(slope, minSlope) * v * w * Kq;
+            f32 q = max(slope, minSlope) * v * w * Kq;
             f32 ds = s - q;
             if (ds >= 0)
             {
@@ -607,13 +607,13 @@ DEPOSIT_AT(xi+1, zi+1,    xf *   zf ) \
             else
             {
                 ds *= -Kr;
-                ds = glm::min(ds, dh * 0.99f);
+                ds = min(ds, dh * 0.99f);
 
 #define ERODE(X, Z, W) \
 { \
 f32 delta = ds * (W) * amount; \
 heightBuffer          [clamp((Z) * width + (X), 0, (i32)heightBufferSize)] -= delta * scale; \
-glm::vec2 &e = erosion[clamp((Z) * width + (X), 0, (i32)heightBufferSize)]; \
+Vec2 &e = erosion[clamp((Z) * width + (X), 0, (i32)heightBufferSize)]; \
 f32 r=e.x, d=e.y; \
 if (delta<=d) d-=delta; \
 else { r+=delta-d; d=0; } \
@@ -660,7 +660,7 @@ e.x=r; e.y=d; \
     setDirty();
 }
 
-void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Scene* scene)
+void Terrain::matchTrack(Vec2 pos, f32 radius, f32 falloff, f32 amount, Scene* scene)
 {
     i32 minX = getCellX(pos.x - radius);
     i32 minY = getCellY(pos.y - radius);
@@ -671,12 +671,12 @@ void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Sce
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
-            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             f32 currentZ = heightBuffer[y * width + x];
             f32 z = currentZ;
-            glm::vec3 from = glm::vec3(p.x, p.y, 1000.f);
-            glm::vec3 rayDir = glm::vec3(0, 0, -1);
+            Vec3 from = Vec3(p.x, p.y, 1000.f);
+            Vec3 rayDir = Vec3(0, 0, -1);
             PxRaycastBuffer rayHit;
             if (scene->raycastStatic(from, rayDir, 10000.f, &rayHit, COLLISION_FLAG_TRACK))
             {
@@ -696,7 +696,7 @@ void Terrain::matchTrack(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, Sce
     setDirty();
 }
 
-void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 materialIndex)
+void Terrain::paint(Vec2 pos, f32 radius, f32 falloff, f32 amount, u32 materialIndex)
 {
     i32 minX = getCellX(pos.x - radius);
     i32 minY = getCellY(pos.y - radius);
@@ -707,10 +707,10 @@ void Terrain::paint(glm::vec2 pos, f32 radius, f32 falloff, f32 amount, u32 mate
     {
         for (i32 y=minY; y<=maxY; ++y)
         {
-            glm::vec2 p(x1 + x * tileSize, y1 + y * tileSize);
-            f32 t = glm::pow(clamp(1.f - (glm::length(pos - p) / radius), 0.f, 1.f), falloff);
+            Vec2 p(x1 + x * tileSize, y1 + y * tileSize);
+            f32 t = powf(clamp(1.f - (length(pos - p) / radius), 0.f, 1.f), falloff);
             u8* b = reinterpret_cast<u8*>(&blend[y * width + x]);
-            glm::vec4 bl = glm::vec4(b[0], b[1], b[2], b[3]) / 255.f;
+            Vec4 bl = Vec4(b[0], b[1], b[2], b[3]) / 255.f;
             bl[materialIndex] += t * amount;
             bl /= bl.x + bl.y + bl.z + bl.w;
             b[0] = u8(bl[0] * 255.f);
@@ -762,8 +762,8 @@ void Terrain::applyDecal(Decal& decal)
     BoundingBox bb = decal.getBoundingBox();
     i32 startX = getCellX(bb.min.x);
     i32 startY = getCellY(bb.min.y);
-    i32 endX = glm::min(getCellX(bb.max.x) + 1, width - 1);
-    i32 endY = glm::min(getCellY(bb.max.y) + 1, height - 1);
+    i32 endX = min(getCellX(bb.max.x) + 1, width - 1);
+    i32 endY = min(getCellY(bb.max.y) + 1, height - 1);
     for (i32 x = startX; x < endX; ++x)
     {
         for (i32 y = startY; y < endY; ++y)
@@ -794,5 +794,5 @@ void Terrain::applyDecal(Decal& decal)
         }
     }
     decal.addMesh((f32*)vertices.get(), sizeof(Vertex),
-            collisionIndices.data(), (u32)collisionIndices.size(), glm::mat4(1.f));
+            collisionIndices.data(), (u32)collisionIndices.size(), Mat4(1.f));
 }

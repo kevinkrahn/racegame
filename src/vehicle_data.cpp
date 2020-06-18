@@ -39,7 +39,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
 
     // create vehicle
     // TODO: add a few timesteps of delay to make sure that suspension is at rest position
-    glm::mat4 startTransform = glm::translate(glm::mat4(1.f), { 0, 0, getRestOffset() });
+    Mat4 startTransform = glm::translate(Mat4(1.f), { 0, 0, getRestOffset() });
     VehiclePhysics v;
     v.setup(nullptr, physicsScene, startTransform, this);
 
@@ -211,7 +211,7 @@ void VehicleData::loadModelData(const char* modelName)
 
     for (auto& obj : model->objects)
     {
-        glm::mat4 transform = obj.getTransform();
+        Mat4 transform = obj.getTransform();
         std::string const& name = obj.name;
         Mesh* mesh = &model->meshes[obj.meshIndex];
         u32 debrisCollectionIndex = UINT32_MAX;
@@ -262,31 +262,31 @@ void VehicleData::loadModelData(const char* modelName)
         {
             wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
                 mesh,
-                glm::scale(glm::mat4(1.f), obj.scale),
+                glm::scale(Mat4(1.f), obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            frontWheelMeshRadius = glm::max(frontWheelMeshRadius, obj.bounds.z * 0.5f);
-            frontWheelMeshWidth = glm::max(frontWheelMeshWidth, obj.bounds.y);
+            frontWheelMeshRadius = max(frontWheelMeshRadius, obj.bounds.z * 0.5f);
+            frontWheelMeshWidth = max(frontWheelMeshWidth, obj.bounds.y);
             wheelPositions[WHEEL_FRONT_RIGHT] = transform[3];
         }
         else if (name.find("RL") != std::string::npos)
         {
             wheelMeshes[WHEEL_REAR_RIGHT].push_back({
                 mesh,
-                glm::scale(glm::mat4(1.f), scaleOf(transform)),
+                glm::scale(Mat4(1.f), scaleOf(transform)),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            rearWheelMeshRadius = glm::max(rearWheelMeshRadius, obj.bounds.z * 0.5f);
-            rearWheelMeshWidth = glm::max(rearWheelMeshWidth, obj.bounds.y);
+            rearWheelMeshRadius = max(rearWheelMeshRadius, obj.bounds.z * 0.5f);
+            rearWheelMeshWidth = max(rearWheelMeshWidth, obj.bounds.y);
             wheelPositions[WHEEL_REAR_RIGHT] = transform[3];
         }
         else if (name.find("FR") != std::string::npos)
         {
             wheelMeshes[WHEEL_FRONT_LEFT].push_back({
                 mesh,
-                glm::scale(glm::mat4(1.f), obj.scale),
+                glm::scale(Mat4(1.f), obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
@@ -296,7 +296,7 @@ void VehicleData::loadModelData(const char* modelName)
         {
             wheelMeshes[WHEEL_REAR_LEFT].push_back({
                 mesh,
-                glm::scale(glm::mat4(1.f), obj.scale),
+                glm::scale(Mat4(1.f), obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
@@ -305,7 +305,7 @@ void VehicleData::loadModelData(const char* modelName)
         else if (name.find("Collision") != std::string::npos)
         {
             collisionMeshes.push_back({ mesh->getConvexCollisionMesh(), transform });
-            collisionWidth = glm::max(collisionWidth, obj.bounds.y);
+            collisionWidth = max(collisionWidth, obj.bounds.y);
         }
         else if (name.find("COM") != std::string::npos)
         {
@@ -313,15 +313,15 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("WeaponMount1") != std::string::npos)
         {
-            weaponMounts[0] = glm::translate(glm::mat4(1.f), obj.position) * rotationOf(transform);
+            weaponMounts[0] = glm::translate(Mat4(1.f), obj.position) * rotationOf(transform);
         }
         else if (name.find("WeaponMount2") != std::string::npos)
         {
-            weaponMounts[1] = glm::translate(glm::mat4(1.f), obj.position) * rotationOf(transform);
+            weaponMounts[1] = glm::translate(Mat4(1.f), obj.position) * rotationOf(transform);
         }
         else if (name.find("WeaponMount3") != std::string::npos)
         {
-            weaponMounts[2] = glm::translate(glm::mat4(1.f), obj.position) * rotationOf(transform);
+            weaponMounts[2] = glm::translate(Mat4(1.f), obj.position) * rotationOf(transform);
         }
         else if (name.find("ExhaustHole") != std::string::npos)
         {
@@ -348,9 +348,9 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
     tuning.collisionMeshes = collisionMeshes;
 }
 
-void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
-        glm::mat4* wheelTransforms, VehicleConfiguration& config, Vehicle* vehicle,
-        bool isBraking, bool isHidden, glm::vec4 const& shield)
+void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
+        Mat4* wheelTransforms, VehicleConfiguration& config, Vehicle* vehicle,
+        bool isBraking, bool isHidden, Vec4 const& shield)
 {
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     if (config.dirty)
@@ -359,12 +359,12 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
         config.dirty = false;
     }
 
-    glm::mat4 defaultWheelTransforms[NUM_WHEELS];
+    Mat4 defaultWheelTransforms[NUM_WHEELS];
     if (!wheelTransforms)
     {
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
-            defaultWheelTransforms[i] = glm::translate(glm::mat4(1.f),
+            defaultWheelTransforms[i] = glm::translate(Mat4(1.f),
                     this->wheelPositions[i]);
         }
     }
@@ -390,16 +390,16 @@ void VehicleData::render(RenderWorld* rw, glm::mat4 const& transform,
     }
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
-        glm::mat4 wheelTransform = transform *
+        Mat4 wheelTransform = transform *
             (wheelTransforms ? wheelTransforms[i] : defaultWheelTransforms[i]);
         if ((i & 1) == 0)
         {
-            wheelTransform = glm::rotate(wheelTransform, PI, glm::vec3(0, 0, 1));
+            wheelTransform = glm::rotate(wheelTransform, PI, Vec3(0, 0, 1));
         }
 
         for (auto& m : wheelMeshes[i])
         {
-            glm::mat4 transform = wheelTransform * m.transform;
+            Mat4 transform = wheelTransform * m.transform;
             m.material->draw(rw, transform, m.mesh, 2);
             if (isHidden)
             {
@@ -460,11 +460,11 @@ void VehicleData::renderDebris(RenderWorld* rw,
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     for (auto const& d : debris)
     {
-        glm::mat4 scale = glm::scale(glm::mat4(1.f), scaleOf(d.meshInfo->transform));
-        glm::mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
+        Mat4 scale = glm::scale(Mat4(1.f), scaleOf(d.meshInfo->transform));
+        Mat4 transform = convert(d.rigidBody->getGlobalPose()) * scale;
         if (d.meshInfo->material == originalPaintMaterial)
         {
-            config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, glm::vec4(0.f),
+            config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, Vec4(0.f),
                     config.wrapTextureGuids, config.wrapColors);
         }
         else
@@ -523,11 +523,11 @@ void initializeVehicleData()
     registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   srgb(0.75f, 0.01f, 0.01f),   "Station Wagon", -1);
     registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   srgb(0.75f, 0.01f, 0.01f),   "Muscle Car", 1);
     registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, srgb(0.95f, 0.47f, 0.02f),   "Cool Car", 1);
-    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  srgb(0.9f, 0.9f, 0.f),       "Cool Car", 2, glm::vec4(0,0,0,1));
-    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, srgb(0.01f, 0.01f, 0.85f),   "Muscle Car", 2, glm::vec4(0.7,0.7,0.01,1));
-    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   srgb(0.01f, 0.01f, 0.3f),    "Muscle Car", 1, glm::vec4(0.5,0,0,1));
+    registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  srgb(0.9f, 0.9f, 0.f),       "Cool Car", 2, Vec4(0,0,0,1));
+    registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, srgb(0.01f, 0.01f, 0.85f),   "Muscle Car", 2, Vec4(0.7,0.7,0.01,1));
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   srgb(0.01f, 0.01f, 0.3f),    "Muscle Car", 1, Vec4(0.5,0,0,1));
     registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   srgb(0.01f, 0.7f, 0.8f),     "Station Wagon", -1);
-    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  srgb(0.91f, 0.91f, 0.91f),   "Cool Car", 2, glm::vec4(0,0,0,1));
+    registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  srgb(0.91f, 0.91f, 0.91f),   "Cool Car", 2, Vec4(0,0,0,1));
     registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  srgb(0.03f, 0.03f, 0.03f),   "Station Wagon", 0);
     registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  srgb(0.01f, 0.75f, 0.01f),   "Muscle Car", -1);
     registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  srgb(0.42f, 0.015f, 0.015f), "Cool Car", 0);

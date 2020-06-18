@@ -305,11 +305,11 @@ public:
         return keyRepeat[key];
     }
 
-    glm::vec2 getMousePosition()
+    Vec2 getMousePosition()
     {
         i32 x, y;
         SDL_GetMouseState(&x, &y);
-        return glm::vec2(x, y);
+        return Vec2(x, y);
     }
 
     void setMousePosition(i32 x, i32 y)
@@ -428,7 +428,7 @@ public:
                 if (!ctl)
                 {
                     f32 val = value / 32768.f;
-                    ctl->axis[axis] = glm::abs(val) < joystickDeadzone ? 0.f : val;
+                    ctl->axis[axis] = absolute(val) < joystickDeadzone ? 0.f : val;
                 }
             } break;
             case SDL_CONTROLLERBUTTONDOWN:

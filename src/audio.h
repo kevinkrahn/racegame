@@ -88,7 +88,7 @@ class Audio
         bool isPaused = false;
         bool is3D = false;
         SoundHandle handle = 0;
-        glm::vec3 position = {};
+        Vec3 position = {};
         SoundType soundType;
     };
 
@@ -112,7 +112,7 @@ class Audio
             f32 volume;
             f32 pitch;
             f32 pan;
-            glm::vec3 position;
+            Vec3 position;
             PlayingSound newSound;
             bool paused;
         };
@@ -125,7 +125,7 @@ class Audio
 
     Array<PlayingSound> playingSounds; // modified only by audio thread
     Array<PlaybackModification> playbackModifications;
-    SmallArray<glm::vec3> listenerPositions;
+    SmallArray<Vec3> listenerPositions;
 
     RandomSeries randomSeries;
 
@@ -138,15 +138,15 @@ public:
     SoundHandle playSound(Sound* sound, SoundType soundType,
             bool loop = false, f32 pitch = 1.f, f32 volume = 1.f, f32 pan = 0.f);
     SoundHandle playSound3D(Sound* sound, SoundType soundType,
-            glm::vec3 const& position, bool loop = false, f32 pitch = 1.f,
+            Vec3 const& position, bool loop = false, f32 pitch = 1.f,
             f32 volume = 1.f, f32 pan = 0.f);
     void stopSound(SoundHandle handle);
     void setSoundPitch(SoundHandle handle, f32 pitch);
     void setSoundVolume(SoundHandle handle, f32 volume);
     void setSoundPan(SoundHandle handle, f32 pan);
-    void setSoundPosition(SoundHandle handle, glm::vec3 const& position);
+    void setSoundPosition(SoundHandle handle, Vec3 const& position);
     void setSoundPaused(SoundHandle handle, bool paused);
-    void setListeners(SmallArray<glm::vec3>const& listeners);
+    void setListeners(SmallArray<Vec3>const& listeners);
     void setPaused(bool paused);
     void stopAllGameplaySounds();
 } g_audio;

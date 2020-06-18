@@ -8,9 +8,9 @@
 
 struct RibbonPoint
 {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec4 color;
+    Vec3 position;
+    Vec3 normal;
+    Vec4 color;
     f32 width;
     f32 life;
     f32 texU;
@@ -19,10 +19,10 @@ struct RibbonPoint
 
 struct RibbonVertex
 {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec4 color;
-    glm::vec2 uv;
+    Vec3 position;
+    Vec3 normal;
+    Vec4 color;
+    Vec2 uv;
 };
 
 class Ribbon
@@ -59,13 +59,13 @@ private:
     }
 
 public:
-    void addPoint(glm::vec3 const& position, glm::vec3 const& normal, f32 width, glm::vec4 const& color, bool endChain=false)
+    void addPoint(Vec3 const& position, Vec3 const& normal, f32 width, Vec4 const& color, bool endChain=false)
     {
         lastPoint = { position, normal, color, width, 0.f, texU, endChain };
         if (endChain ||
             points.empty() ||
             points.back().isEnd ||
-            glm::length2(position - points.back().position) > square(minDistanceBetweenPoints))
+            length2(position - points.back().position) > square(minDistanceBetweenPoints))
         {
             if (points.empty() || points.back().isEnd)
             {
@@ -73,7 +73,7 @@ public:
             }
             if (!points.empty() && !points.back().isEnd)
             {
-                glm::vec3 diff = position - points.back().position;
+                Vec3 diff = position - points.back().position;
                 texU += (length(diff) / ((width + points.back().width) / 2)) / 8;
             }
             points.push_back(lastPoint);
@@ -106,7 +106,7 @@ public:
         {
             if (p->life > fadeDelay)
             {
-                p->color.a = glm::max(0.f, p->color.a - deltaTime * fadeRate);
+                p->color.a = max(0.f, p->color.a - deltaTime * fadeRate);
                 if (p->color.a <= 0.f && !connected(p - points.begin()))
                 {
                     p = points.erase(p);
@@ -142,7 +142,7 @@ public:
             countPoint(v);
         }
         if (!points.back().isEnd &&
-            glm::length2(points.back().position - lastPoint.position) > square(0.1f))
+            length2(points.back().position - lastPoint.position) > square(0.1f))
         {
             countPoint(lastPoint);
         }
@@ -178,22 +178,22 @@ public:
             }
 
             // TODO: offset based on normal?
-            glm::vec3 diff = v.position - holdPoint.position;
-            glm::vec2 offsetDir = glm::normalize(glm::vec2(-diff.y, diff.x));
-            glm::vec3 offset = glm::vec3(offsetDir * v.width, 0);
+            Vec3 diff = v.position - holdPoint.position;
+            Vec2 offsetDir = normalize(Vec2(-diff.y, diff.x));
+            Vec3 offset = Vec3(offsetDir * v.width, 0);
 
             if (firstInChain)
             {
                 firstInChain = false;
-                glm::vec3 prevOffset(offsetDir * holdPoint.width, 0);
+                Vec3 prevOffset(offsetDir * holdPoint.width, 0);
                 holdVerts[0] = { holdPoint.position + prevOffset,
-                    holdPoint.normal, holdPoint.color, glm::vec2(holdPoint.texU, 1) };
+                    holdPoint.normal, holdPoint.color, Vec2(holdPoint.texU, 1) };
                 holdVerts[1] = { holdPoint.position - prevOffset,
-                    holdPoint.normal, holdPoint.color, glm::vec2(holdPoint.texU, 0) };
+                    holdPoint.normal, holdPoint.color, Vec2(holdPoint.texU, 0) };
             }
 
-            d[0] = { v.position - offset, v.normal, v.color, glm::vec2(v.texU, 0) };
-            d[1] = { v.position + offset, v.normal, v.color, glm::vec2(v.texU, 1) };
+            d[0] = { v.position - offset, v.normal, v.color, Vec2(v.texU, 0) };
+            d[1] = { v.position + offset, v.normal, v.color, Vec2(v.texU, 1) };
             d[2] = holdVerts[0];
 
             d[3] = holdVerts[0];
@@ -218,7 +218,7 @@ public:
             writePoint(v);
         }
         if (!points.back().isEnd &&
-            glm::length2(points.back().position - lastPoint.position) > square(0.1f))
+            length2(points.back().position - lastPoint.position) > square(0.1f))
         {
             writePoint(lastPoint);
         }

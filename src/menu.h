@@ -56,8 +56,8 @@ namespace WidgetFlags
 struct Widget
 {
     const char* helpText = nullptr;
-    glm::vec2 pos = {0,0};
-    glm::vec2 size = {0,0};
+    Vec2 pos = {0,0};
+    Vec2 size = {0,0};
     f32 hover = 0.f;
     f32 hoverTimer = 0.f;
     std::function<void()> onSelect;
@@ -79,8 +79,8 @@ struct ImageButtonInfo
 
 struct SliderInfo
 {
-    glm::vec3 color1;
-    glm::vec3 color2;
+    Vec3 color1;
+    Vec3 color2;
     f32 val;
     Texture* tex;
     f32 min;
@@ -123,7 +123,7 @@ class Menu
     void championshipStandings();
     void raceResults();
 
-    void drawBox(glm::vec2 pos, glm::vec2 size);
+    void drawBox(Vec2 pos, Vec2 size);
 
     SmallArray<Widget, 32> widgets;
     Widget* selectedWidget = nullptr;
@@ -165,29 +165,29 @@ class Menu
     i32 didChangeSelectionY();
     i32 didChangeSelectionX();
 
-    Widget* addBackgroundBox(glm::vec2 pos, glm::vec2 size, f32 alpha=0.3f, bool scaleOut=true);
+    Widget* addBackgroundBox(Vec2 pos, Vec2 size, f32 alpha=0.3f, bool scaleOut=true);
     Widget* addLogic(std::function<void()> onUpdate);
     Widget* addLogic(std::function<void(Widget&)> onUpdate);
-    Widget* addButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+    Widget* addButton(const char* text, const char* helpText, Vec2 pos, Vec2 size,
             std::function<void()> onSelect, u32 flags=0, Texture* image=nullptr,
             std::function<bool()> isEnabled=[]{ return true; });
-    Widget* addImageButton(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+    Widget* addImageButton(const char* text, const char* helpText, Vec2 pos, Vec2 size,
             std::function<void()> onSelect, u32 flags, Texture* image, f32 imageMargin,
             std::function<ImageButtonInfo(bool isSelected)> getInfo);
-    Widget* addSlider(const char* text, glm::vec2 pos, glm::vec2 size,
+    Widget* addSlider(const char* text, Vec2 pos, Vec2 size,
             u32 flags, std::function<void(f32)> onValueChanged,
             std::function<SliderInfo()> getInfo);
-    Widget* addSelector2(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+    Widget* addSelector2(const char* text, const char* helpText, Vec2 pos, Vec2 size,
             u32 flags, std::function<SelectorInfo()> getInfo,
             std::function<void(i32 valueIndex)> onValueChanged);
-    Widget* addSelector(const char* text, const char* helpText, glm::vec2 pos, glm::vec2 size,
+    Widget* addSelector(const char* text, const char* helpText, Vec2 pos, Vec2 size,
             SmallArray<std::string> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
-    Widget* addHelpMessage(glm::vec2 pos);
-    Widget* addLabel(std::function<const char*()> getText, glm::vec2 pos, class Font* font,
-            HAlign halign=HAlign::CENTER, VAlign valign=VAlign::CENTER, glm::vec3 const& color=glm::vec3(1.f),
+    Widget* addHelpMessage(Vec2 pos);
+    Widget* addLabel(std::function<const char*()> getText, Vec2 pos, class Font* font,
+            HAlign halign=HAlign::CENTER, VAlign valign=VAlign::CENTER, Vec3 const& color=Vec3(1.f),
             u32 flags=0);
-    Widget* addTitle(const char* text, glm::vec2 pos={0,-400});
+    Widget* addTitle(const char* text, Vec2 pos={0,-400});
 
     void createVehiclePreview();
     void createMainGarageMenu();

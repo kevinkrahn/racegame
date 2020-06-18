@@ -20,13 +20,13 @@ public:
     // serialized
     std::string name;
     i64 materialGuid = 0;
-    glm::quat rotation;
-    glm::vec3 position;
-    glm::vec3 scale;
+    Quat rotation;
+    Vec3 position;
+    Vec3 scale;
     u32 meshIndex;
     bool isCollider = false;
     bool isVisible = true;
-    glm::vec3 bounds;
+    Vec3 bounds;
     Array<u32> collectionIndexes;
 
     void serialize(Serializer& s)
@@ -43,11 +43,11 @@ public:
         s.field(collectionIndexes);
     }
 
-    glm::mat4 getTransform() const
+    Mat4 getTransform() const
     {
-        glm::mat4 transform = glm::translate(glm::mat4(1.f), position)
+        Mat4 transform = glm::translate(Mat4(1.f), position)
             * glm::mat4_cast(rotation)
-            * glm::scale(glm::mat4(1.f), scale);
+            * glm::scale(Mat4(1.f), scale);
         return transform;
     }
 };
@@ -141,7 +141,7 @@ public:
         }
         FATAL_ERROR("Cannot find mesh with name \"", name, "\" in model \"", this->name, "\"");
     }
-    BoundingBox getBoundingbox(glm::mat4 const& m)
+    BoundingBox getBoundingbox(Mat4 const& m)
     {
         BoundingBox bb;
         bb.min = { FLT_MAX, FLT_MAX, FLT_MAX };

@@ -271,25 +271,25 @@ namespace DataFile
             real_ = val;
         }
 
-        OptionalVal<glm::vec2> vec2()
+        OptionalVal<Vec2> vec2()
         {
             if (dataType == DataType::ARRAY && array_.size() >= 2
                     && array_[0].dataType == DataType::F32 && array_[1].dataType == DataType::F32)
             {
-                return OptionalVal<glm::vec2>({ array_[0].real().val(), array_[1].real().val() }, true);
+                return OptionalVal<Vec2>({ array_[0].real().val(), array_[1].real().val() }, true);
             }
             else
             {
-                return OptionalVal<glm::vec2>({}, false);
+                return OptionalVal<Vec2>({}, false);
             }
         }
 
-        glm::vec2 vec2(glm::vec2 defaultVal)
+        Vec2 vec2(Vec2 defaultVal)
         {
             return vec2().val();
         }
 
-        void setVec2(glm::vec2 val)
+        void setVec2(Vec2 val)
         {
             this->~Value();
             dataType = DataType::ARRAY;
@@ -298,28 +298,28 @@ namespace DataFile
             array_[1].setReal(val.y);
         }
 
-        OptionalVal<glm::vec3> vec3()
+        OptionalVal<Vec3> vec3()
         {
             if (dataType == DataType::ARRAY && array_.size() >= 3
                     && array_[0].dataType == DataType::F32
                     && array_[1].dataType == DataType::F32
                     && array_[2].dataType == DataType::F32)
             {
-                return OptionalVal<glm::vec3>({
+                return OptionalVal<Vec3>({
                         array_[0].real().val(), array_[1].real().val(), array_[2].real().val() }, true);
             }
             else
             {
-                return OptionalVal<glm::vec3>({}, false);
+                return OptionalVal<Vec3>({}, false);
             }
         }
 
-        glm::vec3 vec3(glm::vec3 const& defaultVal)
+        Vec3 vec3(Vec3 const& defaultVal)
         {
             return vec3().val();
         }
 
-        void setVec3(glm::vec3 const& val)
+        void setVec3(Vec3 const& val)
         {
             this->~Value();
             dataType = DataType::ARRAY;
@@ -329,29 +329,29 @@ namespace DataFile
             array_[2].setReal(val.z);
         }
 
-        OptionalVal<glm::vec4> vec4()
+        OptionalVal<Vec4> vec4()
         {
             if (dataType == DataType::ARRAY && array_.size() >= 3
                     && array_[0].dataType == DataType::F32
                     && array_[1].dataType == DataType::F32
                     && array_[2].dataType == DataType::F32)
             {
-                return OptionalVal<glm::vec4>({
+                return OptionalVal<Vec4>({
                         array_[0].real().val(), array_[1].real().val(),
                         array_[2].real().val(), array_[3].real().val() }, true);
             }
             else
             {
-                return OptionalVal<glm::vec4>({}, false);
+                return OptionalVal<Vec4>({}, false);
             }
         }
 
-        glm::vec4 vec4(glm::vec4 const& defaultVal)
+        Vec4 vec4(Vec4 const& defaultVal)
         {
             return vec4().val();
         }
 
-        void setVec4(glm::vec4 const& val)
+        void setVec4(Vec4 const& val)
         {
             this->~Value();
             dataType = DataType::ARRAY;
@@ -511,21 +511,21 @@ namespace DataFile
         return v;
     }
 
-    Value makeVec2(glm::vec2 val)
+    Value makeVec2(Vec2 val)
     {
         Value v;
         v.setVec2(val);
         return v;
     }
 
-    Value makeVec3(glm::vec3 const& val)
+    Value makeVec3(Vec3 const& val)
     {
         Value v;
         v.setVec3(val);
         return v;
     }
 
-    Value makeVec4(glm::vec4 const& val)
+    Value makeVec4(Vec4 const& val)
     {
         Value v;
         v.setVec4(val);
@@ -811,22 +811,22 @@ public:
         }
     }
 
-    template<> void element(const char* name, DataFile::Value& val, glm::vec2& dest)
+    template<> void element(const char* name, DataFile::Value& val, Vec2& dest)
     {
         realArray(name, val, dest);
     }
 
-    template<> void element(const char* name, DataFile::Value& val, glm::vec3& dest)
+    template<> void element(const char* name, DataFile::Value& val, Vec3& dest)
     {
         realArray(name, val, dest);
     }
 
-    template<> void element(const char* name, DataFile::Value& val, glm::vec4& dest)
+    template<> void element(const char* name, DataFile::Value& val, Vec4& dest)
     {
         realArray(name, val, dest);
     }
 
-    template<> void element(const char* name, DataFile::Value& val, glm::quat& dest)
+    template<> void element(const char* name, DataFile::Value& val, Quat& dest)
     {
         realArray(name, val, dest);
     }

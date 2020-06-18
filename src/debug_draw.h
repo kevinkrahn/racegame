@@ -10,8 +10,8 @@ class DebugDraw
 {
     struct Vertex
     {
-        glm::vec3 position;
-        glm::vec4 color;
+        Vec3 position;
+        Vec4 color;
     };
     Array<Vertex> verts;
     DynamicBuffer buffer = DynamicBuffer(sizeof(Vertex) * 500000);
@@ -37,24 +37,24 @@ public:
         glDeleteVertexArrays(1, &vao);
     }
 
-    void line(glm::vec3 const& p1, glm::vec3 const& p2,
-            glm::vec4 const& c1 = glm::vec4(1), glm::vec4 const& c2 = glm::vec4(1))
+    void line(Vec3 const& p1, Vec3 const& p2,
+            Vec4 const& c1 = Vec4(1), Vec4 const& c2 = Vec4(1))
     {
         verts.push_back({ p1, c1 });
         verts.push_back({ p2, c2 });
     }
 
-    void boundingBox(BoundingBox const& bb, glm::mat4 const& transform, glm::vec4 const& color)
+    void boundingBox(BoundingBox const& bb, Mat4 const& transform, Vec4 const& color)
     {
-        glm::vec3 p[8] = {
-            glm::vec3(transform * glm::vec4(bb.min.x, bb.min.y, bb.min.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.max.x, bb.min.y, bb.min.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.max.x, bb.max.y, bb.min.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.min.x, bb.max.y, bb.min.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.min.x, bb.min.y, bb.max.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.max.x, bb.min.y, bb.max.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.max.x, bb.max.y, bb.max.z, 1.f)),
-            glm::vec3(transform * glm::vec4(bb.min.x, bb.max.y, bb.max.z, 1.f)),
+        Vec3 p[8] = {
+            Vec3(transform * Vec4(bb.min.x, bb.min.y, bb.min.z, 1.f)),
+            Vec3(transform * Vec4(bb.max.x, bb.min.y, bb.min.z, 1.f)),
+            Vec3(transform * Vec4(bb.max.x, bb.max.y, bb.min.z, 1.f)),
+            Vec3(transform * Vec4(bb.min.x, bb.max.y, bb.min.z, 1.f)),
+            Vec3(transform * Vec4(bb.min.x, bb.min.y, bb.max.z, 1.f)),
+            Vec3(transform * Vec4(bb.max.x, bb.min.y, bb.max.z, 1.f)),
+            Vec3(transform * Vec4(bb.max.x, bb.max.y, bb.max.z, 1.f)),
+            Vec3(transform * Vec4(bb.min.x, bb.max.y, bb.max.z, 1.f)),
         };
 
         line(p[0], p[1], color, color);

@@ -38,11 +38,11 @@ public:
     Font() {}
     Font(std::string const& filename, f32 height, u32 startingChar=32, u32 numGlyphs=95);
 
-    glm::vec2 stringDimensions(const char* str, bool onlyFirstLine=false) const;
+    Vec2 stringDimensions(const char* str, bool onlyFirstLine=false) const;
 
     f32 getHeight() const { return height; }
     f32 getLineHeight() const { return lineHeight; }
 
-    void draw(const char* text, glm::vec2 pos, glm::vec3 color, f32 alpha=1.f,
+    void draw(const char* text, Vec2 pos, Vec3 color, f32 alpha=1.f,
             f32 scale=1.f, HAlign halign=HAlign::LEFT, VAlign valign=VAlign::TOP);
 };

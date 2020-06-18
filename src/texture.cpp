@@ -118,7 +118,7 @@ void Texture::initGLTexture(u32 index)
     }
 
     SourceFile& s = sourceFiles[index];
-    u32 mipLevels = generateMipMaps ? 1 + (u32)(glm::log2((f32)glm::max(s.width, s.height))) : 1;
+    u32 mipLevels = generateMipMaps ? 1 + (u32)(log2f((f32)max(s.width, s.height))) : 1;
 
     glCreateTextures(GL_TEXTURE_2D, 1, &s.previewHandle);
     glTextureStorage2D(s.previewHandle, mipLevels, internalFormat, s.width, s.height);
@@ -149,7 +149,7 @@ void Texture::initGLTexture(u32 index)
         glTextureParameteri(s.previewHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(s.previewHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
-    glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, glm::max((f32)anisotropy, 1.f));
+    glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, max((f32)anisotropy, 1.f));
     glTextureParameterf(s.previewHandle, GL_TEXTURE_LOD_BIAS, lodBias);
     if (generateMipMaps)
     {
@@ -171,7 +171,7 @@ void Texture::initCubemap()
         }
     }
 
-    u32 mipLevels = generateMipMaps ? 1 + (u32)(glm::log2((f32)glm::max(width, height))) : 1;
+    u32 mipLevels = generateMipMaps ? 1 + (u32)(log2f((f32)max(width, height))) : 1;
     GLuint internalFormat = GL_SRGB8;
     GLuint baseFormat = GL_RGBA;
 

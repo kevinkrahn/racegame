@@ -32,14 +32,14 @@ public:
         }
 
         PxRaycastBuffer hit;
-        glm::vec3 down = convert(vehicle->getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
+        Vec3 down = convert(vehicle->getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f);
         if (!scene->raycastStatic(vehicle->getPosition(), down, 2.f, &hit, COLLISION_FLAG_TRACK))
         {
             g_audio.playSound(g_res.getSound("nono"), SoundType::GAME_SFX);
             return;
         }
 
-        glm::vec3 pos = convert(hit.block.position);
+        Vec3 pos = convert(hit.block.position);
         Oil* oil = new Oil(pos);
         scene->addEntity(oil);
         g_audio.playSound3D(g_res.getSound("oil"), SoundType::GAME_SFX,

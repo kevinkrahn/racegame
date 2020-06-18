@@ -6,8 +6,8 @@
 
 struct BoundingBox
 {
-    glm::vec3 min;
-    glm::vec3 max;
+    Vec3 min;
+    Vec3 max;
 
     void serialize(Serializer& s)
     {
@@ -21,7 +21,7 @@ struct BoundingBox
                bb.max.x <= max.x && bb.max.y <= max.y && bb.max.z <= max.z;
     }
 
-    bool containsPoint(glm::vec3 const p) const
+    bool containsPoint(Vec3 const p) const
     {
         return p.x >= min.x && p.y >= min.y && p.z >= min.z &&
                p.x <= max.x && p.y <= max.y && p.z <= max.z;
@@ -35,19 +35,19 @@ struct BoundingBox
     }
 
     // Adapted from http://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/
-    bool triBoxOverlap(glm::vec3 boxcenter, glm::vec3 const& boxhalfsize, glm::vec3 triverts[3]) const
+    bool triBoxOverlap(Vec3 boxcenter, Vec3 const& boxhalfsize, Vec3 triverts[3]) const
     {
-        glm::vec3 v0 = triverts[0] - boxcenter;
-        glm::vec3 v1 = triverts[1] - boxcenter;
-        glm::vec3 v2 = triverts[2] - boxcenter;
+        Vec3 v0 = triverts[0] - boxcenter;
+        Vec3 v1 = triverts[1] - boxcenter;
+        Vec3 v2 = triverts[2] - boxcenter;
 
-        glm::vec3 e0 = v1 - v0;
-        glm::vec3 e1 = v2 - v1;
-        glm::vec3 e2 = v0 - v2;
+        Vec3 e0 = v1 - v0;
+        Vec3 e1 = v2 - v1;
+        Vec3 e2 = v0 - v2;
 
         f32 min, max, p0, p1, p2, rad;
 
-        glm::vec3 fe = glm::abs(e0);
+        Vec3 fe = absolute(e0);
         p0 = e0.z * v0.y - e0.y * v0.z;
         p2 = e0.z * v2.y - e0.y * v2.z;
         if (p0 < p2) { min = p0; max = p2; }
@@ -66,7 +66,7 @@ struct BoundingBox
         rad = fe.y * boxhalfsize.x + fe.x * boxhalfsize.y;
         if (min > rad || max < -rad) return false;
 
-        fe = glm::abs(e1);
+        fe = absolute(e1);
         p0 = e1.z * v0.y - e1.y * v0.z;
         p2 = e1.z * v2.y - e1.y * v2.z;
         if (p0 < p2) { min = p0; max = p2; } else { min = p2; max = p0; }
@@ -83,7 +83,7 @@ struct BoundingBox
         rad = fe.y * boxhalfsize.x + fe.x * boxhalfsize.y;
         if (min > rad || max < -rad) return false;
 
-        fe = glm::abs(e2);
+        fe = absolute(e2);
         p0 = e2.z * v0.y - e2.y * v0.z;
         p1 = e2.z * v1.y - e2.y * v1.z;
         if (p0 < p1) { min = p0; max = p1; } else { min = p1; max = p0; }
@@ -100,15 +100,15 @@ struct BoundingBox
         rad = fe.y * boxhalfsize.x + fe.x * boxhalfsize.y;
         if (min > rad || max < -rad) return false;
 
-        glm::vec3 omin = glm::min(glm::min(v0, v1), v2);
-        glm::vec3 omax = glm::max(glm::max(v0, v1), v2);
+        Vec3 omin = ::min(::min(v0, v1), v2);
+        Vec3 omax = ::max(::max(v0, v1), v2);
         if ((omin.x > boxhalfsize.x || omax.x < -boxhalfsize.x) ||
             (omin.y > boxhalfsize.y || omax.y < -boxhalfsize.y) ||
             (omin.z > boxhalfsize.z || omax.z < -boxhalfsize.z)) return false;
 
-        glm::vec3 normal = glm::cross(e0, e1);
+        Vec3 normal = cross(e0, e1);
 
-        glm::vec3 vmin, vmax;
+        Vec3 vmin, vmax;
         for (u32 q = 0; q < 3; ++q)
         {
             f32 v = v0[q];
@@ -124,17 +124,17 @@ struct BoundingBox
             }
         }
 
-        if (!(glm::dot(normal, vmin) <= 0.f || glm::dot(normal, vmax) >= 0.f)) return false;
+        if (!(dot(normal, vmin) <= 0.f || dot(normal, vmax) >= 0.f)) return false;
 
         return true;
     }
 
-    bool intersectsTriangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2) const
+    bool intersectsTriangle(Vec3 v0, Vec3 v1, Vec3 v2) const
     {
-        glm::vec3 boxcenter = (min + max) * 0.5f;
-        glm::vec3 boxhalfsize = (max - min) * 0.5f;
+        Vec3 boxcenter = (min + max) * 0.5f;
+        Vec3 boxhalfsize = (max - min) * 0.5f;
 
-        glm::vec3 verts[3] = {
+        Vec3 verts[3] = {
             { v0.x, v0.y, v0.z },
             { v1.x, v1.y, v1.z },
             { v2.x, v2.y, v2.z },
@@ -142,10 +142,10 @@ struct BoundingBox
         return triBoxOverlap(boxcenter, boxhalfsize, verts);
     }
 
-    BoundingBox transform(glm::mat4 const& transform) const
+    BoundingBox transform(Mat4 const& transform) const
     {
-        glm::vec3 minP(FLT_MAX), maxP(-FLT_MAX);
-        glm::vec3 corners[8] = {
+        Vec3 minP(FLT_MAX), maxP(-FLT_MAX);
+        Vec3 corners[8] = {
             { min.x, min.y, min.z },
             { max.x, min.y, min.z },
             { max.x, max.y, min.z },
@@ -155,9 +155,9 @@ struct BoundingBox
             { max.x, max.y, max.z },
             { min.x, max.y, max.z },
         };
-        for (glm::vec3& v : corners)
+        for (Vec3& v : corners)
         {
-            v = glm::vec3(transform * glm::vec4(v, 1.0));
+            v = Vec3(transform * Vec4(v, 1.0));
             if (v.x < minP.x) minP.x = v.x;
             if (v.y < minP.y) minP.y = v.y;
             if (v.z < minP.z) minP.z = v.z;
@@ -170,12 +170,12 @@ struct BoundingBox
 
     BoundingBox growToFit(BoundingBox const& other) const
     {
-        return { glm::min(other.min, min), glm::max(other.max, max) };
+        return { ::min(other.min, min), ::max(other.max, max) };
     }
 
     f32 volume() const
     {
-        glm::vec3 dim = max - min;
+        Vec3 dim = max - min;
         return dim.x * dim.y * dim.z;
     }
 
@@ -185,9 +185,9 @@ struct BoundingBox
     }
 };
 
-BoundingBox computeCameraFrustumBoundingBox(glm::mat4 const& inverseViewProj)
+BoundingBox computeCameraFrustumBoundingBox(Mat4 const& inverseViewProj)
 {
-    glm::vec3 ndc[] = {
+    Vec3 ndc[] = {
         { -1,  1, 0 },
         {  1,  1, 0 },
         {  1, -1, 0 },
@@ -207,8 +207,8 @@ BoundingBox computeCameraFrustumBoundingBox(glm::mat4 const& inverseViewProj)
     f32 maxz = -FLT_MAX;
     for (auto& v : ndc)
     {
-        glm::vec4 b = inverseViewProj * glm::vec4(v, 1.f);
-        v = glm::vec3(b) / b.w;
+        Vec4 b = inverseViewProj * Vec4(v, 1.f);
+        v = Vec3(b) / b.w;
 
         if (v.x < minx) minx = v.x;
         if (v.x > maxx) maxx = v.x;

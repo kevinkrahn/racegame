@@ -8,13 +8,13 @@ class Oil : public PlaceableEntity
     Decal decal;
 
 public:
-    Oil() { setup(glm::vec3(0.f)); }
-    Oil(glm::vec3 const& pos)
+    Oil() { setup(Vec3(0.f)); }
+    Oil(Vec3 const& pos)
     {
         setup(pos);
-        scale = glm::vec3(3.25f);
+        scale = Vec3(3.25f);
     }
-    Oil* setup(glm::vec3 const& pos={0,0,0});
+    Oil* setup(Vec3 const& pos={0,0,0});
     void onCreateEnd(class Scene* scene) override;
     void updateTransform(class Scene* scene) override;
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override;

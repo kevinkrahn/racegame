@@ -75,9 +75,9 @@ public:
 
     void onRender(RenderWorld* rw, Scene* scene, f32 deltaTime) override
     {
-        glm::mat4 t =
-            glm::translate(glm::mat4(1.f), glm::vec3(0, 0, glm::sin((f32)scene->getWorldTime()) * 0.2f)) *
-            transform * glm::rotate(glm::mat4(1.f), (f32)scene->getWorldTime(), glm::vec3(0, 0, 1));
+        Mat4 t =
+            glm::translate(Mat4(1.f), Vec3(0, 0, sinf((f32)scene->getWorldTime()) * 0.2f)) *
+            transform * glm::rotate(Mat4(1.f), (f32)scene->getWorldTime(), Vec3(0, 0, 1));
         Model* model = getModel();
         for (auto& obj : model->objects)
         {
@@ -88,8 +88,8 @@ public:
 
     void onPreview(RenderWorld* rw) override
     {
-        rw->setViewportCamera(0, glm::vec3(3.f, 3.f, 4.f) * 1.25f,
-                glm::vec3(0.f, 0.f, 1.25f), 1.f, 200.f, 32.f);
+        rw->setViewportCamera(0, Vec3(3.f, 3.f, 4.f) * 1.25f,
+                Vec3(0.f, 0.f, 1.25f), 1.f, 200.f, 32.f);
         Model* model = getModel();
         for (auto& obj : model->objects)
         {

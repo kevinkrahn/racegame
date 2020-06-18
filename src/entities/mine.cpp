@@ -41,7 +41,7 @@ void Mine::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
     if (activated)
     {
-        scene->createExplosion(translationOf(transform), glm::vec3(0.f), 10.f);
+        scene->createExplosion(translationOf(transform), Vec3(0.f), 10.f);
         this->destroy();
         const char* sounds[] = {
             "explosion2",
@@ -86,9 +86,9 @@ void Mine::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         g_res.getMaterial(obj.materialGuid)->draw(rw, transform * obj.getTransform(),
                 &model->meshes[obj.meshIndex]);
     }
-    glm::vec3 p = translationOf(transform) + glm::vec3(0,0,0.7f);
-    glm::vec4 color = {2.f,0.02f,0.02f,0.3f};
-    f32 t = (glm::sin(aliveTime * 2.f) + 2.f);
+    Vec3 p = translationOf(transform) + Vec3(0,0,0.7f);
+    Vec4 color = {2.f,0.02f,0.02f,0.3f};
+    f32 t = (sinf(aliveTime * 2.f) + 2.f);
     drawBillboard(rw, g_res.getTexture("flare"), p, color, t * 0.3f, 0.f, false);
     rw->addPointLight(p, color, 1.5f * t, 2.f);
 }

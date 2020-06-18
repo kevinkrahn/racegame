@@ -62,7 +62,7 @@ struct RaceResult
     i32 getLeaguePointsEarned() const
     {
         // TODO: have bonus points also affect league points earned
-        return finishedRace ? (glm::max((10 - (i32)placement), 0) * 100) : 0;
+        return finishedRace ? (max((10 - (i32)placement), 0) * 100) : 0;
     }
 
     i32 getCreditsEarned() const
@@ -89,10 +89,10 @@ private:
 
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
-    glm::vec3 trackPreviewCameraFrom = { 0, 0, 0 };
-    glm::vec3 trackPreviewCameraTarget = { 0, 0, 0 };
-    glm::vec3 trackPreviewPosition = { 0, 0, 0 };
-    glm::vec3 trackPreviewVelocity = { 0, 0, 0 };
+    Vec3 trackPreviewCameraFrom = { 0, 0, 0 };
+    Vec3 trackPreviewCameraTarget = { 0, 0, 0 };
+    Vec3 trackPreviewPosition = { 0, 0, 0 };
+    Vec3 trackPreviewVelocity = { 0, 0, 0 };
     u32 currentTrackPreviewPoint = 0;
     f64 worldTime = 0.0;
     bool readyToGo = false;
@@ -164,8 +164,8 @@ public:
     void vehicleFinish(u32 n);
     Vehicle* getVehicle(u32 n) const { return vehicles.size() > n ? vehicles[n].get() : nullptr; }
     void attackCredit(u32 instigator, u32 victim);
-    void applyAreaForce(glm::vec3 const& position, f32 strength) const;
-    void createExplosion(glm::vec3 const& position, glm::vec3 const& velocity, f32 strength);
+    void applyAreaForce(Vec3 const& position, f32 strength) const;
+    void createExplosion(Vec3 const& position, Vec3 const& velocity, f32 strength);
     u32 getNumHumanDrivers() const { return numHumanDrivers; }
     void updateTrackPreview(Renderer* renderer, u32 size);
     TrackPreview2D& getTrackPreview2D() { return trackPreview2D; }
@@ -173,20 +173,20 @@ public:
     EditorCamera& getEditorCamera() { return editorCamera; }
     Array<RacingLine>& getPaths() { return paths; }
     void showDebugInfo();
-    glm::mat4 getStart() const { return start->transform; }
+    Mat4 getStart() const { return start->transform; }
     PxScene* const& getPhysicsScene() const { return physicsScene; }
     TrackGraph& getTrackGraph() { return trackGraph; }
     MotionGrid& getMotionGrid() { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
     bool canGo() const;
-    glm::vec3 findValidPosition(glm::vec3 const& pos, f32 collisionRadius, f32 checkRadius=10.f);
+    Vec3 findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRadius=10.f);
 
-    bool raycastStatic(glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
+    bool raycastStatic(Vec3 const& from, Vec3 const& dir, f32 dist,
             PxRaycastBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK) const;
-    bool raycast(glm::vec3 const& from, glm::vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
-    bool sweepStatic(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
+    bool raycast(Vec3 const& from, Vec3 const& dir, f32 dist, PxRaycastBuffer* hit=nullptr);
+    bool sweepStatic(f32 radius, Vec3 const& from, Vec3 const& dir, f32 dist,
             PxSweepBuffer* hit=nullptr, u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_TRACK) const;
-    bool sweep(f32 radius, glm::vec3 const& from, glm::vec3 const& dir, f32 dist,
+    bool sweep(f32 radius, Vec3 const& from, Vec3 const& dir, f32 dist,
             PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr,
             u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS) const;
 

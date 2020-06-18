@@ -31,13 +31,13 @@ public:
     f32 alphaCutoff = 0.f;
     f32 shadowAlphaCutoff = 0.f;
 
-    glm::vec3 color = { 1, 1, 1 };
-    glm::vec3 emit = { 0, 0, 0 };
+    Vec3 color = { 1, 1, 1 };
+    Vec3 emit = { 0, 0, 0 };
     f32 emitPower = 0.f;
 
     f32 specularPower = 50.f;
     f32 specularStrength = 0.f;
-    glm::vec3 specularColor = { 1, 1, 1 };
+    Vec3 specularColor = { 1, 1, 1 };
 
     f32 fresnelScale = 0.f;
     f32 fresnelPower = 2.5f;
@@ -97,16 +97,16 @@ public:
     GLuint textureNormalHandle = 0;
 
     void loadShaderHandles(SmallArray<ShaderDefine> additionalDefines={});
-    void draw(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil=0);
-    void drawPick(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u32 pickValue);
-    void drawHighlight(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh,
+    void draw(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh, u8 stencil=0);
+    void drawPick(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh, u32 pickValue);
+    void drawHighlight(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh,
             u8 stencil, u8 cameraIndex=0);
-    void drawVehicle(class RenderWorld* rw, glm::mat4 const& transform, struct Mesh* mesh, u8 stencil,
-            glm::vec4 const& shield, i64 wrapTextureGuids[3], glm::vec4 wrapColor[3]);
+    void drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh, u8 stencil,
+            Vec4 const& shield, i64 wrapTextureGuids[3], Vec4 wrapColor[3]);
 };
 
-void drawSimple(RenderWorld* rw, Mesh* mesh, struct Texture* tex, glm::mat4 const& transform,
-        glm::vec3 const& color=glm::vec3(1.f), glm::vec3 const& emit=glm::vec3(0.f));
-void drawWireframe(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform, glm::vec4 color);
-void drawOverlay(RenderWorld* rw, Mesh* mesh, glm::mat4 const& transform,
-        glm::vec3 const& color=glm::vec3(1.f), i32 priorityOffset=0, bool onlyDepth=false);
+void drawSimple(RenderWorld* rw, Mesh* mesh, struct Texture* tex, Mat4 const& transform,
+        Vec3 const& color=Vec3(1.f), Vec3 const& emit=Vec3(0.f));
+void drawWireframe(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec4 color);
+void drawOverlay(RenderWorld* rw, Mesh* mesh, Mat4 const& transform,
+        Vec3 const& color=Vec3(1.f), i32 priorityOffset=0, bool onlyDepth=false);

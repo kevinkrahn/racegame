@@ -22,12 +22,12 @@ public:
     {
         if (ammo > 0)
         {
-            vehicle->setShield(glm::vec3(1.f, 0.2f, 0.f), 1.f);
-            //glm::vec3(0.05f, 0.15f, 1.f);
+            vehicle->setShield(Vec3(1.f, 0.2f, 0.f), 1.f);
+            //Vec3(0.05f, 0.15f, 1.f);
         }
     }
 
-    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             struct VehicleConfiguration const& config, struct VehicleData const& vehicleData) override
     {
         // TODO: show effect when taking damage

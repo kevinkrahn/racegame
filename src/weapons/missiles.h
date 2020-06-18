@@ -38,15 +38,15 @@ public:
             return;
         }
 
-        glm::mat4 transform = vehicle->getTransform();
+        Mat4 transform = vehicle->getTransform();
         f32 minSpeed = 10.f;
-        glm::vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
+        Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
-        if (glm::length2(vel) < square(minSpeed))
+        if (length2(vel) < square(minSpeed))
         {
-            vel = glm::normalize(vel) * minSpeed;
+            vel = normalize(vel) * minSpeed;
         }
-        glm::vec3 pos = transform * mountTransform * glm::vec4(missileSpawnPoint(ammo - 1), 1.f);
+        Vec3 pos = transform * mountTransform * Vec4(missileSpawnPoint(ammo - 1), 1.f);
         scene->addEntity(new Projectile(pos,
                 vel, zAxisOf(transform), vehicle->vehicleIndex, Projectile::MISSILE));
         g_audio.playSound3D(g_res.getSound("missile"),
@@ -56,27 +56,27 @@ public:
         ammo -= 1;
     }
 
-    glm::vec3 missileSpawnPoint(u32 i)
+    Vec3 missileSpawnPoint(u32 i)
     {
         f32 separation = 0.35f;
         f32 xPos[] = { -0.1f, -0.f, 0.1f, -0.f, -0.1f };
-        return glm::vec3(xPos[i] * 1.35f, -(separation * (info.maxUpgradeLevel - 1)) * 0.5f + separation * i, 0.15f);
+        return Vec3(xPos[i] * 1.35f, -(separation * (info.maxUpgradeLevel - 1)) * 0.5f + separation * i, 0.15f);
     }
 
-    void render(class RenderWorld* rw, glm::mat4 const& vehicleTransform,
+    void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
         Material* mat = g_res.getMaterial("plastic");
         for (u32 i=0; i<info.maxUpgradeLevel; ++i)
         {
-            glm::mat4 t = vehicleTransform * mountTransform
-                * glm::translate(glm::mat4(1.f), missileSpawnPoint(i));
+            Mat4 t = vehicleTransform * mountTransform
+                * glm::translate(Mat4(1.f), missileSpawnPoint(i));
             mat->draw(rw, t, mountMesh, 2);
         }
         for (u32 i=0; i<ammo; ++i)
         {
-            glm::mat4 t = vehicleTransform * mountTransform
-                * glm::translate(glm::mat4(1.f), missileSpawnPoint(i));
+            Mat4 t = vehicleTransform * mountTransform
+                * glm::translate(Mat4(1.f), missileSpawnPoint(i));
             mat->draw(rw, t, mesh, 2);
         }
     }

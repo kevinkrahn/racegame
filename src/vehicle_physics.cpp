@@ -210,7 +210,7 @@ static PxConvexMesh* createWheelMesh(const PxF32 width, const PxF32 radius)
     return createConvexMesh(points, 32);
 }
 
-void VehiclePhysics::setup(void* userData, PxScene* scene, glm::mat4 const& transform,
+void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform,
         VehicleTuning* tune)
 {
     this->tuning = tune;
@@ -269,9 +269,9 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, glm::mat4 const& tran
 
     for (auto const& cm : tuning.collisionMeshes)
     {
-        PxVec3 scale(glm::length(glm::vec3(cm.transform[0])),
-                     glm::length(glm::vec3(cm.transform[1])),
-                     glm::length(glm::vec3(cm.transform[2])));
+        PxVec3 scale(length(Vec3(cm.transform[0])),
+                     length(Vec3(cm.transform[1])),
+                     length(Vec3(cm.transform[2])));
         PxShape* chassisShape = PxRigidActorExt::createExclusiveShape(*actor,
                 PxConvexMeshGeometry(cm.convexMesh, PxMeshScale(scale)), *vehicleMaterial);
         chassisShape->setQueryFilterData(chassisQryFilterData);
@@ -495,7 +495,7 @@ VehiclePhysics::~VehiclePhysics()
     frictionPairs->release();
 }
 
-void VehiclePhysics::reset(glm::mat4 const& transform)
+void VehiclePhysics::reset(Mat4 const& transform)
 {
     vehicle4W->setToRestState();
     vehicle4W->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
@@ -526,7 +526,7 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
             engineThrottle = accel;
             if (forwardSpeed < 0.f)
             {
-                engineThrottle = glm::max(accel, brake);
+                engineThrottle = max(accel, brake);
             }
 
             if (accel > 0.f)
@@ -624,7 +624,7 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
     {
         PxVec3 down = getRigidBody()->getGlobalPose().q.getBasisVector2() * -1.f;
         f32 downforce =
-            tuning->forwardDownforce * glm::abs(getForwardSpeed()) +
+            tuning->forwardDownforce * absolute(getForwardSpeed()) +
             tuning->constantDownforce * getRigidBody()->getLinearVelocity().magnitude();
         getRigidBody()->addForce(down * downforce, PxForceMode::eACCELERATION);
 
@@ -634,11 +634,11 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
             auto info = wheelQueryResults[i];
             if (!info.isInAir)
             {
-                f32 lateralSlip = glm::abs(info.lateralSlip) - 0.3f;
-                maxSlip = glm::max(maxSlip, lateralSlip);
+                f32 lateralSlip = absolute(info.lateralSlip) - 0.3f;
+                maxSlip = max(maxSlip, lateralSlip);
             }
         }
-        f32 driftBoost = glm::min(maxSlip, 1.f) * accel * tuning->driftBoost * 20.f;
+        f32 driftBoost = min(maxSlip, 1.f) * accel * tuning->driftBoost * 20.f;
         PxVec3 boostDir = getRigidBody()->getLinearVelocity().getNormalized();
         getRigidBody()->addForce(boostDir * driftBoost, PxForceMode::eACCELERATION);
     }
@@ -650,13 +650,13 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
 
 void VehiclePhysics::updateWheelInfo(f32 deltaTime)
 {
-    glm::mat4 transform = getTransform();
+    Mat4 transform = getTransform();
 
     // update wheels
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         auto info = wheelQueryResults[i];
-        glm::vec3 wheelPosition = transform * glm::vec4(convert(info.localPose.p), 1.f);
+        Vec3 wheelPosition = transform * Vec4(convert(info.localPose.p), 1.f);
         f32 wheelRadius = i < 2 ? tuning->wheelRadiusFront : tuning->wheelRadiusRear;
 
         wheelInfo[i].transform = convert(info.localPose);
@@ -666,7 +666,7 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
         wheelInfo[i].rotationSpeed = vehicle4W->mWheelsDynData.getWheelRotationSpeed(i);
         wheelInfo[i].lateralSlip = info.lateralSlip;
         wheelInfo[i].longitudinalSlip = info.longitudinalSlip;
-        wheelInfo[i].oilCoverage = glm::max(wheelInfo[i].oilCoverage - deltaTime, 0.f);
+        wheelInfo[i].oilCoverage = max(wheelInfo[i].oilCoverage - deltaTime, 0.f);
         wheelInfo[i].dustAmount = 0.f;
         wheelInfo[i].isTouchingTrack = false;
         wheelInfo[i].isOffroad = false;
@@ -706,7 +706,7 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
                 {
                     if (d.groundType == GroundSpot::OIL)
                     {
-                        f32 dist = glm::distance2(d.p, wheelPosition);
+                        f32 dist = distance2(d.p, wheelPosition);
                         if (dist < square(d.radius))
                         {
                             wheelInfo[i].oilCoverage = 2.f;
@@ -714,15 +714,15 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
                     }
                     else if (d.groundType == GroundSpot::GLUE)
                     {
-                        f32 dist = glm::distance2(d.p, wheelPosition);
+                        f32 dist = distance2(d.p, wheelPosition);
                         if (dist < square(d.radius))
                         {
                             wheelInfo[i].isTouchingGlue = true;
                             PxVec3 vel = getRigidBody()->getLinearVelocity();
                             f32 speed = vel.magnitude();
                             f32 originalSpeed = speed;
-                            speed = glm::max(speed - deltaTime * (50.f - glm::distance(d.p, wheelPosition) * 2.f),
-                                    glm::min(originalSpeed, 8.f));
+                            speed = max(speed - deltaTime * (50.f - distance(d.p, wheelPosition) * 2.f),
+                                    min(originalSpeed, 8.f));
                             getRigidBody()->setLinearVelocity(vel.getNormalized() * speed);
                         }
                     }
@@ -731,8 +731,8 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
                 // decrease traction if wheel is covered with oil
                 if (wheelInfo[i].oilCoverage > 0.f)
                 {
-                    f32 amount = glm::clamp(wheelInfo[i].oilCoverage, 0.f, 1.f);
-                    f32 oilFriction = glm::lerp(tuning->trackTireFriction, 0.95f, amount);
+                    f32 amount = clamp(wheelInfo[i].oilCoverage, 0.f, 1.f);
+                    f32 oilFriction = lerp(tuning->trackTireFriction, 0.95f, amount);
                     frictionPairs->setTypePairFriction(0, 0, oilFriction);
                     frictionPairs->setTypePairFriction(0, 1,
                             oilFriction * tuning->rearTireGripPercent);
@@ -755,7 +755,7 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
             {
                 if (d.groundType == GroundSpot::DUST)
                 {
-                    f32 dist = glm::distance(d.p, wheelPosition);
+                    f32 dist = distance(d.p, wheelPosition);
                     f32 amount = clamp(1.f - dist / d.radius, 0.f, 1.f);
                     if (amount > wheelInfo[i].dustAmount)
                     {
@@ -772,7 +772,7 @@ f32 VehiclePhysics::getAverageWheelRotationSpeed() const
     f32 rotationSpeed = 0.f;
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
-        rotationSpeed += glm::abs(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
+        rotationSpeed += absolute(vehicle4W->mWheelsDynData.getWheelRotationSpeed(i));
     }
     rotationSpeed /= NUM_WHEELS;
     return rotationSpeed;
@@ -825,10 +825,10 @@ void VehiclePhysics::checkGroundSpots(PxScene* physicsScene, f32 deltaTime)
             groundSpots.push_back({
                 groundType,
                 userData->placeableEntity->position,
-                glm::max(
-                        glm::abs(userData->placeableEntity->scale.x),
-                        glm::max(glm::abs(userData->placeableEntity->scale.y),
-                            glm::abs(userData->placeableEntity->scale.z))) * 0.48f });
+                max(
+                        absolute(userData->placeableEntity->scale.x),
+                        max(absolute(userData->placeableEntity->scale.y),
+                            absolute(userData->placeableEntity->scale.z))) * 0.48f });
         }
     }
 
