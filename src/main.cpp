@@ -52,12 +52,8 @@
 #define STB_INCLUDE_LINE_GLSL
 #define STB_INCLUDE_IMPLEMENTATION
 #include <stb_include.h>
-#if 0
-#define STB_SPRINTF_IMPLEMENTATION
-#include <stb_sprintf.h>
-#endif
 
-#if 0
+#if 1
 int main(int argc, char** argv)
 {
     g_game.run();
@@ -67,22 +63,11 @@ int main(int argc, char** argv)
 #include "util.h"
 int main(int argc, char** argv)
 {
+    Config config;
+    Serializer::fromFile(config, CONFIG_FILE_PATH);
+    DataFile::Value data = DataFile::load(CONFIG_FILE_PATH);
     StrBuf buf;
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
-    buf.write("hello");
+    data.debugOutput(buf, 0, false);
     println(buf.data());
-
-    println("%s %s %.2f", "hello", "world", PI);
-    println("%s %s %.2f", "hello", "world", PI);
 }
 #endif

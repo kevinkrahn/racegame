@@ -893,8 +893,8 @@ public:
 #undef DESERIALIZE_ERROR
 
 #ifndef NDEBUG
-#define field(FIELD) serializeValue(#FIELD, FIELD, tmpStr("%s: %s", __FILE__, __LINE__))
-#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, tmpStr("%s: %s", __FILE__, __LINE__))
+#define field(FIELD) serializeValue(#FIELD, FIELD, tmpStr("%s: %u", __FILE__, __LINE__))
+#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, tmpStr("%s: %u", __FILE__, __LINE__))
 #else
 #define field(FIELD) serializeValue(#FIELD, FIELD, "WARNING")
 #define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, "WARNING")

@@ -29,11 +29,13 @@ char* tmpStr(const char* format, ...)
     return buf;
 }
 
-#if 0
 void print(const char* format, ...)
 {
     auto callback = [](const char* buf, void* user, int len) -> char* {
-        fputs(buf, stdout);
+        char tmp[STB_SPRINTF_MIN + 1];
+        memcpy(tmp, buf, len);
+        tmp[len] = '\0';
+        fputs(tmp, stdout);
         return (char*)buf;
     };
 
@@ -42,14 +44,6 @@ void print(const char* format, ...)
     va_start(argptr, format);
     stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
     va_end(argptr);
-}
-#endif
-
-template <u32 SIZE>
-void println(Str<SIZE> s)
-{
-    fputs(s.data(), stdout);
-    fputc('\n', stdout);
 }
 
 void println(const char* format="", ...)
@@ -77,13 +71,6 @@ void println(const char* format="", ...)
     fputs(tmp, stdout);
 #endif
     fputc('\n', stdout);
-}
-
-template <u32 SIZE>
-void error(Str<SIZE> s)
-{
-    fputs(s.cstr, stderr);
-    fputc('\n', stderr);
 }
 
 void error(const char* format="", ...)

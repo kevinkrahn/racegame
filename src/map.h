@@ -17,14 +17,7 @@ inline u32 mapHash(const char* str)
 template <u32 SIZE>
 inline u32 mapHash(Str<SIZE> str)
 {
-    u32 hash = 5381;
-    u32 c;
-    const char* ch = str.cstr;
-    while ((c = *ch++))
-    {
-        hash = ((hash << 5) + hash) + c;
-    }
-    return hash;
+    return mapHash(str.cstr);
 }
 
 inline u32 mapHash(void* ptr)

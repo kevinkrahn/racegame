@@ -8,8 +8,8 @@ DataFile::Value DataFile::load(const char* filename)
     if (path::hasExt(filename, ".txt"))
     {
         StrBuf str = readFileString(filename);
-        const char* begin = str.data();
-        Value val = Value::readValue(begin, str.data());
+        const char* begin = str.begin();
+        Value val = Value::readValue(begin, str.end());
         return val;
     }
 
@@ -108,7 +108,6 @@ Value Value::readValue(const char*& ch, const char* end)
                 break;
             }
         }
-        const char* identEnd = ch - 1;
         ++ch;
 
         if (!hasEnd)
@@ -119,7 +118,7 @@ Value Value::readValue(const char*& ch, const char* end)
 
         Value val;
         val.dataType = DataType::STRING;
-        new (&val.str_) String(identBegin, identEnd);
+        new (&val.str_) String(identBegin, ch - 1);
         return val;
     }
     else if (isdigit(*ch) || *ch == '-')
@@ -141,7 +140,7 @@ Value Value::readValue(const char*& ch, const char* end)
                 break;
             }
         }
-        Str64 digits(digitsBegin, ch-1);
+        Str64 digits(digitsBegin, ch);
         Value val;
         if (foundDot)
         {
@@ -190,7 +189,8 @@ Value Value::readValue(const char*& ch, const char* end)
                 }
                 ++ch;
 
-                val.dict_[Str64(identBegin, ch-2)] = readValue(ch, end);
+                Str64 identifier(identBegin, ch-1);
+                val.dict_[identifier] = readValue(ch, end);
 
                 eatSpace(ch);
                 if (ch == end)

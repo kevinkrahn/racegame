@@ -12,7 +12,7 @@ struct Str
 
     Str() {};
     Str(const char* s) { *this = s; }
-    Str(const char* begin, const char* end) { strncpy(cstr, begin, min(SIZE, end-begin)); }
+    Str(const char* begin, const char* end) { memcpy(cstr, begin, min(SIZE, end-begin)); }
     void write(const char* format, ...)
     {
         va_list argptr;
@@ -65,14 +65,21 @@ class StrBuf
     {
         if (capacity_ < capacity)
         {
-            capacity_ = capacity;
+            capacity_ = capacity + capacity_ / 4;
             buf_ = (char*)realloc(buf_, capacity_);
         }
     }
 
 public:
+    ~StrBuf()
+    {
+        if (buf_)
+        {
+            free(buf_);
+        }
+    }
     StrBuf() {}
-    StrBuf(u32 size) : len_(size), capacity_(size)
+    StrBuf(u32 size) : len_(size)
     {
         ensureCapacity(size);
         buf_[0] = 0;
@@ -100,20 +107,19 @@ public:
         {
             buf_[len_+i] = ch;
         }
-        buf_[len_] = '\0';
         len_ += n;
+        buf_[len_] = '\0';
     }
 
     void write(const char* s)
     {
-        writef("%s", s);
-        //write(s, strlen(s));
+        write(s, strlen(s));
     }
 
     void write(const char* s, u32 n)
     {
         ensureCapacity(len_ + n + 1);
-        strncpy(buf_ + len_, s, n);
+        memcpy(buf_ + len_, s, n);
         len_ += n;
         buf_[len_] = '\0';
     }
@@ -140,8 +146,7 @@ public:
     }
 
     const char* find(const char* needle) const { return strstr(buf_, needle); }
-    char* data() const { return buf_; }
-    u32 size() const { return len_; }
+
     void clear()
     {
         len_ = 0;
@@ -150,4 +155,11 @@ public:
             buf_[0] = '\0';
         }
     }
+
+    char* data() const { return buf_; }
+    u32 size() const { return len_; }
+    char* begin() { return buf_; }
+    char* end() { return buf_ + len_; }
+    const char* begin() const { return buf_; }
+    const char* end() const { return buf_ + len_; }
 };
