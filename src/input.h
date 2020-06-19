@@ -152,10 +152,10 @@ private:
     bool buttonReleased[BUTTON_COUNT] = {};
     f32 axis[AXIS_COUNT] = {};
     bool anyButtonPressed = false;
-    std::string guid;
+    Str64 guid;
 
 public:
-    explicit Controller(SDL_GameController* controller, std::string && guid)
+    explicit Controller(SDL_GameController* controller, Str64 const& guid)
         : controller(controller), guid(guid) {}
 
     SDL_GameController* getController() const { return controller; }
@@ -186,7 +186,7 @@ public:
         return axis[index];
     }
 
-    std::string const& getGuid() const { return guid; }
+    Str64 const& getGuid() const { return guid; }
 };
 
 #define NO_CONTROLLER UINT32_MAX
@@ -210,7 +210,7 @@ private:
     i32 mouseScrollY;
     Map<i32, Controller> controllers;
 
-    std::string inputText;
+    //Str64 inputText;
     f32 joystickDeadzone = 0.08f;
 
 public:
@@ -250,7 +250,7 @@ public:
         return controllers.get(id);
     }
 
-    i32 getControllerId(std::string const& guid)
+    i32 getControllerId(Str64 const& guid)
     {
         for (auto& ctl : controllers)
         {
@@ -329,7 +329,7 @@ public:
 
     void onFrameBegin()
     {
-        inputText.clear();
+        //inputText.clear();
     }
 
     void onFrameEnd()
@@ -351,7 +351,7 @@ public:
         mouseScrollY = 0;
     }
 
-    std::string const& getInputText() const { return inputText; }
+    //Str64 const& getInputText() const { return inputText; }
 
     void handleEvent(SDL_Event const& e)
     {
@@ -402,22 +402,22 @@ public:
             {
                 SDL_GameController* controller = SDL_GameControllerOpen(e.cdevice.which);
                 SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
-                char buffer[64] = { 0 };
+                Str64 buffer;
                 SDL_JoystickGetGUIDString(
                         SDL_JoystickGetGUID(
-                            SDL_GameControllerGetJoystick(controller)), buffer, sizeof(buffer));
-                print("Controller added: ", id, " guid: ", buffer,
-                        " name: ", SDL_GameControllerName(controller), '\n');
-                controllers.set(id, Controller(controller, std::string(buffer)));
+                            SDL_GameControllerGetJoystick(controller)), buffer.cstr, sizeof(buffer));
+                println("Controller added: %i, guid: %s, name: %s", id, buffer.cstr,
+                        SDL_GameControllerName(controller));
+                controllers.set(id, Controller(controller, buffer));
             } break;
             case SDL_CONTROLLERDEVICEREMOVED:
             {
                 controllers.erase(e.cdevice.which);
-                print("Controller removed: ", e.cdevice.which, '\n');
+                println("Controller removed: %i", e.cdevice.which);
             } break;
             case SDL_CONTROLLERDEVICEREMAPPED:
             {
-                print("Controller remapped: ", e.cdevice.which, '\n');
+                println("Controller remapped: %i", e.cdevice.which);
             } break;
             case SDL_CONTROLLERAXISMOTION:
             {
@@ -456,7 +456,7 @@ public:
             } break;
             case SDL_TEXTINPUT:
             {
-                inputText += e.text.text;
+                //inputText += e.text.text;
             } break;
         }
     }

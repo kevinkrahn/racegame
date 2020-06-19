@@ -4,10 +4,10 @@
 void Texture::loadSourceFile(u32 index)
 {
     i32 w, h, channels;
-    u8* data = (u8*)stbi_load(sourceFiles[index].path.c_str(), &w, &h, &channels, 4);
+    u8* data = (u8*)stbi_load(sourceFiles[index].path.cstr, &w, &h, &channels, 4);
     if (!data)
     {
-        error("Failed to load image: ", sourceFiles[index].path, " (", stbi_failure_reason(), ")\n");
+        error("Failed to load image: %s (%s)", sourceFiles[index].path.cstr, stbi_failure_reason());
     }
     this->width = w;
     this->height = h;
@@ -58,7 +58,7 @@ void Texture::setTextureType(u32 textureType)
     }
 }
 
-void Texture::setSourceFile(u32 index, std::string const& path)
+void Texture::setSourceFile(u32 index, const char* path)
 {
     assert(index < sourceFiles.size());
     sourceFiles[index].path = path;
@@ -157,7 +157,7 @@ void Texture::initGLTexture(u32 index)
     }
 
 #ifndef NDEBUG
-    glObjectLabel(GL_TEXTURE, s.previewHandle, name.length(), name.c_str());
+    glObjectLabel(GL_TEXTURE, s.previewHandle, name.size(), name.cstr);
 #endif
 }
 

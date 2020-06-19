@@ -1,8 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <functional>
 #include <utility>
 
@@ -13,68 +10,113 @@
 #include "smallarray.h"
 #include "array.h"
 #include "map.h"
+#include "str.h"
+#include "buffer.h"
 
-template <typename T>
-void print(T const& val)
+Buffer g_tmpMem = Buffer(megabytes(32), 16);
+
+char* tmpStr(const char* format, ...)
 {
-    std::cout << val;
+    char* buf = g_tmpMem.get<char*>();
+
+    va_list argptr;
+    va_start(argptr, format);
+    auto count = stbsp_vsnprintf(buf, 4096, format, argptr);
+    va_end(argptr);
+
+    g_tmpMem.bump(count);
+
+    return buf;
 }
 
-template <typename T, typename... Args>
-void print(T const& first, Args const&... args)
+#if 0
+void print(const char* format, ...)
 {
-    print(first);
-    print(args...);
+    auto callback = [](const char* buf, void* user, int len) -> char* {
+        fputs(buf, stdout);
+        return (char*)buf;
+    };
+
+    char tmp[STB_SPRINTF_MIN];
+    va_list argptr;
+    va_start(argptr, format);
+    stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
+    va_end(argptr);
+}
+#endif
+
+template <u32 SIZE>
+void println(Str<SIZE> s)
+{
+    fputs(s.data(), stdout);
+    fputc('\n', stdout);
 }
 
-template <typename T>
-void error(T const& val)
+void println(const char* format="", ...)
 {
-    std::cerr << val;
+#if 1
+    auto callback = [](const char* buf, void* user, int len) -> char* {
+        char tmp[STB_SPRINTF_MIN + 1];
+        memcpy(tmp, buf, len);
+        tmp[len] = '\0';
+        fputs(tmp, stdout);
+        return (char*)buf;
+    };
+
+    char tmp[STB_SPRINTF_MIN];
+    va_list argptr;
+    va_start(argptr, format);
+    stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
+    va_end(argptr);
+#else
+    char tmp[2048];
+    va_list argptr;
+    va_start(argptr, format);
+    stbsp_vsnprintf(tmp, sizeof(tmp), format, argptr);
+    va_end(argptr);
+    fputs(tmp, stdout);
+#endif
+    fputc('\n', stdout);
 }
 
-template <typename T, typename... Args>
-void error(T const& first, Args const&... args)
+template <u32 SIZE>
+void error(Str<SIZE> s)
 {
-    error(first);
-    error(args...);
+    fputs(s.cstr, stderr);
+    fputc('\n', stderr);
 }
 
-template <typename T>
-void _str_(std::ostringstream& ss, T const& val)
+void error(const char* format="", ...)
 {
-    ss << val;
+    auto callback = [](const char* buf, void* user, int len) -> char* {
+        char tmp[STB_SPRINTF_MIN + 1];
+        memcpy(tmp, buf, len);
+        tmp[len] = '\0';
+        fputs(tmp, stderr);
+        return (char*)buf;
+    };
+
+    char tmp[STB_SPRINTF_MIN];
+    va_list argptr;
+    va_start(argptr, format);
+    stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
+    va_end(argptr);
+    putc('\n', stderr);
 }
 
-template <typename T, typename... Args>
-void _str_(std::ostringstream& ss, T const& first, Args const&... args)
+void showError(const char* format, ...)
 {
-    _str_(ss, first);
-    _str_(ss, args...);
+    char buf[1024];
+    va_list argptr;
+    va_start(argptr, format);
+    stbsp_vsnprintf(buf, sizeof(buf), format, argptr);
+    va_end(argptr);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", buf, nullptr); \
 }
 
-std::ostringstream _ss_;
-template <typename... Args>
-std::string str(Args const&... args)
-{
-    _ss_.str({});
-    _str_(_ss_, args...);
-    return _ss_.str();
-}
-
-#define FATAL_ERROR(...) { error("Error: ", __VA_ARGS__, '\n'); \
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", str(__VA_ARGS__).c_str(), nullptr); \
-    abort(); }\
+#define FATAL_ERROR(...) { error(__VA_ARGS__); showError(__VA_ARGS__); abort(); }
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
-template <typename... Args>
-inline void showError(Args const&... args)
-{
-    std::string msg = str(args...);
-    error(msg, '\n');
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Warning", msg.c_str(), nullptr); \
-}
 
 inline f64 getTime()
 {
@@ -85,4 +127,12 @@ inline f64 getTime()
 inline RandomSeries randomSeed()
 {
     return RandomSeries{ (u32)getTime() };
+}
+
+namespace path
+{
+    bool hasExt(const char* str, const char* ext)
+    {
+        return strcmp(str + (strlen(str) - strlen(ext)), ext) == 0;
+    }
 }

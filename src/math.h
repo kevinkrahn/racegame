@@ -1356,7 +1356,7 @@ struct Quat
     }
 };
 
-Quat operator*(Quat lhs, Quat const& rhs)
+inline Quat operator*(Quat lhs, Quat const& rhs)
 {
     lhs *= rhs;
     return lhs;

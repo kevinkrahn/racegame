@@ -1,7 +1,6 @@
 #include "renderer.h"
 #include "game.h"
 #include "scene.h"
-#include <sstream>
 
 #include <stb_include.h>
 
@@ -13,28 +12,27 @@ ShaderHandle getShaderHandle(const char* name, SmallArray<ShaderDefine> const& d
     return g_game.renderer->getShaderHandle(name, defines, renderFlags, depthOffset);
 }
 
-void glShaderSources(GLuint shader, std::string const& src,
+void glShaderSources(GLuint shader, const char* src,
         SmallArray<ShaderDefine> const& defines, ShaderDefine const& stageDefine)
 {
-    std::ostringstream str;
-    str << "#version 450\n";
-    str << "#define MAX_VIEWPORTS " << MAX_VIEWPORTS << '\n';
-    str << "#define SHADOWS_ENABLED " << u32(g_game.config.graphics.shadowsEnabled) << '\n';
-    str << "#define SSAO_ENABLED " << u32(g_game.config.graphics.ssaoEnabled) << '\n';
-    str << "#define BLOOM_ENABLED " << u32(g_game.config.graphics.bloomEnabled) << '\n';
-    str << "#define SHARPEN_ENABLED " << u32(g_game.config.graphics.sharpenEnabled) << '\n';
-    str << "#define POINT_LIGHTS_ENABLED " << u32(g_game.config.graphics.pointLightsEnabled) << '\n';
-    str << "#define MOTION_BLUR_ENABLED " << u32(g_game.config.graphics.motionBlurEnabled) << '\n';
-    str << "#define FOG_ENABLED " << u32(g_game.config.graphics.fogEnabled) << '\n';
-    str << "#define MAX_POINT_LIGHTS " << MAX_POINT_LIGHTS << '\n';
-    str << "#define LIGHT_SPLITS " << LIGHT_SPLITS << '\n';
+    StrBuf buf;
+    buf.write("#version 450\n");
+    buf.writef("#define MAX_VIEWPORTS %u\n", MAX_VIEWPORTS);
+    buf.writef("#define SHADOWS_ENABLED %u\n", u32(g_game.config.graphics.shadowsEnabled));
+    buf.writef("#define SSAO_ENABLED %u\n", u32(g_game.config.graphics.ssaoEnabled));
+    buf.writef("#define BLOOM_ENABLED %u\n", u32(g_game.config.graphics.bloomEnabled));
+    buf.writef("#define SHARPEN_ENABLED %u\n", u32(g_game.config.graphics.sharpenEnabled));
+    buf.writef("#define POINT_LIGHTS_ENABLED %u\n", u32(g_game.config.graphics.pointLightsEnabled));
+    buf.writef("#define MOTION_BLUR_ENABLED %u\n", u32(g_game.config.graphics.motionBlurEnabled));
+    buf.writef("#define FOG_ENABLED %u\n", u32(g_game.config.graphics.fogEnabled));
+    buf.writef("#define MAX_POINT_LIGHTS %u\n", MAX_POINT_LIGHTS);
+    buf.writef("#define LIGHT_SPLITS %u\n", LIGHT_SPLITS);
     for (auto const& d : defines)
     {
-        str << "#define " << d.name << d.value << '\n';
+        buf.writef("#define %s %s\n", d.name, d.value);
     }
-    str << "#define " << stageDefine.name << stageDefine.value << '\n';
-    std::string tmp = str.str();
-    const char* sources[] = { tmp.c_str(), src.c_str() };
+    buf.writef("#define %s %u\n", stageDefine.name, stageDefine.value);
+    const char* sources[] = { buf.data(), src };
     glShaderSource(shader, 2, sources, 0);
 }
 
@@ -51,23 +49,16 @@ void Renderer::loadShader(const char* filename, SmallArray<const char*> defines,
 
 void Renderer::loadShader(ShaderHandle handle)
 {
-    if (shaderPrograms[handle].program != 0)
-    {
-        glDeleteProgram(shaderPrograms[handle].program);
-    }
-
     ShaderProgramSource const& d = shaderProgramSources[handle];
-    std::string filename = str("shaders/", d.name, ".glsl");
+    char* filename = tmpStr("shaders/%s.glsl", d.name);
 
     // TODO: remove dependency on stb_include
     char errorMsg[256];
-    char* shaderText = stb_include_file((char*)filename.c_str(), (char*)"", (char*)"shaders", errorMsg);
-    if (!shaderText)
+    char* shaderStr = stb_include_file(filename, (char*)"", (char*)"shaders", errorMsg);
+    if (!shaderStr)
     {
-        error(errorMsg, '\n');
+        error("Shader parse error: %s", errorMsg);
     }
-    std::string shaderStr = shaderText;
-    free(shaderText);
 
     GLint success, errorMessageLength;
     GLuint program = glCreateProgram();
@@ -79,8 +70,8 @@ void Renderer::loadShader(ShaderHandle handle)
     if (!success)
     {
         glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+        char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
+        glGetShaderInfoLog(vertexShader, errorMessageLength, 0, errorMessage);
         FATAL_ERROR("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
     glAttachShader(program, vertexShader);
@@ -92,15 +83,15 @@ void Renderer::loadShader(ShaderHandle handle)
     if (!success)
     {
         glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+        char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
+        glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, errorMessage);
         FATAL_ERROR("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
     }
     glAttachShader(program, fragmentShader);
 
 #if 0
     GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    bool hasGeometryShader = shaderStr.find("GEOM") != std::string::npos;
+    bool hasGeometryShader = shaderStr.find("GEOM");
     if (hasGeometryShader)
     {
         glShaderSources(geometryShader, shaderStr, defines, {"GEOM", ""});
@@ -109,8 +100,8 @@ void Renderer::loadShader(ShaderHandle handle)
         if (!success)
         {
             glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
-            std::string errorMessage(errorMessageLength, ' ');
-            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, (GLchar*)errorMessage.data());
+            char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
+            glGetShaderInfoLog(geometryShader, errorMessageLength, 0, errorMessage);
             FATAL_ERROR("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
         }
         glAttachShader(program, geometryShader);
@@ -122,16 +113,21 @@ void Renderer::loadShader(ShaderHandle handle)
     if (!success)
     {
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
-        std::string errorMessage(errorMessageLength, ' ');
-        glGetProgramInfoLog(program, errorMessageLength, 0, (GLchar*)errorMessage.data());
+        char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
+        glGetProgramInfoLog(program, errorMessageLength, 0, errorMessage);
         FATAL_ERROR("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
     }
 
+    free(shaderStr);
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 #if 0
     glDeleteShader(geometryShader);
 #endif
+    if (shaderPrograms[handle].program != 0)
+    {
+        glDeleteProgram(shaderPrograms[handle].program);
+    }
     shaderPrograms[handle].program = program;
 }
 
@@ -455,7 +451,7 @@ void RenderWorld::setViewportCount(u32 viewports)
 {
     if (cameras.size() != viewports)
     {
-        print("Viewport count changed.\n");
+        println("Viewport count changed from %u to %u.", cameras.size(), viewports);
         cameras.resize(viewports);
         createFramebuffers();
     }
@@ -1034,7 +1030,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     worldInfo.cameraPosition = Vec4(cameras[index].position, 1.0);
     worldInfo.invResolution = 1.f / Vec2(fbs[index].renderWidth, fbs[index].renderHeight);
 
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, tstr("Render World: ", name, ", Viewport #", index + 1));
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1,
+	        tmpStr("Render World: %s, Viewport #%u", name, index + 1));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     bool isEditorActive = g_game.isEditing

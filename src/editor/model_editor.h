@@ -10,7 +10,7 @@
 class ModelEditor
 {
     Model* model;
-    void loadBlenderFile(std::string const& filename);
+    void loadBlenderFile(const char* filename);
     void processBlenderData();
     DataFile::Value blenderData;
     Array<u32> selectedObjects;

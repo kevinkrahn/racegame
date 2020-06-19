@@ -58,7 +58,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         {
             f32 time = iterations * timestep;
             stats.acceleration = clamp((8.f - time) / 8.f, 0.f, 1.f);
-            //print("Acceleration time: ", time, '\n');
+            //println("Acceleration time: %.2f", time);
             break;
         }
     }
@@ -95,7 +95,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         {
             f32 time = iterations * timestep;
             stats.grip = clamp((0.8f - time) / 0.8f, 0.f, 1.f);
-            //print("Stop time: ", time, '\n');
+            //println("Stop time: %.2f", time);
             break;
         }
     }
@@ -116,7 +116,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         {
             f32 time = iterations * timestep;
             stats.offroad = clamp((8.f - time) / 8.f, 0.f, 1.f);
-            //print("Offroad acceleration time: ", time, '\n');
+            //println("Offroad acceleration time: %.2f", time);
             break;
         }
     }
@@ -212,24 +212,24 @@ void VehicleData::loadModelData(const char* modelName)
     for (auto& obj : model->objects)
     {
         Mat4 transform = obj.getTransform();
-        std::string const& name = obj.name;
+        auto& name = obj.name;
         Mesh* mesh = &model->meshes[obj.meshIndex];
         u32 debrisCollectionIndex = UINT32_MAX;
         for (i32 i=0; i<(i32)model->collections.size(); ++i)
         {
-            if (model->collections[i].name.find("Debris") != std::string::npos)
+            if (model->collections[i].name.find("Debris"))
             {
                 debrisCollectionIndex = i;
                 break;
             }
         }
         bool isInDebrisCollection = !!obj.collectionIndexes.find(debrisCollectionIndex);
-        if (name.find("debris") != std::string::npos ||
-            name.find("Debris") != std::string::npos ||
-            name.find("FL") != std::string::npos ||
-            name.find("FR") != std::string::npos ||
-            name.find("RL") != std::string::npos ||
-            name.find("RR") != std::string::npos ||
+        if (name.find("debris") ||
+            name.find("Debris") ||
+            name.find("FL") ||
+            name.find("FR") ||
+            name.find("RL") ||
+            name.find("RR") ||
             isInDebrisCollection)
         {
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
@@ -252,13 +252,13 @@ void VehicleData::loadModelData(const char* modelName)
         {
             continue;
         }
-        if (name.find("Chassis") != std::string::npos)
+        if (name.find("Chassis"))
         {
             Material* mat = g_res.getMaterial(obj.materialGuid);
             chassisBatch.add(mat, transform, mesh);
             chassisOneMaterialBatch.add(&g_res.defaultMaterial, transform, mesh);
         }
-        if (name.find("FL") != std::string::npos)
+        if (name.find("FL"))
         {
             wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
                 mesh,
@@ -270,7 +270,7 @@ void VehicleData::loadModelData(const char* modelName)
             frontWheelMeshWidth = max(frontWheelMeshWidth, obj.bounds.y);
             wheelPositions[WHEEL_FRONT_RIGHT] = transform.position();
         }
-        else if (name.find("RL") != std::string::npos)
+        else if (name.find("RL"))
         {
             wheelMeshes[WHEEL_REAR_RIGHT].push_back({
                 mesh,
@@ -282,7 +282,7 @@ void VehicleData::loadModelData(const char* modelName)
             rearWheelMeshWidth = max(rearWheelMeshWidth, obj.bounds.y);
             wheelPositions[WHEEL_REAR_RIGHT] = transform.position();
         }
-        else if (name.find("FR") != std::string::npos)
+        else if (name.find("FR"))
         {
             wheelMeshes[WHEEL_FRONT_LEFT].push_back({
                 mesh,
@@ -292,7 +292,7 @@ void VehicleData::loadModelData(const char* modelName)
             });
             wheelPositions[WHEEL_FRONT_LEFT] = transform.position();
         }
-        else if (name.find("RR") != std::string::npos)
+        else if (name.find("RR"))
         {
             wheelMeshes[WHEEL_REAR_LEFT].push_back({
                 mesh,
@@ -302,28 +302,28 @@ void VehicleData::loadModelData(const char* modelName)
             });
             wheelPositions[WHEEL_REAR_LEFT] = obj.position;
         }
-        else if (name.find("Collision") != std::string::npos)
+        else if (name.find("Collision"))
         {
             collisionMeshes.push_back({ mesh->getConvexCollisionMesh(), transform });
             collisionWidth = max(collisionWidth, obj.bounds.y);
         }
-        else if (name.find("COM") != std::string::npos)
+        else if (name.find("COM"))
         {
             sceneCenterOfMass = obj.position;
         }
-        else if (name.find("WeaponMount1") != std::string::npos)
+        else if (name.find("WeaponMount1"))
         {
             weaponMounts[0] = Mat4::translation(obj.position) * transform.rotation();
         }
-        else if (name.find("WeaponMount2") != std::string::npos)
+        else if (name.find("WeaponMount2"))
         {
             weaponMounts[1] = Mat4::translation(obj.position) * transform.rotation();
         }
-        else if (name.find("WeaponMount3") != std::string::npos)
+        else if (name.find("WeaponMount3"))
         {
             weaponMounts[2] = Mat4::translation(obj.position) * transform.rotation();
         }
-        else if (name.find("ExhaustHole") != std::string::npos)
+        else if (name.find("ExhaustHole"))
         {
             exhaustHoles.push_back(obj.position);
         }

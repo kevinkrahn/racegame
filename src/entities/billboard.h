@@ -120,11 +120,11 @@ public:
     {
         g_res.iterateResourceType(ResourceType::TEXTURE, [&](Resource* res){
             Texture* tex = (Texture*)res;
-            if (tex->name.find("billboard") != std::string::npos)
+            if (tex->name.find("billboard"))
             {
                 f32 w = min(ImGui::GetColumnWidth(), 200.f);
                 f32 h = w * 0.5f;
-                ImGui::PushID(tex->name.c_str());
+                ImGui::PushID(tex->name.cstr);
                 if (ImGui::ImageButton((void*)(uintptr_t)tex->getPreviewHandle(), { w, h }))
                 {
                     billboardTextureGuid = tex->guid;

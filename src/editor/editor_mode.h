@@ -1,17 +1,16 @@
 #pragma once
 
 #include "../math.h"
-#include <string>
 
 class EditorMode
 {
-    std::string name;
+    const char* name;
 
 protected:
     class Editor* editor;
 
 public:
-    EditorMode(std::string name) : name(name) {}
+    EditorMode(const char* name) : name(name) {}
     void setEditor(Editor* editor) { this->editor = editor; }
     virtual ~EditorMode() {}
     virtual void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime) = 0;
@@ -20,5 +19,5 @@ public:
     virtual void onEndTest(class Scene* scene) {}
     virtual void onSwitchTo(class Scene* scene) {}
     virtual void onSwitchFrom(class Scene* scene) {}
-    std::string const& getName() const { return name; }
+    const char* getName() const { return name; }
 };

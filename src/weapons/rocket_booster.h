@@ -70,7 +70,7 @@ public:
             float alpha;
         };
 
-        Flames* renderData = g_game.tempMem.bump<Flames>();
+        Flames* renderData = g_tmpMem.bump<Flames>();
         renderData->alpha = min(boostTimer * 7.f, 1.f);
         renderData->exhaustCount = 0;
         renderData->vao = mesh->vao;

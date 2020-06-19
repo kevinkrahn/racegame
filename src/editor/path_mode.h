@@ -259,7 +259,7 @@ public:
         {
             for (u32 i=0; i<scene->getPaths().size(); ++i)
             {
-                if (ImGui::Selectable(tstr("Path ", i + 1), i == selectedPathIndex))
+                if (ImGui::Selectable(tmpStr("Path %u", i + 1), i == selectedPathIndex))
                 {
                     selectedPathIndex = i;
                     selectedPoints.clear();
@@ -283,11 +283,11 @@ public:
         }
 
         if (ImGui::BeginCombo("Source Path",
-                selectedGraphPathIndex >= 0 ? tstr("Graph Path ", selectedGraphPathIndex + 1) : "None"))
+                selectedGraphPathIndex >= 0 ? tmpStr("Graph Path %i", selectedGraphPathIndex + 1) : "None"))
         {
             for (i32 i=0; i<(i32)scene->getTrackGraph().getPaths().size(); ++i)
             {
-                if (ImGui::Selectable(tstr("Graph Path ", i + 1)))
+                if (ImGui::Selectable(tmpStr("Graph Path %i", i + 1)))
                 {
                     selectedGraphPathIndex = i;
                 }

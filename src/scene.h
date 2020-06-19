@@ -119,8 +119,7 @@ private:
 
 public:
     i64 guid = 0;
-    std::string name;
-    std::string notes;
+    Str64 name;
     u32 totalLaps = 4;
     u32 version = 0;
 

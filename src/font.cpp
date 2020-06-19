@@ -4,11 +4,11 @@
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
-Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numGlyphs)
+Font::Font(const char* filename, f32 fontSize, u32 startingChar, u32 numGlyphs)
 {
     this->startingChar = startingChar;
 
-    Buffer fontData = readFileBytes(filename.c_str());
+    Buffer fontData = readFileBytes(filename);
 
     stbtt_fontinfo fontInfo;
     stbtt_InitFont(&fontInfo, fontData.data.get(), stbtt_GetFontOffsetForIndex(fontData.data.get(), 0));
@@ -64,7 +64,7 @@ Font::Font(std::string const& filename, f32 fontSize, u32 startingChar, u32 numG
     height = f.height;
     lineHeight = ((ascent - descent) + lineGap) * scale;
 
-    textureAtlas = Texture(filename.c_str(), w, h, texData.data(), (u32)texData.size(),
+    textureAtlas = Texture(filename, w, h, texData.data(), (u32)texData.size(),
             TextureType::GRAYSCALE);
 }
 

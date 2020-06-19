@@ -205,7 +205,7 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
     f32 lengthPerMesh = pathLength / totalRepeatCount;
     f32 sourceMeshScaleFactor = lengthPerMesh / sourceMeshLength;
 
-    outputMesh->name = sourceMesh->name + " spline";
+    outputMesh->name = Str64::format("%s spline", sourceMesh->name.cstr);
     outputMesh->vertices.resize(sourceMesh->numVertices
             * sourceMesh->stride / sizeof(f32) * totalRepeatCount);
     outputMesh->indices.resize(sourceMesh->numIndices * totalRepeatCount);

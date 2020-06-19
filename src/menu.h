@@ -181,7 +181,7 @@ class Menu
             u32 flags, std::function<SelectorInfo()> getInfo,
             std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addSelector(const char* text, const char* helpText, Vec2 pos, Vec2 size,
-            SmallArray<std::string> values, i32 valueIndex,
+            SmallArray<Str32> values, i32 valueIndex,
             std::function<void(i32 valueIndex)> onValueChanged);
     Widget* addHelpMessage(Vec2 pos);
     Widget* addLabel(std::function<const char*()> getText, Vec2 pos, class Font* font,

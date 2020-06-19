@@ -83,7 +83,6 @@ public:
     OwnedPtr<class Scene> currentScene;
     OwnedPtr<class Scene> nextScene;
     Menu menu;
-    Buffer tempMem = Buffer(megabytes(4), 16);
     OwnedPtr<ResourceManager> resourceManager;
 
     // debug
@@ -99,16 +98,6 @@ public:
     Map<const char*, f64> previousFrameTimedBlocks;
     f64 previousCpuTime = 1.f;
     bool isTimedBlockTrackingPaused = false;
-    /*
-    Array<std::string> debugLogs;
-    template <typename T, typename... Args>
-    void log(Args const& ...args)
-    {
-        std::string s = str(args...);
-        std::cout << s << std::endl;
-        debugLogs.push_back(s);
-    }
-    */
     void checkDebugKeys();
 
     void run();
@@ -129,15 +118,6 @@ public:
     void saveGame();
     void loadGame();
 } g_game;
-
-template <typename... Args>
-char* tstr(Args const&... args)
-{
-    // TODO: This could allocate memory. It shouldn't ever allocate memory
-    std::string s = str(args...);
-    u8* mem = g_game.tempMem.writeBytes((void*)s.data(), s.size() + 1);
-    return reinterpret_cast<char*>(mem);
-}
 
 struct TimedBlock
 {

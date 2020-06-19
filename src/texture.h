@@ -39,7 +39,7 @@ public:
 
     struct SourceFile
     {
-        std::string path;
+        Str64 path;
         Array<u8> data;
         u32 width = 0;
         u32 height = 0;
@@ -103,7 +103,7 @@ public:
     void regenerate();
     void reloadSourceFiles();
     void setTextureType(u32 textureType);
-    void setSourceFile(u32 index, std::string const& path);
+    void setSourceFile(u32 index, const char* path);
     GLuint getPreviewHandle() const { return sourceFiles[0].previewHandle; }
     SourceFile const& getSourceFile(u32 index) const { return sourceFiles[index]; }
     u32 getSourceFileCount() const { return (u32)sourceFiles.size(); }

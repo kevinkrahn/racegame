@@ -93,7 +93,6 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         }
 
         ImGui::Gap();
-        ImGui::InputTextMultiline("Notes", &scene->notes, {0, 70});
         i32 totalLaps = (i32)scene->totalLaps;
         ImGui::InputInt("Laps", &totalLaps);
         scene->totalLaps = (u32)clamp(totalLaps, 1, 10);
@@ -111,7 +110,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
         {
             for (u32 i=0; i<modes.size(); ++i)
             {
-                if (ImGui::BeginTabItem(modes[i]->getName().c_str()))
+                if (ImGui::BeginTabItem(modes[i]->getName()))
                 {
                     activeModeIndex = i;
                     modes[i]->onEditorTabGui(scene, renderer, deltaTime);

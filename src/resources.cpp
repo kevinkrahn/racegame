@@ -46,7 +46,7 @@ Resource* Resources::newResource(ResourceType type, bool makeGUID)
     if (makeGUID)
     {
         resource->guid = generateGUID();
-        resource->name = str(namePrefix, ' ', resources.size());
+        resource->name = Str64::format("%s %u", namePrefix, resources.size());
     }
     return resource;
 }
@@ -90,8 +90,8 @@ void Resources::load()
         auto path = std::filesystem::path(file.path);
         if (path.extension() == ".dat" && path.filename() != METADATA_FILE)
         {
-            auto data = DataFile::load(str(DATA_DIRECTORY, "/", file.path));
-            //print("Loading data file: ", file.path, ", Asset Name: ", data.dict(true).val()["name"], '\n');
+            auto data = DataFile::load(tmpStr("%s/%s", DATA_DIRECTORY, file.path));
+            //println("Loading data file: %s, Asset Name: ", file.path, data.dict(true).val()["name"]);
             if (data.array().hasValue())
             {
                 for (auto& el : data.array().val())

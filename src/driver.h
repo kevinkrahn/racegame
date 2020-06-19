@@ -5,8 +5,8 @@
 
 struct Driver
 {
-    std::string playerName = "no-name";
-    std::string controllerGuid;
+    Str64 playerName = "no-name";
+    Str64 controllerGuid;
     u32 leaguePoints = 0;
     i32 credits = 10000;
     i32 aiIndex = -1;

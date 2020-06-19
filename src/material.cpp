@@ -1,5 +1,4 @@
 #include "material.h"
-#include "game.h"
 
 void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
 {
@@ -66,7 +65,7 @@ struct MaterialRenderData
 
 void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stencil)
 {
-    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+    MaterialRenderData* d = g_tmpMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
     d->material = this;
 #endif
@@ -140,7 +139,7 @@ void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stenc
 
 void Material::drawPick(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u32 pickValue)
 {
-    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+    MaterialRenderData* d = g_tmpMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
     d->material = this;
 #endif
@@ -171,7 +170,7 @@ void Material::drawPick(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u32 
 
 void Material::drawHighlight(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stencil, u8 cameraIndex)
 {
-    MaterialRenderData* d = g_game.tempMem.bump<MaterialRenderData>();
+    MaterialRenderData* d = g_tmpMem.bump<MaterialRenderData>();
 #ifndef NDEBUG
     d->material = this;
 #endif
@@ -221,7 +220,7 @@ struct VehicleRenderData
 void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh,
         u8 stencil, Vec4 const& shield, i64 wrapTextureGuids[3], Vec4 wrapColor[3])
 {
-    VehicleRenderData* d = g_game.tempMem.bump<VehicleRenderData>();
+    VehicleRenderData* d = g_tmpMem.bump<VehicleRenderData>();
 #ifndef NDEBUG
     d->material = this;
 #endif
@@ -295,7 +294,7 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, Mat4 const& transform
     static ShaderHandle shader = getShaderHandle("lit");
     static ShaderHandle depthShader = getShaderHandle("lit", { { "DEPTH_ONLY" } });
 
-    SimpleRenderData* d = g_game.tempMem.bump<SimpleRenderData>();
+    SimpleRenderData* d = g_tmpMem.bump<SimpleRenderData>();
     d->vao = mesh->vao;
     d->tex = tex->handle;
     d->indexCount = mesh->numIndices;
@@ -337,7 +336,7 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec4 colo
 {
     static ShaderHandle shader = getShaderHandle("debug");
 
-    SimpleRenderData* d = g_game.tempMem.bump<SimpleRenderData>();
+    SimpleRenderData* d = g_tmpMem.bump<SimpleRenderData>();
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;
@@ -379,7 +378,7 @@ void drawOverlay(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec3 const&
         bool onlyDepth;
     };
 
-    OverlayRenderData* d = g_game.tempMem.bump<OverlayRenderData>();
+    OverlayRenderData* d = g_tmpMem.bump<OverlayRenderData>();
     d->vao = mesh->vao;
     d->indexCount = mesh->numIndices;
     d->worldTransform = transform;

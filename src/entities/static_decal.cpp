@@ -145,16 +145,14 @@ Array<PropPrefabData> StaticDecal::generatePrefabProps()
     Array<PropPrefabData> results;
     g_res.iterateResourceType(ResourceType::TEXTURE, [&](Resource* res){
         Texture* tex = (Texture*)res;
-        if (tex->name.find("decal_") != std::string::npos)
+        if (tex->name.find("decal_"))
         {
             results.push_back({
                 PropCategory::DECALS,
                 tex->name,
                 [tex](Entity* e) {
                     ((StaticDecal*)e)->setTexture(tex->guid);
-                    ((StaticDecal*)e)->isDust =
-                        tex->name.find("dust") != std::string::npos ||
-                        tex->name.find("sand") != std::string::npos;
+                    ((StaticDecal*)e)->isDust = tex->name.find("dust") || tex->name.find("sand");
                 }
             });
         }

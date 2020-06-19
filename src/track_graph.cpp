@@ -213,7 +213,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     end.angle = start.angle;
     end.direction = start.direction;
 
-    print("Built track graph: ", nodes.size(), " nodes, ", paths.size(), " paths\n");
+    println("Built track graph: %u nodes, %u paths", nodes.size(), paths.size());
 
     startNode = &nodes[startIndex];
     endNode = &nodes[endIndex];

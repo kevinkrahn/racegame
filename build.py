@@ -48,9 +48,6 @@ def fetch_dependencies():
     # STB
     fetch('https://github.com/nothings/stb.git', 'stb')
 
-    # GLM
-    fetch('https://github.com/g-truc/glm', 'glm')
-
     # PhysX
     if fetch('https://github.com/NVIDIAGameWorks/PhysX', 'physx'):
         physxdir = os.path.join('external', 'physx', 'physx')

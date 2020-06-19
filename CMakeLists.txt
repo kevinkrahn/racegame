@@ -8,7 +8,6 @@ include_directories(
     external
     external/sdl2
     external/sdl2/SDL2
-    external/glm
     external/physx/physx/include
     external/physx/pxshared/include
     external/stb

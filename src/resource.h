@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "datafile.h"
-#include <string>
 
 enum struct ResourceType
 {
@@ -18,7 +17,7 @@ class Resource
 {
 public:
     i64 guid;
-    std::string name;
+    Str64 name;
     ResourceType type;
 
     virtual ~Resource() {}

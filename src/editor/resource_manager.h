@@ -10,7 +10,7 @@
 
 struct ResourceFolder
 {
-    std::string name;
+    Str64 name;
     Array<OwnedPtr<ResourceFolder>> childFolders;
     Array<i64> childResources;
     ResourceFolder* parent = nullptr;
@@ -51,7 +51,7 @@ class ResourceManager
     ResourceFolder resources = { "Resources" };
 
     bool isResourceWindowOpen = true;
-    std::string renameText;
+    Str64 renameText;
     ResourceFolder* renameFolder = nullptr;
     Resource* renameResource = nullptr;
     bool firstFrameRename = false;
@@ -83,7 +83,7 @@ class ResourceManager
     void showMaterialWindow(Renderer* renderer, f32 deltaTime);
     void showSoundWindow(Renderer* renderer, f32 deltaTime);
 
-    ResourceFolder& getFolder(std::string const& path);
+    ResourceFolder& getFolder(const char* path);
     void saveResources();
 
 public:

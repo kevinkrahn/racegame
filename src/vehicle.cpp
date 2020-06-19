@@ -192,13 +192,13 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         f32 o25 = (f32)g_game.windowHeight * 0.03f;
         f32 o200 = (f32)g_game.windowHeight * 0.21f;
 
-        char* p = tstr(min((u32)currentLap, scene->getTotalLaps()));
+        char* p = tmpStr("%u", min((u32)currentLap, scene->getTotalLaps()));
         const char* lapStr = "LAP";
         f32 lapWidth = font1.stringDimensions(lapStr).x;
         ui::text(&font1, lapStr, offset + Vec2(o20, d.y*o20), Vec3(1.f));
         ui::text(&font2, p,
                     offset + Vec2(o25 + lapWidth, d.y*o20), Vec3(1.f));
-        ui::text(&font1, tstr('/', scene->getTotalLaps()),
+        ui::text(&font1, tmpStr("/%u", scene->getTotalLaps()),
                     offset + Vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20),
                     Vec3(1.f));
 
@@ -209,7 +209,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 
         Vec3 col = mix(Vec3(0, 1, 0), Vec3(1, 0, 0), placement / 8.f);
 
-        p = tstr(placement + 1);
+        p = tmpStr("%u", placement + 1);
         ui::text(&font2, p, offset + Vec2(o200, d.y*o20), col);
         ui::text(&font1, placementSuffix,
                     offset + Vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col);

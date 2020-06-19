@@ -37,7 +37,6 @@
 - Vehicle respawn angles are awkward sometimes
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
-- Replace std::string with custom string type
 - Support multiple keyboards (not supported by SDL)
 - Show controller button icons on UI buttons when a controller is plugged in
 - Show version or git hash in the corner in the menu
@@ -50,6 +49,8 @@
 - Add garage menu for adding decals to vehicle
 - Add suicide ability that creates a massive explosion
 - Leave scorch mark on track after explosion
+- Replace <filesystem>
+- Replace <mutex>
 
 - Ideas:
     - Grenade launcher weapon

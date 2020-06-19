@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include "util.h"
 
 #define MAGIC_NUMBER 0x00001111
@@ -66,12 +65,12 @@ namespace DataFile
     class Value
     {
     public:
-        using Dict = Map<std::string, Value>;
+        using Dict = Map<Str64, Value>;
         using Array = Array<Value>;
         using ByteArray = ::Array<u8>;
-        using String = std::string;
+        using String = Str64;
 
-        friend Value load(std::string const&);
+        friend Value load(const char* filename);
 
     private:
         DataType dataType = DataType::NONE;
@@ -88,7 +87,7 @@ namespace DataFile
 
     public:
         static Value readValue(Buffer& buf);
-        static Value readValue(std::string::const_iterator& ch, std::string::const_iterator end);
+        static Value readValue(const char*& ch, const char* end);
         void write(Buffer& buf) const;
 
         ~Value()
@@ -118,12 +117,12 @@ namespace DataFile
         Value() {}
         Value(Value const& other) { *this = other; }
         Value(Value&& other) { *this = std::move(other); }
-        explicit Value(std::string&& str)
+        explicit Value(String&& str)
         {
             dataType = DataType::STRING;
             new (&str_) String(std::move(str));
         }
-        explicit Value(std::string const& str)
+        explicit Value(String const& str)
         {
             dataType = DataType::STRING;
             new (&str_) String(str);
@@ -222,16 +221,16 @@ namespace DataFile
             return OptionalRef<String>(str_, dataType == DataType::STRING);
         }
 
-        std::string string(std::string const& defaultVal)
+        String string(String const& defaultVal)
         {
             return string().val();
         }
 
-        void setString(std::string const& val)
+        void setString(String const& val)
         {
             Value v;
             v.dataType = DataType::STRING;
-            new (&v.str_) std::string(val);
+            new (&v.str_) String(val);
             *this = std::move(v);
         }
 
@@ -448,20 +447,6 @@ namespace DataFile
             new (&dict_) Dict(val);
         }
 
-        /*
-        Value& operator [] (std::string key)
-        {
-            CHECK_TYPE(DataType::DICT);
-            return dict_[key];
-        }
-
-        Value& operator [] (std::size_t index)
-        {
-            CHECK_TYPE(DataType::ARRAY);
-            return array_[index];
-        }
-        */
-
         template <typename T>
         OptionalVal<T> convertBytes()
         {
@@ -474,23 +459,23 @@ namespace DataFile
             return OptionalVal<T>(std::move(val), true);
         }
 
-        void debugOutput(std::ostream& os, u32 indent, bool newline) const;
+        void debugOutput(StrBuf& buf, u32 indent, bool newline) const;
 
-        Value& operator=(std::string const& val) { setString(val); return *this; }
+        Value& operator=(String const& val) { setString(val); return *this; }
         Value& operator=(const char* val) { setString(val); return *this; }
         Value& operator=(i64 val) { setInteger(val); return *this; }
         Value& operator=(f32 val) { setReal(val); return *this; }
         Value& operator=(bool val) { setBoolean(val); return *this; }
     };
 
-    Value makeString(std::string const& val)
+    Value makeString(Value::String const& val)
     {
         Value v;
         v.setString(val);
         return v;
     }
 
-    Value makeString(std::string&& val)
+    Value makeString(Value::String val)
     {
         Value v;
         v.setString(std::move(val));
@@ -581,44 +566,14 @@ namespace DataFile
         return v;
     }
 
-    Value load(std::string const& filename);
-    void save(Value const& val, std::string const& filename);
-
-    inline std::ostream& operator << (std::ostream& os, Value const& rhs)
-    {
-        rhs.debugOutput(os, 0, true);
-        return os;
-    }
-
-    inline std::ostream& operator << (std::ostream& os, DataType dataType)
-    {
-        switch (dataType)
-        {
-            case NONE:
-                return os << "NONE";
-            case STRING:
-                return os << "STRING";
-            case I64:
-                return os << "I64";
-            case F32:
-                return os << "F32";
-            case BYTE_ARRAY:
-                return os << "BYTE_ARRAY";
-            case ARRAY:
-                return os << "ARRAY";
-            case DICT:
-                return os << "DICT";
-            case BOOL:
-                return os << "BOOL";
-        }
-        return os;
-    }
+    Value load(const char* filename);
+    void save(Value const& val, const char* filename);
 };
 
 #ifndef NDEBUG
-#define DESERIALIZE_ERROR(...) { error(context, ": ", __VA_ARGS__, '\n'); return; }
+#define DESERIALIZE_ERROR(...) { error("%s: %s", context, tmpStr(__VA_ARGS__)); return; }
 #else
-#define DESERIALIZE_ERROR(...) { error(__VA_ARGS__, '\n'); return; }
+#define DESERIALIZE_ERROR(...) { error(__VA_ARGS__); return; }
 #endif
 
 class Serializer
@@ -626,7 +581,7 @@ class Serializer
 public:
     DataFile::Value::Dict& dict;
     bool deserialize;
-    std::string context;
+    const char* context;
 
     Serializer(DataFile::Value& val, bool deserialize) : dict(val.dict(true).val()),
         deserialize(deserialize) {}
@@ -641,7 +596,7 @@ public:
     }
 
     template<typename T>
-    void serializeValue(const char* name, T& field, std::string&& context)
+    void serializeValue(const char* name, T& field, decltype(context)&& context)
     {
         if (deserialize)
         {
@@ -664,7 +619,7 @@ public:
                 auto v = val.integer();
                 if (!v.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
                 }
                 dest = (T)v.val();
             }
@@ -680,12 +635,12 @@ public:
                 auto v = val.integer();
                 if (!v.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read value as INTEGER: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
                 }
                 dest = (T)v.val();
                 if (v.val() > std::numeric_limits<T>::max())
                 {
-                    error(context, ": deserialized integer overflow");
+                    error("%s: deserialized integer overflow", context);
                 }
             }
             else
@@ -701,11 +656,11 @@ public:
                 auto v = val.array();
                 if (!v.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
                 }
                 if (v.val().size() < arraySize)
                 {
-                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
                 }
                 for (u32 i=0; i<(u32)arraySize; ++i)
                 {
@@ -731,7 +686,7 @@ public:
                 auto v = val.dict();
                 if (!v.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read value as DICT: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read value as DICT: \"%s\"", name);
                 }
                 Serializer childSerializer(val, true);
                 dest.serialize(childSerializer);
@@ -746,12 +701,12 @@ public:
         }
     }
 
-    template<> void element(const char* name, DataFile::Value& val, std::string& dest)
+    template<> void element(const char* name, DataFile::Value& val, DataFile::Value::String& dest)
     {
         if (deserialize)
         {
             auto v = val.string();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"", name, "\"");
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"%s\"", name);
             dest = v.val();
         }
         else val = dest;
@@ -762,7 +717,7 @@ public:
         if (deserialize)
         {
             auto v = val.boolean();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as BOOL: \"", name, "\"");
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as BOOL: \"%s\"", name);
             dest = v.val();
         }
         else val = dest;
@@ -773,7 +728,7 @@ public:
         if (deserialize)
         {
             auto v = val.real();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as REAL: \"", name, "\"");
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as REAL: \"%s\"", name);
             dest = v.val();
         }
         else val = dest;
@@ -788,14 +743,14 @@ public:
             auto v = val.array();
             if (!v.hasValue() || v.val().size() < count)
             {
-                DESERIALIZE_ERROR("Failed to read real ARRAY [", count, "] field: \"", name, "\"");
+                DESERIALIZE_ERROR("Failed to read real ARRAY [%u] field: \"%s\"", count, name);
             }
             for (u32 i=0; i<count; ++i)
             {
                 auto optionalValue = v.val()[i].real();
                 if (!optionalValue.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read real ARRAY [", count, "] field: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read real ARRAY [%u] field: \"%s\"", count, name);
                 }
                 ((f32*)&dest)[i] = optionalValue.val();
             }
@@ -842,11 +797,11 @@ public:
                 auto v = val.bytearray();
                 if (!v.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"%s\"", name);
                 }
                 if (v.val().size() % sizeof(V) != 0)
                 {
-                    DESERIALIZE_ERROR("Cannot convert BYTEARRAY field: \"", name, "\"");
+                    DESERIALIZE_ERROR("Cannot convert BYTEARRAY field: \"%s\"", name);
                 }
                 dest.assign(reinterpret_cast<V*>(v.val().data()),
                         reinterpret_cast<V*>(v.val().data() + v.val().size()));
@@ -865,7 +820,7 @@ public:
                 auto v = val.array();
                 if (!v.hasValue())
                 {
-                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"", name, "\"");
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
                 }
                 dest.clear();
                 dest.reserve(v.val().size());
@@ -915,7 +870,7 @@ public:
     }
 
     template<typename T>
-    static void toFile(T& val, std::string const& filename)
+    static void toFile(T& val, const char* filename)
     {
         auto data = DataFile::makeDict();
         Serializer s(data, false);
@@ -924,7 +879,7 @@ public:
     }
 
     template<typename T>
-    static void fromFile(T& val, std::string const& filename)
+    static void fromFile(T& val, const char* filename)
     {
         auto data = DataFile::load(filename);
         if (data.hasValue())
@@ -938,8 +893,8 @@ public:
 #undef DESERIALIZE_ERROR
 
 #ifndef NDEBUG
-#define field(FIELD) serializeValue(#FIELD, FIELD, str(__FILE__, ": ", __LINE__))
-#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, str(__FILE__, ": ", __LINE__))
+#define field(FIELD) serializeValue(#FIELD, FIELD, tmpStr("%s: %s", __FILE__, __LINE__))
+#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, tmpStr("%s: %s", __FILE__, __LINE__))
 #else
 #define field(FIELD) serializeValue(#FIELD, FIELD, "WARNING")
 #define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, "WARNING")

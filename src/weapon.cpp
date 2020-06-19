@@ -16,7 +16,7 @@ void Weapon::loadModelData(const char* modelName)
     Model* model = g_res.getModel(modelName);
     for (auto const & obj : model->objects)
     {
-        if (obj.name.find("SpawnPoint") != std::string::npos)
+        if (obj.name.find("SpawnPoint"))
         {
             projectileSpawnPoints.push_back(obj.position);
         }

@@ -7,8 +7,8 @@
 #define IMGUI_USE_STB_SPRINTF
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
+#include "str.h"
 #include <imgui/imgui.h>
-#include <imgui/misc/cpp/imgui_stdlib.h>
 
 namespace ImGui
 {
@@ -36,5 +36,11 @@ namespace ImGui
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
         }
+    }
+
+    template <u32 SIZE>
+    inline bool InputText(const char* label, Str<SIZE>* str, ImGuiInputTextFlags flags=0)
+    {
+        return ImGui::InputText(label, str->cstr, SIZE, flags);
     }
 }

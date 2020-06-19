@@ -52,8 +52,12 @@
 #define STB_INCLUDE_LINE_GLSL
 #define STB_INCLUDE_IMPLEMENTATION
 #include <stb_include.h>
+#if 0
+#define STB_SPRINTF_IMPLEMENTATION
+#include <stb_sprintf.h>
+#endif
 
-#if 1
+#if 0
 int main(int argc, char** argv)
 {
     g_game.run();
@@ -63,18 +67,22 @@ int main(int argc, char** argv)
 #include "util.h"
 int main(int argc, char** argv)
 {
-    Map<u32, u32> map;
+    StrBuf buf;
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    buf.write("hello");
+    println(buf.data());
 
-    for (u32 i=0; i<100; ++i)
-    {
-        map.set(i, i + 1);
-    }
-
-    print("set all\n");
-    for (u32 i=0; i<100; ++i)
-    {
-        print(*map.get(i), '\n');
-    }
-    print("get all\n");
+    println("%s %s %.2f", "hello", "world", PI);
+    println("%s %s %.2f", "hello", "world", PI);
 }
 #endif

@@ -9,7 +9,6 @@
 #include "model.h"
 #include "audio.h"
 #include "trackdata.h"
-#include <string>
 
 const char* DATA_DIRECTORY = "../editor_data";
 const char* ASSET_DIRECTORY = "../assets";
@@ -21,7 +20,7 @@ private:
     // TODO: convert fonts into resource
     Map<const char*, Map<u32, Font>> fonts;
     Map<i64, OwnedPtr<Resource>> resources;
-    Map<std::string, Resource*> resourceNameMap;
+    Map<Str64, Resource*> resourceNameMap;
 
 public:
 
@@ -29,7 +28,7 @@ public:
     void loadResource(DataFile::Value& data);
     Resource* newResource(ResourceType type, bool makeGUID);
     void registerResource(OwnedPtr<Resource>&& resource);
-    void renameResource(Resource* resource, std::string const& newName)
+    void renameResource(Resource* resource, Str64 const& newName)
     {
         resourceNameMap.erase(resource->name);
         resource->name = newName;
@@ -85,13 +84,13 @@ public:
         auto ptr = fonts.get(name);
         if (!ptr)
         {
-            return fonts[name][height] = Font(std::string(name) + ".ttf", (f32)height);
+            return fonts[name][height] = Font(tmpStr("%s.ttf", name), (f32)height);
         }
 
         auto ptr2 = ptr->get(height);
         if (!ptr2)
         {
-            return fonts[name][height] = Font(std::string(name) + ".ttf", (f32)height);
+            return fonts[name][height] = Font(tmpStr("%s.ttf", name), (f32)height);
         }
 
         return *ptr2;
@@ -102,8 +101,6 @@ public:
         auto iter = resources.get(guid);
         if (!iter || iter->get()->type != ResourceType::TEXTURE)
         {
-            //FATAL_ERROR("Texture not found: ", guid);
-            //print("Texture not found: ", guid, '\n');
             return &white;
         }
         return (Texture*)iter->get();
@@ -114,8 +111,6 @@ public:
         auto iter = resourceNameMap.get(name);
         if (!iter || (*iter)->type != ResourceType::TEXTURE)
         {
-            //FATAL_ERROR("Texture not found: ", guid);
-            //print("Texture not found: ", guid, '\n');
             return &white;
         }
         return (Texture*)*iter;
@@ -166,8 +161,6 @@ public:
         auto iter = resources.get(guid);
         if (!iter || iter->get()->type != ResourceType::MATERIAL)
         {
-            //FATAL_ERROR("Material not found: ", guid);
-            //print("Material not found: ", guid, '\n');
             return &defaultMaterial;
         }
         return (Material*)iter->get();
@@ -178,8 +171,6 @@ public:
         auto iter = resourceNameMap.get(name);
         if (!iter || (*iter)->type != ResourceType::MATERIAL)
         {
-            //FATAL_ERROR("Material not found: ", name);
-            //print("Material not found: ", name, '\n');
             return &defaultMaterial;
         }
         return (Material*)*iter;

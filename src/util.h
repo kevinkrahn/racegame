@@ -8,17 +8,16 @@
 
 #include "misc.h"
 #include "buffer.h"
-#include <string>
 #include <filesystem>
 
 struct FileItem
 {
-    std::string path;
+    const char* path;
     bool isDirectory;
     Array<FileItem> children;
 };
 
-Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
+Array<FileItem> readDirectory(const char* dir, bool recursive=true)
 {
     Array<FileItem> files;
 
@@ -35,8 +34,8 @@ Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
         {
             if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                files.push_back({ fileData.cFileName, true });
-                std::string childDirectory = dir + '/' + fileData.cFileName;
+                files.push_back({ tmpStr("%s", fileData.cFileName), true });
+                const char* childDirectory = tmpStr("%s/%s", dir, fileData.cFileName);
                 if (recursive)
                 {
                     files.back().children = readDirectory(childDirectory, recursive);
@@ -44,27 +43,28 @@ Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
             }
             else
             {
-                files.push_back({ fileData.cFileName, false });
+                files.push_back({ tmpStr("%s", fileData.cFileName), false });
             }
         }
     }
     while (FindNextFileA(handle, &fileData) != 0);
     FindClose(handle);
 #else
-    DIR* dirp = opendir(dir.c_str());
+    DIR* dirp = opendir(dir);
     if (!dirp)
     {
-        FATAL_ERROR("Failed to read directory: ", dir);
+        FATAL_ERROR("Failed to read directory: %s", dir);
     }
     dirent* dp;
     while ((dp = readdir(dirp)))
     {
         if (dp->d_name[0] != '.')
         {
+            const char* name = tmpStr("%s", dp->d_name);
             if (dp->d_type == DT_DIR)
             {
-				files.push_back({ dp->d_name, true });
-				std::string childDirectory = dir + '/' + dp->d_name;
+				files.push_back({ name, true });
+				const char* childDirectory = tmpStr("%s/%s", dir, dp->d_name);
 				if (recursive)
 				{
 					files.back().children = readDirectory(childDirectory, recursive);
@@ -72,7 +72,7 @@ Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
             }
             else if (dp->d_type == DT_REG)
             {
-                files.push_back({ dp->d_name, false });
+                files.push_back({ name, false });
             }
         }
     }
@@ -82,13 +82,13 @@ Array<FileItem> readDirectory(std::string const& dir, bool recursive=true)
     files.sort([](auto& a, auto& b) {
         if (a.isDirectory && !b.isDirectory) return true;
         if (!a.isDirectory && b.isDirectory) return false;
-        return a.path < b.path;
+        return strcmp(a.path, b.path) < 0;
     });
     return files;
 }
 
-std::string chooseFile(bool open, std::string const& fileType,
-        SmallArray<const char*> extensions, std::string const& defaultDir)
+const char* chooseFile(bool open, const char* fileType,
+        SmallArray<const char*> extensions, const char* defaultDir)
 {
 #if _WIN32
     char szFile[260];
@@ -115,7 +115,7 @@ std::string chooseFile(bool open, std::string const& fileType,
     {
         if (GetOpenFileName(&ofn) == TRUE)
         {
-            return std::string(szFile);
+            return tmpStr("%s", szFile);
         }
         else
         {
@@ -126,7 +126,7 @@ std::string chooseFile(bool open, std::string const& fileType,
     {
         if (GetSaveFileName(&ofn) == TRUE)
         {
-            return std::string(szFile);
+            return tmpStr("%s", szFile);
         }
         else
         {
@@ -134,51 +134,45 @@ std::string chooseFile(bool open, std::string const& fileType,
         }
     }
 #else
-    char filename[1024] = { 0 };
-    std::string cmd = "zenity";
-    std::string fileFilter = fileType + " | ";
+    StrBuf buf;
+    buf.writef("zenity --file-filter \"%s |", fileType);
     for (auto& ext : extensions)
     {
-        fileFilter += ext;
-        fileFilter += ' ';
+        buf.write(" ");
+        buf.write(ext);
     }
-    cmd += " --file-filter \"" + fileFilter + '"';
+    buf.write("\"");
     if (open)
     {
-        cmd += " --title 'Open File' --file-selection --filename ";
+        buf.write(" --title 'Open File' --file-selection --filename ");
     }
     else
     {
-        cmd += " --title 'Save File' --file-selection --save --confirm-overwrite --filename ";
+        buf.write(" --title 'Save File' --file-selection --save --confirm-overwrite --filename ");
     }
-    cmd += std::filesystem::absolute(defaultDir).string();
-    print(cmd, '\n');
-    FILE *f = popen(cmd.c_str(), "r");
-    if (!f || !fgets(filename, sizeof(filename) - 1, f))
+    buf.write(std::filesystem::absolute(defaultDir).string().c_str());
+    println("%s", buf.data());
+    FILE *f = popen(buf.data(), "r");
+    char* filename = g_tmpMem.bump<char>(1024);
+    if (!f || !fgets(filename, 1024 - 1, f))
     {
-        error("Unable to create file dialog\n");
+        error("Unable to create file dialog");
         return {};
     }
     pclose(f);
-    std::string file(filename);
-    if (!file.empty())
-    {
-        file.pop_back();
-    }
-
-    return file;
+    return filename[0] != 0 ? filename : nullptr;
 #endif
 }
 
 struct CommandResult
 {
     i32 exitCode;
-    std::string output;
+    const char* output;
 };
 
-CommandResult runShellCommand(std::string const& command)
+CommandResult runShellCommand(const char* command)
 {
-    print(command, '\n');
+    println("%s", command);
 
 #if _WIN32
     SECURITY_ATTRIBUTES attr;
@@ -207,7 +201,7 @@ CommandResult runShellCommand(std::string const& command)
     startInfo.hStdInput = hChildStdinRead;
     startInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    if (!CreateProcess(NULL, (LPSTR)command.c_str(), NULL, NULL, TRUE, 0,
+    if (!CreateProcess(NULL, (LPSTR)command, NULL, NULL, TRUE, 0,
                 NULL, NULL, &startInfo, &procInfo))
     {
         return { -1004 };
@@ -232,27 +226,23 @@ CommandResult runShellCommand(std::string const& command)
 
     return result;
 #else
-    std::string cmd = command + " 2>&1";
-
-    FILE* stream = popen(cmd.c_str(), "r");
+    FILE* stream = popen(tmpStr("%s 2>&1", command), "r");
     if (!stream)
     {
         return { -1, "" };
     }
 
-    std::string output;
-    char* line = NULL;
-    size_t memSize = 0;
-    ssize_t r;
-    while ((r = getline(&line, &memSize, stream)) != -1)
+    char* commandOutput = g_tmpMem.get<char*>();
+    char* writePos = commandOutput;
+    u32 totalSize = 0;
+    while (fgets(writePos, 1024, stream))
     {
-        output += std::string(line, r);
+        totalSize += 1024;
+        writePos = commandOutput + totalSize;
     }
-    free(line);
-
     i32 code = pclose(stream);
 
-    return { code, output };
+    return { code, commandOutput };
 #endif
 }
 
@@ -270,7 +260,7 @@ Buffer readFileBytes(const char* filename)
     return buffer;
 }
 
-std::string readFileString(const char* filename)
+StrBuf readFileString(const char* filename)
 {
     SDL_RWops* file = SDL_RWFromFile(filename, "r+b");
     if (!file)
@@ -278,8 +268,7 @@ std::string readFileString(const char* filename)
         FATAL_ERROR("File ", filename, " does not exist.");
     }
     size_t size = SDL_RWsize(file);
-    std::string buffer;
-    buffer.resize(size);
+    StrBuf buffer(size);
     SDL_RWread(file, buffer.data(), size, 1);
     SDL_RWclose(file);
     return buffer;

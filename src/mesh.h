@@ -22,7 +22,7 @@ struct VertexAttribute
 
 struct Mesh
 {
-    std::string name;
+    Str64 name;
     Array<f32> vertices;
     Array<u32> indices;
 

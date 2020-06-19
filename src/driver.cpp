@@ -22,7 +22,7 @@ void Driver::aiUpgrades(RandomSeries& series)
     assert(aiIndex != -1);
     ComputerDriverData const& ai = g_ais[aiIndex];
 
-//#define AI_DEBUG_PRINT(...) print(__VA_ARGS__)
+//#define AI_DEBUG_PRINT(...) println(__VA_ARGS__)
 #define AI_DEBUG_PRINT(...)
 
     if (vehicleIndex == -1)
@@ -35,7 +35,7 @@ void Driver::aiUpgrades(RandomSeries& series)
             vehicleConfig.wrapColors[0] = ai.wrapColor;
         }
         credits -= g_vehicles[vehicleIndex]->price;
-        AI_DEBUG_PRINT(playerName, " bought vehicle: ", g_vehicles[vehicleIndex]->name, '\n');
+        AI_DEBUG_PRINT("%s bought vehicle %s" playerName, g_vehicles[vehicleIndex]->name);
     }
 
     // TODO: make AI buy better vehicles over time
@@ -155,8 +155,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought front weapon ", g_weapons[index].info.name, ' ',
-                                    c.frontWeaponUpgradeLevel[0] + 1, '\n');
+                            AI_DEBUG_PRINT("%s bought front weapon %s %i",
+                                    playerName, g_weapons[index].info.name, c.frontWeaponUpgradeLevel[0] + 1);
                             credits -= g_weapons[index].info.price;
                             c.frontWeaponIndices[0] = index;
                             ++c.frontWeaponUpgradeLevel[0];
@@ -184,8 +184,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought front weapon ", g_weapons[index].info.name, ' ',
-                                    c.frontWeaponUpgradeLevel[1] + 1, '\n');
+                            AI_DEBUG_PRINT("%s bought front weapon %s %i", playerName, g_weapons[index].info.name,
+                                    c.frontWeaponUpgradeLevel[1] + 1);
                             credits -= g_weapons[index].info.price;
                             c.frontWeaponIndices[1] = index;
                             ++c.frontWeaponUpgradeLevel[1];
@@ -213,8 +213,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought front weapon ", g_weapons[index].info.name, ' ',
-                                    c.frontWeaponUpgradeLevel[2] + 1, '\n');
+                            AI_DEBUG_PRINT("%s bought front weapon %s %i", playerName, g_weapons[index].info.name,
+                                    c.frontWeaponUpgradeLevel[2] + 1);
                             credits -= g_weapons[index].info.price;
                             c.frontWeaponIndices[2] = index;
                             ++c.frontWeaponUpgradeLevel[2];
@@ -242,8 +242,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought rear weapon ", g_weapons[index].info.name, ' ',
-                                    c.rearWeaponUpgradeLevel[0] + 1, '\n');
+                            AI_DEBUG_PRINT("%s bought rear weapon %s %i", playerName, g_weapons[index].info.name,
+                                    c.rearWeaponUpgradeLevel[0] + 1);
                             credits -= g_weapons[index].info.price;
                             c.rearWeaponIndices[0] = index;
                             ++c.rearWeaponUpgradeLevel[0];
@@ -271,8 +271,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought rear weapon ", g_weapons[index].info.name, ' ',
-                                    c.rearWeaponIndices[1] + 1, '\n');
+                            AI_DEBUG_PRINT("%s bought rear weapon %s %i", playerName, g_weapons[index].info.name,
+                                    c.rearWeaponUpgradeLevel[1] + 1);
                             credits -= g_weapons[index].info.price;
                             c.rearWeaponIndices[1] = index;
                             ++c.rearWeaponUpgradeLevel[1];
@@ -300,8 +300,8 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought rear weapon ", g_weapons[index].info.name, ' ',
-                                    c.rearWeaponUpgradeLevel[2] + 1, '\n');
+                            AI_DEBUG_PRINT("%s bought rear weapon %s %i", playerName, g_weapons[index].info.name,
+                                    c.rearWeaponUpgradeLevel[2] + 1);
                             credits -= g_weapons[index].info.price;
                             c.rearWeaponIndices[2] = index;
                             ++c.rearWeaponUpgradeLevel[2];
@@ -321,7 +321,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT(playerName, " bought special ability ", g_weapons[index].info.name, '\n');
+                            AI_DEBUG_PRINT("%s bought special ability %s", playerName, g_weapons[index].info.name);
                             credits -= g_weapons[index].info.price;
                             c.specialAbilityIndex = index;
                             boughtSomething = true;
@@ -348,8 +348,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                     }
                     else if (c.canAddUpgrade(this, upgradeLevel))
                     {
-                        AI_DEBUG_PRINT(playerName, " bought armor ", upgradeLevel,
-                                '(', upgradeChoice.priority, ")\n");
+                        AI_DEBUG_PRINT("%s bought armor %i (%.2f)", upgradeLevel, upgradeChoice.priority);
                         credits -= price;
                         c.addUpgrade(ARMOR_INDEX);
                         restart = true;
@@ -376,8 +375,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                     }
                     else if (c.canAddUpgrade(this, ENGINE_INDEX))
                     {
-                        AI_DEBUG_PRINT(playerName, " bought engine ", upgradeLevel,
-                                '(', upgradeChoice.priority, ")\n");
+                        AI_DEBUG_PRINT("%s bought engine %i (%.2f)", upgradeLevel, upgradeChoice.priority);
                         credits -= price;
                         c.addUpgrade(ENGINE_INDEX);
                         restart = true;
@@ -404,8 +402,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                     }
                     else if (c.canAddUpgrade(this, TIRES_INDEX))
                     {
-                        AI_DEBUG_PRINT(playerName, " bought tires ", upgradeLevel,
-                                '(', upgradeChoice.priority, ")\n");
+                        AI_DEBUG_PRINT("%s bought tires %i (%.2f)", upgradeLevel, upgradeChoice.priority);
                         credits -= price;
                         c.addUpgrade(TIRES_INDEX);
                         restart = true;
@@ -437,8 +434,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else if (c.canAddUpgrade(this, i))
                         {
-                            AI_DEBUG_PRINT(playerName, " bought ", upgradeInfo.name, " ",
-                                    upgradeLevel, '\n');
+                            AI_DEBUG_PRINT("%s bought %s %i", upgradeInfo.name, upgradeLevel);
                             credits -= price;
                             c.addUpgrade(i);
                             restart = true;

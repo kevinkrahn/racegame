@@ -16,12 +16,12 @@ void Sound::decodeVorbisData()
     i32 count = decodeVorbis(rawAudioData.data(), (i32)rawAudioData.size(), &channels, &rate, &buf);
     if (count == -1)
     {
-        error("Failed to decode vorbis: ", name, '\n');
+        error("Failed to decode vorbis: %s", name.cstr);
         return;
     }
     if (rate != 44100)
     {
-        error("Unsupported sample rate: ", rate, " (", name, ")\n");
+        error("Unsupported sample rate: %i (\"%s\")", rate, name.cstr);
         return;
     }
 
@@ -34,8 +34,8 @@ void Sound::decodeVorbisData()
 
 void Sound::loadFromFile(const char* filename)
 {
-    std::string fname(filename);
-    std::string ext = fname.substr(fname.size()-4);
+    Str64 fname(filename);
+    Str64 ext = fname.substr(fname.size()-4);
     if (ext == ".wav")
     {
         SDL_AudioSpec spec;

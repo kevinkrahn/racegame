@@ -25,7 +25,7 @@ void Decal::setTexture(Texture* tex, Texture* texNormal)
 
 void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 const& meshTransform)
 {
-    //print("Adding mesh with ", indexCount * 3, " vertices\n");
+    //println("Adding mesh with %u vertices", indexCount * 3);
 
     const Vec3 planes[] = {
         {  1.f,  0.f,  0.f },

@@ -1,41 +1,25 @@
 #include "datafile.h"
-#include <iomanip>
-#include <cctype>
 
 using namespace DataFile;
 
-DataFile::Value DataFile::load(std::string const& filename)
+DataFile::Value DataFile::load(const char* filename)
 {
     // text format
-    if (filename.substr(filename.size()-4) == ".txt")
+    if (path::hasExt(filename, ".txt"))
     {
-        std::string str = readFileString(filename.c_str());
-
-        // strip comments
-        for (;;)
-        {
-            auto pos = str.find("//");
-            if (pos == std::string::npos)
-            {
-                break;
-            }
-            auto endOfLine = str.find('\n', pos);
-            str = str.replace(pos,
-                    endOfLine == std::string::npos ? std::string::npos : endOfLine - pos, "");
-        }
-
-        auto begin = str.cbegin();
-        Value val = Value::readValue(begin, str.cend());
+        StrBuf str = readFileString(filename);
+        const char* begin = str.data();
+        Value val = Value::readValue(begin, str.data());
         return val;
     }
 
     // binary format
-    Buffer buf = readFileBytes(filename.c_str());
+    Buffer buf = readFileBytes(filename);
 
     u32 header = *buf.bump<u32>();
     if (header != MAGIC_NUMBER)
     {
-        error("Invalid data file: ", filename, '\n');
+        error("Invalid data file: %s", filename);
         return Value();
     }
 
@@ -43,15 +27,14 @@ DataFile::Value DataFile::load(std::string const& filename)
     return val;
 }
 
-void DataFile::save(DataFile::Value const& val, std::string const& filename)
+void DataFile::save(DataFile::Value const& val, const char* filename)
 {
     // text format
-    if (filename.substr(filename.size()-4) == ".txt")
+    if (path::hasExt(filename, ".txt"))
     {
-        std::ostringstream ss;
-        ss << val;
-        std::string fileStr = ss.str();
-        writeFile(filename.c_str(), fileStr.data(), fileStr.size());
+        StrBuf buf;
+        val.debugOutput(buf, 0, false);
+        writeFile(filename, buf.data(), buf.size());
         return;
     }
 
@@ -60,20 +43,21 @@ void DataFile::save(DataFile::Value const& val, std::string const& filename)
     Buffer buf(megabytes(20));
     buf.write(magic);
     val.write(buf);
-    writeFile(filename.c_str(), buf.data.get(), buf.pos);
+    writeFile(filename, buf.data.get(), buf.pos);
 }
 
 // TODO: Add line numbers and more descriptive messages to parser errors
-Value Value::readValue(std::string::const_iterator& ch, std::string::const_iterator end)
+Value Value::readValue(const char*& ch, const char* end)
 {
-    auto eatSpace = [&](std::string::const_iterator& ch) {
-        while(ch != end && std::isspace(*ch))
+    auto eatSpace = [&](const char*& ch) {
+        while(ch != end && isspace(*ch))
         {
             ++ch;
         }
     };
-    auto readIdentifier = [&](std::string::const_iterator& ch, std::string const& ident) {
-        for (u32 i=0; i<ident.size(); ++i, ++ch)
+    auto readIdentifier = [&](const char*& ch, const char* ident) {
+        auto len = strlen(ident);
+        for (u32 i=0; i<len; ++i, ++ch)
         {
             if (ch == end || *ch != ident[i])
             {
@@ -114,35 +98,34 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
     }
     else if (*ch == '"')
     {
-        std::string string = "";
+        const char* identBegin = ch + 1;
         bool hasEnd = false;
         while(++ch != end)
         {
             if (*ch == '"')
             {
                 hasEnd = true;
-                ++ch;
                 break;
             }
-            string += *ch;
         }
+        const char* identEnd = ch - 1;
+        ++ch;
 
         if (!hasEnd)
         {
-            error("String has no terminating quotation.\n");
+            error("String has no terminating quotation.");
             return Value();
         }
 
         Value val;
         val.dataType = DataType::STRING;
-        new (&val.str_) String(std::move(string));
+        new (&val.str_) String(identBegin, identEnd);
         return val;
     }
-    else if (std::isdigit(*ch) || *ch == '-')
+    else if (isdigit(*ch) || *ch == '-')
     {
         bool foundDot = false;
-        std::string digits = "";
-        digits += *ch;
+        const char* digitsBegin = ch;
         while(++ch != end)
         {
             if (*ch == '.')
@@ -153,22 +136,22 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
                 }
                 foundDot = true;
             }
-            else if (!std::isdigit(*ch))
+            else if (!isdigit(*ch))
             {
                 break;
             }
-            digits += *ch;
         }
+        Str64 digits(digitsBegin, ch-1);
         Value val;
         if (foundDot)
         {
             val.dataType = DataType::F32;
-            val.real_ = std::stof(digits);
+            val.real_ = (f32)atof(digits.cstr);
         }
         else
         {
             val.dataType = DataType::I64;
-            val.integer_ = std::stoll(digits);
+            val.integer_ = atoll(digits.cstr);
         }
         return val;
     }
@@ -183,36 +166,36 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
             eatSpace(ch);
             if (ch == end)
             {
-                error("Unexpected end of string when parsing Dict. \n");
+                error("Unexpected end of string when parsing Dict.");
                 return Value();
             }
-            if (std::isalpha(*ch))
+            if (isalpha(*ch))
             {
-                std::string identifier = "";
-                while (ch != end && (std::isalpha(*ch) || std::isdigit(*ch) || *ch == '-'))
+                const char* identBegin = ch;
+                while (ch != end && (isalpha(*ch) || isdigit(*ch) || *ch == '-'))
                 {
-                    identifier += *ch++;
+                    ++ch;
                 }
 
                 if (ch == end)
                 {
-                    error("Unexpected end of string when parsing Dict. \n");
+                    error("Unexpected end of string when parsing Dict.");
                     return Value();
                 }
 
                 if (*ch != ':')
                 {
-                    error("Expected ':' but found '", *ch, "'\n");
+                    error("Expected ':' but found '%c'", *ch);
                     return Value();
                 }
                 ++ch;
 
-                val.dict_[identifier] = readValue(ch, end);
+                val.dict_[Str64(identBegin, ch-2)] = readValue(ch, end);
 
                 eatSpace(ch);
                 if (ch == end)
                 {
-                    error("Unexpected end of string when parsing Dict. \n");
+                    error("Unexpected end of string when parsing Dict.");
                     return Value();
                 }
 
@@ -224,7 +207,7 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
                     eatSpace(ch);
                     if (ch == end)
                     {
-                        error("Unexpected end of string when parsing Dict. \n");
+                        error("Unexpected end of string when parsing Dict.");
                         return Value();
                     }
                 }
@@ -237,13 +220,13 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
 
                 if (!comma && *ch != ',')
                 {
-                    error("Expected ',' but found '", *ch, "'\n");
+                    error("Expected ',' but found '%c'", *ch);
                     return Value();
                 }
             }
             else
             {
-                error("Unexpected character '", *ch, "'\n");
+                error("Unexpected character '%c'", *ch);
                 return Value();
             }
         }
@@ -283,7 +266,7 @@ Value Value::readValue(std::string::const_iterator& ch, std::string::const_itera
 
             if (foundValue && *ch != ',')
             {
-                error("Expected ',' but found '", *ch, "'\n");
+                error("Expected ',' but found '%c'", *ch);
                 return Value();
             }
         }
@@ -310,7 +293,7 @@ Value Value::readValue(Buffer& buf)
         {
             u32 len = *buf.bump<u32>();
             char* chars = buf.bump<char>(len);
-            new (&value.str_) std::string(chars, chars+len);
+            new (&value.str_) String(chars, chars+len);
         } break;
         case DataType::BYTE_ARRAY:
         {
@@ -345,7 +328,7 @@ Value Value::readValue(Buffer& buf)
             {
                 u32 keyLen = *buf.bump<u32>();
                 char* chars = buf.bump<char>(keyLen);
-                std::string key(chars, chars+keyLen);
+                Str64 key(chars, chars+keyLen);
                 value.dict_.set(key, readValue(buf));
             }
         } break;
@@ -356,7 +339,7 @@ Value Value::readValue(Buffer& buf)
         } break;
         default:
         {
-            error("Invalid data type: ", (u32)value.dataType, '\n');
+            error("Invalid data type: %u", (u32)value.dataType);
             value.dataType = DataType::NONE;
         } break;
     }
@@ -412,76 +395,74 @@ void Value::write(Buffer& buf) const
         } break;
         default:
         {
-            error("Cannot save value: Invalid data type: ", (u32)dataType, '\n');
+            error("Cannot save value: Invalid data type: %u", (u32)dataType);
         } break;
     }
 }
 
-void Value::debugOutput(std::ostream& os, u32 indent, bool newline) const
+void Value::debugOutput(StrBuf& buf, u32 indent, bool newline) const
 {
     switch (dataType)
     {
         case DataType::NONE:
-            os << "None";
+            buf.write("None");
             break;
         case DataType::I64:
-            os << integer_;
+            buf.writef("%i", integer_);
             break;
         case DataType::F32:
-            os << std::fixed << std::setprecision(4);
-            os << real_;
+            buf.writef("%.4f", real_);
             break;
         case DataType::STRING:
-            os << '"' << str_ << '"';
+            buf.writef("\"%s\"", str_.cstr);
             break;
         case DataType::BYTE_ARRAY:
-            os << "<bytearray>";
+            buf.write("<bytearray>");
             break;
         case DataType::ARRAY:
-            if (newline)
-            {
-                os << std::string(indent * 2, ' ');
-            }
+            buf.write(' ', indent * 2);
             if (array_.size() == 0)
             {
-                os << "[]";
+                buf.write("[]");
             }
             else
             {
-                os << "[\n";
+                buf.write("[\n");
                 for (u32 i=0; i<array_.size(); ++i)
                 {
-                    os << std::string((indent + 1) * 2, ' ');
-                    array_[i].debugOutput(os, indent + 1, array_[i].dataType != DataType::DICT);
-                    os << ",\n";
+                    buf.write(' ', (indent + 1) * 2);
+                    array_[i].debugOutput(buf, indent + 1, array_[i].dataType != DataType::DICT);
+                    buf.write(",\n");
                 }
-                os << std::string(indent * 2, ' ') << "]";
+                buf.write(' ', indent * 2);
+                buf.write(']');
             }
             break;
         case DataType::DICT:
             if (newline)
             {
-                os << std::string(indent * 2, ' ');
+                buf.write(' ', indent * 2);
             }
             if (dict_.size() == 0)
             {
-                os << "{}";
+                buf.write("{}");
             }
             else
             {
-                os << "{\n";
+                buf.write("{\n");
                 for (auto const& pair : dict_)
                 {
-                    os << std::string((indent + 1) * 2, ' ');
-                    os << pair.key << ": ";
-                    pair.value.debugOutput(os, indent + 1, false);
-                    os << ",\n";
+                    buf.write(' ', (indent + 1) * 2);
+                    buf.writef("%s: ", pair.key.cstr);
+                    pair.value.debugOutput(buf, indent + 1, false);
+                    buf.write(",\n");
                 }
-                os << std::string(indent * 2, ' ') << "}";
+                buf.write(' ', indent * 2);
+                buf.write('}');
             }
             break;
         case DataType::BOOL:
-            os << (bool_ ? "true" : "false");
+            buf.write(bool_ ? "true" : "false");
             break;
     }
 }

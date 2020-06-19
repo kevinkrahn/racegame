@@ -14,7 +14,7 @@ enum struct AudioFormat
 struct Sound : public Resource
 {
     // serialized
-    std::string sourceFilePath;
+    Str64 sourceFilePath;
     Array<u8> rawAudioData;
     u32 numSamples = 0;
     u32 numChannels = 0;

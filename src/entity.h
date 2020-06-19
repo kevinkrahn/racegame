@@ -27,7 +27,7 @@ struct ECS_Component
 
 struct ECS_Entity
 {
-    std::string name;
+    Str64 name;
     SmallArray<ECS_Component*, 8> components;
     Vec3 position;
     u32 flags = ENTITY_NONE;
@@ -136,7 +136,7 @@ public:
 struct PropPrefabData
 {
     PropCategory category;
-    std::string name;
+    Str64 name;
     std::function<void(PlaceableEntity*)> doThing = [](auto){};
 };
 

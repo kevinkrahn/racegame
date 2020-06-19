@@ -45,7 +45,7 @@ Scene::Scene(TrackData* data)
 
     if (!data->data.hasValue())
     {
-        print("Loading empty scene. Adding default entities.");
+        println("Loading empty scene. Adding default entities.");
         addEntity(g_entities[0].create()); // terrain
         addEntity(g_entities[1].create()); // track
         addEntity(g_entities[4].create()); // starting point
@@ -114,7 +114,7 @@ void Scene::startRace()
     // if no racing lines have been defined for the track generate them from the track graph
     if (paths.empty())
     {
-        print("Scene has no paths defined. Generating paths.\n");
+        println("Scene has no paths defined. Generating paths.");
         hasGeneratedPaths = true;
         paths.reserve(trackGraph.getPaths().size());
         for (auto& path : trackGraph.getPaths())
@@ -208,7 +208,7 @@ void Scene::buildBatches()
     }
     batcher.end();
     f64 timeTakenToBuildBatches = getTime() - t;
-    print("Built ", batcher.batches.size(), " batches in ", timeTakenToBuildBatches, " seconds\n");
+    println("Built %u batches in %.2f seconds", batcher.batches.size(), timeTakenToBuildBatches);
     isBatched = true;
 }
 
@@ -849,11 +849,6 @@ void Scene::attackCredit(u32 instigator, u32 victim)
             ++vehicles[victim]->raceStatistics.destroyed;
             ++vehicles[instigator]->raceStatistics.frags;
             vehicles[instigator]->addBonus("ATTACK BONUS", ATTACK_BONUS_AMOUNT, Vec3(1.f));
-            std::string instigatorName = vehicles[instigator]->driver->playerName;
-            for (auto& ch : instigatorName)
-            {
-                ch = toupper(ch);
-            }
             vehicles[victim]->addNotification("DESTROYED", 2.f, Vec3(1.f, 0.3f, 0.02f));
         }
     }
@@ -877,13 +872,11 @@ void Scene::buildRaceResults()
         {
             if (v->driver->isPlayer)
             {
-                print("Player did not finish: ", v->currentLap, "/", totalLaps, " laps\n");
                 v->placement = 9999;
             }
             else
             {
                 auto& ai = g_ais[v->driver->aiIndex];
-                print("AI did not finish: ", v->currentLap, "/", totalLaps, " laps\n");
                 // generate fake stats for the drivers that have not yet finished the race
                 for (u32 i = v->currentLap + 1; i<totalLaps; ++i)
                 {
@@ -1226,7 +1219,6 @@ void Scene::serialize(Serializer& s)
     s.write("type", ResourceType::TRACK);
     s.field(guid);
     s.field(name);
-    s.field(notes);
     s.field(totalLaps);
     s.field(version);
     s.field(paths);
@@ -1310,7 +1302,7 @@ void Scene::deserializeTransientEntities(Array<DataFile::Value>& entities)
 void Scene::showDebugInfo()
 {
     ImGui::Gap();
-    ImGui::Text("Scene Name: %s", name.c_str());
+    ImGui::Text("Scene Name: %s", name.cstr);
     ImGui::Text("Entities: %i", entities.size());
     ImGui::Text("Generated Paths: %s", hasGeneratedPaths ? "true" : "false");
     ImGui::Text("World Time: %.4f", worldTime);

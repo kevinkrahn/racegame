@@ -1,7 +1,6 @@
 #pragma once
 
 #include "renderer.h"
-#include "game.h"
 
 struct BillboardRenderData
 {
@@ -18,7 +17,7 @@ void drawBillboard(RenderWorld* rw, Texture* texture, Vec3 const& position, Vec4
     static ShaderHandle shaderLit = getShaderHandle("billboard", { {"LIT"} });
     static ShaderHandle shaderUnlit = getShaderHandle("billboard", {});
 
-    BillboardRenderData* renderData = g_game.tempMem.bump<BillboardRenderData>();
+    BillboardRenderData* renderData = g_tmpMem.bump<BillboardRenderData>();
     renderData->tex = texture->handle;
     renderData->scale = scale;
     renderData->color = color;

@@ -18,7 +18,7 @@ class ModelObject
 {
 public:
     // serialized
-    std::string name;
+    Str64 name;
     i64 materialGuid = 0;
     Quat rotation;
     Vec3 position;
@@ -80,7 +80,7 @@ const char* propCategoryNames[] = {
 
 struct ModelObjectCollection
 {
-    std::string name;
+    Str64 name;
     bool isVisible = true;
 
     void serialize(Serializer& s)
@@ -94,8 +94,8 @@ class Model : public Resource
 {
 public:
     // serialized
-    std::string sourceFilePath;
-    std::string sourceSceneName;
+    Str64 sourceFilePath;
+    Str64 sourceSceneName;
     Array<Mesh> meshes;
     Array<ModelObject> objects;
     Array<ModelObjectCollection> collections;
@@ -125,7 +125,7 @@ public:
                 return &obj;
             }
         }
-        FATAL_ERROR("Cannot find object with name \"", name, "\" in model \"", this->name, "\"");
+        FATAL_ERROR("Cannot find object with name \"%s\" in model \"%s\"", name, this->name.cstr);
     }
     Mesh* getMeshByName(const char* name)
     {
@@ -136,7 +136,7 @@ public:
                 return &mesh;
             }
         }
-        FATAL_ERROR("Cannot find mesh with name \"", name, "\" in model \"", this->name, "\"");
+        FATAL_ERROR("Cannot find mesh with name \"%s\" in model \"%s\"", name, this->name.cstr);
     }
     BoundingBox getBoundingbox(Mat4 const& m)
     {

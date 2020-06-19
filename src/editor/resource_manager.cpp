@@ -9,7 +9,7 @@ static void sortResources(ResourceFolder& folder)
     {
         if (!g_res.getResource(*it))
         {
-            showError("Resource ", std::hex, *it, std::dec, " does not exist, removing.");
+            showError("Resource %x does not exist, removing.", *it);
             it = folder.childResources.erase(it);
         }
         else
@@ -39,18 +39,18 @@ void ResourceManager::saveResources()
     {
         if (auto res = g_res.getResource(r.key))
         {
-            std::string filename = str(DATA_DIRECTORY, "/", std::hex, r.key, ".dat", std::dec);
-            print("Saving resource ", filename, '\n');
+            const char* filename = tmpStr("%s/%x.dat", DATA_DIRECTORY, (u64)r.key);
+            println("Saving resource %s", filename);
             Serializer::toFile(*res, filename);
         }
     }
     resourcesModified.clear();
-    Serializer::toFile(resources, str(DATA_DIRECTORY, "/", METADATA_FILE));
+    Serializer::toFile(resources, tmpStr("%s/%s", DATA_DIRECTORY, METADATA_FILE));
 }
 
 ResourceManager::ResourceManager()
 {
-    Serializer::fromFile(resources, str(DATA_DIRECTORY, "/", METADATA_FILE));
+    Serializer::fromFile(resources, tmpStr("%s/%s", DATA_DIRECTORY, METADATA_FILE));
 
     Map<i64, bool> resourceFolderMap;
     Array<ResourceFolder*> folders = { &resources };
@@ -94,7 +94,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
             ImGui::SetKeyboardFocusHere();
         }
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
-        ImGui::PushID(tstr("Rename ", renameID));
+        ImGui::PushID(tmpStr("Rename %u", renameID));
         if (ImGui::InputText("", &renameText, ImGuiInputTextFlags_EnterReturnsTrue))
         {
             renameFolder->name = renameText;
@@ -118,7 +118,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
     }
     else
     {
-        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "%s", folder->name.c_str());
+        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "%s", folder->name.cstr);
         if (folder->parent && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
         {
             DragDropPayload payload = {};
@@ -126,7 +126,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
             payload.folderDragged = folder;
             payload.sourceFolder = folder->parent;
             ImGui::SetDragDropPayload("Drag Resource", &payload, sizeof(payload));
-            ImGui::Text(folder->name.c_str());
+            ImGui::Text(folder->name.cstr);
             ImGui::EndDragDropSource();
         }
         if (ImGui::BeginDragDropTarget())
@@ -225,7 +225,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             ImGui::PopID();
             ImGui::SameLine();
             static u32 renameID = 0;
-            ImGui::PushID(tstr("Rename ", renameID));
+            ImGui::PushID(tmpStr("Rename %u", renameID));
             if (firstFrameRename)
             {
                 renameID++;
@@ -274,7 +274,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                 payload.resourceDragged = childResource;
                 payload.sourceFolder = folder;
                 ImGui::SetDragDropPayload("Drag Resource", &payload, sizeof(payload));
-                ImGui::Text(childResource->name.c_str());
+                ImGui::Text(childResource->name.cstr);
                 ImGui::EndDragDropSource();
             }
             if (ImGui::BeginPopupContextItem())
@@ -286,7 +286,8 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                     childResource->serialize(s);
                     Resource* resource = newResource(childResource->type);
                     data.dict().val()["guid"] = resource->guid;
-                    data.dict().val()["name"].string().val() += "_copy";
+                    data.dict().val()["name"].string().val()
+                        = tmpStr("%s_copy", data.dict().val()["name"].string().val().cstr);
                     s.deserialize = true;
                     resource->serialize(s);
                 }
@@ -317,7 +318,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                         icons[(u32)childResource->type])->getPreviewHandle(), { 16, 16 });
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 24.f);
-            ImGui::Text(childResource->name.c_str());
+            ImGui::Text(childResource->name.cstr);
         }
         ImGui::PopStyleColor();
         if (removed)
@@ -348,10 +349,10 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             }
 
             it = folder->childResources.erase(it);
-            std::string filename = str(DATA_DIRECTORY, "/", std::hex, *it, ".dat", std::dec);
-            if (remove(filename.c_str()) != 0)
+            const char* filename = tmpStr("%s/%x.dat", DATA_DIRECTORY, (u64)*it);
+            if (remove(filename) != 0)
             {
-                error("Failed to delete file: ", filename, '\n');
+                error("Failed to delete file: %s", filename);
             }
             removed = true;
         }
@@ -521,9 +522,9 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
     ImGui::SetNextWindowSizeConstraints(size, size);
     bool changed = false;
     if (ImGui::BeginCombo(name,
-                currentTexture == 0 ? "None" : g_res.getTexture(currentTexture)->name.c_str()))
+                currentTexture == 0 ? "None" : g_res.getTexture(currentTexture)->name.cstr))
     {
-        static std::string searchString;
+        static Str64 searchString;
         static Array<Texture*> searchResults;
         searchResults.clear();
 
@@ -550,7 +551,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
             Texture* tex = (Texture*)resource;
             if (tex->getTextureType() == type)
             {
-                if (searchString.empty() || tex->name.find(searchString) != std::string::npos)
+                if (searchString.empty() || tex->name.find(searchString))
                 {
                     searchResults.push_back(tex);
                 }
@@ -572,7 +573,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
                 ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
                 ImGui::SameLine();
                 ImGui::PushID(tex->guid);
-                if (ImGui::Selectable(tex->name.c_str()))
+                if (ImGui::Selectable(tex->name.cstr))
                 {
                     changed = true;
                     currentTexture = tex->guid;
@@ -609,11 +610,11 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
         {
             if (ImGui::Button("Load Image"))
             {
-                std::string filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
-                        str(ASSET_DIRECTORY, "/textures"));
-                if (!filename.empty())
+                const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
+                        tmpStr("%s/textures", ASSET_DIRECTORY));
+                if (!filename)
                 {
-                    tex.setSourceFile(0, std::filesystem::relative(filename).string());
+                    tex.setSourceFile(0, std::filesystem::relative(filename).string().c_str());
                     tex.regenerate();
                     dirty = true;
                 }
@@ -637,7 +638,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
             ImGui::Image((void*)(uintptr_t)tex.getPreviewHandle(), ImVec2(tex.width, tex.height));
             ImGui::EndChild();
 
-            ImGui::Text(tex.getSourceFile(0).path.c_str());
+            ImGui::Text(tex.getSourceFile(0).path.cstr);
             ImGui::Text("%i x %i", tex.width, tex.height);
         }
         else if (tex.getSourceFileCount() > 1)
@@ -652,18 +653,18 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                 ImGui::NextColumn();
                 if (ImGui::Button("Load File"))
                 {
-                    std::string filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
-                                str(ASSET_DIRECTORY, "/textures"));
-                    if (!filename.empty())
+                    const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
+                                tmpStr("%s/textures", ASSET_DIRECTORY));
+                    if (!filename)
                     {
-                        tex.setSourceFile(i, std::filesystem::relative(filename).string());
+                        tex.setSourceFile(i, std::filesystem::relative(filename).string().c_str());
                         tex.regenerate();
                         dirty = true;
                     }
                 }
                 if (!sf.path.empty())
                 {
-                    ImGui::Text(sf.path.c_str());
+                    ImGui::Text(sf.path.cstr);
                 }
                 if (sf.width > 0 && sf.height > 0)
                 {
@@ -748,7 +749,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
         ImGui::NextColumn();
 
-        ImGui::Text(selectedMaterial->name.c_str());
+        ImGui::Text(selectedMaterial->name.cstr);
 
         const char* materialTypeNames = "Lit\0Unlit\0";
         dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
@@ -821,25 +822,25 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
         ImGui::SameLine();
         if (ImGui::Button("Load Sound"))
         {
-            std::string filename =
-                chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, str(ASSET_DIRECTORY, "/sounds"));
-            if (!filename.empty())
+            const char* filename =
+                chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, tmpStr("%s/sounds", ASSET_DIRECTORY));
+            if (!filename)
             {
-                sound.sourceFilePath = std::filesystem::relative(filename).string();
-                sound.loadFromFile(sound.sourceFilePath.c_str());
+                sound.sourceFilePath = std::filesystem::relative(filename).string().c_str();
+                sound.loadFromFile(sound.sourceFilePath.cstr);
             }
             dirty = true;
         }
         ImGui::SameLine();
         if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
         {
-            sound.loadFromFile(sound.sourceFilePath.c_str());
+            sound.loadFromFile(sound.sourceFilePath.cstr);
             dirty = true;
         }
 
         ImGui::Gap();
 
-        ImGui::Text(sound.sourceFilePath.c_str());
+        ImGui::Text(sound.sourceFilePath.cstr);
         ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
 
         dirty |= ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);

@@ -102,8 +102,7 @@ void MotionGrid::build(Scene* scene)
         }
     }
 
-    print("Built motion grid. Cells checked: ", count, ", Cells used: ", hitCount,
-            ", Layers: ", highestLayerCount, '\n');
+    println("Built motion grid. Cells checked: %i, Cells used: %i, ", count, hitCount, highestLayerCount);
 }
 
 void MotionGrid::setCell(Vec3 p, CellType cellType, bool permanent)
@@ -298,7 +297,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
     to.y = clamp(to.y, y1, y2);
 
     // TODO: if the start or end cell is blocked, search the area for a valid cell
-    Node* startNode = g_game.tempMem.bump<Node>();
+    Node* startNode = g_tmpMem.bump<Node>();
     *startNode = { (i32)((from.x - x1) / CELL_SIZE), (i32)((from.y - y1) / CELL_SIZE), getCellLayerIndex(from) };
     Node endNode = { (i32)((to.x - x1) / CELL_SIZE), (i32)((to.y - y1) / CELL_SIZE), getCellLayerIndex(to) };
 
@@ -466,7 +465,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
 
             if (!isOnOpen)
             {
-                Node* node = g_game.tempMem.bump<Node>();
+                Node* node = g_tmpMem.bump<Node>();
                 *node = newNode;
                 open.push_back(node);
             }

@@ -559,7 +559,7 @@ public:
         if (ImGui::Begin("Spline Mesh Properties"))
         {
             Model* model = g_res.getModel(selectedSpline->modelGuid);
-            ImGui::Text(model->name.c_str());
+            ImGui::Text(model->name.cstr);
 
             if (ImGui::DragFloat("Scale", &selectedSpline->scale, 0.01f, 0.1f, 10.f))
             {
@@ -612,7 +612,7 @@ public:
                 {
                     ImGui::BeginTooltip();
                     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                    ImGui::TextUnformatted(splineModels[i].model->name.c_str());
+                    ImGui::TextUnformatted(splineModels[i].model->name.cstr);
                     ImGui::PopTextWrapPos();
                     ImGui::EndTooltip();
                 }

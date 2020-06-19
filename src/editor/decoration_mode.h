@@ -102,7 +102,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     {
                         ImGui::BeginTooltip();
                         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                        ImGui::TextUnformatted(propPrefabs[itemIndex].prefabData.name.c_str());
+                        ImGui::TextUnformatted(propPrefabs[itemIndex].prefabData.name.cstr);
                         ImGui::PopTextWrapPos();
                         ImGui::EndTooltip();
                     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "array.h"
+#include "str.h"
 
 inline u32 mapHash(const char* str)
 {
@@ -13,12 +14,12 @@ inline u32 mapHash(const char* str)
     return hash;
 }
 
-// TODO: remove when std::string replacement is available
-inline u32 mapHash(std::string const& str)
+template <u32 SIZE>
+inline u32 mapHash(Str<SIZE> str)
 {
     u32 hash = 5381;
     u32 c;
-    const char* ch = str.c_str();
+    const char* ch = str.cstr;
     while ((c = *ch++))
     {
         hash = ((hash << 5) + hash) + c;

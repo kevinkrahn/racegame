@@ -51,7 +51,7 @@ void Menu::startQuickRace()
     g_game.state.drivers.clear();
     RandomSeries series = randomSeed();
     i32 driverCredits = irandom(series, 10000, 50000);
-    print("Starting quick race with driver budget: ", driverCredits, '\n');
+    println("Starting quick race with driver budget: %i", driverCredits);
     Array<Driver> drivers;
     const u32 driverCount = 10;
     i32 driverIndexOffset = irandom(series, 0, (i32)g_ais.size());
@@ -502,7 +502,7 @@ Widget* Menu::addSelector2(const char* text, const char* helpText, Vec2 pos, Vec
 }
 
 Widget* Menu::addSelector(const char* text, const char* helpText, Vec2 pos, Vec2 size,
-        SmallArray<std::string> values, i32 valueIndex,
+        SmallArray<Str32> values, i32 valueIndex,
         std::function<void(i32 valueIndex)> onValueChanged)
 {
     Font* font = &g_res.getFont("font", (u32)convertSize(34));
@@ -530,7 +530,7 @@ Widget* Menu::addSelector(const char* text, const char* helpText, Vec2 pos, Vec2
                     pos + Vec2(convertSize(20.f), size.y * 0.5f),
                     Vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
                     HAlign::LEFT, VAlign::CENTER);
-        ui::text(font, tstr(values[valueIndex]),
+        ui::text(font, tmpStr("%s", values[valueIndex].cstr),
                     pos + Vec2(size.x * 0.75f, size.y * 0.5f),
                     Vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
                     HAlign::CENTER, VAlign::CENTER);
@@ -738,7 +738,7 @@ void Menu::showNewChampionshipMenu()
                             btn.fadeInAlpha);
 
                 Font* font = &g_res.getFont("font", (u32)convertSize(38));
-                const char* text = tstr(g_game.state.drivers[i].playerName);
+                const char* text = tmpStr(g_game.state.drivers[i].playerName.cstr);
                 f32 textAlpha = isSelected ? 1.f : 0.5f;
                 ui::text(font, text,
                             pos + Vec2(convertSize(20), size.y * 0.5f),
@@ -797,7 +797,7 @@ void Menu::showNewChampionshipMenu()
                 if (!keyboardPlayerExists)
                 {
                     g_game.state.drivers.push_back(Driver(true, true, true, 0));
-                    g_game.state.drivers.back().playerName = str("Player ", g_game.state.drivers.size());
+                    g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
                 }
             }
 
@@ -819,7 +819,7 @@ void Menu::showNewChampionshipMenu()
                     {
                         g_game.state.drivers.push_back(Driver(true, true, false, controller.key));
                         g_game.state.drivers.back().controllerGuid = controller.value.getGuid();
-                        g_game.state.drivers.back().playerName = str("Player ", g_game.state.drivers.size());
+                        g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
                     }
                 }
             }
@@ -863,7 +863,7 @@ void Menu::showChampionshipMenu()
                 Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
                 u32 vehicleIconSize = (u32)convertSize(w.size.y);
                 RenderWorld& rw = renderWorlds[playerIndex];
-                rw.setName(tstr("Vehicle Icon ", playerIndex));
+                rw.setName(tmpStr("Vehicle Icon %i", playerIndex));
                 rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
                 drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
                 if (driver.vehicleIndex != -1)
@@ -897,12 +897,12 @@ void Menu::showChampionshipMenu()
                 f32 textAlpha = (isSelected ? 1.f : 0.5f) * w.fadeInAlpha;
                 f32 margin = convertSize(15.f);
                 Font* font = &g_res.getFont("font", (u32)convertSize(34));
-                ui::text(font, tstr(driver.playerName, "'s Garage"),
+                ui::text(font, tmpStr("%s's Garage", driver.playerName.cstr),
                             pos + Vec2(iconSize + margin, margin),
                             Vec3(1.f), textAlpha, w.fadeInScale);
 
                 Font* fontSmall = &g_res.getFont("font", (u32)convertSize(28));
-                ui::text(fontSmall, tstr("Credits: ", driver.credits),
+                ui::text(fontSmall, tmpStr("Credits: %i", driver.credits),
                             pos + Vec2(iconSize + margin, margin + convertSize(35.f)),
                             Vec3(1.f), textAlpha, w.fadeInScale);
 
@@ -951,10 +951,10 @@ void Menu::showChampionshipMenu()
 
     addBackgroundBox({0,-425+90}, {1920, 180}, 0.5f, false);
     Font* bigFont = &g_res.getFont("font_bold", (u32)convertSize(110));
-    Widget* label = addLabel([]{ return tstr("League ", (char)('A' + g_game.state.currentLeague)); },
+    Widget* label = addLabel([]{ return tmpStr("League %c", (char)('A' + g_game.state.currentLeague)); },
             {0, -370}, bigFont, HAlign::CENTER, VAlign::CENTER);
     Font* mediumFont = &g_res.getFont("font", (u32)convertSize(60));
-    addLabel([]{ return tstr("Race ", g_game.state.currentRace + 1, "/10"); }, {0, -290}, mediumFont,
+    addLabel([]{ return tmpStr("Race %u/10", g_game.state.currentRace + 1); }, {0, -290}, mediumFont,
             HAlign::CENTER, VAlign::CENTER);
 
     addLogic([label]{
@@ -978,20 +978,20 @@ void Menu::createVehiclePreview()
     addHelpMessage({0, 400});
 
     Font* font = &g_res.getFont("font", (u32)convertSize(30));
-    std::string garageName = str(garage.driver->playerName, "'s Garage");
+    Str64 garageName = tmpStr("%s's Garage", garage.driver->playerName.cstr);
 
     addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
-    addLabel([=]{ return tstr(garageName); }, {-260 - vehiclePreviewSize.x * 0.5f
-            + font->stringDimensions(garageName.c_str()).x * 0.5f + 20, -375}, font);
+    addLabel([=]{ return garageName.cstr; }, {-260 - vehiclePreviewSize.x * 0.5f
+            + font->stringDimensions(garageName.cstr).x * 0.5f + 20, -375}, font);
 
     Font* font2 = &g_res.getFont("font_bold", (u32)convertSize(30));
-    std::string creditsMaxSize = "CREDITS: 000000";
+    const char* creditsMaxSize = "CREDITS: 000000";
     addBackgroundBox({-260 + vehiclePreviewSize.x * 0.5f
-            - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375},
-            { font2->stringDimensions(creditsMaxSize.c_str()).x + 40, 50.f }, 0.92f);
-    addLabel([this]{ return tstr("CREDITS: ", garage.driver->credits); },
+            - font2->stringDimensions(creditsMaxSize).x * 0.5f - 20, -375},
+            { font2->stringDimensions(creditsMaxSize).x + 40, 50.f }, 0.92f);
+    addLabel([this]{ return tmpStr("CREDITS: %i", garage.driver->credits); },
             {-260 + vehiclePreviewSize.x * 0.5f
-            - font2->stringDimensions(creditsMaxSize.c_str()).x * 0.5f - 20, -375}, font2,
+            - font2->stringDimensions(creditsMaxSize).x * 0.5f - 20, -375}, font2,
             HAlign::CENTER, VAlign::CENTER, Vec3(COLOR_SELECTED));
 
     static RenderWorld rw;
@@ -1241,7 +1241,7 @@ void Menu::createPerformanceMenu()
             {
                 g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
             }
-        }, WidgetFlags::TRANSIENT, upgrade.icon, 48, [i, this](bool isSelected){
+        }, WidgetFlags::TRANSIENT, upgrade.icon, 48, [i, this](bool isSelected) -> ImageButtonInfo {
             auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
             auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.find(
                     [i](auto& u) { return u.upgradeIndex == i; });
@@ -1265,7 +1265,7 @@ void Menu::createPerformanceMenu()
 
             bool isPurchasable = garage.driver->credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
             return ImageButtonInfo{
-                isPurchasable, false, upgrade.maxUpgradeLevel, upgradeLevel, tstr(price) };
+                isPurchasable, false, upgrade.maxUpgradeLevel, upgradeLevel, tmpStr("%i", price) };
         });
 
         if (i == 0)
@@ -1562,7 +1562,7 @@ void Menu::createCarLotMenu()
             if (garage.driver->vehicleIndex == -1)
             {
                 ui::text(fontBold,
-                    tstr("PRICE: ", g_vehicles[garage.previewVehicleIndex]->price),
+                    tmpStr("PRICE: %i", g_vehicles[garage.previewVehicleIndex]->price),
                     center + convertSize(pos), Vec3(1.f),
                     w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
             }
@@ -1571,17 +1571,17 @@ void Menu::createCarLotMenu()
                 if (garage.driver->vehicleIndex != garage.previewVehicleIndex)
                 {
                     ui::text(font,
-                        tstr("PRICE: ", g_vehicles[garage.previewVehicleIndex]->price),
+                        tmpStr("PRICE: %i", g_vehicles[garage.previewVehicleIndex]->price),
                         center + convertSize(pos), Vec3(0.6f),
                         w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
 
                     ui::text(font,
-                        tstr("TRADE: ", garage.driver->getVehicleValue()),
+                        tmpStr("TRADE: %i", garage.driver->getVehicleValue()),
                         center + convertSize(pos + Vec2(0, 24)), Vec3(0.6f),
                         w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
 
                     ui::text(fontBold,
-                        tstr("TOTAL: ", g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue()),
+                        tmpStr("TOTAL: %i", g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue()),
                         center + convertSize(pos + Vec2(0, 48)), Vec3(1.f),
                         w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
                 }
@@ -1635,13 +1635,13 @@ void Menu::createCarLotMenu()
                 garage.currentStats = garage.previewTuning.computeVehicleStats();
                 garage.upgradeStats = garage.currentStats;
             }
-        }, WidgetFlags::TRANSIENT, rw.getTexture(), 0.f, [i,this](bool isSelected){
+        }, WidgetFlags::TRANSIENT, rw.getTexture(), 0.f, [i,this](bool isSelected) -> ImageButtonInfo {
             //bool buttonEnabled = garage.driver->credits >= g_vehicles[i]->price || i == garage.driver->vehicleIndex;
             bool buttonEnabled = true;
             return ImageButtonInfo{
                 buttonEnabled,
                 i == garage.previewVehicleIndex, 0, 0,
-                i == garage.driver->vehicleIndex ? "OWNED" : tstr(g_vehicles[i]->price), true };
+                i == garage.driver->vehicleIndex ? "OWNED" : tmpStr("%i", g_vehicles[i]->price), true };
         });
 
         if (i == 0)
@@ -1710,14 +1710,14 @@ void Menu::createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgrad
                 g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
             }
         }, WidgetFlags::TRANSIENT, weapon.info.icon, 48,
-            [i, this, &weaponSlot, &upgradeLevel](bool isSelected){
+            [i, this, &weaponSlot, &upgradeLevel](bool isSelected) -> ImageButtonInfo {
             u32 weaponUpgradeLevel = (weaponSlot == i) ? upgradeLevel: 0;
             bool isPurchasable = garage.driver->credits >= g_weapons[i].info.price
                 && weaponUpgradeLevel < g_weapons[i].info.maxUpgradeLevel
                 && (weaponSlot == -1 || weaponSlot == i);
             return ImageButtonInfo{
                 isPurchasable, weaponSlot == i, (i32)g_weapons[i].info.maxUpgradeLevel,
-                (i32)weaponUpgradeLevel, tstr(g_weapons[i].info.price) };
+                (i32)weaponUpgradeLevel, tmpStr("%i", g_weapons[i].info.price) };
         });
 
         if (i == 0)
@@ -1750,7 +1750,7 @@ void Menu::championshipStandings()
                 Vec2(cw, menuPos.y + convertSize720i(32)), Vec3(1.f),
                 1.f, 1.f, HAlign::CENTER, VAlign::TOP);
 
-    ui::text(smallfont, tstr("League ", (char)('A' + g_game.state.currentLeague)),
+    ui::text(smallfont, tmpStr("League %c", (char)('A' + g_game.state.currentLeague)),
                 Vec2(cw, menuPos.y + convertSize720i(58)), Vec3(1.f),
                 1.f, 1.f, HAlign::CENTER, VAlign::TOP);
 
@@ -1774,7 +1774,7 @@ void Menu::championshipStandings()
         Driver* driver = sortedDrivers[i];
 
         RenderWorld& rw = renderWorlds[i];
-        rw.setName(tstr("Vehicle Icon ", i));
+        rw.setName(tmpStr("Vehicle Icon %u", i));
         rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
         if (driver->vehicleIndex != -1)
@@ -1794,7 +1794,7 @@ void Menu::championshipStandings()
 
         Vec2 pos = menuPos + Vec2(0.f,
                         convertSize720i(100) + i * convertSize720(48));
-        ui::text(smallfont, tstr(i + 1),
+        ui::text(smallfont, tmpStr("%u", i + 1),
                     pos + Vec2(convertSize720i(columnOffset[0]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::CENTER);
 
@@ -1802,10 +1802,10 @@ void Menu::championshipStandings()
                     pos + Vec2(convertSize720i(columnOffset[1]), -floorf(vehicleIconSize/2)),
                     {1,1}, {0,0}, Vec2(vehicleIconSize), Vec3(1.f), 1.f);
 
-        ui::text(smallfont, driver->playerName.c_str(),
+        ui::text(smallfont, driver->playerName.cstr,
                     pos + Vec2(convertSize720i(columnOffset[2]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::CENTER);
-        ui::text(smallfont, tstr(driver->leaguePoints),
+        ui::text(smallfont, tmpStr("%u", driver->leaguePoints),
                     pos + Vec2(convertSize720i(columnOffset[3]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::CENTER);
     }
@@ -1878,27 +1878,27 @@ void Menu::raceResults()
     {
         Vec2 pos = menuPos + Vec2(0.f,
                         convertSize720i(100) + row.placement * convertSize720(24));
-        ui::text(smallfont, tstr(row.placement + 1),
+        ui::text(smallfont, tmpStr("%i", row.placement + 1),
                     pos + Vec2(convertSize720i(columnOffset[0]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, row.driver->playerName.c_str(),
+        ui::text(smallfont, row.driver->playerName.cstr,
                     pos + Vec2(convertSize720i(columnOffset[1]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tstr(row.statistics.accidents),
+        ui::text(smallfont, tmpStr("%i", row.statistics.accidents),
                     pos + Vec2(convertSize720i(columnOffset[2]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tstr(row.statistics.destroyed),
+        ui::text(smallfont, tmpStr("%i", row.statistics.destroyed),
                     pos + Vec2(convertSize720i(columnOffset[3]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tstr(row.statistics.frags),
+        ui::text(smallfont, tmpStr("%i", row.statistics.frags),
                     pos + Vec2(convertSize720i(columnOffset[4]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tstr(row.getBonus()),
+        ui::text(smallfont, tmpStr("%i", row.getBonus()),
                     pos + Vec2(convertSize720i(columnOffset[5]), 0),
                     Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
-            ui::text(smallfont, tstr(row.getCreditsEarned()),
+            ui::text(smallfont, tmpStr("%i", row.getCreditsEarned()),
                         pos + Vec2(convertSize720i(columnOffset[6]), 0),
                         Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
         }
@@ -1971,7 +1971,7 @@ void Menu::showGraphicsSettingsMenu()
         { 2560, 1440 },
         { 3840, 2160 },
     };
-    SmallArray<std::string> resolutionNames;
+    SmallArray<Str32> resolutionNames;
     i32 valueIndex = 2;
     for (i32 i=0; i<(i32)ARRAY_SIZE(resolutions); ++i)
     {
@@ -1980,7 +1980,7 @@ void Menu::showGraphicsSettingsMenu()
         {
             valueIndex = i;
         }
-        resolutionNames.push_back(str(resolutions[i].x, " x ", resolutions[i].y));
+        resolutionNames.push_back(tmpStr("%i x %i", resolutions[i].x, resolutions[i].y));
     }
 
     Vec2 size(750, 50);
@@ -2008,7 +2008,7 @@ void Menu::showGraphicsSettingsMenu()
     */
 
     static u32 shadowMapResolutions[] = { 0, 1024, 2048, 4096 };
-    SmallArray<std::string> shadowQualityNames = { "Off", "Low", "Medium", "High" };
+    SmallArray<Str32> shadowQualityNames = { "Off", "Low", "Medium", "High" };
     i32 shadowQualityIndex = 0;
     for (i32 i=0; i<(i32)ARRAY_SIZE(shadowMapResolutions); ++i)
     {
@@ -2025,7 +2025,7 @@ void Menu::showGraphicsSettingsMenu()
         });
     y += size.y + 10;
 
-    SmallArray<std::string> ssaoQualityNames = { "Off", "Normal", "High" };
+    SmallArray<Str32> ssaoQualityNames = { "Off", "Normal", "High" };
     i32 ssaoQualityIndex = 0;
     if (tmpConfig.graphics.ssaoEnabled)
     {
@@ -2036,8 +2036,8 @@ void Menu::showGraphicsSettingsMenu()
         }
     }
 
-    addSelector("SSAO", "Darkens occluded areas of the world for improved realism.", { 0, y }, size, ssaoQualityNames,
-        ssaoQualityIndex, [this](i32 valueIndex){
+    addSelector("SSAO", "Darkens occluded areas of the world for improved realism.", { 0, y }, size,
+        ssaoQualityNames, ssaoQualityIndex, [this](i32 valueIndex){
             tmpConfig.graphics.ssaoEnabled = valueIndex > 0;
             tmpConfig.graphics.ssaoHighQuality = valueIndex == 2;
         });
@@ -2049,7 +2049,7 @@ void Menu::showGraphicsSettingsMenu()
 
     i32 aaIndex = 0;
     static u32 aaLevels[] = { 0, 2, 4, 8 };
-    SmallArray<std::string> aaLevelNames = { "Off", "2x MSAA", "4x MSAA", "8x MSAA" };
+    SmallArray<Str32> aaLevelNames = { "Off", "2x MSAA", "4x MSAA", "8x MSAA" };
     for (i32 i=0; i<(i32)ARRAY_SIZE(aaLevels); ++i)
     {
         if (aaLevels[i] == tmpConfig.graphics.msaaLevel)
@@ -2058,8 +2058,8 @@ void Menu::showGraphicsSettingsMenu()
             break;
         }
     }
-    addSelector("Anti-Aliasing", "Improves image quality by smoothing jagged edges.", { 0, y }, size, aaLevelNames,
-        aaIndex, [this](i32 valueIndex){
+    addSelector("Anti-Aliasing", "Improves image quality by smoothing jagged edges.", { 0, y }, size,
+        aaLevelNames, aaIndex, [this](i32 valueIndex){
             tmpConfig.graphics.msaaLevel = aaLevels[valueIndex];
         });
     y += size.y + 10;
@@ -2192,119 +2192,6 @@ void Menu::gameplayOptions()
     {
         Config defaultConfig;
         tmpConfig.gameplay = defaultConfig.gameplay;
-    }
-
-    if (g_gui.button("Cancel") || g_gui.didGoBack())
-    {
-        showSettingsMenu();
-        g_gui.popSelection();
-    }
-
-    g_gui.end();
-}
-
-void Menu::graphicsOptions()
-{
-    g_gui.beginPanel("Graphics Options", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
-            0.5f, false, true);
-
-    i32 resolutionIndex = 0;
-    Vec2i resolutions[] = {
-        { 960, 540 },
-        { 1024, 576 },
-        { 1280, 720 },
-        { 1366, 768 },
-        { 1600, 900 },
-        { 1920, 1080 },
-        { 2560, 1440 },
-        { 3840, 2160 },
-    };
-    SmallArray<std::string> resolutionNames;
-    for (i32 i=0; i<(i32)ARRAY_SIZE(resolutions); ++i)
-    {
-        if (resolutions[i].x == (i32)tmpConfig.graphics.resolutionX &&
-            resolutions[i].y == (i32)tmpConfig.graphics.resolutionY)
-        {
-            resolutionIndex = i;
-        }
-        resolutionNames.push_back(str(resolutions[i].x, " x ", resolutions[i].y));
-    }
-    g_gui.select("Resolution", &resolutionNames[0],
-                ARRAY_SIZE(resolutions), resolutionIndex);
-    tmpConfig.graphics.resolutionX = resolutions[resolutionIndex].x;
-    tmpConfig.graphics.resolutionY = resolutions[resolutionIndex].y;
-
-    g_gui.toggle("Fullscreen", tmpConfig.graphics.fullscreen);
-    g_gui.toggle("V-Sync", tmpConfig.graphics.vsync);
-    /*
-    f32 maxFPS = tmpConfig.graphics.maxFPS;
-    g_gui.slider("Max FPS", 30, 300, maxFPS);
-    tmpConfig.graphics.maxFPS = (u32)maxFPS;
-    */
-
-    u32 shadowMapResolutions[] = { 0, 1024, 2048, 4096 };
-    std::string shadowQualityNames[] = { "Off", "Low", "Medium", "High" };
-    i32 shadowQualityIndex = 0;
-    for (i32 i=0; i<(i32)ARRAY_SIZE(shadowMapResolutions); ++i)
-    {
-        if (shadowMapResolutions[i] == tmpConfig.graphics.shadowMapResolution)
-        {
-            shadowQualityIndex = i;
-            break;
-        }
-    }
-    g_gui.select("Shadow Quality", shadowQualityNames, ARRAY_SIZE(shadowQualityNames),
-            shadowQualityIndex);
-    tmpConfig.graphics.shadowsEnabled = shadowQualityIndex > 0;
-    tmpConfig.graphics.shadowMapResolution = shadowMapResolutions[shadowQualityIndex];
-
-    std::string ssaoQualityNames[] = { "Off", "Normal", "High" };
-    i32 ssaoQualityIndex = 0;
-    if (tmpConfig.graphics.ssaoEnabled)
-    {
-        ssaoQualityIndex = 1;
-        if (tmpConfig.graphics.ssaoHighQuality)
-        {
-            ssaoQualityIndex = 2;
-        }
-    }
-    g_gui.select("SSAO Quality", ssaoQualityNames, ARRAY_SIZE(ssaoQualityNames),
-            ssaoQualityIndex);
-    tmpConfig.graphics.ssaoEnabled = ssaoQualityIndex > 0;
-    tmpConfig.graphics.ssaoHighQuality = ssaoQualityIndex == 2;
-
-    g_gui.toggle("Bloom", tmpConfig.graphics.bloomEnabled);
-
-    i32 aaIndex = 0;
-    u32 aaLevels[] = { 0, 2, 4, 8 };
-    std::string aaLevelNames[] = { "Off", "2x MSAA", "4x MSAA", "8x MSAA" };
-    for (i32 i=0; i<(i32)ARRAY_SIZE(aaLevels); ++i)
-    {
-        if (aaLevels[i] == tmpConfig.graphics.msaaLevel)
-        {
-            aaIndex = i;
-            break;
-        }
-    }
-    g_gui.select("Anti-Aliasing", aaLevelNames, ARRAY_SIZE(aaLevelNames), aaIndex);
-    tmpConfig.graphics.msaaLevel = aaLevels[aaIndex];
-
-    g_gui.gap(20);
-    if (g_gui.button("Save"))
-    {
-        g_game.config = tmpConfig;
-        g_game.renderer->updateSettingsVersion();
-        SDL_SetWindowFullscreen(g_game.window, g_game.config.graphics.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-        SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
-        g_game.config.save();
-        showMainMenu();
-        g_gui.popSelection();
-    }
-
-    if (g_gui.button("Reset to Defaults"))
-    {
-        Config defaultConfig;
-        tmpConfig.graphics = defaultConfig.graphics;
     }
 
     if (g_gui.button("Cancel") || g_gui.didGoBack())

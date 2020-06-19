@@ -59,7 +59,7 @@ void ModelEditor::showSceneSelection()
         auto& scenes = blenderData.dict().val()["scenes"].array().val();
         for (auto& val : scenes)
         {
-            if (ImGui::Selectable(val.dict().val()["name"].string().val().c_str()))
+            if (ImGui::Selectable(val.dict().val()["name"].string().val().cstr))
             {
                 model->sourceSceneName = val.dict().val()["name"].string().val();
                 processBlenderData();
@@ -92,13 +92,13 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::SameLine();
         if (ImGui::Button("Load File"))
         {
-            std::string path =
-                chooseFile( true, "Model Files", { "*.blend" }, str(ASSET_DIRECTORY, "/models"));
-            if (!path.empty())
+            const char* path =
+                chooseFile( true, "Model Files", { "*.blend" }, tmpStr("%s/models", ASSET_DIRECTORY));
+            if (!path)
             {
-                model->sourceFilePath = std::filesystem::relative(path).string();
+                model->sourceFilePath = std::filesystem::relative(path).string().c_str();
                 model->sourceSceneName = "";
-                loadBlenderFile(model->sourceFilePath);
+                loadBlenderFile(model->sourceFilePath.cstr);
                 dirty = true;
             }
         }
@@ -106,26 +106,25 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::SameLine();
         if (ImGui::Button("Reimport"))
         {
-            if (!model->sourceFilePath.empty())
+            if (model->sourceFilePath.size() > 0)
             {
-                loadBlenderFile(model->sourceFilePath);
+                loadBlenderFile(model->sourceFilePath.cstr);
                 dirty = true;
             }
         }
 
         ImGui::Gap();
-        if (!model->sourceFilePath.empty())
+        if (model->sourceFilePath.size() > 0)
         {
-            ImGui::Text(model->sourceFilePath.c_str());
-            ImGui::Text(tstr("Scene: ", model->sourceSceneName.c_str()));
+            ImGui::Text(model->sourceFilePath.cstr);
+            ImGui::Text(tmpStr("Scene: %s", model->sourceSceneName.cstr));
         }
-        std::string guid = str("0x", std::hex, model->guid, std::dec);
-        ImGui::TextDisabled("GUID: %s", guid.c_str());
+        ImGui::TextDisabled("GUID: %x", model->guid);
         ImGui::SameLine();
         if (ImGui::SmallButton("Copy"))
         {
             ImGui::LogToClipboard();
-            ImGui::LogText(guid.c_str());
+            ImGui::LogText("%x", model->guid);
             ImGui::LogFinish();
         }
         ImGui::Checkbox("Show Grid", &showGrid);
@@ -186,7 +185,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
 
                 auto it = selectedObjects.find(i);
-                if (ImGui::Selectable(model->objects[i].name.c_str(), !!it))
+                if (ImGui::Selectable(model->objects[i].name.cstr, !!it))
                 {
                     if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                     {
@@ -221,7 +220,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 for (i32 i=0; i<(i32)model->collections.size(); ++i)
                 {
-                    if (ImGui::CollapsingHeader(model->collections[i].name.c_str()))
+                    if (ImGui::CollapsingHeader(model->collections[i].name.cstr))
                     {
                         listObjects(i);
                     }
@@ -273,11 +272,11 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             ImVec2 size = { ImGui::GetWindowWidth() * 0.65f, 300.f };
             ImGui::SetNextWindowSizeConstraints(size, size);
             if (ImGui::BeginCombo("Material",
-                    obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.c_str() : "None"))
+                    obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.cstr : "None"))
             {
                 dirty = true;
 
-                static std::string searchString;
+                static Str64 searchString;
                 static Array<Material*> searchResults;
                 searchResults.clear();
 
@@ -305,7 +304,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
 
                 g_res.iterateResourceType(ResourceType::MATERIAL, [&](Resource* res){
                     Material* mat = (Material*)res;
-                    if (searchString.empty() || mat->name.find(searchString) != std::string::npos)
+                    if (searchString.empty() || mat->name.find(searchString))
                     {
                         searchResults.push_back(mat);
                     }
@@ -328,7 +327,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     for (Material* mat : searchResults)
                     {
                         ImGui::PushID(mat->guid);
-                        if (ImGui::Selectable(mat->name.c_str()))
+                        if (ImGui::Selectable(mat->name.cstr))
                         {
                             for (u32 index : selectedObjects)
                             {
@@ -527,7 +526,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
     debugDraw.draw(rw);
 }
 
-void ModelEditor::loadBlenderFile(std::string const& filename)
+void ModelEditor::loadBlenderFile(const char* filename)
 {
     // execute blender with a python script that will output the data in the datafile format
     const char* blenderPath =
@@ -536,14 +535,13 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
 #else
     "blender";
 #endif
-    CommandResult r = runShellCommand(str(blenderPath,
-            " -b ", filename,
-            " -P ../blender_exporter.py --enable-autoexec"));
+    const char* command = tmpStr("%s -b %s -P ../blender_exporter.py --enabled-autoexec", blenderPath, filename);
+    CommandResult r = runShellCommand(command);
 
-    if (r.output.find("Saved to file: ") == std::string::npos)
+    if (strstr(r.output, "Saved to file: "))
     {
-        error("Failed to import blender file:\n");
-        error(r.output);
+        error("Failed to import blender file:");
+        error("%s", r.output);
         showError("Failed to import blender file. See console for details.");
         return;
     }
@@ -554,7 +552,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     // meshes
     if (!val.dict().hasValue())
     {
-        error("Failed to import blender file: Unexpected data structure.\n");
+        error("Failed to import blender file: Unexpected data structure.");
         showError("Failed to import blender file. See console for details.");
         return;
     }
@@ -563,7 +561,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     if (!val.dict().val()["scenes"].array().hasValue()
             || val.dict().val()["scenes"].array().val().empty())
     {
-        error("Failed to import blender file: No scenes found in file.\n");
+        error("Failed to import blender file: No scenes found in file.");
         showError("The chosen does not contain any scenes.");
         return;
     }
@@ -571,7 +569,7 @@ void ModelEditor::loadBlenderFile(std::string const& filename)
     blenderData = std::move(val);
     if (model->sourceSceneName.empty() && blenderData.dict().val()["scenes"].array().val().size() > 1)
     {
-        print("Blender file contains multiple scenes. There are choices.\n");
+        println("Blender file contains multiple scenes. There are choices.");
         ImGui::OpenPopup("Blender Import");
     }
     else
@@ -600,7 +598,7 @@ void ModelEditor::processBlenderData()
     }
     if (!scenePtr)
     {
-        error("Scene \"", model->sourceSceneName, "\" not found\n");
+        error("Scene \"%s\" not found", model->sourceSceneName.cstr);
         return;
     }
 
@@ -615,14 +613,14 @@ void ModelEditor::processBlenderData()
     auto collections = scene["collections"].array(true).val();
     for (auto& collection : collections)
     {
-        std::string collectionName = collection.string("");
+        auto collectionName = collection.string("");
         model->collections.push_back({
             collectionName,
-            collectionName.find("Debris") != std::string::npos
+            collectionName.find("Debris")
         });
     }
 
-    Map<std::string, u32> meshesToLoad;
+    Map<Str64, u32> meshesToLoad;
     auto& objects = scene["objects"].array().val();
     for (auto& mesh : model->meshes)
     {
@@ -675,13 +673,13 @@ void ModelEditor::processBlenderData()
         }
 
         // auto set certain propers based on the name of the object
-        if (modelObj->name.find("Collision") != std::string::npos
-            || modelObj->name.find("collision") != std::string::npos)
+        if (modelObj->name.find("Collision")
+            || modelObj->name.find("collision"))
         {
             modelObj->isCollider = true;
             modelObj->isVisible = false;
         }
-        else if (modelObj->name.find("Body") != std::string::npos)
+        else if (modelObj->name.find("Body"))
         {
             //modelObj->isPaint = true;
             modelObj->materialGuid = g_res.getMaterial("paint_material")->guid;

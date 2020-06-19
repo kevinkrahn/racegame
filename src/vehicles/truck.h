@@ -111,7 +111,7 @@ public:
                     tuning.maxHitPoints += 12.f * u.upgradeLevel;
                     break;
                 default:
-                    print("Unhandled upgrade: ", upgrade.name, '\n');
+                    println("Unhandled upgrade: %s", upgrade.name);
                     break;
             }
         }

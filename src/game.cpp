@@ -75,7 +75,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
     {
         return;
     }
-    print("OpenGL Debug (", id, "): ", message, '\n');
+    println("OpenGL Debug (%i): %s", id, message);
     assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
 }
 #endif
@@ -83,7 +83,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 void Game::run()
 {
 #ifndef NDEBUG
-    print("Debug mode\n");
+    println("Debug mode");
 #endif
 
     f64 loadStartTime = getTime();
@@ -92,7 +92,7 @@ void Game::run()
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
     {
-        FATAL_ERROR("SDL_Init Error: ", SDL_GetError())
+        FATAL_ERROR("SDL_Init Error: %s", SDL_GetError())
     }
 
     SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
@@ -114,13 +114,13 @@ void Game::run()
             config.graphics.resolutionX, config.graphics.resolutionY, flags);
     if (!window)
     {
-        FATAL_ERROR("Failed to create SDL window: ", SDL_GetError())
+        FATAL_ERROR("Failed to create SDL window: %s", SDL_GetError())
     }
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
     if (!context)
     {
-        FATAL_ERROR("Failed to create OpenGL context: ", SDL_GetError())
+        FATAL_ERROR("Failed to create OpenGL context: %s", SDL_GetError())
     }
 
     gladLoadGLLoader(SDL_GL_GetProcAddress);
@@ -167,13 +167,15 @@ void Game::run()
     initializeVehicleData();
     registerEntities();
 
-    print("Loaded resources in ", getTime() - loadStartTime, " seconds\n");
+    println("Loaded resources in %.2f seconds", getTime() - loadStartTime);
 
     menu.showMainMenu();
     changeScene("race1");
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;
+
+    g_tmpMem.clear();
     while (true)
     {
         f64 frameStartTime = getTime();
@@ -275,7 +277,7 @@ void Game::run()
             }
         }
 
-        tempMem.clear();
+        g_tmpMem.clear();
 
         const f64 maxDeltaTime = 1.f / 30.f;
         f64 delta = min(getTime() - frameStartTime, maxDeltaTime);
@@ -322,7 +324,7 @@ Scene* Game::changeScene(const char* sceneName)
 {
     if (sceneName)
     {
-        print("Loading scene: ", sceneName, '\n');
+        println("Loading scene: %s", sceneName);
         i64 guid = g_res.getTrackGuid(sceneName);
         return changeScene(guid);
     }
@@ -435,7 +437,7 @@ void Game::checkDebugKeys()
         ImGui::Text("Lowest Frame Time: %.3fms", g_game.allTimeLowestDeltaTime * 1000);
         ImGui::PlotLines("Frame Times", g_game.deltaTimeHistory, ARRAY_SIZE(g_game.deltaTimeHistory),
                 0, nullptr, 0.f, 0.04f, { 0, 80 });
-        ImGui::Text("Frame Temp-Memory Usage: %.3fkb", tempMem.pos / 1024.f);
+        ImGui::Text("Frame Temp-Memory Usage: %.3fkb", g_tmpMem.pos / 1024.f);
         ImGui::Text("Resolution: %ix%i", g_game.config.graphics.resolutionX, g_game.config.graphics.resolutionY);
         ImGui::Text("Time Dilation: %f", g_game.timeDilation);
         // TODO: count draw calls

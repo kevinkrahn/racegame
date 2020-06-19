@@ -107,7 +107,7 @@ public:
                     tuning.peekEngineTorque += 5.f;
                     break;
                 default:
-                    print("Unhandled upgrade: ", upgrade.name, '\n');
+                    println("Unhandled upgrade: %s", upgrade.name);
                     break;
             }
         }

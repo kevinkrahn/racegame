@@ -36,7 +36,7 @@ class Font
 
 public:
     Font() {}
-    Font(std::string const& filename, f32 height, u32 startingChar=32, u32 numGlyphs=95);
+    Font(const char* filename, f32 height, u32 startingChar=32, u32 numGlyphs=95);
 
     Vec2 stringDimensions(const char* str, bool onlyFirstLine=false) const;
 

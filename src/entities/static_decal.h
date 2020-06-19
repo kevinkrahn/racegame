@@ -49,10 +49,7 @@ public:
                     g_res.getTexture("decal_sand"),
                 };
                 setTexture(textures[texIndex]->guid);
-                if (tex->name.find("dust") != std::string::npos || tex->name.find("sand") != std::string::npos)
-                {
-                    isDust = true;
-                }
+                isDust = tex->name.find("dust") || tex->name.find("sand");
             }
         }
     }
@@ -64,5 +61,5 @@ public:
         decal.setTexture(tex);
     }
     Array<PropPrefabData> generatePrefabProps() override;
-    const char* getName() const override { return tstr("Decal ", tex->name.c_str()); }
+    const char* getName() const override { return tmpStr("Decal %s", tex->name.cstr); }
 };
