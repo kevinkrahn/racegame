@@ -49,7 +49,6 @@
 - Add garage menu for adding decals to vehicle
 - Add suicide ability that creates a massive explosion
 - Leave scorch mark on track after explosion
-- Replace <filesystem>
 - Replace <mutex>
 
 - Ideas:

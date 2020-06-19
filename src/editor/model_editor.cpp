@@ -3,7 +3,6 @@
 #include "../renderer.h"
 #include "../game.h"
 #include "../collision_flags.h"
-#include <filesystem>
 
 ModelEditor::ModelEditor()
 {
@@ -96,7 +95,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 chooseFile( true, "Model Files", { "*.blend" }, tmpStr("%s/models", ASSET_DIRECTORY));
             if (!path)
             {
-                model->sourceFilePath = std::filesystem::relative(path).string().c_str();
+                model->sourceFilePath = path::relative(path);
                 model->sourceSceneName = "";
                 loadBlenderFile(model->sourceFilePath.cstr);
                 dirty = true;

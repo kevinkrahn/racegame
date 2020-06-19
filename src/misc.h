@@ -122,4 +122,23 @@ namespace path
     {
         return strcmp(str + (strlen(str) - strlen(ext)), ext) == 0;
     }
+
+    const char* relative(const char* path)
+    {
+        char* buf = tmpStr("%s", path);
+        for (char* ch = buf; *ch; ++ch)
+        {
+            if (*ch == '\\')
+            {
+                *ch = '/';
+            }
+        }
+        const char* needle = "assets/";
+        const char* assetsFolder = strstr(buf, needle);
+        if (!assetsFolder)
+        {
+            return "";
+        }
+        return tmpStr("%s", assetsFolder + strlen(needle));
+    }
 }

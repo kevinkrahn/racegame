@@ -8,7 +8,6 @@
 
 #include "misc.h"
 #include "buffer.h"
-#include <filesystem>
 
 struct FileItem
 {
@@ -144,13 +143,17 @@ const char* chooseFile(bool open, const char* fileType,
     buf.write("\"");
     if (open)
     {
-        buf.write(" --title 'Open File' --file-selection --filename ");
+        buf.write(" --title 'Open File' --file-selection");
     }
     else
     {
-        buf.write(" --title 'Save File' --file-selection --save --confirm-overwrite --filename ");
+        buf.write(" --title 'Save File' --file-selection --save --confirm-overwrite");
     }
-    buf.write(std::filesystem::absolute(defaultDir).string().c_str());
+    if (defaultDir)
+    {
+        buf.write(" --filename ");
+        buf.write(defaultDir);
+    }
     println("%s", buf.data());
     FILE *f = popen(buf.data(), "r");
     char* filename = g_tmpMem.bump<char>(1024);

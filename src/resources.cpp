@@ -3,7 +3,6 @@
 #include "game.h"
 #include "driver.h"
 #include "util.h"
-#include <filesystem>
 
 Resource* Resources::newResource(ResourceType type, bool makeGUID)
 {
@@ -87,8 +86,7 @@ void Resources::load()
     Array<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
     for (auto& file : resourceFiles)
     {
-        auto path = std::filesystem::path(file.path);
-        if (path.extension() == ".dat" && path.filename() != METADATA_FILE)
+        if (path::hasExt(file.path, ".dat") && !strstr(file.path, METADATA_FILE))
         {
             auto data = DataFile::load(tmpStr("%s/%s", DATA_DIRECTORY, file.path));
             //println("Loading data file: %s, Asset Name: ", file.path, data.dict(true).val()["name"]);

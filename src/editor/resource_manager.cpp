@@ -1,7 +1,6 @@
 #include "resource_manager.h"
 #include "../game.h"
 #include "../scene.h"
-#include <filesystem>
 
 static void sortResources(ResourceFolder& folder)
 {
@@ -614,7 +613,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                         tmpStr("%s/textures", ASSET_DIRECTORY));
                 if (!filename)
                 {
-                    tex.setSourceFile(0, std::filesystem::relative(filename).string().c_str());
+                    tex.setSourceFile(0, path::relative(filename));
                     tex.regenerate();
                     dirty = true;
                 }
@@ -657,7 +656,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                                 tmpStr("%s/textures", ASSET_DIRECTORY));
                     if (!filename)
                     {
-                        tex.setSourceFile(i, std::filesystem::relative(filename).string().c_str());
+                        tex.setSourceFile(i, path::relative(filename));
                         tex.regenerate();
                         dirty = true;
                     }
@@ -826,7 +825,7 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
                 chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, tmpStr("%s/sounds", ASSET_DIRECTORY));
             if (!filename)
             {
-                sound.sourceFilePath = std::filesystem::relative(filename).string().c_str();
+                sound.sourceFilePath = path::relative(filename);
                 sound.loadFromFile(sound.sourceFilePath.cstr);
             }
             dirty = true;
