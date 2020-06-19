@@ -1,7 +1,6 @@
 #include "audio.h"
 #include "math.h"
 #include "game.h"
-#include <SDL2/SDL.h>
 
 Sound::Sound(const char* filename)
 {
@@ -116,7 +115,7 @@ void Audio::audioCallback(u8* buf, i32 len)
 
     bool pauseGameplaySounds;
     {
-        std::lock_guard<std::mutex> lock(audioMutex);
+        LockGuard lock(audioMutex);
 
         pauseGameplaySounds = this->pauseGameplaySounds;
 
@@ -327,7 +326,7 @@ SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
     ps.handle = ++nextSoundHandle;
     ps.soundType = soundType;
 
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PLAY;
     pm.newSound = ps;
@@ -355,7 +354,7 @@ SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
         ps.playPosition = random(randomSeries, 0.f, (f32)sound->numSamples);
     }
 
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PLAY;
     pm.newSound = ps;
@@ -366,7 +365,7 @@ SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
 
 void Audio::stopSound(SoundHandle handle)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::STOP;
     pm.handle = handle;
@@ -375,7 +374,7 @@ void Audio::stopSound(SoundHandle handle)
 
 void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PITCH;
     pm.pitch = pitch;
@@ -385,7 +384,7 @@ void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
 
 void Audio::setSoundVolume(SoundHandle handle, f32 volume)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::VOLUME;
     pm.volume = volume;
@@ -395,7 +394,7 @@ void Audio::setSoundVolume(SoundHandle handle, f32 volume)
 
 void Audio::setSoundPan(SoundHandle handle, f32 pan)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PAN;
     pm.pan = pan;
@@ -405,7 +404,7 @@ void Audio::setSoundPan(SoundHandle handle, f32 pan)
 
 void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::POSITION;
     pm.position = position;
@@ -415,7 +414,7 @@ void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
 
 void Audio::setSoundPaused(SoundHandle handle, bool paused)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::SET_PAUSED;
     pm.paused = paused;
@@ -425,7 +424,7 @@ void Audio::setSoundPaused(SoundHandle handle, bool paused)
 
 void Audio::setListeners(SmallArray<Vec3>const& listeners)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     listenerPositions.clear();
     for (auto& p : listeners)
     {
@@ -435,7 +434,7 @@ void Audio::setListeners(SmallArray<Vec3>const& listeners)
 
 void Audio::stopAllGameplaySounds()
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
 
     PlaybackModification pm;
     pm.type = PlaybackModification::STOP_GAMEPLAY_SOUNDS;
@@ -444,6 +443,6 @@ void Audio::stopAllGameplaySounds()
 
 void Audio::setPaused(bool paused)
 {
-    std::lock_guard<std::mutex> lock(audioMutex);
+    LockGuard lock(audioMutex);
     pauseGameplaySounds = paused;
 }
