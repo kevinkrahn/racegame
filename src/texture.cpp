@@ -4,10 +4,11 @@
 void Texture::loadSourceFile(u32 index)
 {
     i32 w, h, channels;
-    u8* data = (u8*)stbi_load(sourceFiles[index].path.cstr, &w, &h, &channels, 4);
+    const char* fullPath = tmpStr("%s/%s", ASSET_DIRECTORY, sourceFiles[index].path.cstr);
+    u8* data = (u8*)stbi_load(fullPath, &w, &h, &channels, 4);
     if (!data)
     {
-        error("Failed to load image: %s (%s)", sourceFiles[index].path.cstr, stbi_failure_reason());
+        error("Failed to load image: %s (%s)", fullPath, stbi_failure_reason());
     }
     this->width = w;
     this->height = h;

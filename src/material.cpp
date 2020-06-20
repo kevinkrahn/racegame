@@ -1,4 +1,5 @@
 #include "material.h"
+#include "renderer.h"
 
 void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
 {

@@ -29,6 +29,12 @@ char* tmpStr(const char* format, ...)
     return buf;
 }
 
+char* hex(i64 n)
+{
+    u32* b = (u32*)&n;
+    return tmpStr("%x%x", b[1], b[0]);
+}
+
 void print(const char* format, ...)
 {
     auto callback = [](const char* buf, void* user, int len) -> char* {

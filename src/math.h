@@ -301,7 +301,7 @@ struct Vec3
         return { -x, -y, -z };
     }
 };
-using Rgb = Vec3;
+//using Rgb = Vec3;
 
 inline Vec3 operator+(Vec3 lhs, Vec3 const& rhs)
 {
@@ -380,7 +380,7 @@ struct Vec4
             f32 r, g, b, a;
         };
         Vec3 xyz;
-        Rgb rgb;
+        Vec3 rgb;
         f32 data[4];
     };
 
@@ -484,7 +484,7 @@ struct Vec4
         return { -x, -y, -z, -w };
     }
 };
-using Rgba = Vec4;
+//using Rgba = Vec4;
 
 inline Vec4 operator+(Vec4 lhs, Vec4 const& rhs)
 {

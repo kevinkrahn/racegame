@@ -97,7 +97,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 model->sourceFilePath = path::relative(path);
                 model->sourceSceneName = "";
-                loadBlenderFile(model->sourceFilePath.cstr);
+                loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.cstr));
                 dirty = true;
             }
         }
@@ -107,7 +107,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             if (model->sourceFilePath.size() > 0)
             {
-                loadBlenderFile(model->sourceFilePath.cstr);
+                loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.cstr));
                 dirty = true;
             }
         }

@@ -157,13 +157,25 @@ const char* chooseFile(bool open, const char* fileType,
     println("%s", buf.data());
     FILE *f = popen(buf.data(), "r");
     char* filename = g_tmpMem.bump<char>(1024);
+    memset(filename, 0, 1024);
     if (!f || !fgets(filename, 1024 - 1, f))
     {
         error("Unable to create file dialog");
         return {};
     }
     pclose(f);
-    return filename[0] != 0 ? filename : nullptr;
+    if (filename[0] != 0)
+    {
+        // strip newline
+        auto len = strlen(filename)-1;
+        if (filename[len] == '\n')
+        {
+            filename[len] = '\0';
+        }
+        println("File chosen: %s", filename);
+        return filename;
+    }
+    return nullptr;
 #endif
 }
 

@@ -116,9 +116,14 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     // environment reflections
     vec3 I = normalize(worldPosition - cameraPosition);
     vec3 R = reflect(I, normal);
-    lightOut += textureLod(cubemapSampler, R, reflectionLod).rgb
-        * reflectionStrength
-        * clamp(shadow * getFresnel(normal, worldPosition, reflectionBias, 1.0, 1.3), 0.1, 1.0);
+    float reflectionAmount = reflectionStrength *
+        clamp(shadow * getFresnel(normal, worldPosition, reflectionBias, 1.0, 1.3), 0.1, 1.0);;
+#if SSAO_ENABLED
+#ifndef NO_SSAO
+    reflectionAmount *= ssaoAmount;
+#endif
+#endif
+    lightOut += textureLod(cubemapSampler, R, reflectionLod).rgb * reflectionAmount;
 
     // fog
 #if FOG_ENABLED

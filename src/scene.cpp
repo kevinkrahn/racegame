@@ -79,7 +79,7 @@ Scene::Scene(TrackData* data)
     track->buildTrackGraph(&trackGraph, start->transform);
     trackPreviewPosition = start->position;
     trackPreviewCameraTarget = trackPreviewPosition;
-    trackPreviewCameraFrom = trackPreviewPosition + Vec3(0, 0, 5);
+    trackPreviewCameraFrom = trackPreviewPosition + normalize(Vec3(1.f, 1.f, 1.25f)) * 15.f;
 
     if (!g_game.isEditing)
     {
@@ -214,6 +214,7 @@ void Scene::buildBatches()
 
 void Scene::stopRace()
 {
+    // TODO: fix this
     trackPreviewCameraFrom = g_game.renderer->getRenderWorld()->getCamera(0).position;
     trackPreviewCameraTarget =
         vehicles.find([](auto& v) { return v->cameraIndex == 0; })->get()->getPosition();

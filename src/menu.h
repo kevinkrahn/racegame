@@ -79,8 +79,8 @@ struct ImageButtonInfo
 
 struct SliderInfo
 {
-    Vec3 color1;
-    Vec3 color2;
+    Vec4 color1;
+    Vec4 color2;
     f32 val;
     Texture* tex;
     f32 min;

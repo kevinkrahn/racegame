@@ -89,6 +89,12 @@ void Resources::load()
         if (path::hasExt(file.path, ".dat") && !strstr(file.path, METADATA_FILE))
         {
             auto data = DataFile::load(tmpStr("%s/%s", DATA_DIRECTORY, file.path));
+            /*
+            println("GUID: %s : %s : %x",
+                    file.path,
+                    hex(data.dict(true).val()["guid"].integer(0)),
+                    (u64)data.dict(true).val()["guid"].integer(0));
+            */
             //println("Loading data file: %s, Asset Name: ", file.path, data.dict(true).val()["name"]);
             if (data.array().hasValue())
             {

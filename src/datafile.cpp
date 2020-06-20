@@ -420,7 +420,10 @@ void Value::debugOutput(StrBuf& buf, u32 indent, bool newline) const
             buf.write("<bytearray>");
             break;
         case DataType::ARRAY:
-            buf.write(' ', indent * 2);
+            if (newline)
+            {
+                buf.write(' ', indent * 2);
+            }
             if (array_.size() == 0)
             {
                 buf.write("[]");
@@ -431,7 +434,9 @@ void Value::debugOutput(StrBuf& buf, u32 indent, bool newline) const
                 for (u32 i=0; i<array_.size(); ++i)
                 {
                     buf.write(' ', (indent + 1) * 2);
-                    array_[i].debugOutput(buf, indent + 1, array_[i].dataType != DataType::DICT);
+                    bool elementOnNewline =
+                        array_[i].dataType != DataType::DICT && array_[i].dataType != DataType::ARRAY;
+                    array_[i].debugOutput(buf, indent + 1, elementOnNewline);
                     buf.write(",\n");
                 }
                 buf.write(' ', indent * 2);

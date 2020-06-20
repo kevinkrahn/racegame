@@ -571,7 +571,7 @@ namespace DataFile
 };
 
 #ifndef NDEBUG
-#define DESERIALIZE_ERROR(...) { error("%s: %s", context, tmpStr(__VA_ARGS__)); return; }
+#define DESERIALIZE_ERROR(...) { error("%s: %s", context, Str512::format(__VA_ARGS__).cstr); return; }
 #else
 #define DESERIALIZE_ERROR(...) { error(__VA_ARGS__); return; }
 #endif
@@ -893,8 +893,8 @@ public:
 #undef DESERIALIZE_ERROR
 
 #ifndef NDEBUG
-#define field(FIELD) serializeValue(#FIELD, FIELD, tmpStr("%s: %u", __FILE__, __LINE__))
-#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, tmpStr("%s: %u", __FILE__, __LINE__))
+#define field(FIELD) serializeValue(#FIELD, FIELD, Str512::format("%s: %u", __FILE__, __LINE__).cstr)
+#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, Str512::format("%s: %u", __FILE__, __LINE__).cstr)
 #else
 #define field(FIELD) serializeValue(#FIELD, FIELD, "WARNING")
 #define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, "WARNING")

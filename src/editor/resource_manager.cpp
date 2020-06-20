@@ -8,7 +8,7 @@ static void sortResources(ResourceFolder& folder)
     {
         if (!g_res.getResource(*it))
         {
-            showError("Resource %x does not exist, removing.", *it);
+            showError("Resource %s does not exist, removing.", hex(*it));
             it = folder.childResources.erase(it);
         }
         else
@@ -38,9 +38,12 @@ void ResourceManager::saveResources()
     {
         if (auto res = g_res.getResource(r.key))
         {
-            const char* filename = tmpStr("%s/%x.dat", DATA_DIRECTORY, (u64)r.key);
-            println("Saving resource %s", filename);
-            Serializer::toFile(*res, filename);
+            const char* guidHex = hex(r.key);
+            // TODO: find out why tmpStr is broken here
+            //const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, guidHex);
+            auto filename = Str512::format("%s/%s.dat", DATA_DIRECTORY, guidHex);
+            println("Saving resource %s", filename.cstr);
+            Serializer::toFile(*res, filename.cstr);
         }
     }
     resourcesModified.clear();
@@ -348,7 +351,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             }
 
             it = folder->childResources.erase(it);
-            const char* filename = tmpStr("%s/%x.dat", DATA_DIRECTORY, (u64)*it);
+            const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, hex(*it));
             if (remove(filename) != 0)
             {
                 error("Failed to delete file: %s", filename);
@@ -611,7 +614,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
             {
                 const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
                         tmpStr("%s/textures", ASSET_DIRECTORY));
-                if (!filename)
+                if (filename)
                 {
                     tex.setSourceFile(0, path::relative(filename));
                     tex.regenerate();
@@ -654,7 +657,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                 {
                     const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
                                 tmpStr("%s/textures", ASSET_DIRECTORY));
-                    if (!filename)
+                    if (filename)
                     {
                         tex.setSourceFile(i, path::relative(filename));
                         tex.regenerate();
@@ -823,17 +826,17 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
         {
             const char* filename =
                 chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, tmpStr("%s/sounds", ASSET_DIRECTORY));
-            if (!filename)
+            if (filename)
             {
                 sound.sourceFilePath = path::relative(filename);
-                sound.loadFromFile(sound.sourceFilePath.cstr);
+                sound.loadFromFile(filename);
             }
             dirty = true;
         }
         ImGui::SameLine();
         if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
         {
-            sound.loadFromFile(sound.sourceFilePath.cstr);
+            sound.loadFromFile(tmpStr("%s/%s", ASSET_DIRECTORY, sound.sourceFilePath.cstr));
             dirty = true;
         }
 

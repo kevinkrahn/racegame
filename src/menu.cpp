@@ -52,15 +52,16 @@ void Menu::startQuickRace()
     RandomSeries series = randomSeed();
     i32 driverCredits = irandom(series, 10000, 50000);
     println("Starting quick race with driver budget: %i", driverCredits);
-    Array<Driver> drivers;
-    const u32 driverCount = 10;
-    i32 driverIndexOffset = irandom(series, 0, (i32)g_ais.size());
-    for (u32 i=0; i<driverCount; ++i)
+    g_game.state.drivers.clear();
+    for (u32 i=0; i<10; ++i)
     {
-        drivers.push_back(Driver(i==0, i==0, i==0, 0, -1,
-                    (driverIndexOffset + i) % g_ais.size()));
-        drivers.back().credits = driverCredits;
-        drivers.back().aiUpgrades(series);
+        i32 aiIndex;
+        do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
+        while (g_game.state.drivers.find([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
+
+        g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1, aiIndex));
+        g_game.state.drivers.back().credits = driverCredits;
+        g_game.state.drivers.back().aiUpgrades(series);
     }
 #if 0
     drivers[0].hasCamera = true;
@@ -68,15 +69,6 @@ void Menu::startQuickRace()
     drivers[2].hasCamera = true;
     drivers[3].hasCamera = true;
 #endif
-
-    // shuffle
-    for (u32 i=0; i<driverCount; ++i)
-    {
-        i32 index = irandom(series, 0, (i32)drivers.size());
-        Driver driver = std::move(drivers[index]);
-        drivers.erase(drivers.begin() + index);
-        g_game.state.drivers.push_back(std::move(driver));
-    }
 
     g_game.state.gameMode = GameMode::QUICK_RACE;
     g_game.isEditing = false;
@@ -410,8 +402,7 @@ Widget* Menu::addSlider(const char* text, Vec2 pos, Vec2 size, u32 flags,
         f32 alpha = (isSelected ? 1.f : 0.6f) * w.fadeInAlpha;
         ui::text(font, text, pos + Vec2(size.x * 0.5f, -convertSize(8)),
                     Vec3(1.f), alpha, w.fadeInScale, HAlign::CENTER, VAlign::BOTTOM);
-        ui::rectBlur(ui::IMAGE, info.tex, pos, size,
-                Vec4(info.color1, 1.f), Vec4(info.color2, 1.f), w.fadeInAlpha);
+        ui::rectBlur(ui::IMAGE, info.tex, pos, size, info.color1, info.color2, w.fadeInAlpha);
 
         if (isSelected && w.fadeInAlpha > 0.5f)
         {
@@ -432,8 +423,9 @@ Widget* Menu::addSlider(const char* text, Vec2 pos, Vec2 size, u32 flags,
         }
 
         f32 t = (info.val - info.min) / (info.max - info.min);
-        ui::rectBlur(ui::IMAGE, &g_res.white, pos + Vec2(t * size.x, 0.f),
-                {convertSize(4), size.y}, Vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha);
+        f32 handleWidth = convertSize(6);
+        ui::rectBlur(ui::IMAGE, &g_res.white, pos + Vec2(t * size.x - handleWidth / 2, 0.f),
+                Vec2(handleWidth, size.y), Vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha);
     };
     w.fadeInScale = 0.7f;
     widgets.push_back(w);
@@ -697,17 +689,15 @@ void Menu::showNewChampionshipMenu()
         g_game.changeScene(championshipTracks[g_game.state.currentRace]);
 
         // add AI drivers
+        RandomSeries series = randomSeed();
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
-            g_game.state.drivers.push_back(Driver(false, false, false, -1, i, i));
-        }
-        RandomSeries series = randomSeed();
-        for (auto& driver : g_game.state.drivers)
-        {
-            if (!driver.isPlayer)
-            {
-                driver.aiUpgrades(series);
-            }
+            i32 aiIndex;
+            do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
+            while (g_game.state.drivers.find([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
+
+            g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiIndex));
+            g_game.state.drivers.back().aiUpgrades(series);
         }
         garage.playerIndex = 0;
         showInitialCarLotMenu(garage.playerIndex);
@@ -978,10 +968,11 @@ void Menu::createVehiclePreview()
     addHelpMessage({0, 400});
 
     Font* font = &g_res.getFont("font", (u32)convertSize(30));
-    Str64 garageName = tmpStr("%s's Garage", garage.driver->playerName.cstr);
+    static Str512 garageName;
+    garageName = Str512::format("%s's Garage", garage.driver->playerName.cstr);
 
     addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
-    addLabel([=]{ return garageName.cstr; }, {-260 - vehiclePreviewSize.x * 0.5f
+    addLabel([]{ return garageName.cstr; }, {-260 - vehiclePreviewSize.x * 0.5f
             + font->stringDimensions(garageName.cstr).x * 0.5f + 20, -375}, font);
 
     Font* font2 = &g_res.getFont("font_bold", (u32)convertSize(30));
@@ -1299,8 +1290,8 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
-            Vec3(1.f),
-            Vec3(1.f),
+            Vec4(1.f),
+            Vec4(1.f),
             hue,
             g_res.getTexture("hues"),
             0.01f,
@@ -1319,8 +1310,8 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
-            hsvToRgb(hue, 0.f, value),
-            hsvToRgb(hue, 1.f, value),
+            Vec4(hsvToRgb(hue, 0.f, value), 1.f),
+            Vec4(hsvToRgb(hue, 1.f, value), 1.f),
             saturation,
             &g_res.white,
             0.f,
@@ -1339,10 +1330,10 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
-            hsvToRgb(hue, saturation, 0.f),
-            hsvToRgb(hue, saturation, 1.f),
+            Vec4(hsvToRgb(hue, saturation, 1.f), 1.f),
+            Vec4(hsvToRgb(hue, saturation, 1.f), 1.f),
             value,
-            &g_res.white,
+            g_res.getTexture("brightness_gradient"),
             0.02f,
             0.98f,
         };
@@ -1355,21 +1346,43 @@ void Menu::createCosmeticsMenu()
         garage.driver->getVehicleConfig()->paintShininess = garage.previewVehicleConfig.paintShininess;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, [&]{
-        return SliderInfo{ Vec3(0.f), Vec3(1.f),
-            garage.previewVehicleConfig.paintShininess, &g_res.white, 0.f, 1.f };
+        return SliderInfo{
+            Vec4(1.f),
+            Vec4(1.f),
+            garage.previewVehicleConfig.paintShininess,
+            g_res.getTexture("slider"),
+            0.f,
+            1.f
+        };
     });
     y += size.y + gap;
 
+    y += size.y * 0.5f + gap;
     for (i32 i=0; i<3; ++i)
     {
-        const char* text[3] = { "LAYER 1", "LAYER 2", "LAYER 3" };
-        addButton(text[i], "Add graphics to your vehicle.", {x,y}, size, [this,i]{
+        Vec2 layerButtonSize = Vec2(size.x, size.y * 0.75f);
+        //Vec2 layerButtonSize = size;
+        const char* text[3] = { "VINYL LAYER 1", "VINYL LAYER 2", "VINYL LAYER 3" };
+        addButton(text[i], "Add graphics to your vehicle.", {x,y}, layerButtonSize, [this,i]{
             i32 layerIndex = i;
             resetTransient();
             createCosmeticLayerMenu(layerIndex);
         }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT);
-        y+= size.y + gap;
+        y+= layerButtonSize.y + gap;
     }
+
+    addLogic([this]{
+        if (g_input.isKeyPressed(KEY_F12))
+        {
+            DataFile::Value data = DataFile::makeDict();
+            Serializer s(data, false);
+            garage.driver->serialize(s);
+            StrBuf buf;
+            data.debugOutput(buf, 0, false);
+            println("========== DRIVER DEBUG OUTPUT ==========");
+            println(buf.data());
+        }
+    });
 
     Vec2 buttonSize(450, 75);
     addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
@@ -1440,8 +1453,8 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
-            Vec3(1.f),
-            Vec3(1.f),
+            Vec4(1.f),
+            Vec4(1.f),
             hue,
             g_res.getTexture("hues"),
             0.f,
@@ -1463,8 +1476,8 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
-            hsvToRgb(hue, 0.f, value),
-            hsvToRgb(hue, 1.f, value),
+            Vec4(hsvToRgb(hue, 0.f, value), 1.f),
+            Vec4(hsvToRgb(hue, 1.f, value), 1.f),
             saturation,
             &g_res.white,
             0.f,
@@ -1486,10 +1499,10 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
-            hsvToRgb(hue, saturation, 0.f),
-            hsvToRgb(hue, saturation, 1.f),
+            Vec4(hsvToRgb(hue, saturation, 1.f), 1.f),
+            Vec4(hsvToRgb(hue, saturation, 1.f), 1.f),
             value,
-            &g_res.white,
+            g_res.getTexture("brightness_gradient"),
             0.f,
             1.f,
         };
@@ -1504,7 +1517,14 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
             = garage.previewVehicleConfig.wrapColors[layerIndex].a;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, [&]{
-        return SliderInfo{ Vec3(0.f), Vec3(1.f), alpha, &g_res.white, 0.f, 1.f };
+        return SliderInfo{
+            Vec4(1.f),
+            Vec4(1.f),
+            alpha,
+            g_res.getTexture("alpha_gradient"),
+            0.f,
+            1.f
+        };
     });
     y += size.y + gap;
 
@@ -1539,10 +1559,10 @@ void Menu::createCarLotMenu()
     });
 
     addButton("BUY CAR", nullptr, {280, 350-buttonSize.y*0.5f - buttonSize.y - 12}, buttonSize, [this]{
-        garage.driver->vehicleIndex = garage.previewVehicleIndex;
-        garage.driver->vehicleConfig = garage.previewVehicleConfig;
         i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue();
         garage.driver->credits -= totalCost;
+        garage.driver->vehicleIndex = garage.previewVehicleIndex;
+        garage.driver->vehicleConfig = garage.previewVehicleConfig;
     }, WidgetFlags::TRANSIENT, nullptr, [this]{
         i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue();
         return garage.previewVehicleIndex != garage.driver->vehicleIndex &&
@@ -1616,8 +1636,8 @@ void Menu::createCarLotMenu()
         rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
         g_game.renderer->addRenderWorld(&rw);
 
-        Vec2 pos = { x + (i % buttonsPerRow) * (size.x + gap),
-                          y + (i / buttonsPerRow) * (size.y + gap) };
+        Vec2 pos = Vec2(x + (i % buttonsPerRow) * (size.x + gap),
+                        y + (i / buttonsPerRow) * (size.y + gap));
         Widget* w = addImageButton(g_vehicles[i]->name, g_vehicles[i]->description, pos, size, [i,this]{
             garage.previewVehicleIndex = i;
             if (i == garage.driver->vehicleIndex)
