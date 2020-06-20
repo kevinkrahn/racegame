@@ -192,8 +192,8 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         f32 o25 = (f32)g_game.windowHeight * 0.03f;
         f32 o200 = (f32)g_game.windowHeight * 0.21f;
 
-        u32 currentLap = min((u32)currentLap, scene->getTotalLaps());
-        char* p = tmpStr("%u", currentLap);
+        u32 lap = min((u32)currentLap, scene->getTotalLaps());
+        char* p = tmpStr("%u", lap);
         const char* lapStr = "LAP";
         f32 lapWidth = font1.stringDimensions(lapStr).x;
         ui::text(&font1, lapStr, offset + Vec2(o20, d.y*o20), Vec3(1.f));
