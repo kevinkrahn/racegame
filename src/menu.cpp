@@ -93,18 +93,6 @@ f32 convertSize(f32 size)
     return floorf(size * (g_game.windowHeight / REFERENCE_HEIGHT));
 }
 
-// TODO: remove
-f32 convertSize720(f32 size)
-{
-    return size * (g_game.windowHeight / 720.f);
-}
-
-// TODO: remove
-f32 convertSize720i(f32 size)
-{
-    return floorf(size * (g_game.windowHeight / 720.f));
-}
-
 Vec2 convertSize(Vec2 size)
 {
     return Vec2(convertSize(size.x), convertSize(size.y));
@@ -832,11 +820,34 @@ void Menu::showInitialCarLotMenu(u32 playerIndex)
     createCarLotMenu();
 }
 
+void Menu::updateVehiclePreviews()
+{
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+    for (u32 driverIndex=0; driverIndex<10; ++driverIndex)
+    {
+        RenderWorld& rw = vehiclePreviews[driverIndex];
+        rw.setName(tmpStr("Vehicle Icon %i", driverIndex));
+        u32 vehicleIconSize = (u32)convertSize(150);
+        rw.setSize(vehicleIconSize, vehicleIconSize);
+        drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
+        Driver& driver = g_game.state.drivers[driverIndex];
+        if (driver.vehicleIndex != -1)
+        {
+            driver.getVehicleData()->render(&rw,
+                Mat4::translation(Vec3(0, 0, driver.getTuning().getRestOffset())),
+                nullptr, *driver.getVehicleConfig());
+        }
+        rw.setViewportCount(1);
+        rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
+        rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+        g_game.renderer->addRenderWorld(&rw);
+    }
+}
+
 void Menu::showChampionshipMenu()
 {
+    updateVehiclePreviews();
     reset();
-
-    static RenderWorld renderWorlds[MAX_VIEWPORTS];
 
     i32 playerIndex = 0;
     for (auto& driver : g_game.state.drivers)
@@ -848,26 +859,7 @@ void Menu::showChampionshipMenu()
             w.pos = { 55.f, -135.f + playerIndex * 170 };
             w.size = { 450, 150 };
             w.fadeInScale = 0.7f;
-            w.onRender = [&driver, playerIndex](Widget& w, bool isSelected){
-                Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
-                u32 vehicleIconSize = (u32)convertSize(w.size.y);
-                RenderWorld& rw = renderWorlds[playerIndex];
-                rw.setName(tmpStr("Vehicle Icon %i", playerIndex));
-                rw.setSize(vehicleIconSize*2, vehicleIconSize*2);
-                drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
-                if (driver.vehicleIndex != -1)
-                {
-                    //Mat4 vehicleTransform = Mat4::rotationZ((f32)getTime());
-                    Mat4 vehicleTransform = Mat4(1.f);
-                    driver.getVehicleData()->render(&rw, Mat4::translation(
-                            Vec3(0, 0, driver.getTuning().getRestOffset())) *
-                        vehicleTransform, nullptr, *driver.getVehicleConfig());
-                }
-                rw.setViewportCount(1);
-                rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
-                rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
-                g_game.renderer->addRenderWorld(&rw);
-
+            w.onRender = [this, &driver, playerIndex](Widget& w, bool isSelected){
                 Vec2 center = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
                 Vec2 size = convertSize(w.size) * w.fadeInScale;
                 Vec2 pos = convertSize(w.pos) + center - size * 0.5f;
@@ -879,9 +871,9 @@ void Menu::showChampionshipMenu()
                         Vec4(Vec3((sinf(w.hoverTimer * 4.f) + 1.f)*0.5f*w.hover*0.04f), 0.8f),
                         w.fadeInAlpha);
 
-                f32 iconSize = vehicleIconSize * w.fadeInScale;
-                ui::rectUVBlur(ui::IMAGE, rw.getTexture(), pos, Vec2(iconSize), {1,1}, {0,0},
-                        Vec4(1.f), w.fadeInAlpha);
+                f32 iconSize = (u32)convertSize(w.size.y) * w.fadeInScale;
+                ui::rectUVBlur(ui::IMAGE, vehiclePreviews[playerIndex].getTexture(), pos,
+                        Vec2(iconSize), {1,1}, {0,0}, Vec4(1.f), w.fadeInAlpha);
 
                 f32 textAlpha = (isSelected ? 1.f : 0.5f) * w.fadeInAlpha;
                 f32 margin = convertSize(15.f);
@@ -1771,7 +1763,30 @@ void Menu::showGarageMenu()
     createMainGarageMenu();
 }
 
-void Menu::championshipStandings()
+void Menu::showChampionshipStandings()
+{
+    static const Vec2 boxSize{1040, 840};
+    selectedWidget = addButton("OKAY", nullptr, Vec2(0, boxSize.y/2-50), Vec2(200, 50), [this]{
+        g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
+        showChampionshipMenu();
+        RandomSeries series = randomSeed();
+        if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
+        {
+            for (auto& driver : g_game.state.drivers)
+            {
+                if (!driver.isPlayer)
+                {
+                    driver.aiUpgrades(series);
+                }
+            }
+            g_game.saveGame();
+            g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+        }
+    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
+}
+
+#if 0
+void Menu::showChampionshipStandings()
 {
     f32 w = convertSize720i(550);
 
@@ -1866,32 +1881,38 @@ void Menu::championshipStandings()
         }
     }
 }
+#endif
 
-void Menu::raceResults()
+void Menu::showRaceResults()
 {
-    f32 w = convertSize720i(650);
+#if 0
+    // generate fake race results
+    Scene* scene = g_game.currentScene.get();
+    scene->getRaceResults().clear();
+    RandomSeries series = randomSeed();
+    for (u32 i=0; i<10; ++i)
+    {
+        g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, i%2, i));
+    }
+    for (u32 i=0; i<10; ++i)
+    {
+        RaceResult result;
+        result.driver = &g_game.state.drivers[i];
+        result.finishedRace = true;
+        result.placement = i;
+        result.statistics.accidents = irandom(series, 0, 10);
+        result.statistics.destroyed = irandom(series, 0, 10);
+        result.statistics.frags = irandom(series, 0, 50);
+        result.statistics.bonuses.push_back(RaceBonus{ "SMALL BONUS", 100 });
+        result.statistics.bonuses.push_back(RaceBonus{ "MEDIUM BONUS", 400 });
+        result.statistics.bonuses.push_back(RaceBonus{ "BIG BONUS", 500 });
+        scene->getRaceResults().push_back(result);
+    }
+#endif
+    updateVehiclePreviews();
 
-    f32 cw = (f32)(g_game.windowWidth/2);
-    Vec2 menuPos = Vec2(cw - w/2, floorf(g_game.windowHeight * 0.2f));
-    Vec2 menuSize = Vec2(w, (f32)g_game.windowHeight * 0.6f);
-    drawBox(menuPos, menuSize);
-
-    Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize720(26));
-    Font* smallfont = &g_res.getFont("font", (u32)convertSize720(16));
-    Font* tinyfont = &g_res.getFont("font", (u32)convertSize720(14));
-
-    ui::text(bigfont, "Race Results",
-                Vec2(cw, menuPos.y + convertSize720i(32)), Vec3(1.f),
-                1.f, 1.f, HAlign::CENTER, VAlign::TOP);
-
-    ui::rect(ui::BG, nullptr,
-                menuPos + Vec2(convertSize720(8), convertSize720(64)),
-                Vec2(w - convertSize720(16), convertSize720(19)), Vec3(0.f), 0.6f);
-
-    f32 columnOffset[] = {
-        32, 90, 225, 315, 400, 460, 520
-    };
-    const char* columnTitle[] = {
+    static f32 columnOffset[] = { 32, 90, 225, 335, 420, 490, 590 };
+    static const char* columnTitle[] = {
         "NO.",
         "DRIVER",
         "ACCIDENTS",
@@ -1901,57 +1922,99 @@ void Menu::raceResults()
         "CREDITS EARNED"
     };
 
-    u32 maxColumn = g_game.state.gameMode == GameMode::CHAMPIONSHIP
-        ? ARRAY_SIZE(columnTitle) : ARRAY_SIZE(columnTitle) - 1;
+    static const Vec2 boxSize{1040, 840};
 
-    for (u32 i=0; i<maxColumn; ++i)
-    {
-        ui::text(tinyfont, columnTitle[i],
-                    menuPos + Vec2(convertSize720i(columnOffset[i]), convertSize720(70)),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-    }
+    Widget w;
+    w.fadeInScale = 0.5f;
+    w.flags = 0;
+    w.pos = Vec2(0,0);
+    w.onRender = [this](Widget& w, bool isSelected){
+        Vec2 center = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
+        ui::rectBlur(-1000, nullptr, center-convertSize(boxSize)*0.5f * w.fadeInScale,
+                convertSize(boxSize) * w.fadeInScale, Vec4(Vec3(0.f), 0.8f), w.fadeInAlpha);
 
-    for (auto& row : g_game.currentScene->getRaceResults())
-    {
-        Vec2 pos = menuPos + Vec2(0.f,
-                        convertSize720i(100) + row.placement * convertSize720(24));
-        ui::text(smallfont, tmpStr("%i", row.placement + 1),
-                    pos + Vec2(convertSize720i(columnOffset[0]), 0),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, row.driver->playerName.cstr,
-                    pos + Vec2(convertSize720i(columnOffset[1]), 0),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tmpStr("%i", row.statistics.accidents),
-                    pos + Vec2(convertSize720i(columnOffset[2]), 0),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tmpStr("%i", row.statistics.destroyed),
-                    pos + Vec2(convertSize720i(columnOffset[3]), 0),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tmpStr("%i", row.statistics.frags),
-                    pos + Vec2(convertSize720i(columnOffset[4]), 0),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        ui::text(smallfont, tmpStr("%i", row.getBonus()),
-                    pos + Vec2(convertSize720i(columnOffset[5]), 0),
-                    Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
-        if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+        Font* titlefont = &g_res.getFont("font_bold", (u32)convertSize(26));
+        Font* font = &g_res.getFont("font", (u32)convertSize(26));
+        Font* bigfont = &g_res.getFont("font_bold", (u32)convertSize(55));
+
+        ui::text(bigfont, "RACE RESULTS", center + Vec2(0, -boxSize.y/2 + 40) * w.fadeInScale, Vec3(1.f),
+                w.fadeInAlpha, w.fadeInScale, HAlign::CENTER, VAlign::CENTER);
+
+        u32 maxColumn = g_game.state.gameMode == GameMode::CHAMPIONSHIP
+            ? ARRAY_SIZE(columnTitle) : ARRAY_SIZE(columnTitle) - 1;
+
+        for (u32 i=0; i<maxColumn; ++i)
         {
-            ui::text(smallfont, tmpStr("%i", row.getCreditsEarned()),
-                        pos + Vec2(convertSize720i(columnOffset[6]), 0),
-                        Vec3(1.f), 1.f, 1.f, HAlign::LEFT, VAlign::TOP);
+            Vec2 pos = (-boxSize / 2 + 20) + Vec2(columnOffset[i] * 1.5f, 70);
+            ui::text(titlefont, columnTitle[i], center + convertSize(pos) * w.fadeInScale,
+                    Vec3(1.f), w.fadeInAlpha, w.fadeInScale, HAlign::CENTER, VAlign::CENTER);
         }
-    }
 
-    if (didSelect())
-    {
+        for (u32 i=0; i<10; ++i)
+        {
+            auto& row = g_game.currentScene->getRaceResults()[i];
+            Font* f = row.driver->isPlayer ? titlefont : font;
+            Vec3 color = row.driver->isPlayer ? COLOR_SELECTED.rgb : Vec3(1.f);
+
+            f32 rowHeight = 50;
+            f32 rowSep = 65;
+            Vec2 pos = (-boxSize / 2 + 20) + Vec2(0, i * rowSep + 115);
+            Vec2 boxP = center + convertSize(Vec2(0, pos.y) - Vec2(boxSize.x, rowHeight) * 0.5f) * w.fadeInScale;
+            Vec2 boxS = Vec2(boxSize.x, rowHeight) * w.fadeInScale;
+            ui::rectBlur(ui::BG, nullptr, boxP, boxS, Vec4(Vec3(0.1f), 1.f), w.fadeInAlpha * 0.2f);
+
+            Vec2 p = center + convertSize(pos + Vec2(columnOffset[0] * 1.5f, 0.f)) * w.fadeInScale;
+            ui::text(f, tmpStr("%i", row.placement + 1), p, Vec3(1.f), w.fadeInAlpha, w.fadeInScale,
+                    HAlign::CENTER, VAlign::CENTER);
+
+            f32 iconSize = 60;
+            i32 driverIndex = g_game.state.drivers.find([&row](Driver& d) { return &d == row.driver; }) - g_game.state.drivers.begin();
+            p = center + convertSize(pos + Vec2(columnOffset[0] * 1.5f + 20, -iconSize/2)) * w.fadeInScale;
+            ui::rectUVBlur(ui::IMAGE, vehiclePreviews[driverIndex].getTexture(), p,
+                    convertSize(Vec2(iconSize)) * w.fadeInScale, Vec2(0,1), Vec2(1,0), Vec4(1.f),
+                    w.fadeInAlpha);
+
+            p = center + convertSize(pos + Vec2(columnOffset[1] * 1.5f, 0.f)) * w.fadeInScale;
+            ui::text(f, tmpStr("%s", row.driver->playerName.cstr), p, color, w.fadeInAlpha, w.fadeInScale,
+                    HAlign::LEFT, VAlign::CENTER);
+
+            p = center + convertSize(pos + Vec2(columnOffset[2] * 1.5f, 0.f)) * w.fadeInScale;
+            ui::text(f, tmpStr("%i", row.statistics.accidents), p, Vec3(1.f), w.fadeInAlpha, w.fadeInScale,
+                    HAlign::CENTER, VAlign::CENTER);
+
+            p = center + convertSize(pos + Vec2(columnOffset[3] * 1.5f, 0.f)) * w.fadeInScale;
+            ui::text(f, tmpStr("%i", row.statistics.destroyed), p, Vec3(1.f), w.fadeInAlpha, w.fadeInScale,
+                    HAlign::CENTER, VAlign::CENTER);
+
+            p = center + convertSize(pos + Vec2(columnOffset[4] * 1.5f, 0.f)) * w.fadeInScale;
+            ui::text(f, tmpStr("%i", row.statistics.frags), p, Vec3(1.f), w.fadeInAlpha, w.fadeInScale,
+                    HAlign::CENTER, VAlign::CENTER);
+
+            p = center + convertSize(pos + Vec2(columnOffset[5] * 1.5f, 0.f)) * w.fadeInScale;
+            ui::text(f, tmpStr("%i", row.getBonus()), p, Vec3(1.f), w.fadeInAlpha, w.fadeInScale,
+                    HAlign::CENTER, VAlign::CENTER);
+
+            if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+            {
+                p = center + convertSize(pos + Vec2(columnOffset[6] * 1.5f, 0.f)) * w.fadeInScale;
+                ui::text(f, tmpStr("%i", row.getCreditsEarned()), p, Vec3(1.f), w.fadeInAlpha, w.fadeInScale,
+                    HAlign::CENTER, VAlign::CENTER);
+            }
+        }
+    };
+    widgets.push_back(std::move(w));
+
+    selectedWidget = addButton("OKAY", nullptr, Vec2(0, boxSize.y/2-50), Vec2(200, 50), [this]{
         for (auto& r : g_game.currentScene->getRaceResults())
         {
             r.driver->lastPlacement = r.placement;
         }
 
         g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
+        reset();
         if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
-            menuMode = CHAMPIONSHIP_STANDINGS;
+            showChampionshipStandings();
             for (auto& row : g_game.currentScene->getRaceResults())
             {
                 row.driver->credits += row.getCreditsEarned();
@@ -1964,7 +2027,7 @@ void Menu::raceResults()
             showMainMenu();
             g_game.currentScene->isCameraTourEnabled = true;
         }
-    }
+    }, WidgetFlags::FADE_OUT);
 }
 
 void Menu::showSettingsMenu()
@@ -2265,37 +2328,18 @@ void Menu::showPauseMenu()
     });
 }
 
-void Menu::drawBox(Vec2 pos, Vec2 size)
-{
-    f32 border = floorf(convertSize720(3));
-    ui::rectBlur(ui::BORDER, nullptr, pos-border, size+border*2, Vec4(Vec3(1.f), 0.4f), 1.f);
-    ui::rectBlur(ui::BG, nullptr, pos, size, Vec4(Vec3(0.f), 0.8f), 1.f);
-}
-
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     if (g_game.currentScene && !g_game.currentScene->isRaceInProgress && !g_game.isEditing)
     {
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
-        f32 h = convertSize720(tex->height * 0.5f);
+        f32 h = convertSize(tex->height * 0.5f);
         ui::rectUVBlur(-200, tex, Vec2(0), {w,h}, Vec2(0.f, 0.999f),
-                    Vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.001f));
+                    Vec2(g_game.windowWidth/convertSize(tex->width * 0.5f), 0.001f));
         ui::rectUVBlur(-200, tex, Vec2(0, g_game.windowHeight-h), {w,h},
                     Vec2(0.f, 0.001f),
-                    Vec2(g_game.windowWidth/convertSize720(tex->width * 0.5f), 0.999f));
-    }
-
-    switch (menuMode)
-    {
-        case MenuMode::VISIBLE:
-            break;
-        case MenuMode::CHAMPIONSHIP_STANDINGS:
-            championshipStandings();
-            break;
-        case MenuMode::RACE_RESULTS:
-            raceResults();
-            break;
+                    Vec2(g_game.windowWidth/convertSize(tex->width * 0.5f), 0.999f));
     }
 
     repeatTimer = max(repeatTimer - g_game.deltaTime, 0.f);

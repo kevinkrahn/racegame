@@ -169,8 +169,8 @@ void Game::run()
 
     println("Loaded resources in %.2f seconds", getTime() - loadStartTime);
 
-    menu.showMainMenu();
     changeScene("race1");
+    menu.showMainMenu();
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;
@@ -228,6 +228,7 @@ void Game::run()
             }
             currentScene = std::move(nextScene);
             currentScene->onStart();
+            //menu.showRaceResults();
         }
 
         ImGui_ImplOpenGL3_NewFrame();

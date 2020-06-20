@@ -110,20 +110,7 @@ struct GarageData
 
 class Menu
 {
-    enum MenuMode
-    {
-        VISIBLE,
-        CHAMPIONSHIP_STANDINGS,
-        RACE_RESULTS,
-    } menuMode;
-
     Config tmpConfig;
-
-    void championshipGarage();
-    void championshipStandings();
-    void raceResults();
-
-    void drawBox(Vec2 pos, Vec2 size);
 
     SmallArray<Widget, 32> widgets;
     Widget* selectedWidget = nullptr;
@@ -132,6 +119,8 @@ class Menu
     bool fadeIn = true;
     f32 blackFadeAlpha = 0.f;
     GarageData garage;
+    RenderWorld vehiclePreviews[10];
+    void updateVehiclePreviews();
 
     void reset()
     {
@@ -140,7 +129,6 @@ class Menu
         repeatTimer = 0.f;
         fadeIn = true;
         fadeInTimer = 0.f;
-        menuMode = MenuMode::VISIBLE;
     }
 
     void resetTransient()
@@ -203,7 +191,8 @@ public:
     void showNewChampionshipMenu();
     void showChampionshipMenu();
     void showGarageMenu();
-    void showRaceResults() { menuMode = MenuMode::RACE_RESULTS; }
+    void showRaceResults();
+    void showChampionshipStandings();
     void showSettingsMenu();
     void showGraphicsSettingsMenu();
     void showAudioSettingsMenu();
