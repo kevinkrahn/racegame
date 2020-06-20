@@ -276,6 +276,7 @@ struct VehicleData
 
     const char* name ="";
     const char* description ="";
+    Vec3 defaultColorHsv = Vec3(0.f, 0.f, 0.95f);
     i32 price = 0;
     u32 frontWeaponCount = 1;
     u32 rearWeaponCount = 1;

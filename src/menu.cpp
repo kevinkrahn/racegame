@@ -821,12 +821,6 @@ void Menu::showInitialCarLotMenu(u32 playerIndex)
 {
     garage.initialCarSelect = true;
     garage.driver = &g_game.state.drivers[playerIndex];
-    garage.previewVehicleIndex = 0;
-    garage.previewVehicleConfig = VehicleConfiguration{};
-    garage.previewVehicleConfig.reloadMaterials();
-    g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
-    garage.currentStats = garage.previewTuning.computeVehicleStats();
-    garage.upgradeStats = garage.currentStats;
 
     reset();
     createVehiclePreview();
@@ -1537,12 +1531,20 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
 
 void Menu::createCarLotMenu()
 {
-    static VehicleConfiguration vehicleConfig;
     static Array<RenderWorld> renderWorlds(g_vehicles.size());
 
     if (garage.previewVehicleIndex == -1)
     {
         garage.previewVehicleIndex = 0;
+        garage.previewVehicleConfig = VehicleConfiguration{};
+        auto& vd = g_vehicles[garage.previewVehicleIndex];
+        garage.previewVehicleConfig.color =
+            srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
+        garage.previewVehicleConfig.hsv = vd->defaultColorHsv;
+        garage.previewVehicleConfig.reloadMaterials();
+        g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+        garage.currentStats = garage.previewTuning.computeVehicleStats();
+        garage.upgradeStats = garage.currentStats;
     }
 
     Vec2 buttonSize(450, 75);
@@ -1625,6 +1627,12 @@ void Menu::createCarLotMenu()
         rw.setSize((u32)convertSize(size.x)*2, (u32)convertSize(size.y)*2);
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
+        VehicleConfiguration vehicleConfig;
+        auto& vd = g_vehicles[i];
+        vehicleConfig.color =
+            srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
+        vehicleConfig.hsv = vd->defaultColorHsv;
+
         VehicleTuning tuning;
         g_vehicles[i]->initTuning(vehicleConfig, tuning);
         f32 vehicleAngle = 0.f;
@@ -1650,6 +1658,10 @@ void Menu::createCarLotMenu()
             else
             {
                 garage.previewVehicleConfig = VehicleConfiguration{};
+                auto& vd = g_vehicles[garage.previewVehicleIndex];
+                garage.previewVehicleConfig.color =
+                    srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
+                garage.previewVehicleConfig.hsv = vd->defaultColorHsv;
                 garage.previewVehicleConfig.reloadMaterials();
                 g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
                 garage.currentStats = garage.previewTuning.computeVehicleStats();

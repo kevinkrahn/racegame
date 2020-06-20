@@ -13,6 +13,7 @@ public:
         price = 9000;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
+        defaultColorHsv = Vec3(0.f, 0.95f, 0.95f);
 
         loadModelData("vehicle_stationwagon");
         initStandardUpgrades();

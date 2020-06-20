@@ -12,6 +12,7 @@ public:
         price = 8900;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
+        defaultColorHsv = Vec3(04.f, 0.85f, 0.3f);
 
         loadModelData("vehicle_muscle");
         initStandardUpgrades();
