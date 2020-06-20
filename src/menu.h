@@ -153,7 +153,7 @@ class Menu
     i32 didChangeSelectionY();
     i32 didChangeSelectionX();
 
-    Widget* addBackgroundBox(Vec2 pos, Vec2 size, f32 alpha=0.3f, bool scaleOut=true);
+    Widget* addBackgroundBox(Vec2 pos, Vec2 size, f32 alpha=0.5f, bool scaleOut=true);
     Widget* addLogic(std::function<void()> onUpdate);
     Widget* addLogic(std::function<void(Widget&)> onUpdate);
     Widget* addButton(const char* text, const char* helpText, Vec2 pos, Vec2 size,

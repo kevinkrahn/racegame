@@ -1909,6 +1909,7 @@ void Menu::showRaceResults()
         scene->getRaceResults().push_back(result);
     }
 #endif
+    reset();
     updateVehiclePreviews();
 
     static f32 columnOffset[] = { 32, 90, 225, 335, 420, 490, 590 };

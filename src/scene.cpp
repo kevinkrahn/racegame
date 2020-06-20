@@ -397,8 +397,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (allPlayersFinished && isRaceInProgress)
         {
             finishTimer += deltaTime;
-            if (finishTimer >= 4.f && !g_game.isEditing)
+            if (finishTimer >= 5.f && !g_game.isEditing)
             {
+#if 0
                 // TODO: Tell the player to press a button
                 if (didSelect())
                 {
@@ -406,6 +407,11 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                     stopRace();
                     g_game.menu.showRaceResults();
                 }
+#else
+                    buildRaceResults();
+                    stopRace();
+                    g_game.menu.showRaceResults();
+#endif
             }
         }
 
