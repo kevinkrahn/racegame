@@ -177,7 +177,8 @@ public:
     TrackGraph& getTrackGraph() { return trackGraph; }
     MotionGrid& getMotionGrid() { return motionGrid; }
     u32 getTotalLaps() const { return totalLaps; }
-    bool canGo() const;
+    f32 timeUntilStart() const { return 3.f - worldTime; }
+    bool canGo() const { return timeUntilStart() < 0.001f; };
     Vec3 findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRadius=10.f);
 
     bool raycastStatic(Vec3 const& from, Vec3 const& dir, f32 dist,

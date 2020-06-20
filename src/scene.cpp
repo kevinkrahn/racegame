@@ -170,8 +170,9 @@ void Scene::startRace()
         }
 
         //Vec3 offset = -Vec3(6 + i / 4 * 8, -7.5f + i % 4 * 5, 0.f);
+        f32 distanceBehindStartingLine = 4.f;
         Vec3 offset = -Vec3(
-                6 + i / driversPerRow * 8,
+                distanceBehindStartingLine + i / driversPerRow * 7.5f,
                 -(width/2) + (i % driversPerRow) * (width / (driversPerRow - 1)),
                 0.f);
         Vec3 zdir = normalize(start.zAxis());
@@ -261,11 +262,6 @@ void Scene::onStart()
             g_res.getSound("environment"), SoundType::MUSIC, true, 1.f, 0.f);
 }
 
-bool Scene::canGo() const
-{
-    return readyToGo || g_game.isEditing;
-}
-
 void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     TIMED_BLOCK();
@@ -302,11 +298,6 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     {
         worldTime += deltaTime;
         rw->updateWorldTime(worldTime);
-
-        if (worldTime >= 3.f)
-        {
-            readyToGo = true;
-        }
 
         SmallArray<Vec3> listenerPositions;
         if (!g_game.isEditing && !isRaceInProgress && isCameraTourEnabled

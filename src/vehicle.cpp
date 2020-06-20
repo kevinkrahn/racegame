@@ -445,36 +445,42 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             deadTimer = 0.f;
             hitPoints = tuning.maxHitPoints;
 
-            Vec3 pos = graphResult.position;
-            const TrackGraph::Node* node = graphResult.lastNode;
-            if (!graphResult.lastNode)
+            if (useResetTransform)
             {
-                node = scene->getTrackGraph().getEndNode();
+                useResetTransform = false;
+                Mat4 resetTransform = Mat4::translation(Vec3(0,0,7.f)) * startTransform;
+                reset(resetTransform);
             }
-            pos += Vec3(random(scene->randomSeries, -5.f, 5.f),
-                    random(scene->randomSeries, -5.f, 5.f), 0.f);
-            pos = scene->findValidPosition(pos, 5.f);
-
-            Mat4 resetTransform =
-                Mat4::translation(pos + Vec3(0, 0, 7.f)) * Mat4::rotationZ(node->angle);
-
-            PxRaycastBuffer hit;
-            if (scene->raycastStatic(pos + Vec3(0, 0, 8.f), { 0, 0, -1 }, 20.f, &hit))
+            else
             {
-                Vec3 up = convert(hit.block.normal);
-                Vec3 forwardTmp = Vec3(lengthdir(node->angle, 1.f), 0.f);
-                Vec3 right = normalize(cross(up, forwardTmp));
-                Vec3 forward = normalize(cross(right, up));
-                Mat4 m(1.f);
-                m[0] = Vec4(forward, m[0].w);
-                m[1] = Vec4(right, m[1].w);
-                m[2] = Vec4(up, m[2].w);
-                resetTransform = Mat4::translation(pos + up * 7.f) * m;
+                const TrackGraph::Node* node = graphResult.lastNode;
+                if (!graphResult.lastNode)
+                {
+                    node = scene->getTrackGraph().getEndNode();
+                }
+                Vec3 pos = graphResult.position;
+                pos += Vec3(random(scene->randomSeries, -5.f, 5.f),
+                        random(scene->randomSeries, -5.f, 5.f), 0.f);
+                pos = scene->findValidPosition(pos, 5.f);
+                Mat4 resetTransform =
+                    Mat4::translation(pos + Vec3(0, 0, 7.f)) * Mat4::rotationZ(node->angle);
+                PxRaycastBuffer hit;
+                if (scene->raycastStatic(pos + Vec3(0, 0, 8.f), { 0, 0, -1 }, 20.f, &hit))
+                {
+                    Vec3 up = hit.block.normal;
+                    Vec3 forwardTmp = Vec3(lengthdir(node->angle, 1.f), 0.f);
+                    Vec3 right = normalize(cross(up, forwardTmp));
+                    Vec3 forward = normalize(cross(right, up));
+                    Mat4 m(1.f);
+                    m[0] = Vec4(forward, m[0].w);
+                    m[1] = Vec4(right, m[1].w);
+                    m[2] = Vec4(up, m[2].w);
+                    resetTransform = Mat4::translation(pos + up * 7.f) * m;
+                }
+                reset(resetTransform);
             }
 
-            reset(resetTransform);
-
-            if (!finishedRace)
+            if (!finishedRace && scene->canGo())
             {
                 const f32 respawnSpeed = 11.f;
                 getRigidBody()->addForce(
@@ -545,7 +551,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (!finishedRace)
     {
         vehiclePhysics.update(scene->getPhysicsScene(), deltaTime,
-                input.digital, input.accel, input.brake, input.steer, false, scene->canGo(), false);
+                input.digital, input.accel, input.brake, input.steer, false, true, false);
     }
     else
     {
@@ -586,27 +592,36 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     if (!finishedRace && graphResult.lapDistanceLowMark < maxSkippableDistance)
     {
         Vec3 finishLinePosition = scene->getStart().position();
-        Vec3 dir = normalize(currentPosition - finishLinePosition);
+        Vec3 checkPosition = currentPosition + getForwardVector() * tuning.collisionLength * 0.5f;
+        Vec3 dir = normalize(checkPosition - finishLinePosition);
         if (dot(scene->getStart().xAxis(), dir) > 0.f
-                && lengthSquared(currentPosition - finishLinePosition) < square(40.f))
+                && lengthSquared(checkPosition - finishLinePosition) < square(40.f))
         {
-            if (!finishedRace && (u32)currentLap >= scene->getTotalLaps())
+            if (!scene->canGo())
             {
-                finishedRace = true;
-                scene->vehicleFinish(vehicleIndex);
+                blowUp(2.f);
+                useResetTransform = true;
             }
-            if (currentLap > 0)
+            else
             {
-                g_audio.playSound3D(g_res.getSound("lap"), SoundType::GAME_SFX, currentPosition);
+                if (!finishedRace && (u32)currentLap >= scene->getTotalLaps())
+                {
+                    finishedRace = true;
+                    scene->vehicleFinish(vehicleIndex);
+                }
+                if (currentLap > 0)
+                {
+                    g_audio.playSound3D(g_res.getSound("lap"), SoundType::GAME_SFX, checkPosition);
+                }
+                ++currentLap;
+                if ((u32)currentLap == scene->getTotalLaps())
+                {
+                    addNotification("LAST LAP!", 2.f, Vec3(1, 0, 0));
+                }
+                graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
+                graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
+                resetAmmo();
             }
-            ++currentLap;
-            if ((u32)currentLap == scene->getTotalLaps())
-            {
-                addNotification("LAST LAP!", 2.f, Vec3(1, 0, 0));
-            }
-            graphResult.lapDistanceLowMark = scene->getTrackGraph().getStartNode()->t;
-            graphResult.currentLapDistance = scene->getTrackGraph().getStartNode()->t;
-            resetAmmo();
         }
     }
 
@@ -664,7 +679,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     bool onGround = false;
     if (currentPosition.z < -32.f)
     {
-        applyDamage(100.f, vehicleIndex);
+        applyDamage(10000.f, vehicleIndex);
     }
     else
     {
@@ -910,7 +925,7 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
     }
 }
 
-void Vehicle::blowUp()
+void Vehicle::blowUp(f32 respawnTime)
 {
     Mat4 transform = vehiclePhysics.getTransform();
     for (auto& d : g_vehicles[driver->vehicleIndex]->debrisChunks)
@@ -935,7 +950,7 @@ void Vehicle::blowUp()
             random(scene->randomSeries, 6.f, 7.f)
         });
     }
-    deadTimer = 0.8f;
+    deadTimer = respawnTime;
     scene->createExplosion(transform.position(), previousVelocity, 10.f);
     if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.5)
     {
@@ -1173,7 +1188,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
                 Vec3(1, 0, 0)));
 #endif
 
-    input.accel = 1.f;
+    input.accel = (scene->timeUntilStart() < ai.drivingSkill * 0.35f + 0.0025f) ? 1.f : 0.f;
     input.brake = 0.f;
     input.steer = clamp(dot(Vec2(rightVector), dirToTargetP) * 1.2f, -1.f, 1.f);
     f32 aggression = min(max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),

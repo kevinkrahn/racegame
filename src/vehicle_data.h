@@ -126,6 +126,7 @@ struct VehicleTuning
     Vec3 wheelPositions[NUM_WHEELS];
 
     f32 collisionWidth = 0.f;
+    f32 collisionLength = 0.f;
     f32 maxHitPoints;
 
     f32 getRestOffset() const
@@ -269,6 +270,7 @@ struct VehicleData
     f32 rearWheelMeshRadius = 0.f;
     f32 rearWheelMeshWidth = 0.f;
     f32 collisionWidth = 0.f;
+    f32 collisionLength = 0.f;
     Vec3 sceneCenterOfMass = Vec3(0.f);
 
     Array<VehicleCollisionsMesh> collisionMeshes;

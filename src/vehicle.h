@@ -62,6 +62,7 @@ public:
     Mat4 startTransform;
 	f32 flipTimer = 0.f;
 	f32 deadTimer = 0.f;
+	bool useResetTransform = false;
 	f32 controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
 	u32 lastOpponentDamagedBy = UINT32_MAX;
@@ -143,7 +144,7 @@ public:
     }
     bool isDead() const { return deadTimer > 0.f; }
 
-    void blowUp();
+    void blowUp(f32 respawnTime=0.8f);
     void reset(Mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator);
     void addNotification(const char* text, f32 time=2.f, Vec3 const& color=Vec3(1.f))

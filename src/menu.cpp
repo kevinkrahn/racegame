@@ -59,10 +59,15 @@ void Menu::startQuickRace()
         do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
         while (g_game.state.drivers.find([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
 
-        g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, -1, aiIndex));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiIndex));
         g_game.state.drivers.back().credits = driverCredits;
         g_game.state.drivers.back().aiUpgrades(series);
     }
+    Driver& playerDriver = g_game.state.drivers[irandom(series, 0, (i32)g_game.state.drivers.size())];
+    playerDriver.isPlayer = true;
+    playerDriver.hasCamera = true;
+    playerDriver.useKeyboard = true;
+
 #if 0
     drivers[0].hasCamera = true;
     drivers[1].hasCamera = true;

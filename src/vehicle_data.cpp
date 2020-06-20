@@ -305,6 +305,7 @@ void VehicleData::loadModelData(const char* modelName)
         else if (name.find("Collision"))
         {
             collisionMeshes.push_back({ mesh->getConvexCollisionMesh(), transform });
+            collisionLength = max(collisionLength, obj.bounds.x);
             collisionWidth = max(collisionWidth, obj.bounds.y);
         }
         else if (name.find("COM"))
@@ -340,6 +341,7 @@ void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
         tuning.wheelPositions[i] = wheelPositions[i];
     }
     tuning.collisionWidth = collisionWidth;
+    tuning.collisionLength = collisionLength;
     tuning.wheelWidthFront = frontWheelMeshWidth;
     tuning.wheelWidthRear = rearWheelMeshWidth;
     tuning.wheelRadiusFront = frontWheelMeshRadius;
