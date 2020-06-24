@@ -157,6 +157,7 @@ struct WorldInfo
     f32 pad2[2];
 };
 
+// TODO: profile to see if using a map improves performance vs a sorted array
 struct RenderItems
 {
     Map<ShaderHandle, Array<RenderItem>> depthPrepass;
@@ -165,6 +166,7 @@ struct RenderItems
     Array<TransparentRenderItem> transparentPass;
     Map<ShaderHandle, Array<HighlightPassRenderItem>> highlightPass;
     Map<ShaderHandle, Array<RenderItem>> pickPass;
+    Array<TransparentRenderItem> overlayPass;
 };
 
 class RenderWorld
@@ -256,6 +258,11 @@ public:
     void highlightPass(ShaderHandle shaderHandle, HighlightPassRenderItem const& renderItem)
     {
         renderItems.highlightPass[shaderHandle].push_back(renderItem);
+    }
+
+    void overlayPass(TransparentRenderItem const& renderItem)
+    {
+        renderItems.overlayPass.push_back(renderItem);
     }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }

@@ -72,7 +72,7 @@ void Renderer::loadShader(ShaderHandle handle)
         glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
         char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
         glGetShaderInfoLog(vertexShader, errorMessageLength, 0, errorMessage);
-        FATAL_ERROR("Vertex Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+        FATAL_ERROR("Vertex Shader Compilation Error: (%s)\n%s", filename, errorMessage);
     }
     glAttachShader(program, vertexShader);
 
@@ -85,7 +85,7 @@ void Renderer::loadShader(ShaderHandle handle)
         glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
         char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
         glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, errorMessage);
-        FATAL_ERROR("Fragment Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+        FATAL_ERROR("Fragment Shader Compilation Error: (%s)\n%s", filename, errorMessage);
     }
     glAttachShader(program, fragmentShader);
 
@@ -102,7 +102,7 @@ void Renderer::loadShader(ShaderHandle handle)
             glGetShaderiv(geometryShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
             char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
             glGetShaderInfoLog(geometryShader, errorMessageLength, 0, errorMessage);
-            FATAL_ERROR("Geometry Shader Compilation Error: (", filename, ")\n", errorMessage, '\n');
+            FATAL_ERROR("Geometry Shader Compilation Error: (%s)\n%s", filename, errorMessage);
         }
         glAttachShader(program, geometryShader);
     }
@@ -115,7 +115,7 @@ void Renderer::loadShader(ShaderHandle handle)
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
         char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
         glGetProgramInfoLog(program, errorMessageLength, 0, errorMessage);
-        FATAL_ERROR("Shader Link Error: (", filename, ")\n", errorMessage, '\n');
+        FATAL_ERROR("Shader Link Error: (%s)\n%s", filename, errorMessage);
     }
 
     free(shaderStr);
@@ -923,9 +923,10 @@ void RenderWorld::clear()
     clearRenderItems(renderItems.depthPrepass);
     clearRenderItems(renderItems.shadowPass);
     clearRenderItems(renderItems.opaqueColorPass);
-    renderItems.transparentPass.clear();
     clearRenderItems(renderItems.highlightPass);
     clearRenderItems(renderItems.pickPass);
+    renderItems.transparentPass.clear();
+    renderItems.overlayPass.clear();
 }
 
 void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoShadow, u32 cameraIndex)
@@ -971,10 +972,12 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
-    renderItems.transparentPass.sort([](auto& a, auto& b) {
+    auto comparator = [](TransparentRenderItem const& a, TransparentRenderItem const& b) {
         if (a.priority != b.priority) return a.priority < b.priority;
         return a.shader < b.shader;
-    });
+    };
+    renderItems.transparentPass.sort(comparator);
+    renderItems.overlayPass.sort(comparator);
     for (u32 i=0; i<fbs.size(); ++i)
     {
         renderer->setCurrentRenderingCameraIndex(i);
@@ -1373,6 +1376,25 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glStencilMask(0x0);
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    previousShader = -1;
+    for (auto& renderItem : renderItems.overlayPass)
+    {
+        if (previousShader != renderItem.shader)
+        {
+            previousShader = renderItem.shader;
+            ShaderProgram const& program = renderer->getShader(renderItem.shader);
+            glUseProgram(program.program);
+            glPolygonOffset(0.f, program.depthOffset);
+        }
+        renderItem.render(renderItem.renderData);
+    }
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    glStencilMask(0xFF);
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glDepthMask(GL_TRUE);

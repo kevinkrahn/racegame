@@ -22,13 +22,13 @@ void main()
 
 layout(location = 0) in vec3 inColor;
 
-layout(location = 0) out vec3 outColor;
+layout(location = 0) out vec4 outColor;
 
 layout(location = 1) uniform vec3 color;
 
 void main()
 {
-    outColor = color * inColor;
+    outColor = vec4(color * inColor, 1.0);
 }
 
 #endif

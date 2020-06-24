@@ -287,6 +287,7 @@ struct SimpleRenderData
     Mat3 normalTransform;
     Vec3 color;
     Vec3 emit;
+    RenderWorld* rw;
 };
 
 void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, Mat4 const& transform,
@@ -343,11 +344,12 @@ void drawWireframe(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec4 colo
     d->worldTransform = transform;
     d->color = color.rgb;
     d->emit.r = color.a;
+    d->rw = rw;
 
     auto renderOpaque = [](void* renderData) {
         SimpleRenderData* d = (SimpleRenderData*)renderData;
 
-        Camera const& camera = g_game.renderer->getRenderWorld()->getCamera(0);
+        Camera const& camera = d->rw->getCamera(0);
         glUniform4f(2, d->color.x, d->color.y, d->color.z, d->emit.r);
         glUniform1i(3, 1);
         Mat4 t = camera.viewProjection * d->worldTransform;
@@ -407,5 +409,5 @@ void drawOverlay(RenderWorld* rw, Mesh* mesh, Mat4 const& transform, Vec3 const&
         }
     };
 
-    rw->transparentPass({ shader, TransparentDepth::OVERLAY + priorityOffset, d, render });
+    rw->overlayPass({ shader, TransparentDepth::OVERLAY + priorityOffset, d, render });
 }

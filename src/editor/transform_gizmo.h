@@ -237,8 +237,7 @@ public:
                         Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
             }
 
-            drawOverlay(rw, arrowMesh,
-                    Mat4::translation(p) * Mat4::rotationZ(rot), yCol);
+            drawOverlay(rw, arrowMesh, Mat4::translation(p) * Mat4::rotationZ(rot), yCol);
             if (entityDragAxis & DragAxis::Y)
             {
                 scene->debugDraw.line(
@@ -246,8 +245,7 @@ public:
                         Vec4(0, 1, 0, 1), Vec4(0, 1, 0, 1));
             }
 
-            drawOverlay(rw, arrowMesh,
-                    Mat4::translation(p) * Mat4::rotationY(-rot), zCol);
+            drawOverlay(rw, arrowMesh, Mat4::translation(p) * Mat4::rotationY(rot), zCol);
             if (entityDragAxis & DragAxis::Z)
             {
                 scene->debugDraw.line(
@@ -323,8 +321,7 @@ public:
                         Mat4::translation(p) * Mat4::scaling(Vec3(4.4f)),
                         Vec3(1.f), -1, true);
 
-                drawOverlay(rw, arrowMesh,
-                        Mat4::translation(p) * Mat4::rotationY(rot), xCol);
+                drawOverlay(rw, arrowMesh, Mat4::translation(p) * Mat4::rotationY(rot), xCol);
                 if (entityDragAxis & DragAxis::X)
                 {
                     scene->debugDraw.line(
@@ -332,8 +329,7 @@ public:
                             Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
                 }
 
-                drawOverlay(rw, arrowMesh,
-                        Mat4::translation(p) * Mat4::rotationX(rot), yCol);
+                drawOverlay(rw, arrowMesh, Mat4::translation(p) * Mat4::rotationX(rot), yCol);
                 if (entityDragAxis & DragAxis::Y)
                 {
                     scene->debugDraw.line(
@@ -464,8 +460,7 @@ public:
                         Vec4(1, 0, 0, 1), Vec4(1, 0, 0, 1));
             }
 
-            drawOverlay(rw, arrowMesh,
-                    Mat4::translation(p) * orientation * Mat4::rotationZ(rot), yCol);
+            drawOverlay(rw, arrowMesh, Mat4::translation(p) * orientation * Mat4::rotationZ(rot), yCol);
             if (entityDragAxis & DragAxis::Y)
             {
                 scene->debugDraw.line(
@@ -473,8 +468,7 @@ public:
                         Vec4(0, 1, 0, 1), Vec4(0, 1, 0, 1));
             }
 
-            drawOverlay(rw, arrowMesh,
-                    Mat4::translation(p) * orientation * Mat4::rotationY(-rot), zCol);
+            drawOverlay(rw, arrowMesh, Mat4::translation(p) * orientation * Mat4::rotationY(rot), zCol);
             if (entityDragAxis & DragAxis::Z)
             {
                 scene->debugDraw.line(

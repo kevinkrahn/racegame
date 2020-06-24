@@ -15,7 +15,6 @@
 - Kinetic armor effect
 - Create general-purpose particle system
 - Make better explosion effect
-- Add more cosmetic options (decals)
 - Add armor icon beside healthbar
 - Don't blow up so easily when two wheels are off the track
 - Add splitscreen configuration (horizontal vs vertical split for two and three players)
@@ -47,6 +46,13 @@
 - Add vehicle reflection on the floor of garage
 - Add suicide ability that creates a massive explosion
 - Leave scorch mark on track after explosion
+- Add leagues and transitions between leagues
+- Batch static decals (they are regular meshes now so there's no reason not to)
+- Add tabs to the debug info window (or group information under collapsing headers)
+- It should be possible to create a good path offset by checking if the offset point is to close
+  to the line in the surrounding area (check forward a bit and also backward a bit). If it is too
+  close then use the last known good point. If there is no last point, then loop until one is found.
+    
 
 - Ideas:
     - Grenade launcher weapon
@@ -58,3 +64,4 @@
     - Deathmatch mode, or a mode where everybody races around a map to pickup an item that spawns randomly
     - Ability that gives immediate burst of speed and big bonus to ramming damage
     - Shock wave ability
+    - Add weapon that deals damage based on race placement (i.e. the driver in first place would receive the most damage)

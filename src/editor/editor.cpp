@@ -82,7 +82,8 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             conf->frontWeaponUpgradeLevel[0] = 5;
             conf->rearWeaponIndices[0] = 4;
             conf->rearWeaponUpgradeLevel[0] = 5;
-            conf->specialAbilityIndex = 11;
+            //conf->specialAbilityIndex = 11;
+            conf->specialAbilityIndex = 7;
 
             for (auto& mode : modes)
             {
