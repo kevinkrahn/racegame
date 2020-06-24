@@ -425,7 +425,7 @@ public:
                 u8 axis = e.caxis.axis;
                 i16 value = e.caxis.value;
                 auto ctl = controllers.get(which);
-                if (!ctl)
+                if (ctl)
                 {
                     f32 val = value / 32768.f;
                     ctl->axis[axis] = absolute(val) < joystickDeadzone ? 0.f : val;
@@ -436,7 +436,7 @@ public:
                 SDL_JoystickID which = e.cbutton.which;
                 u8 button = e.cbutton.button;
                 auto ctl = controllers.get(which);
-                if (!ctl)
+                if (ctl)
                 {
                     ctl->buttonPressed[button] = true;
                     ctl->buttonDown[button] = true;
@@ -448,7 +448,7 @@ public:
                 SDL_JoystickID which = e.cbutton.which;
                 u8 button = e.cbutton.button;
                 auto ctl = controllers.get(which);
-                if (!ctl)
+                if (ctl)
                 {
                     ctl->buttonDown[button] = false;
                     ctl->buttonReleased[button] = true;
