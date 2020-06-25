@@ -31,8 +31,10 @@ void glShaderSources(GLuint shader, const char* src,
     {
         buf.writef("#define %s %s\n", d.name, d.value);
     }
-    buf.writef("#define %s %u\n", stageDefine.name, stageDefine.value);
+    buf.writef("#define %s %s\n", stageDefine.name, stageDefine.value);
     const char* sources[] = { buf.data(), src };
+    //println("SHADER ===========================");
+    //println("%s%s", buf.data(), src);
     glShaderSource(shader, 2, sources, 0);
 }
 
@@ -72,7 +74,7 @@ void Renderer::loadShader(ShaderHandle handle)
         glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
         char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
         glGetShaderInfoLog(vertexShader, errorMessageLength, 0, errorMessage);
-        FATAL_ERROR("Vertex Shader Compilation Error: (%s)\n%s", filename, errorMessage);
+        FATAL_ERROR("Vertex Shader Compilation Error: (%s) %s", filename, errorMessage);
     }
     glAttachShader(program, vertexShader);
 
@@ -85,7 +87,7 @@ void Renderer::loadShader(ShaderHandle handle)
         glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &errorMessageLength);
         char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
         glGetShaderInfoLog(fragmentShader, errorMessageLength, 0, errorMessage);
-        FATAL_ERROR("Fragment Shader Compilation Error: (%s)\n%s", filename, errorMessage);
+        FATAL_ERROR("Fragment Shader Compilation Error: (%s) %s", filename, errorMessage);
     }
     glAttachShader(program, fragmentShader);
 
@@ -115,7 +117,7 @@ void Renderer::loadShader(ShaderHandle handle)
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &errorMessageLength);
         char* errorMessage = g_tmpMem.bump<char>(errorMessageLength);
         glGetProgramInfoLog(program, errorMessageLength, 0, errorMessage);
-        FATAL_ERROR("Shader Link Error: (%s)\n%s", filename, errorMessage);
+        FATAL_ERROR("Shader Link Error: (%s) %s", filename, errorMessage);
     }
 
     free(shaderStr);
@@ -128,6 +130,7 @@ void Renderer::loadShader(ShaderHandle handle)
     {
         glDeleteProgram(shaderPrograms[handle].program);
     }
+    //glObjectLabel(GL_TEXTURE, program, strlen(filename), filename);
     shaderPrograms[handle].program = program;
 }
 
