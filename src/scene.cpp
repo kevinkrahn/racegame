@@ -218,7 +218,7 @@ void Scene::stopRace()
     // TODO: fix this
     trackPreviewCameraFrom = g_game.renderer->getRenderWorld()->getCamera(0).position;
     trackPreviewCameraTarget =
-        vehicles.find([](auto& v) { return v->cameraIndex == 0; })->get()->getPosition();
+        vehicles.findIf([](auto& v) { return v->cameraIndex == 0; })->get()->getPosition();
 
     finishOrder.clear();
     placements.clear();
@@ -287,8 +287,21 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
-    u32 viewportCount = (!isRaceInProgress) ? 1 : (u32)std::count_if(g_game.state.drivers.begin(), g_game.state.drivers.end(),
-            [](auto& d) { return d.hasCamera; });
+    u32 viewportCount = 0;
+    if (!isRaceInProgress)
+    {
+        viewportCount = 1;
+    }
+    else
+    {
+		for (auto& driver : g_game.state.drivers)
+		{
+            if (driver.hasCamera)
+            {
+                ++viewportCount;
+            }
+		}
+    }
     rw->setViewportCount(viewportCount);
     //rw->addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
     // TODO: make light direction configurable in editor
@@ -1097,7 +1110,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                             myDamage *= 2.75f;
                             // TODO: Shouldn't minDamage be multiplied by deltaTime?
                             f32 minDamage = 5.f;
-                            myDamage = std::max(myDamage, minDamage);
+                            myDamage = max(myDamage, minDamage);
                         }
                         if (a->vehicle->hasAbility("Ram Booster"))
                         {
@@ -1121,7 +1134,7 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                         {
                             myDamage *= 2.75f;
                             // TODO: test this out
-                            myDamage = std::max(myDamage, 5.f);
+                            myDamage = max(myDamage, 5.f);
                         }
                         if (b->vehicle->hasAbility("Ram Booster"))
                         {
@@ -1304,10 +1317,10 @@ void Scene::showDebugInfo()
     ImGui::Text("Entities: %i", entities.size());
     ImGui::Text("Generated Paths: %s", hasGeneratedPaths ? "true" : "false");
     ImGui::Text("World Time: %.4f", worldTime);
-    if (auto playerVehicle = vehicles.find([](auto& v) { return v->driver->isPlayer; }))
+    if (auto playerVehicle = vehicles.findIf([](auto& v) { return v->driver->isPlayer; }))
     {
         ImGui::Gap();
-        (*playerVehicle)->showDebugInfo();
+        playerVehicle->get()->showDebugInfo();
     }
 }
 

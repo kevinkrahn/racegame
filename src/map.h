@@ -45,6 +45,18 @@ inline u32 mapHash(i64 val)
     return *((u32*)&val);
 }
 
+template <typename T>
+inline bool mapCompare(T const& lhs, T const& rhs)
+{
+    return lhs == rhs;
+}
+
+template <>
+inline bool mapCompare(const char* const& lhs, const char* const& rhs)
+{
+    return strcmp(lhs, rhs) == 0;
+}
+
 template <typename KEY, typename VALUE, u32 SIZE=64>
 class Map
 {
@@ -63,7 +75,7 @@ private:
     {
         for (auto& pair : elements_[index])
         {
-            if (key == pair.key)
+            if (mapCompare(key, pair.key))
             {
                 return &pair;
             }
@@ -75,7 +87,7 @@ private:
     {
         for (auto& pair : elements_[index])
         {
-            if (key == pair.key)
+            if (mapCompare(key, pair.key))
             {
                 return &pair;
             }

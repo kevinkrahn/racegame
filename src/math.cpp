@@ -463,7 +463,7 @@ Quat::Quat(Mat3 const& m)
 		biggestIndex = 3;
 	}
 
-	f32 biggestVal = sqrt(fourBiggestSquaredMinus1 + 1.f) * 0.5f;
+	f32 biggestVal = sqrtf(fourBiggestSquaredMinus1 + 1.f) * 0.5f;
 	f32 mult = 0.25f / biggestVal;
 
 	switch(biggestIndex)

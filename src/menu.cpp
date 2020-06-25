@@ -57,7 +57,7 @@ void Menu::startQuickRace()
     {
         i32 aiIndex;
         do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
-        while (g_game.state.drivers.find([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
+        while (g_game.state.drivers.findIf([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
 
         g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiIndex));
         g_game.state.drivers.back().credits = driverCredits;
@@ -687,7 +687,7 @@ void Menu::showNewChampionshipMenu()
         {
             i32 aiIndex;
             do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
-            while (g_game.state.drivers.find([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
+            while (g_game.state.drivers.findIf([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
 
             g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiIndex));
             g_game.state.drivers.back().aiUpgrades(series);
@@ -1079,26 +1079,25 @@ void Menu::createVehiclePreview()
 
 void Menu::createMainGarageMenu()
 {
+	resetTransient();
+
     Texture* iconbg = g_res.getTexture("iconbg");
     Vec2 size(450, 75);
     f32 x = 280;
     f32 y = -400 + size.y * 0.5f;
     f32 gap = 12;
     selectedWidget = addButton("PERFORMANCE", "Upgrades to enhance your vehicle's performance.", {x,y}, size, [this]{
-        resetTransient();
         createPerformanceMenu();
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_engine"));
     y += size.y + gap;
 
     addButton("COSMETICS", "Change your vehicle's appearance with decals or paint.", {x,y}, size, [this]{
-        resetTransient();
         createCosmeticsMenu();
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_spraycan"));
     y += size.y + gap;
 
     i32 frontWeapon = garage.previewVehicleConfig.frontWeaponIndices[0];
     addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, [this]{
-        resetTransient();
         createWeaponsMenu(WeaponType::FRONT_WEAPON,
                 garage.previewVehicleConfig.frontWeaponIndices[0],
                 garage.previewVehicleConfig.frontWeaponUpgradeLevel[0]);
@@ -1110,7 +1109,6 @@ void Menu::createMainGarageMenu()
     {
         i32 roofWeapon = garage.previewVehicleConfig.frontWeaponIndices[1];
         addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, [this]{
-            resetTransient();
             createWeaponsMenu(WeaponType::FRONT_WEAPON,
                 garage.previewVehicleConfig.frontWeaponIndices[1],
                 garage.previewVehicleConfig.frontWeaponUpgradeLevel[1]);
@@ -1121,7 +1119,6 @@ void Menu::createMainGarageMenu()
 
     i32 rearWeapon = garage.previewVehicleConfig.rearWeaponIndices[0];
     addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, [this]{
-        resetTransient();
         createWeaponsMenu(WeaponType::REAR_WEAPON,
                 garage.previewVehicleConfig.rearWeaponIndices[0],
                 garage.previewVehicleConfig.rearWeaponUpgradeLevel[0]);
@@ -1130,7 +1127,6 @@ void Menu::createMainGarageMenu()
     y += size.y + gap;
 
     addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, [this]{
-        resetTransient();
         static u32 upgradeLevel;
         upgradeLevel = garage.previewVehicleConfig.specialAbilityIndex == -1 ? 0 : 1;
         createWeaponsMenu(WeaponType::SPECIAL_ABILITY,
@@ -1141,7 +1137,6 @@ void Menu::createMainGarageMenu()
     y += size.y + gap;
 
     addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, [this]{
-        resetTransient();
         createCarLotMenu();
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT);
     y += size.y + gap;
@@ -1177,11 +1172,12 @@ void Menu::createMainGarageMenu()
 
 void Menu::createPerformanceMenu()
 {
+	resetTransient();
+
     Vec2 buttonSize(450, 75);
     addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
         garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
         garage.upgradeStats = garage.currentStats;
-        resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 
@@ -1200,7 +1196,7 @@ void Menu::createPerformanceMenu()
                           y + (i / buttonsPerRow) * (size.y + gap) };
         Widget* w = addImageButton(upgrade.name, upgrade.description, pos, size, [i, this]{
             auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
-            auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.find(
+            auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.findIf(
                     [i](auto& u) { return u.upgradeIndex == i; });
             bool isEquipped = !!currentUpgrade;
             i32 upgradeLevel = 0;
@@ -1223,7 +1219,7 @@ void Menu::createPerformanceMenu()
             }
         }, WidgetFlags::TRANSIENT, upgrade.icon, 48, [i, this](bool isSelected) -> ImageButtonInfo {
             auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
-            auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.find(
+            auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.findIf(
                     [i](auto& u) { return u.upgradeIndex == i; });
             bool isEquipped = !!currentUpgrade;
             i32 upgradeLevel = 0;
@@ -1257,6 +1253,8 @@ void Menu::createPerformanceMenu()
 
 void Menu::createCosmeticsMenu()
 {
+	resetTransient();
+
     Vec2 size(450, 70);
     f32 x = 280;
     f32 y = -400 + size.y * 0.5f;
@@ -1375,7 +1373,6 @@ void Menu::createCosmeticsMenu()
 
     Vec2 buttonSize(450, 75);
     addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
-        resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 
@@ -1519,13 +1516,14 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
 
     Vec2 buttonSize(450, 75);
     addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
-        resetTransient();
         createCosmeticsMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 }
 
 void Menu::createCarLotMenu()
 {
+	resetTransient();
+
     static Array<RenderWorld> renderWorlds(g_vehicles.size());
 
     if (garage.previewVehicleIndex == -1)
@@ -1549,7 +1547,6 @@ void Menu::createCarLotMenu()
         garage.previewTuning = garage.driver->getTuning();
         garage.currentStats = garage.previewTuning.computeVehicleStats();
         garage.upgradeStats = garage.currentStats;
-        resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT, nullptr, [this]{
         return garage.driver->vehicleIndex != -1;
@@ -1680,10 +1677,11 @@ void Menu::createCarLotMenu()
 
 void Menu::createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgradeLevel)
 {
+	resetTransient();
+
     Vec2 buttonSize(450, 75);
     selectedWidget = addButton("BACK", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
         garage.driver->vehicleConfig = garage.previewVehicleConfig;
-        resetTransient();
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 
@@ -1935,7 +1933,7 @@ void Menu::showRaceResults()
                     HAlign::CENTER, VAlign::CENTER);
 
             f32 iconSize = 60;
-            i32 driverIndex = g_game.state.drivers.find([&row](Driver& d) { return &d == row.driver; }) - g_game.state.drivers.begin();
+            i32 driverIndex = g_game.state.drivers.findIndexIf([&row](Driver& d) { return &d == row.driver; });
             p = center + convertSize(pos + Vec2(columnOffset[0] * 1.5f + 20, -iconSize/2)) * w.fadeInScale;
             ui::rectUVBlur(ui::IMAGE, vehiclePreviews[driverIndex].getTexture(), p,
                     convertSize(Vec2(iconSize)) * w.fadeInScale, Vec2(0,1), Vec2(1,0), Vec4(1.f),

@@ -1,11 +1,5 @@
 #pragma once
 
-#if _WIN32
-#include <windows.h>
-#else
-#include <dirent.h>
-#endif
-
 #include "misc.h"
 #include "buffer.h"
 
@@ -22,7 +16,7 @@ Array<FileItem> readDirectory(const char* dir, bool recursive=true)
 
 #if _WIN32
     WIN32_FIND_DATA fileData;
-    HANDLE handle = FindFirstFile((dir + "\\*").c_str(), &fileData);
+    HANDLE handle = FindFirstFile(tmpStr("%s\\*", dir), &fileData);
     if (handle == INVALID_HANDLE_VALUE)
     {
         FATAL_ERROR("Failed to read directory: ", dir);

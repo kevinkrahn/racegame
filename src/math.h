@@ -664,7 +664,7 @@ inline f32 smoothMove(f32 from, f32 to, f32 amount, f32 deltaTime)
 
 inline Vec3 smoothMove(Vec3 const& from, Vec3 const& to, f32 amount, f32 deltaTime)
 {
-    return lerp(from, to, 1.f-exp(-amount * deltaTime));
+    return lerp(from, to, 1.f-expf(-amount * deltaTime));
 }
 
 inline f32 smoothMoveSnap(f32 from, f32 to, f32 amount, f32 deltaTime, f32 snap)

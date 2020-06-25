@@ -452,7 +452,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         {
             if (folderMove.payload.isFolder)
             {
-                auto removeIt = folderMove.payload.sourceFolder->childFolders.find(
+                auto removeIt = folderMove.payload.sourceFolder->childFolders.findIf(
                             [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
                 assert(removeIt);
                 folderMove.dropFolder->childFolders.push_back(std::move(*removeIt));

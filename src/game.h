@@ -129,5 +129,5 @@ struct TimedBlock
         g_game.timedBlocks[name] += getTime() - startTime;
     }
 };
-#define TIMED_BLOCK() TimedBlock timedBlock{ __PRETTY_FUNCTION__, getTime() }
+#define TIMED_BLOCK() TimedBlock timedBlock{ __FUNCTION__, getTime() }
 

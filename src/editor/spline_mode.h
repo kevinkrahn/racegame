@@ -528,19 +528,19 @@ public:
                 auto& point = spline->points[i];
 
                 Mat4 transform = Mat4::translation(point.position);
-                bool isSelected = !!selectedPoints.find([&](auto& p) {
+                bool isSelected = !!selectedPoints.findIf([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i; });
                 Vec3 color = Vec3(isSelected ? white : red);
                 drawOverlay(rw, sphereMesh, transform, color);
 
-                isSelected = !!selectedHandles.find([&](auto& p) {
+                isSelected = !!selectedHandles.findIf([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && p.firstHandle; });
                 color = Vec3(isSelected ? white : orange);
                 transform = Mat4::translation(point.position + point.handleOffsetA) *
                             Mat4::translation(Vec3(0.8f));
                 drawOverlay(rw, sphereMesh, transform, color);
 
-                isSelected = !!selectedHandles.find([&](auto& p) {
+                isSelected = !!selectedHandles.findIf([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && !p.firstHandle; });
                 color = Vec3(isSelected ? white : orange);
                 transform = Mat4::translation(point.position + point.handleOffsetB) *

@@ -33,6 +33,8 @@ public:
     T& operator * () const { return *ptr_; }
     T* operator -> () const { return ptr_; }
     T& operator [] (unsigned long long index) const { return ptr_[index]; }
+    bool operator == (OwnedPtr const& other) { return ptr_ == other.ptr_; }
+    bool operator == (const T* ptr) { return ptr_ == ptr; }
 };
 
 template <typename T>

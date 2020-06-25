@@ -68,7 +68,7 @@ void Sound::loadFromFile(const char* filename)
     else if (ext == ".ogg")
     {
         Buffer oggData = readFileBytes(filename);
-        rawAudioData.resize(oggData.size);
+        rawAudioData.resize((u32)oggData.size);
         rawAudioData.assign(oggData.data.get(), oggData.data.get() + oggData.size);
         decodeVorbisData();
         format = AudioFormat::VORBIS;

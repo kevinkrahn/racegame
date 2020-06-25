@@ -113,7 +113,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         Vec2 pointScreen = project(point, rw->getCamera(0).viewProjection)
             * Vec2(g_game.windowWidth, g_game.windowHeight);
 
-        auto it = selectedPoints.find([&i](auto& s) { return s.pointIndex == i; });
+        auto it = selectedPoints.findIf([&i](auto& s) { return s.pointIndex == i; });
         bool isSelected = !!it;
 
         if (isSelected)
@@ -202,7 +202,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
         auto& c = connections[i];
         if (isDragging)
         {
-            if (selectedPoints.find([&c](auto& s) {
+            if (selectedPoints.findIf([&c](auto& s) {
                 return s.pointIndex == c->pointIndexA || s.pointIndex == c->pointIndexB; }))
             {
                 c->isDirty = true;

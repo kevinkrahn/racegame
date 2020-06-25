@@ -1,8 +1,9 @@
 #pragma once
 
-#include "math.h"
+#include <utility>
 #include <string.h>
 #include <stb_sprintf.h>
+#include "math.h"
 
 template <u32 SIZE>
 struct Str
@@ -97,6 +98,9 @@ public:
         this->buf_ = other.buf_;
         this->capacity_ = other.capacity_;
         this->len_ = other.len_;
+        other.buf_ = nullptr;
+        other.capacity_ = 0;
+        other.len_ = 0;
         return *this;
     }
 

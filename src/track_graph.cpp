@@ -100,7 +100,8 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     u32 endIndex = (u32)nodes.size();
 
     // copy the start node to make the end node
-    nodes.push_back(nodes[startIndex]);
+    Node newEndNode = nodes[startIndex];
+    nodes.push_back(newEndNode);
     Node& end = nodes.back();
     end.connections.clear();
 

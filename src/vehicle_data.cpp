@@ -174,7 +174,7 @@ void VehicleData::initStandardUpgrades()
 
 VehicleConfiguration::Upgrade* VehicleConfiguration::getUpgrade(i32 upgradeIndex)
 {
-    return performanceUpgrades.find([&](auto& u) { return u.upgradeIndex == upgradeIndex; });
+    return performanceUpgrades.findIf([&](auto& u) { return u.upgradeIndex == upgradeIndex; });
 }
 
 bool VehicleConfiguration::canAddUpgrade(struct Driver* driver, i32 upgradeIndex)

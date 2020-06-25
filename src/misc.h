@@ -1,5 +1,12 @@
 #pragma once
 
+#if _WIN32
+#define NOMINMAX
+#include <windows.h>
+#else
+#include <dirent.h>
+#endif
+
 #include <functional>
 #include <utility>
 
@@ -54,7 +61,6 @@ void print(const char* format, ...)
 
 void println(const char* format="", ...)
 {
-#if 1
     auto callback = [](const char* buf, void* user, int len) -> char* {
         char tmp[STB_SPRINTF_MIN + 1];
         memcpy(tmp, buf, len);
@@ -68,14 +74,6 @@ void println(const char* format="", ...)
     va_start(argptr, format);
     stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
     va_end(argptr);
-#else
-    char tmp[2048];
-    va_list argptr;
-    va_start(argptr, format);
-    stbsp_vsnprintf(tmp, sizeof(tmp), format, argptr);
-    va_end(argptr);
-    fputs(tmp, stdout);
-#endif
     fputc('\n', stdout);
 }
 
@@ -97,16 +95,7 @@ void error(const char* format="", ...)
     putc('\n', stderr);
 }
 
-void showError(const char* format, ...)
-{
-    char buf[1024];
-    va_list argptr;
-    va_start(argptr, format);
-    stbsp_vsnprintf(buf, sizeof(buf), format, argptr);
-    va_end(argptr);
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", buf, nullptr); \
-}
-
+#define showError(...) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", tmpStr(__VA_ARGS__), nullptr); }
 #define FATAL_ERROR(...) { error(__VA_ARGS__); showError(__VA_ARGS__); abort(); }
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

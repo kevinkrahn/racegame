@@ -615,7 +615,7 @@ void ModelEditor::processBlenderData()
         auto collectionName = collection.string("");
         model->collections.push_back({
             collectionName,
-            collectionName.find("Debris")
+            !!collectionName.find("Debris")
         });
     }
 

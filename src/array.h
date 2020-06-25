@@ -405,7 +405,8 @@ public:
     u32 size() const { return size_; }
     u32 capacity() const { return capacity_; }
 
-    T* find(T const& needle)
+    template <typename NEEDLE>
+    T* find(NEEDLE const& needle)
     {
         for (auto it = begin(); it != end(); ++it)
         {
@@ -417,8 +418,8 @@ public:
         return nullptr;
     }
 
-    template <typename CALLBACK>
-    T* find(CALLBACK const& cb)
+    template <typename CB>
+    T* findIf(CB const& cb)
     {
         for (auto it = begin(); it != end(); ++it)
         {
@@ -431,11 +432,25 @@ public:
     }
 
     static constexpr u32 NONE = -1;
-    u32 findIndex(T const& needle)
+    template <typename NEEDLE>
+    u32 findIndex(NEEDLE const& needle)
     {
         for (u32 i=0; i<size_; ++i)
         {
             if (data_[i] == needle)
+            {
+                return i;
+            }
+        }
+        return NONE;
+    }
+
+    template <typename CB>
+    u32 findIndexIf(CB const& cb)
+    {
+        for (u32 i=0; i<size_; ++i)
+        {
+            if (cb(data_[i]))
             {
                 return i;
             }

@@ -1162,7 +1162,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
             glBindVertexArray(emptyVAO);
             glBindFramebuffer(GL_FRAMEBUFFER, fb.cszFramebuffers[0]);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glUseProgram(renderer->getShaderProgram("csz"));
+            GLuint cszProgram = renderer->getShaderProgram("csz");
+            glUseProgram(cszProgram);
             Camera const& cam = cameras[index];
             Vec4 clipInfo = { cam.nearPlane * cam.farPlane, cam.nearPlane - cam.farPlane, cam.farPlane, 0.f };
             glUniform4fv(1, 1, (GLfloat*)&clipInfo);
