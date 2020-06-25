@@ -42,8 +42,8 @@ void ResourceManager::saveResources()
             // TODO: find out why tmpStr is broken here
             //const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, guidHex);
             auto filename = Str512::format("%s/%s.dat", DATA_DIRECTORY, guidHex);
-            println("Saving resource %s", filename.cstr);
-            Serializer::toFile(*res, filename.cstr);
+            println("Saving resource %s", filename.data());
+            Serializer::toFile(*res, filename.data());
         }
     }
     resourcesModified.clear();
@@ -120,7 +120,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
     }
     else
     {
-        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "%s", folder->name.cstr);
+        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "%s", folder->name.data());
         if (folder->parent && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
         {
             DragDropPayload payload = {};
@@ -128,7 +128,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
             payload.folderDragged = folder;
             payload.sourceFolder = folder->parent;
             ImGui::SetDragDropPayload("Drag Resource", &payload, sizeof(payload));
-            ImGui::Text(folder->name.cstr);
+            ImGui::Text(folder->name.data());
             ImGui::EndDragDropSource();
         }
         if (ImGui::BeginDragDropTarget())
@@ -276,7 +276,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                 payload.resourceDragged = childResource;
                 payload.sourceFolder = folder;
                 ImGui::SetDragDropPayload("Drag Resource", &payload, sizeof(payload));
-                ImGui::Text(childResource->name.cstr);
+                ImGui::Text(childResource->name.data());
                 ImGui::EndDragDropSource();
             }
             if (ImGui::BeginPopupContextItem())
@@ -289,7 +289,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                     Resource* resource = newResource(childResource->type);
                     data.dict().val()["guid"] = resource->guid;
                     data.dict().val()["name"].string().val()
-                        = tmpStr("%s_copy", data.dict().val()["name"].string().val().cstr);
+                        = tmpStr("%s_copy", data.dict().val()["name"].string().val().data());
                     s.deserialize = true;
                     resource->serialize(s);
                 }
@@ -320,7 +320,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                         icons[(u32)childResource->type])->getPreviewHandle(), { 16, 16 });
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 24.f);
-            ImGui::Text(childResource->name.cstr);
+            ImGui::Text(childResource->name.data());
         }
         ImGui::PopStyleColor();
         if (removed)
@@ -524,7 +524,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
     ImGui::SetNextWindowSizeConstraints(size, size);
     bool changed = false;
     if (ImGui::BeginCombo(name,
-                currentTexture == 0 ? "None" : g_res.getTexture(currentTexture)->name.cstr))
+                currentTexture == 0 ? "None" : g_res.getTexture(currentTexture)->name.data()))
     {
         static Str64 searchString;
         static Array<Texture*> searchResults;
@@ -575,7 +575,7 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
                 ImGui::Image((void*)(uintptr_t)tex->getPreviewHandle(), { 16, 16 });
                 ImGui::SameLine();
                 ImGui::PushID(tex->guid);
-                if (ImGui::Selectable(tex->name.cstr))
+                if (ImGui::Selectable(tex->name.data()))
                 {
                     changed = true;
                     currentTexture = tex->guid;
@@ -640,7 +640,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
             ImGui::Image((void*)(uintptr_t)tex.getPreviewHandle(), ImVec2(tex.width, tex.height));
             ImGui::EndChild();
 
-            ImGui::Text(tex.getSourceFile(0).path.cstr);
+            ImGui::Text(tex.getSourceFile(0).path.data());
             ImGui::Text("%i x %i", tex.width, tex.height);
         }
         else if (tex.getSourceFileCount() > 1)
@@ -666,7 +666,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
                 }
                 if (!sf.path.empty())
                 {
-                    ImGui::Text(sf.path.cstr);
+                    ImGui::Text(sf.path.data());
                 }
                 if (sf.width > 0 && sf.height > 0)
                 {
@@ -751,7 +751,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
         ImGui::NextColumn();
 
-        ImGui::Text(selectedMaterial->name.cstr);
+        ImGui::Text(selectedMaterial->name.data());
 
         const char* materialTypeNames = "Lit\0Unlit\0";
         dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
@@ -836,13 +836,13 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
         ImGui::SameLine();
         if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
         {
-            sound.loadFromFile(tmpStr("%s/%s", ASSET_DIRECTORY, sound.sourceFilePath.cstr));
+            sound.loadFromFile(tmpStr("%s/%s", ASSET_DIRECTORY, sound.sourceFilePath.data()));
             dirty = true;
         }
 
         ImGui::Gap();
 
-        ImGui::Text(sound.sourceFilePath.cstr);
+        ImGui::Text(sound.sourceFilePath.data());
         ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
 
         dirty |= ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);

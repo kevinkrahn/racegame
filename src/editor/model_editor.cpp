@@ -58,7 +58,7 @@ void ModelEditor::showSceneSelection()
         auto& scenes = blenderData.dict().val()["scenes"].array().val();
         for (auto& val : scenes)
         {
-            if (ImGui::Selectable(val.dict().val()["name"].string().val().cstr))
+            if (ImGui::Selectable(val.dict().val()["name"].string().val().data()))
             {
                 model->sourceSceneName = val.dict().val()["name"].string().val();
                 processBlenderData();
@@ -97,7 +97,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 model->sourceFilePath = path::relative(path);
                 model->sourceSceneName = "";
-                loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.cstr));
+                loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.data()));
                 dirty = true;
             }
         }
@@ -107,7 +107,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             if (model->sourceFilePath.size() > 0)
             {
-                loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.cstr));
+                loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.data()));
                 dirty = true;
             }
         }
@@ -115,8 +115,8 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         ImGui::Gap();
         if (model->sourceFilePath.size() > 0)
         {
-            ImGui::Text(model->sourceFilePath.cstr);
-            ImGui::Text(tmpStr("Scene: %s", model->sourceSceneName.cstr));
+            ImGui::Text(model->sourceFilePath.data());
+            ImGui::Text(tmpStr("Scene: %s", model->sourceSceneName.data()));
         }
         ImGui::TextDisabled("GUID: %x", model->guid);
         ImGui::SameLine();
@@ -184,7 +184,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
 
                 auto it = selectedObjects.find(i);
-                if (ImGui::Selectable(model->objects[i].name.cstr, !!it))
+                if (ImGui::Selectable(model->objects[i].name.data(), !!it))
                 {
                     if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                     {
@@ -219,7 +219,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 for (i32 i=0; i<(i32)model->collections.size(); ++i)
                 {
-                    if (ImGui::CollapsingHeader(model->collections[i].name.cstr))
+                    if (ImGui::CollapsingHeader(model->collections[i].name.data()))
                     {
                         listObjects(i);
                     }
@@ -271,7 +271,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             ImVec2 size = { ImGui::GetWindowWidth() * 0.65f, 300.f };
             ImGui::SetNextWindowSizeConstraints(size, size);
             if (ImGui::BeginCombo("Material",
-                    obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.cstr : "None"))
+                    obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.data() : "None"))
             {
                 dirty = true;
 
@@ -326,7 +326,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                     for (Material* mat : searchResults)
                     {
                         ImGui::PushID(mat->guid);
-                        if (ImGui::Selectable(mat->name.cstr))
+                        if (ImGui::Selectable(mat->name.data()))
                         {
                             for (u32 index : selectedObjects)
                             {
@@ -597,7 +597,7 @@ void ModelEditor::processBlenderData()
     }
     if (!scenePtr)
     {
-        error("Scene \"%s\" not found", model->sourceSceneName.cstr);
+        error("Scene \"%s\" not found", model->sourceSceneName.data());
         return;
     }
 

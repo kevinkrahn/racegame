@@ -6,19 +6,21 @@
 #include "math.h"
 
 template <u32 SIZE>
-struct Str
+class Str
 {
+    char buf_[SIZE] = {0};
+
+public:
     static constexpr u32 MAX_SIZE = SIZE;
-    char cstr[SIZE] = {0};
 
     Str() {};
     Str(const char* s) { *this = s; }
-    Str(const char* begin, const char* end) { memcpy(cstr, begin, min(SIZE, end-begin)); }
+    Str(const char* begin, const char* end) { memcpy(buf_, begin, min(SIZE, end-begin)); }
     void write(const char* format, ...)
     {
         va_list argptr;
         va_start(argptr, format);
-        stbsp_vsnprintf(cstr, SIZE, format, argptr);
+        stbsp_vsnprintf(buf_, SIZE, format, argptr);
         va_end(argptr);
     }
     static Str format(const char* format, ...)
@@ -26,7 +28,7 @@ struct Str
         Str<SIZE> s;
         va_list argptr;
         va_start(argptr, format);
-        stbsp_vsnprintf(s.cstr, SIZE, format, argptr);
+        stbsp_vsnprintf(s.buf_, SIZE, format, argptr);
         va_end(argptr);
         return s;
     }
@@ -34,22 +36,22 @@ struct Str
     Str(Str && other) { *this = other; }
     Str& operator=(Str const& other) = default;
     Str& operator=(Str && other) = default;
-    Str& operator=(const char* s) { strncpy(cstr, s, SIZE-1); return *this; }
-    bool operator==(Str const& other) const { return strncmp(cstr, other.cstr, SIZE) == 0; }
-    bool operator==(const char* s) const { return strncmp(cstr, s, SIZE) == 0; }
-    const char* find(const char* needle) const { return strstr(cstr, needle); }
-    const char* find(Str const& needle) const { return strstr(cstr, needle.cstr); }
-    char* data() const { return (char*)cstr; }
-    char const& operator[](u32 index) const { return cstr[index]; }
-    char& operator[](u32 index) { return cstr[index]; }
-    u32 size() const { return strlen(cstr); }
+    Str& operator=(const char* s) { strncpy(buf_, s, SIZE-1); return *this; }
+    bool operator==(Str const& other) const { return strncmp(buf_, other.buf_, SIZE) == 0; }
+    bool operator==(const char* s) const { return strncmp(buf_, s, SIZE) == 0; }
+    const char* find(const char* needle) const { return strstr(buf_, needle); }
+    const char* find(Str const& needle) const { return strstr(buf_, needle.buf_); }
+    char* data() const { return (char*)buf_; }
+    char const& operator[](u32 index) const { return buf_[index]; }
+    char& operator[](u32 index) { return buf_[index]; }
+    u32 size() const { return strlen(buf_); }
     bool empty() const { return size() > 0; }
     Str substr(u32 from, u32 len=0) const
     {
-        return Str(cstr + from, len > 0 ? cstr + size() : cstr + from + len);
+        return Str(buf_ + from, len > 0 ? buf_ + size() : buf_ + from + len);
     }
-    bool operator<(Str const& rhs) { return strcmp(cstr, rhs.cstr) < 0; }
-    bool operator>(Str const& rhs) { return strcmp(cstr, rhs.cstr) > 0; }
+    bool operator<(Str const& rhs) { return strcmp(buf_, rhs.buf_) < 0; }
+    bool operator>(Str const& rhs) { return strcmp(buf_, rhs.buf_) > 0; }
 };
 
 using Str32 = Str<32>;

@@ -41,6 +41,6 @@ namespace ImGui
     template <u32 SIZE>
     inline bool InputText(const char* label, Str<SIZE>* str, ImGuiInputTextFlags flags=0)
     {
-        return ImGui::InputText(label, str->cstr, SIZE, flags);
+        return ImGui::InputText(label, str->data(), SIZE, flags);
     }
 }

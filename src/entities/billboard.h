@@ -124,7 +124,7 @@ public:
             {
                 f32 w = min(ImGui::GetColumnWidth(), 200.f);
                 f32 h = w * 0.5f;
-                ImGui::PushID(tex->name.cstr);
+                ImGui::PushID(tex->name.data());
                 if (ImGui::ImageButton((void*)(uintptr_t)tex->getPreviewHandle(), { w, h }))
                 {
                     billboardTextureGuid = tex->guid;

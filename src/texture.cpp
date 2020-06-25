@@ -4,7 +4,7 @@
 void Texture::loadSourceFile(u32 index)
 {
     i32 w, h, channels;
-    const char* fullPath = tmpStr("%s/%s", ASSET_DIRECTORY, sourceFiles[index].path.cstr);
+    const char* fullPath = tmpStr("%s/%s", ASSET_DIRECTORY, sourceFiles[index].path.data());
     u8* data = (u8*)stbi_load(fullPath, &w, &h, &channels, 4);
     if (!data)
     {
@@ -158,7 +158,7 @@ void Texture::initGLTexture(u32 index)
     }
 
 #ifndef NDEBUG
-    glObjectLabel(GL_TEXTURE, s.previewHandle, name.size(), name.cstr);
+    glObjectLabel(GL_TEXTURE, s.previewHandle, name.size(), name.data());
 #endif
 }
 

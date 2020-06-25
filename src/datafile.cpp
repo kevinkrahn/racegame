@@ -145,12 +145,12 @@ Value Value::readValue(const char*& ch, const char* end)
         if (foundDot)
         {
             val.dataType = DataType::F32;
-            val.real_ = (f32)atof(digits.cstr);
+            val.real_ = (f32)atof(digits.data());
         }
         else
         {
             val.dataType = DataType::I64;
-            val.integer_ = atoll(digits.cstr);
+            val.integer_ = atoll(digits.data());
         }
         return val;
     }
@@ -414,7 +414,7 @@ void Value::debugOutput(StrBuf& buf, u32 indent, bool newline) const
             buf.writef("%.4f", real_);
             break;
         case DataType::STRING:
-            buf.writef("\"%s\"", str_.cstr);
+            buf.writef("\"%s\"", str_.data());
             break;
         case DataType::BYTE_ARRAY:
             buf.write("<bytearray>");
@@ -458,7 +458,7 @@ void Value::debugOutput(StrBuf& buf, u32 indent, bool newline) const
                 for (auto const& pair : dict_)
                 {
                     buf.write(' ', (indent + 1) * 2);
-                    buf.writef("%s: ", pair.key.cstr);
+                    buf.writef("%s: ", pair.key.data());
                     pair.value.debugOutput(buf, indent + 1, false);
                     buf.write(",\n");
                 }

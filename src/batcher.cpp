@@ -5,7 +5,7 @@ void Batcher::end(bool keepMeshData)
     for (auto& itemsForThisMaterial : materialMap)
     {
         Mesh bigBatchedMesh;
-        bigBatchedMesh.name = tmpStr("%s Batch", itemsForThisMaterial.key->name.cstr);
+        bigBatchedMesh.name = tmpStr("%s Batch", itemsForThisMaterial.key->name.data());
         bigBatchedMesh.numVertices = 0;
         bigBatchedMesh.numIndices = 0;
         bigBatchedMesh.numColors = 1;

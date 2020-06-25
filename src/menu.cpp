@@ -515,7 +515,7 @@ Widget* Menu::addSelector(const char* text, const char* helpText, Vec2 pos, Vec2
                     pos + Vec2(convertSize(20.f), size.y * 0.5f),
                     Vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
                     HAlign::LEFT, VAlign::CENTER);
-        ui::text(font, tmpStr("%s", values[valueIndex].cstr),
+        ui::text(font, tmpStr("%s", values[valueIndex].data()),
                     pos + Vec2(size.x * 0.75f, size.y * 0.5f),
                     Vec3(1.f), (isSelected ? 1.f : 0.5f) * w.fadeInAlpha, w.fadeInScale,
                     HAlign::CENTER, VAlign::CENTER);
@@ -721,7 +721,7 @@ void Menu::showNewChampionshipMenu()
                             btn.fadeInAlpha);
 
                 Font* font = &g_res.getFont("font", (u32)convertSize(38));
-                const char* text = tmpStr(g_game.state.drivers[i].playerName.cstr);
+                const char* text = tmpStr(g_game.state.drivers[i].playerName.data());
                 f32 textAlpha = isSelected ? 1.f : 0.5f;
                 ui::text(font, text,
                             pos + Vec2(convertSize(20), size.y * 0.5f),
@@ -878,7 +878,7 @@ void Menu::showChampionshipMenu()
                 f32 textAlpha = (isSelected ? 1.f : 0.5f) * w.fadeInAlpha;
                 f32 margin = convertSize(15.f);
                 Font* font = &g_res.getFont("font", (u32)convertSize(34));
-                ui::text(font, tmpStr("%s's Garage", driver.playerName.cstr),
+                ui::text(font, tmpStr("%s's Garage", driver.playerName.data()),
                             pos + Vec2(iconSize + margin, margin),
                             Vec3(1.f), textAlpha, w.fadeInScale);
 
@@ -958,11 +958,11 @@ void Menu::createVehiclePreview()
 
     Font* font = &g_res.getFont("font", (u32)convertSize(30));
     static Str512 garageName;
-    garageName = Str512::format("%s's Garage", garage.driver->playerName.cstr);
+    garageName = Str512::format("%s's Garage", garage.driver->playerName.data());
 
     addBackgroundBox({-260, -375}, {vehiclePreviewSize.x, 50}, 0.8f);
-    addLabel([]{ return garageName.cstr; }, {-260 - vehiclePreviewSize.x * 0.5f
-            + font->stringDimensions(garageName.cstr).x * 0.5f + 20, -375}, font);
+    addLabel([]{ return garageName.data(); }, {-260 - vehiclePreviewSize.x * 0.5f
+            + font->stringDimensions(garageName.data()).x * 0.5f + 20, -375}, font);
 
     Font* font2 = &g_res.getFont("font_bold", (u32)convertSize(30));
     const char* creditsMaxSize = "CREDITS: 000000";
@@ -1813,7 +1813,7 @@ void Menu::showChampionshipStandings()
                     w.fadeInAlpha);
 
             p = center + convertSize(pos + Vec2(150, 0)) * w.fadeInScale;
-            ui::text(f, tmpStr("%s", driver->playerName.cstr), p, color, w.fadeInAlpha, w.fadeInScale,
+            ui::text(f, tmpStr("%s", driver->playerName.data()), p, color, w.fadeInAlpha, w.fadeInScale,
                     HAlign::LEFT, VAlign::CENTER);
 
             p = center + convertSize(pos + Vec2(600, 0)) * w.fadeInScale;
@@ -1940,7 +1940,7 @@ void Menu::showRaceResults()
                     w.fadeInAlpha);
 
             p = center + convertSize(pos + Vec2(columnOffset[1] * 1.5f, 0.f)) * w.fadeInScale;
-            ui::text(f, tmpStr("%s", row.driver->playerName.cstr), p, color, w.fadeInAlpha, w.fadeInScale,
+            ui::text(f, tmpStr("%s", row.driver->playerName.data()), p, color, w.fadeInAlpha, w.fadeInScale,
                     HAlign::LEFT, VAlign::CENTER);
 
             p = center + convertSize(pos + Vec2(columnOffset[2] * 1.5f, 0.f)) * w.fadeInScale;

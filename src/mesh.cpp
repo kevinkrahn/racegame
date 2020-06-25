@@ -263,7 +263,7 @@ PxTriangleMesh* Mesh::getCollisionMesh()
     PxTriangleMeshCookingResult::Enum result;
     if (!g_game.physx.cooking->cookTriangleMesh(desc, writeBuffer, &result))
     {
-        FATAL_ERROR("Failed to create collision mesh: %s", name.cstr);
+        FATAL_ERROR("Failed to create collision mesh: %s", name.data());
     }
 
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
@@ -287,7 +287,7 @@ PxConvexMesh* Mesh::getConvexCollisionMesh()
     PxDefaultMemoryOutputStream writeBuffer;
     if (!g_game.physx.cooking->cookConvexMesh(convexDesc, writeBuffer))
     {
-        FATAL_ERROR("Failed to create convex collision mesh: %s", name.cstr);
+        FATAL_ERROR("Failed to create convex collision mesh: %s", name.data());
     }
 
     PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());

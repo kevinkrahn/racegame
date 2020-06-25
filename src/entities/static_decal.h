@@ -61,5 +61,5 @@ public:
         decal.setTexture(tex);
     }
     Array<PropPrefabData> generatePrefabProps() override;
-    const char* getName() const override { return tmpStr("Decal %s", tex->name.cstr); }
+    const char* getName() const override { return tmpStr("Decal %s", tex->name.data()); }
 };

@@ -571,7 +571,7 @@ namespace DataFile
 };
 
 #ifndef NDEBUG
-#define DESERIALIZE_ERROR(...) { error("%s: %s", context, Str512::format(__VA_ARGS__).cstr); return; }
+#define DESERIALIZE_ERROR(...) { error("%s: %s", context, Str512::format(__VA_ARGS__).data()); return; }
 #else
 #define DESERIALIZE_ERROR(...) { error(__VA_ARGS__); return; }
 #endif
@@ -596,12 +596,12 @@ public:
     }
 
     template<typename T>
-    void serializeValue(const char* name, T& field, decltype(context)&& context)
+    void serializeValue(const char* name, T& field, const char* context)
     {
         if (deserialize)
         {
             element(name, dict[name], field);
-            this->context = std::move(context);
+            this->context = context;
         }
         else
         {
@@ -893,8 +893,8 @@ public:
 #undef DESERIALIZE_ERROR
 
 #ifndef NDEBUG
-#define field(FIELD) serializeValue(#FIELD, FIELD, Str512::format("%s: %u", __FILE__, __LINE__).cstr)
-#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, Str512::format("%s: %u", __FILE__, __LINE__).cstr)
+#define field(FIELD) serializeValue(#FIELD, FIELD, Str512::format("%s: %u", __FILE__, __LINE__).data())
+#define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, Str512::format("%s: %u", __FILE__, __LINE__).data())
 #else
 #define field(FIELD) serializeValue(#FIELD, FIELD, "WARNING")
 #define fieldName(NAME, FIELD) serializeValue(NAME, FIELD, "WARNING")

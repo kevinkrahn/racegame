@@ -15,12 +15,12 @@ void Sound::decodeVorbisData()
     i32 count = decodeVorbis(rawAudioData.data(), (i32)rawAudioData.size(), &channels, &rate, &buf);
     if (count == -1)
     {
-        error("Failed to decode vorbis: %s", name.cstr);
+        error("Failed to decode vorbis: %s", name.data());
         return;
     }
     if (rate != 44100)
     {
-        error("Unsupported sample rate: %i (\"%s\")", rate, name.cstr);
+        error("Unsupported sample rate: %i (\"%s\")", rate, name.data());
         return;
     }
 
@@ -103,6 +103,7 @@ static f32 sampleAudio(Sound* sound, f32 position, u32 channel, bool looping)
     f32 sample1 = (f32)sound->audioData[sampleIndex1] / 32767.0f;
     f32 sample2 = (f32)sound->audioData[sampleIndex2] / 32767.0f;
 
+    // TODO: don't use modf
     f64 intpart;
     f32 result = lerp(sample1, sample2, (f32)absolute(modf(position, &intpart)));
 

@@ -1313,7 +1313,7 @@ void Scene::deserializeTransientEntities(Array<DataFile::Value>& entities)
 void Scene::showDebugInfo()
 {
     ImGui::Gap();
-    ImGui::Text("Scene Name: %s", name.cstr);
+    ImGui::Text("Scene Name: %s", name.data());
     ImGui::Text("Entities: %i", entities.size());
     ImGui::Text("Generated Paths: %s", hasGeneratedPaths ? "true" : "false");
     ImGui::Text("World Time: %.4f", worldTime);

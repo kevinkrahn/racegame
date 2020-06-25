@@ -28,6 +28,6 @@ public:
     void serializeState(Serializer& s) override;
     void updateTransform(class Scene* scene) override;
     Array<PropPrefabData> generatePrefabProps() override;
-    const char* getName() const override { return model->name.cstr; }
+    const char* getName() const override { return model->name.data(); }
     void onBatch(class Batcher& batcher) override;
 };

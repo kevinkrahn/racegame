@@ -405,8 +405,8 @@ public:
                 Str64 buffer;
                 SDL_JoystickGetGUIDString(
                         SDL_JoystickGetGUID(
-                            SDL_GameControllerGetJoystick(controller)), buffer.cstr, sizeof(buffer));
-                println("Controller added: %i, guid: %s, name: %s", id, buffer.cstr,
+                            SDL_GameControllerGetJoystick(controller)), buffer.data(), sizeof(buffer));
+                println("Controller added: %i, guid: %s, name: %s", id, buffer.data(),
                         SDL_GameControllerName(controller));
                 controllers.set(id, Controller(controller, buffer));
             } break;

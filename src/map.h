@@ -17,7 +17,7 @@ inline u32 mapHash(const char* str)
 template <u32 SIZE>
 inline u32 mapHash(Str<SIZE> str)
 {
-    return mapHash(str.cstr);
+    return mapHash(str.data());
 }
 
 inline u32 mapHash(void* ptr)

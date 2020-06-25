@@ -125,7 +125,7 @@ public:
                 return &obj;
             }
         }
-        FATAL_ERROR("Cannot find object with name \"%s\" in model \"%s\"", name, this->name.cstr);
+        FATAL_ERROR("Cannot find object with name \"%s\" in model \"%s\"", name, this->name.data());
     }
     Mesh* getMeshByName(const char* name)
     {
@@ -136,7 +136,7 @@ public:
                 return &mesh;
             }
         }
-        FATAL_ERROR("Cannot find mesh with name \"%s\" in model \"%s\"", name, this->name.cstr);
+        FATAL_ERROR("Cannot find mesh with name \"%s\" in model \"%s\"", name, this->name.data());
     }
     BoundingBox getBoundingbox(Mat4 const& m)
     {
