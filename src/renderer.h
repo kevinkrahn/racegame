@@ -123,8 +123,8 @@ struct FullscreenFramebuffers
     GLuint fullscreenBlurFramebuffer;
 };
 
-const u32 MAX_POINT_LIGHTS = 8;
-const u32 LIGHT_SPLITS = 12;
+const u32 MAX_POINT_LIGHTS = 6;
+const u32 LIGHT_SPLITS = 10;
 
 struct PointLight
 {

@@ -31,7 +31,7 @@ char* tmpStr(const char* format, ...)
     auto count = stbsp_vsnprintf(buf, 4096, format, argptr);
     va_end(argptr);
 
-    g_tmpMem.bump(count);
+    g_tmpMem.bump(count+1);
 
     return buf;
 }

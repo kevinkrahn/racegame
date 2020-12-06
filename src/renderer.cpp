@@ -33,8 +33,10 @@ void glShaderSources(GLuint shader, const char* src,
     }
     buf.writef("#define %s %s\n", stageDefine.name, stageDefine.value);
     const char* sources[] = { buf.data(), src };
-    //println("SHADER ===========================");
-    //println("%s%s", buf.data(), src);
+#if 0
+    println("SHADER ===========================");
+    println("%s%s", buf.data(), src);
+#endif
     glShaderSource(shader, 2, sources, 0);
 }
 

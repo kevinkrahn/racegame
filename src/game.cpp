@@ -76,7 +76,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
         return;
     }
     println("OpenGL Debug (%i): %s", id, message);
-    assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
+    //assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
 }
 #endif
 
