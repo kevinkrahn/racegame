@@ -52,6 +52,7 @@
 - It should be possible to create a good path offset by checking if the offset point is to close
   to the line in the surrounding area (check forward a bit and also backward a bit). If it is too
   close then use the last known good point. If there is no last point, then loop until one is found.
+- Show weapon icon beside attack bonus notice
     
 
 - Ideas:

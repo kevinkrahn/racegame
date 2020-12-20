@@ -10,7 +10,7 @@
 #include "imgui.h"
 
 // TODO: play with this value to find best distance
-const f32 camDistance = 80.f;
+const f32 camDistance = 100.f;
 
 Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
         Driver* driver, VehicleTuning&& tuning, u32 vehicleIndex, i32 cameraIndex)
