@@ -45,7 +45,7 @@ public:
     char const& operator[](u32 index) const { return buf_[index]; }
     char& operator[](u32 index) { return buf_[index]; }
     u32 size() const { return strlen(buf_); }
-    bool empty() const { return size() > 0; }
+    bool empty() const { return size() == 0; }
     Str substr(u32 from, u32 len=0) const
     {
         return Str(buf_ + from, len > 0 ? buf_ + size() : buf_ + from + len);
