@@ -93,7 +93,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             const char* path =
                 chooseFile( true, "Model Files", { "*.blend" }, tmpStr("%s/models", ASSET_DIRECTORY));
-            if (!path)
+            if (path)
             {
                 model->sourceFilePath = path::relative(path);
                 model->sourceSceneName = "";
@@ -535,6 +535,8 @@ void ModelEditor::loadBlenderFile(const char* filename)
     "blender";
 #endif
     const char* command = tmpStr("%s -b %s -P ../blender_exporter.py --enabled-autoexec", blenderPath, filename);
+    println("Running blender");
+    println(command);
     CommandResult r = runShellCommand(command);
 
     if (strstr(r.output, "Saved to file: "))

@@ -190,6 +190,8 @@ public:
     PxRigidBody* getRigidBody() { return vehiclePhysics.getRigidBody(); }
     Vec3 getPosition() { return vehiclePhysics.getPosition(); }
     Vec3 getForwardVector() { return vehiclePhysics.getForwardVector(); }
+    Vec3 getRightVector() { return vehiclePhysics.getRightVector(); }
+    Vec3 getUpVector() { return vehiclePhysics.getUpVector(); }
 
     void setMotionBlur(f32 strength, f32 resetTimer)
     {

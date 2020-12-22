@@ -401,6 +401,7 @@ Resource* ResourceManager::newResource(ResourceType type)
     Resource* resource = g_res.newResource(type, true);
     g_res.registerResource(resource);
     markDirty(resource->guid);
+    openResource(resource);
     return resource;
 }
 

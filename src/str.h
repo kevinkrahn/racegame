@@ -48,7 +48,7 @@ public:
     bool empty() const { return size() == 0; }
     Str substr(u32 from, u32 len=0) const
     {
-        return Str(buf_ + from, len > 0 ? buf_ + size() : buf_ + from + len);
+        return Str(buf_ + from, len == 0 ? buf_ + size() : buf_ + from + len);
     }
     bool operator<(Str const& rhs) { return strcmp(buf_, rhs.buf_) < 0; }
     bool operator>(Str const& rhs) { return strcmp(buf_, rhs.buf_) > 0; }

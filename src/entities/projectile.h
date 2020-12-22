@@ -40,6 +40,7 @@ public:
     {
         BLASTER,
         BULLET,
+        BULLET_SMALL,
         MISSILE,
         BOUNCER,
         PHANTOM,

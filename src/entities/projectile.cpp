@@ -31,6 +31,7 @@ void Projectile::onCreate(Scene* scene)
             environmentImpactSounds = { "blaster_hit" };
             break;
         case BULLET:
+        case BULLET_SMALL:
             life = 2.f;
             groundFollow = false;
             collisionRadius = 0.1f;
@@ -209,6 +210,15 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             drawBillboard(rw, g_res.getTexture("flare"),
                         position, Vec4(emit, 0.8f), 0.75f, 0.f, false);
             rw->addPointLight(position, color * 2.f, 4.f, 2.f);
+        } break;
+        case BULLET_SMALL:
+        {
+            Vec3 color = Vec3(1.f, 0.5f, 0.01f);
+            Vec3 emit = Vec3(1.f, 0.5f, 0.01f) * 2.f;
+            Mat4 transform = Mat4::translation(position) * m * Mat4::scaling(Vec3(0.35f));
+            drawSimple(rw, bulletMesh, &g_res.white, transform, color, emit);
+            drawBillboard(rw, g_res.getTexture("flare"),
+                        position, Vec4(emit, 0.8f), 0.5f, 0.f, false);
         } break;
         case MISSILE:
         {
