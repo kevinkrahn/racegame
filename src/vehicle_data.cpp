@@ -224,13 +224,13 @@ void VehicleData::loadModelData(const char* modelName)
             }
         }
         bool isInDebrisCollection = !!obj.collectionIndexes.find(debrisCollectionIndex);
-        if (name.find("debris") ||
+        if (isInDebrisCollection ||
+            name.find("debris") ||
             name.find("Debris") ||
             name.find("FL") ||
             name.find("FR") ||
             name.find("RL") ||
-            name.find("RR") ||
-            isInDebrisCollection)
+            name.find("RR"))
         {
             PxConvexMesh* collisionMesh = mesh->getConvexCollisionMesh();
             PxMaterial* material = g_game.physx.physics->createMaterial(0.3f, 0.3f, 0.1f);
@@ -497,6 +497,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "vehicles/stationwagon.h"
 #include "vehicles/coolcar.h"
 #include "vehicles/muscle.h"
+#include "vehicles/muscle2.h"
 
 void initializeVehicleData()
 {
@@ -519,7 +520,8 @@ void initializeVehicleData()
     registerVehicle<VStationWagon>();
     registerVehicle<VCoolCar>();
     registerVehicle<VMuscle>();
-    //registerVehicle<VSportscar>();
+    registerVehicle<VSportscar>();
+    registerVehicle<VMuscle2>();
     //registerVehicle<VTruck>();
     //registerVehicle<VRacecar>();
 
@@ -528,11 +530,12 @@ void initializeVehicleData()
     registerAI("Rad Racer",       0.5f,  0.5f, 0.6f, 0.25f, srgb(0.95f, 0.47f, 0.02f),   "Cool Car", 1);
     registerAI("Me First",        0.9f,  0.1f, 0.1f, 0.1f,  srgb(0.9f, 0.9f, 0.f),       "Cool Car", 2, Vec4(0,0,0,1));
     registerAI("Automosqueal",    0.5f,  1.f,  1.f,  0.25f, srgb(0.01f, 0.01f, 0.85f),   "Muscle Car", 2, Vec4(0.7,0.7,0.01,1));
-    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   srgb(0.01f, 0.01f, 0.3f),    "Muscle Car", 1, Vec4(0.5,0,0,1));
+    registerAI("Rocketeer",       0.25f, 1.f,  0.1f, 0.f,   srgb(0.01f, 0.01f, 0.3f),    "Other Car", 1, Vec4(0.5,0,0,1));
     registerAI("Zoom-Zoom",       1.f,   0.1f, 0.8f, 1.f,   srgb(0.01f, 0.7f, 0.8f),     "Station Wagon", -1);
     registerAI("Octane",          0.7f,  0.2f, 0.2f, 0.2f,  srgb(0.91f, 0.91f, 0.91f),   "Cool Car", 2, Vec4(0,0,0,1));
     registerAI("Joe Blow",        0.5f,  0.5f, 0.5f, 0.5f,  srgb(0.03f, 0.03f, 0.03f),   "Station Wagon", 0);
-    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  srgb(0.01f, 0.75f, 0.01f),   "Muscle Car", -1);
+    registerAI("Square Triangle", 0.3f,  0.4f, 0.1f, 0.7f,  srgb(0.01f, 0.75f, 0.01f),   "Other Car", -1);
     registerAI("Questionable",    0.4f,  0.6f, 0.6f, 0.7f,  srgb(0.42f, 0.015f, 0.015f), "Cool Car", 0);
     registerAI("McCarface",       0.9f,  0.9f, 0.f,  0.1f,  srgb(0.2f, 0.1f, 0.06f),     "Station Wagon", -1);
+    registerAI("Combustion",      0.9f,  0.9f, 0.4f, 0.3f,  srgb(0.1f, 0.2f, 0.06f),     "Sportscar", -1);
 }

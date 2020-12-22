@@ -75,12 +75,14 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             // TODO: Add options to include AI drivers and configure player vehicle
 
             g_game.state.drivers.clear();
-            g_game.state.drivers.push_back(Driver(true, true, true, 0, 1));
+            g_game.state.drivers.push_back(Driver(true, true, true, 0, 4));
             auto conf = g_game.state.drivers.back().getVehicleConfig();
-            conf->color = Vec3(0.85f, 0.1f, 0.1f);
+            auto vd = g_game.state.drivers.back().getVehicleData();
+            conf->color =
+                srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
             conf->frontWeaponIndices[0] = 1;
             conf->frontWeaponUpgradeLevel[0] = 5;
-            conf->rearWeaponIndices[0] = 4;
+            conf->rearWeaponIndices[0] = 6;
             conf->rearWeaponUpgradeLevel[0] = 5;
             //conf->specialAbilityIndex = 11;
             conf->specialAbilityIndex = 7;

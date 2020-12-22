@@ -2,19 +2,19 @@
 
 #include "../vehicle_data.h"
 
-class VMuscle : public VehicleData
+class VMuscle2 : public VehicleData
 {
 public:
-    VMuscle()
+    VMuscle2()
     {
-        name = "Muscle Car";
-        description = "It can drive";
-        price = 8900;
+        name = "Other Car";
+        description = "It goes zoom zoom";
+        price = 8990;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
-        defaultColorHsv = Vec3(1.f, 0.85f, 0.3f);
+        defaultColorHsv = Vec3(0.08f, 0.95f, 0.98f);
 
-        loadModelData("vehicle_muscle");
+        loadModelData("vehicle_muscle2");
         initStandardUpgrades();
     }
 
@@ -22,35 +22,35 @@ public:
     {
         copySceneDataToTuning(tuning);
 
-        tuning.maxHitPoints = 110;
+        tuning.maxHitPoints = 115;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
-        tuning.chassisMass = 1550;
-        tuning.wheelMassFront = 15;
-        tuning.wheelMassRear = 15;
+        tuning.chassisMass = 1500;
+        tuning.wheelMassFront = 16;
+        tuning.wheelMassRear = 16;
         tuning.wheelDampingRate = 0.1f;
-        tuning.wheelOffroadDampingRate = 28;
+        tuning.wheelOffroadDampingRate = 25;
         //tuning.frontToeAngle = radians(-0.5f); // more responsive to inputs
-        tuning.frontToeAngle = radians(0.f);
+        tuning.frontToeAngle = radians(-0.02f);
         //tuning.rearToeAngle = radians(4.5f); // faster recovery from slide
-        tuning.rearToeAngle = radians(0.9f); // faster recovery from slide
-        tuning.trackTireFriction = 2.4f;
-        tuning.offroadTireFriction = 1.7f;
+        tuning.rearToeAngle = radians(0.95f); // faster recovery from slide
+        tuning.trackTireFriction = 2.2f;
+        tuning.offroadTireFriction = 1.85f;
 
-        tuning.rearTireGripPercent = 0.98f;
+        tuning.rearTireGripPercent = 0.97f;
         tuning.constantDownforce = 0.f;
-        tuning.forwardDownforce = 0.002f;
-        tuning.topSpeed = 31.f;
-        tuning.driftBoost = 0.f;
+        tuning.forwardDownforce = 0.003f;
+        tuning.topSpeed = 31.5f;
+        tuning.driftBoost = 0.05f;
 
         tuning.maxEngineOmega = 800.f;
-        tuning.peekEngineTorque = 1020.f;
+        tuning.peekEngineTorque = 1040.f;
         tuning.engineDampingFullThrottle = 0.3f;
-        tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
-        tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
-        tuning.maxBrakeTorque = 6000.f;
-        tuning.maxSteerAngle = radians(52.f);
-        tuning.clutchStrength = 5.f;
+        tuning.engineDampingZeroThrottleClutchEngaged = 1.4f;
+        tuning.engineDampingZeroThrottleClutchDisengaged = 0.5f;
+        tuning.maxBrakeTorque = 6200.f;
+        tuning.maxSteerAngle = radians(50.f);
+        tuning.clutchStrength = 5.5f;
         tuning.gearSwitchTime = 0.16f;
         tuning.autoBoxSwitchTime = 1.2f;
         tuning.gearRatios = { -4.3f, 0.f, 4.f, 1.65f, 1.21f, 0.95f };
@@ -89,7 +89,6 @@ public:
                 case PerformanceUpgradeType::WEIGHT_REDUCTION:
                     tuning.chassisMass -= 30.f * u.upgradeLevel;
                     break;
-                // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:
                     tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
                     tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;

@@ -256,7 +256,7 @@ struct VehicleData
     Batcher chassisBatch;
     Batcher chassisOneMaterialBatch;
 
-    SmallArray<VehicleMesh> wheelMeshes[NUM_WHEELS];
+    SmallArray<VehicleMesh, 10> wheelMeshes[NUM_WHEELS];
 
     Vec3 wheelPositions[NUM_WHEELS] = {};
     Mat4 weaponMounts[3] = {
@@ -264,6 +264,7 @@ struct VehicleData
         Mat4::translation({ 0.f, 0.f, 2.f }),
         Mat4::translation({ -2.f, 0.f, 2.f }),
     };
+    // TODO: Make this a Mat4 so exhaust can face down, up, or sideways
     SmallArray<Vec3> exhaustHoles;
     f32 frontWheelMeshRadius = 0.f;
     f32 frontWheelMeshWidth = 0.f;

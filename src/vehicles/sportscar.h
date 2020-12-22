@@ -13,6 +13,7 @@ public:
         price = 8900;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
+        defaultColorHsv = Vec3(0.05f, 0.1f, 0.05f);
 
         loadModelData("vehicle_sportscar");
         initStandardUpgrades();
