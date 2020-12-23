@@ -75,7 +75,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             // TODO: Add options to include AI drivers and configure player vehicle
 
             g_game.state.drivers.clear();
-            g_game.state.drivers.push_back(Driver(true, true, true, 0, 4));
+            g_game.state.drivers.push_back(Driver(true, true, true, 0, 3));
             auto conf = g_game.state.drivers.back().getVehicleConfig();
             auto vd = g_game.state.drivers.back().getVehicleData();
             conf->color =

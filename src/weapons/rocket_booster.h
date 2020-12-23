@@ -75,13 +75,13 @@ public:
         renderData->exhaustCount = 0;
         renderData->vao = mesh->vao;
         renderData->indexCount = mesh->numIndices;
-        for (auto& p : vehicleData.exhaustHoles)
+        for (auto& t : vehicleData.exhaustHoles)
         {
-            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * Mat4::translation(p);
+            renderData->exhausts[renderData->exhaustCount] = vehicleTransform * t * Mat4::rotationZ(PI);
             renderData->exhaustCount++;
             if (renderData->alpha > 0.f)
             {
-                rw->addPointLight(Vec3(vehicleTransform * Vec4(p + Vec3(-0.25f, 0, 0.25f), 1.f)),
+                rw->addPointLight(Vec3(vehicleTransform * Vec4(t.position() + Vec3(-0.25f, 0, 0.25f), 1.f)),
                         Vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 3.f, 2.f);
             }
         }

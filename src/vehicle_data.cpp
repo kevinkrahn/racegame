@@ -326,7 +326,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("ExhaustHole"))
         {
-            exhaustHoles.push_back(obj.position);
+            exhaustHoles.push_back(Mat4::translation(obj.position) * transform.rotation());
         }
     }
 

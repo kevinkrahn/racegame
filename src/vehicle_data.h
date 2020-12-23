@@ -264,8 +264,7 @@ struct VehicleData
         Mat4::translation({ 0.f, 0.f, 2.f }),
         Mat4::translation({ -2.f, 0.f, 2.f }),
     };
-    // TODO: Make this a Mat4 so exhaust can face down, up, or sideways
-    SmallArray<Vec3> exhaustHoles;
+    SmallArray<Mat4> exhaustHoles;
     f32 frontWheelMeshRadius = 0.f;
     f32 frontWheelMeshWidth = 0.f;
     f32 rearWheelMeshRadius = 0.f;
