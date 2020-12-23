@@ -60,7 +60,7 @@ public:
         if (ImGui::Button("Split [t]", buttonSize)
                 || (!isKeyboardHandled && g_input.isKeyPressed(KEY_T)))
         {
-            //scene->track->split();
+            scene->track->split();
         }
 
         if (ImGui::Button("Match Highest Z", buttonSize))

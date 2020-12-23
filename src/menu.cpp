@@ -12,41 +12,57 @@ const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
 const Vec4 COLOR_NOT_SELECTED = Vec4(1.f);
 
 const char* championshipTracks[] = {
+    // a
     "race1",
     "race2",
     "race3",
     "race4",
-    "race5",
-    "race6",
-    "race7",
-    "race8",
-    "race9",
-    "race10",
+    "race11",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
     "race11",
 
-    "race1",
-    "race2",
-    "race3",
-    "race4",
+    // b
     "race5",
     "race6",
     "race7",
     "race8",
     "race9",
     "race10",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
+    "race10",
+
+    // a
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race11",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
     "race11",
 
-    "race1",
-    "race2",
-    "race3",
-    "race4",
+    // b
     "race5",
     "race6",
     "race7",
     "race8",
     "race9",
     "race10",
-    "race11",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
+    "race10",
 };
 
 void Menu::startQuickRace()

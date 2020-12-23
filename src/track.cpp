@@ -501,6 +501,10 @@ void Track::extendTrack(i32 prefabCurveIndex)
     }
 }
 
+void Track::split()
+{
+}
+
 void Track::subdividePoints()
 {
 }

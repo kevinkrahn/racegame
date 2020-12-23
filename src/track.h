@@ -178,7 +178,7 @@ public:
     {
         previewMesh.destroy();
     }
-    void trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime,
+    void trackModeUpdate(class Renderer* renderer, Scene* scene, f32 deltaTime,
             bool& isMouseHandled, struct GridSettings* gridSettings);
     bool canConnect() const { return selectedPoints.size() == 2; }
     bool canExtendTrack() const
@@ -191,6 +191,7 @@ public:
         Vec3 xDir = getPointDir(pointIndex);
         return lengthSquared(xDir) > 0.f;
     }
+    void split();
     void matchZ(bool lowest);
     void extendTrack(i32 prefabCurveIndex);
     void connectPoints();
