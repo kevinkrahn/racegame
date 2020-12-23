@@ -8,7 +8,7 @@ public:
     VRacecar()
     {
         name = "Racecar";
-        description = "It is very fast";
+        description = "Excessive speed.";
         price = 60000;
         frontWeaponCount = 2;
         rearWeaponCount = 2;

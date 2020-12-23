@@ -525,7 +525,7 @@ void initializeVehicleData()
     registerVehicle<VSportscar>();
     registerVehicle<VMuscle2>();
     //registerVehicle<VTruck>();
-    //registerVehicle<VRacecar>();
+    registerVehicle<VRacecar>();
 
     registerAI("Vendetta",        1.f,   0.5f, 1.f,  1.f,   srgb(0.75f, 0.01f, 0.01f),   "Station Wagon", -1);
     registerAI("Dumb Dumb",       0.f,   0.f,  0.f,  0.f,   srgb(0.75f, 0.01f, 0.01f),   "Muscle Car", 1);

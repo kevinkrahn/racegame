@@ -1528,8 +1528,6 @@ void Menu::createCarLotMenu()
 {
 	resetTransient();
 
-    static Array<RenderWorld> renderWorlds(g_vehicles.size());
-
     if (garage.previewVehicleIndex == -1)
     {
         garage.previewVehicleIndex = 0;
@@ -1614,12 +1612,14 @@ void Menu::createCarLotMenu()
     f32 gap = 6;
     u32 buttonsPerRow = 3;
 
+    static Array<RenderWorld> carLotRenderWorlds(g_vehicles.size());
     for (i32 i=0; i<(i32)g_vehicles.size(); ++i)
     {
-        RenderWorld& rw = renderWorlds[i];
+        RenderWorld& rw = carLotRenderWorlds[i];
 
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         rw.setName("Garage");
+        rw.setBloomForceOff(true);
         rw.setSize((u32)convertSize(size.x)*2, (u32)convertSize(size.y)*2);
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 

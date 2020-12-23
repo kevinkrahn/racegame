@@ -201,6 +201,7 @@ class RenderWorld
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
     bool bloomEnabled = false;
+    bool forceBloomOff = false;
     struct PickPixelResult
     {
         Vec2 pickPos;
@@ -269,6 +270,7 @@ public:
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
     Texture releaseTexture(u32 cameraIndex=0);
 
+    void setBloomForceOff(bool off) { this->forceBloomOff = off; }
     void setName(const char* name) { this->name = name; }
     void setViewportCount(u32 viewports);
     u32 getViewportCount() const { return cameras.size(); }

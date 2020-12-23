@@ -9,7 +9,7 @@ public:
     VSportscar()
     {
         name = "Sportscar";
-        description = "Small and quick, but has poor traction.";
+        description = "Not really a sportscar.";
         price = 9800;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
