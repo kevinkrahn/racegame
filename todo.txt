@@ -12,7 +12,6 @@
 - Add testing zone where you can drive around an open area
 - Add rippling flag
 - Add powerups? Will have to think about whether this is a good idea game design wise
-- Kinetic armor effect
 - Create general-purpose particle system
 - Make better explosion effect
 - Add armor icon beside healthbar
