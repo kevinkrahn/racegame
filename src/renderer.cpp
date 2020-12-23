@@ -772,7 +772,6 @@ void RenderWorld::createFramebuffers()
         if (forceBloomOff)
         {
             bloomEnabled = false;
-            print("bloom off\n");
         }
         if (bloomEnabled)
         {

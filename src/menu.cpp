@@ -1104,18 +1104,18 @@ void Menu::createVehiclePreview()
             f32 barWidth = maxBarWidth * stats[i].value;
             f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
 
-            if (upgradeBarWidth - barWidth > 0.01f)
+            if (upgradeBarWidth - barWidth > 0.001f)
             {
                 ui::rectBlur(ui::ICON+1, &g_res.white, statsPos + Vec2(0, i * barSep + barOffset),
                         Vec2(upgradeBarWidth, barHeight),
                         Vec4(0.01f,0.7f,0.01f,0.9f), box->fadeInAlpha);
             }
 
-            if (upgradeBarWidth - barWidth < -0.01f)
+            if (upgradeBarWidth - barWidth < -0.001f)
             {
                 ui::rectBlur(ui::ICON+2, &g_res.white, statsPos + Vec2(0, i * barSep + barOffset),
-                            Vec2(upgradeBarWidth, barHeight), Vec4(0.8f, 0.01f, 0.01f, 0.9f),
-                            box->fadeInAlpha);
+                            Vec2(barWidth, barHeight),
+                            Vec4(0.8f, 0.01f, 0.01f, 0.9f), box->fadeInAlpha);
             }
 
             ui::rectBlur(ui::ICON+3, &g_res.white, statsPos + Vec2(0, i * barSep + barOffset),
@@ -1284,6 +1284,19 @@ void Menu::createPerformanceMenu()
                 g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
                 garage.driver->credits -= price;
                 garage.driver->getVehicleConfig()->addUpgrade(i);
+                garage.previewTuning = garage.driver->getTuning();
+                garage.currentStats = garage.previewTuning.computeVehicleStats();
+                garage.upgradeStats = garage.currentStats;
+
+                auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.findIf(
+                        [i](auto& u) { return u.upgradeIndex == i; });
+                if (currentUpgrade->upgradeLevel < upgrade.maxUpgradeLevel)
+                {
+                    garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                    garage.previewVehicleConfig.addUpgrade(i);
+                    g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                    garage.upgradeStats = garage.previewTuning.computeVehicleStats();
+                }
             }
             else
             {

@@ -10,8 +10,8 @@ public:
         name = "Racecar";
         description = "Excessive speed.";
         price = 60000;
-        frontWeaponCount = 2;
-        rearWeaponCount = 2;
+        frontWeaponCount = 1;
+        rearWeaponCount = 1;
 
         loadModelData("vehicle_racecar");
     }

@@ -11,7 +11,7 @@ public:
         name = "Sportscar";
         description = "Not really a sportscar.";
         price = 9800;
-        frontWeaponCount = 1;
+        frontWeaponCount = 2;
         rearWeaponCount = 1;
         defaultColorHsv = Vec3(0.05f, 0.1f, 0.05f);
 
