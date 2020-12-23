@@ -17,7 +17,7 @@ public:
         info.name = "Phantom";
         info.description = "Can hit multiple targets with a single shot by passing through vehicles!";
         info.icon = g_res.getTexture("icon_phantom");
-        info.price = 1000;
+        info.price = 1100;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
 

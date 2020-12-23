@@ -22,6 +22,7 @@ const char* championshipTracks[] = {
     "race8",
     "race9",
     "race10",
+    "race11",
 
     "race1",
     "race2",
@@ -33,6 +34,7 @@ const char* championshipTracks[] = {
     "race8",
     "race9",
     "race10",
+    "race11",
 
     "race1",
     "race2",
@@ -44,6 +46,7 @@ const char* championshipTracks[] = {
     "race8",
     "race9",
     "race10",
+    "race11",
 };
 
 void Menu::startQuickRace()
@@ -813,6 +816,7 @@ void Menu::showNewChampionshipMenu()
 void Menu::showInitialCarLotMenu(u32 playerIndex)
 {
     garage.initialCarSelect = true;
+    garage.previewVehicleIndex = -1;
     garage.driver = &g_game.state.drivers[playerIndex];
 
     reset();

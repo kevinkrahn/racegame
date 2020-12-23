@@ -10,7 +10,7 @@ public:
     {
         name = "Sportscar";
         description = "Small and quick, but has poor traction.";
-        price = 8900;
+        price = 9800;
         frontWeaponCount = 1;
         rearWeaponCount = 1;
         defaultColorHsv = Vec3(0.05f, 0.1f, 0.05f);
@@ -23,10 +23,10 @@ public:
     {
         copySceneDataToTuning(tuning);
 
-        tuning.maxHitPoints = 100;
+        tuning.maxHitPoints = 120;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
-        tuning.chassisMass = 1350;
+        tuning.chassisMass = 1390;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.1f;
@@ -36,16 +36,16 @@ public:
         //tuning.rearToeAngle = radians(4.5f); // faster recovery from slide
         tuning.rearToeAngle = radians(0.9f); // faster recovery from slide
         tuning.trackTireFriction = 2.38f;
-        tuning.offroadTireFriction = 1.1f;
+        tuning.offroadTireFriction = 1.2f;
 
         tuning.rearTireGripPercent = 0.96f;
         tuning.constantDownforce = 0.f;
         tuning.forwardDownforce = 0.001f;
         tuning.topSpeed = 33.f;
-        tuning.driftBoost = 0.f;
+        tuning.driftBoost = 0.02f;
 
         tuning.maxEngineOmega = 720.f;
-        tuning.peekEngineTorque = 990.f;
+        tuning.peekEngineTorque = 1100.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
