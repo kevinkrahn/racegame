@@ -4,18 +4,18 @@
 #include "../vehicle.h"
 #include "../entities/projectile.h"
 
-class WMissiles : public Weapon
+class WHomingMissiles : public Weapon
 {
     Mesh* mesh;
     Mesh* mountMesh;
 
 public:
-    WMissiles()
+    WHomingMissiles()
     {
-        info.name = "Missiles";
-        info.description = "Deals high damage and follows slopes!";
-        info.icon = g_res.getTexture("icon_missile");
-        info.price = 1000;
+        info.name = "Homing Missiles";
+        info.description = "Deals high damage homes in on the nearest enemy!";
+        info.icon = g_res.getTexture("icon_homing_missile");
+        info.price = 1500;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
 
@@ -39,7 +39,7 @@ public:
         }
 
         Mat4 transform = vehicle->getTransform();
-        f32 minSpeed = 25.f;
+        f32 minSpeed = 10.f;
         Vec3 vel = convert(vehicle->getRigidBody()->getLinearVelocity())
             + vehicle->getForwardVector() * minSpeed;
         if (lengthSquared(vel) < square(minSpeed))
@@ -48,7 +48,7 @@ public:
         }
         Vec3 pos = Vec3(transform * mountTransform * Vec4(missileSpawnPoint(ammo - 1), 1.f));
         scene->addEntity(new Projectile(pos,
-                vel, transform.zAxis(), vehicle->vehicleIndex, Projectile::MISSILE));
+                vel, transform.zAxis(), vehicle->vehicleIndex, Projectile::HOMING_MISSILE));
         g_audio.playSound3D(g_res.getSound("missile"),
                 SoundType::GAME_SFX, vehicle->getPosition(), false,
                 random(scene->randomSeries, 0.95f, 1.05f), 0.9f);
@@ -66,7 +66,7 @@ public:
     void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
             VehicleConfiguration const& config, VehicleData const& vehicleData) override
     {
-        Material* mat = g_res.getMaterial("plastic");
+        Material* mat = g_res.getMaterial("black_plastic");
         for (u32 i=0; i<info.maxUpgradeLevel; ++i)
         {
             Mat4 t = vehicleTransform * mountTransform

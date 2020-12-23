@@ -42,6 +42,7 @@ public:
         BULLET,
         BULLET_SMALL,
         MISSILE,
+        HOMING_MISSILE,
         BOUNCER,
         PHANTOM,
     };

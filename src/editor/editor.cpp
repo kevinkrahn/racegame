@@ -80,7 +80,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             auto vd = g_game.state.drivers.back().getVehicleData();
             conf->color =
                 srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-            conf->frontWeaponIndices[0] = 1;
+            conf->frontWeaponIndices[0] = 14;
             conf->frontWeaponUpgradeLevel[0] = 5;
             conf->rearWeaponIndices[0] = 6;
             conf->rearWeaponUpgradeLevel[0] = 5;

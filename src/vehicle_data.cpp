@@ -486,6 +486,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "weapons/underplating.h"
 #include "weapons/kinetic_armor.h"
 #include "weapons/missiles.h"
+#include "weapons/homing_missiles.h"
 #include "weapons/bouncer.h"
 #include "weapons/oil.h"
 #include "weapons/glue.h"
@@ -515,6 +516,7 @@ void initializeVehicleData()
     registerWeapon<WKineticArmor>();
     registerWeapon<WPhantom>();
     registerWeapon<WScatterGun>();
+    registerWeapon<WHomingMissiles>();
 
     //registerVehicle<VMini>();
     registerVehicle<VStationWagon>();

@@ -56,10 +56,21 @@ void Projectile::onCreate(Scene* scene)
             groundFollow = true;
             collisionRadius = 0.5f;
             damage = 120;
-            accel = 20.f;
-            homingSpeed = 80.f;
-            maxSpeed = 100.f;
+            accel = 14.f;
+            maxSpeed = 110.f;
             explosionStrength = 5.f;
+            environmentImpactSounds = { "explosion1" };
+            vehicleImpactSounds = { "explosion1" };
+            break;
+        case HOMING_MISSILE:
+            life = 4.25f;
+            groundFollow = true;
+            collisionRadius = 0.5f;
+            damage = 150;
+            accel = 20.f;
+            homingSpeed = 85.f;
+            maxSpeed = 100.f;
+            explosionStrength = 6.f;
             environmentImpactSounds = { "explosion1" };
             vehicleImpactSounds = { "explosion1" };
             break;
@@ -140,7 +151,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
     position += velocity * deltaTime;
 
-    if (projectileType == MISSILE)
+    if (projectileType == MISSILE || projectileType == HOMING_MISSILE)
     {
         // TODO: play sound while missile is traveling
         if (((u32)(life * 100.f) & 1) == 0)
@@ -228,6 +239,15 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
             drawBillboard(rw, g_res.getTexture("flare"), position,
                         Vec4(1.f, 0.5f, 0.03f, 0.8f), 1.8f, 0.f, false);
             rw->addPointLight(position, Vec3(1.f, 0.5f, 0.03f) * 5.f, 5.f, 2.f);
+        } break;
+        case HOMING_MISSILE:
+        {
+            Mesh* mesh = g_res.getModel("weapon_missile")->getMeshByName("missile.Missile");
+            Mat4 transform = Mat4::translation(position) * m;
+            drawSimple(rw, mesh, &g_res.white, transform, Vec3(1.f));
+            drawBillboard(rw, g_res.getTexture("flare"), position,
+                        Vec4(1.f, 0.2f, 0.03f, 0.8f), 1.8f, 0.f, false);
+            rw->addPointLight(position, Vec3(1.f, 0.2f, 0.03f) * 5.f, 5.f, 2.f);
         } break;
         case BOUNCER:
         {
