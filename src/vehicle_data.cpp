@@ -490,6 +490,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "weapons/bouncer.h"
 #include "weapons/oil.h"
 #include "weapons/glue.h"
+#include "weapons/auto_repair.h"
 
 #include "vehicles/mini.h"
 #include "vehicles/sportscar.h"
@@ -517,6 +518,7 @@ void initializeVehicleData()
     registerWeapon<WPhantom>();
     registerWeapon<WScatterGun>();
     registerWeapon<WHomingMissiles>();
+    registerWeapon<WAutoRepair>();
 
     //registerVehicle<VMini>();
     registerVehicle<VStationWagon>();

@@ -28,7 +28,6 @@
 - Add texture compression
 - Add difficulty levels
 - Add passive ability that gives a bit of ammo when destroyed
-- Add passive ability that slowly restores armor
 - Fix stutter when race starts or hide it with black screen that fades out
 - Shoot out shell casings when minigun is fired
 - Fix transform gizmo

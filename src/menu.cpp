@@ -63,6 +63,58 @@ const char* championshipTracks[] = {
     "race8",
     "race9",
     "race10",
+
+    // a
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race11",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race11",
+
+    // b
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
+    "race10",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
+    "race10",
+
+    // a
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race11",
+    "race1",
+    "race2",
+    "race3",
+    "race4",
+    "race11",
+
+    // b
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
+    "race10",
+    "race5",
+    "race6",
+    "race7",
+    "race8",
+    "race9",
+    "race10",
 };
 
 void Menu::startQuickRace()
@@ -88,10 +140,10 @@ void Menu::startQuickRace()
     playerDriver.useKeyboard = true;
 
 #if 0
-    drivers[0].hasCamera = true;
-    drivers[1].hasCamera = true;
-    drivers[2].hasCamera = true;
-    drivers[3].hasCamera = true;
+    g_game.state.drivers[0].hasCamera = true;
+    g_game.state.drivers[1].hasCamera = true;
+    g_game.state.drivers[2].hasCamera = true;
+    //g_game.state.drivers[3].hasCamera = true;
 #endif
 
     g_game.state.gameMode = GameMode::QUICK_RACE;

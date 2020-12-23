@@ -147,6 +147,7 @@ public:
     void blowUp(f32 respawnTime=0.8f);
     void reset(Mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator);
+    void repair(f32 amount) { hitPoints = min(hitPoints + amount, this->tuning.maxHitPoints); }
     void addNotification(const char* text, f32 time=2.f, Vec3 const& color=Vec3(1.f))
     {
         if (notifications.size() == notifications.capacity())
