@@ -10,8 +10,10 @@ public:
         name = "Other Car";
         description = "It goes zoom zoom";
         price = 8990;
-        frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
         defaultColorHsv = Vec3(0.08f, 0.95f, 0.98f);
 
         loadModelData("vehicle_muscle2");

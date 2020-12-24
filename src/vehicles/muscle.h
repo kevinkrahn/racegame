@@ -10,8 +10,10 @@ public:
         name = "Muscle Car";
         description = "It can drive";
         price = 8900;
-        frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
         defaultColorHsv = Vec3(1.f, 0.85f, 0.3f);
 
         loadModelData("vehicle_muscle");

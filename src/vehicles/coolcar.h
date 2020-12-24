@@ -11,8 +11,10 @@ public:
         name = "Cool Car";
         description = "Pretty great";
         price = 10000;
-        frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
 
         loadModelData("vehicle_coolcar");
         initStandardUpgrades();

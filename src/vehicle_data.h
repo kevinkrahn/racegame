@@ -167,12 +167,9 @@ struct VehicleConfiguration
     Vec4 wrapColors[3] = { Vec4(1.f), Vec4(1.f), Vec4(1.f) };
     Vec3 wrapColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
 
-    i32 frontWeaponIndices[3] = { -1, -1, -1 };
-    u32 frontWeaponUpgradeLevel[3] = { 0, 0, 0 };
-    i32 rearWeaponIndices[3] = { -1, -1, -1 };
-    u32 rearWeaponUpgradeLevel[3] = { 0, 0, 0 };
+    i32 weaponIndices[4] = { -1, -1, -1, -1 };
+    u32 weaponUpgradeLevel[4] = { 0, 0, 0, 0 };
     i32 specialAbilityIndex = -1;
-    // TODO: should the special ability also have an upgrade level?
 
     struct Upgrade
     {
@@ -280,8 +277,7 @@ struct VehicleData
     const char* description ="";
     Vec3 defaultColorHsv = Vec3(0.f, 0.f, 0.95f);
     i32 price = 0;
-    u32 frontWeaponCount = 1;
-    u32 rearWeaponCount = 1;
+    SmallArray<WeaponSlot, 4> weaponSlots;
 
     Array<VehicleMesh> debrisChunks;
 

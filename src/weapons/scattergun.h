@@ -18,6 +18,7 @@ public:
         info.price = 900;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
+        info.weaponClasses = WeaponClass::HOOD1 | WeaponClass::NARROW;
 
         ammoUnitCount = 1;
         fireMode = FireMode::ONE_SHOT;

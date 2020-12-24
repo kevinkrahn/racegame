@@ -11,8 +11,10 @@ public:
         name = "Mini";
         description = "Small and nimble. Quick acceleration, \nbut low top-speed.";
         price = 8400;
-        frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
 
         loadModelData("model_mini");
         initStandardUpgrades();

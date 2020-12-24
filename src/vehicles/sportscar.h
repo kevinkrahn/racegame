@@ -10,9 +10,12 @@ public:
     {
         name = "Sportscar";
         description = "Not really a sportscar.";
-        price = 9800;
-        frontWeaponCount = 2;
-        rearWeaponCount = 1;
+        price = 10000;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "ROOF WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::ROOF1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
         defaultColorHsv = Vec3(0.05f, 0.1f, 0.05f);
 
         loadModelData("vehicle_sportscar");

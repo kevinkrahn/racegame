@@ -10,8 +10,10 @@ public:
         name = "Truck";
         description = "Rough and tough.\nDrives well off the road.";
         price = 13000;
-        frontWeaponCount = 2;
-        rearWeaponCount = 3;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
 
         loadModelData("vehicle_truck");
 

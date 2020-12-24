@@ -21,6 +21,7 @@ public:
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
+        info.weaponClasses = WeaponClass::HOOD1 | WeaponClass::NARROW;
 
         ammoUnitCount = 12;
         fireMode = FireMode::CONTINUOUS;

@@ -11,8 +11,10 @@ public:
         name = "Station Wagon";
         description = "Not so great.";
         price = 9000;
-        frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
         defaultColorHsv = Vec3(0.f, 0.95f, 0.95f);
 
         loadModelData("vehicle_stationwagon");

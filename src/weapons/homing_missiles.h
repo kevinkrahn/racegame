@@ -18,6 +18,7 @@ public:
         info.price = 1500;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
+        info.weaponClasses = WeaponClass::HOOD1 | WeaponClass::ROOF1;
 
         Model* model = g_res.getModel("weapon_missile");
         mesh = model->getMeshByName("missile.Missile");

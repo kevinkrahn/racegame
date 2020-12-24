@@ -6,7 +6,29 @@ enum struct WeaponType
 {
     FRONT_WEAPON,
     REAR_WEAPON,
-    SPECIAL_ABILITY,
+    SPECIAL_ABILITY
+};
+
+namespace WeaponClass
+{
+    enum
+    {
+        HOOD1 = 1 << 0,
+        HOOD2 = 1 << 1,
+        ROOF1 = 1 << 2,
+        ROOF2 = 1 << 3,
+        RACK1 = 1 << 4,
+        RACK2 = 1 << 5,
+
+        NARROW = 1 << 6
+    };
+}
+
+struct WeaponSlot
+{
+    const char* name = "";
+    WeaponType weaponType = WeaponType::FRONT_WEAPON;
+    u32 weaponClasses = 0;
 };
 
 struct WeaponInfo
@@ -17,6 +39,7 @@ struct WeaponInfo
     i32 price = 0;
     u32 maxUpgradeLevel = 5;
     WeaponType weaponType = WeaponType::FRONT_WEAPON;
+    u32 weaponClasses = WeaponClass::HOOD1;
 };
 
 class Weapon

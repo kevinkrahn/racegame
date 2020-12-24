@@ -1168,40 +1168,23 @@ void Menu::createMainGarageMenu()
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT, g_res.getTexture("icon_spraycan"));
     y += size.y + gap;
 
-    i32 frontWeapon = garage.previewVehicleConfig.frontWeaponIndices[0];
-    addButton("FRONT WEAPON", "Install a weapon on the front weapon slot.", {x,y}, size, [this]{
-        createWeaponsMenu(WeaponType::FRONT_WEAPON,
-                garage.previewVehicleConfig.frontWeaponIndices[0],
-                garage.previewVehicleConfig.frontWeaponUpgradeLevel[0]);
-    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
-        frontWeapon == -1 ? iconbg : g_weapons[frontWeapon].info.icon);
-    y += size.y + gap;
-
-    if (g_vehicles[garage.previewVehicleIndex]->frontWeaponCount > 1)
+    for (u32 i=0; i<garage.driver->getVehicleData()->weaponSlots.size(); ++i)
     {
-        i32 roofWeapon = garage.previewVehicleConfig.frontWeaponIndices[1];
-        addButton("ROOF WEAPON", "Install a weapon on the roof weapon slot.", {x,y}, size, [this]{
-            createWeaponsMenu(WeaponType::FRONT_WEAPON,
-                garage.previewVehicleConfig.frontWeaponIndices[1],
-                garage.previewVehicleConfig.frontWeaponUpgradeLevel[1]);
+        i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
+        WeaponSlot slot = garage.driver->getVehicleData()->weaponSlots[i];
+        addButton(slot.name, tmpStr("Install a weapon on the %s slot.", slot.name), {x,y}, size, [this, slot]{
+            createWeaponsMenu(slot.weaponType, slot.weaponClasses,
+                    garage.previewVehicleConfig.weaponIndices[0],
+                    garage.previewVehicleConfig.weaponUpgradeLevel[0]);
         }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
-            roofWeapon == -1 ? iconbg : g_weapons[roofWeapon].info.icon);
+            installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
         y += size.y + gap;
     }
-
-    i32 rearWeapon = garage.previewVehicleConfig.rearWeaponIndices[0];
-    addButton("REAR WEAPON", "Install a weapon in the rear weapon slot.", {x,y}, size, [this]{
-        createWeaponsMenu(WeaponType::REAR_WEAPON,
-                garage.previewVehicleConfig.rearWeaponIndices[0],
-                garage.previewVehicleConfig.rearWeaponUpgradeLevel[0]);
-    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
-        rearWeapon == -1 ? iconbg : g_weapons[rearWeapon].info.icon);
-    y += size.y + gap;
 
     addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, [this]{
         static u32 upgradeLevel;
         upgradeLevel = garage.previewVehicleConfig.specialAbilityIndex == -1 ? 0 : 1;
-        createWeaponsMenu(WeaponType::SPECIAL_ABILITY,
+        createWeaponsMenu(WeaponType::SPECIAL_ABILITY, 0,
                 garage.previewVehicleConfig.specialAbilityIndex, upgradeLevel);
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
         garage.previewVehicleConfig.specialAbilityIndex == -1 ? iconbg
@@ -1760,7 +1743,7 @@ void Menu::createCarLotMenu()
     }
 }
 
-void Menu::createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgradeLevel)
+void Menu::createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weaponSlot, u32& upgradeLevel)
 {
 	resetTransient();
 
@@ -1794,7 +1777,7 @@ void Menu::createWeaponsMenu(WeaponType weaponType, i32& weaponSlot, u32& upgrad
     for (i32 i=0; i<(i32)g_weapons.size(); ++i)
     {
         auto& weapon = g_weapons[i];
-        if (weapon.info.weaponType != weaponType)
+        if (weapon.info.weaponType != weaponType || (weapon.info.weaponClasses & weaponClass) != weaponClass)
         {
             continue;
         }

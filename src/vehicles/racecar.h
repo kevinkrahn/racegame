@@ -9,9 +9,11 @@ public:
     {
         name = "Racecar";
         description = "Excessive speed.";
-        price = 60000;
-        frontWeaponCount = 1;
-        rearWeaponCount = 1;
+        price = 1;
+        weaponSlots = {
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 | WeaponClass::NARROW },
+            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+        };
 
         loadModelData("vehicle_racecar");
     }
