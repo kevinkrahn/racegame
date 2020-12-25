@@ -20,6 +20,7 @@
 - Vibrate player's controller when that player is selected (so that the player can be identified)
 - Use heightfield for terrain collision geometry
 - Add ability to create holes in the terrain (for tunnels, caves, .etc)
+- Add ability to pick any 4 materials to paint on terrain
 - Add sound effect when driving on sand
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
@@ -51,6 +52,7 @@
   to the line in the surrounding area (check forward a bit and also backward a bit). If it is too
   close then use the last known good point. If there is no last point, then loop until one is found.
 - Show weapon icon beside attack bonus notice
+- Indicate places on the track, in the editor, where the AI should place mines, oil, and glue
 
 - Ideas:
     - Grenade launcher weapon
