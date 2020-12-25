@@ -1172,10 +1172,10 @@ void Menu::createMainGarageMenu()
     {
         i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
         WeaponSlot slot = garage.driver->getVehicleData()->weaponSlots[i];
-        addButton(slot.name, tmpStr("Install a weapon on the %s slot.", slot.name), {x,y}, size, [this, slot]{
+        addButton(slot.name, "Install or upgrade a weapon.", {x,y}, size, [this, slot, i]{
             createWeaponsMenu(slot.weaponType, slot.weaponClasses,
-                    garage.previewVehicleConfig.weaponIndices[0],
-                    garage.previewVehicleConfig.weaponUpgradeLevel[0]);
+                    garage.previewVehicleConfig.weaponIndices[i],
+                    garage.previewVehicleConfig.weaponUpgradeLevel[i]);
         }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
             installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
         y += size.y + gap;

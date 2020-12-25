@@ -52,29 +52,31 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
     vehiclePhysics.setup(&actorUserData, scene->getPhysicsScene(), transform, &this->tuning);
 
     // create weapons
-    u32 frontWeaponCount = 0;
-    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::weaponIndices); ++i)
+    u32 frontWeaponSlotCount = 0;
+    u32 weaponSlotCount = driver->getVehicleData()->weaponSlots.size();
+    for (u32 i=0; i<weaponSlotCount; ++i)
     {
         VehicleConfiguration* config = driver->getVehicleConfig();
         if (config->weaponIndices[i] != -1)
         {
             auto weapon = g_weapons[config->weaponIndices[i]].create();
-            println("CREATING WEAPON: %s", weapon->info.name);
             weapon->upgradeLevel = config->weaponUpgradeLevel[i];
             switch(weapon->info.weaponType)
             {
                 case WeaponType::FRONT_WEAPON:
                     frontWeapons.push_back(std::move(weapon));
-                    frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[frontWeaponCount];
-                    ++frontWeaponCount;
+                    frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[frontWeaponSlotCount];
                     break;
                 case WeaponType::REAR_WEAPON:
-                    println("REAR WEAPON MAN");
                     rearWeapons.push_back(std::move(weapon));
                     break;
                 case WeaponType::SPECIAL_ABILITY:
                     assert(false);
             }
+        }
+        if (driver->getVehicleData()->weaponSlots[i].weaponType == WeaponType::FRONT_WEAPON)
+        {
+            ++frontWeaponSlotCount;
         }
     }
     if (driver->getVehicleConfig()->specialAbilityIndex != -1)
