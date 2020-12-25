@@ -13,7 +13,7 @@ public:
     WHomingMissiles()
     {
         info.name = "Homing Missiles";
-        info.description = "Deals high damage homes in on the nearest enemy!";
+        info.description = "Deals high damage. Homes in on the nearest enemy!";
         info.icon = g_res.getTexture("icon_homing_missile");
         info.price = 1500;
         info.maxUpgradeLevel = 5;

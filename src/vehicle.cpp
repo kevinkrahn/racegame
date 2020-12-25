@@ -52,23 +52,29 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
     vehiclePhysics.setup(&actorUserData, scene->getPhysicsScene(), transform, &this->tuning);
 
     // create weapons
-    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices); ++i)
+    u32 frontWeaponCount = 0;
+    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::weaponIndices); ++i)
     {
         VehicleConfiguration* config = driver->getVehicleConfig();
-        if (config->frontWeaponIndices[i] != -1)
+        if (config->weaponIndices[i] != -1)
         {
-            frontWeapons.push_back(g_weapons[config->frontWeaponIndices[i]].create());
-            frontWeapons.back()->upgradeLevel = config->frontWeaponUpgradeLevel[i];
-            frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[i];
-        }
-    }
-    for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
-    {
-        VehicleConfiguration* config = driver->getVehicleConfig();
-        if (config->rearWeaponIndices[i] != -1)
-        {
-            rearWeapons.push_back(g_weapons[config->rearWeaponIndices[i]].create());
-            rearWeapons.back()->upgradeLevel = config->rearWeaponUpgradeLevel[i];
+            auto weapon = g_weapons[config->weaponIndices[i]].create();
+            println("CREATING WEAPON: %s", weapon->info.name);
+            weapon->upgradeLevel = config->weaponUpgradeLevel[i];
+            switch(weapon->info.weaponType)
+            {
+                case WeaponType::FRONT_WEAPON:
+                    frontWeapons.push_back(std::move(weapon));
+                    frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[frontWeaponCount];
+                    ++frontWeaponCount;
+                    break;
+                case WeaponType::REAR_WEAPON:
+                    println("REAR WEAPON MAN");
+                    rearWeapons.push_back(std::move(weapon));
+                    break;
+                case WeaponType::SPECIAL_ABILITY:
+                    assert(false);
+            }
         }
     }
     if (driver->getVehicleConfig()->specialAbilityIndex != -1)

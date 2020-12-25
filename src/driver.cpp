@@ -35,14 +35,14 @@ void Driver::aiUpgrades(RandomSeries& series)
             vehicleConfig.wrapColors[0] = ai.wrapColor;
         }
         credits -= g_vehicles[vehicleIndex]->price;
-        AI_DEBUG_PRINT("%s bought vehicle %s" playerName, g_vehicles[vehicleIndex]->name);
+        AI_DEBUG_PRINT("%s bought vehicle %s", playerName.data(), g_vehicles[vehicleIndex]->name);
     }
 
     // TODO: make AI buy better vehicles over time
 
     enum UpgradeType
     {
-        FRONT_WEAPON1,
+        FRONT_WEAPON1 = 0,
         FRONT_WEAPON2,
         FRONT_WEAPON3,
         REAR_WEAPON1,
@@ -137,17 +137,21 @@ void Driver::aiUpgrades(RandomSeries& series)
             switch(upgradeChoice.type)
             {
                 case FRONT_WEAPON1:
+                case FRONT_WEAPON2:
+                case FRONT_WEAPON3:
                 {
-                    if (getVehicleData()->frontWeaponCount < 1)
+                    u32 frontWeaponIndex = upgradeChoice.type - FRONT_WEAPON1;
+                    if (getVehicleData()->getWeaponSlotCount(WeaponType::FRONT_WEAPON) < frontWeaponIndex + 1)
                     {
                         continue;
                     }
-                    i32 index = c.frontWeaponIndices[0] == -1
+                    i32 slotIndex = getVehicleData()->getWeaponSlotIndex(WeaponType::FRONT_WEAPON, frontWeaponIndex);
+                    i32 index = c.weaponIndices[slotIndex] == -1
                         ? frontWeapons[irandom(series, 0, (u32)frontWeapons.size())]
-                        : c.frontWeaponIndices[0];
+                        : c.weaponIndices[slotIndex];
                     u32 maxLevel = upgradeChoice.upgradeLevel > 0
                         ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
-                    if (c.frontWeaponUpgradeLevel[0] < maxLevel)
+                    if (c.weaponUpgradeLevel[slotIndex] < maxLevel)
                     {
                         if (g_weapons[index].info.price > credits)
                         {
@@ -156,143 +160,31 @@ void Driver::aiUpgrades(RandomSeries& series)
                         else
                         {
                             AI_DEBUG_PRINT("%s bought front weapon %s %i",
-                                    playerName, g_weapons[index].info.name, c.frontWeaponUpgradeLevel[0] + 1);
+                                    playerName.data(), g_weapons[index].info.name, c.weaponUpgradeLevel[slotIndex] + 1);
                             credits -= g_weapons[index].info.price;
-                            c.frontWeaponIndices[0] = index;
-                            ++c.frontWeaponUpgradeLevel[0];
-                            restart = true;
-                            boughtSomething = true;
-                        }
-                    }
-                } break;
-                case FRONT_WEAPON2:
-                {
-                    if (getVehicleData()->frontWeaponCount < 2)
-                    {
-                        continue;
-                    }
-                    i32 index = c.frontWeaponIndices[1] == -1
-                        ? frontWeapons[irandom(series, 0, (u32)frontWeapons.size())]
-                        : c.frontWeaponIndices[1];
-                    u32 maxLevel = upgradeChoice.upgradeLevel > 0
-                        ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
-                    if (c.frontWeaponUpgradeLevel[1] < maxLevel)
-                    {
-                        if (g_weapons[index].info.price > credits)
-                        {
-                            allDone = true;
-                        }
-                        else
-                        {
-                            AI_DEBUG_PRINT("%s bought front weapon %s %i", playerName, g_weapons[index].info.name,
-                                    c.frontWeaponUpgradeLevel[1] + 1);
-                            credits -= g_weapons[index].info.price;
-                            c.frontWeaponIndices[1] = index;
-                            ++c.frontWeaponUpgradeLevel[1];
-                            restart = true;
-                            boughtSomething = true;
-                        }
-                    }
-                } break;
-                case FRONT_WEAPON3:
-                {
-                    if (getVehicleData()->frontWeaponCount < 3)
-                    {
-                        continue;
-                    }
-                    i32 index = c.frontWeaponIndices[2] == -1
-                        ? frontWeapons[irandom(series, 0, (u32)frontWeapons.size())]
-                        : c.frontWeaponIndices[2];
-                    u32 maxLevel = upgradeChoice.upgradeLevel > 0
-                        ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
-                    if (c.frontWeaponUpgradeLevel[2] < maxLevel)
-                    {
-                        if (g_weapons[index].info.price > credits)
-                        {
-                            allDone = true;
-                        }
-                        else
-                        {
-                            AI_DEBUG_PRINT("%s bought front weapon %s %i", playerName, g_weapons[index].info.name,
-                                    c.frontWeaponUpgradeLevel[2] + 1);
-                            credits -= g_weapons[index].info.price;
-                            c.frontWeaponIndices[2] = index;
-                            ++c.frontWeaponUpgradeLevel[2];
+                            c.weaponIndices[slotIndex] = index;
+                            ++c.weaponUpgradeLevel[slotIndex];
                             restart = true;
                             boughtSomething = true;
                         }
                     }
                 } break;
                 case REAR_WEAPON1:
-                {
-                    if (getVehicleData()->rearWeaponCount < 1)
-                    {
-                        continue;
-                    }
-                    i32 index = c.rearWeaponIndices[0] == -1
-                        ? rearWeapons[irandom(series, 0, (u32)rearWeapons.size())]
-                        : c.rearWeaponIndices[0];
-                    u32 maxLevel = upgradeChoice.upgradeLevel > 0
-                        ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
-                    if (c.rearWeaponUpgradeLevel[0] < maxLevel)
-                    {
-                        if (g_weapons[index].info.price > credits)
-                        {
-                            allDone = true;
-                        }
-                        else
-                        {
-                            AI_DEBUG_PRINT("%s bought rear weapon %s %i", playerName, g_weapons[index].info.name,
-                                    c.rearWeaponUpgradeLevel[0] + 1);
-                            credits -= g_weapons[index].info.price;
-                            c.rearWeaponIndices[0] = index;
-                            ++c.rearWeaponUpgradeLevel[0];
-                            restart = true;
-                            boughtSomething = true;
-                        }
-                    }
-                } break;
                 case REAR_WEAPON2:
-                {
-                    if (getVehicleData()->rearWeaponCount < 2)
-                    {
-                        continue;
-                    }
-                    i32 index = c.rearWeaponIndices[1] == -1
-                        ? rearWeapons[irandom(series, 0, (u32)rearWeapons.size())]
-                        : c.rearWeaponIndices[1];
-                    u32 maxLevel = upgradeChoice.upgradeLevel > 0
-                        ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
-                    if (c.rearWeaponUpgradeLevel[1] < maxLevel)
-                    {
-                        if (g_weapons[index].info.price > credits)
-                        {
-                            allDone = true;
-                        }
-                        else
-                        {
-                            AI_DEBUG_PRINT("%s bought rear weapon %s %i", playerName, g_weapons[index].info.name,
-                                    c.rearWeaponUpgradeLevel[1] + 1);
-                            credits -= g_weapons[index].info.price;
-                            c.rearWeaponIndices[1] = index;
-                            ++c.rearWeaponUpgradeLevel[1];
-                            restart = true;
-                            boughtSomething = true;
-                        }
-                    }
-                } break;
                 case REAR_WEAPON3:
                 {
-                    if (getVehicleData()->rearWeaponCount < 3)
+                    u32 rearWeaponIndex = upgradeChoice.type - REAR_WEAPON1;
+                    if (getVehicleData()->getWeaponSlotCount(WeaponType::REAR_WEAPON) < rearWeaponIndex + 1)
                     {
                         continue;
                     }
-                    i32 index = c.rearWeaponIndices[2] == -1
+                    i32 slotIndex = getVehicleData()->getWeaponSlotIndex(WeaponType::REAR_WEAPON, rearWeaponIndex);
+                    i32 index = c.weaponIndices[slotIndex] == -1
                         ? rearWeapons[irandom(series, 0, (u32)rearWeapons.size())]
-                        : c.rearWeaponIndices[2];
+                        : c.weaponIndices[slotIndex];
                     u32 maxLevel = upgradeChoice.upgradeLevel > 0
                         ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
-                    if (c.rearWeaponUpgradeLevel[2] < maxLevel)
+                    if (c.weaponUpgradeLevel[slotIndex] < maxLevel)
                     {
                         if (g_weapons[index].info.price > credits)
                         {
@@ -300,11 +192,11 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT("%s bought rear weapon %s %i", playerName, g_weapons[index].info.name,
-                                    c.rearWeaponUpgradeLevel[2] + 1);
+                            AI_DEBUG_PRINT("%s bought rear weapon %s %i",
+                                    playerName.data(), g_weapons[index].info.name, c.weaponUpgradeLevel[slotIndex] + 1);
                             credits -= g_weapons[index].info.price;
-                            c.rearWeaponIndices[2] = index;
-                            ++c.rearWeaponUpgradeLevel[2];
+                            c.weaponIndices[slotIndex] = index;
+                            ++c.weaponUpgradeLevel[slotIndex];
                             restart = true;
                             boughtSomething = true;
                         }
@@ -321,7 +213,7 @@ void Driver::aiUpgrades(RandomSeries& series)
                         }
                         else
                         {
-                            AI_DEBUG_PRINT("%s bought special ability %s", playerName, g_weapons[index].info.name);
+                            AI_DEBUG_PRINT("%s bought special ability %s", playerName.data(), g_weapons[index].info.name);
                             credits -= g_weapons[index].info.price;
                             c.specialAbilityIndex = index;
                             boughtSomething = true;

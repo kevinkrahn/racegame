@@ -426,23 +426,13 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
     }
     else
     {
-        for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices); ++i)
+        for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::weaponIndices); ++i)
         {
-            if (config.frontWeaponIndices[i] != -1)
+            if (config.weaponIndices[i] != -1)
             {
-                auto w = g_weapons[config.frontWeaponIndices[i]].create();
-                w->upgradeLevel = config.frontWeaponUpgradeLevel[i];
+                auto w = g_weapons[config.weaponIndices[i]].create();
+                w->upgradeLevel = config.weaponUpgradeLevel[i];
                 w->mountTransform = weaponMounts[i];
-                w->refillAmmo();
-                w->render(rw, transform, config, *this);
-            }
-        }
-        for (u32 i=0; i<ARRAY_SIZE(VehicleConfiguration::rearWeaponIndices); ++i)
-        {
-            if (config.rearWeaponIndices[i] != -1)
-            {
-                auto w = g_weapons[config.rearWeaponIndices[i]].create();
-                w->upgradeLevel = config.rearWeaponUpgradeLevel[i];
                 w->refillAmmo();
                 w->render(rw, transform, config, *this);
             }

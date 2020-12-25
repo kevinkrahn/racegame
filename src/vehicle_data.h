@@ -169,6 +169,7 @@ struct VehicleConfiguration
 
     i32 weaponIndices[4] = { -1, -1, -1, -1 };
     u32 weaponUpgradeLevel[4] = { 0, 0, 0, 0 };
+    // TODO: integrate this into weaponIndices
     i32 specialAbilityIndex = -1;
 
     struct Upgrade
@@ -196,10 +197,8 @@ struct VehicleConfiguration
         s.field(wrapTextureGuids);
         s.field(wrapColors);
         s.field(wrapColorsHSV);
-        s.field(frontWeaponIndices);
-        s.field(frontWeaponUpgradeLevel);
-        s.field(rearWeaponIndices);
-        s.field(rearWeaponUpgradeLevel);
+        s.field(weaponIndices);
+        s.field(weaponUpgradeLevel);
         s.field(specialAbilityIndex);
         s.field(performanceUpgrades);
     }
@@ -293,6 +292,35 @@ struct VehicleData
     void loadModelData(const char* modelName);
     void copySceneDataToTuning(VehicleTuning& tuning);
     void initStandardUpgrades();
+    u32 getWeaponSlotCount(WeaponType weaponType)
+    {
+        u32 count = 0;
+        for (auto& w : weaponSlots)
+        {
+            if (w.weaponType == weaponType)
+            {
+                ++count;
+            }
+        }
+        return count;
+    }
+    i32 getWeaponSlotIndex(WeaponType weaponType, u32 n)
+    {
+        u32 count = 0, index = 0;
+        for (auto& w : weaponSlots)
+        {
+            if (w.weaponType == weaponType)
+            {
+                if (count == n)
+                {
+                    return index;
+                }
+                ++count;
+            }
+            ++index;
+        }
+        return -1;
+    }
 };
 
 Array<OwnedPtr<VehicleData>> g_vehicles;

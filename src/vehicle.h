@@ -97,9 +97,9 @@ public:
     f32 rearWeaponTimer = 0.f;
 
     // weapons
-    SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
+    SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::weaponIndices)>
         frontWeapons;
-    SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::frontWeaponIndices)>
+    SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::weaponIndices)>
         rearWeapons;
     OwnedPtr<Weapon> specialAbility;
 

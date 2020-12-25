@@ -12,8 +12,8 @@ public:
         info.name = "Glue";
         info.description = "Force your opponents to slow down!";
         info.icon = g_res.getTexture("icon_glue");
-        info.price = 1000;
-        info.maxUpgradeLevel = 4;
+        info.price = 750;
+        info.maxUpgradeLevel = 3;
         info.weaponType = WeaponType::REAR_WEAPON;
     }
 
