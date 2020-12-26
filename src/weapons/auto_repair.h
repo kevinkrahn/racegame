@@ -19,7 +19,7 @@ public:
     void update(Scene* scene, Vehicle* vehicle, bool fireBegin, bool fireHold,
             f32 deltaTime) override
     {
-        vehicle->repair(deltaTime * 2);
+        vehicle->repair(deltaTime * 3);
     }
 
     void render(class RenderWorld* rw, Mat4 const& vehicleTransform,

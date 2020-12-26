@@ -11,6 +11,9 @@
 const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
 const Vec4 COLOR_NOT_SELECTED = Vec4(1.f);
 
+const f32 BEGIN_REPEAT_DELAY = 0.4f;
+const f32 JOYSTICK_DEADZONE = 0.2f;
+
 const char* championshipTracks[] = {
     // a
     "race1",
@@ -183,12 +186,12 @@ i32 Menu::didChangeSelectionX()
             if (repeatTimer == 0.f)
             {
                 f32 xaxis = pair.value.getAxis(AXIS_LEFT_X);
-                if (xaxis < -0.2f)
+                if (xaxis < -JOYSTICK_DEADZONE)
                 {
                     tmpResult = -1;
                     repeatTimer = 0.1f;
                 }
-                else if (xaxis > 0.2f)
+                else if (xaxis > JOYSTICK_DEADZONE)
                 {
                     tmpResult = 1;
                     repeatTimer = 0.1f;
@@ -219,12 +222,12 @@ i32 Menu::didChangeSelectionY()
             if (repeatTimer == 0.f)
             {
                 f32 yaxis = pair.value.getAxis(AXIS_LEFT_Y);
-                if (yaxis < -0.2f)
+                if (yaxis < -JOYSTICK_DEADZONE)
                 {
                     tmpResult = -1;
                     repeatTimer = 0.1f;
                 }
-                else if (yaxis > 0.2f)
+                else if (yaxis > JOYSTICK_DEADZONE)
                 {
                     tmpResult = 1;
                     repeatTimer = 0.1f;
@@ -2375,7 +2378,32 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     Vec2(g_game.windowWidth/convertSize(tex->width * 0.5f), 0.999f));
     }
 
-    repeatTimer = max(repeatTimer - g_game.deltaTime, 0.f);
+    bool gainRepeat = false;
+    for (auto& pair : g_input.getControllers())
+    {
+        i32 result = pair.value.isButtonPressed(BUTTON_DPAD_RIGHT) -
+                     pair.value.isButtonPressed(BUTTON_DPAD_LEFT);
+        f32 xaxis = pair.value.getAxis(AXIS_LEFT_X);
+        f32 yaxis = pair.value.getAxis(AXIS_LEFT_Y);
+        if (result || absolute(xaxis) > JOYSTICK_DEADZONE || absolute(yaxis) > JOYSTICK_DEADZONE)
+        {
+            gainRepeat = true;
+            break;
+        }
+    }
+    if (gainRepeat)
+    {
+        beginRepeatTimer = min(beginRepeatTimer + g_game.deltaTime, BEGIN_REPEAT_DELAY);
+    }
+    else
+    {
+        repeatTimer = 0.f;
+        beginRepeatTimer = max(beginRepeatTimer - g_game.deltaTime, 0.f);
+    }
+    if (beginRepeatTimer >= BEGIN_REPEAT_DELAY)
+    {
+        repeatTimer = max(repeatTimer - g_game.deltaTime, 0.f);
+    }
 
     Vec2 mousePos = g_input.getMousePosition();
     Vec2 center = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;

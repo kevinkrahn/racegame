@@ -28,7 +28,7 @@ public:
         tuning.maxHitPoints = 100;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
-        tuning.chassisMass = 1350;
+        tuning.chassisMass = 1340;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.1f;
@@ -47,7 +47,7 @@ public:
         tuning.driftBoost = 0.f;
 
         tuning.maxEngineOmega = 720.f;
-        tuning.peekEngineTorque = 990.f;
+        tuning.peekEngineTorque = 1000.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;

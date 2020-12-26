@@ -47,7 +47,7 @@ public:
         tuning.topSpeed = 33.f;
         tuning.driftBoost = 0.02f;
 
-        tuning.maxEngineOmega = 720.f;
+        tuning.maxEngineOmega = 750.f;
         tuning.peekEngineTorque = 1100.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
@@ -72,7 +72,7 @@ public:
         tuning.frontAntiRollbarStiffness = 7000.f;
         tuning.rearAntiRollbarStiffness = 7000.f;
         tuning.ackermannAccuracy = 0.5f;
-        tuning.centerOfMass = { 0.09f, 0.f, -0.6f };
+        tuning.centerOfMass = { 0.04f, 0.f, -0.6f };
 
         for (auto& u : configuration.performanceUpgrades)
         {

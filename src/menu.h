@@ -114,6 +114,7 @@ class Menu
 
     SmallArray<Widget, 32> widgets;
     Widget* selectedWidget = nullptr;
+    f32 beginRepeatTimer = 0.f;
     f32 repeatTimer = 0.f;
     f32 fadeInTimer = 0.f;
     bool fadeIn = true;
@@ -126,6 +127,7 @@ class Menu
     {
         selectedWidget = nullptr;
         widgets.clear();
+        beginRepeatTimer = 0.f;
         repeatTimer = 0.f;
         fadeIn = true;
         fadeInTimer = 0.f;
@@ -135,6 +137,7 @@ class Menu
     {
         selectedWidget = nullptr;
         repeatTimer = 0.f;
+        beginRepeatTimer = 0.f;
         fadeIn = true;
         fadeInTimer = 0.f;
         for (auto it = widgets.begin(); it != widgets.end();)
