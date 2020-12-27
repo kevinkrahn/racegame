@@ -28,7 +28,7 @@ public:
 
         tuning.maxHitPoints = 120;
 
-        tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
+        tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
         tuning.chassisMass = 1390;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
@@ -72,7 +72,7 @@ public:
         tuning.frontAntiRollbarStiffness = 7000.f;
         tuning.rearAntiRollbarStiffness = 7000.f;
         tuning.ackermannAccuracy = 0.5f;
-        tuning.centerOfMass = { 0.04f, 0.f, -0.6f };
+        tuning.centerOfMass = { 0.28f, 0.f, -0.6f };
 
         for (auto& u : configuration.performanceUpgrades)
         {

@@ -616,6 +616,19 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 {
                     finishedRace = true;
                     scene->vehicleFinish(vehicleIndex);
+                    const char* notifications[10] = {
+                        "1st PLACE!",
+                        "2nd PLACE!",
+                        "3rd PLACE!",
+                        "4th PLACE!",
+                        "5th PLACE!",
+                        "6th PLACE!",
+                        "7th PLACE!",
+                        "8th PLACE!",
+                        "9th PLACE!",
+                        "10th PLACE!",
+                    };
+                    addNotification(notifications[placement], 50.f);
                 }
                 if (currentLap > 0)
                 {
