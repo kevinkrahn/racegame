@@ -29,6 +29,7 @@ public:
     VehiclePhysics vehiclePhysics;
     VehicleTuning tuning;
     ActorUserData actorUserData;
+    Controller* controller = nullptr;
 
 	Driver* driver;
 	Scene* scene;

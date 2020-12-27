@@ -943,6 +943,13 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
         {
             smokeTimerDamage = 0.015f;
         }
+        if (controller)
+        {
+            if (g_game.config.gameplay.forceFeedbackEnabled)
+            {
+                controller->playHaptic(0.5, 1000);
+            }
+        }
     }
 }
 
@@ -1027,7 +1034,7 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
     }
     else if (!driver->controllerGuid.empty())
     {
-        Controller* controller = g_input.getController(driver->controllerID);
+        controller = g_input.getController(driver->controllerID);
         if (!controller)
         {
             driver->controllerID = g_input.getControllerId(driver->controllerGuid);
@@ -1048,33 +1055,36 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
     }
     if (scene->getNumHumanDrivers() == 1)
     {
-        for (auto& c : g_input.getControllers())
+        for (auto& cp : g_input.getControllers())
         {
-            const Controller* controller = &c.value;
-            f32 val = controller->getAxis(AXIS_TRIGGER_RIGHT);
+            Controller* c = &cp.value;
+            f32 val = c->getAxis(AXIS_TRIGGER_RIGHT);
             if (absolute(val) > 0.f)
             {
                 input.accel = val;
                 input.digital = false;
+                controller = c;
             }
-            val = controller->getAxis(AXIS_TRIGGER_LEFT);
+            val = c->getAxis(AXIS_TRIGGER_LEFT);
             if (absolute(val) > 0.f)
             {
                 input.brake = val;
                 input.digital = false;
+                controller = c;
             }
-            val = -controller->getAxis(AXIS_LEFT_X);
+            val = -c->getAxis(AXIS_LEFT_X);
             if (absolute(val) > 0.f)
             {
                 input.steer = val;
                 input.digital = false;
+                controller = c;
             }
-            input.beginShoot = input.beginShoot || controller->isButtonPressed(BUTTON_RIGHT_SHOULDER);
-            input.holdShoot = input.holdShoot || controller->isButtonDown(BUTTON_RIGHT_SHOULDER);
-            input.beginShootRear = input.beginShootRear || controller->isButtonPressed(BUTTON_LEFT_SHOULDER);
-            input.holdShootRear = input.holdShootRear || controller->isButtonDown(BUTTON_LEFT_SHOULDER);
-            input.switchFrontWeapon = input.switchFrontWeapon || controller->isButtonPressed(BUTTON_X);
-            input.switchRearWeapon = input.switchRearWeapon || controller->isButtonPressed(BUTTON_Y);
+            input.beginShoot = input.beginShoot || c->isButtonPressed(BUTTON_RIGHT_SHOULDER);
+            input.holdShoot = input.holdShoot || c->isButtonDown(BUTTON_RIGHT_SHOULDER);
+            input.beginShootRear = input.beginShootRear || c->isButtonPressed(BUTTON_LEFT_SHOULDER);
+            input.holdShootRear = input.holdShootRear || c->isButtonDown(BUTTON_LEFT_SHOULDER);
+            input.switchFrontWeapon = input.switchFrontWeapon || c->isButtonPressed(BUTTON_X);
+            input.switchRearWeapon = input.switchRearWeapon || c->isButtonPressed(BUTTON_Y);
         }
     }
 
@@ -1102,6 +1112,14 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
     if (g_input.isKeyPressed(KEY_J))
     {
         getRigidBody()->addForce(convert(vehiclePhysics.getRightVector() * 15.f), PxForceMode::eVELOCITY_CHANGE);
+    }
+
+    if (g_input.isKeyPressed(KEY_U))
+    {
+        if (controller)
+        {
+            controller->playHaptic(0.5, 1000);
+        }
     }
 #endif
 

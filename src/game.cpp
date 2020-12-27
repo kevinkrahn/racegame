@@ -90,7 +90,7 @@ void Game::run()
 
     g_game.config.load();
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) != 0)
     {
         FATAL_ERROR("SDL_Init Error: %s", SDL_GetError())
     }

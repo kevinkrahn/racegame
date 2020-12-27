@@ -147,6 +147,7 @@ class Controller
 
 private:
     SDL_GameController* controller = nullptr;
+    SDL_Haptic* haptic = nullptr;
     bool buttonDown[BUTTON_COUNT] = {};
     bool buttonPressed[BUTTON_COUNT] = {};
     bool buttonReleased[BUTTON_COUNT] = {};
@@ -155,10 +156,19 @@ private:
     Str64 guid;
 
 public:
-    explicit Controller(SDL_GameController* controller, Str64 const& guid)
-        : controller(controller), guid(guid) {}
+    Controller(SDL_GameController* controller, SDL_Haptic* haptic, Str64 const& guid)
+        : controller(controller), haptic(haptic), guid(guid) {}
 
     SDL_GameController* getController() const { return controller; }
+    SDL_Haptic* getHaptic() const { return haptic; }
+
+    void playHaptic(f32 strength = 0.5f, u32 lengthMs = 500)
+    {
+        if (haptic)
+        {
+            SDL_HapticRumblePlay(haptic, strength, lengthMs);
+        }
+    }
 
     bool isButtonDown(u32 button) const
     {
@@ -243,7 +253,7 @@ public:
         SDL_StopTextInput();
     }
 
-    Map<i32, Controller> const& getControllers() const { return controllers; }
+    Map<i32, Controller>& getControllers() { return controllers; }
 
     Controller* getController(i32 id)
     {
@@ -401,14 +411,23 @@ public:
             case SDL_CONTROLLERDEVICEADDED:
             {
                 SDL_GameController* controller = SDL_GameControllerOpen(e.cdevice.which);
-                SDL_JoystickID id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+                SDL_Joystick* joystick = SDL_GameControllerGetJoystick(controller);
+                SDL_JoystickID id = SDL_JoystickInstanceID(joystick);
+                SDL_Haptic* haptic = SDL_HapticOpenFromJoystick(joystick);
+                if (!haptic)
+                {
+                    println("Failed to initialize haptics: %s", SDL_GetError());
+                }
+                else if (SDL_HapticRumbleInit(haptic) != 0)
+                {
+                    println("Failed to initialize rumble: %s", SDL_GetError());
+                    haptic = nullptr;
+                }
                 Str64 buffer;
-                SDL_JoystickGetGUIDString(
-                        SDL_JoystickGetGUID(
-                            SDL_GameControllerGetJoystick(controller)), buffer.data(), sizeof(buffer));
-                println("Controller added: %i, guid: %s, name: %s", id, buffer.data(),
-                        SDL_GameControllerName(controller));
-                controllers.set(id, Controller(controller, buffer));
+                SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(joystick), buffer.data(), sizeof(buffer));
+                println("Controller added: %i, guid: %s, name: %s, haptics: %s", id, buffer.data(),
+                        SDL_GameControllerName(controller), haptic ? "yes" : "no");
+                controllers.set(id, Controller(controller, haptic, buffer));
             } break;
             case SDL_CONTROLLERDEVICEREMOVED:
             {

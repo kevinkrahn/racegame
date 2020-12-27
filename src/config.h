@@ -65,11 +65,13 @@ struct Config
     {
         f32 hudTrackScale = 1.f;
         f32 hudTextScale = 1.f;
+        bool forceFeedbackEnabled = true;
 
         void serialize(Serializer& s)
         {
             s.field(hudTrackScale);
             s.field(hudTextScale);
+            s.field(forceFeedbackEnabled);
         }
     } gameplay;
 
