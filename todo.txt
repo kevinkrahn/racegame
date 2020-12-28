@@ -58,6 +58,9 @@
 - Add a mine that has a large explosive force that sends vehicles flying, but does little damage
 - When trading in a vehicle, the value of equippment should be included in the value
 - Change that horrible collision sound
+- Tweak vehicle physics so they don't flip so easily
+- Fix vehicle respawning on top of railings
+- Test with Steam controller
 
 - Ideas:
     - Grenade launcher weapon
