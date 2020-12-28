@@ -943,11 +943,11 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
         {
             smokeTimerDamage = 0.015f;
         }
-        if (controller)
+        if (amount > 10 && controller)
         {
             if (g_game.config.gameplay.forceFeedbackEnabled)
             {
-                controller->playHaptic(0.5, 1000);
+                controller->playHaptic(clamp(0.2f + amount * 0.03f, 0.f, 0.8f), 400);
             }
         }
     }
