@@ -31,7 +31,6 @@
 - Fix stutter when race starts or hide it with black screen that fades out
 - Shoot out shell casings when minigun is fired
 - Fix transform gizmo
-- Vehicle respawn angles are awkward sometimes
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
 - Support multiple keyboards (not supported by SDL)
@@ -58,8 +57,6 @@
 - Add a mine that has a large explosive force that sends vehicles flying, but does little damage
 - When trading in a vehicle, the value of equippment should be included in the value
 - Change that horrible collision sound
-- Tweak vehicle physics so they don't flip so easily
-- Fix vehicle respawning on top of railings
 - Test with Steam controller
 
 - Ideas:

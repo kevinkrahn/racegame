@@ -1150,8 +1150,12 @@ void Scene::onContact(const PxContactPairHeader& pairHeader, const PxContactPair
                     }
                 }
 
-                g_audio.playSound3D(g_res.getSound("impact"),
-                        SoundType::GAME_SFX, contactPoints[j].position);
+                if (damage > 0.1f)
+                {
+                    g_audio.playSound3D(g_res.getSound("impact"),
+                            SoundType::GAME_SFX, contactPoints[j].position, false, 1.f,
+                            clamp(damage * 0.2f, 0.1f, 1.f));
+                }
             }
 
             PxMaterial* materialA = pairs[i].shapes[0]->getMaterialFromInternalFaceIndex(
@@ -1371,7 +1375,6 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
             }
             if (onTrack)
             {
-                println("Found valid position");
                 return transform.p;
             }
         }
@@ -1382,7 +1385,6 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
         transform.p = convert(pos + offset);
     }
 
-    println("Did not find valid position");
     return pos;
 }
 
