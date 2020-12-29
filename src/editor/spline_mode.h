@@ -537,14 +537,14 @@ public:
                     return p.spline == spline && p.pointIndex == i && p.firstHandle; });
                 color = Vec3(isSelected ? white : orange);
                 transform = Mat4::translation(point.position + point.handleOffsetA) *
-                            Mat4::translation(Vec3(0.8f));
+                            Mat4::scaling(Vec3(0.8f));
                 drawOverlay(rw, sphereMesh, transform, color);
 
                 isSelected = !!selectedHandles.findIf([&](auto& p) {
                     return p.spline == spline && p.pointIndex == i && !p.firstHandle; });
                 color = Vec3(isSelected ? white : orange);
                 transform = Mat4::translation(point.position + point.handleOffsetB) *
-                            Mat4::translation(Vec3(0.8f));
+                            Mat4::scaling(Vec3(0.8f));
                 drawOverlay(rw, sphereMesh, transform, color);
 
                 Vec4 c(color, 1.f);

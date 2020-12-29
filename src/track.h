@@ -164,8 +164,8 @@ private:
 public:
     Track()
     {
-        points.push_back(Point{ Vec3(50, 0, 0.05f) });
-        points.push_back(Point{ Vec3(-50, 0, 0.05f) });
+        points.push_back(Point{ Vec3(50, 0, 0.2f) });
+        points.push_back(Point{ Vec3(-50, 0, 0.2f) });
         OwnedPtr<BezierSegment> segment(new BezierSegment);
         segment->track = this;
         segment->handleOffsetA = Vec3(-10, 0, 0);

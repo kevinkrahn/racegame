@@ -60,6 +60,8 @@
 - Make AI respect racing line speed
 - Should be able to build after a fresh git clone with only a C++ compiler and nothing else.
   This means storing all libraries in the git repo and removing dependency on CMake and Python.
+- Add effects for armor and money pickups.
+- Experiment with an initial burst at the beginning of a rocket boost, to make it feel better to use.
 
 - Ideas:
     - Grenade launcher weapon
