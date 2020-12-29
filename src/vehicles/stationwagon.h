@@ -28,7 +28,7 @@ public:
         tuning.maxHitPoints = 100;
 
         tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
-        tuning.chassisMass = 1340;
+        tuning.chassisMass = 1335;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
         tuning.wheelDampingRate = 0.1f;
@@ -43,11 +43,11 @@ public:
         tuning.rearTireGripPercent = 0.96f;
         tuning.constantDownforce = 0.f;
         tuning.forwardDownforce = 0.001f;
-        tuning.topSpeed = 33.f;
+        tuning.topSpeed = 32.f;
         tuning.driftBoost = 0.f;
 
-        tuning.maxEngineOmega = 720.f;
-        tuning.peekEngineTorque = 1000.f;
+        tuning.maxEngineOmega = 725.f;
+        tuning.peekEngineTorque = 1035.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -79,7 +79,7 @@ public:
             switch (upgrade.upgradeType)
             {
                 case PerformanceUpgradeType::ENGINE:
-                    tuning.peekEngineTorque += 11.f * u.upgradeLevel;
+                    tuning.peekEngineTorque += 12.f * u.upgradeLevel;
                     tuning.topSpeed += 1.2f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:

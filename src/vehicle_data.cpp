@@ -267,7 +267,7 @@ void VehicleData::loadModelData(const char* modelName)
                 g_res.getMaterial(obj.materialGuid),
             });
             frontWheelMeshRadius = max(frontWheelMeshRadius, obj.bounds.z * 0.5f);
-            frontWheelMeshWidth = max(frontWheelMeshWidth, obj.bounds.y);
+            frontWheelMeshWidth = max(frontWheelMeshWidth, obj.bounds.y * 0.98f);
             wheelPositions[WHEEL_FRONT_RIGHT] = transform.position();
         }
         else if (name.find("RL"))
@@ -279,7 +279,7 @@ void VehicleData::loadModelData(const char* modelName)
                 g_res.getMaterial(obj.materialGuid),
             });
             rearWheelMeshRadius = max(rearWheelMeshRadius, obj.bounds.z * 0.5f);
-            rearWheelMeshWidth = max(rearWheelMeshWidth, obj.bounds.y);
+            rearWheelMeshWidth = max(rearWheelMeshWidth, obj.bounds.y * 0.98f);
             wheelPositions[WHEEL_REAR_RIGHT] = transform.position();
         }
         else if (name.find("FR"))

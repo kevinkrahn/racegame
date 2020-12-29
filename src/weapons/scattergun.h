@@ -50,11 +50,11 @@ public:
         {
             vel = normalize(vel) * minSpeed;
         }
-        for (u32 i=0; i<11; ++i)
+        for (u32 i=0; i<12; ++i)
         {
             f32 s = 10.f;
             Vec3 v = vel + vehicle->getRightVector() * random(scene->randomSeries, -s, s);
-            v += vel + vehicle->getUpVector() * random(scene->randomSeries, -5.f, 5.f);
+            v += vel + vehicle->getUpVector() * random(scene->randomSeries, -4.f, 4.f);
             v += vehicle->getForwardVector() * random(scene->randomSeries, 0, 10.f);
             Vec3 pos = Vec3(transform * mountTransform * Vec4(projectileSpawnPoints[0], 1.f));
             scene->addEntity(new Projectile(pos,

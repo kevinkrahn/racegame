@@ -289,6 +289,9 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform
     centerOfMassOffset = convert(tuning.centerOfMass);
     actor->setCMassLocalPose(PxTransform(centerOfMassOffset, PxQuat(PxIdentity)));
     actor->userData = userData;
+    PxVec3 t = actor->getMassSpaceInertiaTensor();
+    //println("%.2f, %.2f, %.2f", t.x, t.y, t.z);
+    actor->setMassSpaceInertiaTensor(PxVec3(t.x*2.f, t.y*1.4f, t.z*1.1f));
 
     f32 wheelMOIFront = 0.5f * tuning.wheelMassFront * square(tuning.wheelRadiusFront);
     f32 wheelMOIRear = 0.5f * tuning.wheelMassRear * square(tuning.wheelRadiusRear);
@@ -592,17 +595,12 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
             }
-            // TODO: find better way to limit top speed
-            f32 speedDiff = forwardSpeed - tuning->topSpeed;
-            if (speedDiff > 1.f)
+            f32 speedDiff = forwardSpeed - (tuning->topSpeed - 0.8f);
+            if (speedDiff > 0.f && accel > 0.f)
             {
-                vehicle4W->mDriveDynData.setAnalogInput(
-                        PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL, accel * 0.42f);
-            }
-            else if (speedDiff > 0.f)
-            {
-                vehicle4W->mDriveDynData.setAnalogInput(
-                        PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL, accel * 0.49f);
+                vehicle4W->mDriveDynData.setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL,
+                        accel * clamp(1.f - speedDiff * 0.8f, 0.05f, 1.f));
+                vehicle4W->mDriveDynData.setCurrentGear(tuning->gearRatios.size() - 1);
             }
         }
     }
@@ -732,6 +730,7 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
                 if (wheelInfo[i].oilCoverage > 0.f)
                 {
                     f32 amount = clamp(wheelInfo[i].oilCoverage, 0.f, 1.f);
+                    // TODO: should this be a percentage of trackTireFriction rather than the hardcoded 0.95?
                     f32 oilFriction = lerp(tuning->trackTireFriction, 0.95f, amount);
                     frictionPairs->setTypePairFriction(0, 0, oilFriction);
                     frictionPairs->setTypePairFriction(0, 1,

@@ -47,8 +47,8 @@ public:
         tuning.topSpeed = 33.f;
         tuning.driftBoost = 0.02f;
 
-        tuning.maxEngineOmega = 750.f;
-        tuning.peekEngineTorque = 1100.f;
+        tuning.maxEngineOmega = 755.f;
+        tuning.peekEngineTorque = 1200.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -80,12 +80,12 @@ public:
             switch (upgrade.upgradeType)
             {
                 case PerformanceUpgradeType::ENGINE:
-                    tuning.peekEngineTorque += 11.f * u.upgradeLevel;
+                    tuning.peekEngineTorque += 15.f * u.upgradeLevel;
                     tuning.topSpeed += 1.2f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:
                     tuning.trackTireFriction += 0.16f * u.upgradeLevel;
-                    tuning.offroadTireFriction += 0.05f * u.upgradeLevel;
+                    tuning.offroadTireFriction += 0.08f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 12.f * u.upgradeLevel;
@@ -95,10 +95,11 @@ public:
                     break;
                 // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:
-                    tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
-                    tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
-                    tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
-                    tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
+                    tuning.frontAntiRollbarStiffness += 600.f * u.upgradeLevel;
+                    tuning.rearAntiRollbarStiffness += 600.f * u.upgradeLevel;
+                    tuning.suspensionSpringStrength += 1100.f * u.upgradeLevel;
+                    tuning.suspensionSpringDamperRate += 600.f * u.upgradeLevel;
+                    tuning.trackTireFriction += 0.05f * u.upgradeLevel;
                     break;
                 default:
                     println("Unhandled upgrade: %s", upgrade.name);

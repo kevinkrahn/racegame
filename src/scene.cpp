@@ -1324,6 +1324,11 @@ void Scene::showDebugInfo()
     }
 }
 
+f32 Scene::timeUntilStart() const
+{
+    return g_game.isEditing ? 0.f : 3.f - worldTime;
+}
+
 Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRadius)
 {
     PxTransform transform(PxIdentity);
@@ -1336,7 +1341,8 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
     PxQueryFilterData filterObstacles;
     filterObstacles.flags |= PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC;
     filterObstacles.data = PxFilterData(
-            COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS | COLLISION_FLAG_MINE, 0, 0, 0);
+            COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS |
+            COLLISION_FLAG_MINE | COLLISION_FLAG_SPLINE, 0, 0, 0);
 
     PxQueryFilterData filterTrack;
     filterTrack.flags |= PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC;
@@ -1349,14 +1355,14 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
         PxVec3(0, -1, 0)
     };
 
-    for (u32 i=0; i<10; ++i)
+    for (u32 i=0; i<20; ++i)
     {
         if (!physicsScene->overlap(geometry, transform, overlapHit, filterObstacles))
         {
             bool onTrack = true;
             for (PxVec3& offset : offsets)
             {
-                if (!physicsScene->raycast(transform.p + offset + PxVec3(0, 0, 5.f), PxVec3(0, 0, -1), 10.f, raycastHit,
+                if (!physicsScene->raycast(transform.p + offset * 2.5f + PxVec3(0, 0, 5.f), PxVec3(0, 0, -1), 10.f, raycastHit,
                         PxHitFlags(PxHitFlag::eMESH_ANY), filterTrack))
                 {
                     onTrack = false;
@@ -1365,6 +1371,7 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
             }
             if (onTrack)
             {
+                println("Found valid position");
                 return transform.p;
             }
         }
@@ -1375,6 +1382,7 @@ Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRad
         transform.p = convert(pos + offset);
     }
 
+    println("Did not find valid position");
     return pos;
 }
 

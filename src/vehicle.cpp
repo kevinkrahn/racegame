@@ -379,6 +379,19 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 {
     TIMED_BLOCK();
 
+#if 0
+    Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
+    drawSimple(rw, sphere, &g_res.white, Mat4::translation(graphResult.position),
+                Vec3(0, 1, 0));
+    if (graphResult.lastNode)
+    {
+        drawSimple(rw, sphere, &g_res.white, Mat4::translation(graphResult.lastNode->position),
+                Vec3(1, 0, 0));
+    }
+    drawSimple(rw, sphere, &g_res.white, Mat4::translation(respawnTestPosition),
+                Vec3(0, 0, 1));
+#endif
+
     bool isPlayerControlled = driver->isPlayer;
 
     for (u32 i=0; i<NUM_WHEELS; ++i)
@@ -469,14 +482,22 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
                 Vec3 pos = graphResult.position;
                 pos += Vec3(random(scene->randomSeries, -5.f, 5.f),
                         random(scene->randomSeries, -5.f, 5.f), 0.f);
-                pos = scene->findValidPosition(pos, 5.f);
+                pos = scene->findValidPosition(pos, 3.f, 10.f);
+
+                TrackGraph::QueryResult tmpResult = graphResult;
+                tmpResult.lapDistanceLowMark = tmpResult.currentLapDistance;
+                respawnTestPosition = Vec3(graphResult.position.xy + lengthdir(node->angle, 9.f), pos.z);
+                scene->getTrackGraph().findLapDistance(respawnTestPosition, tmpResult, 250.f);
+                respawnTestPosition = tmpResult.position;
+                f32 angle = pointDirection(graphResult.position.xy, tmpResult.position.xy) + PI * 0.5f;
+
                 Mat4 resetTransform =
-                    Mat4::translation(pos + Vec3(0, 0, 7.f)) * Mat4::rotationZ(node->angle);
+                    Mat4::translation(pos + Vec3(0, 0, 6.5f)) * Mat4::rotationZ(angle);
                 PxRaycastBuffer hit;
                 if (scene->raycastStatic(pos + Vec3(0, 0, 8.f), { 0, 0, -1 }, 20.f, &hit))
                 {
                     Vec3 up = hit.block.normal;
-                    Vec3 forwardTmp = Vec3(lengthdir(node->angle, 1.f), 0.f);
+                    Vec3 forwardTmp = Vec3(lengthdir(angle, 1.f), 0.f);
                     Vec3 right = normalize(cross(up, forwardTmp));
                     Vec3 forward = normalize(cross(right, up));
                     Mat4 m(1.f);
@@ -490,10 +511,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             if (!finishedRace && scene->canGo())
             {
-                const f32 respawnSpeed = 11.f;
+#if 1
+                const f32 respawnSpeed = 6.f;
                 getRigidBody()->addForce(
                         convert(vehiclePhysics.getForwardVector() * respawnSpeed),
                         PxForceMode::eVELOCITY_CHANGE);
+#endif
             }
         }
         if (cameraIndex >= 0)
@@ -947,7 +970,7 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
         {
             if (g_game.config.gameplay.forceFeedbackEnabled)
             {
-                controller->playHaptic(clamp(0.2f + amount * 0.03f, 0.f, 0.8f), 400);
+                controller->playHaptic(clamp(0.2f + amount * 0.03f, 0.f, 0.8f), 350);
             }
         }
     }
@@ -980,7 +1003,7 @@ void Vehicle::blowUp(f32 respawnTime)
     }
     deadTimer = respawnTime;
     scene->createExplosion(transform.position(), previousVelocity, 10.f);
-    if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.5)
+    if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.5f)
     {
         scene->attackCredit(lastOpponentDamagedBy, vehicleIndex);
     }

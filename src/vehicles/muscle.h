@@ -42,11 +42,11 @@ public:
         tuning.rearTireGripPercent = 0.98f;
         tuning.constantDownforce = 0.f;
         tuning.forwardDownforce = 0.002f;
-        tuning.topSpeed = 31.f;
+        tuning.topSpeed = 33.f;
         tuning.driftBoost = 0.f;
 
         tuning.maxEngineOmega = 820.f;
-        tuning.peekEngineTorque = 1060.f;
+        tuning.peekEngineTorque = 1080.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -78,12 +78,12 @@ public:
             switch (upgrade.upgradeType)
             {
                 case PerformanceUpgradeType::ENGINE:
-                    tuning.peekEngineTorque += 12.f * u.upgradeLevel;
+                    tuning.peekEngineTorque += 15.f * u.upgradeLevel;
                     tuning.topSpeed += 1.5f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:
-                    tuning.trackTireFriction += 0.1f * u.upgradeLevel;
-                    tuning.offroadTireFriction += 0.08f * u.upgradeLevel;
+                    tuning.trackTireFriction += 0.12f * u.upgradeLevel;
+                    tuning.offroadTireFriction += 0.12f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ARMOR:
                     tuning.maxHitPoints += 13.f * u.upgradeLevel;
@@ -93,10 +93,10 @@ public:
                     break;
                 // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:
-                    tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
-                    tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
-                    tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
-                    tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
+                    tuning.frontAntiRollbarStiffness += 600.f * u.upgradeLevel;
+                    tuning.rearAntiRollbarStiffness += 600.f * u.upgradeLevel;
+                    tuning.suspensionSpringStrength += 1100.f * u.upgradeLevel;
+                    tuning.suspensionSpringDamperRate += 600.f * u.upgradeLevel;
                     break;
                 default:
                     println("Unhandled upgrade: %s", upgrade.name);

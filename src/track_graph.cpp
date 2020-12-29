@@ -206,7 +206,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
                 toPosition = nodes[nodeIndexPaths[j][i-1]].position;
                 fromPosition = nodes[nodeIndexPaths[j][i]].position;
             }
-            nodes[nodeIndexPaths[j][i]].angle = pointDirection(Vec2(fromPosition), Vec2(toPosition)) - f32(M_PI) * 0.5f;
+            nodes[nodeIndexPaths[j][i]].angle = pointDirection(Vec2(fromPosition), Vec2(toPosition)) - PI * 0.5f;
             nodes[nodeIndexPaths[j][i]].direction = normalize(fromPosition - toPosition);
         }
     }

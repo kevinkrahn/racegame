@@ -46,7 +46,7 @@ public:
         tuning.driftBoost = 0.f;
 
         tuning.maxEngineOmega = 900.f;
-        tuning.peekEngineTorque = 1020.f;
+        tuning.peekEngineTorque = 1150.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -78,11 +78,11 @@ public:
             switch (upgrade.upgradeType)
             {
                 case PerformanceUpgradeType::ENGINE:
-                    tuning.peekEngineTorque += 8.f * u.upgradeLevel;
+                    tuning.peekEngineTorque += 15.f * u.upgradeLevel;
                     tuning.topSpeed += 1.2f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:
-                    tuning.trackTireFriction += 0.1f * u.upgradeLevel;
+                    tuning.trackTireFriction += 0.11f * u.upgradeLevel;
                     tuning.offroadTireFriction += 0.02f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ARMOR:
@@ -93,10 +93,11 @@ public:
                     break;
                 // TODO: Add visible lowering of suspension
                 case PerformanceUpgradeType::SUSPENSION:
-                    tuning.frontAntiRollbarStiffness += 500.f * u.upgradeLevel;
-                    tuning.rearAntiRollbarStiffness += 500.f * u.upgradeLevel;
-                    tuning.suspensionSpringStrength += 1000.f * u.upgradeLevel;
-                    tuning.suspensionSpringDamperRate += 500.f * u.upgradeLevel;
+                    tuning.frontAntiRollbarStiffness += 600.f * u.upgradeLevel;
+                    tuning.rearAntiRollbarStiffness += 600.f * u.upgradeLevel;
+                    tuning.suspensionSpringStrength += 1100.f * u.upgradeLevel;
+                    tuning.suspensionSpringDamperRate += 600.f * u.upgradeLevel;
+                    tuning.trackTireFriction += 0.05f * u.upgradeLevel;
                     break;
                 default:
                     println("Unhandled upgrade: %s", upgrade.name);
