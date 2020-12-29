@@ -194,12 +194,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
-    Mat4 m(1.f);
-    m[0] = Vec4(normalize(velocity), m[0].w);
-    m[1] = Vec4(normalize(
-                cross(upVector, Vec3(m[0]))), m[1].w);
-    m[2] = Vec4(normalize(
-                cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
+    Mat4 m = Mat4::faceDirection(normalize(velocity), upVector);
 
     switch (projectileType)
     {

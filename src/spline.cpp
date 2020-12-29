@@ -244,14 +244,8 @@ void Spline::deformMeshAlongPath(Mesh* sourceMesh, Mesh* outputMesh, f32 meshSca
             Vec3 xDir = line.dir;
             Vec3 yDir = normalize(cross(Vec3(0, 0, 1), xDir));
             Vec3 zDir = normalize(cross(xDir, yDir));
-
-            Mat3 m(1.f);
-            m[0] = xDir;
-            m[1] = yDir;
-            m[2] = zDir;
-
-            Vec3 dp = line.pos + line.dir *
-                (distanceAlongPath - line.distanceToHere) + m * p;
+            Mat3 m(xDir, yDir, zDir);
+            Vec3 dp = line.pos + line.dir * (distanceAlongPath - line.distanceToHere) + m * p;
 
             // bend normal and tangent
             Vec3 dn = normalize(m * n);

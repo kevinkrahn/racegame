@@ -57,6 +57,9 @@
 - Add a mine that has a large explosive force that sends vehicles flying, but does little damage
 - Change that horrible collision sound
 - Test with Steam controller
+- Make AI respect racing line speed
+- Should be able to build after a fresh git clone with only a C++ compiler and nothing else.
+  This means storing all libraries in the git repo and removing dependency on CMake and Python.
 
 - Ideas:
     - Grenade launcher weapon

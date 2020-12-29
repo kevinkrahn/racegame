@@ -4,6 +4,13 @@
 Vec2::Vec2(Vec3 const& v) : x(v.x), y(v.y) {}
 Vec3::Vec3(Vec4 const& v) : x(v.x), y(v.y), z(v.z) {}
 
+Mat3 Mat3::faceDirection(const Vec3 &forwardVector, const Vec3 &upVector)
+{
+    Vec3 right = normalize(cross(upVector, forwardVector));
+    Vec3 up = normalize(cross(forwardVector, right));
+    return Mat3(forwardVector, right, up);
+}
+
 Mat4 Mat4::ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 {
     Mat4 result(1.f);
@@ -161,6 +168,13 @@ Mat4 Mat4::translation(Vec3 const& trans)
     r[3][2] = trans.z;
 
     return r;
+}
+
+Mat4 Mat4::faceDirection(const Vec3 &forwardVector, const Vec3 &upVector)
+{
+    Vec3 right = normalize(cross(upVector, forwardVector));
+    Vec3 up = normalize(cross(forwardVector, right));
+    return Mat4(forwardVector, right, up);
 }
 
 Mat4 inverse(Mat4 const& m)

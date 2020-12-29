@@ -900,6 +900,12 @@ struct Mat3
         value[2] = Vec3(0.f, 0.f, n);
     }
     explicit Mat3(struct Mat4 const& m);
+    Mat3(Vec3 const& basis1, Vec3 const& basis2, Vec3 const& basis3)
+    {
+        value[0] = basis1;
+        value[1] = basis2;
+        value[2] = basis3;
+    }
 
     f32* valuePtr() const { return (f32*)value; }
 
@@ -986,6 +992,7 @@ struct Mat3
         return *this;
     }
 
+    static Mat3 faceDirection(Vec3 const& forwardVector, Vec3 const& upVector);
 };
 
 Mat3 inverse(Mat3 const& m);
@@ -1069,6 +1076,13 @@ struct alignas(16) Mat4
         value[2] = Vec4(m[2], 0.f);
         value[3] = { 0, 0, 0, 1 };
     }
+    Mat4(Vec3 const& basis1, Vec3 const& basis2, Vec3 const& basis3)
+    {
+        value[0] = Vec4(basis1, 0.f);
+        value[1] = Vec4(basis2, 0.f);
+        value[2] = Vec4(basis3, 0.f);
+        value[3] = Vec4(0.f, 0.f, 0.f, 1.f);
+    }
 
     explicit Mat4(PxMat44 const& m) : Mat4(m.front()) {}
     explicit Mat4(struct Quat const& q);
@@ -1086,6 +1100,7 @@ struct alignas(16) Mat4
     static Mat4 rotationZ(f32 angle);
     static Mat4 scaling(Vec3 const& scale);
     static Mat4 translation(Vec3 const& trans);
+    static Mat4 faceDirection(Vec3 const& forwardVector, Vec3 const& upVector);
 
     Vec3 const& xAxis() const
     {
