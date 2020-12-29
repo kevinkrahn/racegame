@@ -192,6 +192,8 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
 
 void Renderer::updateFramebuffers()
 {
+    renderWorld.name = "Main";
+    renderWorld.pickBufferEnabled = true;
     renderWorld.width = g_game.config.graphics.resolutionX;
     renderWorld.height = g_game.config.graphics.resolutionY;
     renderWorld.createFramebuffers();
@@ -275,8 +277,6 @@ void Renderer::init()
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glDisable(GL_DITHER);
-
-    renderWorld.name = "Main";
 }
 
 void Renderer::render(f32 deltaTime)
@@ -820,7 +820,7 @@ void RenderWorld::createFramebuffers()
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
 
-        if (width > 128 && height > 128)
+        if (pickBufferEnabled)
         {
             glGenTextures(1, &fb.pickIDTexture);
             glBindTexture(GL_TEXTURE_2D, fb.pickIDTexture);

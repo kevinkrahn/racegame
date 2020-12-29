@@ -178,6 +178,7 @@ class RenderWorld
     u32 settingsVersion = 0;
     Vec4 clearColor = { 0.15f, 0.35f, 0.9f, 1.f };
     bool clearColorEnabled = false;
+    bool pickBufferEnabled = false;
 
     const char* name = "";
     WorldInfo worldInfo;
