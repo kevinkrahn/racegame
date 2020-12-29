@@ -673,21 +673,52 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         Vec3 yDir = normalize(cross(xDir, Vec3(0, 0, 1)));
         Vec3 zDir = normalize(cross(yDir, xDir));
         f32 width = lerp(c.widthA, c.widthB, t);
-        Vec3 p1 = p + yDir * width;
-        Vec3 p2 = p - yDir * width;
-        c.vertices.push_back(Vertex{ p1, zDir });
-        c.vertices.push_back(Vertex{ p2, zDir });
+        f32 edgeWidth = 0.f;
+        f32 edgeHeight = 0.36f;
+        Vec3 p1 = p + yDir * (width + edgeWidth) - Vec3(0, 0, edgeHeight);
+        Vec3 p2 = p + yDir * width;
+        Vec3 p3 = p - yDir * width;
+        Vec3 p4 = p - yDir * (width + edgeWidth) - Vec3(0, 0, edgeHeight);
+        c.vertices.push_back(Vertex{ p1, -yDir }); // current: j,   previous: j-4
+        c.vertices.push_back(Vertex{ p2, zDir });  // current: j+1, previous: j-3
+        c.vertices.push_back(Vertex{ p3, zDir });  // current: j+2, previous: j-2
+        c.vertices.push_back(Vertex{ p4, yDir });  // current: j+3, previous: j-1
         if (i > 0)
         {
-            c.indices.push_back(i * 2 - 1);
-            c.indices.push_back(i * 2 - 2);
-            c.indices.push_back(i * 2);
-            c.indices.push_back(i * 2);
-            c.indices.push_back(i * 2 + 1);
-            c.indices.push_back(i * 2 - 1);
+            u32 j = i*4;
+
+            // left edge tri 1
+            c.indices.push_back(j-3);
+            c.indices.push_back(j-4);
+            c.indices.push_back(j);
+
+            // left edge tri 2
+            c.indices.push_back(j-3);
+            c.indices.push_back(j);
+            c.indices.push_back(j+1);
+
+            // center tri 1
+            c.indices.push_back(j-2);
+            c.indices.push_back(j-3);
+            c.indices.push_back(j+1);
+
+            // center tri 2
+            c.indices.push_back(j-2);
+            c.indices.push_back(j+1);
+            c.indices.push_back(j+2);
+
+            // right edge tri 1
+            c.indices.push_back(j-1);
+            c.indices.push_back(j-2);
+            c.indices.push_back(j+2);
+
+            // right edge tri 2
+            c.indices.push_back(j-1);
+            c.indices.push_back(j+2);
+            c.indices.push_back(j+3);
         }
-        c.boundingBox.min = min(c.boundingBox.min, min(p1, p2));
-        c.boundingBox.max = max(c.boundingBox.max, max(p1, p2));
+        c.boundingBox.min = min(c.boundingBox.min, min(min(p1, p2), min(p3, p4)));
+        c.boundingBox.max = max(c.boundingBox.max, max(max(p1, p2), max(p3, p4)));
         prevP = p;
     }
     computeBoundingBox();
@@ -782,187 +813,55 @@ void Track::computeBoundingBox()
 void Track::buildPreviewMesh(Scene* scene)
 {
     previewMesh.destroy();
+    previewMesh.vertices.clear();
+    previewMesh.indices.clear();
 
-    u32 vertexCount = 0;
-    u32 indexCount = 0;
-    for (auto& c : connections)
-    {
-        vertexCount += c->vertices.size();
-        indexCount += c->indices.size();
-    }
-    const u32 vertexElementCount = 7;
-    previewMesh.vertices.resize(vertexCount * vertexElementCount + 2);
-    previewMesh.indices.resize(indexCount);
-
-#if 0
-    u32 vertexIndex = 0;
     u32 indexOffset = 0;
-    u32 indexIndex = 0;
-    const f32 stepSize = 4.f;
-    TrackGraph& trackGraph = scene->getTrackGraph();
-    Vec3 finishLinePosition = translationOf(scene->getStart());
     for (auto& c : connections)
     {
-        f32 totalLength = c->getLength();
-        u32 totalSteps = (u32)(totalLength / stepSize);
-        Vec3 prevP = points[c->pointIndexA].position;
-        f32 dA = trackGraph.getNode(c->trackGraphNodeIndexA)->t;
-        f32 dB = trackGraph.getNode(c->trackGraphNodeIndexB)->t;
-
-        u32 finishLineStepIndex = 0;
-        bool crossesFinishLine = false;
-        for (u32 i=0; i<=totalSteps; ++i)
+        for (u32 i=0; i<c->vertices.size(); i+=4)
         {
-            f32 t = (f32)i / (f32)totalSteps;
-            Vec3 p = pointOnBezierCurve(
-                    points[c->pointIndexA].position,
-                    points[c->pointIndexA].position + c->handleOffsetA,
-                    points[c->pointIndexB].position + c->handleOffsetB,
-                    points[c->pointIndexB].position, t);
-            if (distance2(p, finishLinePosition) < square(6.f))
-            {
-                crossesFinishLine = true;
-                finishLineStepIndex = i;
-                break;
-            }
-        }
+            // skip edges
 
-        f32 ddA = dA;
-        f32 ddB = dB;
-        if (crossesFinishLine)
-        {
-            ddB = dA < dB ? 0.f : trackGraph.getStartNode()->t;
-        }
+            previewMesh.vertices.push_back(c->vertices[i+1].position.x);
+            previewMesh.vertices.push_back(c->vertices[i+1].position.y);
+            previewMesh.vertices.push_back(c->vertices[i+1].position.z);
+            previewMesh.vertices.push_back(c->vertices[i+1].normal.x);
+            previewMesh.vertices.push_back(c->vertices[i+1].normal.y);
+            previewMesh.vertices.push_back(c->vertices[i+1].normal.z);
 
-        for (u32 i=0; i<=totalSteps; ++i)
-        {
-            f32 t = (f32)i / (f32)totalSteps;
-            Vec3 p = pointOnBezierCurve(
-                    points[c->pointIndexA].position,
-                    points[c->pointIndexA].position + c->handleOffsetA,
-                    points[c->pointIndexB].position + c->handleOffsetB,
-                    points[c->pointIndexB].position, t);
-            Vec3 xDir = normalize(i == 0 ? c->handleOffsetA :
-                    (i == totalSteps ? -c->handleOffsetB : normalize(p - prevP)));
-            Vec3 yDir = normalize(cross(xDir, Vec3(0, 0, 1)));
-            Vec3 zDir = normalize(cross(yDir, xDir));
-            f32 width = lerp(c->widthA, c->widthB, t);
-            Vec3 p1 = p + yDir * width;
-            Vec3 p2 = p - yDir * width;
-
-            f32 distance = 0.f;
-            f32 lerpT = t;
-            if (crossesFinishLine)
-            {
-                if (i <= finishLineStepIndex)
-                {
-                    lerpT = (f32)i / (f32)(finishLineStepIndex);
-                }
-                else
-                {
-                    lerpT = (f32)(i - finishLineStepIndex) / (f32)(totalSteps - finishLineStepIndex);
-                }
-                distance = lerp(ddA, ddB, lerpT);
-            }
-            else
-            {
-                distance = trackGraph.findTrackProgressAtPoint(p, lerp(ddA, ddB, lerpT));
-            }
-
-            previewMesh.vertices[vertexIndex + 0]  = p1.x;
-            previewMesh.vertices[vertexIndex + 1]  = p1.y;
-            previewMesh.vertices[vertexIndex + 2]  = p1.z;
-            previewMesh.vertices[vertexIndex + 3]  = zDir.x;
-            previewMesh.vertices[vertexIndex + 4]  = zDir.y;
-            previewMesh.vertices[vertexIndex + 5]  = zDir.z;
-            previewMesh.vertices[vertexIndex + 6]  = distance / trackGraph.getStartNode()->t;
-            previewMesh.vertices[vertexIndex + 7]  = p2.x;
-            previewMesh.vertices[vertexIndex + 8]  = p2.y;
-            previewMesh.vertices[vertexIndex + 9]  = p2.z;
-            previewMesh.vertices[vertexIndex + 10] = zDir.x;
-            previewMesh.vertices[vertexIndex + 11] = zDir.y;
-            previewMesh.vertices[vertexIndex + 12] = zDir.z;
-            previewMesh.vertices[vertexIndex + 13] = distance / trackGraph.getStartNode()->t;;
-            vertexIndex += 2 * vertexElementCount;
+            previewMesh.vertices.push_back(c->vertices[i+2].position.x);
+            previewMesh.vertices.push_back(c->vertices[i+2].position.y);
+            previewMesh.vertices.push_back(c->vertices[i+2].position.z);
+            previewMesh.vertices.push_back(c->vertices[i+2].normal.x);
+            previewMesh.vertices.push_back(c->vertices[i+2].normal.y);
+            previewMesh.vertices.push_back(c->vertices[i+2].normal.z);
 
             if (i > 0)
             {
-                previewMesh.indices[indexIndex + 0] = indexOffset - 1;
-                previewMesh.indices[indexIndex + 1] = indexOffset - 2;
-                previewMesh.indices[indexIndex + 2] = indexOffset;
-                previewMesh.indices[indexIndex + 3] = indexOffset;
-                previewMesh.indices[indexIndex + 4] = indexOffset + 1;
-                previewMesh.indices[indexIndex + 5] = indexOffset - 1;
+                previewMesh.indices.push_back(indexOffset-1);
+                previewMesh.indices.push_back(indexOffset-2);
+                previewMesh.indices.push_back(indexOffset);
 
-                indexIndex += 6;
-            }
-
-            if (crossesFinishLine && i == finishLineStepIndex)
-            {
-                previewMesh.vertices[vertexIndex + 0]  = p1.x;
-                previewMesh.vertices[vertexIndex + 1]  = p1.y;
-                previewMesh.vertices[vertexIndex + 2]  = p1.z;
-                previewMesh.vertices[vertexIndex + 3]  = zDir.x;
-                previewMesh.vertices[vertexIndex + 4]  = zDir.y;
-                previewMesh.vertices[vertexIndex + 5]  = zDir.z;
-                previewMesh.vertices[vertexIndex + 6]  = ddA;
-                previewMesh.vertices[vertexIndex + 7]  = p2.x;
-                previewMesh.vertices[vertexIndex + 8]  = p2.y;
-                previewMesh.vertices[vertexIndex + 9]  = p2.z;
-                previewMesh.vertices[vertexIndex + 10] = zDir.x;
-                previewMesh.vertices[vertexIndex + 11] = zDir.y;
-                previewMesh.vertices[vertexIndex + 12] = zDir.z;
-                previewMesh.vertices[vertexIndex + 13] = ddA;
-                vertexIndex += 2 * vertexElementCount;
-                indexOffset += 2;
-
-                ddA = dA < dB ? trackGraph.getStartNode()->t : 0.f;
-                ddB = dB;
+                previewMesh.indices.push_back(indexOffset-1);
+                previewMesh.indices.push_back(indexOffset);
+                previewMesh.indices.push_back(indexOffset+1);
             }
 
             indexOffset += 2;
-            prevP = p;
         }
     }
 
-#else
-    u32 vertexIndex = 0;
-    u32 indexOffset = 0;
-    u32 indexIndex = 0;
-    for (auto& c : connections)
-    {
-        for (u32 i=0; i<c->vertices.size(); ++i)
-        {
-            previewMesh.vertices[vertexIndex + 0] = c->vertices[i].position.x;
-            previewMesh.vertices[vertexIndex + 1] = c->vertices[i].position.y;
-            previewMesh.vertices[vertexIndex + 2] = c->vertices[i].position.z;
-            // TODO: don't include normals if not used
-            previewMesh.vertices[vertexIndex + 3] = c->vertices[i].normal.x;
-            previewMesh.vertices[vertexIndex + 4] = c->vertices[i].normal.y;
-            previewMesh.vertices[vertexIndex + 5] = c->vertices[i].normal.z;
-            //previewMesh.vertices[vertexIndex + 6] = 0.f;
-
-            vertexIndex += vertexElementCount;
-        }
-        for (u32 i=0; i<c->indices.size(); ++i)
-        {
-            previewMesh.indices[indexIndex + i] = c->indices[i] + indexOffset;
-        }
-        indexIndex += (u32)c->indices.size();
-        indexOffset += (u32)c->vertices.size();
-    }
-#endif
     previewMesh.name = "Track Preview";
-    previewMesh.numVertices = previewMesh.vertices.size() / vertexElementCount;
+    previewMesh.numVertices = previewMesh.vertices.size() / 7;
     previewMesh.numIndices = previewMesh.indices.size();
     previewMesh.numColors = 0;
     previewMesh.numTexCoords = 0;
-    previewMesh.stride = vertexElementCount * sizeof(f32);
+    previewMesh.stride = 6 * sizeof(f32);
     previewMesh.aabb = boundingBox;
     previewMesh.vertexFormat = {
         { 0, VertexAttributeType::FLOAT3 }, // position
         { 1, VertexAttributeType::FLOAT3 }, // normal
-        //{ 2, VertexAttributeType::FLOAT1 }, // distance
     };
 
     previewMesh.createVAO();

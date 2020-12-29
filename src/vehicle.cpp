@@ -1260,8 +1260,11 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     // obstacle avoidance
 #if 1
     u32 flags = COLLISION_FLAG_DYNAMIC | COLLISION_FLAG_OIL  |
-                COLLISION_FLAG_GLUE    | COLLISION_FLAG_MINE |
-                COLLISION_FLAG_CHASSIS;// | COLLISION_FLAG_BOOSTER;
+                COLLISION_FLAG_GLUE    | COLLISION_FLAG_MINE; // | COLLISION_FLAG_BOOSTER;
+    if (attackTimer < 0.6f)
+    {
+        flags |= COLLISION_FLAG_CHASSIS;
+    }
     PxSweepBuffer hit;
     f32 sweepLength = 13.f + ai.awareness * 8.f;
     PxRigidBody* ignoreBody = getRigidBody();
@@ -1523,19 +1526,19 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         }
         else
         {
-            attackTimer = max(attackTimer - deltaTime * 4.f, 0.f);
+            attackTimer = max(attackTimer - deltaTime * 3.8f, 0.f);
         }
 
         if (frontWeapons[currentFrontWeaponIndex]->fireMode == Weapon::CONTINUOUS)
         {
-            if (attackTimer > 2.f * (1.f - aggression) + 0.4f)
+            if (attackTimer > 2.f * (1.f - aggression) + 0.35f)
             {
                 input.holdShoot = true;
             }
         }
         else
         {
-            if (attackTimer > 2.5f * (1.f - aggression) + 0.7f)
+            if (attackTimer > 2.4f * (1.f - aggression) + 0.6f)
             {
                 attackTimer = 0.f;
                 input.beginShoot = true;

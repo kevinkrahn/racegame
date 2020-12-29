@@ -8,8 +8,8 @@
 #include "audio.h"
 #include "weapon.h"
 #include "imgui.h"
-#include <imgui/examples/imgui_impl_sdl.h>
-#include <imgui/examples/imgui_impl_opengl3.h>
+#include <imgui/backends/imgui_impl_sdl.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
 
 void Game::initPhysX()
 {

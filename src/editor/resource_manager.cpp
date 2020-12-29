@@ -648,7 +648,7 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
         {
             for (u32 i=0; i<tex.getSourceFileCount(); ++i)
             {
-                ImGui::Columns(2, NULL, false);
+                ImGui::Columns(2, nullptr, false);
                 ImGui::SetColumnWidth(0, 80);
                 auto const& sf = tex.getSourceFile(i);
                 f32 ratio = 72.f / sf.width;
