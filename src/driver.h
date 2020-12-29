@@ -40,7 +40,31 @@ struct Driver
 
     i32 getVehicleValue()
     {
-        return vehicleIndex == -1 ? 0 : g_vehicles[vehicleIndex]->price / 2;
+        if (vehicleIndex == -1)
+        {
+            return 0;
+        }
+        i32 value = g_vehicles[vehicleIndex]->price;
+        VehicleData* vd = getVehicleData();
+        for (auto& upgrade : vehicleConfig.performanceUpgrades)
+        {
+            for (i32 i=1; i<=upgrade.upgradeLevel; ++i)
+            {
+                value += vd->availableUpgrades[upgrade.upgradeIndex].price * i;
+            }
+        }
+        if (vehicleConfig.specialAbilityIndex != -1)
+        {
+            value += g_weapons[vehicleConfig.specialAbilityIndex].info.price;
+        }
+        for (i32 weaponIndex : vehicleConfig.weaponIndices)
+        {
+            if (weaponIndex != -1)
+            {
+                value += g_weapons[weaponIndex].info.price;
+            }
+        }
+        return value / 2;
     }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,

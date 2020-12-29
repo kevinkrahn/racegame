@@ -55,7 +55,6 @@
 - Background music
 - Focus the equipped item first in the weapon menu
 - Add a mine that has a large explosive force that sends vehicles flying, but does little damage
-- When trading in a vehicle, the value of equippment should be included in the value
 - Change that horrible collision sound
 - Test with Steam controller
 
