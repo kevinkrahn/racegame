@@ -4,6 +4,7 @@
 - Add grass placement system (auto-stick to terrain, overlapping objects automatically destroy it)
 - Add support for importing a heightmap into the editor
 - Multi-thread certain parts (e.g. physics and particles can be simulated at the same time)
+- Multi-thread asset loading
 - Add force-feedback for collisions, offroad, etc.
 - Render with pre-multiplied alpha
 - Use time dilation for some effect (maybe when last person crosses finish line? A power up?)
@@ -62,15 +63,15 @@
   This means storing all libraries in the git repo and removing dependency on CMake and Python.
 - Add effects for armor and money pickups.
 - Experiment with an initial burst at the beginning of a rocket boost, to make it feel better to use.
-
-- Ideas:
-    - Grenade launcher weapon
-    - Weapon that drops bouncing explosive balls from the back of the vehicle
-    - Missile rack on back of truck (shoots high into the air and homes down on a target)
-    - Vehicle upgrade with visual properties, like a spoiler for downforce, or visual armour
-    - Shield ability
-    - Ability that creates huge explosion when vehicle is destoyed, damaging nearby vehicles
-    - Deathmatch mode, or a mode where everybody races around a map to pickup an item that spawns randomly
-    - Ability that gives immediate burst of speed and big bonus to ramming damage
-    - Shock wave ability
-    - Add weapon that deals damage based on race placement (i.e. the driver in first place would receive the most damage)
+- Grenade launcher weapon
+- Weapon that drops bouncing explosive balls from the back of the vehicle
+- Missile rack on back of truck (shoots high into the air and homes down on a target)
+- Vehicle upgrade with visual properties, like a spoiler for downforce, or visual armour
+- Shield ability
+- Ability that creates huge explosion when vehicle is destoyed, damaging nearby vehicles
+- Deathmatch mode, or a mode where everybody races around a map to pickup an item that spawns randomly
+- Ability that gives immediate burst of speed and big bonus to ramming damage
+- Shock wave ability
+- Add weapon that deals damage based on race placement (i.e. the driver in first place would receive the most damage)
+- Add inverse of jump jet, an ability that slams you to the ground.
+- Maybe splines should store there snapped-to-terrain-or-track position, so that it doesn't change when the terrain or track changes.

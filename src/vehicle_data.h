@@ -145,6 +145,9 @@ const char* g_wrapTextures[] = {
     "p_double_stripes",
     "p_splat",
     "p_test",
+    "p_single_stripe_center",
+    "p_single_stripe_left",
+    "p_single_stripe_right",
 };
 
 const char* g_wrapTextureNames[] = {
@@ -153,6 +156,9 @@ const char* g_wrapTextureNames[] = {
     "Double Stripe",
     "Splat",
     "Test",
+    "Single Stripe",
+    "Single Stripe Left",
+    "Single Stripe Right",
 };
 
 static_assert(ARRAY_SIZE(g_wrapTextureNames) == ARRAY_SIZE(g_wrapTextureNames));

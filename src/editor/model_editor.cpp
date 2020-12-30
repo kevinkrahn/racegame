@@ -118,14 +118,7 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
             ImGui::Text(model->sourceFilePath.data());
             ImGui::Text(tmpStr("Scene: %s", model->sourceSceneName.data()));
         }
-        ImGui::TextDisabled("GUID: %x", model->guid);
-        ImGui::SameLine();
-        if (ImGui::SmallButton("Copy"))
-        {
-            ImGui::LogToClipboard();
-            ImGui::LogText("%x", model->guid);
-            ImGui::LogFinish();
-        }
+        ImGui::Guid(model->guid);
         ImGui::Checkbox("Show Grid", &showGrid);
         ImGui::Checkbox("Show Floor", &showFloor);
         ImGui::Checkbox("Show Bounds", &showBoundingBox);

@@ -429,7 +429,7 @@ public:
                 {
                     // handle A
                     if (raySphereIntersection(cam, rayDir,
-                            spline->points[i].position + spline->points[i].handleOffsetA, 0.012f))
+                            spline->points[i].position + spline->points[i].handleOffsetA, 0.01f))
                     {
                         bool alreadySelected = false;
                         for (u32 j=0; j<selectedPoints.size(); ++j)
@@ -456,7 +456,7 @@ public:
 
                     // handle B
                     if (raySphereIntersection(cam, rayDir,
-                            spline->points[i].position + spline->points[i].handleOffsetB, 0.012f))
+                            spline->points[i].position + spline->points[i].handleOffsetB, 0.01f))
                     {
                         bool alreadySelected = false;
                         for (u32 j=0; j<selectedPoints.size(); ++j)

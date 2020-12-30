@@ -43,4 +43,16 @@ namespace ImGui
     {
         return ImGui::InputText(label, str->data(), SIZE, flags);
     }
+
+    inline void Guid(i64 guid)
+    {
+        ImGui::TextDisabled("GUID: %x", guid);
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Copy"))
+        {
+            ImGui::LogToClipboard();
+            ImGui::LogText("%x", guid);
+            ImGui::LogFinish();
+        }
+    }
 }

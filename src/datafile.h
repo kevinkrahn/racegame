@@ -571,9 +571,11 @@ namespace DataFile
 };
 
 #ifndef NDEBUG
-#define DESERIALIZE_ERROR(...) { error("%s: %s", context, Str512::format(__VA_ARGS__).data()); return; }
+//#define DESERIALIZE_ERROR(...) { error("%s: %s", context, Str512::format(__VA_ARGS__).data()); return; }
+#define DESERIALIZE_ERROR(...) { return; }
 #else
-#define DESERIALIZE_ERROR(...) { error(__VA_ARGS__); return; }
+//#define DESERIALIZE_ERROR(...) { error(__VA_ARGS__); return; }
+#define DESERIALIZE_ERROR(...) { return; }
 #endif
 
 class Serializer

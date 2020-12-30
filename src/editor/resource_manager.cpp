@@ -350,13 +350,13 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                 g_game.unloadScene();
             }
 
-            it = folder->childResources.erase(it);
             const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, hex(*it));
             if (remove(filename) != 0)
             {
                 error("Failed to delete file: %s", filename);
             }
             removed = true;
+            it = folder->childResources.erase(it);
         }
         else
         {
@@ -419,6 +419,30 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     renderer->getRenderWorld()->setHighlightColor(0, Vec4(1.f, 0.65f, 0.1f, 1.f));
 
+    if (ImGui::BeginPopupModal("Exit Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Are you sure you want to exit the editor?");
+        ImGui::Gap();
+        ImGui::SetItemDefaultFocus();
+        if (ImGui::Button("Yes", {120, 0}))
+        {
+            ImGui::CloseCurrentPopup();
+            g_game.isEditing = false;
+            g_game.menu.showMainMenu();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("No", {120, 0}))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        if (g_input.isKeyPressed(KEY_ESCAPE))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    bool exitEditor = false;
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -427,6 +451,11 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             if (ImGui::MenuItem("Save", "Ctrl+S"))
             {
                 saveResources();
+            }
+            if (ImGui::MenuItem("Exit"))
+            {
+                // TODO: Prompt for unsaved changes
+                exitEditor = true;
             }
             ImGui::EndMenu();
         }
@@ -439,6 +468,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
+    }
+    if (exitEditor)
+    {
+        ImGui::OpenPopup("Exit Editor");
     }
 
     if (isResourceWindowOpen)
@@ -475,29 +508,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     showTextureWindow(renderer, deltaTime);
     showMaterialWindow(renderer, deltaTime);
     showSoundWindow(renderer, deltaTime);
-
-    if (ImGui::BeginPopupModal("Exit Editor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::Text("Are you sure you want to exit the editor?");
-        ImGui::Gap();
-        ImGui::SetItemDefaultFocus();
-        if (ImGui::Button("Yes", {120, 0}))
-        {
-            ImGui::CloseCurrentPopup();
-            g_game.isEditing = false;
-            g_game.menu.showMainMenu();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("No", {120, 0}))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        if (g_input.isKeyPressed(KEY_ESCAPE))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
 
     // TODO: fix escape behavior (it only works when a window is focused)
     if (!ImGui::GetIO().WantCaptureKeyboard && g_input.isKeyPressed(KEY_ESCAPE))
@@ -677,6 +687,8 @@ void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
             }
             ImGui::Gap();
         }
+
+        ImGui::Guid(tex.guid);
 
         const char* textureTypeNames = "Color\0Grayscale\0Normal Map\0Cube Map\0";
         i32 textureType = tex.getTextureType();
