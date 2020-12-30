@@ -71,17 +71,14 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
                     rearWeapons.push_back(std::move(weapon));
                     break;
                 case WeaponType::SPECIAL_ABILITY:
-                    assert(false);
+                    specialAbilities.push_back(std::move(weapon));
+                    break;
             }
         }
         if (driver->getVehicleData()->weaponSlots[i].weaponType == WeaponType::FRONT_WEAPON)
         {
             ++frontWeaponSlotCount;
         }
-    }
-    if (driver->getVehicleConfig()->specialAbilityIndex != -1)
-    {
-        specialAbility = g_weapons[driver->getVehicleConfig()->specialAbilityIndex].create();
     }
 }
 
@@ -105,9 +102,9 @@ void Vehicle::resetAmmo()
     {
         w->refillAmmo();
     }
-    if (specialAbility)
+    for(auto& w : specialAbilities)
     {
-        specialAbility->refillAmmo();
+        w->refillAmmo();
     }
 }
 
@@ -124,9 +121,9 @@ void Vehicle::reset(Mat4 const& transform)
     {
         w->reset();
     }
-    if (specialAbility)
+    for (auto& w : specialAbilities)
     {
-        specialAbility->reset();
+        w->reset();
     }
     vehiclePhysics.reset(transform);
 }
@@ -241,11 +238,11 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
                     w.get(), true, i == currentRearWeaponIndex && rearWeapons[i]->ammo > 0);
             weaponIconX += g_game.windowHeight * 0.1f;
         }
-        if (specialAbility)
+        for (i32 i=0; i<(i32)specialAbilities.size(); ++i)
         {
             drawWeaponAmmo(renderer, offset +
                     Vec2(weaponIconX, d.y * g_game.windowHeight * 0.018f),
-                    specialAbility.get(), false, false);
+                    specialAbilities[i].get(), false, false);
         }
 
         // healthbar
@@ -572,10 +569,9 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     {
         currentRearWeaponIndex = (currentRearWeaponIndex + 1) % rearWeapons.size();
     }
-
-    if (specialAbility)
+    for (u32 i=0; i<specialAbilities.size(); ++i)
     {
-        specialAbility->update(scene, this, false, false, deltaTime);
+        specialAbilities[i]->update(scene, this, false, false, deltaTime);
     }
 
     // update vehicle physics
@@ -949,9 +945,9 @@ void Vehicle::shakeScreen(f32 intensity)
 
 void Vehicle::applyDamage(f32 amount, u32 instigator)
 {
-    if (specialAbility)
+    for (u32 i=0; i<specialAbilities.size(); ++i)
     {
-        amount = specialAbility->onDamage(amount, this);
+        amount = specialAbilities[i]->onDamage(amount, this);
     }
     if (amount > 0.f)
     {

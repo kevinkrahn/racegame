@@ -6,6 +6,7 @@
 class MaterialEditor : public ResourceEditor
 {
     RenderWorld rw;
+    i32 previewMeshIndex = 0;
 
 public:
     ~MaterialEditor()
@@ -18,10 +19,10 @@ public:
         Material& mat = *(Material*)r;
         mat.loadShaderHandles();
 
-        static i32 previewMeshIndex = 0;
-
         rw.setName("Material Preview");
         rw.setSize(200, 200);
+        rw.setBloomForceOff(true);
+        // TODO: find out why normal maps don't look right in the preview
         const char* previewMeshes[] = { "world.Sphere", "world.UnitCube", "world.Quad" };
         Mesh* previewMesh = g_res.getModel("misc")->getMeshByName(previewMeshes[previewMeshIndex]);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));

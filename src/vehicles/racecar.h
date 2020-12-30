@@ -12,7 +12,8 @@ public:
         price = 1;
         weaponSlots = {
             { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 | WeaponClass::NARROW },
-            { "REAR WEAPON", WeaponType::REAR_WEAPON }
+            { "REAR WEAPON", WeaponType::REAR_WEAPON },
+            { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };
 
         loadModelData("vehicle_racecar");

@@ -85,7 +85,8 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
             conf->weaponUpgradeLevel[0] = 5;
             conf->weaponIndices[1] = 6;
             conf->weaponUpgradeLevel[1] = 5;
-            conf->specialAbilityIndex = 15;
+            conf->weaponIndices[2] = 15;
+            conf->weaponIndices[3] = 15;
 
             for (auto& mode : modes)
             {

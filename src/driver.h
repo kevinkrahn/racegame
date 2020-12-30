@@ -53,15 +53,12 @@ struct Driver
                 value += vd->availableUpgrades[upgrade.upgradeIndex].price * i;
             }
         }
-        if (vehicleConfig.specialAbilityIndex != -1)
+        for (u32 i=0; i<ARRAY_SIZE(vehicleConfig.weaponIndices); ++i)
         {
-            value += g_weapons[vehicleConfig.specialAbilityIndex].info.price;
-        }
-        for (i32 weaponIndex : vehicleConfig.weaponIndices)
-        {
+            i32 weaponIndex = vehicleConfig.weaponIndices[i];
             if (weaponIndex != -1)
             {
-                value += g_weapons[weaponIndex].info.price;
+                value += g_weapons[weaponIndex].info.price * vehicleConfig.weaponUpgradeLevel[i];
             }
         }
         return value / 2;

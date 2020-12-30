@@ -103,7 +103,7 @@ public:
         frontWeapons;
     SmallArray<OwnedPtr<Weapon>, ARRAY_SIZE(VehicleConfiguration::weaponIndices)>
         rearWeapons;
-    OwnedPtr<Weapon> specialAbility;
+    SmallArray<OwnedPtr<Weapon>, 2> specialAbilities;
 
     Vec3 screenShakeVelocity = Vec3(0);
     Vec3 screenShakeOffset = Vec3(0);
@@ -140,9 +140,9 @@ public:
     Driver* getDriver() const { return driver; }
     ComputerDriverData* getAI() const { return &g_ais[driver->aiIndex]; }
 
-    bool hasAbility(const char* name) const
+    bool hasAbility(const char* name)
     {
-        return specialAbility && specialAbility->info.name == name;
+        return specialAbilities.findIf([name](auto& a){ return a->info.name == name; });
     }
     bool isDead() const { return deadTimer > 0.f; }
 

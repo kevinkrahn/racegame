@@ -13,7 +13,7 @@
 - Add testing zone where you can drive around an open area
 - Add rippling flag
 - Add powerups? Will have to think about whether this is a good idea game design wise
-- Create general-purpose particle system
+- Create particle system editor
 - Make better explosion effect
 - Add armor icon beside healthbar
 - Don't blow up so easily when two wheels are off the track
@@ -26,12 +26,13 @@
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
 - Undo/Redo in editor
-- Add texture compression
+- Add texture compression (stb_dxt.h) DXT1 for no alpha, DXT3 with alpha 
+- Don't store alpha channel for textures that don't need it (24-bit textures)
 - Add difficulty levels
 - Add passive ability that gives a bit of ammo when destroyed
 - Fix stutter when race starts or hide it with black screen that fades out
 - Shoot out shell casings when minigun is fired
-- Fix transform gizmo
+- Fix transform gizmo (or use https://github.com/CedricGuillemet/ImGuizmo)
 - Glue should probably slow vehicles down more
 - Compile in release mode with -ffastmath
 - Support multiple keyboards (not supported by SDL)
@@ -78,3 +79,5 @@
 - Add expand all and collapse all to resource tree
 - Fix hidden view effect on non-nvidia cards
 - Add ability to mark any entity as something that can be driven on
+- Add a bonus for conserving ammo? If you don't use all your ammo for a lap then give a bonus, or maybe
+  this could be a special ability.

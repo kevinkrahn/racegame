@@ -419,9 +419,9 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
         {
             w->render(rw, transform, config, *this);
         }
-        if (vehicle->specialAbility)
+        for (auto& w : vehicle->specialAbilities)
         {
-            vehicle->specialAbility->render(rw, transform, config, *this);
+            w->render(rw, transform, config, *this);
         }
     }
     else
@@ -436,11 +436,6 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
                 w->refillAmmo();
                 w->render(rw, transform, config, *this);
             }
-        }
-        if (config.specialAbilityIndex != -1)
-        {
-            auto w = g_weapons[config.specialAbilityIndex].create();
-            w->render(rw, transform, config, *this);
         }
     }
 }

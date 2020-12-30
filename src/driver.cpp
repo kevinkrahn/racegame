@@ -204,18 +204,31 @@ void Driver::aiUpgrades(RandomSeries& series)
                 } break;
                 case SPECIAL_ABILITY:
                 {
-                    if (c.specialAbilityIndex == -1)
+                    u32 specialAbilityIndex = upgradeChoice.type - SPECIAL_ABILITY;
+                    if (getVehicleData()->getWeaponSlotCount(WeaponType::SPECIAL_ABILITY) < specialAbilityIndex + 1)
                     {
-                        u32 index = specialAbilities[irandom(series, 0, (u32)specialAbilities.size())];
+                        continue;
+                    }
+                    i32 slotIndex = getVehicleData()->getWeaponSlotIndex(WeaponType::SPECIAL_ABILITY, specialAbilityIndex);
+                    i32 index = c.weaponIndices[slotIndex] == -1
+                        ? specialAbilities[irandom(series, 0, (u32)specialAbilities.size())]
+                        : c.weaponIndices[slotIndex];
+                    u32 maxLevel = upgradeChoice.upgradeLevel > 0
+                        ? upgradeChoice.upgradeLevel : g_weapons[index].info.maxUpgradeLevel;
+                    if (c.weaponUpgradeLevel[slotIndex] < maxLevel)
+                    {
                         if (g_weapons[index].info.price > credits)
                         {
                             allDone = true;
                         }
                         else
                         {
-                            AI_DEBUG_PRINT("%s bought special ability %s", playerName.data(), g_weapons[index].info.name);
+                            AI_DEBUG_PRINT("%s bought special ability %s %i",
+                                    playerName.data(), g_weapons[index].info.name, c.weaponUpgradeLevel[slotIndex] + 1);
                             credits -= g_weapons[index].info.price;
-                            c.specialAbilityIndex = index;
+                            c.weaponIndices[slotIndex] = index;
+                            ++c.weaponUpgradeLevel[slotIndex];
+                            restart = true;
                             boughtSomething = true;
                         }
                     }

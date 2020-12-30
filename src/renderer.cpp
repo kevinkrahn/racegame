@@ -703,15 +703,9 @@ void RenderWorld::createFramebuffers()
         }
 
         // bloom framebuffers
-        bloomEnabled = g_game.config.graphics.bloomEnabled;
-        if (width < 128 || height < 128)
-        {
-            bloomEnabled = false;
-        }
-        if (forceBloomOff)
-        {
-            bloomEnabled = false;
-        }
+        bloomEnabled = g_game.config.graphics.bloomEnabled
+            && !forceBloomOff && width > 128 && height > 128;
+        //println("Render World: %s, bloom=%i, forceBloomOff=%i, bloomEnabled=%i", name, bloomEnabled, forceBloomOff, g_game.config.graphics.bloomEnabled);
         if (bloomEnabled)
         {
             for (u32 i=firstBloomDivisor; i<lastBloomDivisor; i *= 2)
@@ -738,6 +732,15 @@ void RenderWorld::createFramebuffers()
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tex[1], 0);
 
                 assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+#if 0
+                glBindFramebuffer(GL_FRAMEBUFFER, fb.bloomFramebuffers[i]);
+                glDrawBuffer(GL_COLOR_ATTACHMENT0 | GL_COLOR_ATTACHMENT1);
+                glClearColor(0, 0, 0, 0);
+                glClear(GL_COLOR_BUFFER_BIT);
+                glDrawBuffer(GL_COLOR_ATTACHMENT0);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
 
                 fb.bloomFramebuffers.push_back(framebuffer);
                 fb.bloomBufferSize.push_back({ (i32)fb.renderWidth/(i32)i, (i32)fb.renderHeight/(i32)i });
@@ -1552,6 +1555,8 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
 		glPopDebugGroup();
 
         // draw to final color texture
+		// TODO: doesn't this mean that if bloom is disabled, then sharpen and outline effects are also?
+		// TODO: should this be moved outside the if block?
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Post Process");
         glBindFramebuffer(GL_FRAMEBUFFER, fb.finalFramebuffer);
         glViewport(0, 0, fb.renderWidth, fb.renderHeight);

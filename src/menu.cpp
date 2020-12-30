@@ -1184,16 +1184,6 @@ void Menu::createMainGarageMenu()
         y += size.y + gap;
     }
 
-    addButton("PASSIVE ABILITY", "Install a passive ability.", {x,y}, size, [this]{
-        static u32 upgradeLevel;
-        upgradeLevel = garage.previewVehicleConfig.specialAbilityIndex == -1 ? 0 : 1;
-        createWeaponsMenu(WeaponType::SPECIAL_ABILITY, 0,
-                garage.previewVehicleConfig.specialAbilityIndex, upgradeLevel);
-    }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
-        garage.previewVehicleConfig.specialAbilityIndex == -1 ? iconbg
-            : g_weapons[garage.previewVehicleConfig.specialAbilityIndex].info.icon);
-    y += size.y + gap;
-
     addButton("CAR LOT", "Buy a new vehicle!", {x,y}, size, [this]{
         createCarLotMenu();
     }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT);

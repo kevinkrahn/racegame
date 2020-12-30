@@ -190,8 +190,6 @@ struct VehicleConfiguration
 
     i32 weaponIndices[4] = { -1, -1, -1, -1 };
     u32 weaponUpgradeLevel[4] = { 0, 0, 0, 0 };
-    // TODO: integrate this into weaponIndices
-    i32 specialAbilityIndex = -1;
 
     struct Upgrade
     {
@@ -215,7 +213,6 @@ struct VehicleConfiguration
         s.field(cosmetics);
         s.field(weaponIndices);
         s.field(weaponUpgradeLevel);
-        s.field(specialAbilityIndex);
         s.field(performanceUpgrades);
     }
 

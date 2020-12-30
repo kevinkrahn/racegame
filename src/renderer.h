@@ -198,11 +198,11 @@ class RenderWorld
     // TODO: calculate these based on render resolution
     u32 firstBloomDivisor = 2;
     u32 lastBloomDivisor = 16;
+    bool bloomEnabled = false;
+    bool forceBloomOff = false;
 
     Texture tex[MAX_VIEWPORTS];
     u32 shadowMapResolution = 0;
-    bool bloomEnabled = false;
-    bool forceBloomOff = false;
     struct PickPixelResult
     {
         Vec2 pickPos;
