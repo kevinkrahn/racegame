@@ -13,7 +13,7 @@ public:
         rw.destroy();
     }
 
-    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override
+    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override
     {
         Material& mat = *(Material*)r;
         mat.loadShaderHandles();
@@ -37,7 +37,7 @@ public:
 
         bool isOpen = true;
         bool dirty = false;
-        if (ImGui::Begin("Material Properties", &isOpen))
+        if (ImGui::Begin(tmpStr("Material Properties###Material Properties %i", n), &isOpen))
         {
             ImGui::PushItemWidth(200);
             dirty |= ImGui::InputText("##Name", &mat.name);
@@ -101,7 +101,7 @@ public:
 
         if (!isOpen)
         {
-            rm->closeResource(r);
+            rm->markClosed(r);
         }
 
         if (dirty)

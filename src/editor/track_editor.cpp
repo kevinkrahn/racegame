@@ -33,7 +33,7 @@ void TrackEditor::init(Resource* resource)
     g_game.changeScene(resource->guid);
 }
 
-void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime)
+void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime, u32 n)
 {
     Scene* scene = g_game.currentScene.get();
     if (!scene)

@@ -6,13 +6,13 @@
 class AIEditor : public ResourceEditor
 {
 public:
-    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override
+    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override
     {
         AIDriverData& ai = *(AIDriverData*)r;
 
         bool isOpen = true;
         bool dirty = false;
-        if (ImGui::Begin("AI Driver Properties", &isOpen))
+        if (ImGui::Begin(tmpStr("AI Driver Properties###AI Driver Properties %i", n), &isOpen))
         {
             dirty |= ImGui::InputText("##Name", &ai.name);
             ImGui::Guid(ai.guid);
@@ -35,7 +35,7 @@ public:
 
         if (!isOpen)
         {
-            rm->closeResource(r);
+            rm->markClosed(r);
         }
 
         if (dirty)

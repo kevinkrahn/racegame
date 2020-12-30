@@ -50,6 +50,7 @@ struct OpenedResource
 {
     Resource* resource;
     OwnedPtr<ResourceEditor> editor;
+    u32 windowID;
 };
 
 struct RegisteredResourceEditor
@@ -78,6 +79,7 @@ class ResourceManager
     Map<ResourceType, RegisteredResourceEditor> registeredResourceEditors;
     Array<OpenedResource> openedResources;
     Map<i64, bool> resourcesModified;
+    Map<Resource*, bool> resourcesClosed;
 
     bool showFolder(ResourceFolder* folder);
     void showFolderContents(ResourceFolder* folder);
@@ -86,6 +88,7 @@ public:
     ResourceManager();
     void onUpdate(Renderer* renderer, f32 deltaTime);
     void markDirty(i64 guid) { resourcesModified.set(guid, true); }
+    void markClosed(Resource* r) { resourcesClosed.set(r, true); }
     bool isResourceDirty(i64 guid) const { return resourcesModified.get(guid); }
     Resource* newResource(ResourceType type);
     void openResource(Resource* resource);

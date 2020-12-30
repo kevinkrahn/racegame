@@ -334,10 +334,23 @@ void ResourceManager::openResource(Resource* resource)
     }
     else
     {
+        u32 windowID = 1;
+        for (u32 i=1; i<99999; ++i)
+        {
+            if (!openedResources.findIf([i, resource](auto& r) {
+                return r.resource->type == resource->type && r.windowID == i;
+            }))
+            {
+                windowID = i;
+                break;
+            }
+        }
+
         resourceEditor->init(resource);
         openedResources.push_back({
             resource,
-            resourceEditor
+            resourceEditor,
+            windowID,
         });
     }
 }
@@ -375,6 +388,12 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     {
         return;
     }
+
+    for (auto& r : resourcesClosed)
+    {
+        closeResource(r.key);
+    }
+    resourcesClosed.clear();
 
     renderer->getRenderWorld()->setHighlightColor(0, Vec4(1.f, 0.65f, 0.1f, 1.f));
 
@@ -466,7 +485,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
     for (OpenedResource const& r : openedResources)
     {
-        r.editor->onUpdate(r.resource, this, renderer, deltaTime);
+        r.editor->onUpdate(r.resource, this, renderer, deltaTime, r.windowID);
     }
 
     // TODO: fix escape behavior (it only works when a window is focused)
@@ -478,7 +497,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
     if (activeExclusiveEditor)
     {
-        activeExclusiveEditor->onUpdate(activeExclusiveResource, this, renderer, deltaTime);
+        activeExclusiveEditor->onUpdate(activeExclusiveResource, this, renderer, deltaTime, 0);
     }
 }
 

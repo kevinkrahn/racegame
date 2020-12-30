@@ -6,14 +6,14 @@
 class TextureEditor : public ResourceEditor
 {
 public:
-    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override
+    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override
     {
         bool dirty = false;
         Texture& tex = *(Texture*)r;
         bool changed = false;
 
         bool isOpen = true;
-        if (ImGui::Begin("Texture Properties", &isOpen))
+        if (ImGui::Begin(tmpStr("Texture Properties###Texture Properties %i", n), &isOpen))
         {
             ImGui::PushItemWidth(150);
             dirty |= ImGui::InputText("##Name", &tex.name);
@@ -113,7 +113,7 @@ public:
 
         if (!isOpen)
         {
-            rm->closeResource(r);
+            rm->markClosed(r);
         }
 
         if (changed)

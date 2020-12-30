@@ -6,13 +6,13 @@
 class SoundEditor : public ResourceEditor
 {
 public:
-    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override
+    void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override
     {
         Sound& sound = *(Sound*)r;
 
         bool dirty = false;
         bool isOpen = true;
-        if (ImGui::Begin("Sound Properties", &isOpen))
+        if (ImGui::Begin(tmpStr("Sound Properties###Sound Properties %i", n), &isOpen))
         {
             ImGui::PushItemWidth(150);
             dirty |= ImGui::InputText("##Name", &sound.name);
@@ -63,7 +63,7 @@ public:
 
         if (!isOpen)
         {
-            rm->closeResource(r);
+            rm->markClosed(r);
         }
 
         if (dirty)

@@ -74,7 +74,7 @@ void ModelEditor::showSceneSelection()
     }
 }
 
-void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime)
+void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime, u32 n)
 {
     bool dirty = false;
     if (ImGui::Begin("Model Editor"))

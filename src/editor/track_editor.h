@@ -27,7 +27,7 @@ class TrackEditor : public ResourceEditor
 public:
     ~TrackEditor();
     void init(class Resource* resource) override;
-    void onUpdate(class Resource* r, class ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override;
+    void onUpdate(class Resource* r, class ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override;
     GridSettings& getGridSettings() { return gridSettings; }
     bool wantsExclusiveScreen() override;
 };

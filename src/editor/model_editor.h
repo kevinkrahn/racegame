@@ -35,6 +35,6 @@ class ModelEditor : public ResourceEditor
 public:
     ModelEditor();
     void init(class Resource* resource) override;
-    void onUpdate(class Resource* r, class ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override;
+    void onUpdate(class Resource* r, class ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override;
     Model* getCurrentModel() const { return model; }
 };
