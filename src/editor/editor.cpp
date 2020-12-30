@@ -78,7 +78,7 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
             g_game.state.drivers.push_back(Driver(true, true, true, 0, 3));
             auto conf = g_game.state.drivers.back().getVehicleConfig();
             auto vd = g_game.state.drivers.back().getVehicleData();
-            conf->color =
+            conf->cosmetics.color =
                 srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
             conf->weaponIndices[0] = 14;
             conf->weaponUpgradeLevel[0] = 5;

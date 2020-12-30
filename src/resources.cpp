@@ -3,49 +3,28 @@
 #include "game.h"
 #include "driver.h"
 #include "util.h"
+#include "ai_driver_data.h"
+
+void Resources::initResourceTypes()
+{
+    registerResourceType<Texture>(ResourceType::TEXTURE, "Texture", "texture_icon", ResourceFlags::NONE);
+    registerResourceType<Model>(ResourceType::MODEL, "Model", "model_icon", ResourceFlags::EXCLUSIVE_EDITOR);
+    registerResourceType<Sound>(ResourceType::SOUND, "Sound", "sound_icon", ResourceFlags::NONE);
+    //registerResourceType<Font>(ResourceType::FONT, "Font", "icon_track", ResourceFlags::NONE); // TODO: use different icon
+    registerResourceType<TrackData>(ResourceType::TRACK, "Track", "icon_track", ResourceFlags::EXCLUSIVE_EDITOR);
+    registerResourceType<Material>(ResourceType::MATERIAL, "Material", "material_icon", ResourceFlags::NONE);
+    registerResourceType<AIDriverData>(ResourceType::AI_DRIVER_DATA, "AI Driver", "ai_icon", ResourceFlags::NONE);
+}
 
 Resource* Resources::newResource(ResourceType type, bool makeGUID)
 {
-    Resource* resource = nullptr;
-    const char* namePrefix = "";
-    switch (type)
-    {
-        case ResourceType::TEXTURE:
-        {
-            resource = new Texture();
-            namePrefix = "Texture";
-        } break;
-        case ResourceType::SOUND:
-        {
-            resource = new Sound();
-            namePrefix = "Sound";
-        } break;
-        case ResourceType::MATERIAL:
-        {
-            resource = new Material();
-            namePrefix = "Material";
-        } break;
-        case ResourceType::MODEL:
-        {
-            resource = new Model();
-            namePrefix = "Model";
-        } break;
-        case ResourceType::TRACK:
-        {
-            resource = new TrackData();
-            namePrefix = "Track";
-        } break;
-        default:
-        {
-            error("Cannot create resource with unknown type: ", (u32)type);
-            return nullptr;
-        }
-    }
+    RegisteredResourceType* registeredResourceType = g_resourceTypes.get((u32)type);
+    Resource* resource = registeredResourceType->create();
     resource->type = type;
     if (makeGUID)
     {
         resource->guid = generateGUID();
-        resource->name = Str64::format("%s %u", namePrefix, resources.size());
+        resource->name = Str64::format("%s %u", registeredResourceType->name, resources.size());
     }
     return resource;
 }

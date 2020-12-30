@@ -11,6 +11,7 @@ enum struct ResourceType
     FONT = 4,
     TRACK = 5,
     MATERIAL = 6,
+    AI_DRIVER_DATA = 7,
 };
 
 class Resource

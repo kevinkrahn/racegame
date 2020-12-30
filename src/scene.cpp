@@ -46,9 +46,9 @@ Scene::Scene(TrackData* data)
     if (!data->data.hasValue())
     {
         println("Loading empty scene. Adding default entities.");
-        addEntity(g_entities[0].create()); // terrain
-        addEntity(g_entities[1].create()); // track
-        addEntity(g_entities[4].create()); // starting point
+        addEntity(g_entities[0].create(0)); // terrain
+        addEntity(g_entities[1].create(1)); // track
+        addEntity(g_entities[4].create(4)); // starting point
 
         guid = data->guid;
         name = data->name;
@@ -776,7 +776,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
         trackPreview2D.drawItem(sphereMesh->vao, sphereMesh->numIndices,
             Mat4::translation(Vec3(0, 0, 2.1f) + v->getPosition())
                 * Mat4::scaling(Vec3(5.1f)),
-            v->getDriver()->getVehicleConfig()->color, false, 2);
+            v->getDriver()->getVehicleConfig()->cosmetics.color, false, 2);
         /*
         trackPreview2D.drawItem(cubeMesh->vao, cubeMesh->numIndices, v->getTransform(),
             v->getDriver()->getVehicleConfig()->color, false, 0);
@@ -1273,7 +1273,7 @@ Entity* Scene::deserializeEntity(DataFile::Value& val)
 {
     i32 entityID = (i32)val.dict(true).val()["entityID"].integer().val();
     Serializer s(val, true);
-    Entity* entity = g_entities[entityID].create();
+    Entity* entity = g_entities[entityID].create(entityID);
     entity->serializeState(s);
     this->addEntity(entity);
     return entity;

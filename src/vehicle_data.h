@@ -163,7 +163,7 @@ const char* g_wrapTextureNames[] = {
 
 static_assert(ARRAY_SIZE(g_wrapTextureNames) == ARRAY_SIZE(g_wrapTextureNames));
 
-struct VehicleConfiguration
+struct VehicleCosmeticConfiguration
 {
     Vec3 color = Vec3(0.95f);
     Vec3 hsv = Vec3(0.f, 0.f, 0.95f);
@@ -172,6 +172,21 @@ struct VehicleConfiguration
     i64 wrapTextureGuids[3] = { 0, 0, 0 };
     Vec4 wrapColors[3] = { Vec4(1.f), Vec4(1.f), Vec4(1.f) };
     Vec3 wrapColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
+
+    void serialize(Serializer& s)
+    {
+        s.field(color);
+        s.field(hsv);
+        s.field(paintShininess);
+        s.field(wrapTextureGuids);
+        s.field(wrapColors);
+        s.field(wrapColorsHSV);
+    }
+};
+
+struct VehicleConfiguration
+{
+    VehicleCosmeticConfiguration cosmetics;
 
     i32 weaponIndices[4] = { -1, -1, -1, -1 };
     u32 weaponUpgradeLevel[4] = { 0, 0, 0, 0 };
@@ -197,12 +212,7 @@ struct VehicleConfiguration
 
     void serialize(Serializer& s)
     {
-        s.field(color);
-        s.field(hsv);
-        s.field(paintShininess);
-        s.field(wrapTextureGuids);
-        s.field(wrapColors);
-        s.field(wrapColorsHSV);
+        s.field(cosmetics);
         s.field(weaponIndices);
         s.field(weaponUpgradeLevel);
         s.field(specialAbilityIndex);
@@ -217,16 +227,16 @@ struct VehicleConfiguration
         Material* originalPaintMaterial = g_res.getMaterial("paint_material");
         Material* mattePaintMaterial = g_res.getMaterial("paint_material_matte");
         paintMaterial = *originalPaintMaterial;
-        paintMaterial.color = color;
+        paintMaterial.color = cosmetics.color;
         paintMaterial.loadShaderHandles({ {"VEHICLE"} });
-        paintMaterial.reflectionLod = lerp(mattePaintMaterial->reflectionLod, originalPaintMaterial->reflectionLod, paintShininess);
-        paintMaterial.reflectionBias = lerp(mattePaintMaterial->reflectionBias, originalPaintMaterial->reflectionBias, paintShininess);
-        paintMaterial.reflectionStrength = lerp(mattePaintMaterial->reflectionStrength, originalPaintMaterial->reflectionStrength, paintShininess);
-        paintMaterial.specularPower = lerp(mattePaintMaterial->specularPower, originalPaintMaterial->specularPower, paintShininess);
-        paintMaterial.specularStrength = lerp(mattePaintMaterial->specularStrength, originalPaintMaterial->specularStrength, paintShininess);
-        paintMaterial.fresnelBias = lerp(mattePaintMaterial->fresnelBias, originalPaintMaterial->fresnelBias, paintShininess);
-        paintMaterial.fresnelPower = lerp(mattePaintMaterial->fresnelPower, originalPaintMaterial->fresnelPower, paintShininess);
-        paintMaterial.fresnelScale = lerp(mattePaintMaterial->fresnelScale, originalPaintMaterial->fresnelScale, paintShininess);
+        paintMaterial.reflectionLod = lerp(mattePaintMaterial->reflectionLod, originalPaintMaterial->reflectionLod, cosmetics.paintShininess);
+        paintMaterial.reflectionBias = lerp(mattePaintMaterial->reflectionBias, originalPaintMaterial->reflectionBias, cosmetics.paintShininess);
+        paintMaterial.reflectionStrength = lerp(mattePaintMaterial->reflectionStrength, originalPaintMaterial->reflectionStrength, cosmetics.paintShininess);
+        paintMaterial.specularPower = lerp(mattePaintMaterial->specularPower, originalPaintMaterial->specularPower, cosmetics.paintShininess);
+        paintMaterial.specularStrength = lerp(mattePaintMaterial->specularStrength, originalPaintMaterial->specularStrength, cosmetics.paintShininess);
+        paintMaterial.fresnelBias = lerp(mattePaintMaterial->fresnelBias, originalPaintMaterial->fresnelBias, cosmetics.paintShininess);
+        paintMaterial.fresnelPower = lerp(mattePaintMaterial->fresnelPower, originalPaintMaterial->fresnelPower, cosmetics.paintShininess);
+        paintMaterial.fresnelScale = lerp(mattePaintMaterial->fresnelScale, originalPaintMaterial->fresnelScale, cosmetics.paintShininess);
         dirty = false;
     }
 };

@@ -5,6 +5,7 @@
 #include "../renderer.h"
 #include "../input.h"
 #include "../util.h"
+#include "../ai_driver_data.h"
 #include "editor.h"
 #include "model_editor.h"
 
@@ -61,7 +62,7 @@ class ResourceManager
         ResourceFolder* dropFolder = nullptr;
     } folderMove;
 
-    ResourceType activeEditor;
+    ResourceType activeExclusiveEditor;
     Editor trackEditor;
     ModelEditor modelEditor;
 
@@ -71,7 +72,11 @@ class ResourceManager
     Sound* selectedSound = nullptr;
     bool isMaterialWindowOpen = false;
     Material* selectedMaterial = nullptr;
+    bool isAIDriverDataWindowOpen = false;
+    AIDriverData* selectedAIDriverData = nullptr;
 
+    // TODO: use this instead of the stinky garbage variables above
+    Map<u32, Resource*> openResources;
     Map<i64, bool> resourcesModified;
 
     bool showFolder(ResourceFolder* folder);
@@ -82,6 +87,7 @@ class ResourceManager
     void showTextureWindow(Renderer* renderer, f32 deltaTime);
     void showMaterialWindow(Renderer* renderer, f32 deltaTime);
     void showSoundWindow(Renderer* renderer, f32 deltaTime);
+    void showAIDriverDataWindow(Renderer* renderer, f32 deltaTime);
 
     ResourceFolder& getFolder(const char* path);
     void saveResources();

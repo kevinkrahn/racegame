@@ -123,8 +123,9 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     renderWorld.setViewportCamera(0, Vec3(8.f, 8.f, 10.f),
                             Vec3(0.f, 0.f, 1.f), 1.f, 220.f, 39.f);
                     static OwnedPtr<PlaceableEntity> ptr;
+                    u32 entityIndex = propPrefabs[itemIndex].entityIndex;
                     ptr.reset((PlaceableEntity*)
-                            g_entities[propPrefabs[itemIndex].entityIndex].create());
+                            g_entities[entityIndex].create(entityIndex));
                     propPrefabs[itemIndex].prefabData.doThing(ptr.get());
                     ptr->onPreview(&renderWorld);
                     g_game.renderer->addRenderWorld(&renderWorld);
@@ -180,7 +181,7 @@ public:
             auto& e = g_entities[entityIndex];
             if (e.isPlaceableInEditor)
             {
-                OwnedPtr<PlaceableEntity> ptr((PlaceableEntity*)e.create());
+                OwnedPtr<PlaceableEntity> ptr((PlaceableEntity*)e.create(entityIndex));
                 Array<PropPrefabData> data = ptr->generatePrefabProps();
                 for (auto& d : data)
                 {
@@ -330,8 +331,9 @@ public:
                         u32 propTypeIndex = selectedPropTypes[
                             irandom(scene->randomSeries, 0, (u32)selectedPropTypes.size())];
                         Vec3 hitPoint = convert(hit.block.position);
+                        u32 entityIndex = propPrefabs[propTypeIndex].entityIndex;
                         PlaceableEntity* newEntity =
-                            (PlaceableEntity*)g_entities[propPrefabs[propTypeIndex].entityIndex].create();
+                            (PlaceableEntity*)g_entities[entityIndex].create(entityIndex);
                         propPrefabs[propTypeIndex].prefabData.doThing(newEntity);
                         newEntity->position = hitPoint;
                         newEntity->scale *= random(scene->randomSeries, randomizeScaleMin, randomizeScaleMax);;

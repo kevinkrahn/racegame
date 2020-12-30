@@ -1334,17 +1334,17 @@ void Menu::createCosmeticsMenu()
     static f32 hue;
     static f32 saturation;
     static f32 value;
-    hue = garage.previewVehicleConfig.hsv.x;
-    saturation = garage.previewVehicleConfig.hsv.y;
-    value = garage.previewVehicleConfig.hsv.z;
+    hue = garage.previewVehicleConfig.cosmetics.hsv.x;
+    saturation = garage.previewVehicleConfig.cosmetics.hsv.y;
+    value = garage.previewVehicleConfig.cosmetics.hsv.z;
 
     selectedWidget = addSlider("PAINT HUE", {x,y}, size, WidgetFlags::TRANSIENT, [this](f32 val){
         hue = val;
-        garage.previewVehicleConfig.hsv.x = hue;
-        garage.previewVehicleConfig.color = srgb(hsvToRgb(hue, saturation, value));
+        garage.previewVehicleConfig.cosmetics.hsv.x = hue;
+        garage.previewVehicleConfig.cosmetics.color = srgb(hsvToRgb(hue, saturation, value));
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->hsv = garage.previewVehicleConfig.hsv;
-        garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
+        garage.driver->getVehicleConfig()->cosmetics.hsv = garage.previewVehicleConfig.cosmetics.hsv;
+        garage.driver->getVehicleConfig()->cosmetics.color = garage.previewVehicleConfig.cosmetics.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
@@ -1360,11 +1360,11 @@ void Menu::createCosmeticsMenu()
 
     addSlider("PAINT SATURATION", {x,y}, size, WidgetFlags::TRANSIENT, [this](f32 val){
         saturation = val;
-        garage.previewVehicleConfig.hsv.y = saturation;
-        garage.previewVehicleConfig.color = srgb(hsvToRgb(hue, saturation, value));
+        garage.previewVehicleConfig.cosmetics.hsv.y = saturation;
+        garage.previewVehicleConfig.cosmetics.color = srgb(hsvToRgb(hue, saturation, value));
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->hsv = garage.previewVehicleConfig.hsv;
-        garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
+        garage.driver->getVehicleConfig()->cosmetics.hsv = garage.previewVehicleConfig.cosmetics.hsv;
+        garage.driver->getVehicleConfig()->cosmetics.color = garage.previewVehicleConfig.cosmetics.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
@@ -1380,11 +1380,11 @@ void Menu::createCosmeticsMenu()
 
     addSlider("PAINT BRIGHTNESS", {x,y}, size, WidgetFlags::TRANSIENT, [this](f32 val){
         value = val;
-        garage.previewVehicleConfig.hsv.z = value;
-        garage.previewVehicleConfig.color = srgb(hsvToRgb(hue, saturation, value));
+        garage.previewVehicleConfig.cosmetics.hsv.z = value;
+        garage.previewVehicleConfig.cosmetics.color = srgb(hsvToRgb(hue, saturation, value));
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->hsv = garage.previewVehicleConfig.hsv;
-        garage.driver->getVehicleConfig()->color = garage.previewVehicleConfig.color;
+        garage.driver->getVehicleConfig()->cosmetics.hsv = garage.previewVehicleConfig.cosmetics.hsv;
+        garage.driver->getVehicleConfig()->cosmetics.color = garage.previewVehicleConfig.cosmetics.color;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
@@ -1399,15 +1399,15 @@ void Menu::createCosmeticsMenu()
     y += size.y + gap;
 
     addSlider("PAINT SHININESS", {x,y}, size, WidgetFlags::TRANSIENT, [this](f32 val){
-        garage.previewVehicleConfig.paintShininess = val;
+        garage.previewVehicleConfig.cosmetics.paintShininess = val;
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->paintShininess = garage.previewVehicleConfig.paintShininess;
+        garage.driver->getVehicleConfig()->cosmetics.paintShininess = garage.previewVehicleConfig.cosmetics.paintShininess;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, [&]{
         return SliderInfo{
             Vec4(1.f),
             Vec4(1.f),
-            garage.previewVehicleConfig.paintShininess,
+            garage.previewVehicleConfig.cosmetics.paintShininess,
             g_res.getTexture("slider"),
             0.f,
             1.f
@@ -1461,16 +1461,16 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
     static f32 value;
     static f32 alpha;
     static i32 textureIndex;
-    hue = garage.previewVehicleConfig.wrapColorsHSV[layerIndex].x;
-    saturation = garage.previewVehicleConfig.wrapColorsHSV[layerIndex].y;
-    value = garage.previewVehicleConfig.wrapColorsHSV[layerIndex].z;
-    alpha = garage.previewVehicleConfig.wrapColors[layerIndex].a;
+    hue = garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex].x;
+    saturation = garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex].y;
+    value = garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex].z;
+    alpha = garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex].a;
 
     textureIndex = 0;
     for (i32 i = 0; i<ARRAY_SIZE(g_wrapTextures); ++i)
     {
         if (g_res.getTexture(g_wrapTextures[i])->guid
-                == garage.previewVehicleConfig.wrapTextureGuids[layerIndex])
+                == garage.previewVehicleConfig.cosmetics.wrapTextureGuids[layerIndex])
         {
             textureIndex = i;
             break;
@@ -1490,23 +1490,23 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
         {
             textureIndex = 0;
         }
-        garage.previewVehicleConfig.wrapTextureGuids[layerIndex] =
+        garage.previewVehicleConfig.cosmetics.wrapTextureGuids[layerIndex] =
             g_res.getTexture(g_wrapTextures[textureIndex])->guid;
-        garage.driver->getVehicleConfig()->wrapTextureGuids[layerIndex] =
-            garage.previewVehicleConfig.wrapTextureGuids[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapTextureGuids[layerIndex] =
+            garage.previewVehicleConfig.cosmetics.wrapTextureGuids[layerIndex];
     });
     y += size.y + gap;
 
     addSlider("LAYER HUE", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
         hue = val;
-        garage.previewVehicleConfig.wrapColorsHSV[layerIndex].x = hue;
-        garage.previewVehicleConfig.wrapColors[layerIndex]
+        garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex].x = hue;
+        garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex]
             = Vec4(srgb(hsvToRgb(hue, saturation, value)), alpha);
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->wrapColorsHSV[layerIndex]
-            = garage.previewVehicleConfig.wrapColorsHSV[layerIndex];
-        garage.driver->getVehicleConfig()->wrapColors[layerIndex]
-            = garage.previewVehicleConfig.wrapColors[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapColorsHSV[layerIndex]
+            = garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapColors[layerIndex]
+            = garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex];
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
@@ -1522,14 +1522,14 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
 
     addSlider("LAYER SATURATION", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
         saturation = val;
-        garage.previewVehicleConfig.wrapColorsHSV[layerIndex].y = saturation;
-        garage.previewVehicleConfig.wrapColors[layerIndex]
+        garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex].y = saturation;
+        garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex]
             = Vec4(srgb(hsvToRgb(hue, saturation, value)), alpha);
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->wrapColorsHSV[layerIndex]
-            = garage.previewVehicleConfig.wrapColorsHSV[layerIndex];
-        garage.driver->getVehicleConfig()->wrapColors[layerIndex]
-            = garage.previewVehicleConfig.wrapColors[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapColorsHSV[layerIndex]
+            = garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapColors[layerIndex]
+            = garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex];
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
@@ -1545,14 +1545,14 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
 
     addSlider("LAYER BRIGHTNESS", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
         value = val;
-        garage.previewVehicleConfig.wrapColorsHSV[layerIndex].z = value;
-        garage.previewVehicleConfig.wrapColors[layerIndex]
+        garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex].z = value;
+        garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex]
             = Vec4(srgb(hsvToRgb(hue, saturation, value)), alpha);
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->wrapColorsHSV[layerIndex]
-            = garage.previewVehicleConfig.wrapColorsHSV[layerIndex];
-        garage.driver->getVehicleConfig()->wrapColors[layerIndex]
-            = garage.previewVehicleConfig.wrapColors[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapColorsHSV[layerIndex]
+            = garage.previewVehicleConfig.cosmetics.wrapColorsHSV[layerIndex];
+        garage.driver->getVehicleConfig()->cosmetics.wrapColors[layerIndex]
+            = garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex];
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, []{
         return SliderInfo{
@@ -1568,10 +1568,10 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
 
     addSlider("LAYER TRANSPARENCY", {x,y}, size, WidgetFlags::TRANSIENT, [this, layerIndex](f32 val){
         alpha = val;
-        garage.previewVehicleConfig.wrapColors[layerIndex].a = val;
+        garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex].a = val;
         garage.previewVehicleConfig.reloadMaterials();
-        garage.driver->getVehicleConfig()->wrapColors[layerIndex].a
-            = garage.previewVehicleConfig.wrapColors[layerIndex].a;
+        garage.driver->getVehicleConfig()->cosmetics.wrapColors[layerIndex].a
+            = garage.previewVehicleConfig.cosmetics.wrapColors[layerIndex].a;
         garage.driver->getVehicleConfig()->reloadMaterials();
     }, [&]{
         return SliderInfo{
@@ -1600,9 +1600,9 @@ void Menu::createCarLotMenu()
         garage.previewVehicleIndex = 0;
         garage.previewVehicleConfig = VehicleConfiguration{};
         auto& vd = g_vehicles[garage.previewVehicleIndex];
-        garage.previewVehicleConfig.color =
+        garage.previewVehicleConfig.cosmetics.color =
             srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-        garage.previewVehicleConfig.hsv = vd->defaultColorHsv;
+        garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
         garage.previewVehicleConfig.reloadMaterials();
         g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
         garage.currentStats = garage.previewTuning.computeVehicleStats();
@@ -1692,9 +1692,9 @@ void Menu::createCarLotMenu()
 
         VehicleConfiguration vehicleConfig;
         auto& vd = g_vehicles[i];
-        vehicleConfig.color =
+        vehicleConfig.cosmetics.color =
             srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-        vehicleConfig.hsv = vd->defaultColorHsv;
+        vehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
 
         VehicleTuning tuning;
         g_vehicles[i]->initTuning(vehicleConfig, tuning);
@@ -1722,9 +1722,9 @@ void Menu::createCarLotMenu()
             {
                 garage.previewVehicleConfig = VehicleConfiguration{};
                 auto& vd = g_vehicles[garage.previewVehicleIndex];
-                garage.previewVehicleConfig.color =
+                garage.previewVehicleConfig.cosmetics.color =
                     srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-                garage.previewVehicleConfig.hsv = vd->defaultColorHsv;
+                garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
                 garage.previewVehicleConfig.reloadMaterials();
                 g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
                 garage.currentStats = garage.previewTuning.computeVehicleStats();

@@ -375,7 +375,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
         if (m.material == originalPaintMaterial)
         {
             config.paintMaterial.drawVehicle(rw, transform, &m.mesh, 2, shield,
-                    config.wrapTextureGuids, config.wrapColors);
+                    config.cosmetics.wrapTextureGuids, config.cosmetics.wrapColors);
         }
         else
         {
@@ -456,7 +456,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         if (d.meshInfo->material == originalPaintMaterial)
         {
             config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, Vec4(0.f),
-                    config.wrapTextureGuids, config.wrapColors);
+                    config.cosmetics.wrapTextureGuids, config.cosmetics.wrapColors);
         }
         else
         {

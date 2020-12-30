@@ -42,7 +42,7 @@ void ResourceManager::saveResources()
             // TODO: find out why tmpStr is broken here
             //const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, guidHex);
             auto filename = Str512::format("%s/%s.dat", DATA_DIRECTORY, guidHex);
-            println("Saving resource %s", filename.data());
+            println("Saving resource %s, %s", filename.data(), res->name.data());
             Serializer::toFile(*res, filename.data());
         }
     }
@@ -157,25 +157,12 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
                 newFolder->parent = folder;
                 folder->childFolders.push_back(std::move(newFolder));
             }
-            if (ImGui::MenuItem("New Texture"))
+            for (auto& r : g_resourceTypes)
             {
-                folder->childResources.push_back(newResource(ResourceType::TEXTURE)->guid);
-            }
-            if (ImGui::MenuItem("New Model"))
-            {
-                folder->childResources.push_back(newResource(ResourceType::MODEL)->guid);
-            }
-            if (ImGui::MenuItem("New Material"))
-            {
-                folder->childResources.push_back(newResource(ResourceType::MATERIAL)->guid);
-            }
-            if (ImGui::MenuItem("New Sound"))
-            {
-                folder->childResources.push_back(newResource(ResourceType::SOUND)->guid);
-            }
-            if (ImGui::MenuItem("New Track"))
-            {
-                folder->childResources.push_back(newResource(ResourceType::TRACK)->guid);
+                if (ImGui::MenuItem(tmpStr("New %s", r.value.name)))
+                {
+                    folder->childResources.push_back(newResource(r.value.resourceType)->guid);
+                }
             }
             if (ImGui::MenuItem("Rename"))
             {
@@ -307,17 +294,8 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             }
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 4.f);
-            const char* icons[] = {
-                "not_used",
-                "texture_icon",
-                "model_icon",
-                "sound_icon",
-                "icon_track",
-                "icon_track",
-                "material_icon",
-            };
             ImGui::Image((void*)(uintptr_t)g_res.getTexture(
-                        icons[(u32)childResource->type])->getPreviewHandle(), { 16, 16 });
+                    g_resourceTypes[(u32)childResource->type].resourceIcon)->getPreviewHandle(), { 16, 16 });
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 24.f);
             ImGui::Text(childResource->name.data());
@@ -340,6 +318,11 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             {
                 selectedMaterial = nullptr;
                 isMaterialWindowOpen = false;
+            }
+            if (selectedAIDriverData == childResource)
+            {
+                selectedAIDriverData = nullptr;
+                isAIDriverDataWindowOpen = false;
             }
             if (modelEditor.getCurrentModel() == childResource)
             {
@@ -382,16 +365,20 @@ void ResourceManager::openResource(Resource* resource)
             selectedMaterial = (Material*)resource;
             break;
         case ResourceType::MODEL:
-            activeEditor = ResourceType::MODEL;
+            activeExclusiveEditor = ResourceType::MODEL;
             g_game.unloadScene();
             modelEditor.setModel((Model*)resource);
             break;
         case ResourceType::TRACK:
-            activeEditor = ResourceType::TRACK;
+            activeExclusiveEditor = ResourceType::TRACK;
             trackEditor.reset();
             g_game.changeScene(resource->guid);
             break;
         case ResourceType::FONT:
+            break;
+        case ResourceType::AI_DRIVER_DATA:
+            isAIDriverDataWindowOpen = true;
+            selectedAIDriverData = (AIDriverData*)resource;
             break;
     }
 }
@@ -508,6 +495,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     showTextureWindow(renderer, deltaTime);
     showMaterialWindow(renderer, deltaTime);
     showSoundWindow(renderer, deltaTime);
+    showAIDriverDataWindow(renderer, deltaTime);
 
     // TODO: fix escape behavior (it only works when a window is focused)
     if (!ImGui::GetIO().WantCaptureKeyboard && g_input.isKeyPressed(KEY_ESCAPE))
@@ -516,11 +504,11 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 
     renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
-    if (activeEditor == ResourceType::TRACK && g_game.currentScene)
+    if (activeExclusiveEditor == ResourceType::TRACK && g_game.currentScene)
     {
         trackEditor.onUpdate(g_game.currentScene.get(), renderer, deltaTime);
     }
-    else if (activeEditor == ResourceType::MODEL && modelEditor.getCurrentModel())
+    else if (activeExclusiveEditor == ResourceType::MODEL && modelEditor.getCurrentModel())
     {
         modelEditor.onUpdate(renderer, deltaTime);
     }
@@ -528,6 +516,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 
 bool chooseTexture(i32 type, i64& currentTexture, const char* name)
 {
+    // TODO: Add X to clear the selected texture
     ImGui::Image((void*)(uintptr_t)g_res.getTexture(currentTexture)->getPreviewHandle(), { 48, 48 });
     ImGui::SameLine();
     ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
@@ -765,6 +754,7 @@ void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
         ImGui::NextColumn();
 
         ImGui::Text(selectedMaterial->name.data());
+        ImGui::Guid(selectedMaterial->guid);
 
         const char* materialTypeNames = "Lit\0Unlit\0";
         dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
@@ -857,6 +847,7 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
 
         ImGui::Text(sound.sourceFilePath.data());
         ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
+        ImGui::Guid(sound.guid);
 
         dirty |= ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
         dirty |= ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
@@ -874,11 +865,47 @@ void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
         {
             g_audio.stopSound(previewSoundHandle);
         }
-
-        ImGui::End();
     }
+    ImGui::End();
+
     if (dirty)
     {
         markDirty(sound.guid);
+    }
+}
+
+void ResourceManager::showAIDriverDataWindow(Renderer* renderer, f32 deltaTime)
+{
+    if (!isAIDriverDataWindowOpen)
+    {
+        return;
+    }
+    AIDriverData& ai = *selectedAIDriverData;
+
+    bool dirty = false;
+    if (ImGui::Begin("AI Driver Properties", &isSoundWindowOpen))
+    {
+        dirty |= ImGui::InputText("##Name", &ai.name);
+        ImGui::Guid(ai.guid);
+        ImGui::Gap();
+        dirty |= ImGui::SliderFloat("Driving Skill", &ai.drivingSkill, 0.f, 1.f);
+        ImGui::HelpMarker("How optimal of a path the AI takes on the track.");
+        dirty |= ImGui::SliderFloat("Aggression", &ai.aggression, 0.f, 1.f);
+        ImGui::HelpMarker("How often the AI will go out of its way to attack other drivers.");
+        dirty |= ImGui::SliderFloat("Awareness", &ai.awareness, 0.f, 1.f);
+        ImGui::HelpMarker("How much the AI will attempt to avoid hitting other drivers and obstacles.");
+        dirty |= ImGui::SliderFloat("Fear", &ai.fear, 0.f, 1.f);
+        ImGui::HelpMarker("How much the AI will try to evade other drivers.");
+
+        ImGui::Gap();
+
+        dirty |= ImGui::ColorEdit3("Paint Color", (f32*)&ai.cosmetics.color);
+        dirty |= ImGui::SliderFloat("Paint Shininess", &ai.cosmetics.paintShininess, 0.f, 1.f);
+    }
+    ImGui::End();
+
+    if (dirty)
+    {
+        markDirty(selectedAIDriverData->guid);
     }
 }

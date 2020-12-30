@@ -3,7 +3,6 @@
 #include "math.h"
 #include "datafile.h"
 #include "model.h"
-#include <functional>
 
 #if 0
 enum EntityFlags
@@ -204,7 +203,7 @@ public:
 struct RegisteredEntity
 {
     u32 entityID;
-    std::function<class Entity*()> create;
+    class Entity*(*create)(u32);
     bool isPlaceableInEditor;
 };
 
@@ -217,7 +216,7 @@ void registerEntity()
     u32 entityID = (u32)g_entities.size();
     g_entities.push_back({
         entityID,
-        [entityID] {
+        [] (u32 entityID) {
             Entity* e = new T();
             e->entityID = entityID;
             if (std::is_base_of<PlaceableEntity, T>::value)

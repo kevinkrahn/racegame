@@ -187,7 +187,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         {
             return;
         }
-        Spline* newSpline = (Spline*)g_entities[5].create();
+        Spline* newSpline = (Spline*)g_entities[5].create(5);
         newSpline->setPersistent(true);
 
         newSpline->points = Array<SplinePoint>(
@@ -328,7 +328,7 @@ public:
             if (scene->raycastStatic(cam.position, rayDir, 10000.f, &hit))
             {
                 Vec3 hitPoint = convert(hit.block.position);
-                Spline* newSpline = (Spline*)g_entities[5].create();
+                Spline* newSpline = (Spline*)g_entities[5].create(5);
                 newSpline->modelGuid = splineModels[selectedSplineModel].model->guid;
                 newSpline->setPersistent(true);
                 Vec3 handleOffset(5, 0, 0);

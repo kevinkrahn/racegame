@@ -14,6 +14,36 @@ const char* DATA_DIRECTORY = "../editor_data";
 const char* ASSET_DIRECTORY = "../assets";
 const char* METADATA_FILE = "metadata.dat";
 
+namespace ResourceFlags
+{
+    enum
+    {
+        NONE = 0,
+        EXCLUSIVE_EDITOR = 1 << 0,
+    };
+}
+
+struct RegisteredResourceType
+{
+    const char* name;
+    const char* resourceIcon;
+    ResourceType resourceType;
+    u32 flags;
+    Resource*(*create)();
+};
+
+Map<u32, RegisteredResourceType> g_resourceTypes;
+
+template <typename T>
+void registerResourceType(ResourceType resourceType, const char* name, const char* icon,
+        u32 flags = ResourceFlags::NONE)
+{
+    g_resourceTypes.set((u32)resourceType, { name, icon, resourceType, flags, []() {
+        Resource* r = new T();
+        return r;
+    } });
+}
+
 class Resources
 {
 private:
@@ -23,7 +53,7 @@ private:
     Map<Str64, Resource*> resourceNameMap;
 
 public:
-
+    void initResourceTypes();
     void load();
     void loadResource(DataFile::Value& data);
     Resource* newResource(ResourceType type, bool makeGUID);

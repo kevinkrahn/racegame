@@ -351,7 +351,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     if (cameraIndex >= 0)
     {
         rw->setHighlightColor(cameraIndex,
-                Vec4(driver->getVehicleConfig()->color, 1.f));
+                Vec4(driver->getVehicleConfig()->cosmetics.color, 1.f));
 
         Mat4 m = Mat4(1.f);
         m[0] = Vec4(-cameraDir, m[0].w);
