@@ -6,8 +6,7 @@
 #include "../input.h"
 #include "../util.h"
 #include "../ai_driver_data.h"
-#include "editor.h"
-#include "model_editor.h"
+#include "resource_editor.h"
 
 struct ResourceFolder
 {
@@ -47,6 +46,17 @@ struct DragDropPayload
     ResourceFolder* folderDragged;
 };
 
+struct OpenedResource
+{
+    Resource* resource;
+    OwnedPtr<ResourceEditor> editor;
+};
+
+struct RegisteredResourceEditor
+{
+    ResourceEditor*(*createEditor)();
+};
+
 class ResourceManager
 {
     ResourceFolder resources = { "Resources" };
@@ -62,43 +72,32 @@ class ResourceManager
         ResourceFolder* dropFolder = nullptr;
     } folderMove;
 
-    ResourceType activeExclusiveEditor;
-    Editor trackEditor;
-    ModelEditor modelEditor;
+    OwnedPtr<ResourceEditor> activeExclusiveEditor;
+    Resource* activeExclusiveResource = nullptr;
 
-    bool isTextureWindowOpen = false;
-    Texture* selectedTexture = nullptr;
-    bool isSoundWindowOpen = false;
-    Sound* selectedSound = nullptr;
-    bool isMaterialWindowOpen = false;
-    Material* selectedMaterial = nullptr;
-    bool isAIDriverDataWindowOpen = false;
-    AIDriverData* selectedAIDriverData = nullptr;
-
-    // TODO: use this instead of the stinky garbage variables above
-    Map<u32, Resource*> openResources;
+    Map<ResourceType, RegisteredResourceEditor> registeredResourceEditors;
+    Array<OpenedResource> openedResources;
     Map<i64, bool> resourcesModified;
 
     bool showFolder(ResourceFolder* folder);
     void showFolderContents(ResourceFolder* folder);
-    void openResource(Resource* resource);
-
-    Resource* newResource(ResourceType type);
-    void showTextureWindow(Renderer* renderer, f32 deltaTime);
-    void showMaterialWindow(Renderer* renderer, f32 deltaTime);
-    void showSoundWindow(Renderer* renderer, f32 deltaTime);
-    void showAIDriverDataWindow(Renderer* renderer, f32 deltaTime);
-
-    ResourceFolder& getFolder(const char* path);
-    void saveResources();
 
 public:
     ResourceManager();
     void onUpdate(Renderer* renderer, f32 deltaTime);
     void markDirty(i64 guid) { resourcesModified.set(guid, true); }
     bool isResourceDirty(i64 guid) const { return resourcesModified.get(guid); }
+    Resource* newResource(ResourceType type);
+    void openResource(Resource* resource);
+    void closeResource(Resource* resource);
+    void saveResources();
+    bool chooseTexture(i32 type, i64& currentTexture, const char* name);
 
-    Texture* getSelectedTexture() const { return selectedTexture; }
-    Material* getSelectedMaterial() const { return selectedMaterial; }
-    Sound* getSelectedSound() const { return selectedSound; }
+    Resource* getOpenedResource(ResourceType resourceType)
+    {
+        auto result = openedResources.findIf([resourceType](OpenedResource const& r) {
+            return r.resource->type == resourceType;
+        });
+        return result ? result->resource : nullptr;
+    }
 };

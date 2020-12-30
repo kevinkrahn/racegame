@@ -14,6 +14,11 @@ enum struct ResourceType
     AI_DRIVER_DATA = 7,
 };
 
+inline u32 mapHash(ResourceType val)
+{
+    return (u32)val;
+}
+
 class Resource
 {
 public:

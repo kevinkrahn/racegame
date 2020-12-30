@@ -512,68 +512,7 @@ void RenderWorld::updateWorldTime(f64 time)
 
 void RenderWorld::createFramebuffers()
 {
-    for (auto& b : worldInfoUBO)
-    {
-        b.destroy();
-    }
-    worldInfoUBO.clear();
-
-    for (auto& b : worldInfoUBOShadow)
-    {
-        b.destroy();
-    }
-    worldInfoUBOShadow.clear();
-
-    for (auto& fb : fbs)
-    {
-        if (fb.mainFramebuffer)
-        {
-            glDeleteTextures(1, &fb.mainColorTexture);
-            glDeleteTextures(1, &fb.mainDepthTexture);
-            glDeleteTextures(1, &fb.stencilViewTexture);
-            glDeleteFramebuffers(1, &fb.mainFramebuffer);
-        }
-        if (fb.finalFramebuffer)
-        {
-            glDeleteTextures(1, &fb.finalColorTexture);
-            glDeleteFramebuffers(1, &fb.finalFramebuffer);
-        }
-        if (fb.msaaResolveColorTexture)
-        {
-            glDeleteTextures(1, &fb.msaaResolveColorTexture);
-            glDeleteTextures(1, &fb.msaaResolveDepthTexture);
-            glDeleteFramebuffers(1, &fb.msaaResolveFramebuffer);
-            glDeleteFramebuffers(1, &fb.msaaResolveFromFramebuffer);
-        }
-        if (fb.shadowFramebuffer)
-        {
-            glDeleteTextures(1, &fb.shadowDepthTexture);
-            glDeleteFramebuffers(1, &fb.shadowFramebuffer);
-        }
-        if (fb.cszFramebuffers[0])
-        {
-            glDeleteTextures(1, &fb.cszTexture);
-            glDeleteFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
-        }
-        if (fb.saoFramebuffer)
-        {
-            glDeleteTextures(1, &fb.saoTexture);
-            glDeleteTextures(1, &fb.saoBlurTexture);
-            glDeleteFramebuffers(1, &fb.saoFramebuffer);
-        }
-        if (fb.bloomFramebuffers.size() > 0)
-        {
-            glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
-            glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
-        }
-        if (fb.pickFramebuffer)
-        {
-            glDeleteTextures(1, &fb.pickIDTexture);
-            glDeleteRenderbuffers(1, &fb.pickDepthTexture);
-            glDeleteFramebuffers(1, &fb.pickFramebuffer);
-        }
-    }
-    fbs.clear();
+    destroy();
 
     for (u32 i=0; i<cameras.size(); ++i)
     {
@@ -852,6 +791,72 @@ void RenderWorld::createFramebuffers()
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void RenderWorld::destroy()
+{
+    for (auto& b : worldInfoUBO)
+    {
+        b.destroy();
+    }
+    worldInfoUBO.clear();
+
+    for (auto& b : worldInfoUBOShadow)
+    {
+        b.destroy();
+    }
+    worldInfoUBOShadow.clear();
+
+    for (auto& fb : fbs)
+    {
+        if (fb.mainFramebuffer)
+        {
+            glDeleteTextures(1, &fb.mainColorTexture);
+            glDeleteTextures(1, &fb.mainDepthTexture);
+            glDeleteTextures(1, &fb.stencilViewTexture);
+            glDeleteFramebuffers(1, &fb.mainFramebuffer);
+        }
+        if (fb.finalFramebuffer)
+        {
+            glDeleteTextures(1, &fb.finalColorTexture);
+            glDeleteFramebuffers(1, &fb.finalFramebuffer);
+        }
+        if (fb.msaaResolveColorTexture)
+        {
+            glDeleteTextures(1, &fb.msaaResolveColorTexture);
+            glDeleteTextures(1, &fb.msaaResolveDepthTexture);
+            glDeleteFramebuffers(1, &fb.msaaResolveFramebuffer);
+            glDeleteFramebuffers(1, &fb.msaaResolveFromFramebuffer);
+        }
+        if (fb.shadowFramebuffer)
+        {
+            glDeleteTextures(1, &fb.shadowDepthTexture);
+            glDeleteFramebuffers(1, &fb.shadowFramebuffer);
+        }
+        if (fb.cszFramebuffers[0])
+        {
+            glDeleteTextures(1, &fb.cszTexture);
+            glDeleteFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
+        }
+        if (fb.saoFramebuffer)
+        {
+            glDeleteTextures(1, &fb.saoTexture);
+            glDeleteTextures(1, &fb.saoBlurTexture);
+            glDeleteFramebuffers(1, &fb.saoFramebuffer);
+        }
+        if (fb.bloomFramebuffers.size() > 0)
+        {
+            glDeleteFramebuffers(fb.bloomFramebuffers.size(), &fb.bloomFramebuffers[0]);
+            glDeleteTextures(fb.bloomColorTextures.size(), &fb.bloomColorTextures[0]);
+        }
+        if (fb.pickFramebuffer)
+        {
+            glDeleteTextures(1, &fb.pickIDTexture);
+            glDeleteRenderbuffers(1, &fb.pickDepthTexture);
+            glDeleteFramebuffers(1, &fb.pickFramebuffer);
+        }
+    }
+    fbs.clear();
 }
 
 Texture RenderWorld::releaseTexture(u32 cameraIndex)

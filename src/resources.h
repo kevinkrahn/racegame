@@ -30,18 +30,24 @@ struct RegisteredResourceType
     ResourceType resourceType;
     u32 flags;
     Resource*(*create)();
+    class ResourceEditor*(*createEditor)();
 };
 
-Map<u32, RegisteredResourceType> g_resourceTypes;
+Map<ResourceType, RegisteredResourceType> g_resourceTypes;
 
-template <typename T>
+template <typename RESOURCE, typename EDITOR>
 void registerResourceType(ResourceType resourceType, const char* name, const char* icon,
         u32 flags = ResourceFlags::NONE)
 {
-    g_resourceTypes.set((u32)resourceType, { name, icon, resourceType, flags, []() {
-        Resource* r = new T();
-        return r;
-    } });
+    RegisteredResourceType t = {
+        name,
+        icon,
+        resourceType,
+        flags,
+        []() -> Resource* { return new RESOURCE(); },
+        []() -> ResourceEditor* { return new EDITOR(); },
+    };
+    g_resourceTypes.set(resourceType, t);
 }
 
 class Resources

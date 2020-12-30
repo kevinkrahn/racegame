@@ -6,6 +6,7 @@
 #include "../texture.h"
 #include "../renderer.h"
 #include "editor_mode.h"
+#include "resource_editor.h"
 
 // TODO: Implement grid snapping in all edit modes
 struct GridSettings
@@ -16,16 +17,17 @@ struct GridSettings
     f32 z = 2.f;
 };
 
-class Editor
+class TrackEditor : public ResourceEditor
 {
+    Resource* resource;
     SmallArray<OwnedPtr<EditorMode>> modes;
     u32 activeModeIndex = 0;
     GridSettings gridSettings;
 
 public:
-    Editor();
-    void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime);
+    ~TrackEditor();
+    void init(class Resource* resource) override;
+    void onUpdate(class Resource* r, class ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override;
     GridSettings& getGridSettings() { return gridSettings; }
-    void onEndTestDrive(Scene* scene);
-    void reset();
+    bool wantsExclusiveScreen() override;
 };

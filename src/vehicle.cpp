@@ -363,7 +363,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
         motionBlurStrength = smoothMove(motionBlurStrength, targetMotionBlurStrength, 2.f, deltaTime);
 
         Vec3 vel = Vec4(m * Vec4(convert(getRigidBody()->getLinearVelocity()), 1.f)).xyz;
-        Vec2 motionBlur = vel.xy * motionBlurStrength * 0.01f;
+        Vec2 motionBlur = vel.xy * motionBlurStrength * 0.008f;
         rw->setMotionBlur(cameraIndex, motionBlur);
 
         motionBlurResetTimer = max(motionBlurResetTimer - deltaTime, 0.f);

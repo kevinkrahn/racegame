@@ -7,11 +7,11 @@ class EditorMode
     const char* name;
 
 protected:
-    class Editor* editor;
+    class TrackEditor* editor;
 
 public:
     EditorMode(const char* name) : name(name) {}
-    void setEditor(Editor* editor) { this->editor = editor; }
+    void setEditor(TrackEditor* editor) { this->editor = editor; }
     virtual ~EditorMode() {}
     virtual void onUpdate(class Scene* scene, class Renderer* renderer, f32 deltaTime) = 0;
     virtual void onEditorTabGui(class Scene* scene, class Renderer* renderer, f32 deltaTime) = 0;

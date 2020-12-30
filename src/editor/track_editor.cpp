@@ -1,4 +1,4 @@
-#include "editor.h"
+#include "track_editor.h"
 #include "../game.h"
 #include "../input.h"
 #include "../scene.h"
@@ -10,8 +10,14 @@
 #include "decoration_mode.h"
 #include "path_mode.h"
 
-void Editor::reset()
+TrackEditor::~TrackEditor()
 {
+}
+
+void TrackEditor::init(Resource* resource)
+{
+    this->resource = resource;
+
     modes.clear();
     modes.push_back(new TerrainMode);
     modes.push_back(new TrackMode);
@@ -23,23 +29,18 @@ void Editor::reset()
     {
         mode->setEditor(this);
     }
+
+    g_game.changeScene(resource->guid);
 }
 
-Editor::Editor()
+void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime)
 {
-    reset();
-}
-
-void Editor::onEndTestDrive(Scene* scene)
-{
-    for (auto& mode : modes)
+    Scene* scene = g_game.currentScene.get();
+    if (!scene)
     {
-        mode->onEndTest(scene);
+        // scene hasn't loaded yet
+        return;
     }
-}
-
-void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
-{
     modes[activeModeIndex]->onUpdate(scene, renderer, deltaTime);
 
     Vec3 cameraTarget = scene->getEditorCamera().getCameraTarget();
@@ -131,4 +132,21 @@ void Editor::onUpdate(Scene* scene, Renderer* renderer, f32 deltaTime)
 
     }
     ImGui::End();
+}
+
+bool TrackEditor::wantsExclusiveScreen()
+{
+    if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
+    {
+        if (g_input.isKeyPressed(KEY_ESCAPE) || g_input.isKeyPressed(KEY_F5))
+        {
+            g_game.currentScene->stopRace();
+            for (auto& mode : modes)
+            {
+                mode->onEndTest(g_game.currentScene.get());
+            }
+        }
+        return true;
+    }
+    return false;
 }

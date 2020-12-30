@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor.h"
+#include "track_editor.h"
 #include "editor_mode.h"
 #include "../input.h"
 #include "../renderer.h"

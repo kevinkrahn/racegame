@@ -40,7 +40,7 @@
 
 #include "editor/editor_camera.cpp"
 #include "editor/resource_manager.cpp"
-#include "editor/editor.cpp"
+#include "editor/track_editor.cpp"
 #include "editor/model_editor.cpp"
 
 #define STB_RECT_PACK_IMPLEMENTATION

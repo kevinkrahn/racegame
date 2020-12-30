@@ -14,10 +14,9 @@ PxFilterFlags physxFilterShader(
     PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
 { return PxFilterFlags(0); }
 
-void ModelEditor::setModel(Model* model)
+void ModelEditor::init(Resource* resource)
 {
-    this->model = model;
-    selectedObjects.clear();
+    this->model = (Model*)resource;
 
 #if 0
     if (physicsScene)
@@ -75,7 +74,7 @@ void ModelEditor::showSceneSelection()
     }
 }
 
-void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
+void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime)
 {
     bool dirty = false;
     if (ImGui::Begin("Model Editor"))
@@ -283,12 +282,12 @@ void ModelEditor::onUpdate(Renderer* renderer, f32 deltaTime)
                 ImGui::SameLine();
                 if (ImGui::Button("!", ImVec2(16, 0)))
                 {
-                    if (g_game.resourceManager->getSelectedMaterial())
+                    Resource* r = g_game.resourceManager->getOpenedResource(ResourceType::MATERIAL);
+                    if (r)
                     {
                         for (u32 index : selectedObjects)
                         {
-                            model->objects[index].materialGuid =
-                                g_game.resourceManager->getSelectedMaterial()->guid;
+                            model->objects[index].materialGuid = r->guid;
                         }
                         ImGui::CloseCurrentPopup();
                     }

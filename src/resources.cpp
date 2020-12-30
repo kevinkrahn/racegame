@@ -3,22 +3,34 @@
 #include "game.h"
 #include "driver.h"
 #include "util.h"
+
+#include "texture.h"
+#include "editor/texture_editor.h"
+#include "model.h"
+#include "editor/model_editor.h"
+#include "trackdata.h"
+#include "editor/track_editor.h"
+#include "audio.h"
+#include "editor/sound_editor.h"
+#include "material.h"
+#include "editor/material_editor.h"
 #include "ai_driver_data.h"
+#include "editor/ai_editor.h"
 
 void Resources::initResourceTypes()
 {
-    registerResourceType<Texture>(ResourceType::TEXTURE, "Texture", "texture_icon", ResourceFlags::NONE);
-    registerResourceType<Model>(ResourceType::MODEL, "Model", "model_icon", ResourceFlags::EXCLUSIVE_EDITOR);
-    registerResourceType<Sound>(ResourceType::SOUND, "Sound", "sound_icon", ResourceFlags::NONE);
-    //registerResourceType<Font>(ResourceType::FONT, "Font", "icon_track", ResourceFlags::NONE); // TODO: use different icon
-    registerResourceType<TrackData>(ResourceType::TRACK, "Track", "icon_track", ResourceFlags::EXCLUSIVE_EDITOR);
-    registerResourceType<Material>(ResourceType::MATERIAL, "Material", "material_icon", ResourceFlags::NONE);
-    registerResourceType<AIDriverData>(ResourceType::AI_DRIVER_DATA, "AI Driver", "ai_icon", ResourceFlags::NONE);
+    registerResourceType<Texture, TextureEditor>(ResourceType::TEXTURE, "Texture", "texture_icon", ResourceFlags::NONE);
+    registerResourceType<Model, ModelEditor>(ResourceType::MODEL, "Model", "model_icon", ResourceFlags::EXCLUSIVE_EDITOR);
+    registerResourceType<Sound, SoundEditor>(ResourceType::SOUND, "Sound", "sound_icon", ResourceFlags::NONE);
+    //registerResourceType<Font, FontEditor>(ResourceType::FONT, "Font", "icon_track", ResourceFlags::NONE); // TODO: use different icon
+    registerResourceType<TrackData, TrackEditor>(ResourceType::TRACK, "Track", "icon_track", ResourceFlags::EXCLUSIVE_EDITOR);
+    registerResourceType<Material, MaterialEditor>(ResourceType::MATERIAL, "Material", "material_icon", ResourceFlags::NONE);
+    registerResourceType<AIDriverData, AIEditor>(ResourceType::AI_DRIVER_DATA, "AI Driver", "ai_icon", ResourceFlags::NONE);
 }
 
 Resource* Resources::newResource(ResourceType type, bool makeGUID)
 {
-    RegisteredResourceType* registeredResourceType = g_resourceTypes.get((u32)type);
+    RegisteredResourceType* registeredResourceType = g_resourceTypes.get(type);
     Resource* resource = registeredResourceType->create();
     resource->type = type;
     if (makeGUID)

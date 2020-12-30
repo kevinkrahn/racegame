@@ -2,7 +2,7 @@
 
 #include "transform_gizmo.h"
 #include "editor_mode.h"
-#include "editor.h"
+#include "track_editor.h"
 #include "../input.h"
 #include "../renderer.h"
 #include "../imgui.h"

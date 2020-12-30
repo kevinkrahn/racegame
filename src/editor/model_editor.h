@@ -6,8 +6,9 @@
 #include "../model.h"
 #include "../debug_draw.h"
 #include "editor_camera.h"
+#include "resource_editor.h"
 
-class ModelEditor
+class ModelEditor : public ResourceEditor
 {
     Model* model;
     void loadBlenderFile(const char* filename);
@@ -33,7 +34,7 @@ class ModelEditor
 
 public:
     ModelEditor();
-    void onUpdate(class Renderer* renderer, f32 deltaTime);
-    void setModel(Model* model);
+    void init(class Resource* resource) override;
+    void onUpdate(class Resource* r, class ResourceManager* rm, class Renderer* renderer, f32 deltaTime) override;
     Model* getCurrentModel() const { return model; }
 };

@@ -332,6 +332,7 @@ public:
         shadowBounds = bb;
         hasCustomShadowBounds = enabled;
     }
+    void destroy();
 };
 
 class Renderer

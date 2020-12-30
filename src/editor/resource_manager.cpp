@@ -39,8 +39,6 @@ void ResourceManager::saveResources()
         if (auto res = g_res.getResource(r.key))
         {
             const char* guidHex = hex(r.key);
-            // TODO: find out why tmpStr is broken here
-            //const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, guidHex);
             auto filename = Str512::format("%s/%s.dat", DATA_DIRECTORY, guidHex);
             println("Saving resource %s, %s", filename.data(), res->name.data());
             Serializer::toFile(*res, filename.data());
@@ -295,7 +293,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 4.f);
             ImGui::Image((void*)(uintptr_t)g_res.getTexture(
-                    g_resourceTypes[(u32)childResource->type].resourceIcon)->getPreviewHandle(), { 16, 16 });
+                    g_resourceTypes[childResource->type].resourceIcon)->getPreviewHandle(), { 16, 16 });
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 24.f);
             ImGui::Text(childResource->name.data());
@@ -304,34 +302,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
         if (removed)
         {
             // TODO: add confirmation dialog
-            if (selectedTexture == childResource)
-            {
-                selectedTexture = nullptr;
-                isTextureWindowOpen = false;
-            }
-            if (selectedSound == childResource)
-            {
-                selectedSound = nullptr;
-                isSoundWindowOpen = false;
-            }
-            if (selectedMaterial == childResource)
-            {
-                selectedMaterial = nullptr;
-                isMaterialWindowOpen = false;
-            }
-            if (selectedAIDriverData == childResource)
-            {
-                selectedAIDriverData = nullptr;
-                isAIDriverDataWindowOpen = false;
-            }
-            if (modelEditor.getCurrentModel() == childResource)
-            {
-                modelEditor.setModel(nullptr);
-            }
-            if (g_game.currentScene && g_game.currentScene->guid == childResource->guid)
-            {
-                g_game.unloadScene();
-            }
+            closeResource(childResource);
 
             const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, hex(*it));
             if (remove(filename) != 0)
@@ -350,36 +321,42 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
 
 void ResourceManager::openResource(Resource* resource)
 {
-    switch (resource->type)
+    if (openedResources.findIf([resource](OpenedResource const& r) { return r.resource == resource; }))
     {
-        case ResourceType::TEXTURE:
-            isTextureWindowOpen = true;
-            selectedTexture = (Texture*)resource;
-            break;
-        case ResourceType::SOUND:
-            isSoundWindowOpen = true;
-            selectedSound = (Sound*)resource;
-            break;
-        case ResourceType::MATERIAL:
-            isMaterialWindowOpen = true;
-            selectedMaterial = (Material*)resource;
-            break;
-        case ResourceType::MODEL:
-            activeExclusiveEditor = ResourceType::MODEL;
+        return;
+    }
+    ResourceEditor* resourceEditor = g_resourceTypes.get(resource->type)->createEditor();
+    if (g_resourceTypes.get(resource->type)->flags & ResourceFlags::EXCLUSIVE_EDITOR)
+    {
+        g_game.unloadScene();
+        resourceEditor->init(resource);
+        activeExclusiveEditor.reset(resourceEditor);
+    }
+    else
+    {
+        resourceEditor->init(resource);
+        openedResources.push_back({
+            resource,
+            resourceEditor
+        });
+    }
+}
+
+void ResourceManager::closeResource(Resource* resource)
+{
+    auto r = openedResources.findIf([resource](OpenedResource const& r) { return r.resource == resource; });
+    if (r)
+    {
+        openedResources.erase(r);
+    }
+    if (activeExclusiveResource == resource)
+    {
+        activeExclusiveResource = nullptr;
+        activeExclusiveEditor.reset();
+        if (g_game.currentScene && g_game.currentScene->guid == resource->guid)
+        {
             g_game.unloadScene();
-            modelEditor.setModel((Model*)resource);
-            break;
-        case ResourceType::TRACK:
-            activeExclusiveEditor = ResourceType::TRACK;
-            trackEditor.reset();
-            g_game.changeScene(resource->guid);
-            break;
-        case ResourceType::FONT:
-            break;
-        case ResourceType::AI_DRIVER_DATA:
-            isAIDriverDataWindowOpen = true;
-            selectedAIDriverData = (AIDriverData*)resource;
-            break;
+        }
     }
 }
 
@@ -394,13 +371,8 @@ Resource* ResourceManager::newResource(ResourceType type)
 
 void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
 {
-    if (g_game.currentScene && g_game.currentScene->isRaceInProgress)
+    if (activeExclusiveEditor && activeExclusiveEditor->wantsExclusiveScreen())
     {
-        if (g_input.isKeyPressed(KEY_ESCAPE) || g_input.isKeyPressed(KEY_F5))
-        {
-            g_game.currentScene->stopRace();
-            trackEditor.onEndTestDrive(g_game.currentScene.get());
-        }
         return;
     }
 
@@ -492,10 +464,10 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         folderMove.dropFolder = nullptr;
     }
 
-    showTextureWindow(renderer, deltaTime);
-    showMaterialWindow(renderer, deltaTime);
-    showSoundWindow(renderer, deltaTime);
-    showAIDriverDataWindow(renderer, deltaTime);
+    for (OpenedResource const& r : openedResources)
+    {
+        r.editor->onUpdate(r.resource, this, renderer, deltaTime);
+    }
 
     // TODO: fix escape behavior (it only works when a window is focused)
     if (!ImGui::GetIO().WantCaptureKeyboard && g_input.isKeyPressed(KEY_ESCAPE))
@@ -504,17 +476,13 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     }
 
     renderer->getRenderWorld()->setClearColor(true, { 0.1f, 0.1f, 0.1f, 1.f });
-    if (activeExclusiveEditor == ResourceType::TRACK && g_game.currentScene)
+    if (activeExclusiveEditor)
     {
-        trackEditor.onUpdate(g_game.currentScene.get(), renderer, deltaTime);
-    }
-    else if (activeExclusiveEditor == ResourceType::MODEL && modelEditor.getCurrentModel())
-    {
-        modelEditor.onUpdate(renderer, deltaTime);
+        activeExclusiveEditor->onUpdate(activeExclusiveResource, this, renderer, deltaTime);
     }
 }
 
-bool chooseTexture(i32 type, i64& currentTexture, const char* name)
+bool ResourceManager::chooseTexture(i32 type, i64& currentTexture, const char* name)
 {
     // TODO: Add X to clear the selected texture
     ImGui::Image((void*)(uintptr_t)g_res.getTexture(currentTexture)->getPreviewHandle(), { 48, 48 });
@@ -541,9 +509,11 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
         ImGui::SameLine();
         if (ImGui::Button("!", ImVec2(16, 0)))
         {
-            if (g_game.resourceManager->getSelectedTexture())
+            // TODO: use last focused texture or the last opened
+            Texture* openedTexture = (Texture*)getOpenedResource(ResourceType::TEXTURE);
+            if (openedTexture)
             {
-                currentTexture = g_game.resourceManager->getSelectedTexture()->guid;
+                currentTexture = openedTexture->guid;
                 changed = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -589,323 +559,4 @@ bool chooseTexture(i32 type, i64& currentTexture, const char* name)
         ImGui::EndCombo();
     }
     return changed;
-}
-
-void ResourceManager::showTextureWindow(Renderer* renderer, f32 deltaTime)
-{
-    if (!isTextureWindowOpen)
-    {
-        return;
-    }
-
-    bool dirty = false;
-    Texture& tex = *selectedTexture;
-    bool changed = false;
-
-    if (ImGui::Begin("Texture Properties", &isTextureWindowOpen))
-    {
-        ImGui::PushItemWidth(150);
-        dirty |= ImGui::InputText("##Name", &tex.name);
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-        if (tex.getSourceFileCount() == 1)
-        {
-            if (ImGui::Button("Load Image"))
-            {
-                const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
-                        tmpStr("%s/textures", ASSET_DIRECTORY));
-                if (filename)
-                {
-                    tex.setSourceFile(0, path::relative(filename));
-                    tex.regenerate();
-                    dirty = true;
-                }
-            }
-            ImGui::SameLine();
-        }
-        if (ImGui::Button("Reimport"))
-        {
-            tex.reloadSourceFiles();
-            dirty = true;
-        }
-
-        ImGui::Gap();
-
-        if (tex.getSourceFileCount() == 1 && tex.getPreviewHandle())
-        {
-            ImGui::BeginChild("Texture Preview",
-                    { ImGui::GetWindowWidth(), (f32)min(tex.height, 300u) }, false,
-                    ImGuiWindowFlags_HorizontalScrollbar);
-            // TODO: Add controls to pan the image view and zoom in and out
-            ImGui::Image((void*)(uintptr_t)tex.getPreviewHandle(), ImVec2(tex.width, tex.height));
-            ImGui::EndChild();
-
-            ImGui::Text(tex.getSourceFile(0).path.data());
-            ImGui::Text("%i x %i", tex.width, tex.height);
-        }
-        else if (tex.getSourceFileCount() > 1)
-        {
-            for (u32 i=0; i<tex.getSourceFileCount(); ++i)
-            {
-                ImGui::Columns(2, nullptr, false);
-                ImGui::SetColumnWidth(0, 80);
-                auto const& sf = tex.getSourceFile(i);
-                f32 ratio = 72.f / sf.width;
-                ImGui::Image((void*)(uintptr_t)sf.previewHandle, ImVec2(sf.width * ratio, sf.height * ratio));
-                ImGui::NextColumn();
-                if (ImGui::Button("Load File"))
-                {
-                    const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
-                                tmpStr("%s/textures", ASSET_DIRECTORY));
-                    if (filename)
-                    {
-                        tex.setSourceFile(i, path::relative(filename));
-                        tex.regenerate();
-                        dirty = true;
-                    }
-                }
-                if (!sf.path.empty())
-                {
-                    ImGui::Text(sf.path.data());
-                }
-                if (sf.width > 0 && sf.height > 0)
-                {
-                    ImGui::Text("%i x %i", sf.width, sf.height);
-                }
-                ImGui::Columns(1);
-            }
-            ImGui::Gap();
-        }
-
-        ImGui::Guid(tex.guid);
-
-        const char* textureTypeNames = "Color\0Grayscale\0Normal Map\0Cube Map\0";
-        i32 textureType = tex.getTextureType();
-        changed |= ImGui::Combo("Type", &textureType, textureTypeNames);
-        if (textureType != tex.getTextureType())
-        {
-            tex.setTextureType(textureType);
-        }
-
-        changed |= ImGui::Checkbox("Repeat", &tex.repeat);
-        changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
-        changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);
-
-        changed |= ImGui::InputInt("Anisotropy", &tex.anisotropy);
-        tex.anisotropy = clamp(tex.anisotropy, 0, 16);
-
-        const char* filterNames = "Nearest\0Bilinear\0Trilinear\0";
-        changed |= ImGui::Combo("Filtering", &tex.filter, filterNames);
-
-        ImGui::End();
-    }
-
-    if (changed)
-    {
-        tex.regenerate();
-        dirty = true;
-    }
-
-    if (dirty)
-    {
-        markDirty(tex.guid);
-    }
-}
-
-void ResourceManager::showMaterialWindow(Renderer* renderer, f32 deltaTime)
-{
-    if (!isMaterialWindowOpen)
-    {
-        return;
-    }
-
-    Material& mat = *selectedMaterial;
-    mat.loadShaderHandles();
-
-    static RenderWorld rw;
-    static i32 previewMeshIndex = 0;
-
-    rw.setName("Material Preview");
-    rw.setSize(200, 200);
-    const char* previewMeshes[] = { "world.Sphere", "world.UnitCube", "world.Quad" };
-    Mesh* previewMesh = g_res.getModel("misc")->getMeshByName(previewMeshes[previewMeshIndex]);
-    rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));
-    rw.setViewportCount(1);
-    rw.updateWorldTime(30.f);
-    rw.setClearColor(true, { 0.05f, 0.05f, 0.05f, 1.f });
-    rw.setViewportCamera(0, Vec3(8.f, 8.f, 10.f),
-            Vec3(0.f, 0.f, 1.f), 1.f, 200.f, 40.f);
-    Mat4 transform = Mat4::scaling(Vec3(3.5f));
-    mat.draw(&rw, transform, previewMesh);
-
-    renderer->addRenderWorld(&rw);
-
-    bool dirty = false;
-    if (ImGui::Begin("Material Properties", &isMaterialWindowOpen))
-    {
-        ImGui::PushItemWidth(200);
-        dirty |= ImGui::InputText("##Name", &mat.name);
-        ImGui::PopItemWidth();
-        ImGui::Gap();
-
-        ImGui::Columns(2, nullptr, false);
-        ImGui::SetColumnWidth(0, 208);
-        ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
-        ImGui::NextColumn();
-
-        ImGui::Text(selectedMaterial->name.data());
-        ImGui::Guid(selectedMaterial->guid);
-
-        const char* materialTypeNames = "Lit\0Unlit\0";
-        dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
-
-        const char* previewMeshNames = "Sphere\0Box\0Plane\0";
-        dirty |= ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
-
-        ImGui::Columns(1);
-        ImGui::Gap();
-
-        chooseTexture(TextureType::COLOR, mat.colorTexture, "Color Texture");
-        chooseTexture(TextureType::NORMAL_MAP, mat.normalMapTexture, "Normal Map");
-
-        ImGui::Columns(2, nullptr, false);
-        dirty |= ImGui::Checkbox("Culling", &mat.isCullingEnabled);
-        dirty |= ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
-        dirty |= ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
-        dirty |= ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
-        ImGui::NextColumn();
-        dirty |= ImGui::Checkbox("Visible", &mat.isVisible);
-        dirty |= ImGui::Checkbox("Wireframe", &mat.displayWireframe);
-        dirty |= ImGui::Checkbox("Transparent", &mat.isTransparent);
-        dirty |= ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
-        ImGui::Columns(1);
-
-        dirty |= ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
-        dirty |= ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
-        dirty |= ImGui::InputFloat("Depth Offset", &mat.depthOffset);
-
-        dirty |= ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
-        dirty |= ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
-        dirty |= ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
-        dirty |= ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
-        dirty |= ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
-        dirty |= ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
-
-        dirty |= ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
-        dirty |= ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
-        dirty |= ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
-
-        dirty |= ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
-        dirty |= ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
-        dirty |= ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
-        dirty |= ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
-
-        ImGui::End();
-    }
-
-    if (dirty)
-    {
-        markDirty(mat.guid);
-    }
-}
-
-void ResourceManager::showSoundWindow(Renderer* renderer, f32 deltaTime)
-{
-    if (!isSoundWindowOpen)
-    {
-        return;
-    }
-
-    Sound& sound = *selectedSound;
-
-    bool dirty = false;
-    if (ImGui::Begin("Sound Properties", &isSoundWindowOpen))
-    {
-        ImGui::PushItemWidth(150);
-        dirty |= ImGui::InputText("##Name", &sound.name);
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-        if (ImGui::Button("Load Sound"))
-        {
-            const char* filename =
-                chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, tmpStr("%s/sounds", ASSET_DIRECTORY));
-            if (filename)
-            {
-                sound.sourceFilePath = path::relative(filename);
-                sound.loadFromFile(filename);
-            }
-            dirty = true;
-        }
-        ImGui::SameLine();
-        if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
-        {
-            sound.loadFromFile(tmpStr("%s/%s", ASSET_DIRECTORY, sound.sourceFilePath.data()));
-            dirty = true;
-        }
-
-        ImGui::Gap();
-
-        ImGui::Text(sound.sourceFilePath.data());
-        ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
-        ImGui::Guid(sound.guid);
-
-        dirty |= ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
-        dirty |= ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
-
-        ImGui::Gap();
-
-        static SoundHandle previewSoundHandle = 0;
-        if (ImGui::Button("Preview"))
-        {
-            g_audio.stopSound(previewSoundHandle);
-            previewSoundHandle = g_audio.playSound(&sound, SoundType::MENU_SFX);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Stop"))
-        {
-            g_audio.stopSound(previewSoundHandle);
-        }
-    }
-    ImGui::End();
-
-    if (dirty)
-    {
-        markDirty(sound.guid);
-    }
-}
-
-void ResourceManager::showAIDriverDataWindow(Renderer* renderer, f32 deltaTime)
-{
-    if (!isAIDriverDataWindowOpen)
-    {
-        return;
-    }
-    AIDriverData& ai = *selectedAIDriverData;
-
-    bool dirty = false;
-    if (ImGui::Begin("AI Driver Properties", &isSoundWindowOpen))
-    {
-        dirty |= ImGui::InputText("##Name", &ai.name);
-        ImGui::Guid(ai.guid);
-        ImGui::Gap();
-        dirty |= ImGui::SliderFloat("Driving Skill", &ai.drivingSkill, 0.f, 1.f);
-        ImGui::HelpMarker("How optimal of a path the AI takes on the track.");
-        dirty |= ImGui::SliderFloat("Aggression", &ai.aggression, 0.f, 1.f);
-        ImGui::HelpMarker("How often the AI will go out of its way to attack other drivers.");
-        dirty |= ImGui::SliderFloat("Awareness", &ai.awareness, 0.f, 1.f);
-        ImGui::HelpMarker("How much the AI will attempt to avoid hitting other drivers and obstacles.");
-        dirty |= ImGui::SliderFloat("Fear", &ai.fear, 0.f, 1.f);
-        ImGui::HelpMarker("How much the AI will try to evade other drivers.");
-
-        ImGui::Gap();
-
-        dirty |= ImGui::ColorEdit3("Paint Color", (f32*)&ai.cosmetics.color);
-        dirty |= ImGui::SliderFloat("Paint Shininess", &ai.cosmetics.paintShininess, 0.f, 1.f);
-    }
-    ImGui::End();
-
-    if (dirty)
-    {
-        markDirty(selectedAIDriverData->guid);
-    }
 }
