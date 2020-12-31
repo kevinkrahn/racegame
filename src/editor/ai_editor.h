@@ -1,5 +1,6 @@
 #include "../resources.h"
 #include "../imgui.h"
+#include "../vinyl_pattern.h"
 #include "resource_editor.h"
 #include "resource_manager.h"
 
@@ -74,39 +75,47 @@ public:
             ImGui::TreePop();
         }
 
-        for (u32 layerIndex=0; layerIndex<ARRAY_SIZE(ai.config.cosmetics.wrapTextureGuids); ++layerIndex)
+        for (u32 layerIndex=0; layerIndex<ARRAY_SIZE(ai.config.cosmetics.vinylGuids); ++layerIndex)
         {
             if (ImGui::TreeNodeEx(tmpStr("Vinyl Layer %i", layerIndex+1), 0, tmpStr("Vinyl Layer %i", layerIndex+1)))
             {
                 const char* layerVinylName = "";
-                for (u32 i=0; i<ARRAY_SIZE(g_wrapTextures); ++i)
+                i64 vinylGuid = ai.config.cosmetics.vinylGuids[layerIndex];
+                if (vinylGuid && g_res.getResource(vinylGuid))
                 {
-                    Texture* t = g_res.getTexture(g_wrapTextures[i]);
-                    if (t->guid == ai.config.cosmetics.wrapTextureGuids[layerIndex])
-                    {
-                        layerVinylName = g_wrapTextureNames[i];
-                        break;
-                    }
+                    layerVinylName = g_res.getResource(vinylGuid)->name.data();
+                }
+                else
+                {
+                    vinylGuid = 0;
+                    ai.config.cosmetics.vinylGuids[layerIndex] = 0;
+                    layerVinylName = "None";
                 }
                 if (ImGui::BeginCombo("Texture", layerVinylName))
                 {
-                    for (u32 i=0; i<ARRAY_SIZE(g_wrapTextures); ++i)
+                    if (ImGui::Selectable("None###Absolutely Nothing"))
                     {
-                        Texture* t = g_res.getTexture(g_wrapTextures[i]);
-                        bool isSelected = t->guid == ai.config.cosmetics.wrapTextureGuids[layerIndex];
-                        if (ImGui::Selectable(g_wrapTextureNames[i]))
+                        ai.config.cosmetics.vinylGuids[layerIndex] = 0;
+                    }
+                    if (vinylGuid == 0)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                    g_res.iterateResourceType(ResourceType::VINYL_PATTERN, [&](Resource* r) {
+                        bool isSelected = r->guid == vinylGuid;
+                        if (ImGui::Selectable(r->name.data()))
                         {
-                            ai.config.cosmetics.wrapTextureGuids[layerIndex] = t->guid;
+                            ai.config.cosmetics.vinylGuids[layerIndex] = r->guid;
                             dirty = true;
                         }
                         if (isSelected)
                         {
                             ImGui::SetItemDefaultFocus();
                         }
-                    }
+                    });
                     ImGui::EndCombo();
                 }
-                dirty |= ImGui::ColorEdit4("Color", (f32*)&ai.config.cosmetics.wrapColors[layerIndex]);
+                dirty |= ImGui::ColorEdit4("Color", (f32*)&ai.config.cosmetics.vinylColors[layerIndex]);
                 ImGui::TreePop();
             }
         }
@@ -189,7 +198,7 @@ public:
 
             for (u32 i=0; i<ai.vehicles.size();)
             {
-                bool isOpen = ImGui::TreeNode(tmpStr("Vehicle %i", i+1));
+                bool isOpen = ImGui::TreeNodeEx(tmpStr("Vehicle %i", i+1), ImGuiTreeNodeFlags_DefaultOpen);
                 if (ImGui::BeginPopupContextItem())
                 {
                     if (ImGui::MenuItem("Duplicate"))

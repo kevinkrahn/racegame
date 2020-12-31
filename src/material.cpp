@@ -214,12 +214,12 @@ struct VehicleRenderData
     f32 specularPower, specularStrength;
     f32 reflectionStrength, reflectionLod, reflectionBias;
     Vec4 shield;
-    GLuint wrapTexture[3];
-    Vec4 wrapColor[3];
+    GLuint vinylTexture[3];
+    Vec4 vinylColor[3];
 };
 
 void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct Mesh* mesh,
-        u8 stencil, Vec4 const& shield, i64 wrapTextureGuids[3], Vec4 wrapColor[3])
+        u8 stencil, Vec4 const& shield, i64 vinylTextureGuids[3], Vec4 vinylColor[3])
 {
     VehicleRenderData* d = g_tmpMem.bump<VehicleRenderData>();
 #ifndef NDEBUG
@@ -240,18 +240,18 @@ void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct 
     d->reflectionLod = reflectionLod;
     d->reflectionBias = reflectionBias;
     d->shield = shield;
-    d->wrapTexture[0] = g_res.getTexture(wrapTextureGuids[0])->handle;
-    d->wrapTexture[1] = g_res.getTexture(wrapTextureGuids[1])->handle;
-    d->wrapTexture[2] = g_res.getTexture(wrapTextureGuids[2])->handle;
-    d->wrapColor[0] = wrapTextureGuids[0] != 0 ? wrapColor[0] : Vec4(0);
-    d->wrapColor[1] = wrapTextureGuids[1] != 0 ? wrapColor[1] : Vec4(0);
-    d->wrapColor[2] = wrapTextureGuids[2] != 0 ? wrapColor[2] : Vec4(0);
+    d->vinylTexture[0] = g_res.getTexture(vinylTextureGuids[0])->handle;
+    d->vinylTexture[1] = g_res.getTexture(vinylTextureGuids[1])->handle;
+    d->vinylTexture[2] = g_res.getTexture(vinylTextureGuids[2])->handle;
+    d->vinylColor[0] = vinylTextureGuids[0] != 0 ? vinylColor[0] : Vec4(0);
+    d->vinylColor[1] = vinylTextureGuids[1] != 0 ? vinylColor[1] : Vec4(0);
+    d->vinylColor[2] = vinylTextureGuids[2] != 0 ? vinylColor[2] : Vec4(0);
 
     auto renderOpaque = [](void* renderData) {
         VehicleRenderData* d = (VehicleRenderData*)renderData;
-        glBindTextureUnit(6, d->wrapTexture[0]);
-        glBindTextureUnit(7, d->wrapTexture[1]);
-        glBindTextureUnit(8, d->wrapTexture[2]);
+        glBindTextureUnit(6, d->vinylTexture[0]);
+        glBindTextureUnit(7, d->vinylTexture[1]);
+        glBindTextureUnit(8, d->vinylTexture[2]);
         glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
         glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform3fv(2, 1, (GLfloat*)&d->color);
@@ -260,7 +260,7 @@ void Material::drawVehicle(class RenderWorld* rw, Mat4 const& transform, struct 
         glUniform3fv(6, 1, (GLfloat*)&d->emission);
         glUniform3f(7, d->reflectionStrength, d->reflectionLod, d->reflectionBias);
         glUniform4fv(10, 1, (GLfloat*)&d->shield);
-        glUniform4fv(11, 3, (GLfloat*)&d->wrapColor);
+        glUniform4fv(11, 3, (GLfloat*)&d->vinylColor);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);
     };

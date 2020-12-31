@@ -370,12 +370,21 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
         }
     }
 
+    i64 textureGuids[ARRAY_SIZE(VehicleCosmeticConfiguration::vinylGuids)] = { 0 };
+    for (u32 i=0; i<ARRAY_SIZE(textureGuids); ++i)
+    {
+        Resource* r = g_res.getResource(config.cosmetics.vinylGuids[i]);
+        if (r)
+        {
+            textureGuids[i] = ((VinylPattern*)r)->colorTextureGuid;
+        }
+    }
     for (auto& m : chassisBatch.batches)
     {
         if (m.material == originalPaintMaterial)
         {
             config.paintMaterial.drawVehicle(rw, transform, &m.mesh, 2, shield,
-                    config.cosmetics.wrapTextureGuids, config.cosmetics.wrapColors);
+                    textureGuids, config.cosmetics.vinylColors);
         }
         else
         {
@@ -443,6 +452,16 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
 void VehicleData::renderDebris(RenderWorld* rw,
         Array<VehicleDebris> const& debris, VehicleConfiguration& config)
 {
+    i64 textureGuids[ARRAY_SIZE(VehicleCosmeticConfiguration::vinylGuids)] = { 0 };
+    for (u32 i=0; i<ARRAY_SIZE(textureGuids); ++i)
+    {
+        Resource* r = g_res.getResource(config.cosmetics.vinylGuids[i]);
+        if (r)
+        {
+            textureGuids[i] = ((VinylPattern*)r)->colorTextureGuid;
+        }
+    }
+
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     for (auto const& d : debris)
     {
@@ -451,7 +470,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
         if (d.meshInfo->material == originalPaintMaterial)
         {
             config.paintMaterial.drawVehicle(rw, transform, d.meshInfo->mesh, 0, Vec4(0.f),
-                    config.cosmetics.wrapTextureGuids, config.cosmetics.wrapColors);
+                    textureGuids, config.cosmetics.vinylColors);
         }
         else
         {

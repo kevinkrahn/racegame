@@ -6,6 +6,7 @@
 #include "weapon.h"
 #include "material.h"
 #include "batcher.h"
+#include "vinyl_pattern.h"
 
 #define WHEEL_FRONT_LEFT  PxVehicleDrive4WWheelOrder::eFRONT_LEFT
 #define WHEEL_FRONT_RIGHT PxVehicleDrive4WWheelOrder::eFRONT_RIGHT
@@ -16,6 +17,7 @@
 struct RegisteredWeapon
 {
     WeaponInfo info;
+    // TODO: remove std::function
     std::function<OwnedPtr<Weapon>()> create;
 };
 
@@ -125,49 +127,24 @@ struct VehicleTuning
     VehicleStats computeVehicleStats();
 };
 
-// TODO: remove these arrays and generate the list from resources
-const char* g_wrapTextures[] = {
-    "p_none",
-    "p_flames",
-    "p_double_stripes",
-    "p_splat",
-    "p_test",
-    "p_single_stripe_center",
-    "p_single_stripe_left",
-    "p_single_stripe_right",
-};
-
-const char* g_wrapTextureNames[] = {
-    "None",
-    "Flames",
-    "Double Stripe",
-    "Splat",
-    "Test",
-    "Single Stripe",
-    "Single Stripe Left",
-    "Single Stripe Right",
-};
-
-static_assert(ARRAY_SIZE(g_wrapTextureNames) == ARRAY_SIZE(g_wrapTextureNames));
-
 struct VehicleCosmeticConfiguration
 {
     Vec3 color = Vec3(0.95f);
     Vec3 hsv = Vec3(0.f, 0.f, 0.95f);
     f32 paintShininess = 1.f;
 
-    i64 wrapTextureGuids[3] = { 0, 0, 0 };
-    Vec4 wrapColors[3] = { Vec4(1.f), Vec4(1.f), Vec4(1.f) };
-    Vec3 wrapColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
+    i64 vinylGuids[3] = { 0, 0, 0 };
+    Vec4 vinylColors[3] = { Vec4(1.f), Vec4(1.f), Vec4(1.f) };
+    Vec3 vinylColorsHSV[3] = { {0,0,1}, {0,0,1}, {0,0,1} };
 
     void serialize(Serializer& s)
     {
         s.field(color);
         s.field(hsv);
         s.field(paintShininess);
-        s.field(wrapTextureGuids);
-        s.field(wrapColors);
-        s.field(wrapColorsHSV);
+        s.field(vinylGuids);
+        s.field(vinylColors);
+        s.field(vinylColorsHSV);
     }
 };
 
