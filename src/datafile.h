@@ -614,7 +614,7 @@ public:
     template<typename T>
     void element(const char* name, DataFile::Value& val, T& dest)
     {
-        if constexpr (std::is_enum<T>::value)
+        if constexpr (IsEnum<T>::value)
         {
             if (deserialize)
             {
@@ -630,7 +630,7 @@ public:
                 val = (i64)dest;
             }
         }
-        else if constexpr (std::is_integral<T>::value)
+        else if constexpr (IsIntegral<T>::value)
         {
             if (deserialize)
             {
@@ -640,7 +640,7 @@ public:
                     DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
                 }
                 dest = (T)v.val();
-                if (v.val() > std::numeric_limits<T>::max())
+                if (v.val() > NumericLimits<T>::max || v.val() < NumericLimits<T>::min)
                 {
                     error("%s: deserialized integer overflow", context);
                 }
@@ -650,9 +650,9 @@ public:
                 val = (i64)dest;
             }
         }
-        else if constexpr (std::is_array<T>::value)
+        else if constexpr (IsArray<T>::value)
         {
-            auto arraySize = std::extent<T>::value;
+            auto arraySize = ARRAY_SIZE(dest);
             if (deserialize)
             {
                 auto v = val.array();
@@ -792,7 +792,7 @@ public:
     void array(const char* name, DataFile::Value& val, T& dest)
     {
         using V = typename T::value_type;
-        if constexpr (std::is_arithmetic<V>::value)
+        if constexpr (IsArithmetic<V>::value)
         {
             if (deserialize)
             {

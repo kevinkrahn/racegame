@@ -20,6 +20,7 @@
 #include "map.h"
 #include "str.h"
 #include "buffer.h"
+#include "template_magic.h"
 
 Buffer g_tmpMem = Buffer(megabytes(32), 16);
 

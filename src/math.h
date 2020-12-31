@@ -1,35 +1,15 @@
 #pragma once
 
-#include <stdint.h>
-
-typedef uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef int8_t   i8;
-typedef int16_t  i16;
-typedef int32_t  i32;
-typedef int64_t  i64;
-typedef float    f32;
-typedef double   f64;
-
-template <typename T> struct RemoveReference      { typedef T type; };
-template <typename T> struct RemoveReference<T&>  { typedef T type; };
-template <typename T> struct RemoveReference<T&&> { typedef T type; };
-
-template <typename T>
-constexpr typename RemoveReference<T>::type&& move(T&& t)
-{
-    return static_cast<typename RemoveReference<T>::type&&>(t);
-}
-
-template <typename T>
-void swap(T& a, T& b)
-{
-    auto tmp = (T&&)a;
-    a = (T&&)b;
-    b = (T&&)tmp;
-}
+typedef unsigned char  u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+typedef unsigned long long u64;
+typedef char i8;
+typedef short i16;
+typedef int i32;
+typedef long long i64;
+typedef float f32;
+typedef double f64;
 
 #include <PxPhysicsAPI.h>
 using namespace physx;
