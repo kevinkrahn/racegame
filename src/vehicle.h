@@ -87,7 +87,6 @@ public:
 	u32 totalAirBonuses = 0;
     Vec3 shieldColor = Vec3(0, 0, 0);
     f32 shieldStrength = 0.f;
-    Vec3 respawnTestPosition;
 
     // ai
     Vec3 targetOffset = Vec3(0);

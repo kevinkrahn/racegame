@@ -1,6 +1,5 @@
 #pragma once
 
-#include <utility>
 #include "math.h"
 
 template <typename T>
@@ -52,10 +51,10 @@ class Array
             {
                 if (compare(data_[i], pivot))
                 {
-                    std::swap(data_[++swapIndex], data_[i]);
+                    swp(data_[++swapIndex], data_[i]);
                 }
             }
-            std::swap(data_[swapIndex + 1], data_[highIndex]);
+            swp(data_[swapIndex + 1], data_[highIndex]);
             i32 middleIndex = swapIndex + 1;
             quickSort(lowIndex, middleIndex - 1, compare);
             quickSort(middleIndex + 1, highIndex, compare);
@@ -482,7 +481,7 @@ public:
             u32 j = i;
             while (j > 0 && compare(data_[j], data_[j-1]))
             {
-                std::swap(data_[j-1], data_[j]);
+                swp(data_[j-1], data_[j]);
                 j--;
             }
         }

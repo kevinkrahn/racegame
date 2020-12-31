@@ -98,7 +98,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
             for (i32 i=(i32)splineB->points.size() - 1; i >= 0; --i)
             {
                 SplinePoint point = splineB->points[i];
-                std::swap(point.handleOffsetA, point.handleOffsetB);
+                swp(point.handleOffsetA, point.handleOffsetB);
                 splineA->points.push(point);
             }
         }
@@ -124,7 +124,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
             for (auto it = splineB->points.begin(); it!=splineB->points.end(); ++it)
             {
                 SplinePoint point = *it;
-                std::swap(point.handleOffsetA, point.handleOffsetB);
+                swp(point.handleOffsetA, point.handleOffsetB);
                 splineA->points.insert(splineA->points.begin(), point);
             }
         }
@@ -156,7 +156,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         u32 pointIndexB = selectedPoints[1].pointIndex;
         if (pointIndexB < pointIndexA)
         {
-            std::swap(pointIndexA, pointIndexB);
+            swp(pointIndexA, pointIndexB);
         }
         SplinePoint& p1 = spline->points[pointIndexA];
         SplinePoint& p2 = spline->points[pointIndexB];

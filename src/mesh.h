@@ -89,7 +89,7 @@ struct Mesh
 };
 
 #if 0
-inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
+void debugPrintMesh(Mesh const& rhs)
 {
     struct Vertex
     {
@@ -102,11 +102,11 @@ inline std::ostream& operator << (std::ostream& lhs, Mesh const& rhs)
     for (u32 i=0; i<rhs.numVertices; ++i)
     {
         Vertex v = *((Vertex*)(((u8*)rhs.vertices.data()) + i * rhs.stride));
-        lhs << "POS:    " << v.pos << '\n';
-        lhs << "NORMAL: " << v.normal << '\n';
-        lhs << "TANGENT: " << v.tangent << '\n';
-        lhs << "COLOR:  " << v.color << '\n';
-        lhs << "UV:     " << v.uv << '\n';
+        println("POS:     %.2f", v.pos);
+        println("NORMAL:  %.2f", v.normal);
+        println("TANGENT: %.2f", v.tangent);
+        println("COLOR:   %.2f", v.color);
+        println("UV:      %.2f", v.uv);
     }
     return lhs;
 }

@@ -298,31 +298,6 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
             Vec4(shieldColor, shieldStrength));
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
-
-    // visualize path finding
-#if 0
-    if (motionPath.size() > 0)
-    {
-        Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
-        //Font* font = &g_res.getFont("font", 18);
-        for (auto& p : motionPath)
-        {
-            drawSimple(rw, sphere, &g_res.white,
-                        Mat4::translation(p.p + Vec3(0, 0, 1))
-                            * Mat4::scaling(Vec3(0.25f)), Vec3(1, 1, 0)));
-
-            /*
-            Vec4 tp = g_game.renderer->getRenderWorld()->getCamera(0).viewProjection *
-                Vec4(p.p + Vec3(0, 0, 1), 1.f);
-            tp.x = (((tp.x / tp.w) + 1.f) / 2.f) * g_game.windowWidth;
-            tp.y = ((-1.f * (tp.y / tp.w) + 1.f) / 2.f) * g_game.windowHeight;
-            g_game.renderer->push2D(TextRenderable(font,
-                tstr(std::fixed, std::setprecision(1), p.g, ", ", p.h), { tp.x, tp.y },
-                Vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
-            */
-        }
-    }
-#endif
 }
 
 void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
@@ -375,19 +350,6 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
 void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 {
     TIMED_BLOCK();
-
-#if 0
-    Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
-    drawSimple(rw, sphere, &g_res.white, Mat4::translation(graphResult.position),
-                Vec3(0, 1, 0));
-    if (graphResult.lastNode)
-    {
-        drawSimple(rw, sphere, &g_res.white, Mat4::translation(graphResult.lastNode->position),
-                Vec3(1, 0, 0));
-    }
-    drawSimple(rw, sphere, &g_res.white, Mat4::translation(respawnTestPosition),
-                Vec3(0, 0, 1));
-#endif
 
     bool isPlayerControlled = driver->isPlayer;
 
@@ -483,7 +445,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
                 TrackGraph::QueryResult tmpResult = graphResult;
                 tmpResult.lapDistanceLowMark = tmpResult.currentLapDistance;
-                respawnTestPosition = Vec3(graphResult.position.xy + lengthdir(node->angle, 9.f), pos.z);
+                Vec3 respawnTestPosition = Vec3(graphResult.position.xy + lengthdir(node->angle, 9.f), pos.z);
                 scene->getTrackGraph().findLapDistance(respawnTestPosition, tmpResult, 250.f);
                 respawnTestPosition = tmpResult.position;
                 f32 angle = pointDirection(graphResult.position.xy, tmpResult.position.xy) + PI * 0.5f;

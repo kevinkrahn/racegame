@@ -173,7 +173,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     {
         for (u32 j=i; j>0 && pathLengths[j-1] > pathLengths[j]; --j)
         {
-            std::swap(nodeIndexPaths[j], nodeIndexPaths[j-1]);
+            swp(nodeIndexPaths[j], nodeIndexPaths[j-1]);
         }
     }
 

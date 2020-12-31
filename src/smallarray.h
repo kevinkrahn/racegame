@@ -340,7 +340,7 @@ public:
             u32 j = i;
             while (j > 0 && compare(data_[j], data_[j-1]))
             {
-                std::swap(data_[j-1], data_[j]);
+                swp(data_[j-1], data_[j]);
                 j--;
             }
         }
