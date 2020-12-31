@@ -5,21 +5,25 @@
 
 class AIEditor : public ResourceEditor
 {
-    RenderWorld rw;
+    Array<OwnedPtr<RenderWorld>> renderWorlds;
 
 public:
     ~AIEditor()
     {
-        rw.destroy();
+        for (auto& rw : renderWorlds)
+        {
+            rw->destroy();
+        }
     }
 
-    bool drawVehiclePreview(Renderer* renderer, AIDriverData& ai)
+    bool drawVehiclePreview(Renderer* renderer, RenderWorld& rw, AIVehicleConfiguration& ai)
     {
         bool dirty = false;
 
         rw.setName("AI Vehicle Preview");
         rw.setBloomForceOff(true);
-        rw.setSize(200, 200);
+        u32 rs = 160;
+        rw.setSize(rs, rs);
         rw.setViewportCount(1);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
         rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
@@ -39,7 +43,11 @@ public:
             vehicleName = vehicle->name;
         }
 
-        ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
+        ImGui::Columns(2, nullptr, false);
+        ImGui::SetColumnWidth(0, rs + 8);
+        ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { (f32)rs, (f32)rs },
+                { 1.f, 1.f }, { 0.f, 0.f });
+        ImGui::NextColumn();
 
         if (ImGui::BeginCombo("Vehicle", vehicleName))
         {
@@ -143,8 +151,18 @@ public:
                 ImGui::TreePop();
             }
         }
+        ImGui::Columns(1);
 
         return dirty;
+    }
+
+    void init(Resource* r) override
+    {
+        AIDriverData& ai = *(AIDriverData*)r;
+        for (auto& v : ai.vehicles)
+        {
+            renderWorlds.push_back(new RenderWorld());
+        }
     }
 
     void onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime, u32 n) override
@@ -169,9 +187,33 @@ public:
 
             ImGui::Gap();
 
-            dirty |= drawVehiclePreview(renderer, ai);
+            for (u32 i=0; i<ai.vehicles.size(); ++i)
+            {
+                const char* label = tmpStr("Vehicle %i", i+1);
+                if (ImGui::TreeNodeEx(label, 0, label))
+                {
+                    dirty |= drawVehiclePreview(renderer, *renderWorlds[i], ai.vehicles[i]);
+                    if (dirty)
+                    {
+                        ai.vehicles[i].config.reloadMaterials();
+                    }
+                    ImGui::TreePop();
+                }
+            }
 
-            ai.config.reloadMaterials();
+            // TODO: auto-filter out invalid vehicle indices and upgrade indices
+            if (ImGui::Button("Add Vehicle"))
+            {
+                ai.vehicles.push_back({});
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::WEAPON, 0, 3 });
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 0, 1 });
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::WEAPON, 0, 5 });
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 2, 1 });
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::WEAPON, 1, 2 });
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 2, 2 });
+                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 0, 2 });
+                renderWorlds.push_back(new RenderWorld());
+            }
         }
         ImGui::End();
 

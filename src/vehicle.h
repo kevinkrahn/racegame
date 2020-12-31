@@ -138,7 +138,7 @@ public:
 	~Vehicle();
 
     Driver* getDriver() const { return driver; }
-    ComputerDriverData* getAI() const { return &g_ais[driver->aiIndex]; }
+    AIDriverData* getAI() const { return (AIDriverData*)g_res.getResource(driver->aiDriverGUID); }
 
     bool hasAbility(const char* name)
     {

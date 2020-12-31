@@ -1,8 +1,9 @@
 #include "driver.h"
 #include "resources.h"
+#include "ai_driver_data.h"
 
 Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-        i32 controllerID, i32 vehicleIndex, i32 aiIndex)
+        i32 controllerID, i32 vehicleIndex, i64 aiDriverGUID)
 {
     this->hasCamera = hasCamera;
     this->vehicleIndex = vehicleIndex;
@@ -10,35 +11,33 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
     this->controllerID = controllerID;
     this->isPlayer = isPlayer;
 
-    this->aiIndex = aiIndex;
-    if (aiIndex != -1 && !isPlayer)
+    this->aiDriverGUID = aiDriverGUID;
+    if (aiDriverGUID != -0 && !isPlayer)
     {
-        this->playerName = g_ais[aiIndex].name;
+        this->playerName = g_res.getResource(aiDriverGUID)->name;
     }
 }
 
 void Driver::aiUpgrades(RandomSeries& series)
 {
-    assert(aiIndex != -1);
-    ComputerDriverData const& ai = g_ais[aiIndex];
+    assert(aiDriverGUID != 0);
+
+    AIDriverData const& ai = *(AIDriverData*)g_res.getResource(aiDriverGUID);
 
 //#define AI_DEBUG_PRINT(...) println(__VA_ARGS__)
 #define AI_DEBUG_PRINT(...)
 
     if (vehicleIndex == -1)
     {
-        vehicleConfig.cosmetics.color = ai.color;
-        vehicleIndex = (i32)ai.vehicleIndex;
-        if (ai.wrapIndex != -1)
-        {
-            vehicleConfig.cosmetics.wrapTextureGuids[0] = g_res.getTexture(g_wrapTextures[ai.wrapIndex])->guid;
-            vehicleConfig.cosmetics.wrapColors[0] = ai.wrapColor;
-        }
+        auto& v = ai.vehicles[0];
+        vehicleConfig.cosmetics = v.config.cosmetics;
+        vehicleIndex = (i32)v.vehicleIndex;
         credits -= g_vehicles[vehicleIndex]->price;
         AI_DEBUG_PRINT("%s bought vehicle %s", playerName.data(), g_vehicles[vehicleIndex]->name);
     }
 
     // TODO: make AI buy better vehicles over time
+    // TODO: use the weapon and upgrade info stored in AIDriverData
 
     enum UpgradeType
     {

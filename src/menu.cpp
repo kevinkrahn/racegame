@@ -127,13 +127,22 @@ void Menu::startQuickRace()
     i32 driverCredits = irandom(series, 10000, 50000);
     println("Starting quick race with driver budget: %i", driverCredits);
     g_game.state.drivers.clear();
+    Array<AIDriverData*> aiDrivers;
+    g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
+        AIDriverData* d = (AIDriverData*)r;
+        if (d->vehicles.size() > 0)
+        {
+            aiDrivers.push_back(d);
+        }
+    });
     for (u32 i=0; i<10; ++i)
     {
         i32 aiIndex;
-        do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
-        while (g_game.state.drivers.findIf([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
-
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiIndex));
+        do { aiIndex = irandom(series, 0, (i32)aiDrivers.size()); }
+        while (g_game.state.drivers.findIf([&](Driver const& d){
+            return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
+        }));
+        g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
         g_game.state.drivers.back().credits = driverCredits;
         g_game.state.drivers.back().aiUpgrades(series);
     }
@@ -757,13 +766,22 @@ void Menu::showNewChampionshipMenu()
 
         // add AI drivers
         RandomSeries series = randomSeed();
+        Array<AIDriverData*> aiDrivers;
+        g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
+            AIDriverData* d = (AIDriverData*)r;
+            if (d->vehicles.size() > 0)
+            {
+                aiDrivers.push_back(d);
+            }
+        });
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
         {
             i32 aiIndex;
-            do { aiIndex = irandom(series, 0, (i32)g_ais.size()); }
-            while (g_game.state.drivers.findIf([aiIndex](Driver const& d){ return d.aiIndex == aiIndex; }));
-
-            g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiIndex));
+            do { aiIndex = irandom(series, 0, (i32)aiDrivers.size()); }
+            while (g_game.state.drivers.findIf([&](Driver const& d){
+                return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
+            }));
+            g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
             g_game.state.drivers.back().aiUpgrades(series);
         }
         garage.playerIndex = 0;

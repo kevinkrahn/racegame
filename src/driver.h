@@ -9,7 +9,7 @@ struct Driver
     Str64 controllerGuid;
     u32 leaguePoints = 0;
     i32 credits = 10000;
-    i32 aiIndex = -1;
+    i64 aiDriverGUID = 0;
     i32 controllerID = -1;
     i32 vehicleIndex = -1;
     u32 lastPlacement = 0;
@@ -65,7 +65,7 @@ struct Driver
     }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-            i32 controllerID=0, i32 vehicleIndex=-1, i32 aiIndex=-1);
+            i32 controllerID=0, i32 vehicleIndex=-1, i64 aiDriverGUID=0);
 
     Driver() = default;
     Driver(Driver&& other) = default;
@@ -79,7 +79,7 @@ struct Driver
         s.field(controllerGuid);
         s.field(leaguePoints);
         s.field(credits);
-        s.field(aiIndex);
+        s.field(aiDriverGUID);
         s.field(vehicleIndex);
         s.field(lastPlacement);
         s.field(isPlayer);

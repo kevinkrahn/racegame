@@ -887,7 +887,7 @@ void Scene::buildRaceResults()
             }
             else
             {
-                auto& ai = g_ais[v->driver->aiIndex];
+                auto& ai = *v->getAI();
                 // generate fake stats for the drivers that have not yet finished the race
                 for (u32 i = v->currentLap + 1; i<totalLaps; ++i)
                 {

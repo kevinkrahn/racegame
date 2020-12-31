@@ -23,16 +23,16 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
     this->lastDamagedBy = vehicleIndex;
     this->vehicleIndex = vehicleIndex;
     this->offsetChangeInterval = random(scene->randomSeries, 6.f, 15.f);
-	if (driver->aiIndex != -1)
+    this->driver = driver;
+	if (driver->aiDriverGUID != 0)
 	{
-		auto& ai = g_ais[driver->aiIndex];
-		f32 skill = clamp(1.f - ai.drivingSkill
+		auto ai = getAI();
+		f32 skill = clamp(1.f - ai->drivingSkill
 				+ random(scene->randomSeries, -0.2f, 0.2f), 0.f, 0.99999f);
 		this->preferredFollowPathIndex = (u32)(max(0, (i32)scene->getPaths().size()) * skill);
 		this->currentFollowPathIndex = this->preferredFollowPathIndex;
 		// TODO: change preferredFollowPathIndex per lap?
 	}
-    this->driver = driver;
     this->scene = scene;
     this->lastValidPosition = transform.position();
     this->cameraIndex = cameraIndex;
@@ -1166,7 +1166,7 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
 
 void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 {
-    auto& ai = g_ais[driver->aiIndex];
+    auto& ai = *getAI();
 
     Vec3 currentPosition = vehiclePhysics.getPosition();
     Vec3 forwardVector = vehiclePhysics.getForwardVector();

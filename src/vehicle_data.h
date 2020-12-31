@@ -13,19 +13,6 @@
 #define WHEEL_REAR_RIGHT  PxVehicleDrive4WWheelOrder::eREAR_RIGHT
 #define NUM_WHEELS 4
 
-struct ComputerDriverData
-{
-    const char* name = "Computer Driver";
-    f32 drivingSkill = 1.f; // [0,1] how optimal of a path the AI takes on the track
-    f32 aggression = 1.f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
-    f32 awareness = 1.f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
-    f32 fear = 1.f;         // [0,1] how much the AI tries to evade other drivers
-    Vec3 color;
-    u32 vehicleIndex = 0;
-    i32 wrapIndex = -1;
-    Vec4 wrapColor;
-};
-
 struct RegisteredWeapon
 {
     WeaponInfo info;
@@ -338,20 +325,6 @@ struct VehicleData
 
 Array<OwnedPtr<VehicleData>> g_vehicles;
 Array<RegisteredWeapon> g_weapons;
-Array<ComputerDriverData> g_ais;
-
-u32 findVehicleIndexByName(const char* name)
-{
-    for (u32 i=0; i<g_vehicles.size(); ++i)
-    {
-        if (strcmp(g_vehicles[i]->name, name) == 0)
-        {
-            return i;
-        }
-    }
-    error("No vehicle exists with name: \"", name, "\"\n");
-    return 0;
-}
 
 template <typename T>
 void registerWeapon()
@@ -366,22 +339,6 @@ template <typename T>
 void registerVehicle()
 {
     g_vehicles.push_back(new T);
-}
-
-void registerAI(const char* name, f32 drivingSkill, f32 aggression, f32 awareness, f32 fear,
-    Vec3 const& color, const char* vehicleName, i32 wrapIndex=-1, Vec4 const& wrapColor=Vec4(1.f))
-{
-    g_ais.push_back({
-        name,
-        drivingSkill,
-        aggression,
-        awareness,
-        fear,
-        color,
-        findVehicleIndexByName(vehicleName),
-        wrapIndex,
-        wrapColor,
-    });
 }
 
 void initializeVehicleData();
