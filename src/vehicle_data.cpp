@@ -204,6 +204,21 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
 
 void VehicleData::loadModelData(const char* modelName)
 {
+    // reset values
+    collisionMeshes.clear();
+    for (u32 i=0; i<ARRAY_SIZE(wheelMeshes); ++i)
+    {
+        wheelMeshes[i].clear();
+    }
+    debrisChunks.clear();
+    frontWheelMeshRadius = 0.f;
+    frontWheelMeshWidth = 0.f;
+    rearWheelMeshRadius = 0.f;
+    rearWheelMeshWidth = 0.f;
+    collisionWidth = 0.f;
+    collisionLength = 0.f;
+    sceneCenterOfMass = Vec3(0.f);
+
     chassisBatch.begin();
     chassisOneMaterialBatch.begin();
 

@@ -249,8 +249,8 @@ struct VehicleData
     Array<VehicleCollisionsMesh> collisionMeshes;
     Array<PerformanceUpgrade> availableUpgrades;
 
-    const char* name ="";
-    const char* description ="";
+    Str32 name ="";
+    Str64 description ="";
     Vec3 defaultColorHsv = Vec3(0.f, 0.f, 0.95f);
     i32 price = 0;
     SmallArray<WeaponSlot, 4> weaponSlots;

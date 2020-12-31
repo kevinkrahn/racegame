@@ -82,3 +82,4 @@
   this could be a special ability.
 - Show waveform visualization in sound window
 - Add test area to compare speed of all vehicles in a drag race
+- AI should use their weapons more aggressively close to the end of the lap if they still have ammo

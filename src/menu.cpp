@@ -1727,7 +1727,7 @@ void Menu::createCarLotMenu()
 
         Vec2 pos = Vec2(x + (i % buttonsPerRow) * (size.x + gap),
                         y + (i / buttonsPerRow) * (size.y + gap));
-        Widget* w = addImageButton(g_vehicles[i]->name, g_vehicles[i]->description, pos, size, [i,this]{
+        Widget* w = addImageButton(g_vehicles[i]->name.data(), g_vehicles[i]->description.data(), pos, size, [i,this]{
             garage.previewVehicleIndex = i;
             if (i == garage.driver->vehicleIndex)
             {

@@ -41,7 +41,7 @@ public:
             vehicle->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())), nullptr, ai.config);
             renderer->addRenderWorld(&rw);
 
-            vehicleName = vehicle->name;
+            vehicleName = vehicle->name.data();
         }
 
         ImGui::Columns(2, nullptr, false);
@@ -55,7 +55,7 @@ public:
             for (u32 i=0; i<g_vehicles.size(); ++i)
             {
                 bool isSelected = i == ai.vehicleIndex;
-                if (ImGui::Selectable(g_vehicles[i]->name))
+                if (ImGui::Selectable(g_vehicles[i]->name.data()))
                 {
                     ai.vehicleIndex = i;
                     dirty = true;
