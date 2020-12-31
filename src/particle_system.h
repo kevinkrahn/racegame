@@ -65,7 +65,7 @@ public:
     void spawn(Vec3 const& position, Vec3 const& velocity, f32 alpha,
             Vec4 const& color = Vec4(1.f), f32 scale = 1.f)
     {
-        particles.push_back({
+        particles.push({
             position,
             velocity,
             random(series, minScale, maxScale) * scale,

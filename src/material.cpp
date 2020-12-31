@@ -11,30 +11,30 @@ void Material::loadShaderHandles(SmallArray<ShaderDefine> additionalDefines)
     if (isVisible)
     {
         SmallArray<ShaderDefine> defines = additionalDefines;
-        if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
-        if (normalMapTexture != 0) { defines.push_back({ "NORMAL_MAP" }); }
+        if (alphaCutoff > 0.f) { defines.push({ "ALPHA_DISCARD" }); }
+        if (normalMapTexture != 0) { defines.push({ "NORMAL_MAP" }); }
         colorShaderHandle = getShaderHandle("lit", defines, renderFlags, -100.f * depthOffset);
     }
     shadowShaderHandle = 0;
     if (castsShadow)
     {
         SmallArray<ShaderDefine> defines = additionalDefines;
-        defines.push_back({ "DEPTH_ONLY" });
-        if (shadowAlphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
+        defines.push({ "DEPTH_ONLY" });
+        if (shadowAlphaCutoff > 0.f) { defines.push({ "ALPHA_DISCARD" }); }
         shadowShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
     depthShaderHandle = 0;
     if (isDepthWriteEnabled)
     {
         SmallArray<ShaderDefine> defines = additionalDefines;
-        defines.push_back({ "DEPTH_ONLY" });
-        if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
+        defines.push({ "DEPTH_ONLY" });
+        if (alphaCutoff > 0.f) { defines.push({ "ALPHA_DISCARD" }); }
         depthShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
     {
         SmallArray<ShaderDefine> defines = additionalDefines;
-        defines.push_back({ "OUT_ID" });
-        if (alphaCutoff > 0.f) { defines.push_back({ "ALPHA_DISCARD" }); }
+        defines.push({ "OUT_ID" });
+        if (alphaCutoff > 0.f) { defines.push({ "ALPHA_DISCARD" }); }
         pickShaderHandle = getShaderHandle("lit", defines, renderFlags);
     }
     textureColorHandle = colorTexture

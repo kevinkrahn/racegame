@@ -97,9 +97,9 @@ class PathMode : public EditorMode, public TransformGizmoHandler
         {
             RacingLine::Point point;
             point.position = p->position;
-            racingLine.points.push_back(point);
+            racingLine.points.push(point);
         }
-        scene->getPaths().push_back(std::move(racingLine));
+        scene->getPaths().push(std::move(racingLine));
     }
 
     void deletePath(Scene* scene)
@@ -116,7 +116,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
     {
         if (scene->getPaths().size() > 0)
         {
-            scene->getPaths().push_back(scene->getPaths()[selectedPathIndex]);
+            scene->getPaths().push(scene->getPaths()[selectedPathIndex]);
             ++selectedPathIndex;
         }
     }
@@ -133,9 +133,9 @@ class PathMode : public EditorMode, public TransformGizmoHandler
             {
                 RacingLine::Point point;
                 point.position = p->position;
-                racingLine.points.push_back(point);
+                racingLine.points.push(point);
             }
-            scene->getPaths().push_back(std::move(racingLine));
+            scene->getPaths().push(std::move(racingLine));
         }
         selectedPoints.clear();
         selectedPathIndex = 0;
@@ -237,7 +237,7 @@ public:
                         }
                         if (!alreadySelected)
                         {
-                            selectedPoints.push_back((u16)i);
+                            selectedPoints.push((u16)i);
                         }
                         hit = true;
                         break;

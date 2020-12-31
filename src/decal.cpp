@@ -46,16 +46,16 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 c
             vert.normal = worldSpaceNormalTransform * vert.normal;
         }
 
-        mesh.vertices.push_back(vert.pos.x);
-        mesh.vertices.push_back(vert.pos.y);
-        mesh.vertices.push_back(vert.pos.z);
-        mesh.vertices.push_back(vert.normal.x);
-        mesh.vertices.push_back(vert.normal.y);
-        mesh.vertices.push_back(vert.normal.z);
-        mesh.vertices.push_back(vert.uv.x);
-        mesh.vertices.push_back(vert.uv.y);
+        mesh.vertices.push(vert.pos.x);
+        mesh.vertices.push(vert.pos.y);
+        mesh.vertices.push(vert.pos.z);
+        mesh.vertices.push(vert.normal.x);
+        mesh.vertices.push(vert.normal.y);
+        mesh.vertices.push(vert.normal.z);
+        mesh.vertices.push(vert.uv.x);
+        mesh.vertices.push(vert.uv.y);
 
-        mesh.indices.push_back(mesh.indices.size());
+        mesh.indices.push(mesh.indices.size());
     };
 
     Mat4 vertTransform = inverse(transform) * meshTransform;
@@ -116,16 +116,16 @@ void Decal::addMesh(f32* verts, u32 stride, u32* indices, u32 indexCount, Mat4 c
                 {
                     if (d1 > 0.f)
                     {
-                        out.push_back({
+                        out.push({
                             lastVert.pos + (v.pos - lastVert.pos) * d,
                             lastVert.normal + (v.normal - lastVert.normal) * d,
                         });
                     }
-                    out.push_back(v);
+                    out.push(v);
                 }
                 else if (d1 <= 0.f)
                 {
-                    out.push_back({
+                    out.push({
                         lastVert.pos + (v.pos - lastVert.pos) * d,
                         lastVert.normal + (v.normal - lastVert.normal) * d,
                     });

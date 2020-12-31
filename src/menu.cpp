@@ -132,7 +132,7 @@ void Menu::startQuickRace()
         AIDriverData* d = (AIDriverData*)r;
         if (d->vehicles.size() > 0)
         {
-            aiDrivers.push_back(d);
+            aiDrivers.push(d);
         }
     });
     for (u32 i=0; i<10; ++i)
@@ -142,7 +142,7 @@ void Menu::startQuickRace()
         while (g_game.state.drivers.findIf([&](Driver const& d){
             return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
         }));
-        g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
+        g_game.state.drivers.push(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
         g_game.state.drivers.back().credits = driverCredits;
         g_game.state.drivers.back().aiUpgrades(series);
     }
@@ -279,7 +279,7 @@ Widget* Menu::addBackgroundBox(Vec2 pos, Vec2 size, f32 alpha, bool scaleOut)
         ui::rectBlur(-1000, nullptr, pos, size, Vec4(Vec3(0.f), alpha), w.fadeInAlpha);
     };
     w.flags = 0;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -288,7 +288,7 @@ Widget* Menu::addLogic(std::function<void()> onUpdate)
     Widget w;
     w.flags = 0;
     w.onRender = [onUpdate](Widget& w, bool isSelected){ onUpdate(); };
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -297,7 +297,7 @@ Widget* Menu::addLogic(std::function<void(Widget&)> onUpdate)
     Widget w;
     w.flags = 0;
     w.onRender = [onUpdate](Widget& w, bool isSelected){ onUpdate(w); };
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -373,7 +373,7 @@ Widget* Menu::addButton(const char* text, const char* helpText, Vec2 pos, Vec2 s
     button.flags = WidgetFlags::SELECTABLE |
                    WidgetFlags::NAVIGATE_VERTICAL |
                    WidgetFlags::NAVIGATE_HORIZONTAL | flags;
-    widgets.push_back(button);
+    widgets.push(button);
     return &widgets.back();
 }
 
@@ -452,7 +452,7 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, Vec2 pos, V
     button.flags = WidgetFlags::SELECTABLE |
                    WidgetFlags::NAVIGATE_VERTICAL |
                    WidgetFlags::NAVIGATE_HORIZONTAL | flags;
-    widgets.push_back(button);
+    widgets.push(button);
     return &widgets.back();
 }
 
@@ -504,7 +504,7 @@ Widget* Menu::addSlider(const char* text, Vec2 pos, Vec2 size, u32 flags,
                 Vec2(handleWidth, size.y), Vec4(0.1f, 0.1f, 0.1f, 1.f), w.fadeInAlpha);
     };
     w.fadeInScale = 0.7f;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -565,7 +565,7 @@ Widget* Menu::addSelector2(const char* text, const char* helpText, Vec2 pos, Vec
         }
     };
     w.fadeInScale = 0.7f;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -644,7 +644,7 @@ Widget* Menu::addSelector(const char* text, const char* helpText, Vec2 pos, Vec2
     w.fadeInScale = 0.7f;
     w.flags = WidgetFlags::SELECTABLE |
               WidgetFlags::NAVIGATE_VERTICAL;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -668,7 +668,7 @@ Widget* Menu::addHelpMessage(Vec2 pos)
         }
     };
     w.flags = 0;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -683,7 +683,7 @@ Widget* Menu::addLabel(std::function<const char*()> getText, Vec2 pos, Font* fon
                     widget.fadeInAlpha, widget.fadeInScale, halign, valign);
     };
     w.flags = flags;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -702,7 +702,7 @@ Widget* Menu::addTitle(const char* text, Vec2 pos)
                 widget.fadeInAlpha, widget.fadeInScale, HAlign::CENTER, VAlign::CENTER);
     };
     w.flags = 0;
-    widgets.push_back(w);
+    widgets.push(w);
     return &widgets.back();
 }
 
@@ -771,7 +771,7 @@ void Menu::showNewChampionshipMenu()
             AIDriverData* d = (AIDriverData*)r;
             if (d->vehicles.size() > 0)
             {
-                aiDrivers.push_back(d);
+                aiDrivers.push(d);
             }
         });
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
@@ -781,7 +781,7 @@ void Menu::showNewChampionshipMenu()
             while (g_game.state.drivers.findIf([&](Driver const& d){
                 return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
             }));
-            g_game.state.drivers.push_back(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
+            g_game.state.drivers.push(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
             g_game.state.drivers.back().aiUpgrades(series);
         }
         garage.playerIndex = 0;
@@ -845,7 +845,7 @@ void Menu::showNewChampionshipMenu()
                 btn.flags = 0;
             }
         };
-        widgets.push_back(w);
+        widgets.push(w);
     }
 
     addBackgroundBox({0,0}, {880, 780});
@@ -871,7 +871,7 @@ void Menu::showNewChampionshipMenu()
                 }
                 if (!keyboardPlayerExists)
                 {
-                    g_game.state.drivers.push_back(Driver(true, true, true, 0));
+                    g_game.state.drivers.push(Driver(true, true, true, 0));
                     g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
                 }
             }
@@ -892,7 +892,7 @@ void Menu::showNewChampionshipMenu()
 
                     if (!controllerPlayerExists)
                     {
-                        g_game.state.drivers.push_back(Driver(true, true, false, controller.key));
+                        g_game.state.drivers.push(Driver(true, true, false, controller.key));
                         g_game.state.drivers.back().controllerGuid = controller.value.getGuid();
                         g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
                     }
@@ -995,7 +995,7 @@ void Menu::showChampionshipMenu()
                         WidgetFlags::NAVIGATE_VERTICAL |
                         WidgetFlags::NAVIGATE_HORIZONTAL |
                         WidgetFlags::FADE_OUT;
-            widgets.push_back(w);
+            widgets.push(w);
 
             ++playerIndex;
         }
@@ -1482,7 +1482,7 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
     vinyls.clear();
     vinylIndex = 0;
     g_res.iterateResourceType(ResourceType::VINYL_PATTERN, [](Resource* r) {
-        vinyls.push_back((VinylPattern*)r);
+        vinyls.push((VinylPattern*)r);
     });
     vinyls.sort([](VinylPattern* a, VinylPattern* b){ return a->name < b->name; });
     vinyls.insert(vinyls.begin(), &none);
@@ -1688,7 +1688,7 @@ void Menu::createCarLotMenu()
                 }
             }
         };
-        widgets.push_back(w);
+        widgets.push(w);
     }
 
     Vec2 size(150, 150);
@@ -1874,7 +1874,7 @@ void Menu::showChampionshipStandings()
         SmallArray<Driver*, 10> sortedDrivers;
         for(auto& driver : g_game.state.drivers)
         {
-            sortedDrivers.push_back(&driver);
+            sortedDrivers.push(&driver);
         }
         sortedDrivers.sort([](Driver* a, Driver* b) { return a->leaguePoints > b->leaguePoints; });
 
@@ -1910,7 +1910,7 @@ void Menu::showChampionshipStandings()
                     HAlign::CENTER, VAlign::CENTER);
         }
     };
-    widgets.push_back(std::move(w));
+    widgets.push(std::move(w));
 
     u32 flags = WidgetFlags::FADE_OUT | WidgetFlags::BACK;
     if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
@@ -1945,7 +1945,7 @@ void Menu::showRaceResults()
     RandomSeries series = randomSeed();
     for (u32 i=0; i<10; ++i)
     {
-        g_game.state.drivers.push_back(Driver(i==0, i==0, i==0, 0, i%2, i));
+        g_game.state.drivers.push(Driver(i==0, i==0, i==0, 0, i%2, i));
     }
     for (u32 i=0; i<10; ++i)
     {
@@ -1956,10 +1956,10 @@ void Menu::showRaceResults()
         result.statistics.accidents = irandom(series, 0, 10);
         result.statistics.destroyed = irandom(series, 0, 10);
         result.statistics.frags = irandom(series, 0, 50);
-        result.statistics.bonuses.push_back(RaceBonus{ "SMALL BONUS", 100 });
-        result.statistics.bonuses.push_back(RaceBonus{ "MEDIUM BONUS", 400 });
-        result.statistics.bonuses.push_back(RaceBonus{ "BIG BONUS", 500 });
-        scene->getRaceResults().push_back(result);
+        result.statistics.bonuses.push(RaceBonus{ "SMALL BONUS", 100 });
+        result.statistics.bonuses.push(RaceBonus{ "MEDIUM BONUS", 400 });
+        result.statistics.bonuses.push(RaceBonus{ "BIG BONUS", 500 });
+        scene->getRaceResults().push(result);
     }
 #endif
     reset();
@@ -2056,7 +2056,7 @@ void Menu::showRaceResults()
             }
         }
     };
-    widgets.push_back(std::move(w));
+    widgets.push(std::move(w));
 
     selectedWidget = addButton("OKAY", nullptr, Vec2(0, boxSize.y/2-50), Vec2(200, 50), [this]{
         for (auto& r : g_game.currentScene->getRaceResults())
@@ -2134,7 +2134,7 @@ void Menu::showGraphicsSettingsMenu()
         {
             valueIndex = i;
         }
-        resolutionNames.push_back(tmpStr("%i x %i", resolutions[i].x, resolutions[i].y));
+        resolutionNames.push(tmpStr("%i x %i", resolutions[i].x, resolutions[i].y));
     }
 
     Vec2 size(750, 50);

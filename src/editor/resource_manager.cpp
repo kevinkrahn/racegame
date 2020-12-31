@@ -65,7 +65,7 @@ ResourceManager::ResourceManager()
         }
         for (auto& childFolder : folder->childFolders)
         {
-            folders.push_back(childFolder.get());
+            folders.push(childFolder.get());
         }
     }
 
@@ -73,7 +73,7 @@ ResourceManager::ResourceManager()
     g_res.iterateResources([&](Resource* res){
         if (!resourceFolderMap.get(res->guid))
         {
-            resources.childResources.push_back(res->guid);
+            resources.childResources.push(res->guid);
         }
     });
 
@@ -172,13 +172,13 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
                 OwnedPtr<ResourceFolder> newFolder(new ResourceFolder);
                 newFolder->name = "New Folder";
                 newFolder->parent = folder;
-                folder->childFolders.push_back(std::move(newFolder));
+                folder->childFolders.push(std::move(newFolder));
             }
             for (auto& r : g_resourceTypes)
             {
                 if (ImGui::MenuItem(tmpStr("New %s", r.value.name)))
                 {
-                    folder->childResources.push_back(newResource(r.value.resourceType)->guid);
+                    folder->childResources.push(newResource(r.value.resourceType)->guid);
                 }
             }
             if (ImGui::MenuItem("Rename"))
@@ -371,7 +371,7 @@ void ResourceManager::openResource(Resource* resource)
         }
 
         resourceEditor->init(resource);
-        openedResources.push_back({
+        openedResources.push({
             resource,
             resourceEditor,
             windowID,
@@ -495,7 +495,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                 auto removeIt = folderMove.payload.sourceFolder->childFolders.findIf(
                             [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
                 assert(removeIt);
-                folderMove.dropFolder->childFolders.push_back(std::move(*removeIt));
+                folderMove.dropFolder->childFolders.push(std::move(*removeIt));
                 folderMove.dropFolder->childFolders.back()->parent = folderMove.dropFolder;
                 folderMove.payload.sourceFolder->childFolders.erase(removeIt);
             }
@@ -504,7 +504,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                 folderMove.payload.sourceFolder->childResources.erase(
                         folderMove.payload.sourceFolder->childResources.find(
                             folderMove.payload.resourceDragged->guid));
-                folderMove.dropFolder->childResources.push_back(
+                folderMove.dropFolder->childResources.push(
                         folderMove.payload.resourceDragged->guid);
             }
         }
@@ -572,7 +572,7 @@ bool ResourceManager::chooseTexture(i32 type, i64& currentTexture, const char* n
             {
                 if (searchString.empty() || tex->name.find(searchString))
                 {
-                    searchResults.push_back(tex);
+                    searchResults.push(tex);
                 }
             }
         });

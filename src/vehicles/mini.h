@@ -20,7 +20,7 @@ public:
         loadModelData("model_mini");
         initStandardUpgrades();
 
-        availableUpgrades.push_back({
+        availableUpgrades.push({
             "AWD Conversion",
             "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
             g_res.getTexture("icon_drivetrain"),

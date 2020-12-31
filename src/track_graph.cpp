@@ -41,7 +41,7 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
         return;
     }
     Node& to = nodes[toIndex];
-    nodeIndexPaths[pathIndex].push_back(toIndex);
+    nodeIndexPaths[pathIndex].push(toIndex);
     u32 branchCount = 0;
     Array<u32> pathToHere = nodeIndexPaths[pathIndex];
     for (u32 i=0; i<to.connections.size(); ++i)
@@ -52,7 +52,7 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
             if (branchCount > 0)
             {
                 pathIndex = (u32)nodeIndexPaths.size();
-                nodeIndexPaths.push_back(pathToHere);
+                nodeIndexPaths.push(pathToHere);
             }
             computePath(c, toIndex, pathIndex, nodeIndexPaths);
             ++branchCount;
@@ -62,14 +62,14 @@ void TrackGraph::computePath(u32 toIndex, u32 fromIndex, u32 pathIndex,
 
 u32 TrackGraph::addNode(Vec3 const& position)
 {
-    nodes.push_back({ position });
+    nodes.push({ position });
     return (u32)nodes.size() - 1;
 }
 
 void TrackGraph::addConnection(u32 fromIndex, u32 toIndex)
 {
-    nodes[fromIndex].connections.push_back(toIndex);
-    nodes[toIndex].connections.push_back(fromIndex);
+    nodes[fromIndex].connections.push(toIndex);
+    nodes[toIndex].connections.push(fromIndex);
 }
 
 void TrackGraph::rebuild(Mat4 const& startTransform)
@@ -101,7 +101,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
 
     // copy the start node to make the end node
     Node newEndNode = nodes[startIndex];
-    nodes.push_back(newEndNode);
+    nodes.push(newEndNode);
     Node& end = nodes.back();
     end.connections.clear();
 
@@ -116,11 +116,11 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
                 if (*o == startIndex)
                 {
                     connection.connections.erase(o);
-                    connection.connections.push_back(endIndex);
+                    connection.connections.push(endIndex);
                     break;
                 }
             }
-            end.connections.push_back(*c);
+            end.connections.push(*c);
             start.connections.erase(c);
             continue;
         }
@@ -142,7 +142,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     Array<Array<u32>> nodeIndexPaths;
     for (u32 c : start.connections)
     {
-        nodeIndexPaths.push_back({ startIndex });
+        nodeIndexPaths.push({ startIndex });
         computePath(c, startIndex, (u32)nodeIndexPaths.size() - 1, nodeIndexPaths);
     }
 
@@ -163,7 +163,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
             totalLength +=
                 length(nodes[(*it)[i]].position - nodes[(*it)[i-1]].position);
         }
-        pathLengths.push_back(totalLength);
+        pathLengths.push(totalLength);
 
         ++it;
     }
@@ -184,9 +184,9 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
         path.reserve(indexPath.size());
         for (u32 nodeIndex : indexPath)
         {
-            path.push_back(&nodes[nodeIndex]);
+            path.push(&nodes[nodeIndex]);
         }
-        paths.push_back(std::move(path));
+        paths.push(std::move(path));
     }
 
     // set node angles

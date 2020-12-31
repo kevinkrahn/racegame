@@ -133,5 +133,5 @@ public:
     f32 getCurrentGearRatio()  const{ return tuning->gearRatios[getCurrentGear()]; }
     f32 getAverageWheelRotationSpeed() const;
     f32 getEngineThrottle() const { return engineThrottle; }
-    void addIgnoredGroundSpot(class Entity* e) { ignoredGroundSpots.push_back({ e, 1.f }); }
+    void addIgnoredGroundSpot(class Entity* e) { ignoredGroundSpots.push({ e, 1.f }); }
 };

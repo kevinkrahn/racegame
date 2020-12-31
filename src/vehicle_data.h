@@ -306,7 +306,7 @@ Array<RegisteredWeapon> g_weapons;
 template <typename T>
 void registerWeapon()
 {
-    g_weapons.push_back({
+    g_weapons.push({
         (T().info),
         [] { return OwnedPtr<Weapon>(new T); }
     });
@@ -315,7 +315,7 @@ void registerWeapon()
 template <typename T>
 void registerVehicle()
 {
-    g_vehicles.push_back(new T);
+    g_vehicles.push(new T);
 }
 
 void initializeVehicleData();

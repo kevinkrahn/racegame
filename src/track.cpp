@@ -179,7 +179,7 @@ void Track::trackModeUpdate(Renderer* renderer, Scene* scene, f32 deltaTime, boo
                     selectMousePos = mousePos;
                     if (!isSelected)
                     {
-                        selectedPoints.push_back({ i, {} });
+                        selectedPoints.push({ i, {} });
                     }
                 }
             }
@@ -482,7 +482,7 @@ void Track::extendTrack(i32 prefabCurveIndex)
     {
         Vec3 p = Vec3(m * Vec4(prefabTrackItems[prefabCurveIndex].curves[c].offset, 1.f))
             + points[pIndex].position;
-        points.push_back({ p });
+        points.push({ p });
         Vec3 h(m * Vec4(prefabTrackItems[prefabCurveIndex].curves[c].handleOffset, 1.f));
 
         OwnedPtr<BezierSegment> segment(new BezierSegment);
@@ -493,11 +493,11 @@ void Track::extendTrack(i32 prefabCurveIndex)
         segment->pointIndexB = (i32)points.size() - 1;
         segment->widthA = fromWidth;
         segment->widthB = fromWidth;
-        connections.push_back(std::move(segment));
+        connections.push(std::move(segment));
 
         pIndex = (i32)points.size() - 1;
         fromHandleOffset = h;
-        selectedPoints.push_back({ (i32)points.size() - 1, {} });
+        selectedPoints.push({ (i32)points.size() - 1, {} });
     }
 }
 
@@ -565,7 +565,7 @@ void Track::connectPoints()
     {
         segment->widthB = s->pointIndexA == index2 ? s->widthA : s->widthB;
     }
-    connections.push_back(std::move(segment));
+    connections.push(std::move(segment));
 }
 
 Track::BezierSegment* Track::getPointConnection(i32 pointIndex)
@@ -679,43 +679,43 @@ void Track::createSegmentMesh(BezierSegment& c, Scene* scene)
         Vec3 p2 = p + yDir * width;
         Vec3 p3 = p - yDir * width;
         Vec3 p4 = p - yDir * (width + edgeWidth) - Vec3(0, 0, edgeHeight);
-        c.vertices.push_back(Vertex{ p1, -yDir }); // current: j,   previous: j-4
-        c.vertices.push_back(Vertex{ p2, zDir });  // current: j+1, previous: j-3
-        c.vertices.push_back(Vertex{ p3, zDir });  // current: j+2, previous: j-2
-        c.vertices.push_back(Vertex{ p4, yDir });  // current: j+3, previous: j-1
+        c.vertices.push(Vertex{ p1, -yDir }); // current: j,   previous: j-4
+        c.vertices.push(Vertex{ p2, zDir });  // current: j+1, previous: j-3
+        c.vertices.push(Vertex{ p3, zDir });  // current: j+2, previous: j-2
+        c.vertices.push(Vertex{ p4, yDir });  // current: j+3, previous: j-1
         if (i > 0)
         {
             u32 j = i*4;
 
             // left edge tri 1
-            c.indices.push_back(j-3);
-            c.indices.push_back(j-4);
-            c.indices.push_back(j);
+            c.indices.push(j-3);
+            c.indices.push(j-4);
+            c.indices.push(j);
 
             // left edge tri 2
-            c.indices.push_back(j-3);
-            c.indices.push_back(j);
-            c.indices.push_back(j+1);
+            c.indices.push(j-3);
+            c.indices.push(j);
+            c.indices.push(j+1);
 
             // center tri 1
-            c.indices.push_back(j-2);
-            c.indices.push_back(j-3);
-            c.indices.push_back(j+1);
+            c.indices.push(j-2);
+            c.indices.push(j-3);
+            c.indices.push(j+1);
 
             // center tri 2
-            c.indices.push_back(j-2);
-            c.indices.push_back(j+1);
-            c.indices.push_back(j+2);
+            c.indices.push(j-2);
+            c.indices.push(j+1);
+            c.indices.push(j+2);
 
             // right edge tri 1
-            c.indices.push_back(j-1);
-            c.indices.push_back(j-2);
-            c.indices.push_back(j+2);
+            c.indices.push(j-1);
+            c.indices.push(j-2);
+            c.indices.push(j+2);
 
             // right edge tri 2
-            c.indices.push_back(j-1);
-            c.indices.push_back(j+2);
-            c.indices.push_back(j+3);
+            c.indices.push(j-1);
+            c.indices.push(j+2);
+            c.indices.push(j+3);
         }
         c.boundingBox.min = min(c.boundingBox.min, min(min(p1, p2), min(p3, p4)));
         c.boundingBox.max = max(c.boundingBox.max, max(max(p1, p2), max(p3, p4)));
@@ -823,29 +823,29 @@ void Track::buildPreviewMesh(Scene* scene)
         {
             // skip edges
 
-            previewMesh.vertices.push_back(c->vertices[i+1].position.x);
-            previewMesh.vertices.push_back(c->vertices[i+1].position.y);
-            previewMesh.vertices.push_back(c->vertices[i+1].position.z);
-            previewMesh.vertices.push_back(c->vertices[i+1].normal.x);
-            previewMesh.vertices.push_back(c->vertices[i+1].normal.y);
-            previewMesh.vertices.push_back(c->vertices[i+1].normal.z);
+            previewMesh.vertices.push(c->vertices[i+1].position.x);
+            previewMesh.vertices.push(c->vertices[i+1].position.y);
+            previewMesh.vertices.push(c->vertices[i+1].position.z);
+            previewMesh.vertices.push(c->vertices[i+1].normal.x);
+            previewMesh.vertices.push(c->vertices[i+1].normal.y);
+            previewMesh.vertices.push(c->vertices[i+1].normal.z);
 
-            previewMesh.vertices.push_back(c->vertices[i+2].position.x);
-            previewMesh.vertices.push_back(c->vertices[i+2].position.y);
-            previewMesh.vertices.push_back(c->vertices[i+2].position.z);
-            previewMesh.vertices.push_back(c->vertices[i+2].normal.x);
-            previewMesh.vertices.push_back(c->vertices[i+2].normal.y);
-            previewMesh.vertices.push_back(c->vertices[i+2].normal.z);
+            previewMesh.vertices.push(c->vertices[i+2].position.x);
+            previewMesh.vertices.push(c->vertices[i+2].position.y);
+            previewMesh.vertices.push(c->vertices[i+2].position.z);
+            previewMesh.vertices.push(c->vertices[i+2].normal.x);
+            previewMesh.vertices.push(c->vertices[i+2].normal.y);
+            previewMesh.vertices.push(c->vertices[i+2].normal.z);
 
             if (i > 0)
             {
-                previewMesh.indices.push_back(indexOffset-1);
-                previewMesh.indices.push_back(indexOffset-2);
-                previewMesh.indices.push_back(indexOffset);
+                previewMesh.indices.push(indexOffset-1);
+                previewMesh.indices.push(indexOffset-2);
+                previewMesh.indices.push(indexOffset);
 
-                previewMesh.indices.push_back(indexOffset-1);
-                previewMesh.indices.push_back(indexOffset);
-                previewMesh.indices.push_back(indexOffset+1);
+                previewMesh.indices.push(indexOffset-1);
+                previewMesh.indices.push(indexOffset);
+                previewMesh.indices.push(indexOffset+1);
             }
 
             indexOffset += 2;

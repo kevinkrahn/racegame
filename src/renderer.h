@@ -235,37 +235,37 @@ public:
 
     void depthPrepass(ShaderHandle shaderHandle, RenderItem const& renderItem)
     {
-        renderItems.depthPrepass[shaderHandle].push_back(renderItem);
+        renderItems.depthPrepass[shaderHandle].push(renderItem);
     }
 
     void shadowPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
     {
-        renderItems.shadowPass[shaderHandle].push_back(renderItem);
+        renderItems.shadowPass[shaderHandle].push(renderItem);
     }
 
     void opaqueColorPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
     {
-        renderItems.opaqueColorPass[shaderHandle].push_back(renderItem);
+        renderItems.opaqueColorPass[shaderHandle].push(renderItem);
     }
 
     void transparentPass(TransparentRenderItem const& renderItem)
     {
-        renderItems.transparentPass.push_back(renderItem);
+        renderItems.transparentPass.push(renderItem);
     }
 
     void pickPass(ShaderHandle shaderHandle, RenderItem const& renderItem)
     {
-        renderItems.pickPass[shaderHandle].push_back(renderItem);
+        renderItems.pickPass[shaderHandle].push(renderItem);
     }
 
     void highlightPass(ShaderHandle shaderHandle, HighlightPassRenderItem const& renderItem)
     {
-        renderItems.highlightPass[shaderHandle].push_back(renderItem);
+        renderItems.highlightPass[shaderHandle].push(renderItem);
     }
 
     void overlayPass(TransparentRenderItem const& renderItem)
     {
-        renderItems.overlayPass.push_back(renderItem);
+        renderItems.overlayPass.push(renderItem);
     }
 
     Texture* getTexture(u32 cameraIndex=0) { return &tex[cameraIndex]; }
@@ -313,7 +313,7 @@ public:
         result.pickPos = pos;
         glCreateBuffers(1, &result.pbo);
         glNamedBufferStorage(result.pbo, sizeof(u32), nullptr, 0);
-        pickPixelResults.push_back(result);
+        pickPixelResults.push(result);
         isPickPixelPending = true;
     }
     u32* getPickPixelResult()
@@ -374,7 +374,7 @@ public:
 
     void add2D(ShaderHandle shader, i32 priority, void* renderData, void(*render)(void*))
     {
-        renderItems2D.push_back({ shader, priority, renderData, render });
+        renderItems2D.push({ shader, priority, renderData, render });
     }
 
     template <typename T>
@@ -383,7 +383,7 @@ public:
         T* data = tempMem.bump<T>();
         new (data) T(std::move(render));
         auto renderFunc = [](void* renderData){ (*((T*)renderData))(); };
-        renderItems2D.push_back({ shader, priority, (void*)data, renderFunc });
+        renderItems2D.push({ shader, priority, (void*)data, renderFunc });
     }
 
     u32 getCurrentRenderingCameraIndex() const { return currentRenderingCameraIndex; }
@@ -396,7 +396,7 @@ public:
             u32 renderFlags, f32 depthOffset);
     void render(f32 deltaTime);
     RenderWorld* getRenderWorld() { return &renderWorld; }
-    void addRenderWorld(RenderWorld* rw) { renderWorlds.push_back(rw); }
+    void addRenderWorld(RenderWorld* rw) { renderWorlds.push(rw); }
     void updateSettingsVersion()
     {
         ++settingsVersion;

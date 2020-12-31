@@ -80,12 +80,12 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
                 Vec3 off(0.f);
                 off[i] = diff;
 
-                splits.push_back({ bb.min, bb.min + dim});
-                splits.push_back({ bb.min + off, bb.min + off + dim });
+                splits.push({ bb.min, bb.min + dim});
+                splits.push({ bb.min + off, bb.min + off + dim });
             }
             else
             {
-                splits.push_back({ bb.min, bb.max });
+                splits.push({ bb.min, bb.max });
             }
         }
         childBoxes = std::move(splits);
@@ -132,15 +132,15 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         }
         else if (hitCount > 1)
         {
-            triangleIndices.push_back(indices[i+0]);
-            triangleIndices.push_back(indices[i+1]);
-            triangleIndices.push_back(indices[i+2]);
+            triangleIndices.push(indices[i+0]);
+            triangleIndices.push(indices[i+1]);
+            triangleIndices.push(indices[i+2]);
         }
         else
         {
-            children[hitIndex].triangleIndices.push_back(indices[i+0]);
-            children[hitIndex].triangleIndices.push_back(indices[i+1]);
-            children[hitIndex].triangleIndices.push_back(indices[i+2]);
+            children[hitIndex].triangleIndices.push(indices[i+0]);
+            children[hitIndex].triangleIndices.push(indices[i+1]);
+            children[hitIndex].triangleIndices.push(indices[i+2]);
             childBoxes[hitIndex].min = min(childBoxes[hitIndex].min, min(min(v0, v1), v2));
             childBoxes[hitIndex].max = max(childBoxes[hitIndex].max, max(max(v0, v1), v2));
         }
@@ -168,7 +168,7 @@ bool Mesh::OctreeNode::intersect(Mesh const& mesh, Mat4 const& transform, Boundi
     {
         for (u32 index : triangleIndices)
         {
-            output.push_back(index);
+            output.push(index);
         }
         for(auto const& child : children)
         {
@@ -192,7 +192,7 @@ bool Mesh::intersect(Mat4 const& transform, BoundingBox bb, Array<u32>& output) 
         {
             for (auto index : indices)
             {
-                output.push_back(index);
+                output.push(index);
             }
             return true;
         }
@@ -338,18 +338,18 @@ void Mesh::calculateVertexFormat()
     assert(numTexCoords == 1);
     if (hasTangents)
     {
-        vertexFormat.push_back({ 2, VertexAttributeType::FLOAT4 }); // tangent
-        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
+        vertexFormat.push({ 2, VertexAttributeType::FLOAT4 }); // tangent
+        vertexFormat.push({ 3, VertexAttributeType::FLOAT2 }); // uv
         for (u32 i=0; i<numColors; ++i)
         {
             // TODO: colors should be packed into a single 32bit integer; 3 floats is too much
-            vertexFormat.push_back({ 4 + i, VertexAttributeType::FLOAT3 });
+            vertexFormat.push({ 4 + i, VertexAttributeType::FLOAT3 });
         }
     }
     else
     {
-        vertexFormat.push_back({ 4, VertexAttributeType::FLOAT3 }); // color
-        vertexFormat.push_back({ 3, VertexAttributeType::FLOAT2 }); // uv
+        vertexFormat.push({ 4, VertexAttributeType::FLOAT3 }); // color
+        vertexFormat.push({ 3, VertexAttributeType::FLOAT2 }); // uv
     }
 }
 

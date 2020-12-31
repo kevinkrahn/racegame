@@ -164,15 +164,15 @@ private:
 public:
     Track()
     {
-        points.push_back(Point{ Vec3(50, 0, 0.2f) });
-        points.push_back(Point{ Vec3(-50, 0, 0.2f) });
+        points.push(Point{ Vec3(50, 0, 0.2f) });
+        points.push(Point{ Vec3(-50, 0, 0.2f) });
         OwnedPtr<BezierSegment> segment(new BezierSegment);
         segment->track = this;
         segment->handleOffsetA = Vec3(-10, 0, 0);
         segment->pointIndexA = 0;
         segment->handleOffsetB = Vec3(10, 0, 0);
         segment->pointIndexB = 1;
-        connections.push_back(std::move(segment));
+        connections.push(std::move(segment));
     }
     ~Track()
     {

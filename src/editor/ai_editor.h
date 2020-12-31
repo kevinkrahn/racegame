@@ -170,7 +170,7 @@ public:
         AIDriverData& ai = *(AIDriverData*)r;
         for (auto& v : ai.vehicles)
         {
-            renderWorlds.push_back(new RenderWorld());
+            renderWorlds.push(new RenderWorld());
         }
     }
 
@@ -206,10 +206,10 @@ public:
                         DataFile::Value data = DataFile::makeDict();
                         Serializer s(data, false);
                         ai.vehicles[i].serialize(s);
-                        ai.vehicles.push_back({});
+                        ai.vehicles.push({});
                         s.deserialize = true;
                         ai.vehicles.back().serialize(s);
-                        renderWorlds.push_back(new RenderWorld());
+                        renderWorlds.push(new RenderWorld());
                     }
                     if (ImGui::MenuItem("Delete"))
                     {
@@ -241,15 +241,15 @@ public:
             // TODO: auto-filter out invalid vehicle indices and upgrade indices
             if (ImGui::Button("Add Vehicle"))
             {
-                ai.vehicles.push_back({});
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::WEAPON, 0, 3 });
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 0, 1 });
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::WEAPON, 0, 5 });
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 2, 1 });
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::WEAPON, 1, 2 });
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 2, 2 });
-                ai.vehicles.back().purchaseActions.push_back({ PurchaseActionType::PERFORMANCE, 0, 2 });
-                renderWorlds.push_back(new RenderWorld());
+                ai.vehicles.push({});
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::WEAPON, 0, 3 });
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::PERFORMANCE, 0, 1 });
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::WEAPON, 0, 5 });
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::PERFORMANCE, 2, 1 });
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::WEAPON, 1, 2 });
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::PERFORMANCE, 2, 2 });
+                ai.vehicles.back().purchaseActions.push({ PurchaseActionType::PERFORMANCE, 0, 2 });
+                renderWorlds.push(new RenderWorld());
             }
         }
         ImGui::End();

@@ -214,7 +214,7 @@ template<typename T>
 void registerEntity()
 {
     u32 entityID = (u32)g_entities.size();
-    g_entities.push_back({
+    g_entities.push({
         entityID,
         [] (u32 entityID) {
             Entity* e = new T();

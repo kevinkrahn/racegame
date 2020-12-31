@@ -64,14 +64,14 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
             switch(weapon->info.weaponType)
             {
                 case WeaponType::FRONT_WEAPON:
-                    frontWeapons.push_back(std::move(weapon));
+                    frontWeapons.push(std::move(weapon));
                     frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[frontWeaponSlotCount];
                     break;
                 case WeaponType::REAR_WEAPON:
-                    rearWeapons.push_back(std::move(weapon));
+                    rearWeapons.push(std::move(weapon));
                     break;
                 case WeaponType::SPECIAL_ABILITY:
-                    specialAbilities.push_back(std::move(weapon));
+                    specialAbilities.push(std::move(weapon));
                     break;
             }
         }

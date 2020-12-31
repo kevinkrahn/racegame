@@ -194,7 +194,7 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
     Upgrade* upgrade = getUpgrade(upgradeIndex);
     if (!upgrade)
     {
-        performanceUpgrades.push_back({ upgradeIndex, 1 });
+        performanceUpgrades.push({ upgradeIndex, 1 });
     }
     else
     {
@@ -239,7 +239,7 @@ void VehicleData::loadModelData(const char* modelName)
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
                         COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
-            debrisChunks.push_back({
+            debrisChunks.push({
                 mesh,
                 transform,
                 shape,
@@ -260,7 +260,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         if (name.find("FL"))
         {
-            wheelMeshes[WHEEL_FRONT_RIGHT].push_back({
+            wheelMeshes[WHEEL_FRONT_RIGHT].push({
                 mesh,
                 Mat4::scaling(obj.scale),
                 nullptr,
@@ -272,7 +272,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("RL"))
         {
-            wheelMeshes[WHEEL_REAR_RIGHT].push_back({
+            wheelMeshes[WHEEL_REAR_RIGHT].push({
                 mesh,
                 Mat4::scaling(transform.scale()),
                 nullptr,
@@ -284,7 +284,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("FR"))
         {
-            wheelMeshes[WHEEL_FRONT_LEFT].push_back({
+            wheelMeshes[WHEEL_FRONT_LEFT].push({
                 mesh,
                 Mat4::scaling(obj.scale),
                 nullptr,
@@ -294,7 +294,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("RR"))
         {
-            wheelMeshes[WHEEL_REAR_LEFT].push_back({
+            wheelMeshes[WHEEL_REAR_LEFT].push({
                 mesh,
                 Mat4::scaling(obj.scale),
                 nullptr,
@@ -304,7 +304,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("Collision"))
         {
-            collisionMeshes.push_back({ mesh->getConvexCollisionMesh(), transform });
+            collisionMeshes.push({ mesh->getConvexCollisionMesh(), transform });
             collisionLength = max(collisionLength, obj.bounds.x);
             collisionWidth = max(collisionWidth, obj.bounds.y);
         }
@@ -326,7 +326,7 @@ void VehicleData::loadModelData(const char* modelName)
         }
         else if (name.find("ExhaustHole"))
         {
-            exhaustHoles.push_back(Mat4::translation(obj.position) * transform.rotation());
+            exhaustHoles.push(Mat4::translation(obj.position) * transform.rotation());
         }
     }
 

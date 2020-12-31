@@ -19,11 +19,11 @@ void TrackEditor::init(Resource* resource)
     this->resource = resource;
 
     modes.clear();
-    modes.push_back(new TerrainMode);
-    modes.push_back(new TrackMode);
-    modes.push_back(new SplineMode);
-    modes.push_back(new DecorationMode);
-    modes.push_back(new PathMode);
+    modes.push(new TerrainMode);
+    modes.push(new TrackMode);
+    modes.push(new SplineMode);
+    modes.push(new DecorationMode);
+    modes.push(new PathMode);
 
     for (auto& mode : modes)
     {
@@ -76,7 +76,7 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
             // TODO: Add options to include AI drivers and configure player vehicle
 
             g_game.state.drivers.clear();
-            g_game.state.drivers.push_back(Driver(true, true, true, 0, 3));
+            g_game.state.drivers.push(Driver(true, true, true, 0, 3));
             auto conf = g_game.state.drivers.back().getVehicleConfig();
             auto vd = g_game.state.drivers.back().getVehicleData();
             conf->cosmetics.color =

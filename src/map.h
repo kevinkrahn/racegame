@@ -113,7 +113,7 @@ public:
         auto ptr = get(index, key);
         if (!ptr)
         {
-            elements_[index].push_back({ key, value });
+            elements_[index].push({ key, value });
             ++size_;
             return false;
         }
@@ -130,7 +130,7 @@ public:
         auto ptr = get(index, key);
         if (!ptr)
         {
-            elements_[index].push_back({ key, std::move(value) });
+            elements_[index].push({ key, std::move(value) });
             ++size_;
             return false;
         }

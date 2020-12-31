@@ -27,7 +27,7 @@ Array<FileItem> readDirectory(const char* dir, bool recursive=true)
         {
             if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                files.push_back({ tmpStr("%s", fileData.cFileName), true });
+                files.push({ tmpStr("%s", fileData.cFileName), true });
                 const char* childDirectory = tmpStr("%s/%s", dir, fileData.cFileName);
                 if (recursive)
                 {
@@ -36,7 +36,7 @@ Array<FileItem> readDirectory(const char* dir, bool recursive=true)
             }
             else
             {
-                files.push_back({ tmpStr("%s", fileData.cFileName), false });
+                files.push({ tmpStr("%s", fileData.cFileName), false });
             }
         }
     }
@@ -56,7 +56,7 @@ Array<FileItem> readDirectory(const char* dir, bool recursive=true)
             const char* name = tmpStr("%s", dp->d_name);
             if (dp->d_type == DT_DIR)
             {
-				files.push_back({ name, true });
+				files.push({ name, true });
 				const char* childDirectory = tmpStr("%s/%s", dir, dp->d_name);
 				if (recursive)
 				{
@@ -65,7 +65,7 @@ Array<FileItem> readDirectory(const char* dir, bool recursive=true)
             }
             else if (dp->d_type == DT_REG)
             {
-                files.push_back({ name, false });
+                files.push({ name, false });
             }
         }
     }

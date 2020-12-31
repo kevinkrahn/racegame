@@ -82,7 +82,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     {
                         if (!selectIt && g_input.isKeyDown(KEY_LCTRL))
                         {
-                            selectedPropTypes.push_back(itemIndex);
+                            selectedPropTypes.push(itemIndex);
                         }
                         else if (selectIt && g_input.isKeyDown(KEY_LSHIFT))
                         {
@@ -91,7 +91,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                         else if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                         {
                             selectedPropTypes.clear();
-                            selectedPropTypes.push_back(itemIndex);
+                            selectedPropTypes.push(itemIndex);
                         }
                     }
                     if (selectIt)
@@ -153,13 +153,13 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
                     if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                     {
                         selectedEntities.clear();
-                        selectedEntities.push_back((PlaceableEntity*)entity.get());
+                        selectedEntities.push((PlaceableEntity*)entity.get());
                     }
                     else
                     {
                         if (it && !g_input.isKeyDown(KEY_LSHIFT))
                         {
-                            selectedEntities.push_back((PlaceableEntity*)entity.get());
+                            selectedEntities.push((PlaceableEntity*)entity.get());
                         }
                         if (!it && !g_input.isKeyDown(KEY_LCTRL))
                         {
@@ -185,7 +185,7 @@ public:
                 Array<PropPrefabData> data = ptr->generatePrefabProps();
                 for (auto& d : data)
                 {
-                    propPrefabs.push_back({ {}, false, entityIndex, std::move(d) });
+                    propPrefabs.push({ {}, false, entityIndex, std::move(d) });
                 }
             }
         }
@@ -279,7 +279,7 @@ public:
                         {
                             if (!it)
                             {
-                                selectedEntities.push_back((PlaceableEntity*)e.get());
+                                selectedEntities.push((PlaceableEntity*)e.get());
                             }
                         }
                     }
@@ -309,7 +309,7 @@ public:
                             {
                                 if (!it)
                                 {
-                                    selectedEntities.push_back((PlaceableEntity*)userData->entity);
+                                    selectedEntities.push((PlaceableEntity*)userData->entity);
                                 }
                             }
                         }
@@ -408,12 +408,12 @@ public:
                 e->serialize(s);
                 PlaceableEntity* newEntity = (PlaceableEntity*)scene->deserializeEntity(data);
                 newEntity->setPersistent(true);
-                newEntities.push_back(newEntity);
+                newEntities.push(newEntity);
             }
             selectedEntities.clear();
             for (auto e : newEntities)
             {
-                selectedEntities.push_back(e);
+                selectedEntities.push(e);
             }
         }
 

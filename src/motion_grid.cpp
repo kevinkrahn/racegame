@@ -64,7 +64,7 @@ void MotionGrid::build(Scene* scene)
                         bool obstructed = scene->getPhysicsScene()->overlap(PxSphereGeometry(overlapRadius),
                                 PxTransform(PxVec3(rx, ry, hit.touches[i].position.z + overlapRadius), PxIdentity),
                                 overlapHit, overlapFilter);
-                        grid[y * width + x].contents.push_back({
+                        grid[y * width + x].contents.push({
                                 hit.touches[i].position.z, obstructed ? CellType::BLOCKED : CellType::TRACK, CellType::NONE });
                         ++hitCount;
                     }
@@ -91,7 +91,7 @@ void MotionGrid::build(Scene* scene)
                             PxTransform(PxVec3(rx, ry, tz + overlapRadius), PxIdentity),
                             overlapHit, overlapFilter);
                     auto& contents = grid[y * width + x].contents;
-                    contents.push_back({ tz, obstructed ? CellType::BLOCKED : CellType::OFFROAD });
+                    contents.push({ tz, obstructed ? CellType::BLOCKED : CellType::OFFROAD });
                     contents.sort([](auto& a, auto& b) {
                         return a.z > b.z;
                     });
@@ -306,7 +306,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
 #endif
 
     open.clear();
-    open.push_back(startNode);
+    open.push(startNode);
 
     const u32 MAX_ITERATIONS = 800;
     u32 gen = (u32)g_game.frameCount;
@@ -327,7 +327,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
         Node* currentNode = *currentNodeIt;
 
 #if DEBUG_INFO
-        debugInfo.push_back(*currentNode);
+        debugInfo.push(*currentNode);
 #endif
 
         open.erase(currentNodeIt);
@@ -352,7 +352,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
             Node* current = currentNode;
             while (current)
             {
-                outPath.push_back(PathNode{
+                outPath.push(PathNode{
                     {
                         x1 + current->x * CELL_SIZE,
                         y1 + current->y * CELL_SIZE,
@@ -446,7 +446,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
 #if DEBUG_INFO
                 Node debugInfoNode = newNode;
                 debugInfoNode.isBlocked = true;
-                debugInfo.push_back(debugInfoNode);
+                debugInfo.push(debugInfoNode);
 #endif
             }
             newNode.g = currentNode->g + costs[i] * costMultiplier;
@@ -467,7 +467,7 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
             {
                 Node* node = g_tmpMem.bump<Node>();
                 *node = newNode;
-                open.push_back(node);
+                open.push(node);
             }
         }
     }

@@ -99,7 +99,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
             {
                 SplinePoint point = splineB->points[i];
                 std::swap(point.handleOffsetA, point.handleOffsetB);
-                splineA->points.push_back(point);
+                splineA->points.push(point);
             }
         }
         else if (pointIndexA == splineA->points.size() - 1 &&
@@ -107,7 +107,7 @@ class SplineMode : public EditorMode, public TransformGizmoHandler
         {
             for (auto it = splineB->points.begin(); it!=splineB->points.end(); ++it)
             {
-                splineA->points.push_back(*it);
+                splineA->points.push(*it);
             }
         }
         else if (pointIndexA == 0 &&
@@ -262,7 +262,7 @@ public:
             Model* model = (Model*)res;
             if (model->modelUsage == ModelUsage::SPLINE)
             {
-                splineModels.push_back({ model });
+                splineModels.push({ model });
             }
         });
     }
@@ -315,7 +315,7 @@ public:
         {
             if (e->entityID == 5)
             {
-                splineEntities.push_back((Spline*)e.get());
+                splineEntities.push((Spline*)e.get());
             }
         }
 
@@ -332,9 +332,9 @@ public:
                 newSpline->modelGuid = splineModels[selectedSplineModel].model->guid;
                 newSpline->setPersistent(true);
                 Vec3 handleOffset(5, 0, 0);
-                newSpline->points.push_back(
+                newSpline->points.push(
                         { hitPoint, -handleOffset, handleOffset });
-                newSpline->points.push_back(
+                newSpline->points.push(
                         { hitPoint + Vec3(20, 0, 0), -handleOffset, handleOffset });
                 newSpline->isDirty = true;
                 scene->addEntity(newSpline);
@@ -357,7 +357,7 @@ public:
                 if (selectedPoints.front().pointIndex == spline->points.size() - 1)
                 {
                     newSelectIndex = (u32)spline->points.size();
-                    spline->points.push_back({ hitPoint, -handleP, handleP });
+                    spline->points.push({ hitPoint, -handleP, handleP });
                 }
                 else
                 {
@@ -365,7 +365,7 @@ public:
                             selectedPoints.front().spline->points.begin(), { hitPoint, handleP, -handleP });
                 }
                 selectedPoints.clear();
-                selectedPoints.push_back({ spline, newSelectIndex });
+                selectedPoints.push({ spline, newSelectIndex });
                 spline->isDirty = true;
             }
         }
@@ -403,7 +403,7 @@ public:
                         }
                         if (!alreadySelected)
                         {
-                            selectedPoints.push_back({ spline, i });
+                            selectedPoints.push({ spline, i });
                         }
                         hitPoint = true;
                         break;
@@ -448,7 +448,7 @@ public:
                         }
                         if (!alreadySelected)
                         {
-                            selectedHandles.push_back({ spline, i, true });
+                            selectedHandles.push({ spline, i, true });
                         }
                         hitHandle = true;
                         break;
@@ -475,7 +475,7 @@ public:
                         }
                         if (!alreadySelected)
                         {
-                            selectedHandles.push_back({ spline, i, false });
+                            selectedHandles.push({ spline, i, false });
                         }
                         hitHandle = true;
                         break;

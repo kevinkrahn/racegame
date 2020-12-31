@@ -181,13 +181,13 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                     if (!g_input.isKeyDown(KEY_LCTRL) && !g_input.isKeyDown(KEY_LSHIFT))
                     {
                         selectedObjects.clear();
-                        selectedObjects.push_back(i);
+                        selectedObjects.push(i);
                     }
                     else
                     {
                         if (it && !g_input.isKeyDown(KEY_LSHIFT))
                         {
-                            selectedObjects.push_back(i);
+                            selectedObjects.push(i);
                         }
                         if (!it && !g_input.isKeyDown(KEY_LCTRL))
                         {
@@ -297,7 +297,7 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                     Material* mat = (Material*)res;
                     if (searchString.empty() || mat->name.find(searchString))
                     {
-                        searchResults.push_back(mat);
+                        searchResults.push(mat);
                     }
                 });
                 searchResults.sort([](auto a, auto b) {
@@ -416,7 +416,7 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                 auto it = selectedObjects.find(i);
                 if (!it)
                 {
-                    selectedObjects.push_back(i);
+                    selectedObjects.push(i);
                 }
                 else if (g_input.isKeyDown(KEY_LSHIFT))
                 {
@@ -607,7 +607,7 @@ void ModelEditor::processBlenderData()
     for (auto& collection : collections)
     {
         auto collectionName = collection.string("");
-        model->collections.push_back({
+        model->collections.push({
             collectionName,
             !!collectionName.find("Debris")
         });
@@ -635,7 +635,7 @@ void ModelEditor::processBlenderData()
             Mesh mesh;
             Serializer s(meshDict[meshName], true);
             mesh.serialize(s);
-            model->meshes.push_back(std::move(mesh));
+            model->meshes.push(std::move(mesh));
         }
 
         ModelObject newObj;
@@ -662,7 +662,7 @@ void ModelEditor::processBlenderData()
         auto collections = obj["collection_indexes"].array(true).val();
         for (auto& collection : collections)
         {
-            modelObj->collectionIndexes.push_back((u32)collection.integer().val());
+            modelObj->collectionIndexes.push((u32)collection.integer().val());
         }
 
         // auto set certain propers based on the name of the object
@@ -678,7 +678,7 @@ void ModelEditor::processBlenderData()
             modelObj->materialGuid = g_res.getMaterial("paint_material")->guid;
         }
 
-        model->objects.push_back(std::move(*modelObj));
+        model->objects.push(std::move(*modelObj));
     }
 #if 0
     for (auto& obj : model->objects)

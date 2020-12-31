@@ -70,7 +70,7 @@ Scene::Scene(TrackData* data)
         for (auto& e : savedNewEntities)
         {
             e->onCreateEnd(this);
-            entities.push_back(std::move(e));
+            entities.push(std::move(e));
         }
     }
 
@@ -125,9 +125,9 @@ void Scene::startRace()
             {
                 RacingLine::Point point;
                 point.position = p->position;
-                racingLine.points.push_back(point);
+                racingLine.points.push(point);
             }
-            paths.push_back(std::move(racingLine));
+            paths.push(std::move(racingLine));
         }
     }
     for (auto& p : paths)
@@ -144,7 +144,7 @@ void Scene::startRace()
     Array<OrderedDriver> createOrder;
     for (auto& driver : g_game.state.drivers)
     {
-        createOrder.push_back({ &driver, driver.hasCamera ? cameraIndex : -1});
+        createOrder.push({ &driver, driver.hasCamera ? cameraIndex : -1});
         if (driver.hasCamera)
         {
             ++cameraIndex;
@@ -190,10 +190,10 @@ void Scene::startRace()
         Mat4 vehicleTransform = Mat4::translation(
                 hit.block.position + hit.block.normal * tuning.getRestOffset()) * start.rotation();
 
-        vehicles.push_back(new Vehicle(this, vehicleTransform, -offset,
+        vehicles.push(new Vehicle(this, vehicleTransform, -offset,
             driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
 
-        placements.push_back(i);
+        placements.push(i);
     }
 
     isRaceInProgress = true;
@@ -342,7 +342,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
             rw->setViewportCamera(0, trackPreviewCameraFrom, trackPreviewCameraTarget, 25.f, 200.f);
 
-            listenerPositions.push_back(cameraTarget);
+            listenerPositions.push(cameraTarget);
         }
 
         // TODO: Use PhysX scratch buffer to reduce allocations
@@ -363,7 +363,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
             vehicles[i]->onUpdate(rw, deltaTime);
             if (vehicles[i]->cameraIndex >= 0)
             {
-                listenerPositions.push_back(vehicles[i]->lastValidPosition);
+                listenerPositions.push(vehicles[i]->lastValidPosition);
             }
         }
 
@@ -381,7 +381,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                 placements.clear();
                 for (u32 i=0; i<vehicles.size(); ++i)
                 {
-                    placements.push_back(i);
+                    placements.push(i);
                 }
                 f32 maxT = trackGraph.getStartNode()->t;
                 placements.sort([&](u32 a, u32 b) {
@@ -471,7 +471,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     for (auto& e : newEntities)
     {
         e->onCreateEnd(this);
-        entities.push_back(std::move(e));
+        entities.push(std::move(e));
     }
     newEntities.clear();
 
@@ -673,7 +673,7 @@ void Scene::onEndUpdate()
 
 void Scene::vehicleFinish(u32 n)
 {
-    finishOrder.push_back(n);
+    finishOrder.push(n);
     u32 playerFinishCount = 0;
     for (auto& v : vehicles)
     {
@@ -895,7 +895,7 @@ void Scene::buildRaceResults()
                     u32 attackBonuses = irandom(randomSeries, 0,
                             (u32)(numDriversStillDriving * ai.aggression * 0.5f));
                     stats.frags += attackBonuses;
-                    stats.bonuses.push_back({ "", attackBonuses * ATTACK_BONUS_AMOUNT });
+                    stats.bonuses.push({ "", attackBonuses * ATTACK_BONUS_AMOUNT });
                     while (attackBonuses > 0)
                     {
                         auto& v2 = vehicles[irandom(randomSeries, 0, (i32)vehicles.size())];
@@ -915,7 +915,7 @@ void Scene::buildRaceResults()
     }
     for (auto& v : vehicles)
     {
-        raceResults.push_back({
+        raceResults.push({
             v->placement,
             v->driver,
             std::move(v->raceStatistics),
@@ -1263,7 +1263,7 @@ void Scene::serialize(Serializer& s)
                 auto dict = DataFile::makeDict();
                 Serializer s(dict, false);
                 entity->serialize(s);
-                entityArray.push_back(std::move(dict));
+                entityArray.push(std::move(dict));
             }
         }
     }
@@ -1289,7 +1289,7 @@ Array<DataFile::Value> Scene::serializeTransientEntities()
             auto dict = DataFile::makeDict();
             Serializer s(dict, false);
             entity->serialize(s);
-            transientEntities.push_back(std::move(dict));
+            transientEntities.push(std::move(dict));
         }
     }
     return transientEntities;

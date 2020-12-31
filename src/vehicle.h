@@ -119,7 +119,7 @@ public:
 	f32 motionBlurResetTimer = 0.f;
 
     Array<VehicleDebris> vehicleDebris;
-    void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push_back(debris); }
+    void createVehicleDebris(VehicleDebris const& debris) { vehicleDebris.push(debris); }
 
 	struct Notification
 	{
@@ -156,11 +156,11 @@ public:
         {
             notifications.erase(notifications.begin());
         }
-        notifications.push_back({ text, time, 0.f, color });
+        notifications.push({ text, time, 0.f, color });
     }
     void addBonus(const char* name, u32 amount, Vec3 const& color = Vec3(0.9f, 0.9f, 0.01f))
     {
-        raceStatistics.bonuses.push_back({ name, amount });
+        raceStatistics.bonuses.push({ name, amount });
         addNotification(name, 2.f, color);
     }
     void fixup()

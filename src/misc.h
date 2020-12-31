@@ -7,7 +7,7 @@
 #include <dirent.h>
 #endif
 
-// TODO: find out why removing this causes a compiler error
+// TODO: remove this eventually
 #include <functional>
 #include <utility>
 

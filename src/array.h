@@ -171,7 +171,7 @@ public:
     }
 
     // copy push
-    void push_back(const T& val)
+    void push(const T& val)
     {
         ensureCapacity();
         new (data_ + size_) T(val);
@@ -179,7 +179,7 @@ public:
     }
 
     // move push
-    void push_back(T&& val)
+    void push(T&& val)
     {
         ensureCapacity();
         new (data_ + size_) T(std::move(val));

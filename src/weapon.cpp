@@ -18,7 +18,7 @@ void Weapon::loadModelData(const char* modelName)
     {
         if (obj.name.find("SpawnPoint"))
         {
-            projectileSpawnPoints.push_back(obj.position);
+            projectileSpawnPoints.push(obj.position);
         }
     }
 }

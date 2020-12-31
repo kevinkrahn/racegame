@@ -41,7 +41,7 @@ public:
 
     void add(Material* material, Mat4 const& transform, Mesh* mesh)
     {
-        materialMap[material].push_back({ transform, mesh });
+        materialMap[material].push({ transform, mesh });
     }
 
     void end(bool keepMeshData=false);

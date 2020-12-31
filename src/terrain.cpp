@@ -773,23 +773,23 @@ void Terrain::applyDecal(Decal& decal)
             {
                 if ((x & 1) ? (y & 1) : !(y & 1))
                 {
-                    collisionIndices.push_back(y * width + x);
-                    collisionIndices.push_back(y * width + x + 1);
-                    collisionIndices.push_back((y + 1) * width + x);
+                    collisionIndices.push(y * width + x);
+                    collisionIndices.push(y * width + x + 1);
+                    collisionIndices.push((y + 1) * width + x);
 
-                    collisionIndices.push_back((y + 1) * width + x);
-                    collisionIndices.push_back(y * width + x + 1);
-                    collisionIndices.push_back((y + 1) * width + x + 1);
+                    collisionIndices.push((y + 1) * width + x);
+                    collisionIndices.push(y * width + x + 1);
+                    collisionIndices.push((y + 1) * width + x + 1);
                 }
                 else
                 {
-                    collisionIndices.push_back(y * width + x);
-                    collisionIndices.push_back(y * width + x + 1);
-                    collisionIndices.push_back((y + 1) * width + x + 1);
+                    collisionIndices.push(y * width + x);
+                    collisionIndices.push(y * width + x + 1);
+                    collisionIndices.push((y + 1) * width + x + 1);
 
-                    collisionIndices.push_back((y + 1) * width + x + 1);
-                    collisionIndices.push_back((y + 1) * width + x);
-                    collisionIndices.push_back(y * width + x);
+                    collisionIndices.push((y + 1) * width + x + 1);
+                    collisionIndices.push((y + 1) * width + x);
+                    collisionIndices.push(y * width + x);
                 }
             }
         }

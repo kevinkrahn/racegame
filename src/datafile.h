@@ -677,7 +677,7 @@ public:
                 {
                     DataFile::Value el;
                     element(name, el, dest[i]);
-                    val.array().val().push_back(std::move(el));
+                    val.array().val().push(std::move(el));
                 }
             }
         }
@@ -763,7 +763,7 @@ public:
             val.array().val().reserve(count);
             for (u32 i=0; i<count; ++i)
             {
-                val.array().val().push_back(DataFile::makeReal(((f32*)&dest)[i]));
+                val.array().val().push(DataFile::makeReal(((f32*)&dest)[i]));
             }
         }
     }
@@ -830,7 +830,7 @@ public:
                 {
                     V el;
                     element(name, item, el);
-                    dest.push_back(std::move(el));
+                    dest.push(std::move(el));
                 }
             }
             else
@@ -841,7 +841,7 @@ public:
                 {
                     DataFile::Value el;
                     element(name, el, item);
-                    array.push_back(std::move(el));
+                    array.push(std::move(el));
                 }
                 val.setArray(std::move(array));
             }

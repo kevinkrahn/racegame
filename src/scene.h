@@ -190,7 +190,7 @@ public:
             PxSweepBuffer* hit=nullptr, PxRigidActor* ignore=nullptr,
             u32 flags=COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS) const;
 
-    void addEntity(Entity* entity) { newEntities.push_back(OwnedPtr<Entity>(entity)); }
+    void addEntity(Entity* entity) { newEntities.push(OwnedPtr<Entity>(entity)); }
     Array<OwnedPtr<Entity>>& getEntities() { return entities; }
     Array<OwnedPtr<Vehicle>>& getVehicles() { return vehicles; }
 

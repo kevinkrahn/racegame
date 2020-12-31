@@ -40,8 +40,8 @@ public:
     void line(Vec3 const& p1, Vec3 const& p2,
             Vec4 const& c1 = Vec4(1), Vec4 const& c2 = Vec4(1))
     {
-        verts.push_back({ p1, c1 });
-        verts.push_back({ p2, c2 });
+        verts.push({ p1, c1 });
+        verts.push({ p2, c2 });
     }
 
     void boundingBox(BoundingBox const& bb, Mat4 const& transform, Vec4 const& color)

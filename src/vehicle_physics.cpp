@@ -821,7 +821,7 @@ void VehiclePhysics::checkGroundSpots(PxScene* physicsScene, f32 deltaTime)
                 continue;
             }
 
-            groundSpots.push_back({
+            groundSpots.push({
                 groundType,
                 userData->placeableEntity->position,
                 max(

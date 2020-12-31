@@ -10,7 +10,7 @@ void StaticMesh::loadModel()
     objects.clear();
     for (auto& obj : model->objects)
     {
-        objects.push_back({ &obj });
+        objects.push({ &obj });
     }
 }
 
@@ -259,7 +259,7 @@ Array<PropPrefabData> StaticMesh::generatePrefabProps()
                 || model->modelUsage == ModelUsage::STATIC_PROP)
         {
             i64 guid = model->guid;
-            result.push_back({
+            result.push({
                 model->category,
                 model->name,
                 [guid](PlaceableEntity* e) {

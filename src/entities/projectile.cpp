@@ -87,7 +87,7 @@ void Projectile::onCreate(Scene* scene)
     }
 
     Vehicle* vehicle = scene->getVehicle(instigator);
-    ignoreActors.push_back(vehicle->getRigidBody());
+    ignoreActors.push(vehicle->getRigidBody());
 }
 
 void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
@@ -176,7 +176,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
         onHit(scene, &hit.touches[i]);
         if (ignoreActors.size() < ignoreActors.capacity())
         {
-            ignoreActors.push_back(hit.touches[i].actor);
+            ignoreActors.push(hit.touches[i].actor);
         }
     }
     if (hit.hasBlock)

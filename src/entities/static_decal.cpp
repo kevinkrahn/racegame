@@ -147,7 +147,7 @@ Array<PropPrefabData> StaticDecal::generatePrefabProps()
         Texture* tex = (Texture*)res;
         if (tex->name.find("decal_"))
         {
-            results.push_back({
+            results.push({
                 PropCategory::DECALS,
                 tex->name,
                 [tex](Entity* e) {

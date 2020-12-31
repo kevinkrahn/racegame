@@ -125,7 +125,7 @@ void Audio::audioCallback(u8* buf, i32 len)
         {
             if (m.type == PlaybackModification::PLAY)
             {
-                playingSounds.push_back(m.newSound);
+                playingSounds.push(m.newSound);
             }
             else if (m.type == PlaybackModification::STOP_GAMEPLAY_SOUNDS)
             {
@@ -181,7 +181,7 @@ void Audio::audioCallback(u8* buf, i32 len)
 
         for (auto& p : listenerPositions)
         {
-            listeners.push_back(p);
+            listeners.push(p);
         }
     }
 
@@ -331,7 +331,7 @@ SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
     PlaybackModification pm;
     pm.type = PlaybackModification::PLAY;
     pm.newSound = ps;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 
     return ps.handle;
 }
@@ -359,7 +359,7 @@ SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
     PlaybackModification pm;
     pm.type = PlaybackModification::PLAY;
     pm.newSound = ps;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 
     return ps.handle;
 }
@@ -370,7 +370,7 @@ void Audio::stopSound(SoundHandle handle)
     PlaybackModification pm;
     pm.type = PlaybackModification::STOP;
     pm.handle = handle;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
@@ -380,7 +380,7 @@ void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
     pm.type = PlaybackModification::PITCH;
     pm.pitch = pitch;
     pm.handle = handle;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setSoundVolume(SoundHandle handle, f32 volume)
@@ -390,7 +390,7 @@ void Audio::setSoundVolume(SoundHandle handle, f32 volume)
     pm.type = PlaybackModification::VOLUME;
     pm.volume = volume;
     pm.handle = handle;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setSoundPan(SoundHandle handle, f32 pan)
@@ -400,7 +400,7 @@ void Audio::setSoundPan(SoundHandle handle, f32 pan)
     pm.type = PlaybackModification::PAN;
     pm.pan = pan;
     pm.handle = handle;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
@@ -410,7 +410,7 @@ void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
     pm.type = PlaybackModification::POSITION;
     pm.position = position;
     pm.handle = handle;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setSoundPaused(SoundHandle handle, bool paused)
@@ -420,7 +420,7 @@ void Audio::setSoundPaused(SoundHandle handle, bool paused)
     pm.type = PlaybackModification::SET_PAUSED;
     pm.paused = paused;
     pm.handle = handle;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setListeners(SmallArray<Vec3>const& listeners)
@@ -429,7 +429,7 @@ void Audio::setListeners(SmallArray<Vec3>const& listeners)
     listenerPositions.clear();
     for (auto& p : listeners)
     {
-        listenerPositions.push_back(p);
+        listenerPositions.push(p);
     }
 }
 
@@ -439,7 +439,7 @@ void Audio::stopAllGameplaySounds()
 
     PlaybackModification pm;
     pm.type = PlaybackModification::STOP_GAMEPLAY_SOUNDS;
-    playbackModifications.push_back(pm);
+    playbackModifications.push(pm);
 }
 
 void Audio::setPaused(bool paused)

@@ -85,7 +85,7 @@ public:
     u32 capacity() const { return maxSize; }
 
     // copy push
-    void push_back(const T& val)
+    void push(const T& val)
     {
         assert(size_ < maxSize);
         new (data_ + size_) T(val);
@@ -93,7 +93,7 @@ public:
     }
 
     // move push
-    void push_back(T&& val)
+    void push(T&& val)
     {
         assert(size_ < maxSize);
         new (data_ + size_) T(std::move(val));
@@ -106,11 +106,11 @@ public:
         SmallArray<T> v;
         for (auto const& val : *this)
         {
-            v.push_back(val);
+            v.push(val);
         }
         for (auto const& val : other)
         {
-            v.push_back(val);
+            v.push(val);
         }
         return v;
     }
@@ -329,7 +329,7 @@ public:
 
     void sort()
     {
-        stableSort([](T const& a, T const& b) { return a < b; });
+        sort([](T const& a, T const& b) { return a < b; });
     }
 
     template <typename COMPARE>

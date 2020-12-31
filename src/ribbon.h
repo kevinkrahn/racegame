@@ -76,7 +76,7 @@ public:
                 Vec3 diff = position - points.back().position;
                 texU += (length(diff) / ((width + points.back().width) / 2)) / 8;
             }
-            points.push_back(lastPoint);
+            points.push(lastPoint);
         }
     }
 
@@ -96,7 +96,7 @@ public:
         {
             lastPoint.isEnd = true;
             lastPoint.color.a = 0.f;
-            points.push_back(lastPoint);
+            points.push(lastPoint);
         }
     }
 
@@ -274,7 +274,7 @@ public:
             void* mem = vertexBuffer.map(size);
             u32 count = ribbon->writeVerts(mem);
             vertexBuffer.unmap();
-            chunks.push_back({ ribbon, count });
+            chunks.push({ ribbon, count });
         }
     }
 

@@ -45,7 +45,7 @@ void Renderer::loadShader(const char* filename, SmallArray<const char*> defines,
     SmallArray<ShaderDefine> actualDefines;
     for (auto& name : defines)
     {
-        actualDefines.push_back({ name, "" });
+        actualDefines.push({ name, "" });
     }
     ShaderHandle handle = getShaderHandle(filename, actualDefines, 0, 0.f);
     shaderNameMap[name ? name : filename] = handle;
@@ -183,8 +183,8 @@ ShaderHandle Renderer::getShaderHandle(const char* name, SmallArray<ShaderDefine
             return shaderIndex;
         }
     }
-    shaderPrograms.push_back({ 0, renderFlags, depthOffset });
-    shaderProgramSources.push_back({ name, defines });
+    shaderPrograms.push({ 0, renderFlags, depthOffset });
+    shaderProgramSources.push({ name, defines });
     ShaderHandle handle = shaderPrograms.size() - 1;
     loadShader(handle);
     return handle;
@@ -497,7 +497,7 @@ void RenderWorld::addPointLight(Vec3 const& position, Vec3 const& color, f32 rad
     pointLight.radius = radius;
     pointLight.color = color;
     pointLight.falloff = falloff;
-    pointLights.push_back(pointLight);
+    pointLights.push(pointLight);
 }
 
 void RenderWorld::setMotionBlur(u32 viewportIndex, Vec2 const& motionBlur)
@@ -722,7 +722,7 @@ void RenderWorld::createFramebuffers()
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                    fb.bloomColorTextures.push_back(tex[n]);
+                    fb.bloomColorTextures.push(tex[n]);
                 }
 
                 GLuint framebuffer;
@@ -742,8 +742,8 @@ void RenderWorld::createFramebuffers()
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
 
-                fb.bloomFramebuffers.push_back(framebuffer);
-                fb.bloomBufferSize.push_back({ (i32)fb.renderWidth/(i32)i, (i32)fb.renderHeight/(i32)i });
+                fb.bloomFramebuffers.push(framebuffer);
+                fb.bloomBufferSize.push({ (i32)fb.renderWidth/(i32)i, (i32)fb.renderHeight/(i32)i });
             }
 
             glGenTextures(1, &fb.finalColorTexture);
@@ -787,9 +787,9 @@ void RenderWorld::createFramebuffers()
             assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
         }
 
-        fbs.push_back(fb);
-        worldInfoUBO.push_back(DynamicBuffer(sizeof(WorldInfo)));
-        worldInfoUBOShadow.push_back(DynamicBuffer(sizeof(WorldInfo)));
+        fbs.push(fb);
+        worldInfoUBO.push(DynamicBuffer(sizeof(WorldInfo)));
+        worldInfoUBOShadow.push(DynamicBuffer(sizeof(WorldInfo)));
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);

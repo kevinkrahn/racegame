@@ -129,7 +129,7 @@ void Spline::updateMesh(Scene* scene)
                 pos.z = hit.block.position.z + zGroundOffset;
             }
 
-            polyLine.push_back({ pos });
+            polyLine.push({ pos });
         }
     }
 
@@ -140,7 +140,7 @@ void Spline::updateMesh(Scene* scene)
     {
         lastPos.z = hit.block.position.z;
     }
-    polyLine.push_back({ lastPos });
+    polyLine.push({ lastPos });
 
     f32 pathLength = 0;
     for (size_t i=0; i<polyLine.size()-1; ++i)
@@ -188,7 +188,7 @@ void Spline::updateMesh(Scene* scene)
             meshInfo.material = g_res.getMaterial(obj.materialGuid);
         }
 
-        meshes.push_back(std::move(meshInfo));
+        meshes.push(std::move(meshInfo));
     }
 }
 

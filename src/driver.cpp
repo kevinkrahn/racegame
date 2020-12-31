@@ -110,13 +110,13 @@ void Driver::aiUpgrades(RandomSeries& series)
         switch (g_weapons[i].info.weaponType)
         {
             case WeaponType::FRONT_WEAPON:
-                frontWeapons.push_back(i);
+                frontWeapons.push(i);
                 break;
             case WeaponType::REAR_WEAPON:
-                rearWeapons.push_back(i);
+                rearWeapons.push(i);
                 break;
             case WeaponType::SPECIAL_ABILITY:
-                specialAbilities.push_back(i);
+                specialAbilities.push(i);
                 break;
         }
     }

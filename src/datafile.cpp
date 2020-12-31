@@ -249,7 +249,7 @@ Value Value::readValue(const char*& ch, const char* end)
             bool foundValue = v.dataType != DataType::NONE;
             if (foundValue)
             {
-                val.array_.push_back(std::move(v));
+                val.array_.push(std::move(v));
             }
 
             eatSpace(ch);
@@ -316,7 +316,7 @@ Value Value::readValue(Buffer& buf)
             value.array_.reserve(len);
             for (u32 i=0; i<len; ++i)
             {
-                value.array_.push_back(readValue(buf));
+                value.array_.push(readValue(buf));
             }
 #endif
         } break;

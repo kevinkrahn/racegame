@@ -96,7 +96,7 @@ public:
         : textureType(textureType), width(width), height(height)
     {
         this->name = name;
-        sourceFiles.push_back({ "", Array<u8>(data, data+dataSize), width, height });
+        sourceFiles.push({ "", Array<u8>(data, data+dataSize), width, height });
         regenerate();
     }
 
