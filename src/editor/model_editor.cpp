@@ -559,7 +559,7 @@ void ModelEditor::loadBlenderFile(const char* filename)
         return;
     }
 
-    blenderData = std::move(val);
+    blenderData = move(val);
     if (model->sourceSceneName.empty() && blenderData.dict().val()["scenes"].array().val().size() > 1)
     {
         println("Blender file contains multiple scenes. There are choices.");
@@ -620,7 +620,7 @@ void ModelEditor::processBlenderData()
         mesh.destroy();
     }
     model->meshes.clear();
-    Array<ModelObject> oldObjects = std::move(model->objects);
+    Array<ModelObject> oldObjects = move(model->objects);
     model->objects.clear();
     auto& meshDict = dict["meshes"].dict().val();
     for (auto& object : objects)
@@ -635,7 +635,7 @@ void ModelEditor::processBlenderData()
             Mesh mesh;
             Serializer s(meshDict[meshName], true);
             mesh.serialize(s);
-            model->meshes.push(std::move(mesh));
+            model->meshes.push(move(mesh));
         }
 
         ModelObject newObj;
@@ -651,7 +651,7 @@ void ModelEditor::processBlenderData()
         }
 
         modelObj->meshIndex = *meshIt;
-        modelObj->name = std::move(obj["name"]).string().val();
+        modelObj->name = move(obj["name"]).string().val();
         Mat4 matrix = obj["matrix"].convertBytes<Mat4>().val();
         modelObj->position = matrix.position();
         modelObj->rotation = Quat(Mat3(matrix.rotation()));
@@ -678,7 +678,7 @@ void ModelEditor::processBlenderData()
             modelObj->materialGuid = g_res.getMaterial("paint_material")->guid;
         }
 
-        model->objects.push(std::move(*modelObj));
+        model->objects.push(move(*modelObj));
     }
 #if 0
     for (auto& obj : model->objects)

@@ -172,7 +172,7 @@ public:
         segment->pointIndexA = 0;
         segment->handleOffsetB = Vec3(10, 0, 0);
         segment->pointIndexB = 1;
-        connections.push(std::move(segment));
+        connections.push(move(segment));
     }
     ~Track()
     {

@@ -207,7 +207,7 @@ void Game::run()
             {
                 currentScene->onEnd();
             }
-            currentScene = std::move(nextScene);
+            currentScene = move(nextScene);
             currentScene->onStart();
             //menu.showRaceResults();
         }
@@ -242,7 +242,7 @@ void Game::run()
         cpuTime = getTime() - frameStartTime;
         if (!isTimedBlockTrackingPaused)
         {
-            previousFrameTimedBlocks = std::move(timedBlocks);
+            previousFrameTimedBlocks = move(timedBlocks);
             previousCpuTime = cpuTime;
         }
         timedBlocks.clear();

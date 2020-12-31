@@ -27,12 +27,12 @@ public:
     void showDetails(Scene* scene) override;
     Array<PropPrefabData> generatePrefabProps() override
     {
-        return {
-            { PropCategory::OBSTACLES, "Green Booster",
-                [](Entity* e) { ((Booster*)e)->backwards = false; } },
-            { PropCategory::OBSTACLES, "Red Booster",
-                [](Entity* e) { ((Booster*)e)->backwards = true; } },
-        };
+        Array<PropPrefabData> a;
+        a.push({ PropCategory::OBSTACLES, "Green Booster",
+                [](Entity* e) { ((Booster*)e)->backwards = false; } });
+        a.push({ PropCategory::OBSTACLES, "Red Booster",
+            [](Entity* e) { ((Booster*)e)->backwards = true; } });
+        return a;
     }
     const char* getName() const override { return "Booster"; }
 };

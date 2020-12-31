@@ -88,7 +88,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
                 splits.push({ bb.min, bb.max });
             }
         }
-        childBoxes = std::move(splits);
+        childBoxes = move(splits);
     }
     if (childBoxes.size() == 1)
     {
@@ -102,7 +102,7 @@ void Mesh::OctreeNode::subdivide(Mesh const& mesh)
         childBoxes[i] = { Vec3(FLT_MAX), Vec3(-FLT_MAX) };
     }
 
-    Array<u32> indices(std::move(triangleIndices));
+    Array<u32> indices(move(triangleIndices));
     triangleIndices = Array<u32>();
     for (u32 i=0; i<indices.size(); i+=3)
     {

@@ -249,7 +249,7 @@ Value Value::readValue(const char*& ch, const char* end)
             bool foundValue = v.dataType != DataType::NONE;
             if (foundValue)
             {
-                val.array_.push(std::move(v));
+                val.array_.push(move(v));
             }
 
             eatSpace(ch);

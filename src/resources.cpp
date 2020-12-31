@@ -49,7 +49,7 @@ void Resources::registerResource(OwnedPtr<Resource>&& resource)
 {
     i64 guid = resource->guid;
     resourceNameMap.set(resource->name, resource.get());
-    resources.set(guid, std::move(resource));
+    resources.set(guid, move(resource));
 }
 
 void Resources::loadResource(DataFile::Value& data)

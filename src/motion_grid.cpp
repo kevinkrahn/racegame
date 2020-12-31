@@ -364,7 +364,9 @@ void MotionGrid::findPath(Vec3& from, Vec3& to, bool isBlocking, Vec2 forward,
                 });
                 current = current->parent;
             }
-            std::reverse(outPath.begin(), outPath.end());
+
+            outPath.reverse();
+
             return;
         }
 

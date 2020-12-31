@@ -11,7 +11,7 @@ public:
     OwnedPtr() {}
     OwnedPtr(T* ptr) : ptr_(ptr) {}
     OwnedPtr(OwnedPtr const& other) = delete;
-    OwnedPtr(OwnedPtr&& other) { *this = std::move(other); }
+    OwnedPtr(OwnedPtr&& other) { *this = move(other); }
     ~OwnedPtr() { if (ptr_) delete ptr_; }
 
     void reset(T* ptr=nullptr)
@@ -46,7 +46,7 @@ public:
     OwnedPtr() {}
     OwnedPtr(T* ptr) : ptr_(ptr) {}
     OwnedPtr(OwnedPtr const& other) = delete;
-    OwnedPtr(OwnedPtr&& other) { *this = std::move(other); }
+    OwnedPtr(OwnedPtr&& other) { *this = move(other); }
     ~OwnedPtr() { if (ptr_) delete[] ptr_; }
 
     void reset(T* ptr=nullptr)

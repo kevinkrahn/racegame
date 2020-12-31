@@ -1,6 +1,5 @@
 #pragma once
 
-#include <utility>
 #include <stdint.h>
 
 typedef uint8_t  u8;
@@ -14,12 +13,22 @@ typedef int64_t  i64;
 typedef float    f32;
 typedef double   f64;
 
+template <typename T> struct RemoveReference      { typedef T type; };
+template <typename T> struct RemoveReference<T&>  { typedef T type; };
+template <typename T> struct RemoveReference<T&&> { typedef T type; };
+
 template <typename T>
-void swp(T& a, T& b)
+constexpr typename RemoveReference<T>::type&& move(T&& t)
 {
-    auto tmp = std::move(a);
-    a = std::move(b);
-    b = std::move(tmp);
+    return static_cast<typename RemoveReference<T>::type&&>(t);
+}
+
+template <typename T>
+void swap(T& a, T& b)
+{
+    auto tmp = (T&&)a;
+    a = (T&&)b;
+    b = (T&&)tmp;
 }
 
 #include <PxPhysicsAPI.h>

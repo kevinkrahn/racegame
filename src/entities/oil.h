@@ -22,7 +22,9 @@ public:
     void onPreview(RenderWorld* rw) override;
     Array<PropPrefabData> generatePrefabProps() override
     {
-        return {{ PropCategory::OBSTACLES, "Oil" }};
+        Array<PropPrefabData> a;
+        a.push({ PropCategory::OBSTACLES, "Oil" });
+        return a;
     }
     const char* getName() const override { return "Oil"; }
 };

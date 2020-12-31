@@ -52,10 +52,10 @@ void Terrain::generate(f32 heightScale, f32 scale)
 void Terrain::resize(f32 x1, f32 y1, f32 x2, f32 y2, bool preserve)
 {
     // record old info
-    OwnedPtr<f32[]> oldHeightBuffer = std::move(heightBuffer);
+    OwnedPtr<f32[]> oldHeightBuffer = move(heightBuffer);
     i32 ow = (i32)((this->x2 - this->x1) / tileSize);
     i32 oh = (i32)((this->y2 - this->y1) / tileSize);
-    OwnedPtr<u32[]> oldBlend = std::move(blend);
+    OwnedPtr<u32[]> oldBlend = move(blend);
     i32 xOffset = (i32)((this->x1 - x1) / tileSize);
     i32 yOffset = (i32)((this->y1 - y1) / tileSize);
 

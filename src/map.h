@@ -130,13 +130,13 @@ public:
         auto ptr = get(index, key);
         if (!ptr)
         {
-            elements_[index].push({ key, std::move(value) });
+            elements_[index].push({ key, move(value) });
             ++size_;
             return false;
         }
         else
         {
-            ptr->value = std::move(value);
+            ptr->value = move(value);
             return true;
         }
     }

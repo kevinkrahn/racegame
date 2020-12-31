@@ -22,7 +22,7 @@ class Array
             {
                 for (u32 i=0; i<size_; ++i)
                 {
-                    new (newData + i) T(std::move(data_[i]));
+                    new (newData + i) T(move(data_[i]));
                 }
                 free(data_);
             }
@@ -51,10 +51,10 @@ class Array
             {
                 if (compare(data_[i], pivot))
                 {
-                    swp(data_[++swapIndex], data_[i]);
+                    swap(data_[++swapIndex], data_[i]);
                 }
             }
-            swp(data_[swapIndex + 1], data_[highIndex]);
+            swap(data_[swapIndex + 1], data_[highIndex]);
             i32 middleIndex = swapIndex + 1;
             quickSort(lowIndex, middleIndex - 1, compare);
             quickSort(middleIndex + 1, highIndex, compare);
@@ -181,7 +181,7 @@ public:
     void push(T&& val)
     {
         ensureCapacity();
-        new (data_ + size_) T(std::move(val));
+        new (data_ + size_) T(move(val));
         ++size_;
     }
 
@@ -199,7 +199,7 @@ public:
         {
             for (T* movePtr = end(); movePtr != ptr; --movePtr)
             {
-                new (movePtr) T(std::move(*(movePtr - 1)));
+                new (movePtr) T(move(*(movePtr - 1)));
             }
         }
         ++size_;
@@ -226,17 +226,17 @@ public:
         {
             for (T* movePtr = end(); movePtr != ptr; --movePtr)
             {
-                new (movePtr) T(std::move(*(movePtr - 1)));
+                new (movePtr) T(move(*(movePtr - 1)));
             }
         }
         ++size_;
-        new (ptr) T(std::move(val));
+        new (ptr) T(move(val));
     }
 
     // move insert
     void insert(T * element, T&& val)
     {
-        insert(data_ - element, std::move(val));
+        insert(data_ - element, move(val));
     }
 
     T* erase(T* element)
@@ -251,7 +251,7 @@ public:
         {
             for (u32 i=element - data_; i<size_-1; ++i)
             {
-                new (data_ + i) T(std::move(data_[i+1]));
+                new (data_ + i) T(move(data_[i+1]));
             }
         }
         --size_;
@@ -282,7 +282,7 @@ public:
             {
                 for (u32 i=startPtr - data_; i<size_-1; ++i)
                 {
-                    new (startPtr + i) T(std::move(data_[elementsRemoved + i]));
+                    new (startPtr + i) T(move(data_[elementsRemoved + i]));
                 }
             }
         }
@@ -481,9 +481,17 @@ public:
             u32 j = i;
             while (j > 0 && compare(data_[j], data_[j-1]))
             {
-                swp(data_[j-1], data_[j]);
+                swap(data_[j-1], data_[j]);
                 j--;
             }
+        }
+    }
+
+    void reverse()
+    {
+        for (u32 low=0, high = size_-1; low < high; low++, high--)
+        {
+            swap(data_[low], data_[high]);
         }
     }
 };

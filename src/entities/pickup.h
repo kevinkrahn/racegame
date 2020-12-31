@@ -105,12 +105,12 @@ public:
 
     Array<PropPrefabData> generatePrefabProps() override
     {
-        return {
-            { PropCategory::PICKUPS, "Money",
-                [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::MONEY; } },
-            { PropCategory::PICKUPS, "Fixup",
-                [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::FIXUP; } },
-        };
+        Array<PropPrefabData> a;
+        a.push({ PropCategory::PICKUPS, "Money",
+            [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::MONEY; } });
+        a.push({ PropCategory::PICKUPS, "Fixup",
+            [](Entity* e) { ((Pickup*)e)->pickupType = PickupType::FIXUP; } });
+        return a;
     }
 
     const char* getName() const override { return pickupName[pickupType]; }

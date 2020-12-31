@@ -185,7 +185,7 @@ public:
                 Array<PropPrefabData> data = ptr->generatePrefabProps();
                 for (auto& d : data)
                 {
-                    propPrefabs.push({ {}, false, entityIndex, std::move(d) });
+                    propPrefabs.push({ {}, false, entityIndex, move(d) });
                 }
             }
         }

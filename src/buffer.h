@@ -35,7 +35,7 @@ public:
 
     Buffer(Buffer&& other)
     {
-        data = std::move(other.data);
+        data = move(other.data);
         size = other.size;
         pos = other.pos;
         alignment = other.alignment;
@@ -51,7 +51,7 @@ public:
     // move assignment
     Buffer& operator=(Buffer&& other)
     {
-        data = std::move(other.data);
+        data = move(other.data);
         size = other.size;
         pos = other.pos;
         alignment = other.alignment;

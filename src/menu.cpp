@@ -331,7 +331,7 @@ Widget* Menu::addButton(const char* text, const char* helpText, Vec2 pos, Vec2 s
     button.helpText = helpText;
     button.pos = pos;
     button.size = size;
-    button.onSelect = std::move(onSelect);
+    button.onSelect = ::move(onSelect);
     button.onRender = [image, font, text, isEnabled](Widget& btn, bool isSelected){
         bool enabled = isEnabled();
         drawSelectableBox(btn, isSelected, enabled);
@@ -387,7 +387,7 @@ Widget* Menu::addImageButton(const char* text, const char* helpText, Vec2 pos, V
     button.helpText = helpText;
     button.pos = pos;
     button.size = size;
-    button.onSelect = std::move(onSelect);
+    button.onSelect = ::move(onSelect);
     button.onRender = [=](Widget& btn, bool isSelected){
         auto info = getInfo(isSelected);
 #if 0
@@ -1910,7 +1910,7 @@ void Menu::showChampionshipStandings()
                     HAlign::CENTER, VAlign::CENTER);
         }
     };
-    widgets.push(std::move(w));
+    widgets.push(move(w));
 
     u32 flags = WidgetFlags::FADE_OUT | WidgetFlags::BACK;
     if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
@@ -2056,7 +2056,7 @@ void Menu::showRaceResults()
             }
         }
     };
-    widgets.push(std::move(w));
+    widgets.push(move(w));
 
     selectedWidget = addButton("OKAY", nullptr, Vec2(0, boxSize.y/2-50), Vec2(200, 50), [this]{
         for (auto& r : g_game.currentScene->getRaceResults())

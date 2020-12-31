@@ -142,7 +142,9 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     Array<Array<u32>> nodeIndexPaths;
     for (u32 c : start.connections)
     {
-        nodeIndexPaths.push({ startIndex });
+        Array<u32> pth;
+        pth.push(startIndex);
+        nodeIndexPaths.push(move(pth));
         computePath(c, startIndex, (u32)nodeIndexPaths.size() - 1, nodeIndexPaths);
     }
 
@@ -173,7 +175,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
     {
         for (u32 j=i; j>0 && pathLengths[j-1] > pathLengths[j]; --j)
         {
-            swp(nodeIndexPaths[j], nodeIndexPaths[j-1]);
+            swap(nodeIndexPaths[j], nodeIndexPaths[j-1]);
         }
     }
 
@@ -186,7 +188,7 @@ void TrackGraph::rebuild(Mat4 const& startTransform)
         {
             path.push(&nodes[nodeIndex]);
         }
-        paths.push(std::move(path));
+        paths.push(move(path));
     }
 
     // set node angles

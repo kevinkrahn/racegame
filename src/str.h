@@ -90,7 +90,7 @@ public:
     }
     StrBuf(StrBuf&& other)
     {
-        *this = std::move(other);
+        *this = move(other);
     }
 
     StrBuf(StrBuf const& other) = delete;

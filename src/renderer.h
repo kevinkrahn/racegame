@@ -183,7 +183,7 @@ class RenderWorld
     const char* name = "";
     WorldInfo worldInfo;
     SmallArray<Framebuffers, MAX_VIEWPORTS> fbs;
-    SmallArray<Camera, MAX_VIEWPORTS> cameras = { {} };
+    SmallArray<Camera, MAX_VIEWPORTS> cameras;
     SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBO;
     SmallArray<DynamicBuffer, MAX_VIEWPORTS> worldInfoUBOShadow;
     Vec4 highlightColor[MAX_VIEWPORTS] = {};
@@ -381,7 +381,7 @@ public:
     void add2D(ShaderHandle shader, i32 priority, T&& render)
     {
         T* data = tempMem.bump<T>();
-        new (data) T(std::move(render));
+        new (data) T(move(render));
         auto renderFunc = [](void* renderData){ (*((T*)renderData))(); };
         renderItems2D.push({ shader, priority, (void*)data, renderFunc });
     }

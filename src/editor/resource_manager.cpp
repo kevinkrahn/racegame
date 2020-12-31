@@ -54,7 +54,8 @@ ResourceManager::ResourceManager()
     resources.setExpanded(true);
 
     Map<i64, bool> resourceFolderMap;
-    Array<ResourceFolder*> folders = { &resources };
+    Array<ResourceFolder*> folders;
+    folders.push(&resources);
     while (folders.size() > 0)
     {
         ResourceFolder* folder = folders.back();
@@ -172,7 +173,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
                 OwnedPtr<ResourceFolder> newFolder(new ResourceFolder);
                 newFolder->name = "New Folder";
                 newFolder->parent = folder;
-                folder->childFolders.push(std::move(newFolder));
+                folder->childFolders.push(move(newFolder));
             }
             for (auto& r : g_resourceTypes)
             {
@@ -495,7 +496,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                 auto removeIt = folderMove.payload.sourceFolder->childFolders.findIf(
                             [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
                 assert(removeIt);
-                folderMove.dropFolder->childFolders.push(std::move(*removeIt));
+                folderMove.dropFolder->childFolders.push(move(*removeIt));
                 folderMove.dropFolder->childFolders.back()->parent = folderMove.dropFolder;
                 folderMove.payload.sourceFolder->childFolders.erase(removeIt);
             }

@@ -493,7 +493,7 @@ void Track::extendTrack(i32 prefabCurveIndex)
         segment->pointIndexB = (i32)points.size() - 1;
         segment->widthA = fromWidth;
         segment->widthB = fromWidth;
-        connections.push(std::move(segment));
+        connections.push(move(segment));
 
         pIndex = (i32)points.size() - 1;
         fromHandleOffset = h;
@@ -565,7 +565,7 @@ void Track::connectPoints()
     {
         segment->widthB = s->pointIndexA == index2 ? s->widthA : s->widthB;
     }
-    connections.push(std::move(segment));
+    connections.push(move(segment));
 }
 
 Track::BezierSegment* Track::getPointConnection(i32 pointIndex)

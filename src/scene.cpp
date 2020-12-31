@@ -61,7 +61,7 @@ Scene::Scene(TrackData* data)
 
     while (newEntities.size() > 0)
     {
-        Array<OwnedPtr<Entity>> savedNewEntities = std::move(newEntities);
+        Array<OwnedPtr<Entity>> savedNewEntities = move(newEntities);
         for (auto& e : savedNewEntities)
         {
             e->setPersistent(true);
@@ -70,7 +70,7 @@ Scene::Scene(TrackData* data)
         for (auto& e : savedNewEntities)
         {
             e->onCreateEnd(this);
-            entities.push(std::move(e));
+            entities.push(move(e));
         }
     }
 
@@ -127,7 +127,7 @@ void Scene::startRace()
                 point.position = p->position;
                 racingLine.points.push(point);
             }
-            paths.push(std::move(racingLine));
+            paths.push(move(racingLine));
         }
     }
     for (auto& p : paths)
@@ -191,7 +191,7 @@ void Scene::startRace()
                 hit.block.position + hit.block.normal * tuning.getRestOffset()) * start.rotation();
 
         vehicles.push(new Vehicle(this, vehicleTransform, -offset,
-            driverInfo.driver, std::move(tuning), i, driverInfo.cameraIndex));
+            driverInfo.driver, move(tuning), i, driverInfo.cameraIndex));
 
         placements.push(i);
     }
@@ -471,7 +471,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     for (auto& e : newEntities)
     {
         e->onCreateEnd(this);
-        entities.push(std::move(e));
+        entities.push(move(e));
     }
     newEntities.clear();
 
@@ -835,7 +835,7 @@ void Scene::writeTrackData()
     DataFile::Value data = DataFile::makeDict();
     Serializer s(data, false);
     serialize(s);
-    g_res.getTrackData(guid)->data = std::move(data);
+    g_res.getTrackData(guid)->data = move(data);
 }
 
 void Scene::onEnd()
@@ -918,7 +918,7 @@ void Scene::buildRaceResults()
         raceResults.push({
             v->placement,
             v->driver,
-            std::move(v->raceStatistics),
+            move(v->raceStatistics),
             v->placement != 9999
         });
     }
@@ -1263,7 +1263,7 @@ void Scene::serialize(Serializer& s)
                 auto dict = DataFile::makeDict();
                 Serializer s(dict, false);
                 entity->serialize(s);
-                entityArray.push(std::move(dict));
+                entityArray.push(move(dict));
             }
         }
     }
@@ -1289,7 +1289,7 @@ Array<DataFile::Value> Scene::serializeTransientEntities()
             auto dict = DataFile::makeDict();
             Serializer s(dict, false);
             entity->serialize(s);
-            transientEntities.push(std::move(dict));
+            transientEntities.push(move(dict));
         }
     }
     return transientEntities;

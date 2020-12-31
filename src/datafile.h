@@ -116,11 +116,11 @@ namespace DataFile
 
         Value() {}
         Value(Value const& other) { *this = other; }
-        Value(Value&& other) { *this = std::move(other); }
+        Value(Value&& other) { *this = move(other); }
         explicit Value(String&& str)
         {
             dataType = DataType::STRING;
-            new (&str_) String(std::move(str));
+            new (&str_) String(move(str));
         }
         explicit Value(String const& str)
         {
@@ -191,19 +191,19 @@ namespace DataFile
                     break;
                 case DataType::STRING:
                     new (&this->str_) String();
-                    this->str_ = std::move(rhs.str_);
+                    this->str_ = move(rhs.str_);
                     break;
                 case DataType::BYTE_ARRAY:
                     new (&this->bytearray_) ByteArray();
-                    this->bytearray_ = std::move(rhs.bytearray_);
+                    this->bytearray_ = move(rhs.bytearray_);
                     break;
                 case DataType::ARRAY:
                     new (&this->array_) Array();
-                    this->array_ = std::move(rhs.array_);
+                    this->array_ = move(rhs.array_);
                     break;
                 case DataType::DICT:
                     new (&this->dict_) Dict();
-                    this->dict_ = std::move(rhs.dict_);
+                    this->dict_ = move(rhs.dict_);
                     break;
                 case DataType::BOOL:
                     this->bool_ = rhs.bool_;
@@ -231,7 +231,7 @@ namespace DataFile
             Value v;
             v.dataType = DataType::STRING;
             new (&v.str_) String(val);
-            *this = std::move(v);
+            *this = move(v);
         }
 
         OptionalRef<i64> integer()
@@ -391,7 +391,7 @@ namespace DataFile
         {
             this->~Value();
             dataType = DataType::BYTE_ARRAY;
-            new (&bytearray_) ByteArray(std::move(val));
+            new (&bytearray_) ByteArray(move(val));
         }
 
         void setBytearray(ByteArray const& val)
@@ -421,7 +421,7 @@ namespace DataFile
         {
             this->~Value();
             dataType = DataType::ARRAY;
-            new (&array_) Array(std::move(val));
+            new (&array_) Array(move(val));
         }
 
         OptionalRef<Dict> dict(bool emptyDictIfNone=false)
@@ -437,7 +437,7 @@ namespace DataFile
         {
             this->~Value();
             dataType = DataType::DICT;
-            new (&dict_) Dict(std::move(val));
+            new (&dict_) Dict(move(val));
         }
 
         void setDict(Dict const& val)
@@ -456,7 +456,7 @@ namespace DataFile
             }
             T val;
             memcpy(&val, bytearray_.data(), bytearray_.size());
-            return OptionalVal<T>(std::move(val), true);
+            return OptionalVal<T>(move(val), true);
         }
 
         void debugOutput(StrBuf& buf, u32 indent, bool newline) const;
@@ -478,7 +478,7 @@ namespace DataFile
     Value makeString(Value::String val)
     {
         Value v;
-        v.setString(std::move(val));
+        v.setString(move(val));
         return v;
     }
 
@@ -527,7 +527,7 @@ namespace DataFile
     Value makeArray(Value::Array&& val)
     {
         Value v;
-        v.setArray(std::move(val));
+        v.setArray(move(val));
         return v;
     }
 
@@ -541,7 +541,7 @@ namespace DataFile
     Value makeBytearray(Value::ByteArray&& val)
     {
         Value v;
-        v.setBytearray(std::move(val));
+        v.setBytearray(move(val));
         return v;
     }
 
@@ -677,7 +677,7 @@ public:
                 {
                     DataFile::Value el;
                     element(name, el, dest[i]);
-                    val.array().val().push(std::move(el));
+                    val.array().val().push(move(el));
                 }
             }
         }
@@ -812,7 +812,7 @@ public:
             {
                 DataFile::Value::ByteArray bytes(reinterpret_cast<u8*>(dest.data()),
                              reinterpret_cast<u8*>(dest.data() + dest.size()));
-                val.setBytearray(std::move(bytes));
+                val.setBytearray(move(bytes));
             }
         }
         else
@@ -830,7 +830,7 @@ public:
                 {
                     V el;
                     element(name, item, el);
-                    dest.push(std::move(el));
+                    dest.push(move(el));
                 }
             }
             else
@@ -841,9 +841,9 @@ public:
                 {
                     DataFile::Value el;
                     element(name, el, item);
-                    array.push(std::move(el));
+                    array.push(move(el));
                 }
-                val.setArray(std::move(array));
+                val.setArray(move(array));
             }
         }
     }

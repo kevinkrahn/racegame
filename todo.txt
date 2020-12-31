@@ -81,3 +81,4 @@
 - Add a bonus for conserving ammo? If you don't use all your ammo for a lap then give a bonus, or maybe
   this could be a special ability.
 - Show waveform visualization in sound window
+- Add test area to compare speed of all vehicles in a drag race

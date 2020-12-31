@@ -142,10 +142,9 @@ public:
 
     Array<PropPrefabData> generatePrefabProps() override
     {
-        Array<PropPrefabData> result = {
-            { PropCategory::NOT_NATURE, "Billboard" }
-        };
-        return result;
+        Array<PropPrefabData> a;
+        a.push({ PropCategory::NOT_NATURE, "Billboard" });
+        return a;
     }
 
     const char* getName() const override { return "Billboard"; }

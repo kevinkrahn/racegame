@@ -95,7 +95,7 @@ void Batcher::end(bool keepMeshData)
             bigBatchedMesh.indices.shrink_to_fit();
         }
 
-        batches.push({ itemsForThisMaterial.key, std::move(bigBatchedMesh) });
+        batches.push({ itemsForThisMaterial.key, move(bigBatchedMesh) });
     }
     materialMap.clear();
 }

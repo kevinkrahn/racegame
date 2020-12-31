@@ -36,7 +36,7 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
     this->scene = scene;
     this->lastValidPosition = transform.position();
     this->cameraIndex = cameraIndex;
-    this->tuning = std::move(tuning);
+    this->tuning = move(tuning);
     this->hitPoints = this->tuning.maxHitPoints;
     this->previousTargetPosition = transform.position();
     this->rearWeaponTimer = 0.f + vehicleIndex * 0.2f;
@@ -64,14 +64,14 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
             switch(weapon->info.weaponType)
             {
                 case WeaponType::FRONT_WEAPON:
-                    frontWeapons.push(std::move(weapon));
+                    frontWeapons.push(move(weapon));
                     frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[frontWeaponSlotCount];
                     break;
                 case WeaponType::REAR_WEAPON:
-                    rearWeapons.push(std::move(weapon));
+                    rearWeapons.push(move(weapon));
                     break;
                 case WeaponType::SPECIAL_ABILITY:
-                    specialAbilities.push(std::move(weapon));
+                    specialAbilities.push(move(weapon));
                     break;
             }
         }

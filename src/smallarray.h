@@ -37,7 +37,7 @@ public:
     {
         for (u32 i=0; i<size_; ++i)
         {
-            new (data_ + i) T(std::move(other.data_[i]));
+            new (data_ + i) T(move(other.data_[i]));
         }
         other.size_ = 0;
     }
@@ -75,7 +75,7 @@ public:
         size_ = other.size_;
         for (u32 i=0; i<size_; ++i)
         {
-            new (data_ + i) T(std::move(other.data_[i]));
+            new (data_ + i) T(move(other.data_[i]));
         }
         return *this;
     }
@@ -96,7 +96,7 @@ public:
     void push(T&& val)
     {
         assert(size_ < maxSize);
-        new (data_ + size_) T(std::move(val));
+        new (data_ + size_) T(move(val));
         ++size_;
     }
 
@@ -123,7 +123,7 @@ public:
         auto ptr = data_ + index;
         for (T* movePtr = end(); movePtr != data_ + index; --movePtr)
         {
-            new (movePtr) T(std::move(*(movePtr - 1)));
+            new (movePtr) T(move(*(movePtr - 1)));
         }
         ++size_;
         new (ptr) T(val);
@@ -143,16 +143,16 @@ public:
         auto ptr = data_ + index;
         for (T* movePtr = end(); movePtr != data_ + index; --movePtr)
         {
-            new (movePtr) T(std::move(*(movePtr - 1)));
+            new (movePtr) T(move(*(movePtr - 1)));
         }
         ++size_;
-        new (ptr) T(std::move(val));
+        new (ptr) T(move(val));
     }
 
     // move insert
     void insert(T * element, T&& val)
     {
-        insert(data_ - element, std::move(val));
+        insert(data_ - element, move(val));
     }
 
     void pop()
@@ -222,7 +222,7 @@ public:
         element->~T();
         for (u32 i=element - data_; i<size_-1; ++i)
         {
-            new (data_ + i) T(std::move(data_[i+1]));
+            new (data_ + i) T(move(data_[i+1]));
         }
         --size_;
         return element;
@@ -340,7 +340,7 @@ public:
             u32 j = i;
             while (j > 0 && compare(data_[j], data_[j-1]))
             {
-                swp(data_[j-1], data_[j]);
+                swap(data_[j-1], data_[j]);
                 j--;
             }
         }

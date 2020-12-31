@@ -188,7 +188,7 @@ void Spline::updateMesh(Scene* scene)
             meshInfo.material = g_res.getMaterial(obj.materialGuid);
         }
 
-        meshes.push(std::move(meshInfo));
+        meshes.push(move(meshInfo));
     }
 }
 

@@ -27,7 +27,9 @@ public:
     void onPreview(RenderWorld* rw) override;
     Array<PropPrefabData> generatePrefabProps() override
     {
-        return {{ PropCategory::RACE, "Start" }};
+        Array<PropPrefabData> a;
+        a.push({ PropCategory::RACE, "Start" });
+        return a;
     }
     const char* getName() const override { return "Start"; }
 };

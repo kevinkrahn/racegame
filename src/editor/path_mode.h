@@ -22,7 +22,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
         {
             return;
         }
-        swp(scene->getPaths()[selectedPathIndex], scene->getPaths()[selectedPathIndex-1]);
+        swap(scene->getPaths()[selectedPathIndex], scene->getPaths()[selectedPathIndex-1]);
     }
 
     void moveDown(Scene* scene)
@@ -31,7 +31,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
         {
             return;
         }
-        swp(scene->getPaths()[selectedPathIndex], scene->getPaths()[selectedPathIndex+1]);
+        swap(scene->getPaths()[selectedPathIndex], scene->getPaths()[selectedPathIndex+1]);
     }
 
     void subdividePath(Scene* scene)
@@ -44,7 +44,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
         u32 pointIndexB = selectedPoints[1];
         if (pointIndexB < pointIndexA)
         {
-            swp(pointIndexA, pointIndexB);
+            swap(pointIndexA, pointIndexB);
         }
         auto& path = scene->getPaths()[selectedPathIndex];
         RacingLine::Point newPoint;
@@ -99,7 +99,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
             point.position = p->position;
             racingLine.points.push(point);
         }
-        scene->getPaths().push(std::move(racingLine));
+        scene->getPaths().push(move(racingLine));
     }
 
     void deletePath(Scene* scene)
@@ -135,7 +135,7 @@ class PathMode : public EditorMode, public TransformGizmoHandler
                 point.position = p->position;
                 racingLine.points.push(point);
             }
-            scene->getPaths().push(std::move(racingLine));
+            scene->getPaths().push(move(racingLine));
         }
         selectedPoints.clear();
         selectedPathIndex = 0;
