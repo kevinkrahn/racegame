@@ -8,12 +8,39 @@
 #include "../ai_driver_data.h"
 #include "resource_editor.h"
 
+inline bool resourceIsMatch(i64 guid, const char* searchText)
+{
+    Str16 guidStr = Str16::format("%x", guid);
+    if (guidStr == searchText)
+    {
+        return true;
+    }
+    if (g_res.getResource(guid)->name.find(searchText))
+    {
+        return true;
+    }
+    return false;
+}
+
 struct ResourceFolder
 {
     Str64 name;
     Array<OwnedPtr<ResourceFolder>> childFolders;
     Array<i64> childResources;
     ResourceFolder* parent = nullptr;
+    bool isExpanded = false;
+
+    void setExpanded(bool expanded, bool recurse=false)
+    {
+        isExpanded = expanded;
+        if (recurse)
+        {
+            for (auto& childFolder : childFolders)
+            {
+                childFolder->setExpanded(expanded, true);
+            }
+        }
+    }
 
     bool hasParent(ResourceFolder* p)
     {
@@ -35,6 +62,25 @@ struct ResourceFolder
                 childFolder->parent = this;
             }
         }
+    }
+
+    bool containsMatch(const char* searchText)
+    {
+        for (i64 guid : childResources)
+        {
+            if (resourceIsMatch(guid, searchText))
+            {
+                return true;
+            }
+        }
+        for (auto& childFolder : childFolders)
+        {
+            if (childFolder->containsMatch(searchText))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 };
 
@@ -67,6 +113,7 @@ class ResourceManager
     ResourceFolder* renameFolder = nullptr;
     Resource* renameResource = nullptr;
     bool firstFrameRename = false;
+    Str64 searchText;
     struct
     {
         DragDropPayload payload;

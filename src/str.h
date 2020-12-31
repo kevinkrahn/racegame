@@ -54,6 +54,7 @@ public:
     bool operator>(Str const& rhs) { return strcmp(buf_, rhs.buf_) > 0; }
 };
 
+using Str16 = Str<16>;
 using Str32 = Str<32>;
 using Str64 = Str<64>;
 using Str512 = Str<512>;

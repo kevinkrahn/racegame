@@ -51,6 +51,7 @@ void ResourceManager::saveResources()
 ResourceManager::ResourceManager()
 {
     Serializer::fromFile(resources, tmpStr("%s/%s", DATA_DIRECTORY, METADATA_FILE));
+    resources.setExpanded(true);
 
     Map<i64, bool> resourceFolderMap;
     Array<ResourceFolder*> folders = { &resources };
@@ -82,10 +83,16 @@ ResourceManager::ResourceManager()
 bool ResourceManager::showFolder(ResourceFolder* folder)
 {
     bool removed = false;
-    u32 flags = folder == &resources ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    bool isSearching = !searchText.empty();
+    bool searchMatch = isSearching && folder->containsMatch(searchText.data());
+    if (isSearching && !searchMatch)
+    {
+        return false;
+    }
+    ImGui::SetNextItemOpen(folder->isExpanded || searchMatch);
     if (folder == renameFolder)
     {
-        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "");
+        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, 0, "");
         ImGui::SameLine();
         static u32 renameID = 0;
         if (firstFrameRename)
@@ -118,7 +125,11 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
     }
     else
     {
-        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, flags, "%s", folder->name.data());
+        bool isFolderOpen = ImGui::TreeNodeEx((void*)folder, 0, "%s", folder->name.data());
+        if (ImGui::IsItemToggledOpen())
+        {
+            folder->setExpanded(isFolderOpen);
+        }
         if (folder->parent && ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
         {
             DragDropPayload payload = {};
@@ -148,6 +159,14 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
         }
         if (ImGui::BeginPopupContextItem())
         {
+            if (ImGui::MenuItem("Collapse"))
+            {
+                folder->setExpanded(false, true);
+            }
+            if (ImGui::MenuItem("Expand"))
+            {
+                folder->setExpanded(true, true);
+            }
             if (ImGui::MenuItem("New Folder"))
             {
                 OwnedPtr<ResourceFolder> newFolder(new ResourceFolder);
@@ -202,6 +221,11 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
     const u32 selectedColor = 0x992299EE;
     for (auto it = folder->childResources.begin(); it != folder->childResources.end();)
     {
+        if (!searchText.empty() && !resourceIsMatch(*it, searchText.data()))
+        {
+            ++it;
+            continue;
+        }
         Resource* childResource = g_res.getResource(*it);
         bool removed = false;
         ImGui::PushStyleColor(ImGuiCol_Header, selectedColor);
@@ -456,6 +480,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     {
         if (ImGui::Begin("Resources", &isResourceWindowOpen))
         {
+            ImGui::InputText("Search", &searchText);
+            ImGui::Gap();
             showFolder(&resources);
         }
         ImGui::End();
