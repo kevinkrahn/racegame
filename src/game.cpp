@@ -8,8 +8,6 @@
 #include "audio.h"
 #include "weapon.h"
 #include "imgui.h"
-#include <imgui/backends/imgui_impl_sdl.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
 
 void Game::initPhysX()
 {
@@ -142,25 +140,7 @@ void Game::run()
     renderer.reset(new Renderer());
     renderer->init();
 
-    // init Dear ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForOpenGL(window, context);
-    ImGui_ImplOpenGL3_Init("#version 130");
-    io.Fonts->AddFontFromFileTTF("font.ttf", 16.f);
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowBorderSize = 1.f;
-    style.FrameBorderSize = 0.f;
-    style.PopupBorderSize = 1.f;
-    style.WindowRounding = 2.f;
-    style.FrameRounding = 2.f;
-    style.TabRounding = 6.f;
-    style.Colors[2] = { 0.02f, 0.02f, 0.02f, 0.92f };
-
+    ImGui::Initialize(window, context);
     g_input.init(window);
     g_audio.init();
     initPhysX();

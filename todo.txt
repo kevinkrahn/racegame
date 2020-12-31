@@ -75,7 +75,7 @@
 - Shock wave ability
 - Add weapon that deals damage based on race placement (i.e. the driver in first place would receive the most damage)
 - Add inverse of jump jet, an ability that slams you to the ground.
-- Maybe splines should store there snapped-to-terrain-or-track position, so that it doesn't change when the terrain or track changes.
+- Maybe splines should store their snapped-to-terrain-or-track position, so that it doesn't change when the terrain or track changes.
 - Add expand all and collapse all to resource tree
 - Fix hidden view effect on non-nvidia cards
 - Add ability to mark any entity as something that can be driven on

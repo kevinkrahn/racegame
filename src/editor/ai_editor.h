@@ -187,10 +187,37 @@ public:
 
             ImGui::Gap();
 
-            for (u32 i=0; i<ai.vehicles.size(); ++i)
+            for (u32 i=0; i<ai.vehicles.size();)
             {
-                const char* label = tmpStr("Vehicle %i", i+1);
-                if (ImGui::TreeNodeEx(label, 0, label))
+                bool isOpen = ImGui::TreeNode(tmpStr("Vehicle %i", i+1));
+                if (ImGui::BeginPopupContextItem())
+                {
+                    if (ImGui::MenuItem("Duplicate"))
+                    {
+                        DataFile::Value data = DataFile::makeDict();
+                        Serializer s(data, false);
+                        ai.vehicles[i].serialize(s);
+                        ai.vehicles.push_back({});
+                        s.deserialize = true;
+                        ai.vehicles.back().serialize(s);
+                        renderWorlds.push_back(new RenderWorld());
+                    }
+                    if (ImGui::MenuItem("Delete"))
+                    {
+                        ai.vehicles.erase(ai.vehicles.begin() + i);
+                        renderWorlds[i]->destroy();
+                        renderWorlds.erase(renderWorlds.begin() + i);
+                        dirty = true;
+                        ImGui::EndPopup();
+                        if (isOpen)
+                        {
+                            ImGui::TreePop();
+                        }
+                        continue;
+                    }
+                    ImGui::EndPopup();
+                }
+                if (isOpen)
                 {
                     dirty |= drawVehiclePreview(renderer, *renderWorlds[i], ai.vehicles[i]);
                     if (dirty)
@@ -199,6 +226,7 @@ public:
                     }
                     ImGui::TreePop();
                 }
+                ++i;
             }
 
             // TODO: auto-filter out invalid vehicle indices and upgrade indices
