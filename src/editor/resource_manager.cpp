@@ -482,7 +482,9 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         {
             ImGui::InputText("Search", &searchText);
             ImGui::Gap();
+            ImGui::BeginChild("Resources");
             showFolder(&resources);
+            ImGui::EndChild();
         }
         ImGui::End();
 
