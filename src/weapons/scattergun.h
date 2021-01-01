@@ -18,7 +18,8 @@ public:
         info.price = 900;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
-        info.weaponClasses = WeaponClass::HOOD1 | WeaponClass::NARROW;
+        info.tags[0] = "hood-1";
+        info.tags[1] = "narrow";
 
         ammoUnitCount = 1;
         fireMode = FireMode::ONE_SHOT;

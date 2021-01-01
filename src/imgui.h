@@ -80,10 +80,11 @@ namespace ImGui
         }
     }
 
-    inline bool InputFloatClamp(const char* label, f32* v, f32 min, f32 max)
+    inline bool InputFloatClamp(const char* label, f32* v, f32 min, f32 max, f32 step=0.f, f32 stepFast=0.f,
+            const char* format="%.3f", u32 flags=0)
     {
         f32 previousValue = *v;
-        InputFloat(label, v);
+        InputFloat(label, v, step, stepFast, format, flags);
         *v = clamp(*v, min, max);
         return *v != previousValue;
     }

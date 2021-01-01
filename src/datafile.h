@@ -461,7 +461,8 @@ namespace DataFile
 
         void debugOutput(StrBuf& buf, u32 indent, bool newline) const;
 
-        Value& operator=(String const& val) { setString(val); return *this; }
+        template <u32 N>
+        Value& operator=(Str<N> const& val) { setString(String(val)); return *this; }
         Value& operator=(const char* val) { setString(val); return *this; }
         Value& operator=(i64 val) { setInteger(val); return *this; }
         Value& operator=(f32 val) { setReal(val); return *this; }
@@ -703,7 +704,20 @@ public:
         }
     }
 
+    /*
     template<> void element(const char* name, DataFile::Value& val, DataFile::Value::String& dest)
+    {
+        if (deserialize)
+        {
+            auto v = val.string();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"%s\"", name);
+            dest = v.val();
+        }
+        else val = dest;
+    }
+    */
+
+    template<u32 N> void element(const char* name, DataFile::Value& val, Str<N>& dest)
     {
         if (deserialize)
         {

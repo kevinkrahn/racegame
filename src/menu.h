@@ -186,7 +186,7 @@ class Menu
     void createCosmeticsMenu();
     void createCosmeticLayerMenu(i32 layerIndex);
     void createCarLotMenu();
-    void createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weaponSlot, u32& upgradeLevel);
+    void createWeaponsMenu(WeaponSlot const& slot, i32& weaponIndex, u32& upgradeLevel);
 
 public:
     void startQuickRace();

@@ -11,7 +11,7 @@ public:
         description = "It can drive";
         price = 8900;
         weaponSlots = {
-            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, tags("hood-1") },
             { "REAR WEAPON", WeaponType::REAR_WEAPON },
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };

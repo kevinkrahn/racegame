@@ -15,7 +15,7 @@ public:
 
     Str() {};
     Str(const char* s) { *this = s; }
-    Str(const char* begin, const char* end) { memcpy(buf_, begin, min(SIZE, end-begin)); }
+    Str(const char* begin, const char* end) { assign(begin, end); }
     void write(const char* format, ...)
     {
         va_list argptr;
@@ -32,13 +32,20 @@ public:
         va_end(argptr);
         return s;
     }
+    void assign(const char* begin, const char* end) { memcpy(buf_, begin, min(SIZE, end-begin)); }
     Str(Str const& other) { *this = other; }
     Str(Str && other) { *this = other; }
+    template <u32 N> explicit Str(Str<N> const& other) { *this = other; }
+    template <u32 N> explicit Str(Str<N> && other) { *this = other; }
     Str& operator=(Str const& other) = default;
     Str& operator=(Str && other) = default;
+    template <u32 N> Str& operator=(Str<N> const& other) { *this = other.data(); return *this; }
+    template <u32 N> Str& operator=(Str<N> && other) { *this = other.data(); return *this; }
     Str& operator=(const char* s) { strncpy(buf_, s, SIZE-1); return *this; }
     bool operator==(Str const& other) const { return strncmp(buf_, other.buf_, SIZE) == 0; }
     bool operator==(const char* s) const { return strncmp(buf_, s, SIZE) == 0; }
+    bool operator!=(Str const& other) const { return !(*this == other); }
+    bool operator!=(const char* s) const { return !(*this == s); }
     const char* find(const char* needle) const { return strstr(buf_, needle); }
     const char* find(Str const& needle) const { return strstr(buf_, needle.buf_); }
     char* data() const { return (char*)buf_; }

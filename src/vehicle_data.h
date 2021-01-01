@@ -64,15 +64,6 @@ enum struct VehicleDifferentialType
     MAX
 };
 
-const char* g_diffTypeNames[] = {
-    "Open FWD",
-    "Open RWD",
-    "Open 4WD",
-    "Limited Slip FWD",
-    "Limited Slip RWD",
-    "Limited Slip 4WD",
-};
-
 enum struct PerformanceUpgradeType
 {
     ENGINE,

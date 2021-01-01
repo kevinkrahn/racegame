@@ -10,32 +10,15 @@ enum struct WeaponType
     SPECIAL_ABILITY,
 };
 
-namespace WeaponClass
-{
-    enum
-    {
-        HOOD1 = 1 << 0,
-        HOOD2 = 1 << 1,
-        ROOF1 = 1 << 2,
-        ROOF2 = 1 << 3,
-        RACK1 = 1 << 4,
-        RACK2 = 1 << 5,
-
-        NARROW = 1 << 6,
-    };
-}
-
-struct WeaponSlot
-{
-    const char* name = "";
-    WeaponType weaponType = WeaponType::FRONT_WEAPON;
-    u32 weaponClasses = 0;
-
-    void serialize(Serializer& s)
-    {
-        s.field(weaponType);
-        s.field(weaponClasses);
-    }
+// TODO: remove
+const Str16 g_tags[] = {
+    "hood-1",
+    "hood-2",
+    "roof-1",
+    "roof-2",
+    "rack-1",
+    "rack-2",
+    "narrow",
 };
 
 struct WeaponInfo
@@ -46,7 +29,57 @@ struct WeaponInfo
     i32 price = 0;
     u32 maxUpgradeLevel = 5;
     WeaponType weaponType = WeaponType::FRONT_WEAPON;
-    u32 weaponClasses = WeaponClass::HOOD1;
+    Str16 tags[4];
+};
+
+struct TagGroup
+{
+    Str16 tags[3];
+
+    void serialize(Serializer& s)
+    {
+        s.field(tags);
+    }
+};
+
+TagGroup tags(const char* s) { return TagGroup{ { s } }; }
+TagGroup tags(const char* s1, const char* s2) { return TagGroup{ { s1, s2 } }; }
+TagGroup tags(const char* s1, const char* s2, const char* s3) { return TagGroup{ { s1, s2, s3 } }; }
+
+struct WeaponSlot
+{
+    Str32 name = "";
+    WeaponType weaponType = WeaponType::FRONT_WEAPON;
+    TagGroup tagGroups[3];
+
+    void serialize(Serializer& s)
+    {
+        s.field(weaponType);
+        s.field(tagGroups);
+    }
+
+    bool matchesWeapon(WeaponInfo const& w) const
+    {
+        for (u32 i=0; i<ARRAY_SIZE(tagGroups); ++i)
+        {
+            bool allMatch = true;
+            for (u32 j=0; j<ARRAY_SIZE(tagGroups[i].tags); ++j)
+            {
+                for (u32 k=0; k<ARRAY_SIZE(w.tags); ++k)
+                {
+                    if (tagGroups[i].tags[j] != w.tags[k])
+                    {
+                        allMatch = false;
+                    }
+                }
+            }
+            if (allMatch)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 class Weapon

@@ -11,7 +11,7 @@ public:
         description = "Rough and tough.\nDrives well off the road.";
         price = 13000;
         weaponSlots = {
-            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, tags("hood-1") },
             { "REAR WEAPON", WeaponType::REAR_WEAPON },
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };

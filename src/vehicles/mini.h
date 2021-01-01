@@ -12,7 +12,7 @@ public:
         description = "Small and nimble. Quick acceleration, \nbut low top-speed.";
         price = 8400;
         weaponSlots = {
-            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, tags("hood-1") },
             { "REAR WEAPON", WeaponType::REAR_WEAPON },
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };

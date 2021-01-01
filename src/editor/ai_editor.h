@@ -137,13 +137,12 @@ public:
                     const char* installedName =
                         installedWeaponIndex != -1 ? g_weapons[installedWeaponIndex].info.name : "None";
                     WeaponSlot slot = vehicle->weaponSlots[slotIndex];
-                    if (ImGui::BeginCombo(slot.name, installedName))
+                    if (ImGui::BeginCombo(slot.name.data(), installedName))
                     {
                         for (u32 i=0; i<g_weapons.size(); ++i)
                         {
                             auto& weapon = g_weapons[i];
-                            if (weapon.info.weaponType != slot.weaponType
-                                || (weapon.info.weaponClasses & slot.weaponClasses) != slot.weaponClasses)
+                            if (weapon.info.weaponType != slot.weaponType || !slot.matchesWeapon(weapon.info))
                             {
                                 continue;
                             }

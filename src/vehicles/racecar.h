@@ -11,7 +11,7 @@ public:
         description = "Excessive speed.";
         price = 1;
         weaponSlots = {
-            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 | WeaponClass::NARROW },
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, tags("hood-1", "narrow") },
             { "REAR WEAPON", WeaponType::REAR_WEAPON },
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };

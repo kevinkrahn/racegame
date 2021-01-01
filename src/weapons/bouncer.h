@@ -19,7 +19,9 @@ public:
         info.price = 800;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
-        info.weaponClasses = WeaponClass::HOOD1 | WeaponClass::NARROW | WeaponClass::ROOF1;
+        info.tags[0] = "hood-1";
+        info.tags[1] = "narrow";
+        info.tags[2] = "roof-1";
 
         loadModelData("weapon_bouncer");
         mesh = g_res.getModel("weapon_bouncer")->getMeshByName("bouncer.Bouncer");

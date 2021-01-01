@@ -60,6 +60,7 @@ public:
     void onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime, u32 n) override
     {
         VehicleData* v = (VehicleData*)r;
+        VehicleTuning& t = v->defaultTuning;
 
         bool isOpen = true;
         bool dirty = false;
@@ -84,67 +85,132 @@ public:
 
             dirty |= ImGui::InputText("Description", &v->description);
             dirty |= ImGui::InputInt("Price", &v->price, 200, 1000);
-            dirty |= ImGui::InputFloat("Hit Points", &v->defaultTuning.maxHitPoints);
+            dirty |= ImGui::InputFloatClamp("Hit Points", &t.maxHitPoints, 1.f, 1000.f, 5.f, 10.f, "%.0f");
 
             // TODO: weapon slots
             // TODO: available upgrades
 
-            dirty |= ImGui::InputFloatClamp("Mass", &v->defaultTuning.chassisMass, 1.f, 10000.f);
-            dirty |= ImGui::InputFloat3("Center of Mass", (f32*)&v->defaultTuning.centerOfMass);
-            dirty |= ImGui::InputFloatClamp("Top Speed", &v->defaultTuning.topSpeed, 1.f, 500.f);
-            dirty |= ImGui::InputFloatClamp("Drift Boost", &v->defaultTuning.forwardDownforce, 0.f, 5.f);
+            dirty |= ImGui::InputFloatClamp("Mass", &t.chassisMass, 1.f, 10000.f, 50.f, 100.f);
+            dirty |= ImGui::InputFloat3("Center of Mass", (f32*)&t.centerOfMass);
+            dirty |= ImGui::InputFloatClamp("Top Speed", &t.topSpeed, 1.f, 500.f, 0.5f, 2.f);
+            dirty |= ImGui::InputFloatClamp("Drift Boost", &t.forwardDownforce, 0.f, 5.f, 0.01f, 0.02f);
+
+            const char* diffTypeNames =
+                "Open FWD\0Open RWD\0Open 4WD\0Limited Slip FWD\0Limited Slip RWD\0Limited Slip 4WD";
+            dirty |= ImGui::Combo("Differential", (i32*)&t.differential, diffTypeNames);
+
+            if (ImGui::TreeNode("Upgrades"))
+            {
+                for (u32 i=0; i<v->availableUpgrades.size(); ++i)
+                {
+                }
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Weapon Slots"))
+            {
+                for (u32 slotIndex=0; slotIndex<v->weaponSlots.size(); ++slotIndex)
+                {
+                    if (ImGui::TreeNode(tmpStr("Weapon Slot %i", slotIndex + 1)))
+                    {
+                        const char* weaponTypeNames = "Front Weapon\0Rear Weapon\0Passive Ability";
+                        dirty |= ImGui::Combo("Type", (i32*)&v->weaponSlots[slotIndex], weaponTypeNames);
+                        // TODO: fix this
+                        dirty |= ImGui::InputText("Name", &v->weaponSlots[slotIndex].name);
+
+                        auto& slot = v->weaponSlots[slotIndex];
+                        ImGui::Columns(ARRAY_SIZE(slot.tagGroups));
+                        for (u32 i=0; i<ARRAY_SIZE(slot.tagGroups); ++i)
+                        {
+                            ImGui::Text(tmpStr("Tag Group %i", i + 1));
+                            for (u32 j=0; j<ARRAY_SIZE(slot.tagGroups[i].tags); ++j)
+                            {
+                                // TODO: add drop down to pick tags
+                                dirty |= ImGui::InputText(tmpStr("###%i%i", i, j), &slot.tagGroups[i].tags[j]);
+                            }
+                            ImGui::NextColumn();
+                        }
+                        ImGui::Columns(1);
+                        ImGui::TreePop();
+                    }
+                }
+                if (ImGui::Button("Add Slot"))
+                {
+                    v->weaponSlots.push({});
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Remove Slot") && t.gearRatios.size() > 2)
+                {
+                    v->weaponSlots.pop();
+                }
+                ImGui::TreePop();
+            }
 
             if (ImGui::TreeNode("Wheels"))
             {
-                dirty |= ImGui::InputFloatClamp("Wheel Damping", &v->defaultTuning.wheelDampingRate, 0.f, 100.f);
-                dirty |= ImGui::InputFloatClamp("Wheel Offroad Damping", &v->defaultTuning.wheelOffroadDampingRate, 0.f, 100.f);
-                dirty |= ImGui::InputFloatClamp("Grip", &v->defaultTuning.trackTireFriction, 0.f, 20.f);
-                dirty |= ImGui::InputFloatClamp("Offroad Grip", &v->defaultTuning.offroadTireFriction, 0.f, 20.f);
-                dirty |= ImGui::InputFloatClamp("Rear Grip Multiplier", &v->defaultTuning.rearTireGripPercent, 0.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Wheel Mass Front", &v->defaultTuning.wheelMassFront, 1.f, 100.f);
-                dirty |= ImGui::InputFloatClamp("Wheel Mass Rear", &v->defaultTuning.wheelMassRear, 1.f, 100.f);
-                dirty |= ImGui::InputFloatClamp("Max Brake Torque", &v->defaultTuning.engineDampingZeroThrottleClutchDisengaged, 0.f, 80000.f);
-                dirty |= ImGui::InputFloatClamp("Camber at Rest", &v->defaultTuning.camberAngleAtRest, -2.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Camber at Max Droop", &v->defaultTuning.camberAngleAtMaxDroop, -2.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Camber at Max Compression", &v->defaultTuning.camberAngleAtMaxCompression, -2.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Front Toe Angle", &v->defaultTuning.frontToeAngle, -2.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Rear Toe Angle", &v->defaultTuning.rearToeAngle, -2.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Max Steer Angle", &v->defaultTuning.maxSteerAngleDegrees, 0.f, 90.f);
-                dirty |= ImGui::InputFloatClamp("Ackermann Accuracy", &v->defaultTuning.ackermannAccuracy, 0.f, 1.f);
+                dirty |= ImGui::InputFloatClamp("Wheel Damping", &t.wheelDampingRate, 0.f, 100.f);
+                dirty |= ImGui::InputFloatClamp("Wheel Offroad Damping", &t.wheelOffroadDampingRate, 0.f, 100.f);
+                dirty |= ImGui::InputFloatClamp("Grip", &t.trackTireFriction, 0.f, 20.f);
+                dirty |= ImGui::InputFloatClamp("Offroad Grip", &t.offroadTireFriction, 0.f, 20.f);
+                dirty |= ImGui::InputFloatClamp("Rear Grip Multiplier", &t.rearTireGripPercent, 0.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Wheel Mass Front", &t.wheelMassFront, 1.f, 100.f);
+                dirty |= ImGui::InputFloatClamp("Wheel Mass Rear", &t.wheelMassRear, 1.f, 100.f);
+                dirty |= ImGui::InputFloatClamp("Max Brake Torque", &t.engineDampingZeroThrottleClutchDisengaged, 0.f, 80000.f);
+                dirty |= ImGui::InputFloatClamp("Camber at Rest", &t.camberAngleAtRest, -2.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Camber at Max Droop", &t.camberAngleAtMaxDroop, -2.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Camber at Max Compression", &t.camberAngleAtMaxCompression, -2.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Front Toe Angle", &t.frontToeAngle, -2.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Rear Toe Angle", &t.rearToeAngle, -2.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Max Steer Angle", &t.maxSteerAngleDegrees, 0.f, 90.f);
+                dirty |= ImGui::InputFloatClamp("Ackermann Accuracy", &t.ackermannAccuracy, 0.f, 1.f);
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("Suspension"))
             {
-                dirty |= ImGui::InputFloatClamp("Max Compression", &v->defaultTuning.suspensionMaxCompression, 0.f, 10.f);
-                dirty |= ImGui::InputFloatClamp("Max Droop", &v->defaultTuning.suspensionMaxDroop, 0.f, 10.f);
-                dirty |= ImGui::InputFloatClamp("Spring Strength", &v->defaultTuning.suspensionSpringStrength, 100.f, 100000.f);
-                dirty |= ImGui::InputFloatClamp("Spring Damper Rate", &v->defaultTuning.suspensionSpringDamperRate, 100.f, 10000.f);
-                dirty |= ImGui::InputFloatClamp("Anti-Rollbar Stiffness", &v->defaultTuning.frontAntiRollbarStiffness, 0.f, 100000.f);
-                v->defaultTuning.rearAntiRollbarStiffness = v->defaultTuning.frontAntiRollbarStiffness;
+                dirty |= ImGui::InputFloatClamp("Max Compression", &t.suspensionMaxCompression, 0.f, 10.f);
+                dirty |= ImGui::InputFloatClamp("Max Droop", &t.suspensionMaxDroop, 0.f, 10.f);
+                dirty |= ImGui::InputFloatClamp("Spring Strength", &t.suspensionSpringStrength, 100.f, 100000.f);
+                dirty |= ImGui::InputFloatClamp("Spring Damper Rate", &t.suspensionSpringDamperRate, 100.f, 10000.f);
+                dirty |= ImGui::InputFloatClamp("Anti-Rollbar Stiffness", &t.frontAntiRollbarStiffness, 0.f, 100000.f);
+                t.rearAntiRollbarStiffness = t.frontAntiRollbarStiffness;
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("Engine"))
             {
-                dirty |= ImGui::InputFloatClamp("Max Omega", &v->defaultTuning.maxEngineOmega, 100.f, 5000.f);
-                dirty |= ImGui::InputFloatClamp("Peak Torque", &v->defaultTuning.peakEngineTorque, 50.f, 5000.f);
-                dirty |= ImGui::InputFloatClamp("Damping Full Throttle", &v->defaultTuning.engineDampingFullThrottle, 0.f, 500.f);
-                dirty |= ImGui::InputFloatClamp("Damping Zero Throttle With Clutch", &v->defaultTuning.engineDampingZeroThrottleClutchEngaged, 0.f, 500.f);
-                dirty |= ImGui::InputFloatClamp("Damping Zero Throttle W/O Clutch", &v->defaultTuning.engineDampingZeroThrottleClutchDisengaged, 0.f, 500.f);
+                dirty |= ImGui::InputFloatClamp("Max Omega", &t.maxEngineOmega, 100.f, 5000.f);
+                dirty |= ImGui::InputFloatClamp("Peak Torque", &t.peakEngineTorque, 50.f, 5000.f);
+                dirty |= ImGui::InputFloatClamp("Damping Full Throttle", &t.engineDampingFullThrottle, 0.f, 500.f);
+                dirty |= ImGui::InputFloatClamp("Damping Zero Throttle With Clutch", &t.engineDampingZeroThrottleClutchEngaged, 0.f, 500.f);
+                dirty |= ImGui::InputFloatClamp("Damping Zero Throttle W/O Clutch", &t.engineDampingZeroThrottleClutchDisengaged, 0.f, 500.f);
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("Downforce"))
             {
-                dirty |= ImGui::InputFloatClamp("Downforce", &v->defaultTuning.constantDownforce, 0.f, 5.f);
-                dirty |= ImGui::InputFloatClamp("Forward Downforce", &v->defaultTuning.forwardDownforce, 0.f, 5.f);
+                dirty |= ImGui::InputFloatClamp("Downforce", &t.constantDownforce, 0.f, 5.f);
+                dirty |= ImGui::InputFloatClamp("Forward Downforce", &t.forwardDownforce, 0.f, 5.f);
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("Transmission"))
             {
-                // TODO: gears
-                dirty |= ImGui::InputFloatClamp("Final Gear Ratio", &v->defaultTuning.finalGearRatio, 0.1f, 20.f);
-                dirty |= ImGui::InputFloatClamp("Clutch Strength", &v->defaultTuning.clutchStrength, 0.1f, 100.f);
-                dirty |= ImGui::InputFloatClamp("Gear Switch Delay", &v->defaultTuning.gearSwitchTime, 0.f, 2.f);
-                dirty |= ImGui::InputFloatClamp("Autobox Switch Delay", &v->defaultTuning.autoBoxSwitchTime, 0.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Final Gear Ratio", &t.finalGearRatio, 0.1f, 20.f);
+                dirty |= ImGui::InputFloatClamp("Clutch Strength", &t.clutchStrength, 0.1f, 100.f);
+                dirty |= ImGui::InputFloatClamp("Gear Switch Delay", &t.gearSwitchTime, 0.f, 2.f);
+                dirty |= ImGui::InputFloatClamp("Autobox Switch Delay", &t.autoBoxSwitchTime, 0.f, 2.f);
+                const char* gearName[] = { "Reverse", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th" };
+                for (u32 i=0; i<t.gearRatios.size(); ++i)
+                {
+                    ImGui::SetNextItemWidth(164.f);
+                    ImGui::InputFloatClamp(gearName[i], &t.gearRatios[i], i == 0 ? -10.f : 0.1f, i == 0 ? -0.1f : 10.f);
+                }
+                if (ImGui::Button("Add Gear"))
+                {
+                    t.gearRatios.push(0.f);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Remove Gear") && t.gearRatios.size() > 2)
+                {
+                    t.gearRatios.pop();
+                }
                 ImGui::TreePop();
             }
         }

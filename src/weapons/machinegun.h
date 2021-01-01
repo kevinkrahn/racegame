@@ -21,7 +21,8 @@ public:
         info.price = 1000;
         info.maxUpgradeLevel = 5;
         info.weaponType = WeaponType::FRONT_WEAPON;
-        info.weaponClasses = WeaponClass::HOOD1 | WeaponClass::NARROW;
+        info.tags[0] = "hood-1";
+        info.tags[1] = "narrow";
 
         ammoUnitCount = 12;
         fireMode = FireMode::CONTINUOUS;

@@ -1192,9 +1192,9 @@ void Menu::createMainGarageMenu()
     for (u32 i=0; i<garage.driver->getVehicleData()->weaponSlots.size(); ++i)
     {
         i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
-        WeaponSlot slot = garage.driver->getVehicleData()->weaponSlots[i];
-        addButton(slot.name, "Install or upgrade a weapon.", {x,y}, size, [this, slot, i]{
-            createWeaponsMenu(slot.weaponType, slot.weaponClasses,
+        WeaponSlot& slot = garage.driver->getVehicleData()->weaponSlots[i];
+        addButton(slot.name.data(), "Install or upgrade a weapon.", {x,y}, size, [this, slot, i]{
+            createWeaponsMenu(slot,
                     garage.previewVehicleConfig.weaponIndices[i],
                     garage.previewVehicleConfig.weaponUpgradeLevel[i]);
         }, WidgetFlags::TRANSIENT | WidgetFlags::FADE_OUT_TRANSIENT,
@@ -1764,7 +1764,7 @@ void Menu::createCarLotMenu()
     }
 }
 
-void Menu::createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weaponSlot, u32& upgradeLevel)
+void Menu::createWeaponsMenu(WeaponSlot const& slot, i32& weaponIndex, u32& upgradeLevel)
 {
 	resetTransient();
 
@@ -1775,14 +1775,14 @@ void Menu::createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weapon
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 
     selectedWidget = addButton("SELL", "Sell the currently equipped item for half the original value.",
-        {280, 350-buttonSize.y*0.5f-buttonSize.y-12}, buttonSize, [this, &weaponSlot, &upgradeLevel]{
-        garage.driver->credits += g_weapons[weaponSlot].info.price / 2;
+        {280, 350-buttonSize.y*0.5f-buttonSize.y-12}, buttonSize, [this, &weaponIndex, &upgradeLevel]{
+        garage.driver->credits += g_weapons[weaponIndex].info.price / 2;
         upgradeLevel -= 1;
         // TODO: use different sound for selling
         g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
         if (upgradeLevel == 0)
         {
-            weaponSlot = -1;
+            weaponIndex = -1;
         }
     }, WidgetFlags::TRANSIENT, nullptr, [&upgradeLevel]{
         return upgradeLevel > 0;
@@ -1798,7 +1798,7 @@ void Menu::createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weapon
     for (i32 i=0; i<(i32)g_weapons.size(); ++i)
     {
         auto& weapon = g_weapons[i];
-        if (weapon.info.weaponType != weaponType || (weapon.info.weaponClasses & weaponClass) != weaponClass)
+        if (weapon.info.weaponType != slot.weaponType || slot.matchesWeapon(weapon.info))
         {
             continue;
         }
@@ -1806,17 +1806,17 @@ void Menu::createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weapon
                           y + (buttonCount / buttonsPerRow) * (size.y + gap) };
         ++buttonCount;
         Widget* w = addImageButton(weapon.info.name, weapon.info.description, pos, size,
-            [i, this, &weaponSlot, &upgradeLevel]{
-            u32 weaponUpgradeLevel = (weaponSlot == i) ? upgradeLevel: 0;
+            [i, this, &weaponIndex, &upgradeLevel]{
+            u32 weaponUpgradeLevel = (weaponIndex == i) ? upgradeLevel: 0;
             bool isPurchasable = garage.driver->credits >= g_weapons[i].info.price
                 && weaponUpgradeLevel < g_weapons[i].info.maxUpgradeLevel
-                && (weaponSlot == -1 || weaponSlot == i);
+                && (weaponIndex == -1 || weaponIndex == i);
             if (isPurchasable)
             {
                 // TODO: Play sound that is more appropriate for a weapon
                 g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
                 garage.driver->credits -= g_weapons[i].info.price;
-                weaponSlot = i;
+                weaponIndex = i;
                 upgradeLevel += 1;
             }
             else
@@ -1824,13 +1824,13 @@ void Menu::createWeaponsMenu(WeaponType weaponType, u32 weaponClass, i32& weapon
                 g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
             }
         }, WidgetFlags::TRANSIENT, weapon.info.icon, 48,
-            [i, this, &weaponSlot, &upgradeLevel](bool isSelected) -> ImageButtonInfo {
-            u32 weaponUpgradeLevel = (weaponSlot == i) ? upgradeLevel: 0;
+            [i, this, &weaponIndex, &upgradeLevel](bool isSelected) -> ImageButtonInfo {
+            u32 weaponUpgradeLevel = (weaponIndex == i) ? upgradeLevel: 0;
             bool isPurchasable = garage.driver->credits >= g_weapons[i].info.price
                 && weaponUpgradeLevel < g_weapons[i].info.maxUpgradeLevel
-                && (weaponSlot == -1 || weaponSlot == i);
+                && (weaponIndex == -1 || weaponIndex == i);
             return ImageButtonInfo{
-                isPurchasable, weaponSlot == i, (i32)g_weapons[i].info.maxUpgradeLevel,
+                isPurchasable, weaponIndex == i, (i32)g_weapons[i].info.maxUpgradeLevel,
                 (i32)weaponUpgradeLevel, tmpStr("%i", g_weapons[i].info.price) };
         });
 

@@ -12,8 +12,8 @@ public:
         description = "Not really a sportscar.";
         price = 10000;
         weaponSlots = {
-            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::HOOD1 },
-            { "ROOF WEAPON", WeaponType::FRONT_WEAPON, WeaponClass::ROOF1 },
+            { "FRONT WEAPON", WeaponType::FRONT_WEAPON, tags("hood-1") },
+            { "ROOF WEAPON", WeaponType::FRONT_WEAPON, tags("roof-1") },
             { "REAR WEAPON", WeaponType::REAR_WEAPON },
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };
