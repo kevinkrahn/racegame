@@ -13,6 +13,7 @@ enum struct ResourceType
     MATERIAL = 6,
     AI_DRIVER_DATA = 7,
     VINYL_PATTERN = 8,
+    VEHICLE = 9,
 };
 
 inline u32 mapHash(ResourceType val)

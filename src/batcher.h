@@ -53,4 +53,10 @@ public:
             batch.material->draw(rw, transform, &batch.mesh);
         }
     }
+
+    Batcher() {}
+    Batcher(Batcher const&) = delete;
+    Batcher(Batcher &&) = default;
+    Batcher& operator = (Batcher const&) = delete;
+    Batcher& operator = (Batcher &&) = default;
 };

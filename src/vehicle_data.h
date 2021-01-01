@@ -53,47 +53,80 @@ struct VehicleStats
     f32 offroad = 0.f;
 };
 
+enum struct VehicleDifferentialType
+{
+    OPEN_FWD,
+    OPEN_RWD,
+    OPEN_4WD,
+    LS_FWD,
+    LS_RWD,
+    LS_4WD,
+    MAX
+};
+
+const char* g_diffTypeNames[] = {
+    "Open FWD",
+    "Open RWD",
+    "Open 4WD",
+    "Limited Slip FWD",
+    "Limited Slip RWD",
+    "Limited Slip 4WD",
+};
+
+enum struct PerformanceUpgradeType
+{
+    ENGINE,
+    ARMOR,
+    TIRES,
+    SUSPENSION,
+    AERODYNAMICS,
+    TRANSMISSION,
+    WEIGHT_REDUCTION,
+    ALL_WHEEL_DRIVE,
+};
+
+struct PerformanceUpgrade
+{
+    const char* name;
+    const char* description;
+    Texture* icon;
+    PerformanceUpgradeType upgradeType;
+    i32 maxUpgradeLevel = 5;
+    i32 price;
+
+    void serialize(Serializer& s)
+    {
+        s.field(maxUpgradeLevel);
+        s.field(price);
+    }
+};
+
 struct VehicleTuning
 {
-    Array<VehicleCollisionsMesh> collisionMeshes;
-
     f32 chassisMass = 1400.f;
     Vec3 centerOfMass = { 0.f, 0.f, -0.2f };
-
-    f32 wheelMassFront = 30.f;
-    f32 wheelWidthFront = 0.4f;
-    f32 wheelRadiusFront = 0.6f;
-    f32 wheelMassRear = 30.f;
-    f32 wheelWidthRear = 0.4f;
-    f32 wheelRadiusRear = 0.6f;
 
     f32 wheelDampingRate = 0.25f;
     f32 wheelOffroadDampingRate = 15.f;
     f32 trackTireFriction = 3.f;
     f32 offroadTireFriction = 2.f;
-    f32 frontToeAngle = 0.f;
-    f32 rearToeAngle = 0.f;
 
-    f32 rearTireGripPercent = 1.f;
     f32 topSpeed = 33.f;
     f32 constantDownforce = 0.005f;
     f32 forwardDownforce = 0.005f;
     f32 driftBoost = 0.f;
+    f32 rearTireGripPercent = 1.f;
 
     f32 maxEngineOmega = 600.f;
     f32 peekEngineTorque = 800.f;
     f32 engineDampingFullThrottle = 0.15f;
     f32 engineDampingZeroThrottleClutchEngaged = 2.f;
     f32 engineDampingZeroThrottleClutchDisengaged = 0.35f;
-    f32 maxHandbrakeTorque = 10000.f;
     f32 maxBrakeTorque = 10000.f;
-    f32 maxSteerAngle = PI * 0.33f;
-    f32 clutchStrength = 10.f;
-    f32 gearSwitchTime = 0.2f;
-    f32 autoBoxSwitchTime = 0.25f;
+    f32 maxSteerAngleDegrees = 60.f;
 
     // reverse, neutral, first, second, third...
-    SmallArray<f32, 12> gearRatios = { -4.f, 0.f, 4.f, 2.f, 1.5f, 1.1f, 1.f };
+    SmallArray<f32, 10> gearRatios;
     f32 finalGearRatio = 4.f;
 
     f32 suspensionMaxCompression = 0.2f;
@@ -110,13 +143,60 @@ struct VehicleTuning
 
     f32 ackermannAccuracy = 1.f;
 
-    PxVehicleDifferential4WData::Enum differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+    VehicleDifferentialType differential = VehicleDifferentialType::LS_RWD;
 
-    Vec3 wheelPositions[NUM_WHEELS];
+    f32 maxHitPoints = 100.f;
 
+    // not very useful values
+    f32 wheelMassFront = 30.f;
+    f32 wheelMassRear = 30.f;
+    f32 frontToeAngle = 0.f;
+    f32 rearToeAngle = 0.f;
+    f32 clutchStrength = 10.f;
+    f32 gearSwitchTime = 0.2f;
+    f32 autoBoxSwitchTime = 0.25f;
+    f32 maxHandbrakeTorque = 10000.f;
+
+    // these values are computed or derived from model
     f32 collisionWidth = 0.f;
     f32 collisionLength = 0.f;
-    f32 maxHitPoints;
+    Vec3 wheelPositions[NUM_WHEELS] = {};
+    Array<VehicleCollisionsMesh> collisionMeshes;
+    f32 wheelWidthRear = 0.4f;
+    f32 wheelRadiusRear = 0.6f;
+    f32 wheelWidthFront = 0.4f;
+    f32 wheelRadiusFront = 0.6f;
+    Mat4 weaponMounts[3] = {
+        Mat4::translation({ 3.f, 0.f, 0.6f }),
+        Mat4::translation({ 0.f, 0.f, 2.f }),
+        Mat4::translation({ -2.f, 0.f, 2.f }),
+    };
+    SmallArray<VehicleMesh, 10> wheelMeshes[NUM_WHEELS];
+    Array<VehicleMesh> debrisChunks;
+    Batcher chassisBatch;
+    Batcher chassisOneMaterialBatch;
+
+    VehicleTuning()
+    {
+        gearRatios.push(-4.f);
+        gearRatios.push(0.f);
+        gearRatios.push(4.f);
+        gearRatios.push(2.f);
+        gearRatios.push(1.5f);
+        gearRatios.push(1.1f);
+        gearRatios.push(1.f);
+    }
+
+    VehicleTuning(VehicleTuning const&) = delete;
+    VehicleTuning(VehicleTuning &&) = default;
+    VehicleTuning& operator = (VehicleTuning const&) = delete;
+    VehicleTuning& operator = (VehicleTuning &&) = default;
+
+    void copy(VehicleTuning* dest)
+    {
+        // this is not great
+        memcpy(dest, this, sizeof(VehicleTuning));
+    }
 
     f32 getRestOffset() const
     {
@@ -125,6 +205,62 @@ struct VehicleTuning
     }
 
     VehicleStats computeVehicleStats();
+
+    void serialize(Serializer& s)
+    {
+        s.field(chassisMass);
+        s.field(centerOfMass);
+
+        s.field(wheelDampingRate);
+        s.field(wheelOffroadDampingRate);
+        s.field(trackTireFriction);
+        s.field(offroadTireFriction);
+
+        s.field(topSpeed);
+        s.field(constantDownforce);
+        s.field(forwardDownforce);
+        s.field(driftBoost);
+        s.field(rearTireGripPercent);
+
+        s.field(maxEngineOmega);
+        s.field(peekEngineTorque);
+        s.field(engineDampingFullThrottle);
+        s.field(engineDampingZeroThrottleClutchEngaged);
+        s.field(engineDampingZeroThrottleClutchDisengaged);
+        s.field(maxBrakeTorque);
+        s.field(maxSteerAngleDegrees);
+
+        s.field(gearRatios);
+        s.field(finalGearRatio);
+
+        s.field(suspensionMaxCompression);
+        s.field(suspensionMaxDroop);
+        s.field(suspensionSpringStrength);
+        s.field(suspensionSpringDamperRate);
+
+        s.field(camberAngleAtRest);
+        s.field(camberAngleAtMaxDroop);
+        s.field(camberAngleAtMaxCompression);
+
+        s.field(frontAntiRollbarStiffness);
+        s.field(rearAntiRollbarStiffness);
+
+        s.field(ackermannAccuracy);
+
+        s.field(differential);
+
+        s.field(maxHitPoints);
+
+        // less useful values
+        f32 wheelMassFront = 30.f;
+        f32 wheelMassRear = 30.f;
+        f32 frontToeAngle = 0.f;
+        f32 rearToeAngle = 0.f;
+        f32 clutchStrength = 10.f;
+        f32 gearSwitchTime = 0.2f;
+        f32 autoBoxSwitchTime = 0.25f;
+        f32 maxHandbrakeTorque = 10000.f;
+    }
 };
 
 struct VehicleCosmeticConfiguration
@@ -202,73 +338,55 @@ struct VehicleConfiguration
     }
 };
 
-enum struct PerformanceUpgradeType
+struct VehicleData : public Resource
 {
-    ENGINE,
-    ARMOR,
-    TIRES,
-    SUSPENSION,
-    AERODYNAMICS,
-    TRANSMISSION,
-    WEIGHT_REDUCTION,
-    ALL_WHEEL_DRIVE,
-};
+protected:
+    virtual void initializeTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) {}
 
-struct PerformanceUpgrade
-{
-    const char* name;
-    const char* description;
-    Texture* icon;
-    PerformanceUpgradeType upgradeType;
-    i32 maxUpgradeLevel = 5;
-    i32 price;
-};
+public:
+    VehicleTuning defaultTuning;
 
-struct VehicleData
-{
-    Batcher chassisBatch;
-    Batcher chassisOneMaterialBatch;
-
-    SmallArray<VehicleMesh, 10> wheelMeshes[NUM_WHEELS];
-
-    Vec3 wheelPositions[NUM_WHEELS] = {};
-    Mat4 weaponMounts[3] = {
-        Mat4::translation({ 3.f, 0.f, 0.6f }),
-        Mat4::translation({ 0.f, 0.f, 2.f }),
-        Mat4::translation({ -2.f, 0.f, 2.f }),
-    };
-    SmallArray<Mat4> exhaustHoles;
-    f32 frontWheelMeshRadius = 0.f;
-    f32 frontWheelMeshWidth = 0.f;
-    f32 rearWheelMeshRadius = 0.f;
-    f32 rearWheelMeshWidth = 0.f;
-    f32 collisionWidth = 0.f;
-    f32 collisionLength = 0.f;
-    Vec3 sceneCenterOfMass = Vec3(0.f);
-
-    Array<VehicleCollisionsMesh> collisionMeshes;
-    Array<PerformanceUpgrade> availableUpgrades;
-
-    Str32 name ="";
     Str64 description ="";
     Vec3 defaultColorHsv = Vec3(0.f, 0.f, 0.95f);
+    f32 defaultShininess = 1.f;
     i32 price = 0;
+    Array<PerformanceUpgrade> availableUpgrades;
     SmallArray<WeaponSlot, 4> weaponSlots;
+    i64 modelGuid;
 
-    Array<VehicleMesh> debrisChunks;
+    // not serialized
+    SmallArray<Mat4> exhaustHoles;
+
+    void serialize(Serializer& s)
+    {
+        Resource::serialize(s);
+
+        s.field(defaultTuning);
+        s.field(description);
+        s.field(defaultColorHsv);
+        s.field(defaultShininess);
+        s.field(price);
+        s.field(weaponSlots);
+        s.field(availableUpgrades);
+        s.field(modelGuid);
+    }
 
     virtual ~VehicleData() {}
     virtual void render(class RenderWorld* rw, Mat4 const& transform,
-            Mat4* wheelTransforms, VehicleConfiguration& config,
+            Mat4* wheelTransforms, VehicleConfiguration& config, VehicleTuning* tuning=nullptr,
             class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false,
             Vec4 const& shield={0,0,0,0});
     virtual void renderDebris(class RenderWorld* rw,
             Array<VehicleDebris> const& debris, VehicleConfiguration& config);
 
-    virtual void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) = 0;
-    void loadModelData(const char* modelName);
-    void copySceneDataToTuning(VehicleTuning& tuning);
+    void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning)
+    {
+        defaultTuning.copy(&tuning);
+        initializeTuning(configuration, tuning);
+    }
+    void loadModelData(const char* modelName, VehicleTuning& tuning);
     void initStandardUpgrades();
+
     u32 getWeaponSlotCount(WeaponType weaponType)
     {
         u32 count = 0;
@@ -316,6 +434,7 @@ template <typename T>
 void registerVehicle()
 {
     g_vehicles.push(new T);
+    g_vehicles.back()->guid = g_res.generateGUID();
 }
 
 void initializeVehicleData();

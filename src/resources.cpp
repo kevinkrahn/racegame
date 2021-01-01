@@ -18,6 +18,8 @@
 #include "editor/ai_editor.h"
 #include "vinyl_pattern.h"
 #include "editor/vinyl_pattern_editor.h"
+#include "vehicle_data.h"
+#include "editor/vehicle_editor.h"
 
 void Resources::initResourceTypes()
 {
@@ -30,6 +32,8 @@ void Resources::initResourceTypes()
     registerResourceType<AIDriverData, AIEditor>(ResourceType::AI_DRIVER_DATA, "AI Driver", "ai_icon", ResourceFlags::NONE);
     // TODO: use different icon
     registerResourceType<VinylPattern, VinylPatternEditor>(ResourceType::VINYL_PATTERN, "Vinyl Pattern", "ai_icon", ResourceFlags::NONE);
+    // TODO: use different icon
+    registerResourceType<VehicleData, VehicleEditor>(ResourceType::VEHICLE, "Vehicle", "ai_icon", ResourceFlags::NONE);
 }
 
 Resource* Resources::newResource(ResourceType type, bool makeGUID)

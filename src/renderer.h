@@ -221,7 +221,7 @@ class RenderWorld
     void partitionPointLights(u32 viewportIndex);
 
 public:
-    RenderWorld() {}
+    RenderWorld() { cameras.resize(1); }
     RenderWorld(u32 width, u32 height, const char* name)
         : width(width), height(height), name(name)
     {

@@ -15,6 +15,7 @@ public:
     void serialize(Serializer& s) override
     {
         Resource::serialize(s);
+
         s.field(colorTextureGuid);
         s.field(normalTextureGuid);
         s.field(shininessTextureGuid);

@@ -202,25 +202,28 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
     }
 }
 
-void VehicleData::loadModelData(const char* modelName)
+void VehicleData::loadModelData(const char* modelName, VehicleTuning& tuning)
 {
+#if 1
     // reset values
-    collisionMeshes.clear();
-    for (u32 i=0; i<ARRAY_SIZE(wheelMeshes); ++i)
+    tuning.collisionMeshes.clear();
+    for (u32 i=0; i<ARRAY_SIZE(tuning.wheelMeshes); ++i)
     {
-        wheelMeshes[i].clear();
+        tuning.wheelMeshes[i].clear();
     }
-    debrisChunks.clear();
-    frontWheelMeshRadius = 0.f;
-    frontWheelMeshWidth = 0.f;
-    rearWheelMeshRadius = 0.f;
-    rearWheelMeshWidth = 0.f;
-    collisionWidth = 0.f;
-    collisionLength = 0.f;
-    sceneCenterOfMass = Vec3(0.f);
+    tuning.debrisChunks.clear();
+    tuning.wheelRadiusFront = 0.f;
+    tuning.wheelWidthFront = 0.f;
+    tuning.wheelRadiusRear = 0.f;
+    tuning.wheelWidthRear = 0.f;
+    tuning.collisionWidth = 0.f;
+    tuning.collisionLength = 0.f;
+    tuning.centerOfMass = Vec3(0.f);
+    exhaustHoles.clear();
+#endif
 
-    chassisBatch.begin();
-    chassisOneMaterialBatch.begin();
+    tuning.chassisBatch.begin();
+    tuning.chassisOneMaterialBatch.begin();
 
     Model* model = g_res.getModel(modelName);
 
@@ -254,7 +257,7 @@ void VehicleData::loadModelData(const char* modelName)
             shape->setSimulationFilterData(PxFilterData(COLLISION_FLAG_DEBRIS,
                         COLLISION_FLAG_TERRAIN | COLLISION_FLAG_OBJECT | COLLISION_FLAG_CHASSIS, 0, 0));
             material->release();
-            debrisChunks.push({
+            tuning.debrisChunks.push({
                 mesh,
                 transform,
                 shape,
@@ -270,74 +273,74 @@ void VehicleData::loadModelData(const char* modelName)
         if (name.find("Chassis"))
         {
             Material* mat = g_res.getMaterial(obj.materialGuid);
-            chassisBatch.add(mat, transform, mesh);
-            chassisOneMaterialBatch.add(&g_res.defaultMaterial, transform, mesh);
+            tuning.chassisBatch.add(mat, transform, mesh);
+            tuning.chassisOneMaterialBatch.add(&g_res.defaultMaterial, transform, mesh);
         }
         if (name.find("FL"))
         {
-            wheelMeshes[WHEEL_FRONT_RIGHT].push({
+            tuning.wheelMeshes[WHEEL_FRONT_RIGHT].push({
                 mesh,
                 Mat4::scaling(obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            frontWheelMeshRadius = max(frontWheelMeshRadius, obj.bounds.z * 0.5f);
-            frontWheelMeshWidth = max(frontWheelMeshWidth, obj.bounds.y * 0.98f);
-            wheelPositions[WHEEL_FRONT_RIGHT] = transform.position();
+            tuning.wheelRadiusFront = max(tuning.wheelRadiusFront, obj.bounds.z * 0.5f);
+            tuning.wheelWidthFront = max(tuning.wheelWidthFront, obj.bounds.y * 0.98f);
+            tuning.wheelPositions[WHEEL_FRONT_RIGHT] = transform.position();
         }
         else if (name.find("RL"))
         {
-            wheelMeshes[WHEEL_REAR_RIGHT].push({
+            tuning.wheelMeshes[WHEEL_REAR_RIGHT].push({
                 mesh,
                 Mat4::scaling(transform.scale()),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            rearWheelMeshRadius = max(rearWheelMeshRadius, obj.bounds.z * 0.5f);
-            rearWheelMeshWidth = max(rearWheelMeshWidth, obj.bounds.y * 0.98f);
-            wheelPositions[WHEEL_REAR_RIGHT] = transform.position();
+            tuning.wheelRadiusRear = max(tuning.wheelRadiusRear, obj.bounds.z * 0.5f);
+            tuning.wheelWidthRear = max(tuning.wheelWidthRear, obj.bounds.y * 0.98f);
+            tuning.wheelPositions[WHEEL_REAR_RIGHT] = transform.position();
         }
         else if (name.find("FR"))
         {
-            wheelMeshes[WHEEL_FRONT_LEFT].push({
+            tuning.wheelMeshes[WHEEL_FRONT_LEFT].push({
                 mesh,
                 Mat4::scaling(obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            wheelPositions[WHEEL_FRONT_LEFT] = transform.position();
+            tuning.wheelPositions[WHEEL_FRONT_LEFT] = transform.position();
         }
         else if (name.find("RR"))
         {
-            wheelMeshes[WHEEL_REAR_LEFT].push({
+            tuning.wheelMeshes[WHEEL_REAR_LEFT].push({
                 mesh,
                 Mat4::scaling(obj.scale),
                 nullptr,
                 g_res.getMaterial(obj.materialGuid),
             });
-            wheelPositions[WHEEL_REAR_LEFT] = obj.position;
+            tuning.wheelPositions[WHEEL_REAR_LEFT] = obj.position;
         }
         else if (name.find("Collision"))
         {
-            collisionMeshes.push({ mesh->getConvexCollisionMesh(), transform });
-            collisionLength = max(collisionLength, obj.bounds.x);
-            collisionWidth = max(collisionWidth, obj.bounds.y);
+            tuning.collisionMeshes.push({ mesh->getConvexCollisionMesh(), transform });
+            tuning.collisionLength = max(tuning.collisionLength, obj.bounds.x);
+            tuning.collisionWidth = max(tuning.collisionWidth, obj.bounds.y);
         }
         else if (name.find("COM"))
         {
-            sceneCenterOfMass = obj.position;
+            tuning.centerOfMass = obj.position;
         }
         else if (name.find("WeaponMount1"))
         {
-            weaponMounts[0] = Mat4::translation(obj.position) * transform.rotation();
+            tuning.weaponMounts[0] = Mat4::translation(obj.position) * transform.rotation();
         }
         else if (name.find("WeaponMount2"))
         {
-            weaponMounts[1] = Mat4::translation(obj.position) * transform.rotation();
+            tuning.weaponMounts[1] = Mat4::translation(obj.position) * transform.rotation();
         }
         else if (name.find("WeaponMount3"))
         {
-            weaponMounts[2] = Mat4::translation(obj.position) * transform.rotation();
+            tuning.weaponMounts[2] = Mat4::translation(obj.position) * transform.rotation();
         }
         else if (name.find("ExhaustHole"))
         {
@@ -345,30 +348,19 @@ void VehicleData::loadModelData(const char* modelName)
         }
     }
 
-    chassisBatch.end(true);
-    chassisOneMaterialBatch.end();
-}
-
-void VehicleData::copySceneDataToTuning(VehicleTuning& tuning)
-{
-    for (u32 i=0; i<ARRAY_SIZE(wheelPositions); ++i)
-    {
-        tuning.wheelPositions[i] = wheelPositions[i];
-    }
-    tuning.collisionWidth = collisionWidth;
-    tuning.collisionLength = collisionLength;
-    tuning.wheelWidthFront = frontWheelMeshWidth;
-    tuning.wheelWidthRear = rearWheelMeshWidth;
-    tuning.wheelRadiusFront = frontWheelMeshRadius;
-    tuning.wheelRadiusRear = rearWheelMeshRadius;
-    tuning.centerOfMass = sceneCenterOfMass;
-    tuning.collisionMeshes = collisionMeshes;
+    tuning.chassisBatch.end(true);
+    tuning.chassisOneMaterialBatch.end();
 }
 
 void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
-        Mat4* wheelTransforms, VehicleConfiguration& config, Vehicle* vehicle,
-        bool isBraking, bool isHidden, Vec4 const& shield)
+        Mat4* wheelTransforms, VehicleConfiguration& config, VehicleTuning* tuning,
+        Vehicle* vehicle, bool isBraking, bool isHidden, Vec4 const& shield)
 {
+    if (!tuning && vehicle)
+    {
+        tuning = vehicle->getTuning();
+    }
+
     Material* originalPaintMaterial = g_res.getMaterial("paint_material");
     if (config.dirty)
     {
@@ -381,7 +373,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
     {
         for (u32 i=0; i<NUM_WHEELS; ++i)
         {
-            defaultWheelTransforms[i] = Mat4::translation(this->wheelPositions[i]);
+            defaultWheelTransforms[i] = Mat4::translation(tuning->wheelPositions[i]);
         }
     }
 
@@ -394,7 +386,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
             textureGuids[i] = ((VinylPattern*)r)->colorTextureGuid;
         }
     }
-    for (auto& m : chassisBatch.batches)
+    for (auto& m : tuning->chassisBatch.batches)
     {
         if (m.material == originalPaintMaterial)
         {
@@ -408,7 +400,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
     }
     if (isHidden)
     {
-        for (auto& m : chassisOneMaterialBatch.batches)
+        for (auto& m : tuning->chassisOneMaterialBatch.batches)
         {
             g_res.defaultMaterial.drawHighlight(rw, transform, &m.mesh, 0, (u8)vehicle->cameraIndex);
         }
@@ -422,7 +414,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
             wheelTransform = wheelTransform * Mat4::rotationZ(PI);
         }
 
-        for (auto& m : wheelMeshes[i])
+        for (auto& m : tuning->wheelMeshes[i])
         {
             Mat4 transform = wheelTransform * m.transform;
             m.material->draw(rw, transform, m.mesh, 2);
@@ -456,7 +448,7 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
             {
                 auto w = g_weapons[config.weaponIndices[i]].create();
                 w->upgradeLevel = config.weaponUpgradeLevel[i];
-                w->mountTransform = weaponMounts[i];
+                w->mountTransform = tuning->weaponMounts[i];
                 w->refillAmmo();
                 w->render(rw, transform, config, *this);
             }

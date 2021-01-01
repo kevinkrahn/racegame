@@ -853,7 +853,7 @@ public:
         array(name, val, dest);
     }
 
-    template<typename T> void element(const char* name, DataFile::Value& val, SmallArray<T>& dest)
+    template<typename T, u32 N> void element(const char* name, DataFile::Value& val, SmallArray<T, N>& dest)
     {
         array(name, val, dest);
     }
@@ -872,12 +872,25 @@ public:
     }
 
     template<typename T>
-    static void toFile(T& val, const char* filename)
+    static DataFile::Value toDict(T& val)
     {
         auto data = DataFile::makeDict();
         Serializer s(data, false);
         val.serialize(s);
-        DataFile::save(data, filename);
+        return data;
+    }
+
+    template<typename T>
+    static void fromDict(DataFile::Value& data, T& val)
+    {
+        Serializer s(data, true);
+        val.serialize(s);
+    }
+
+    template<typename T>
+    static void toFile(T& val, const char* filename)
+    {
+        DataFile::save(toDict(val), filename);
     }
 
     template<typename T>
@@ -886,8 +899,7 @@ public:
         auto data = DataFile::load(filename);
         if (data.hasValue())
         {
-            Serializer s(data, true);
-            val.serialize(s);
+            fromDict(data, val);
         }
     }
 };

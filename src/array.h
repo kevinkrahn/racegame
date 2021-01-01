@@ -402,6 +402,7 @@ public:
 
     bool empty() const { return size_ == 0; }
     T* data() const { return data_; }
+    T* data() { return data_; }
     u32 size() const { return size_; }
     u32 capacity() const { return capacity_; }
 

@@ -1,12 +1,13 @@
 #pragma once
 
 #include "misc.h"
+#include "datafile.h"
 
 enum struct WeaponType
 {
     FRONT_WEAPON,
     REAR_WEAPON,
-    SPECIAL_ABILITY
+    SPECIAL_ABILITY,
 };
 
 namespace WeaponClass
@@ -20,7 +21,7 @@ namespace WeaponClass
         RACK1 = 1 << 4,
         RACK2 = 1 << 5,
 
-        NARROW = 1 << 6
+        NARROW = 1 << 6,
     };
 }
 
@@ -29,6 +30,12 @@ struct WeaponSlot
     const char* name = "";
     WeaponType weaponType = WeaponType::FRONT_WEAPON;
     u32 weaponClasses = 0;
+
+    void serialize(Serializer& s)
+    {
+        s.field(weaponType);
+        s.field(weaponClasses);
+    }
 };
 
 struct WeaponInfo

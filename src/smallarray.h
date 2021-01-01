@@ -18,6 +18,7 @@ public:
 
     SmallArray(std::initializer_list<T> list) : size_((u32)list.size())
     {
+        assert(size_ <= maxSize);
         T* ptr = data_;
         for (auto& it : list)
         {
@@ -45,6 +46,7 @@ public:
 
     explicit SmallArray(u32 size) : size_(size)
     {
+        assert(size_ <= maxSize);
         auto endPtr = data_ + size;
         for (T* ptr = data_; ptr != endPtr; ++ptr)
         {
@@ -82,6 +84,7 @@ public:
     }
 
     T* data() const { return data_; }
+    T* data() { return data_; }
     u32 size() const { return size_; }
     u32 capacity() const { return maxSize; }
 
@@ -211,6 +214,7 @@ public:
         assert(start <= end);
         clear();
         size_ = end - start;
+        assert(size_ <= maxSize);
         for (u32 i=0; i<size_; ++i)
         {
             new (data_+i) T(start[i]);

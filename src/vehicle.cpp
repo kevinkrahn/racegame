@@ -65,7 +65,7 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
             {
                 case WeaponType::FRONT_WEAPON:
                     frontWeapons.push(move(weapon));
-                    frontWeapons.back()->mountTransform = driver->getVehicleData()->weaponMounts[frontWeaponSlotCount];
+                    frontWeapons.back()->mountTransform = tuning.weaponMounts[frontWeaponSlotCount];
                     break;
                 case WeaponType::REAR_WEAPON:
                     rearWeapons.push(move(weapon));
@@ -294,8 +294,8 @@ void Vehicle::onRender(RenderWorld* rw, f32 deltaTime)
     }
     Mat4 transform = vehiclePhysics.getTransform();
     driver->getVehicleData()->render(rw, transform,
-            wheelTransforms, *driver->getVehicleConfig(), this, isBraking, cameraIndex >= 0,
-            Vec4(shieldColor, shieldStrength));
+            wheelTransforms, *driver->getVehicleConfig(), nullptr, this, isBraking,
+            cameraIndex >= 0, Vec4(shieldColor, shieldStrength));
     driver->getVehicleData()->renderDebris(rw, vehicleDebris,
             *driver->getVehicleConfig());
 }
@@ -937,7 +937,7 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
 void Vehicle::blowUp(f32 respawnTime)
 {
     Mat4 transform = vehiclePhysics.getTransform();
-    for (auto& d : g_vehicles[driver->vehicleIndex]->debrisChunks)
+    for (auto& d : tuning.debrisChunks)
     {
         PxRigidDynamic* body = g_game.physx.physics->createRigidDynamic(
                 PxTransform(convert(transform * d.transform)));

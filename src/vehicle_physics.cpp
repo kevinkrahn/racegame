@@ -321,8 +321,8 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform
     wheels[WHEEL_REAR_RIGHT].mToeAngle = -tuning.rearToeAngle;
     wheels[WHEEL_REAR_LEFT].mMaxHandBrakeTorque  = tuning.maxHandbrakeTorque;
     wheels[WHEEL_REAR_RIGHT].mMaxHandBrakeTorque = tuning.maxHandbrakeTorque;
-    wheels[WHEEL_FRONT_LEFT].mMaxSteer = tuning.maxSteerAngle;
-    wheels[WHEEL_FRONT_RIGHT].mMaxSteer = tuning.maxSteerAngle;
+    wheels[WHEEL_FRONT_LEFT].mMaxSteer = radians(tuning.maxSteerAngleDegrees);
+    wheels[WHEEL_FRONT_RIGHT].mMaxSteer = radians(tuning.maxSteerAngleDegrees);
 
     PxVehicleTireData tires[NUM_WHEELS] = { };
     tires[WHEEL_FRONT_LEFT].mType = 0;
@@ -408,7 +408,30 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform
 
     PxVehicleDriveSimData4W driveSimData;
     PxVehicleDifferential4WData diff;
-    diff.mType = tuning.differential;
+    switch (tuning.differential)
+    {
+        case VehicleDifferentialType::OPEN_FWD:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
+            break;
+        case VehicleDifferentialType::OPEN_RWD:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
+            break;
+        case VehicleDifferentialType::OPEN_4WD:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_4WD;
+            break;
+        case VehicleDifferentialType::LS_FWD:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_FRONTWD;
+            break;
+        case VehicleDifferentialType::LS_RWD:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+            break;
+        case VehicleDifferentialType::LS_4WD:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+            break;
+        default:
+            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+            break;
+    }
     driveSimData.setDiffData(diff);
 
     PxVehicleEngineData engine;

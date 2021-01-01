@@ -6,18 +6,24 @@
 
 class AIEditor : public ResourceEditor
 {
-    Array<OwnedPtr<RenderWorld>> renderWorlds;
+    struct VehicleRenderData
+    {
+        RenderWorld rw;
+        VehicleTuning tuning;
+    };
+    Array<OwnedPtr<VehicleRenderData>> vehicleRenderData;
 
 public:
     ~AIEditor()
     {
-        for (auto& rw : renderWorlds)
+        for (auto& rd : vehicleRenderData)
         {
-            rw->destroy();
+            rd->rw.destroy();
         }
     }
 
-    bool drawVehiclePreview(Renderer* renderer, RenderWorld& rw, AIVehicleConfiguration& ai)
+    bool drawVehiclePreview(Renderer* renderer, RenderWorld& rw, VehicleTuning& tuning,
+            AIVehicleConfiguration& ai)
     {
         bool dirty = false;
 
@@ -36,9 +42,8 @@ public:
         if (ai.vehicleIndex != -1)
         {
             VehicleData* vehicle = g_vehicles[ai.vehicleIndex].get();
-            VehicleTuning tuning;
-            vehicle->initTuning(ai.config, tuning);
-            vehicle->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())), nullptr, ai.config);
+            vehicle->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())),
+                    nullptr, ai.config, &tuning, nullptr, false, false, Vec4(0));
             renderer->addRenderWorld(&rw);
 
             vehicleName = vehicle->name.data();
@@ -58,6 +63,7 @@ public:
                 if (ImGui::Selectable(g_vehicles[i]->name.data()))
                 {
                     ai.vehicleIndex = i;
+                    g_vehicles[ai.vehicleIndex]->initTuning(ai.config, tuning);
                     dirty = true;
                 }
                 if (isSelected)
@@ -170,7 +176,9 @@ public:
         AIDriverData& ai = *(AIDriverData*)r;
         for (auto& v : ai.vehicles)
         {
-            renderWorlds.push(new RenderWorld());
+            vehicleRenderData.push(new VehicleRenderData());
+            g_vehicles[v.vehicleIndex]->initTuning(
+                    v.config, vehicleRenderData.back()->tuning);
         }
     }
 
@@ -203,19 +211,18 @@ public:
                 {
                     if (ImGui::MenuItem("Duplicate"))
                     {
-                        DataFile::Value data = DataFile::makeDict();
-                        Serializer s(data, false);
-                        ai.vehicles[i].serialize(s);
+                        auto data = Serializer::toDict(ai.vehicles[i]);
                         ai.vehicles.push({});
-                        s.deserialize = true;
-                        ai.vehicles.back().serialize(s);
-                        renderWorlds.push(new RenderWorld());
+                        Serializer::fromDict(data, ai.vehicles.back());
+                        vehicleRenderData.push(new VehicleRenderData());
+                        g_vehicles[ai.vehicles.back().vehicleIndex]->initTuning(
+                                ai.vehicles.back().config, vehicleRenderData.back()->tuning);
                     }
                     if (ImGui::MenuItem("Delete"))
                     {
                         ai.vehicles.erase(ai.vehicles.begin() + i);
-                        renderWorlds[i]->destroy();
-                        renderWorlds.erase(renderWorlds.begin() + i);
+                        vehicleRenderData[i]->rw.destroy();
+                        vehicleRenderData.erase(vehicleRenderData.begin() + i);
                         dirty = true;
                         ImGui::EndPopup();
                         if (isOpen)
@@ -228,7 +235,8 @@ public:
                 }
                 if (isOpen)
                 {
-                    dirty |= drawVehiclePreview(renderer, *renderWorlds[i], ai.vehicles[i]);
+                    dirty |= drawVehiclePreview(renderer, vehicleRenderData[i]->rw,
+                            vehicleRenderData[i]->tuning, ai.vehicles[i]);
                     if (dirty)
                     {
                         ai.vehicles[i].config.reloadMaterials();
@@ -249,7 +257,7 @@ public:
                 ai.vehicles.back().purchaseActions.push({ PurchaseActionType::WEAPON, 1, 2 });
                 ai.vehicles.back().purchaseActions.push({ PurchaseActionType::PERFORMANCE, 2, 2 });
                 ai.vehicles.back().purchaseActions.push({ PurchaseActionType::PERFORMANCE, 0, 2 });
-                renderWorlds.push(new RenderWorld());
+                vehicleRenderData.push(new VehicleRenderData());
             }
         }
         ImGui::End();

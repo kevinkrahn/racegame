@@ -16,8 +16,6 @@ public:
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };
 
-        loadModelData("vehicle_truck");
-
         // TODO: add upgrade icons
         availableUpgrades = {
             {
@@ -47,13 +45,13 @@ public:
         };
     }
 
-    void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
+    void initializeTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
     {
-        copySceneDataToTuning(tuning);
+        loadModelData("vehicle_truck", tuning);
 
         tuning.maxHitPoints = 175;
 
-        tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+        tuning.differential = VehicleDifferentialType::LS_4WD;
         tuning.chassisMass = 2090;
         tuning.wheelMassFront = 25;
         tuning.wheelMassRear = 25;
@@ -76,7 +74,7 @@ public:
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 6000.f;
-        tuning.maxSteerAngle = radians(48.f);
+        tuning.maxSteerAngleDegrees = 48.f;
         tuning.clutchStrength = 4.f;
         tuning.gearSwitchTime = 0.2f;
         tuning.autoBoxSwitchTime = 0.8f;

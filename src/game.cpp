@@ -16,7 +16,7 @@ void Game::initPhysX()
     public:
         virtual void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line)
         {
-            error(file, ": ", line, ": ", message, '\n');
+            error("%s: %i: %s\n", file, line, message);
         }
     } errorCallback;
 

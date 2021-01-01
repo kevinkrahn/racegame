@@ -141,6 +141,8 @@ public:
     void openResource(Resource* resource);
     void closeResource(Resource* resource);
     void saveResources();
+    // TODO: implement
+    bool chooseResource(ResourceType resourceType, i64 current, const char* name);
     bool chooseTexture(i32 type, i64& currentTexture, const char* name);
 
     Resource* getOpenedResource(ResourceType resourceType)

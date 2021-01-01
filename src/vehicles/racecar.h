@@ -15,17 +15,15 @@ public:
             { "REAR WEAPON", WeaponType::REAR_WEAPON },
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };
-
-        loadModelData("vehicle_racecar");
     }
 
-    void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
+    void initializeTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
     {
-        copySceneDataToTuning(tuning);
+        loadModelData("vehicle_racecar", tuning);
 
         tuning.maxHitPoints = 150;
 
-        tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+        tuning.differential = VehicleDifferentialType::LS_RWD;
         tuning.chassisMass = 1100;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
@@ -48,7 +46,7 @@ public:
         tuning.engineDampingZeroThrottleClutchEngaged = 3.f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.8f;
         tuning.maxBrakeTorque = 15000.f;
-        tuning.maxSteerAngle = radians(45.f);
+        tuning.maxSteerAngleDegrees = 45.f;
         tuning.clutchStrength = 12.f;
         tuning.gearSwitchTime = 0.04f;
         tuning.autoBoxSwitchTime = 0.5f;

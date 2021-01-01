@@ -926,9 +926,9 @@ void Menu::updateVehiclePreviews()
         Driver& driver = g_game.state.drivers[driverIndex];
         if (driver.vehicleIndex != -1)
         {
-            driver.getVehicleData()->render(&rw,
-                Mat4::translation(Vec3(0, 0, driver.getTuning().getRestOffset())),
-                nullptr, *driver.getVehicleConfig());
+            VehicleTuning t = driver.getTuning();
+            driver.getVehicleData()->render(&rw, Mat4::translation(Vec3(0, 0, t.getRestOffset())),
+                nullptr, *driver.getVehicleConfig(), &t);
         }
         rw.setViewportCount(1);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
@@ -1156,7 +1156,7 @@ void Menu::createVehiclePreview()
         Mat4 vehicleTransform = Mat4::rotationZ((f32)getTime());
         g_vehicles[garage.previewVehicleIndex]->render(&rw, Mat4::translation(
                 Vec3(0, 0, garage.previewTuning.getRestOffset())) *
-            vehicleTransform, nullptr, garage.previewVehicleConfig);
+            vehicleTransform, nullptr, garage.previewVehicleConfig, &garage.previewTuning);
         rw.setViewportCount(1);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
         rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
@@ -1719,7 +1719,7 @@ void Menu::createCarLotMenu()
         f32 vehicleAngle = 0.f;
         Mat4 vehicleTransform = Mat4::rotationZ(vehicleAngle);
         g_vehicles[i]->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())) *
-            vehicleTransform, nullptr, vehicleConfig);
+            vehicleTransform, nullptr, vehicleConfig, &tuning);
         rw.setViewportCount(1);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
         rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);

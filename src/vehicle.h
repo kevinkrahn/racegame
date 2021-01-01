@@ -187,6 +187,7 @@ public:
     void onTrigger(ActorUserData* userData);
 
     VehiclePhysics* getVehiclePhysics() { return &vehiclePhysics; }
+    VehicleTuning* getTuning() { return &tuning; }
     Mat4 getTransform() { return vehiclePhysics.getTransform(); }
     f32 getForwardSpeed() { return vehiclePhysics.getForwardSpeed(); }
     PxRigidBody* getRigidBody() { return vehiclePhysics.getRigidBody(); }

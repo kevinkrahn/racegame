@@ -17,9 +17,7 @@ public:
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };
 
-        loadModelData("model_mini");
         initStandardUpgrades();
-
         availableUpgrades.push({
             "AWD Conversion",
             "Converts the differential to all-wheel-drive\nto improve grip and acceleration.",
@@ -30,13 +28,13 @@ public:
         });
     }
 
-    void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
+    void initializeTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
     {
-        copySceneDataToTuning(tuning);
+        loadModelData("model_mini", tuning);
 
         tuning.maxHitPoints = 100;
 
-        tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
+        tuning.differential = VehicleDifferentialType::OPEN_FWD;
         tuning.chassisMass = 1300;
         tuning.wheelMassFront = 20;
         tuning.wheelMassRear = 20;
@@ -59,7 +57,7 @@ public:
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 4000.f;
-        tuning.maxSteerAngle = radians(48.f);
+        tuning.maxSteerAngleDegrees = 48.f;
         tuning.clutchStrength = 5.f;
         tuning.gearSwitchTime = 0.11f;
         tuning.autoBoxSwitchTime = 0.6f;
@@ -106,7 +104,7 @@ public:
                     tuning.chassisMass -= 70.f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::ALL_WHEEL_DRIVE:
-                    tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+                    tuning.differential = VehicleDifferentialType::LS_4WD;
                     tuning.peekEngineTorque += 5.f;
                     break;
                 default:

@@ -16,18 +16,16 @@ public:
             { "PASSIVE ABILITY", WeaponType::SPECIAL_ABILITY },
         };
         defaultColorHsv = Vec3(1.f, 0.85f, 0.3f);
-
-        loadModelData("vehicle_muscle");
         initStandardUpgrades();
     }
 
-    void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
+    void initializeTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) override
     {
-        copySceneDataToTuning(tuning);
+        loadModelData("vehicle_muscle", tuning);
 
         tuning.maxHitPoints = 110;
 
-        tuning.differential = PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
+        tuning.differential = VehicleDifferentialType::OPEN_RWD;
         tuning.chassisMass = 1550;
         tuning.wheelMassFront = 15;
         tuning.wheelMassRear = 15;
@@ -52,7 +50,7 @@ public:
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
         tuning.maxBrakeTorque = 6000.f;
-        tuning.maxSteerAngle = radians(52.f);
+        tuning.maxSteerAngleDegrees = 52.f;
         tuning.clutchStrength = 5.f;
         tuning.gearSwitchTime = 0.16f;
         tuning.autoBoxSwitchTime = 1.2f;
