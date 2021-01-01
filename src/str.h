@@ -1,9 +1,9 @@
 #pragma once
 
-#include <utility>
 #include <string.h>
 #include <stb_sprintf.h>
 #include "math.h"
+#include "template_magic.h"
 
 template <u32 SIZE>
 class Str

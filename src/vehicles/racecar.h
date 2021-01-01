@@ -41,7 +41,7 @@ public:
         tuning.driftBoost = 0.f;
 
         tuning.maxEngineOmega = 950.f;
-        tuning.peekEngineTorque = 2250.f;
+        tuning.peakEngineTorque = 2250.f;
         tuning.engineDampingFullThrottle = 0.14f;
         tuning.engineDampingZeroThrottleClutchEngaged = 3.f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.8f;

@@ -232,4 +232,4 @@ else:
     if build(args.build_type):
         subprocess.run([os.path.abspath(os.path.join('bin', 'game'))], cwd=os.path.abspath('bin'))
 
-print('Took {:.2f} seconds'.format(time.time() - start_time))
+print('Total runtime: {:.2f} seconds'.format(time.time() - start_time))

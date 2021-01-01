@@ -12,7 +12,7 @@ class Array
 
     void reallocate()
     {
-        if constexpr (std::is_trivial<T>::value)
+        if constexpr (IsArithmetic<T>::value)
         {
             data_ = (T*)realloc(data_, capacity_ * sizeof(T));
         }
@@ -81,7 +81,7 @@ public:
     explicit Array(u32 size) : size_(size), capacity_(size)
     {
         reallocate();
-        if constexpr (!std::is_trivial<T>::value)
+        if constexpr (!IsArithmetic<T>::value)
         {
             auto endPtr = data_ + size;
             for (T* ptr = data_; ptr != endPtr; ++ptr)
@@ -128,7 +128,7 @@ public:
     ~Array()
     {
         u32 count = 0;
-        if constexpr (!std::is_trivial<T>::value)
+        if constexpr (!IsArithmetic<T>::value)
         {
             for (auto& l : *this)
             {
@@ -157,7 +157,7 @@ public:
         clear();
         size_ = end - start;
         reserve(size_);
-        if constexpr (std::is_trivial<T>::value)
+        if constexpr (IsArithmetic<T>::value)
         {
             memcpy(data_, start, size_ * sizeof(T));
         }
@@ -192,7 +192,7 @@ public:
         assert(index <= size_);
         ensureCapacity();
         auto ptr = data_+index;
-        if constexpr (std::is_trivial<T>::value)
+        if constexpr (IsArithmetic<T>::value)
         {
             memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
         }
@@ -219,7 +219,7 @@ public:
         assert(index <= size_);
         ensureCapacity();
         auto ptr = data_+index;
-        if constexpr (std::is_trivial<T>::value)
+        if constexpr (IsArithmetic<T>::value)
         {
             memmove(ptr+1, ptr, (size_ - index) * sizeof(T));
         }
@@ -244,7 +244,7 @@ public:
     {
         assert(element < data_+size_);
         element->~T();
-        if constexpr (std::is_trivial<T>::value)
+        if constexpr (IsArithmetic<T>::value)
         {
             memmove(element, element+1, ((data_+size_) - element) * sizeof(T));
         }
@@ -270,7 +270,7 @@ public:
             it->~T();
         }
         u32 elementsRemoved = endPtr - startPtr;
-        if constexpr (std::is_trivial<T>::value)
+        if constexpr (IsArithmetic<T>::value)
         {
             if (size_ > 0 && endPtr != end())
             {

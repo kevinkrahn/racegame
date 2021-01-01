@@ -79,4 +79,12 @@ namespace ImGui
             ImGui::LogFinish();
         }
     }
+
+    inline bool InputFloatClamp(const char* label, f32* v, f32 min, f32 max)
+    {
+        f32 previousValue = *v;
+        InputFloat(label, v);
+        *v = clamp(*v, min, max);
+        return *v != previousValue;
+    }
 }

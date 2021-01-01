@@ -46,7 +46,7 @@ public:
         tuning.driftBoost = 0.f;
 
         tuning.maxEngineOmega = 725.f;
-        tuning.peekEngineTorque = 1035.f;
+        tuning.peakEngineTorque = 1035.f;
         tuning.engineDampingFullThrottle = 0.3f;
         tuning.engineDampingZeroThrottleClutchEngaged = 1.5f;
         tuning.engineDampingZeroThrottleClutchDisengaged = 0.6f;
@@ -78,7 +78,7 @@ public:
             switch (upgrade.upgradeType)
             {
                 case PerformanceUpgradeType::ENGINE:
-                    tuning.peekEngineTorque += 12.f * u.upgradeLevel;
+                    tuning.peakEngineTorque += 12.f * u.upgradeLevel;
                     tuning.topSpeed += 1.2f * u.upgradeLevel;
                     break;
                 case PerformanceUpgradeType::TIRES:

@@ -118,7 +118,7 @@ struct VehicleTuning
     f32 rearTireGripPercent = 1.f;
 
     f32 maxEngineOmega = 600.f;
-    f32 peekEngineTorque = 800.f;
+    f32 peakEngineTorque = 800.f;
     f32 engineDampingFullThrottle = 0.15f;
     f32 engineDampingZeroThrottleClutchEngaged = 2.f;
     f32 engineDampingZeroThrottleClutchDisengaged = 0.35f;
@@ -134,6 +134,7 @@ struct VehicleTuning
     f32 suspensionSpringStrength = 35000.0f;
     f32 suspensionSpringDamperRate = 4500.0f;
 
+    // TODO: should these be in degrees instead of radians?
     f32 camberAngleAtRest = 0.f;
     f32 camberAngleAtMaxDroop = 0.01f;
     f32 camberAngleAtMaxCompression = -0.01f;
@@ -223,7 +224,7 @@ struct VehicleTuning
         s.field(rearTireGripPercent);
 
         s.field(maxEngineOmega);
-        s.field(peekEngineTorque);
+        s.field(peakEngineTorque);
         s.field(engineDampingFullThrottle);
         s.field(engineDampingZeroThrottleClutchEngaged);
         s.field(engineDampingZeroThrottleClutchDisengaged);
@@ -355,6 +356,7 @@ public:
     i64 modelGuid;
 
     // not serialized
+    // TODO: this should be moved into VehicleTuning
     SmallArray<Mat4> exhaustHoles;
 
     void serialize(Serializer& s)

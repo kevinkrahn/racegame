@@ -257,10 +257,8 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
             Vec4(c.position + Vec3(0, 0, 1) * f32(i % 2) * 2.f, 1.f);
         p.x = (((p.x / p.w) + 1.f) / 2.f) * g_game.windowWidth;
         p.y = ((-1.f * (p.y / p.w) + 1.f) / 2.f) * g_game.windowHeight;
-        renderer->push2D(TextRenderable(
-                    &g_res.getFont("font", 23),
-                    tstr(std::fixed, std::setprecision(1), c.t), { p.x, p.y },
-                    Vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER));
+        ui::text(&g_res.getFont("font", 23), tmpStr("%.2f", c.t), { p.x, p.y },
+                Vec3(0.f, 0.f, 1.f), 1.f, 1.f, HorizontalAlign::CENTER);
 #endif
     }
 

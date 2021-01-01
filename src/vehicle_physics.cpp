@@ -435,7 +435,7 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform
     driveSimData.setDiffData(diff);
 
     PxVehicleEngineData engine;
-    engine.mPeakTorque = tuning.peekEngineTorque;
+    engine.mPeakTorque = tuning.peakEngineTorque;
     engine.mMaxOmega = tuning.maxEngineOmega;
     engine.mDampingRateFullThrottle = tuning.engineDampingFullThrottle;
     engine.mDampingRateZeroThrottleClutchEngaged = tuning.engineDampingZeroThrottleClutchEngaged;
