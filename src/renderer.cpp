@@ -682,6 +682,10 @@ void RenderWorld::createFramebuffers()
             {
                 shadowMapResolution = 256;
             }
+            else if (width < 400 || height < 400)
+            {
+                shadowMapResolution = 512;
+            }
 
             glGenTextures(1, &fb.shadowDepthTexture);
             glBindTexture(GL_TEXTURE_2D, fb.shadowDepthTexture);
@@ -704,7 +708,7 @@ void RenderWorld::createFramebuffers()
 
         // bloom framebuffers
         bloomEnabled = g_game.config.graphics.bloomEnabled
-            && !forceBloomOff && width > 128 && height > 128;
+            && !forceBloomOff && width > 300 && height > 300;
         //println("Render World: %s, bloom=%i, forceBloomOff=%i, bloomEnabled=%i", name, bloomEnabled, forceBloomOff, g_game.config.graphics.bloomEnabled);
         if (bloomEnabled)
         {

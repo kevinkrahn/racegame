@@ -33,7 +33,7 @@ public:
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
-        v->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())), nullptr, config);
+        v->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())), nullptr, config, &tuning);
         renderer->addRenderWorld(&rw);
 
         ImGui::Columns(2, nullptr, false);
