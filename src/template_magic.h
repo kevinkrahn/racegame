@@ -86,3 +86,22 @@ template <> struct NumericLimits<long> : NumericLimitsBase<long, -92233720368547
 template <> struct NumericLimits<unsigned long> : NumericLimitsBase<unsigned long, 0, 18446744073709551615UL> {};
 template <> struct NumericLimits<long long> : NumericLimitsBase<long long, -9223372036854775807LL-1, 9223372036854775807LL> {};
 template <> struct NumericLimits<unsigned long long> : NumericLimitsBase<unsigned long long, 0, 18446744073709551615ULL> {};
+
+template <bool B, typename T> struct EnableIf {};
+template <typename T> struct EnableIf<true, T> { typedef T type; };
+
+// TODO: decide if this is worth having
+template <typename E> struct EnableBitMaskOperators { static const bool enable = false; };
+template <typename E> typename EnableIf<EnableBitMaskOperators<E>::enable, E>::type
+operator | (E lhs, E rhs) { return (E)((unsigned int)lhs | (unsigned int)rhs); }
+template <typename E> typename EnableIf<EnableBitMaskOperators<E>::enable, E>::type&
+operator |= (E& lhs, E rhs) { return (E&)((unsigned int&)lhs |= (unsigned int)rhs); }
+template <typename E> typename EnableIf<EnableBitMaskOperators<E>::enable, E>::type
+operator & (E lhs, E rhs) { return (E)((unsigned int)lhs & (unsigned int)rhs); }
+template <typename E> typename EnableIf<EnableBitMaskOperators<E>::enable, E>::type&
+operator &= (E& lhs, E rhs) { return (E)((unsigned int&)lhs &= (unsigned int)rhs); }
+template <typename E> typename EnableIf<EnableBitMaskOperators<E>::enable, E>::type
+operator ~ (E rhs) { return (E)(~(unsigned int)rhs); }
+
+#define BITMASK_OPERATORS(e) template <> struct EnableBitMaskOperators<e> { static const bool enable = true; };\
+    bool operator ! (e v) { return v == (e)(0); }

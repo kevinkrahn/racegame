@@ -142,7 +142,7 @@ class DecorationMode : public EditorMode, public TransformGizmoHandler
         {
             for (auto& entity : scene->getEntities())
             {
-                if (!(entity->entityFlags & Entity::PROP))
+                if (!(entity->entityFlags & EntityFlags::PROP))
                 {
                     continue;
                 }

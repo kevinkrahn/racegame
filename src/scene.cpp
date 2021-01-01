@@ -249,7 +249,7 @@ void Scene::stopRace()
         {
             e->destroy();
         }
-        else if (e->entityFlags & Entity::DYNAMIC)
+        else if ((e->entityFlags & EntityFlags::DYNAMIC) == EntityFlags::DYNAMIC)
         {
             ((PlaceableEntity*)e.get())->updateTransform(this);
         }
@@ -1258,7 +1258,7 @@ void Scene::serialize(Serializer& s)
         auto& entityArray = s.dict["entities"].array().val();
         for (auto& entity : this->entities)
         {
-            if (entity->entityFlags & Entity::PERSISTENT)
+            if ((entity->entityFlags & EntityFlags::PERSISTENT) == EntityFlags::PERSISTENT)
             {
                 auto dict = DataFile::makeDict();
                 Serializer s(dict, false);
@@ -1284,7 +1284,7 @@ Array<DataFile::Value> Scene::serializeTransientEntities()
     Array<DataFile::Value> transientEntities;
     for (auto& entity : this->entities)
     {
-        if (entity->entityFlags & Entity::TRANSIENT)
+        if ((entity->entityFlags & EntityFlags::TRANSIENT) == EntityFlags::TRANSIENT)
         {
             auto dict = DataFile::makeDict();
             Serializer s(dict, false);
@@ -1299,7 +1299,7 @@ void Scene::deserializeTransientEntities(Array<DataFile::Value>& entities)
 {
     for (auto it = this->entities.begin(); it != this->entities.end();)
     {
-        if ((*it)->entityFlags & Entity::TRANSIENT)
+        if (((*it)->entityFlags & EntityFlags::TRANSIENT) == EntityFlags::TRANSIENT)
         {
             it = this->entities.erase(it);
         }

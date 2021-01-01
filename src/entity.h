@@ -85,30 +85,35 @@ struct ActorUserData
     };
 };
 
+enum struct EntityFlags
+{
+    NONE = 0,
+    DESTROYED = 1,
+    PERSISTENT = 1 << 1,
+    DYNAMIC = 1 << 2,
+    TRANSIENT = 1 << 3,
+    PROP = 1 << 4,
+};
+BITMASK_OPERATORS(EntityFlags);
+
 #define UNSET_ENTITY_ID 0xF0F0F0F0
 class Entity
 {
 public:
     u32 entityID = UNSET_ENTITY_ID;
-    enum EntityFlags
-    {
-        NONE = 0,
-        DESTROYED = 1,
-        PERSISTENT = 1 << 1,
-        DYNAMIC = 1 << 2,
-        TRANSIENT = 1 << 3,
-        PROP = 1 << 4,
-    };
-    u32 entityFlags = NONE;
+    EntityFlags entityFlags = EntityFlags::NONE;
     u32 entityCounterID = 0;
 
-    void destroy() { entityFlags |= DESTROYED; }
-    bool isDestroyed() { return entityFlags & DESTROYED; }
+    void destroy() { entityFlags |= EntityFlags::DESTROYED; }
+    bool isDestroyed() { return (entityFlags & EntityFlags::DESTROYED) == EntityFlags::DESTROYED; }
     void setPersistent(bool persistent)
     {
-        entityFlags = persistent ? (entityFlags | PERSISTENT) : (entityFlags & ~PERSISTENT);
+        entityFlags = persistent ? (entityFlags | EntityFlags::PERSISTENT) : (entityFlags & ~EntityFlags::PERSISTENT);
     }
-    bool isPersistent() const { return (entityFlags & PERSISTENT) == PERSISTENT; }
+    bool isPersistent() const
+    {
+        return (entityFlags & EntityFlags::PERSISTENT) == EntityFlags::PERSISTENT;
+    }
 
     virtual ~Entity() {}
     virtual void serializeState(Serializer& s) {}
@@ -221,7 +226,7 @@ void registerEntity()
             e->entityID = entityID;
             if (std::is_base_of<PlaceableEntity, T>::value)
             {
-                e->entityFlags |= Entity::PROP;
+                e->entityFlags |= EntityFlags::PROP;
             }
             e->entityCounterID = ++entityCounter;
             return e;

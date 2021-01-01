@@ -7,24 +7,21 @@
 #include "../scene.h"
 #include "../vehicle.h"
 
-namespace PickupType
+enum struct PickupType
 {
-    enum
-    {
-        MONEY = 0,
-        FIXUP = 1,
-    };
+    MONEY = 0,
+    FIXUP = 1,
 };
 
 class Pickup : public PlaceableEntity
 {
-    u32 pickupType = PickupType::MONEY;
+    PickupType pickupType = PickupType::MONEY;
     static constexpr const char* pickupName[] = { "Money", "Fixup" };
 
 public:
     void onCreate(Scene* scene) override
     {
-        this->entityFlags |= Entity::TRANSIENT;
+        this->entityFlags |= EntityFlags::TRANSIENT;
 
         updateTransform(scene);
         actor = g_game.physx.physics->createRigidStatic(
@@ -113,5 +110,5 @@ public:
         return a;
     }
 
-    const char* getName() const override { return pickupName[pickupType]; }
+    const char* getName() const override { return pickupName[(u32)pickupType]; }
 };
