@@ -63,11 +63,11 @@ int main(int argc, char** argv)
 #include "util.h"
 int main(int argc, char** argv)
 {
-    Config config;
-    Serializer::fromFile(config, CONFIG_FILE_PATH);
-    DataFile::Value data = DataFile::load(CONFIG_FILE_PATH);
-    StrBuf buf;
-    data.debugOutput(buf, 0, false);
-    println(buf.data());
+    int b = 1;;
+    Function<bool(int)> f([b](int a) -> bool { return a > b; });
+    println("%i", f(0));
+    println("%i", f(1));
+    println("%i", f(2));
+    println("%i", f(3));
 }
 #endif

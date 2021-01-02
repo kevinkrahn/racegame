@@ -21,7 +21,6 @@
 - Vibrate player's controller when that player is selected (so that the player can be identified)
 - Use heightfield for terrain collision geometry
 - Add ability to create holes in the terrain (for tunnels, caves, .etc)
-- Add ability to pick any 4 materials to paint on terrain
 - Add sound effect when driving on sand
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
@@ -89,3 +88,5 @@
 - Make general purpose IMGUI function for an editable list, with delete, reordering, and removing 
 - Postfix all fields that reference another asset with "Guid", then when attempting to delete an asset,
   check if any other asset references it.
+- Allow any 4 materials to be painted on terrain, or make a terrain-layer resource
+- Allow any material to be used for track, or add track-material resource

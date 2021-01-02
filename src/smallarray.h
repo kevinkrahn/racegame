@@ -1,9 +1,6 @@
 #pragma once
 
-#include <utility>
-#include <assert.h>
-#include "template_magic.h"
-#include "math.h"
+#include "common.h"
 
 template <typename T, u32 maxSize=8>
 class SmallArray

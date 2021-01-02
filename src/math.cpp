@@ -1,5 +1,5 @@
 #include "math.h"
-#include <assert.h>
+#include "misc.h"
 
 Vec2::Vec2(Vec3 const& v) : x(v.x), y(v.y) {}
 Vec3::Vec3(Vec4 const& v) : x(v.x), y(v.y), z(v.z) {}

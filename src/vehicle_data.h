@@ -17,8 +17,7 @@
 struct RegisteredWeapon
 {
     WeaponInfo info;
-    // TODO: remove std::function
-    std::function<OwnedPtr<Weapon>()> create;
+    Function<OwnedPtr<Weapon>()> create;
 };
 
 Array<RegisteredWeapon> g_weapons;

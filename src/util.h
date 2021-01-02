@@ -3,6 +3,13 @@
 #include "misc.h"
 #include "buffer.h"
 
+#if _WIN32
+#define NOMINMAX
+#include <windows.h>
+#else
+#include <dirent.h>
+#endif
+
 struct FileItem
 {
     const char* path;

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "misc.h"
+#include "ownedptr.h"
+#include "str.h"
 
 constexpr size_t kilobytes(size_t bytes)
 {

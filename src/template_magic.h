@@ -105,3 +105,66 @@ operator ~ (E rhs) { return (E)(~(unsigned int)rhs); }
 
 #define BITMASK_OPERATORS(e) template <> struct EnableBitMaskOperators<e> { static const bool enable = true; };\
     bool operator ! (e v) { return v == (e)(0); }
+
+template <typename T> struct IsLValueReference : FalseType {};
+template <typename T> struct IsLValueReference <T&> : TrueType {};
+template <typename T> constexpr T&& forward(typename RemoveReference<T>::type& t)
+{
+    return static_cast<T&&>(t);
+}
+template <typename T> constexpr T&& forward(typename RemoveReference<T>::type&& t)
+{
+    static_assert(!IsLValueReference<T>::value);
+    return static_cast<T&&>(t);
+}
+
+template <typename Result, typename... Args>
+class FunctionInvokerBase
+{
+public:
+    virtual ~FunctionInvokerBase() {}
+    virtual Result invoke(Args... args) const = 0;
+};
+
+template <typename F, typename Result, typename... Args>
+class FunctionInvoker : public FunctionInvokerBase<Result, Args...>
+{
+    F f;
+
+public:
+    FunctionInvoker(F&& f) : f(move(f)) {}
+    Result invoke(Args... args) const override { return f(args...); }
+};
+
+template <typename>
+class Function;
+
+template <typename Result, typename... Args>
+class Function<Result(Args...)>
+{
+    using InvokerBaseType = FunctionInvokerBase<Result, Args...>;
+
+    char storage[32] = { 0 };
+
+public:
+    template <typename F>
+    Function(F&& f)
+    {
+        static_assert(sizeof(F) <= sizeof(storage));
+        new (storage) FunctionInvoker<F, Result, Args...>(move(f));
+    }
+
+    Function() {}
+    Function(Function const&) = default;
+    Function(Function&&) = default;
+    Function& operator = (Function const&) = default;
+    Function& operator = (Function&&) = default;
+
+    ~Function() { reinterpret_cast<InvokerBaseType*>(storage)->~InvokerBaseType(); }
+
+    Result operator()(Args... args) const
+    {
+        //assert(*((unsigned long long*)storage) != 0);
+        return ((InvokerBaseType*)storage)->invoke(forward<Args>(args)...);
+    }
+};

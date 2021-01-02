@@ -1,18 +1,8 @@
 #pragma once
 
-#if _WIN32
-#define NOMINMAX
-#include <windows.h>
-#else
-#include <dirent.h>
-#endif
-
-// TODO: remove this eventually
-#include <functional>
-#include <utility>
-
 #include <SDL2/SDL.h>
 
+#include "common.h"
 #include "math.h"
 #include "ownedptr.h"
 #include "smallarray.h"
@@ -20,7 +10,6 @@
 #include "map.h"
 #include "str.h"
 #include "buffer.h"
-#include "template_magic.h"
 
 Buffer g_tmpMem = Buffer(megabytes(32), 16);
 
@@ -100,8 +89,6 @@ void error(const char* format="", ...)
 #define showError(...) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", tmpStr(__VA_ARGS__), nullptr); }
 #define FATAL_ERROR(...) { error(__VA_ARGS__); showError(__VA_ARGS__); abort(); }
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
 inline f64 getTime()
 {
     static f64 freq = (f64)SDL_GetPerformanceFrequency();
@@ -120,6 +107,7 @@ namespace path
         return strcmp(str + (strlen(str) - strlen(ext)), ext) == 0;
     }
 
+    // TODO: move this into str.h
     const char* relative(const char* path)
     {
         char* buf = tmpStr("%s", path);

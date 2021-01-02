@@ -1,7 +1,6 @@
 #pragma once
 
-#include "math.h"
-#include "template_magic.h"
+#include "common.h"
 
 template <typename T>
 class Array
