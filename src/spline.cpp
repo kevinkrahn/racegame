@@ -16,7 +16,7 @@ void Spline::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     }
 
 #if 0
-    for (size_t i=1; i<points.size(); ++i)
+    for (u32 i=1; i<points.size(); ++i)
     {
         SplinePoint const& point = points[i];
         SplinePoint const& prevPoint = points[i-1];
@@ -110,7 +110,7 @@ void Spline::updateMesh(Scene* scene)
     Array<PolyLinePoint> polyLine;
     f32 zGroundOffset = 0.01f;
     u32 stickToGroundCollisionFlags = COLLISION_FLAG_TRACK;
-    for (size_t i=0; i<points.size()-1; ++i)
+    for (u32 i=0; i<points.size()-1; ++i)
     {
         SplinePoint const& point = points[i];
         SplinePoint const& nextPoint = points[i+1];
@@ -143,7 +143,7 @@ void Spline::updateMesh(Scene* scene)
     polyLine.push({ lastPos });
 
     f32 pathLength = 0;
-    for (size_t i=0; i<polyLine.size()-1; ++i)
+    for (u32 i=0; i<polyLine.size()-1; ++i)
     {
         Vec3 diff = polyLine[i+1].pos - polyLine[i].pos;
         f32 thisPathLength = pathLength;

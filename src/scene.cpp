@@ -1330,7 +1330,7 @@ void Scene::showDebugInfo()
 
 f32 Scene::timeUntilStart() const
 {
-    return g_game.isEditing ? 0.f : 3.f - worldTime;
+    return g_game.isEditing ? 0.f : 3.f - (f32)worldTime;
 }
 
 Vec3 Scene::findValidPosition(Vec3 const& pos, f32 collisionRadius, f32 checkRadius)

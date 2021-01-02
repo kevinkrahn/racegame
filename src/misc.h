@@ -1,7 +1,5 @@
 #pragma once
 
-#include <SDL2/SDL.h>
-
 #include "common.h"
 #include "math.h"
 #include "ownedptr.h"
@@ -10,6 +8,8 @@
 #include "map.h"
 #include "str.h"
 #include "buffer.h"
+
+#include <SDL2/SDL.h>
 
 Buffer g_tmpMem = Buffer(megabytes(32), 16);
 

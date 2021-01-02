@@ -1,5 +1,10 @@
 #pragma once
 
+#if _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#pragma warning(disable:4244)
+#endif
+
 #include <utility>
 #include <functional>
 #include <SDL2/SDL_assert.h>

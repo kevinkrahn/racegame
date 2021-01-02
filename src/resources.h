@@ -233,12 +233,12 @@ public:
         return (*iter)->guid;
     }
 
-    class VehicleData* getVehicle(i64 guid)
+    struct VehicleData* getVehicle(i64 guid)
     {
         auto iter = resources.get(guid);
         if (iter && iter->get()->type == ResourceType::VEHICLE)
         {
-            return (class VehicleData*)iter->get();
+            return (VehicleData*)iter->get();
         }
         return nullptr;
     }

@@ -82,8 +82,10 @@ template <> struct NumericLimits<short> : NumericLimitsBase<short, -32767-1, 327
 template <> struct NumericLimits<unsigned short> : NumericLimitsBase<unsigned short, 0, 65535> {};
 template <> struct NumericLimits<int> : NumericLimitsBase<int, -2147483647-1, 2147483647> {};
 template <> struct NumericLimits<unsigned int> : NumericLimitsBase<unsigned int, 0, 4294967295U> {};
+#if 0
 template <> struct NumericLimits<long> : NumericLimitsBase<long, -9223372036854775807L-1, 9223372036854775807L> {};
 template <> struct NumericLimits<unsigned long> : NumericLimitsBase<unsigned long, 0, 18446744073709551615UL> {};
+#endif
 template <> struct NumericLimits<long long> : NumericLimitsBase<long long, -9223372036854775807LL-1, 9223372036854775807LL> {};
 template <> struct NumericLimits<unsigned long long> : NumericLimitsBase<unsigned long long, 0, 18446744073709551615ULL> {};
 

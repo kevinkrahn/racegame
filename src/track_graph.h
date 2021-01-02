@@ -46,7 +46,7 @@ public:
     Node* getEndNode() const { return endNode; }
     Node* getNode(u32 index) { return &nodes[index]; }
     u32 getNodeCount() const { return (u32)nodes.size(); }
-    u32 getStartNodeIndex() const { return startNode - nodes.data(); }
+    u32 getStartNodeIndex() const { return (u32)(startNode - nodes.data()); }
     u32 getEndNodeIndex() const { return (u32)nodes.size() - 1; }
 
     void debugDraw(class DebugDraw* dbg, class Renderer* renderer) const;

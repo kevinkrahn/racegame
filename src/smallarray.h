@@ -210,7 +210,7 @@ public:
     {
         assert(start <= end);
         clear();
-        size_ = end - start;
+        size_ = (u32)(end - start);
         assert(size_ <= maxSize);
         for (u32 i=0; i<size_; ++i)
         {
@@ -222,7 +222,7 @@ public:
     {
         assert(element < data_ + size_);
         element->~T();
-        for (u32 i=element - data_; i<size_-1; ++i)
+        for (u32 i=(u32)(element - data_); i<size_-1; ++i)
         {
             new (data_ + i) T(move(data_[i+1]));
         }

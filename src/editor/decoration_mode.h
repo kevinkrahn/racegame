@@ -365,7 +365,7 @@ public:
             u8 selectIndexByte = 0;
             if (it)
             {
-                u32 selectIndex = it - selectedEntities.begin();
+                auto selectIndex = it - selectedEntities.begin();
                 // NOTE: first byte is reserved for hidden flag
                 selectIndexByte = (u8)((selectIndex % 126) + 1) << 1;
             }
@@ -398,7 +398,7 @@ public:
         ImGui::Gap();
 
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
-        if (ImGui::Button("Duplicate [b]", buttonSize) > 0 || g_input.isKeyPressed(KEY_B))
+        if (ImGui::Button("Duplicate [b]", buttonSize) || g_input.isKeyPressed(KEY_B))
         {
             Array<PlaceableEntity*> newEntities;
             for (auto e : selectedEntities)

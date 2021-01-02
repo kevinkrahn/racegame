@@ -597,7 +597,7 @@ void ModelEditor::processBlenderData()
 
     auto& scene = *scenePtr;
 
-    if (model->name.empty() || model->name.substr(0, strlen("Model")) == "Model")
+    if (model->name.empty() || model->name.substr(0, (u32)strlen("Model")) == "Model")
     {
         model->name = scene["name"].string().val();
     }

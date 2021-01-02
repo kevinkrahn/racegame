@@ -761,10 +761,10 @@ inline T clamp(T val, T min, T max)
     return val <= min ? min : (val >= max ? max : val);
 }
 
-inline f32 min(f32 a, f32 b)
-{
-    return a < b ? a : b;
-}
+inline u32 min(u32 a, u32 b) { return a < b ? a : b; }
+inline i32 min(i32 a, i32 b) { return a < b ? a : b; }
+inline f32 min(f32 a, f32 b) { return a < b ? a : b; }
+inline f64 min(f64 a, f64 b) { return a < b ? a : b; }
 
 inline Vec2 min(Vec2 a, Vec2 b)
 {
@@ -781,10 +781,10 @@ inline Vec4 min(Vec4 const& a, Vec4 const& b)
     return Vec4(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w));
 }
 
-inline f32 max(f32 a, f32 b)
-{
-    return a > b ? a : b;
-}
+inline u32 max(u32 a, u32 b) { return a > b ? a : b; }
+inline i32 max(i32 a, i32 b) { return a > b ? a : b; }
+inline f32 max(f32 a, f32 b) { return a > b ? a : b; }
+inline f64 max(f64 a, f64 b) { return a > b ? a : b; }
 
 inline Vec2 max(Vec2 a, Vec2 b)
 {

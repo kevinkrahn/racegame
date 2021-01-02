@@ -653,7 +653,7 @@ public:
         }
         else if constexpr (IsArray<T>::value)
         {
-            auto arraySize = ARRAY_SIZE(dest);
+            u32 arraySize = (u32)(ARRAY_SIZE(dest));
             if (deserialize)
             {
                 auto v = val.array();
@@ -665,7 +665,7 @@ public:
                 {
                     DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
                 }
-                for (u32 i=0; i<(u32)arraySize; ++i)
+                for (u32 i=0; i<arraySize; ++i)
                 {
                     element(name, v.val()[i], dest[i]);
                 }

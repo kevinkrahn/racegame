@@ -1008,8 +1008,8 @@ void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 
 void RenderWorld::partitionPointLights(u32 viewportIndex)
 {
-    f32 partitionWidth = fbs[viewportIndex].renderWidth / LIGHT_SPLITS;
-    f32 partitionHeight = fbs[viewportIndex].renderHeight / LIGHT_SPLITS;
+    f32 partitionWidth = (f32)fbs[viewportIndex].renderWidth / (f32)LIGHT_SPLITS;
+    f32 partitionHeight = (f32)fbs[viewportIndex].renderHeight / (f32)LIGHT_SPLITS;
     for (u32 x = 0; x<LIGHT_SPLITS; ++x)
     {
         f32 splitX = x * partitionWidth;

@@ -298,7 +298,7 @@ struct VehicleTuning
     void applyUpgrade(PerformanceUpgrade const& upgrade, u32 level)
     {
         assert(level > 0);
-        assert(level < upgrade.maxUpgradeLevel);
+        assert(level < (u32)upgrade.maxUpgradeLevel);
 
         chassisMass += upgrade.stats.chassisMassDiff * level;
         wheelDampingRate += upgrade.stats.wheelDampingRateDiff * level;

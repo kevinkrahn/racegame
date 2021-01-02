@@ -1530,7 +1530,7 @@ void Menu::createCosmeticLayerMenu(i32 layerIndex)
         {
             vinylIndex = vinyls.size() - 1;
         }
-        if (vinylIndex >= vinyls.size())
+        if (vinylIndex >= (i32)vinyls.size())
         {
             vinylIndex = 0;
         }

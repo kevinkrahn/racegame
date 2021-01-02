@@ -89,7 +89,7 @@ public:
         Material* mat = g_res.getMaterial("plastic");
         mat->draw(rw, vehicleTransform * mountTransform, mesh, 2);
         mat->draw(rw, vehicleTransform * mountTransform
-                    * Mat4::translation(Vec3(0.556007, 0, 0.397523f))
+                    * Mat4::translation(Vec3(0.556007f, 0, 0.397523f))
                     * Mat4::rotationX(barrelSpin), meshBarrel, 2);
     }
 };

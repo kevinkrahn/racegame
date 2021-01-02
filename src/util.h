@@ -283,7 +283,7 @@ StrBuf readFileString(const char* filename)
     {
         FATAL_ERROR("File ", filename, " does not exist.");
     }
-    size_t size = SDL_RWsize(file);
+    u32 size = (u32)SDL_RWsize(file);
     StrBuf buffer(size);
     SDL_RWread(file, buffer.data(), size, 1);
     SDL_RWclose(file);

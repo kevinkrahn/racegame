@@ -31,7 +31,7 @@ public:
         va_end(argptr);
         return s;
     }
-    void assign(const char* begin, const char* end) { memcpy(buf_, begin, min(SIZE, end-begin)); }
+    void assign(const char* begin, const char* end) { memcpy(buf_, begin, min(SIZE, (u32)(end-begin))); }
     Str(Str const& other) { *this = other; }
     Str(Str && other) { *this = other; }
     template <u32 N> explicit Str(Str<N> const& other) { *this = other; }
@@ -50,7 +50,7 @@ public:
     char* data() const { return (char*)buf_; }
     char const& operator[](u32 index) const { return buf_[index]; }
     char& operator[](u32 index) { return buf_[index]; }
-    u32 size() const { return strlen(buf_); }
+    u32 size() const { return (u32)strlen(buf_); }
     bool empty() const { return size() == 0; }
     Str substr(u32 from, u32 len=0) const
     {
@@ -141,7 +141,7 @@ public:
 
     void write(const char* s)
     {
-        write(s, strlen(s));
+        write(s, (u32)strlen(s));
     }
 
     void write(const char* s, u32 n)

@@ -67,7 +67,7 @@ public:
     Array() {}
 
     // TODO: get rid of initialize_list
-    Array(std::initializer_list<T> list) : size_(list.size()), capacity_(list.size())
+    Array(std::initializer_list<T> list) : size_((u32)list.size()), capacity_((u32)list.size())
     {
         reallocate();
         T* ptr = data_;
@@ -155,7 +155,7 @@ public:
     {
         assert(start <= end);
         clear();
-        size_ = end - start;
+        size_ = (u32)(end - start);
         reserve(size_);
         if constexpr (IsArithmetic<T>::value)
         {
@@ -210,7 +210,7 @@ public:
     // copy insert
     void insert(T * element, const T& val)
     {
-        insert(data_ - element, val);
+        insert((u32)(data_ - element), val);
     }
 
     // move insert by index
@@ -237,7 +237,7 @@ public:
     // move insert
     void insert(T * element, T&& val)
     {
-        insert(data_ - element, move(val));
+        insert((u32)(data_ - element), move(val));
     }
 
     T* erase(T* element)
@@ -250,7 +250,7 @@ public:
         }
         else
         {
-            for (u32 i=element - data_; i<size_-1; ++i)
+            for (u32 i=(u32)(element - data_); i<size_-1; ++i)
             {
                 new (data_ + i) T(move(data_[i+1]));
             }
@@ -269,7 +269,7 @@ public:
         {
             it->~T();
         }
-        u32 elementsRemoved = endPtr - startPtr;
+        u32 elementsRemoved = (u32)(endPtr - startPtr);
         if constexpr (IsArithmetic<T>::value)
         {
             if (size_ > 0 && endPtr != end())
@@ -281,7 +281,7 @@ public:
         {
             if (size_ > 0 && endPtr != end())
             {
-                for (u32 i=startPtr - data_; i<size_-1; ++i)
+                for (u32 i=(u32)(startPtr - data_); i<size_-1; ++i)
                 {
                     new (startPtr + i) T(move(data_[elementsRemoved + i]));
                 }
