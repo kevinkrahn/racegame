@@ -62,8 +62,8 @@ public:
             ImGui::Columns(1);
             ImGui::Gap();
 
-            rm->chooseTexture(TextureType::COLOR, mat.colorTexture, "Color Texture");
-            rm->chooseTexture(TextureType::NORMAL_MAP, mat.normalMapTexture, "Normal Map");
+            chooseTexture(TextureType::COLOR, mat.colorTexture, "Color Texture");
+            chooseTexture(TextureType::NORMAL_MAP, mat.normalMapTexture, "Normal Map");
 
             ImGui::Columns(2, nullptr, false);
             dirty |= ImGui::Checkbox("Culling", &mat.isCullingEnabled);

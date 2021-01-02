@@ -24,7 +24,7 @@ public:
             dirty |= ImGui::InputText("##Name", &p.name);
             ImGui::Guid(p.guid);
             dirty |= ImGui::Checkbox("Useable by Player", &p.canBeUsedByPlayer);
-            dirty |= rm->chooseTexture(TextureType::COLOR, p.colorTextureGuid, "Color Texture");
+            dirty |= chooseTexture(TextureType::COLOR, p.colorTextureGuid, "Color Texture");
             //rm->chooseTexture(TextureType::NORMAL_MAP, p.normalTextureGuid, "Normal Map");
             //rm->chooseTexture(TextureType::COLOR, p.normalTextureGuid, "Shininess Map");
         }

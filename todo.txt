@@ -85,3 +85,4 @@
 - AI should use their weapons more aggressively close to the end of the lap if they still have ammo
 - Get bonus money for making it to the next league
 - Implement drag & drop throughout the editor (e.g. to drag a material from resource browser into a material slot)
+- Allow multiple saved games

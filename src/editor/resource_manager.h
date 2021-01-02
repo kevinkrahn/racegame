@@ -141,9 +141,6 @@ public:
     void openResource(Resource* resource);
     void closeResource(Resource* resource);
     void saveResources();
-    // TODO: implement
-    bool chooseResource(ResourceType resourceType, i64 current, const char* name);
-    bool chooseTexture(i32 type, i64& currentTexture, const char* name);
 
     Resource* getOpenedResource(ResourceType resourceType)
     {
@@ -153,3 +150,115 @@ public:
         return result ? result->resource : nullptr;
     }
 };
+
+template <typename CB>
+bool chooseResource(ResourceType resourceType, i64& current, const char* name,
+        CB const& filter=[]()->bool{})
+{
+    Resource* resource = g_res.getResource(current);
+    if (!resource)
+    {
+        current = 0;
+    }
+    // TODO: Add X to clear selection
+    u32 previewTexture = 0;
+    if (resource)
+    {
+        previewTexture = resource->getPreviewTexture();
+    }
+    if (previewTexture)
+    {
+        ImGui::Image((void*)(uintptr_t)g_res.getResource(current)->getPreviewTexture(), { 48, 48 });
+        ImGui::SameLine();
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
+        ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 300.f };
+        ImGui::SetNextWindowSizeConstraints(size, size);
+    }
+    else
+    {
+        ImGui::SetNextWindowSize({ 0, 300.f });
+    }
+
+    bool changed = false;
+    if (ImGui::BeginCombo(name, current == 0 ? "None" : g_res.getResource(current)->name.data()))
+    {
+        static Str64 searchString;
+        static Array<Resource*> searchResults;
+        searchResults.clear();
+
+        if (ImGui::IsWindowAppearing())
+        {
+            ImGui::SetKeyboardFocusHere();
+            searchString = "";
+        }
+#if 0
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
+        bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::Button("!", ImVec2(16, 0)))
+        {
+            // TODO: use last focused one or the last opened
+            Resource* openedResource = getOpenedResource(resourceType);
+            if (openedResource)
+            {
+                current = openedResource->guid;
+                changed = true;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+#else
+        bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
+#endif
+
+        g_res.iterateResourceType(resourceType, [&filter](Resource* resource){
+            if (filter(resource))
+            {
+                if (searchString.empty() || resource->name.find(searchString))
+                {
+                    searchResults.push(resource);
+                }
+            }
+        });
+        searchResults.sort([](auto& a, auto& b) { return a->name < b->name; });
+
+        if (enterPressed)
+        {
+            current = searchResults[0]->guid;
+            changed = true;
+            ImGui::CloseCurrentPopup();
+        }
+
+        if (ImGui::BeginChild("Search Results", { 0, 0 }))
+        {
+            for (Resource* r : searchResults)
+            {
+                auto previewTexture = r->getPreviewTexture();
+                if (previewTexture)
+                {
+                    ImGui::Image((void*)(uintptr_t)previewTexture, { 16, 16 });
+                    ImGui::SameLine();
+                }
+                ImGui::PushID(r->guid);
+                if (ImGui::Selectable(r->name.data()))
+                {
+                    changed = true;
+                    current = r->guid;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::PopID();
+            }
+            ImGui::EndChild();
+        }
+
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+bool chooseTexture(i32 type, i64& currentTexture, const char* name)
+{
+    return chooseResource(ResourceType::TEXTURE, currentTexture, name, [type](Resource* r){
+        return ((Texture*)r)->getTextureType() == type;
+    });
+}

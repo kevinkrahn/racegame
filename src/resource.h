@@ -35,4 +35,6 @@ public:
         s.field(guid);
         s.field(name);
     }
+    // TODO: do this some other way
+    virtual u32 getPreviewTexture() { return 0; }
 };

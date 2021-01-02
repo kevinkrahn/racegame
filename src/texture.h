@@ -105,6 +105,7 @@ public:
     void setTextureType(u32 textureType);
     void setSourceFile(u32 index, const char* path);
     GLuint getPreviewHandle() const { return sourceFiles[0].previewHandle; }
+    u32 getPreviewTexture() override { return getPreviewHandle(); }
     SourceFile const& getSourceFile(u32 index) const { return sourceFiles[index]; }
     u32 getSourceFileCount() const { return (u32)sourceFiles.size(); }
     i32 getTextureType() const { return textureType; }

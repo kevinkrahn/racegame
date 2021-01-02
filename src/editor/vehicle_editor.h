@@ -76,19 +76,18 @@ public:
                 config.reloadMaterials();
             }
 
-            // TODO: model picker
-            bool modelChanged = false;
+            bool modelChanged = chooseResource(ResourceType::MODEL, v->modelGuid, "Model", [](Resource* r){
+                return ((Model*)r)->modelUsage == ModelUsage::VEHICLE;
+            });
             if (modelChanged)
             {
                 v->initTuning(config, tuning);
             }
+            dirty |= modelChanged;
 
             dirty |= ImGui::InputText("Description", &v->description);
             dirty |= ImGui::InputInt("Price", &v->price, 200, 1000);
             dirty |= ImGui::InputFloatClamp("Hit Points", &t.maxHitPoints, 1.f, 1000.f, 5.f, 10.f, "%.0f");
-
-            // TODO: weapon slots
-            // TODO: available upgrades
 
             dirty |= ImGui::InputFloatClamp("Mass", &t.chassisMass, 1.f, 10000.f, 50.f, 100.f);
             dirty |= ImGui::InputFloat3("Center of Mass", (f32*)&t.centerOfMass);
@@ -101,6 +100,7 @@ public:
 
             if (ImGui::TreeNode("Upgrades"))
             {
+                // TODO: available upgrades
                 for (u32 i=0; i<v->availableUpgrades.size(); ++i)
                 {
                 }
