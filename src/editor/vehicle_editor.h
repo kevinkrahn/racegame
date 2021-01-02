@@ -55,6 +55,11 @@ public:
 
     void init(Resource* r) override
     {
+        VehicleData* v = (VehicleData*)r;
+        config.cosmetics.color = hsvToRgb(
+                v->defaultColorHsv[0], v->defaultColorHsv[1], v->defaultColorHsv[2]);
+        config.cosmetics.paintShininess = v->defaultShininess;
+        v->initTuning(config, tuning);
     }
 
     void onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime, u32 n) override
@@ -66,6 +71,7 @@ public:
         bool dirty = false;
         if (ImGui::Begin(tmpStr("Vehicle Properties###Vehicle Properties %i", n), &isOpen))
         {
+            ImGui::PushItemWidth(210.f);
             dirty |= ImGui::InputText("##Name", &v->name);
             ImGui::Guid(v->guid);
             ImGui::Gap();
@@ -85,24 +91,83 @@ public:
             }
             dirty |= modelChanged;
 
+            dirty |= ImGui::Checkbox("Show in Car Lot", &v->showInCarLot);
             dirty |= ImGui::InputText("Description", &v->description);
             dirty |= ImGui::InputInt("Price", &v->price, 200, 1000);
             dirty |= ImGui::InputFloatClamp("Hit Points", &t.maxHitPoints, 1.f, 1000.f, 5.f, 10.f, "%.0f");
 
+            // TODO: add help markers
             dirty |= ImGui::InputFloatClamp("Mass", &t.chassisMass, 1.f, 10000.f, 50.f, 100.f);
             dirty |= ImGui::InputFloat3("Center of Mass", (f32*)&t.centerOfMass);
             dirty |= ImGui::InputFloatClamp("Top Speed", &t.topSpeed, 1.f, 500.f, 0.5f, 2.f);
             dirty |= ImGui::InputFloatClamp("Drift Boost", &t.forwardDownforce, 0.f, 5.f, 0.01f, 0.02f);
 
             const char* diffTypeNames =
-                "Open FWD\0Open RWD\0Open 4WD\0Limited Slip FWD\0Limited Slip RWD\0Limited Slip 4WD";
+                "Open FWD\0Open RWD\0Open 4WD\0Limited Slip FWD\0Limited Slip RWD\0Limited Slip 4WD\0";
             dirty |= ImGui::Combo("Differential", (i32*)&t.differential, diffTypeNames);
 
-            if (ImGui::TreeNode("Upgrades"))
+            if (ImGui::TreeNode("Performance Upgrades"))
             {
-                // TODO: available upgrades
-                for (u32 i=0; i<v->availableUpgrades.size(); ++i)
+                for (u32 upgradeIndex=0; upgradeIndex<v->availableUpgrades.size(); ++upgradeIndex)
                 {
+                    auto& upgrade = v->availableUpgrades[upgradeIndex];
+                    if (ImGui::TreeNode(tmpStr("Upgrade %i - %s###Upgrade %i",
+                                    upgradeIndex + 1, upgrade.name.data(), upgradeIndex + 1)))
+                    {
+                        dirty |= ImGui::InputText("Name", &upgrade.name);
+                        dirty |= ImGui::InputText("Description", &upgrade.description);
+                        dirty |= chooseTexture(TextureType::COLOR, upgrade.iconGuid, "Icon");
+                        dirty |= ImGui::InputInt("Cost per Level", &upgrade.price, 100, 200);
+                        dirty |= ImGui::InputInt("Max Level", &upgrade.maxUpgradeLevel, 1, 2);
+
+                        if (ImGui::TreeNode("Stat Changes"))
+                        {
+                            dirty |= ImGui::InputFloatClamp("Mass", &upgrade.stats.chassisMassDiff,
+                                    -10000.f, 10000.f, 50.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Top Speed", &upgrade.stats.topSpeedDiff,
+                                    -10000.f, 10000.f, 0.5f, 1.f);
+                            dirty |= ImGui::InputFloatClamp("Hit Points", &upgrade.stats.maxHitPointsDiff,
+                                    -1000.f, 1000.f, 10.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Wheel Damping", &upgrade.stats.wheelDampingRateDiff,
+                                    -100.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Wheel Offroad Damping", &upgrade.stats.wheelOffroadDampingRateDiff,
+                                    -100.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Tire Grip", &upgrade.stats.trackTireFrictionDiff,
+                                    -100.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Offroad Tire Grip", &upgrade.stats.offroadTireFrictionDiff,
+                                    -100.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Downforce", &upgrade.stats.constantDownforceDiff,
+                                    -100.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Forward Downforce", &upgrade.stats.forwardDownforceDiff,
+                                    -100.f, 100.f);
+                            dirty |= ImGui::InputFloatClamp("Max Engine Omega", &upgrade.stats.maxEngineOmegaDiff,
+                                    -1000.f, 1000.f);
+                            dirty |= ImGui::InputFloatClamp("Peak Engine Torque", &upgrade.stats.peakEngineTorqueDiff,
+                                    -1000.f, 1000.f);
+                            dirty |= ImGui::InputFloatClamp("Anti-Rollbar Stiffness", &upgrade.stats.antiRollbarStiffnessDiff,
+                                    -5000.f, 5000.f);
+                            dirty |= ImGui::InputFloatClamp("Spring Strength", &upgrade.stats.suspensionSpringStrengthDiff,
+                                    -5000.f, 5000.f);
+                            dirty |= ImGui::InputFloatClamp("Spring Damper Rate", &upgrade.stats.suspensionSpringDamperRateDiff,
+                                    -5000.f, 5000.f);
+                            const char* diffTypeNames =
+                                "Open FWD\0Open RWD\0Open 4WD\0Limited Slip FWD\0Limited Slip RWD\0Limited Slip 4WD\0None\0";
+                            dirty |= ImGui::Combo("Differential", (i32*)&upgrade.stats.differential, diffTypeNames);
+
+                            ImGui::TreePop();
+                        }
+
+                        ImGui::TreePop();
+                    }
+                }
+                if (ImGui::Button("Add Upgrade"))
+                {
+                    v->availableUpgrades.push({});
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Remove Upgrade") && v->availableUpgrades.size() > 0)
+                {
+                    v->availableUpgrades.pop();
                 }
                 ImGui::TreePop();
             }
@@ -111,14 +176,15 @@ public:
             {
                 for (u32 slotIndex=0; slotIndex<v->weaponSlots.size(); ++slotIndex)
                 {
-                    if (ImGui::TreeNode(tmpStr("Weapon Slot %i", slotIndex + 1)))
+                    auto& slot = v->weaponSlots[slotIndex];
+                    if (ImGui::TreeNode(tmpStr("Weapon Slot %i - %s###Slot %i",
+                                    slotIndex + 1, slot.name.data(), slotIndex + 1)))
                     {
-                        const char* weaponTypeNames = "Front Weapon\0Rear Weapon\0Passive Ability";
-                        dirty |= ImGui::Combo("Type", (i32*)&v->weaponSlots[slotIndex], weaponTypeNames);
-                        // TODO: fix this
-                        dirty |= ImGui::InputText("Name", &v->weaponSlots[slotIndex].name);
+                        const char* weaponTypeNames = "Front Weapon\0Rear Weapon\0Passive Ability\0";
+                        dirty |= ImGui::Combo(tmpStr("Weapon Type", slotIndex),
+                                (i32*)&v->weaponSlots[slotIndex].weaponType, weaponTypeNames);
+                        dirty |= ImGui::InputText("Name", &slot.name);
 
-                        auto& slot = v->weaponSlots[slotIndex];
                         ImGui::Columns(ARRAY_SIZE(slot.tagGroups));
                         for (u32 i=0; i<ARRAY_SIZE(slot.tagGroups); ++i)
                         {
@@ -134,12 +200,12 @@ public:
                         ImGui::TreePop();
                     }
                 }
-                if (ImGui::Button("Add Slot"))
+                if (ImGui::Button("Add Slot") && v->weaponSlots.size() < v->weaponSlots.maximumSize())
                 {
                     v->weaponSlots.push({});
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Remove Slot") && t.gearRatios.size() > 2)
+                if (ImGui::Button("Remove Slot") && v->weaponSlots.size() > 0)
                 {
                     v->weaponSlots.pop();
                 }
@@ -202,7 +268,7 @@ public:
                     ImGui::SetNextItemWidth(164.f);
                     ImGui::InputFloatClamp(gearName[i], &t.gearRatios[i], i == 0 ? -10.f : 0.1f, i == 0 ? -0.1f : 10.f);
                 }
-                if (ImGui::Button("Add Gear"))
+                if (ImGui::Button("Add Gear") && t.gearRatios.size() < t.gearRatios.maximumSize())
                 {
                     t.gearRatios.push(0.f);
                 }
@@ -213,6 +279,8 @@ public:
                 }
                 ImGui::TreePop();
             }
+
+            ImGui::PopItemWidth();
         }
         ImGui::End();
 

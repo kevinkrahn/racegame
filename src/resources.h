@@ -106,7 +106,7 @@ public:
             u32 guidHalf[2] = { xorshift32(series), xorshift32(series) };
             guid = *((i64*)guidHalf);
         }
-        while (guid <= 1 || resources.get(guid));
+        while (guid == 0 || guid == 1 || resources.get(guid));
         return guid;
     }
 
@@ -231,6 +231,16 @@ public:
             FATAL_ERROR("Track not found: ", name);
         }
         return (*iter)->guid;
+    }
+
+    class VehicleData* getVehicle(i64 guid)
+    {
+        auto iter = resources.get(guid);
+        if (iter && iter->get()->type == ResourceType::VEHICLE)
+        {
+            return (class VehicleData*)iter->get();
+        }
+        return nullptr;
     }
 } g_res;
 

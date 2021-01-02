@@ -371,7 +371,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             {
                 debris = vehicleDebris.back();
             }
-			vehicleDebris.pop_back();
+			vehicleDebris.pop();
         }
         else
         {

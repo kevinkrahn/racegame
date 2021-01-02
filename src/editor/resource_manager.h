@@ -161,6 +161,8 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
         current = 0;
     }
     // TODO: Add X to clear selection
+    // TODO: fix this
+    /*
     u32 previewTexture = 0;
     if (resource)
     {
@@ -178,9 +180,10 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
     {
         ImGui::SetNextWindowSize({ 0, 300.f });
     }
+    */
 
     bool changed = false;
-    if (ImGui::BeginCombo(name, current == 0 ? "None" : g_res.getResource(current)->name.data()))
+    if (ImGui::BeginCombo(name, current == 0 ? "None" : resource->name.data()))
     {
         static Str64 searchString;
         static Array<Resource*> searchResults;

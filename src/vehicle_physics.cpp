@@ -428,8 +428,8 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform
         case VehicleDifferentialType::LS_4WD:
             diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
             break;
-        default:
-            diff.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+        case VehicleDifferentialType::NONE:
+            assert(false);
             break;
     }
     driveSimData.setDiffData(diff);

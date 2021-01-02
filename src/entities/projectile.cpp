@@ -174,7 +174,7 @@ void Projectile::onUpdate(RenderWorld* rw, Scene* scene, f32 deltaTime)
     for (u32 i=0; i<hit.nbTouches; ++i)
     {
         onHit(scene, &hit.touches[i]);
-        if (ignoreActors.size() < ignoreActors.capacity())
+        if (ignoreActors.size() < ignoreActors.maximumSize())
         {
             ignoreActors.push(hit.touches[i].actor);
         }

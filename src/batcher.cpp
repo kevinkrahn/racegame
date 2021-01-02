@@ -90,9 +90,9 @@ void Batcher::end(bool keepMeshData)
         if (!keepMeshData)
         {
             bigBatchedMesh.vertices.clear();
-            bigBatchedMesh.vertices.shrink_to_fit();
+            bigBatchedMesh.vertices.shrinkToFit();
             bigBatchedMesh.indices.clear();
-            bigBatchedMesh.indices.shrink_to_fit();
+            bigBatchedMesh.indices.shrinkToFit();
         }
 
         batches.push({ itemsForThisMaterial.key, move(bigBatchedMesh) });

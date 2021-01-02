@@ -86,7 +86,7 @@ public:
     T* data() const { return data_; }
     T* data() { return data_; }
     u32 size() const { return size_; }
-    u32 capacity() const { return maxSize; }
+    u32 maximumSize() const { return maxSize; }
 
     // copy push
     void push(const T& val)

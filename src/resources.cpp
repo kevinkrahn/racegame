@@ -26,14 +26,12 @@ void Resources::initResourceTypes()
     registerResourceType<Texture, TextureEditor>(ResourceType::TEXTURE, "Texture", "texture_icon", ResourceFlags::NONE);
     registerResourceType<Model, ModelEditor>(ResourceType::MODEL, "Model", "model_icon", ResourceFlags::EXCLUSIVE_EDITOR);
     registerResourceType<Sound, SoundEditor>(ResourceType::SOUND, "Sound", "sound_icon", ResourceFlags::NONE);
-    //registerResourceType<Font, FontEditor>(ResourceType::FONT, "Font", "icon_track", ResourceFlags::NONE); // TODO: use different icon
+    //registerResourceType<Font, FontEditor>(ResourceType::FONT, "Font", "icon_font", ResourceFlags::NONE);
     registerResourceType<TrackData, TrackEditor>(ResourceType::TRACK, "Track", "icon_track", ResourceFlags::EXCLUSIVE_EDITOR);
     registerResourceType<Material, MaterialEditor>(ResourceType::MATERIAL, "Material", "material_icon", ResourceFlags::NONE);
     registerResourceType<AIDriverData, AIEditor>(ResourceType::AI_DRIVER_DATA, "AI Driver", "ai_icon", ResourceFlags::NONE);
-    // TODO: use different icon
-    registerResourceType<VinylPattern, VinylPatternEditor>(ResourceType::VINYL_PATTERN, "Vinyl Pattern", "ai_icon", ResourceFlags::NONE);
-    // TODO: use different icon
-    registerResourceType<VehicleData, VehicleEditor>(ResourceType::VEHICLE, "Vehicle", "ai_icon", ResourceFlags::NONE);
+    registerResourceType<VinylPattern, VinylPatternEditor>(ResourceType::VINYL_PATTERN, "Vinyl Pattern", "vinyl_icon", ResourceFlags::NONE);
+    registerResourceType<VehicleData, VehicleEditor>(ResourceType::VEHICLE, "Vehicle", "vehicle_icon", ResourceFlags::NONE);
 }
 
 Resource* Resources::newResource(ResourceType type, bool makeGUID)

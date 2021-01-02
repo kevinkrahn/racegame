@@ -59,7 +59,7 @@ ResourceManager::ResourceManager()
     while (folders.size() > 0)
     {
         ResourceFolder* folder = folders.back();
-        folders.pop_back();
+        folders.pop();
         for (auto& childResource : folder->childResources)
         {
             resourceFolderMap[childResource] = true;
@@ -174,6 +174,10 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
                 newFolder->name = "New Folder";
                 newFolder->parent = folder;
                 folder->childFolders.push(move(newFolder));
+                folder->setExpanded(true);
+                renameText = folder->childFolders.back()->name;
+                renameFolder = folder->childFolders.back().get();
+                firstFrameRename = true;
             }
             for (auto& r : g_resourceTypes)
             {

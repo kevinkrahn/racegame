@@ -97,7 +97,7 @@ struct GarageData
 {
     Driver* driver = nullptr;
 
-    i32 previewVehicleIndex = -1;
+    VehicleData* previewVehicle = nullptr;
     VehicleConfiguration previewVehicleConfig;
     VehicleTuning previewTuning;
 

@@ -132,9 +132,21 @@ void Menu::startQuickRace()
         AIDriverData* d = (AIDriverData*)r;
         if (d->vehicles.size() > 0)
         {
-            aiDrivers.push(d);
+            bool valid = true;
+            for (auto& v : d->vehicles)
+            {
+                if (!g_res.getVehicle(v.vehicleGuid))
+                {
+                    valid = false;
+                }
+            }
+            if (valid)
+            {
+                aiDrivers.push(d);
+            }
         }
     });
+    assert(aiDrivers.size() >= 10);
     for (u32 i=0; i<10; ++i)
     {
         i32 aiIndex;
@@ -142,7 +154,7 @@ void Menu::startQuickRace()
         while (g_game.state.drivers.findIf([&](Driver const& d){
             return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
         }));
-        g_game.state.drivers.push(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
+        g_game.state.drivers.push(Driver(false, false, false, 0, 0, aiDrivers[aiIndex]->guid));
         g_game.state.drivers.back().credits = driverCredits;
         g_game.state.drivers.back().aiUpgrades(series);
     }
@@ -771,7 +783,18 @@ void Menu::showNewChampionshipMenu()
             AIDriverData* d = (AIDriverData*)r;
             if (d->vehicles.size() > 0)
             {
-                aiDrivers.push(d);
+                bool valid = true;
+                for (auto& v : d->vehicles)
+                {
+                    if (!g_res.getVehicle(v.vehicleGuid))
+                    {
+                        valid = false;
+                    }
+                }
+                if (valid)
+                {
+                    aiDrivers.push(d);
+                }
             }
         });
         for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
@@ -781,7 +804,7 @@ void Menu::showNewChampionshipMenu()
             while (g_game.state.drivers.findIf([&](Driver const& d){
                 return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
             }));
-            g_game.state.drivers.push(Driver(false, false, false, 0, -1, aiDrivers[aiIndex]->guid));
+            g_game.state.drivers.push(Driver(false, false, false, 0, 0, aiDrivers[aiIndex]->guid));
             g_game.state.drivers.back().aiUpgrades(series);
         }
         garage.playerIndex = 0;
@@ -905,12 +928,12 @@ void Menu::showNewChampionshipMenu()
 void Menu::showInitialCarLotMenu(u32 playerIndex)
 {
     garage.initialCarSelect = true;
-    garage.previewVehicleIndex = -1;
+    garage.previewVehicle = nullptr;
     garage.driver = &g_game.state.drivers[playerIndex];
 
     reset();
-    createVehiclePreview();
     createCarLotMenu();
+    createVehiclePreview();
 }
 
 void Menu::updateVehiclePreviews()
@@ -924,7 +947,7 @@ void Menu::updateVehiclePreviews()
         rw.setSize(vehicleIconSize, vehicleIconSize);
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
         Driver& driver = g_game.state.drivers[driverIndex];
-        if (driver.vehicleIndex != -1)
+        if (driver.getVehicleData())
         {
             VehicleTuning t = driver.getTuning();
             driver.getVehicleData()->render(&rw, Mat4::translation(Vec3(0, 0, t.getRestOffset())),
@@ -983,7 +1006,7 @@ void Menu::showChampionshipMenu()
             };
             w.onSelect = [playerIndex, this]{
                 garage.driver = &g_game.state.drivers[playerIndex];
-                garage.previewVehicleIndex = garage.driver->vehicleIndex;
+                garage.previewVehicle = garage.driver->getVehicleData();
                 garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                 garage.previewTuning = garage.driver->getTuning();
                 garage.currentStats = garage.previewTuning.computeVehicleStats();
@@ -1154,7 +1177,7 @@ void Menu::createVehiclePreview()
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
         Mat4 vehicleTransform = Mat4::rotationZ((f32)getTime());
-        g_vehicles[garage.previewVehicleIndex]->render(&rw, Mat4::translation(
+        garage.previewVehicle->render(&rw, Mat4::translation(
                 Vec3(0, 0, garage.previewTuning.getRestOffset())) *
             vehicleTransform, nullptr, garage.previewVehicleConfig, &garage.previewTuning);
         rw.setViewportCount(1);
@@ -1247,6 +1270,7 @@ void Menu::createPerformanceMenu()
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT);
 
+#if 0
     Vec2 size(150, 150);
     f32 x = 280-buttonSize.x*0.5f + size.x*0.5f;
     f32 y = -400 + size.y * 0.5f;
@@ -1288,7 +1312,7 @@ void Menu::createPerformanceMenu()
                 {
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                     garage.previewVehicleConfig.addUpgrade(i);
-                    g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                    g_res.getVehicle(garage.previewVehicleGuid)->initTuning(garage.previewVehicleConfig, garage.previewTuning);
                     garage.upgradeStats = garage.previewTuning.computeVehicleStats();
                 }
             }
@@ -1314,7 +1338,7 @@ void Menu::createPerformanceMenu()
                 previewUpgradeIndex = i;
                 garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                 garage.previewVehicleConfig.addUpgrade(i);
-                g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                g_res.getVehicle(garage.previewVehicleGuid)->initTuning(garage.previewVehicleConfig, garage.previewTuning);
                 garage.upgradeStats = garage.previewTuning.computeVehicleStats();
             }
 
@@ -1328,6 +1352,7 @@ void Menu::createPerformanceMenu()
             selectedWidget = w;
         }
     }
+#endif
 }
 
 void Menu::createCosmeticsMenu()
@@ -1613,40 +1638,50 @@ void Menu::createCarLotMenu()
 {
 	resetTransient();
 
-    if (garage.previewVehicleIndex == -1)
+	static Array<VehicleData*> vehicles;
+	vehicles.clear();
+	g_res.iterateResourceType(ResourceType::VEHICLE, [&](Resource* r){
+        auto v = (VehicleData*)r;
+        if (v->showInCarLot)
+        {
+            vehicles.push(v);
+        }
+	});
+
+    if (!garage.previewVehicle)
     {
-        garage.previewVehicleIndex = 0;
+        garage.previewVehicle = vehicles[0];
         garage.previewVehicleConfig = VehicleConfiguration{};
-        auto& vd = g_vehicles[garage.previewVehicleIndex];
+        auto vd = garage.previewVehicle;
         garage.previewVehicleConfig.cosmetics.color =
             srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
         garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
         garage.previewVehicleConfig.reloadMaterials();
-        g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+        vd->initTuning(garage.previewVehicleConfig, garage.previewTuning);
         garage.currentStats = garage.previewTuning.computeVehicleStats();
         garage.upgradeStats = garage.currentStats;
     }
 
     Vec2 buttonSize(450, 75);
     addButton("DONE", nullptr, {280, 350-buttonSize.y*0.5f}, buttonSize, [this]{
-        garage.previewVehicleIndex = garage.driver->vehicleIndex;
+        garage.previewVehicle = garage.driver->getVehicleData();
         garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
         garage.previewTuning = garage.driver->getTuning();
         garage.currentStats = garage.previewTuning.computeVehicleStats();
         garage.upgradeStats = garage.currentStats;
         createMainGarageMenu();
     }, WidgetFlags::FADE_OUT_TRANSIENT | WidgetFlags::BACK | WidgetFlags::TRANSIENT, nullptr, [this]{
-        return garage.driver->vehicleIndex != -1;
+        return !!garage.driver->getVehicleData();
     });
 
     addButton("BUY CAR", nullptr, {280, 350-buttonSize.y*0.5f - buttonSize.y - 12}, buttonSize, [this]{
-        i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue();
+        i32 totalCost = garage.previewVehicle->price - garage.driver->getVehicleValue();
         garage.driver->credits -= totalCost;
-        garage.driver->vehicleIndex = garage.previewVehicleIndex;
+        garage.driver->vehicleGuid = garage.previewVehicle->guid;
         garage.driver->vehicleConfig = garage.previewVehicleConfig;
     }, WidgetFlags::TRANSIENT, nullptr, [this]{
-        i32 totalCost = g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue();
-        return garage.previewVehicleIndex != garage.driver->vehicleIndex &&
+        i32 totalCost = garage.previewVehicle->price - garage.driver->getVehicleValue();
+        return garage.previewVehicle->guid != garage.driver->vehicleGuid &&
             garage.driver->credits >= totalCost;
     });
 
@@ -1660,19 +1695,19 @@ void Menu::createCarLotMenu()
             Vec2 pos = Vec2(-260, -150) - vehiclePreviewSize * 0.5f + Vec2(20);
             Vec2 center = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
 
-            if (garage.driver->vehicleIndex == -1)
+            if (garage.driver->getVehicleData())
             {
                 ui::text(fontBold,
-                    tmpStr("PRICE: %i", g_vehicles[garage.previewVehicleIndex]->price),
+                    tmpStr("PRICE: %i", garage.previewVehicle->price),
                     center + convertSize(pos), Vec3(1.f),
                     w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
             }
             else
             {
-                if (garage.driver->vehicleIndex != garage.previewVehicleIndex)
+                if (garage.driver->getVehicleData() != garage.previewVehicle)
                 {
                     ui::text(font,
-                        tmpStr("PRICE: %i", g_vehicles[garage.previewVehicleIndex]->price),
+                        tmpStr("PRICE: %i", garage.previewVehicle->price),
                         center + convertSize(pos), Vec3(0.6f),
                         w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
 
@@ -1682,7 +1717,7 @@ void Menu::createCarLotMenu()
                         w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
 
                     ui::text(fontBold,
-                        tmpStr("TOTAL: %i", g_vehicles[garage.previewVehicleIndex]->price - garage.driver->getVehicleValue()),
+                        tmpStr("TOTAL: %i", garage.previewVehicle->price - garage.driver->getVehicleValue()),
                         center + convertSize(pos + Vec2(0, 48)), Vec3(1.f),
                         w.fadeInAlpha, 1.f, HAlign::LEFT, VAlign::TOP);
                 }
@@ -1697,8 +1732,8 @@ void Menu::createCarLotMenu()
     f32 gap = 6;
     u32 buttonsPerRow = 3;
 
-    static Array<RenderWorld> carLotRenderWorlds(g_vehicles.size());
-    for (i32 i=0; i<(i32)g_vehicles.size(); ++i)
+    static Array<RenderWorld> carLotRenderWorlds(vehicles.size());
+    for (i32 i=0; i<(i32)vehicles.size(); ++i)
     {
         RenderWorld& rw = carLotRenderWorlds[i];
 
@@ -1709,16 +1744,16 @@ void Menu::createCarLotMenu()
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
         VehicleConfiguration vehicleConfig;
-        auto& vd = g_vehicles[i];
+        auto& vd = vehicles[i];
         vehicleConfig.cosmetics.color =
             srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
         vehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
 
         VehicleTuning tuning;
-        g_vehicles[i]->initTuning(vehicleConfig, tuning);
+        vehicles[i]->initTuning(vehicleConfig, tuning);
         f32 vehicleAngle = 0.f;
         Mat4 vehicleTransform = Mat4::rotationZ(vehicleAngle);
-        g_vehicles[i]->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())) *
+        vehicles[i]->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())) *
             vehicleTransform, nullptr, vehicleConfig, &tuning);
         rw.setViewportCount(1);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
@@ -1727,9 +1762,9 @@ void Menu::createCarLotMenu()
 
         Vec2 pos = Vec2(x + (i % buttonsPerRow) * (size.x + gap),
                         y + (i / buttonsPerRow) * (size.y + gap));
-        Widget* w = addImageButton(g_vehicles[i]->name.data(), g_vehicles[i]->description.data(), pos, size, [i,this]{
-            garage.previewVehicleIndex = i;
-            if (i == garage.driver->vehicleIndex)
+        Widget* w = addImageButton(vehicles[i]->name.data(), vehicles[i]->description.data(), pos, size, [i,this]{
+            garage.previewVehicle = vehicles[i];
+            if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
             {
                 garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                 garage.previewTuning = garage.driver->getTuning();
@@ -1739,22 +1774,23 @@ void Menu::createCarLotMenu()
             else
             {
                 garage.previewVehicleConfig = VehicleConfiguration{};
-                auto& vd = g_vehicles[garage.previewVehicleIndex];
+                auto vd = garage.previewVehicle;
                 garage.previewVehicleConfig.cosmetics.color =
                     srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
                 garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
                 garage.previewVehicleConfig.reloadMaterials();
-                g_vehicles[garage.previewVehicleIndex]->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
                 garage.currentStats = garage.previewTuning.computeVehicleStats();
                 garage.upgradeStats = garage.currentStats;
             }
         }, WidgetFlags::TRANSIENT, rw.getTexture(), 0.f, [i,this](bool isSelected) -> ImageButtonInfo {
             //bool buttonEnabled = garage.driver->credits >= g_vehicles[i]->price || i == garage.driver->vehicleIndex;
             bool buttonEnabled = true;
+            auto v = vehicles[i];
             return ImageButtonInfo{
                 buttonEnabled,
-                i == garage.previewVehicleIndex, 0, 0,
-                i == garage.driver->vehicleIndex ? "OWNED" : tmpStr("%i", g_vehicles[i]->price), true };
+                v == garage.previewVehicle, 0, 0,
+                v == garage.driver->getVehicleData() ? "OWNED" : tmpStr("%i", v->price), true };
         });
 
         if (i == 0)

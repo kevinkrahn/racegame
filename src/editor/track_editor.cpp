@@ -74,9 +74,15 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
         if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
         {
             // TODO: Add options to include AI drivers and configure player vehicle
+	        Array<i64> vehicles;
+	        g_res.iterateResourceType(ResourceType::VEHICLE, [&](Resource* r){
+                auto v = (VehicleData*)r;
+                if (v->showInCarLot) { vehicles.push(v->guid); }
+	        });
 
             g_game.state.drivers.clear();
-            g_game.state.drivers.push(Driver(true, true, true, 0, 3));
+            g_game.state.drivers.push(Driver(true, true, true, 0,
+                        vehicles[irandom(scene->randomSeries, 0, vehicles.size())]));
             auto conf = g_game.state.drivers.back().getVehicleConfig();
             auto vd = g_game.state.drivers.back().getVehicleData();
             conf->cosmetics.color =

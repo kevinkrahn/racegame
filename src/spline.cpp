@@ -152,7 +152,7 @@ void Spline::updateMesh(Scene* scene)
         polyLine[i].distance = pathLength;
         polyLine[i].dir = normalize(diff);
     }
-    polyLine.pop_back();
+    polyLine.pop();
 
     bool modelHasCollision = model->hasCollision();
     for (auto& obj : model->objects)

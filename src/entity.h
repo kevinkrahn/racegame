@@ -216,7 +216,7 @@ Array<RegisteredEntity> g_entities;
 
 u32 entityCounter = 0;
 template<typename T>
-void registerEntity()
+void registerEntity(bool placeable = false)
 {
     u32 entityID = (u32)g_entities.size();
     g_entities.push({
@@ -224,14 +224,14 @@ void registerEntity()
         [] (u32 entityID) {
             Entity* e = new T();
             e->entityID = entityID;
-            if (std::is_base_of<PlaceableEntity, T>::value)
+            if (g_entities[entityID].isPlaceableInEditor)
             {
                 e->entityFlags |= EntityFlags::PROP;
             }
             e->entityCounterID = ++entityCounter;
             return e;
         },
-        std::is_base_of<PlaceableEntity, T>::value,
+        placeable
     });
 }
 

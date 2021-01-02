@@ -128,46 +128,66 @@ VehicleStats VehicleTuning::computeVehicleStats()
 
 void VehicleData::initStandardUpgrades()
 {
+    UpgradeStats engine;
+    engine.peakEngineTorqueDiff = 15.f;
+    engine.topSpeedDiff = 1.2f;
+
+    UpgradeStats tires;
+    tires.trackTireFrictionDiff = 0.1f;
+    tires.offroadTireFrictionDiff = 0.05f;
+
+    UpgradeStats armor;
+    armor.maxHitPointsDiff = 10.f;
+
+    UpgradeStats weight;
+    weight.chassisMassDiff = -30.f;
+
+    UpgradeStats suspension;
+    suspension.antiRollbarStiffnessDiff = 600.f;
+    suspension.suspensionSpringStrengthDiff = 1000.f;
+    suspension.suspensionSpringDamperRateDiff = 600.f;
+    suspension.trackTireFrictionDiff = 0.05f;
+
     availableUpgrades = {
         {
             "ENGINE",
             "Upgrade the engine to improve acceleration and top speed.",
-            g_res.getTexture("icon_pistons"),
-            PerformanceUpgradeType::ENGINE,
-            5,
+            g_res.getTexture("icon_pistons")->guid,
             1500,
+            5,
+            engine
         },
         {
             "TIRES",
             "Equip better tires for improved traction and overall handling.",
-            g_res.getTexture("icon_wheel"),
-            PerformanceUpgradeType::TIRES,
-            5,
+            g_res.getTexture("icon_wheel")->guid,
             1000,
+            5,
+            tires
         },
         {
             "ARMOR",
             "Upgrade armor to improve resistance against all forms of damage.",
-            g_res.getTexture("icon_armor"),
-            PerformanceUpgradeType::ARMOR,
-            5,
+            g_res.getTexture("icon_armor")->guid,
             1000,
+            5,
+            armor
         },
         {
             "SUSPENSION",
             "Upgrade the suspension to improve handling.",
-            g_res.getTexture("icon_suspension"),
-            PerformanceUpgradeType::SUSPENSION,
-            2,
+            g_res.getTexture("icon_suspension")->guid,
             1250,
+            2,
+            suspension
         },
         {
             "WEIGHT",
             "Strips out unnecessary parts of the vehicle to improve acceleration and handling.",
-            g_res.getTexture("icon_weight"),
-            PerformanceUpgradeType::WEIGHT_REDUCTION,
-            2,
+            g_res.getTexture("icon_weight")->guid,
             1500,
+            2,
+            weight
         },
     };
 }
@@ -204,6 +224,13 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
 
 void VehicleData::loadModelData(const char* modelName, VehicleTuning& tuning)
 {
+    Model* model = g_res.getModel(modelName);
+    modelGuid = model->guid;
+    loadModelData(tuning);
+}
+
+void VehicleData::loadModelData(VehicleTuning& tuning)
+{
 #if 1
     // reset values
     tuning.collisionMeshes.clear();
@@ -225,7 +252,7 @@ void VehicleData::loadModelData(const char* modelName, VehicleTuning& tuning)
     tuning.chassisBatch.begin();
     tuning.chassisOneMaterialBatch.begin();
 
-    Model* model = g_res.getModel(modelName);
+    Model* model = g_res.getModel(modelGuid);
 
     for (auto& obj : model->objects)
     {
@@ -503,15 +530,7 @@ void VehicleData::renderDebris(RenderWorld* rw,
 #include "weapons/glue.h"
 #include "weapons/auto_repair.h"
 
-#include "vehicles/mini.h"
-#include "vehicles/sportscar.h"
-#include "vehicles/racecar.h"
-#include "vehicles/truck.h"
-#include "vehicles/stationwagon.h"
-#include "vehicles/coolcar.h"
-#include "vehicles/muscle.h"
-#include "vehicles/muscle2.h"
-
+// TODO: move this
 void initializeVehicleData()
 {
     registerWeapon<WBlaster>();
@@ -530,13 +549,4 @@ void initializeVehicleData()
     registerWeapon<WScatterGun>();
     registerWeapon<WHomingMissiles>();
     registerWeapon<WAutoRepair>();
-
-    //registerVehicle<VMini>();
-    registerVehicle<VStationWagon>();
-    registerVehicle<VCoolCar>();
-    registerVehicle<VMuscle>();
-    registerVehicle<VSportscar>();
-    registerVehicle<VMuscle2>();
-    //registerVehicle<VTruck>();
-    registerVehicle<VRacecar>();
 }

@@ -10,17 +10,6 @@ enum struct WeaponType
     SPECIAL_ABILITY,
 };
 
-// TODO: remove
-const Str16 g_tags[] = {
-    "hood-1",
-    "hood-2",
-    "roof-1",
-    "roof-2",
-    "rack-1",
-    "rack-2",
-    "narrow",
-};
-
 struct WeaponInfo
 {
     const char* name;
@@ -48,12 +37,13 @@ TagGroup tags(const char* s1, const char* s2, const char* s3) { return TagGroup{
 
 struct WeaponSlot
 {
-    Str32 name = "";
+    Str32 name;
     WeaponType weaponType = WeaponType::FRONT_WEAPON;
     TagGroup tagGroups[3];
 
     void serialize(Serializer& s)
     {
+        s.field(name);
         s.field(weaponType);
         s.field(tagGroups);
     }
@@ -67,6 +57,7 @@ struct WeaponSlot
             {
                 for (u32 k=0; k<ARRAY_SIZE(w.tags); ++k)
                 {
+                    // TODO: this is completely wrong, fix it
                     if (tagGroups[i].tags[j] != w.tags[k])
                     {
                         allMatch = false;

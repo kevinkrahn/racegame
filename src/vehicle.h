@@ -151,7 +151,7 @@ public:
     void repair(f32 amount) { hitPoints = min(hitPoints + amount, this->tuning.maxHitPoints); }
     void addNotification(const char* text, f32 time=2.f, Vec3 const& color=Vec3(1.f))
     {
-        if (notifications.size() == notifications.capacity())
+        if (notifications.size() == notifications.maximumSize())
         {
             notifications.erase(notifications.begin());
         }

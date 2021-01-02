@@ -57,13 +57,13 @@ struct PurchaseAction
 
 struct AIVehicleConfiguration
 {
-    u32 vehicleIndex = 0;
+    i64 vehicleGuid = 0;
     VehicleConfiguration config;
     Array<PurchaseAction> purchaseActions;
 
     void serialize(Serializer& s)
     {
-        s.field(vehicleIndex);
+        s.field(vehicleGuid);
         s.field(config);
     }
 };

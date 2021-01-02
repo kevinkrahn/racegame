@@ -20,7 +20,7 @@ class Projectile : public Entity, public PxQueryFilterCallback
         ActorUserData* userData = (ActorUserData*)actor->userData;
         if (userData && userData->entityType == ActorUserData::VEHICLE)
         {
-            if (ignoreActors.size() == ignoreActors.capacity())
+            if (ignoreActors.size() == ignoreActors.maximumSize())
             {
                 return PxQueryHitType::eBLOCK;
             }

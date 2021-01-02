@@ -176,9 +176,9 @@ void Decal::end()
     mesh.numIndices = mesh.indices.size();
     mesh.createVAO();
     mesh.vertices.clear();
-    mesh.vertices.shrink_to_fit();
+    mesh.vertices.shrinkToFit();
     mesh.indices.clear();
-    mesh.indices.shrink_to_fit();
+    mesh.indices.shrinkToFit();
 }
 
 void Decal::draw(RenderWorld* rw)

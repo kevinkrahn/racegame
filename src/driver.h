@@ -11,7 +11,7 @@ struct Driver
     i32 credits = 10000;
     i64 aiDriverGUID = 0;
     i32 controllerID = -1;
-    i32 vehicleIndex = -1;
+    i64 vehicleGuid = 0;
     u32 lastPlacement = 0;
     bool isPlayer = false;
     bool hasCamera = false;
@@ -20,31 +20,31 @@ struct Driver
 
     VehicleConfiguration* getVehicleConfig()
     {
-        assert(vehicleIndex != -1);
         return &vehicleConfig;
     }
 
     VehicleTuning getTuning()
     {
-        assert(vehicleIndex != -1);
+        VehicleData* v = g_res.getVehicle(vehicleGuid);
+        assert(v);
         VehicleTuning tuning;
-        g_vehicles[vehicleIndex]->initTuning(*getVehicleConfig(), tuning);
+        v->initTuning(*getVehicleConfig(), tuning);
         return tuning;
     }
 
     VehicleData* getVehicleData()
     {
-        assert(vehicleIndex != -1);
-        return g_vehicles[vehicleIndex].get();
+        return g_res.getVehicle(vehicleGuid);
     }
 
     i32 getVehicleValue()
     {
-        if (vehicleIndex == -1)
+        VehicleData* v = g_res.getVehicle(vehicleGuid);
+        if (!v)
         {
             return 0;
         }
-        i32 value = g_vehicles[vehicleIndex]->price;
+        i32 value = v->price;
         VehicleData* vd = getVehicleData();
         for (auto& upgrade : vehicleConfig.performanceUpgrades)
         {
@@ -65,7 +65,7 @@ struct Driver
     }
 
     Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-            i32 controllerID=0, i32 vehicleIndex=-1, i64 aiDriverGUID=0);
+            i32 controllerID=0, i64 vehicleGuid=0, i64 aiDriverGUID=0);
 
     Driver() = default;
     Driver(Driver&& other) = default;
@@ -80,12 +80,11 @@ struct Driver
         s.field(leaguePoints);
         s.field(credits);
         s.field(aiDriverGUID);
-        s.field(vehicleIndex);
         s.field(lastPlacement);
         s.field(isPlayer);
         s.field(hasCamera);
         s.field(useKeyboard);
-        s.field(vehicleIndex);
+        s.field(vehicleGuid);
         s.field(vehicleConfig);
     }
 };

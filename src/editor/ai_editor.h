@@ -39,13 +39,12 @@ public:
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
         const char* vehicleName = "None";
-        if (ai.vehicleIndex != -1)
+        VehicleData* vehicle = g_res.getVehicle(ai.vehicleGuid);
+        if (vehicle)
         {
-            VehicleData* vehicle = g_vehicles[ai.vehicleIndex].get();
             vehicle->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())),
                     nullptr, ai.config, &tuning, nullptr, false, false, Vec4(0));
             renderer->addRenderWorld(&rw);
-
             vehicleName = vehicle->name.data();
         }
 
@@ -57,20 +56,19 @@ public:
 
         if (ImGui::BeginCombo("Vehicle", vehicleName))
         {
-            for (u32 i=0; i<g_vehicles.size(); ++i)
-            {
-                bool isSelected = i == ai.vehicleIndex;
-                if (ImGui::Selectable(g_vehicles[i]->name.data()))
+            g_res.iterateResourceType(ResourceType::VEHICLE, [&](Resource* r){
+                bool isSelected = ai.vehicleGuid == r->guid;
+                if (ImGui::Selectable(r->name.data()))
                 {
-                    ai.vehicleIndex = i;
-                    g_vehicles[ai.vehicleIndex]->initTuning(ai.config, tuning);
+                    ai.vehicleGuid = r->guid;
+                    ((VehicleData*)r)->initTuning(ai.config, tuning);
                     dirty = true;
                 }
                 if (isSelected)
                 {
                     ImGui::SetItemDefaultFocus();
                 }
-            }
+            });
             ImGui::EndCombo();
         }
 
@@ -126,9 +124,8 @@ public:
             }
         }
 
-        if (ai.vehicleIndex != -1)
+        if (vehicle)
         {
-            VehicleData* vehicle = g_vehicles[ai.vehicleIndex].get();
             if (ImGui::TreeNodeEx("Weapons", 0, "Weapons"))
             {
                 for (u32 slotIndex=0; slotIndex<vehicle->weaponSlots.size(); ++slotIndex)
@@ -176,8 +173,11 @@ public:
         for (auto& v : ai.vehicles)
         {
             vehicleRenderData.push(new VehicleRenderData());
-            g_vehicles[v.vehicleIndex]->initTuning(
-                    v.config, vehicleRenderData.back()->tuning);
+            auto vehicle = g_res.getVehicle(v.vehicleGuid);
+            if (vehicle)
+            {
+                vehicle->initTuning(v.config, vehicleRenderData.back()->tuning);
+            }
         }
     }
 
@@ -214,8 +214,12 @@ public:
                         ai.vehicles.push({});
                         Serializer::fromDict(data, ai.vehicles.back());
                         vehicleRenderData.push(new VehicleRenderData());
-                        g_vehicles[ai.vehicles.back().vehicleIndex]->initTuning(
-                                ai.vehicles.back().config, vehicleRenderData.back()->tuning);
+                        VehicleData* vehicle = g_res.getVehicle(ai.vehicles.back().vehicleGuid);
+                        if (vehicle)
+                        {
+                            vehicle->initTuning(
+                                    ai.vehicles.back().config, vehicleRenderData.back()->tuning);
+                        }
                     }
                     if (ImGui::MenuItem("Delete"))
                     {

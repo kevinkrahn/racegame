@@ -3,10 +3,10 @@
 #include "ai_driver_data.h"
 
 Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-        i32 controllerID, i32 vehicleIndex, i64 aiDriverGUID)
+        i32 controllerID, i64 vehicleGuid, i64 aiDriverGUID)
 {
     this->hasCamera = hasCamera;
-    this->vehicleIndex = vehicleIndex;
+    this->vehicleGuid = vehicleGuid;
     this->useKeyboard = useKeyboard;
     this->controllerID = controllerID;
     this->isPlayer = isPlayer;
@@ -27,13 +27,15 @@ void Driver::aiUpgrades(RandomSeries& series)
 //#define AI_DEBUG_PRINT(...) println(__VA_ARGS__)
 #define AI_DEBUG_PRINT(...)
 
-    if (vehicleIndex == -1)
+    VehicleData* vehicle = getVehicleData();
+    if (!vehicle)
     {
         auto& v = ai.vehicles[0];
         vehicleConfig.cosmetics = v.config.cosmetics;
-        vehicleIndex = (i32)v.vehicleIndex;
-        credits -= g_vehicles[vehicleIndex]->price;
-        AI_DEBUG_PRINT("%s bought vehicle %s", playerName.data(), g_vehicles[vehicleIndex]->name);
+        vehicleGuid = v.vehicleGuid;
+        vehicle = g_res.getVehicle(vehicleGuid);
+        credits -= vehicle->price;
+        AI_DEBUG_PRINT("%s bought vehicle %s", playerName.data(), vehicle->name);
     }
 
     // TODO: make AI buy better vehicles over time

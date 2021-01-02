@@ -21,6 +21,17 @@ struct RegisteredWeapon
     std::function<OwnedPtr<Weapon>()> create;
 };
 
+Array<RegisteredWeapon> g_weapons;
+
+template <typename T>
+void registerWeapon()
+{
+    g_weapons.push({
+        (T().info),
+        [] { return OwnedPtr<Weapon>(new T); }
+    });
+}
+
 struct VehicleMesh
 {
     Mesh* mesh;
@@ -36,7 +47,7 @@ struct VehicleDebris
     f32 life = 0.f;
 };
 
-struct VehicleCollisionsMesh
+struct VehicleCollisionMesh
 {
     PxConvexMesh* convexMesh;
     Mat4 transform;
@@ -61,34 +72,65 @@ enum struct VehicleDifferentialType
     LS_FWD,
     LS_RWD,
     LS_4WD,
-    MAX
+    NONE,
 };
 
-enum struct PerformanceUpgradeType
+struct UpgradeStats
 {
-    ENGINE,
-    ARMOR,
-    TIRES,
-    SUSPENSION,
-    AERODYNAMICS,
-    TRANSMISSION,
-    WEIGHT_REDUCTION,
-    ALL_WHEEL_DRIVE,
+    f32 chassisMassDiff = 0.f;
+    f32 wheelDampingRateDiff = 0.f;
+    f32 wheelOffroadDampingRateDiff = 0.f;
+    f32 trackTireFrictionDiff = 0.f;
+    f32 offroadTireFrictionDiff = 0.f;
+    f32 topSpeedDiff = 0.f;
+    f32 constantDownforceDiff = 0.f;
+    f32 forwardDownforceDiff = 0.f;
+    f32 maxEngineOmegaDiff = 0.f;
+    f32 peakEngineTorqueDiff = 0.f;
+    f32 maxHitPointsDiff = 0.f;
+    f32 antiRollbarStiffnessDiff = 0.f;
+    f32 suspensionSpringStrengthDiff = 0.f;
+    f32 suspensionSpringDamperRateDiff = 0.f;
+
+    VehicleDifferentialType differential = VehicleDifferentialType::NONE;
+
+    void serialize(Serializer& s)
+    {
+        s.field(chassisMassDiff);
+        s.field(wheelDampingRateDiff);
+        s.field(wheelOffroadDampingRateDiff);
+        s.field(trackTireFrictionDiff);
+        s.field(offroadTireFrictionDiff);
+        s.field(topSpeedDiff);
+        s.field(constantDownforceDiff);
+        s.field(forwardDownforceDiff);
+        s.field(maxEngineOmegaDiff);
+        s.field(peakEngineTorqueDiff);
+        s.field(maxHitPointsDiff);
+        s.field(antiRollbarStiffnessDiff);
+        s.field(suspensionSpringStrengthDiff);
+        s.field(suspensionSpringDamperRateDiff);
+        s.field(differential);
+    }
 };
 
 struct PerformanceUpgrade
 {
-    const char* name;
-    const char* description;
-    Texture* icon;
-    PerformanceUpgradeType upgradeType;
+    Str32 name;
+    Str64 description;
+    i64 iconGuid;
+    i32 price = 1000;
     i32 maxUpgradeLevel = 5;
-    i32 price;
+    UpgradeStats stats;
 
     void serialize(Serializer& s)
     {
-        s.field(maxUpgradeLevel);
+        s.field(name);
+        s.field(description);
+        s.field(iconGuid);
         s.field(price);
+        s.field(maxUpgradeLevel);
+        s.field(stats);
     }
 };
 
@@ -122,16 +164,16 @@ struct VehicleTuning
 
     f32 suspensionMaxCompression = 0.2f;
     f32 suspensionMaxDroop = 0.3f;
-    f32 suspensionSpringStrength = 35000.0f;
-    f32 suspensionSpringDamperRate = 4500.0f;
+    f32 suspensionSpringStrength = 35000.f;
+    f32 suspensionSpringDamperRate = 4500.f;
 
     // TODO: should these be in degrees instead of radians?
     f32 camberAngleAtRest = 0.f;
     f32 camberAngleAtMaxDroop = 0.01f;
     f32 camberAngleAtMaxCompression = -0.01f;
 
-    f32 frontAntiRollbarStiffness = 10000.0f;
-    f32 rearAntiRollbarStiffness = 10000.0f;
+    f32 frontAntiRollbarStiffness = 10000.f;
+    f32 rearAntiRollbarStiffness = 10000.f;
 
     f32 ackermannAccuracy = 1.f;
 
@@ -153,7 +195,7 @@ struct VehicleTuning
     f32 collisionWidth = 0.f;
     f32 collisionLength = 0.f;
     Vec3 wheelPositions[NUM_WHEELS] = {};
-    Array<VehicleCollisionsMesh> collisionMeshes;
+    Array<VehicleCollisionMesh> collisionMeshes;
     f32 wheelWidthRear = 0.4f;
     f32 wheelRadiusRear = 0.6f;
     f32 wheelWidthFront = 0.4f;
@@ -253,6 +295,33 @@ struct VehicleTuning
         f32 autoBoxSwitchTime = 0.25f;
         f32 maxHandbrakeTorque = 10000.f;
     }
+
+    void applyUpgrade(PerformanceUpgrade const& upgrade, u32 level)
+    {
+        assert(level > 0);
+        assert(level < upgrade.maxUpgradeLevel);
+
+        chassisMass += upgrade.stats.chassisMassDiff * level;
+        wheelDampingRate += upgrade.stats.wheelDampingRateDiff * level;
+        wheelOffroadDampingRate += upgrade.stats.wheelOffroadDampingRateDiff * level;
+        trackTireFriction += upgrade.stats.trackTireFrictionDiff * level;
+        offroadTireFriction += upgrade.stats.offroadTireFrictionDiff * level;
+        topSpeed += upgrade.stats.topSpeedDiff * level;
+        constantDownforce += upgrade.stats.constantDownforceDiff * level;
+        forwardDownforce += upgrade.stats.forwardDownforceDiff * level;
+        maxEngineOmega += upgrade.stats.maxEngineOmegaDiff * level;
+        peakEngineTorque += upgrade.stats.peakEngineTorqueDiff * level;
+        maxHitPoints += upgrade.stats.maxHitPointsDiff * level;
+        frontAntiRollbarStiffness += upgrade.stats.antiRollbarStiffnessDiff * level;
+        rearAntiRollbarStiffness += upgrade.stats.antiRollbarStiffnessDiff * level;
+        suspensionSpringStrength += upgrade.stats.suspensionSpringStrengthDiff;
+        suspensionSpringDamperRate += upgrade.stats.suspensionSpringDamperRateDiff;
+
+        if (upgrade.stats.differential != VehicleDifferentialType::NONE)
+        {
+            differential = upgrade.stats.differential;
+        }
+    }
 };
 
 struct VehicleCosmeticConfiguration
@@ -338,6 +407,7 @@ protected:
 public:
     VehicleTuning defaultTuning;
 
+    bool showInCarLot = true;
     Str64 description ="";
     Vec3 defaultColorHsv = Vec3(0.f, 0.f, 0.95f);
     f32 defaultShininess = 1.f;
@@ -355,6 +425,7 @@ public:
         Resource::serialize(s);
 
         s.field(defaultTuning);
+        s.field(showInCarLot);
         s.field(description);
         s.field(defaultColorHsv);
         s.field(defaultShininess);
@@ -375,9 +446,11 @@ public:
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning)
     {
         defaultTuning.copy(&tuning);
-        initializeTuning(configuration, tuning);
+        //initializeTuning(configuration, tuning);
+        loadModelData(tuning);
     }
     void loadModelData(const char* modelName, VehicleTuning& tuning);
+    void loadModelData(VehicleTuning& tuning);
     void initStandardUpgrades();
 
     u32 getWeaponSlotCount(WeaponType weaponType)
@@ -410,24 +483,5 @@ public:
         return -1;
     }
 };
-
-Array<OwnedPtr<VehicleData>> g_vehicles;
-Array<RegisteredWeapon> g_weapons;
-
-template <typename T>
-void registerWeapon()
-{
-    g_weapons.push({
-        (T().info),
-        [] { return OwnedPtr<Weapon>(new T); }
-    });
-}
-
-template <typename T>
-void registerVehicle()
-{
-    g_vehicles.push(new T);
-    g_vehicles.back()->guid = g_res.generateGUID();
-}
 
 void initializeVehicleData();

@@ -59,6 +59,21 @@ public:
     }
     bool operator<(Str const& rhs) { return strcmp(buf_, rhs.buf_) < 0; }
     bool operator>(Str const& rhs) { return strcmp(buf_, rhs.buf_) > 0; }
+    Str toUpper()
+    {
+        Str s = *this;
+        for (char* ch = s.data(); ch != s.data() + s.size(); ++ch)
+        {
+            // TODO
+        }
+        return s;
+    }
+    Str toLower()
+    {
+        Str s = *this;
+        // TODO
+        return s;
+    }
 };
 
 using Str16 = Str<16>;

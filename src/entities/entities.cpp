@@ -15,16 +15,16 @@ void registerEntities()
     // DO NOT CHANGE THE ORDER OF THE REGISTERED ENTITIES!!!
     // If the order is changed it will break compatibility with previously saved scenes
     // If the order must be changed, then compatibility must be added to Scene::deserialize()
-    registerEntity<Terrain>();     // 0
-    registerEntity<Track>();       // 1
-    registerEntity<StaticMesh>();  // 2
-    registerEntity<StaticDecal>(); // 3
-    registerEntity<Start>();       // 4
-    registerEntity<Spline>();      // 5
-    registerEntity<Booster>();     // 6
-    registerEntity<Oil>();         // 7
-    registerEntity<Start>();       // REMOVE
-    registerEntity<Billboard>();   // 9
-    registerEntity<Pickup>();      // 10
-    registerEntity<Glue>();        // 11
+    registerEntity<Terrain>(false);    // 0
+    registerEntity<Track>(false);      // 1
+    registerEntity<StaticMesh>(true);  // 2
+    registerEntity<StaticDecal>(true); // 3
+    registerEntity<Start>(true);       // 4
+    registerEntity<Spline>(false);     // 5
+    registerEntity<Booster>(true);     // 6
+    registerEntity<Oil>(true);         // 7
+    registerEntity<Start>(true);       // REMOVE
+    registerEntity<Billboard>(true);   // 9
+    registerEntity<Pickup>(true);      // 10
+    registerEntity<Glue>(true);        // 11
 }

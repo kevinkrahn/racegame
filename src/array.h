@@ -67,6 +67,7 @@ public:
 
     Array() {}
 
+    // TODO: get rid of initialize_list
     Array(std::initializer_list<T> list) : size_(list.size()), capacity_(list.size())
     {
         reallocate();
@@ -296,7 +297,7 @@ public:
         erase(data_ + index);
     }
 
-    void pop_back()
+    void pop()
     {
         assert(size_ > 0);
         data_[size_ - 1].~T();
@@ -312,7 +313,7 @@ public:
         size_ = 0;
     }
 
-    void shrink_to_fit()
+    void shrinkToFit()
     {
         if (capacity_ > size_)
         {
