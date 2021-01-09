@@ -53,7 +53,7 @@ public:
             ImGui::Text(mat.name.data());
             ImGui::Guid(mat.guid);
 
-            const char* materialTypeNames = "Lit\0Unlit\0";
+            const char* materialTypeNames = "Normal\0Terrain\0Track\0";
             dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
 
             const char* previewMeshNames = "Sphere\0Box\0Plane\0";

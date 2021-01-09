@@ -161,8 +161,7 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
         current = 0;
     }
     // TODO: Add X to clear selection
-    // TODO: fix this
-    /*
+    auto& style = ImGui::GetStyle();
     u32 previewTexture = 0;
     if (resource)
     {
@@ -170,17 +169,15 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
     }
     if (previewTexture)
     {
-        ImGui::Image((void*)(uintptr_t)g_res.getResource(current)->getPreviewTexture(), { 48, 48 });
+        ImGui::Image((void*)(uintptr_t)previewTexture, { 48, 48 });
         ImGui::SameLine();
         ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
-        ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 300.f };
-        ImGui::SetNextWindowSizeConstraints(size, size);
+        ImGui::SetNextWindowSize({ ImGui::GetWindowWidth() * 0.65f - 56, 300.f });
     }
     else
     {
-        ImGui::SetNextWindowSize({ 0, 300.f });
+        ImGui::SetNextWindowSize({ 0.f, 300.f });
     }
-    */
 
     bool changed = false;
     if (ImGui::BeginCombo(name, current == 0 ? "None" : resource->name.data()))
@@ -211,6 +208,7 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
             }
         }
 #else
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() - style.ItemSpacing.x);
         bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
 #endif
 
@@ -256,6 +254,11 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
 
         ImGui::EndCombo();
     }
+    else
+    {
+        ImGui::SetNextWindowSize({ 0, 0 });
+    }
+
     return changed;
 }
 

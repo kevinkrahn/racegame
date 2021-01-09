@@ -7,14 +7,15 @@
 
 enum struct MaterialType
 {
-    LIT = 0,
-    UNLIT = 1,
+    NORMAL = 0,
+    TERRAIN = 1,
+    TRACK = 2,
 };
 
 class Material : public Resource
 {
 public:
-    MaterialType materialType;
+    MaterialType materialType = MaterialType::NORMAL;
 
     bool isCullingEnabled = true;
     bool castsShadow = true;

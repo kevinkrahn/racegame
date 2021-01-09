@@ -90,3 +90,7 @@
   check if any other asset references it.
 - Allow any 4 materials to be painted on terrain, or make a terrain-layer resource
 - Allow any material to be used for track, or add track-material resource
+- Optimize vehicle initTuning() by skipping the batching for vehicle previews
+- Improve force feedback
+- Highlight player vehicle in each viewport before race starts
+- Disable highlight behind some railing types
