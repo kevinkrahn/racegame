@@ -108,6 +108,7 @@ void Terrain::onCreate(Scene* scene)
     actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
 
+    // TODO: remove
     surfaceMaterials[0] = {
         "Grass",
         {
@@ -181,6 +182,7 @@ void Terrain::onCreate(Scene* scene)
 
     regenerateMesh();
     regenerateCollisionMesh(scene);
+    regenerateMaterial();
 
     if (!scene->terrain)
     {
@@ -236,6 +238,11 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
     rw->depthPrepass(depthShader, { this, renderDepth });
     rw->shadowPass(depthShader, { this, renderDepth });
     rw->opaqueColorPass(g_game.isEditing ? colorShaderWithBrush : colorShader, { this, renderColor });
+}
+
+void Terrain::regenerateMaterial()
+{
+
 }
 
 bool Terrain::isOffroadAt(f32 x, f32 y) const

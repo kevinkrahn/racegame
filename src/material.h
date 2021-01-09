@@ -12,6 +12,29 @@ enum struct MaterialType
     TRACK = 2,
 };
 
+struct TerrainLayer
+{
+    i64 colorTextureGuid = 0;
+    i64 normalTextureGuid = 0;
+    f32 fresnelScale = 0.f;
+    f32 fresnelPower = 2.5f;
+    f32 fresnelBias = -0.2f;
+    f32 textureScale = 0.1f;
+
+    bool isOffroad = false;
+
+    void serialize(Serializer& s)
+    {
+        s.field(colorTextureGuid);
+        s.field(normalTextureGuid);
+        s.field(fresnelScale);
+        s.field(fresnelPower);
+        s.field(fresnelBias);
+        s.field(textureScale);
+        s.field(isOffroad);
+    }
+};
+
 class Material : public Resource
 {
 public:
@@ -51,6 +74,8 @@ public:
     i64 colorTexture = 0;
     i64 normalMapTexture = 0;
 
+    TerrainLayer terrainLayers[4];
+
     void serialize(Serializer& s) override
     {
         Resource::serialize(s);
@@ -86,8 +111,18 @@ public:
         s.field(reflectionLod);
         s.field(reflectionBias);
 
-        s.field(colorTexture);
-        s.field(normalMapTexture);
+        switch (materialType)
+        {
+            case MaterialType::NORMAL:
+                s.field(colorTexture);
+                s.field(normalMapTexture);
+                break;
+            case MaterialType::TRACK:
+                break;
+            case MaterialType::TERRAIN:
+                s.field(terrainLayers);
+                break;
+        }
     }
 
     ShaderHandle colorShaderHandle = 0;

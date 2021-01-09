@@ -160,13 +160,19 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
         }
         if (ImGui::BeginPopupContextItem())
         {
+            if (ImGui::MenuItem("Expand"))
+            {
+                folder->setExpanded(true, true);
+            }
             if (ImGui::MenuItem("Collapse"))
             {
                 folder->setExpanded(false, true);
             }
-            if (ImGui::MenuItem("Expand"))
+            if (ImGui::MenuItem("Rename"))
             {
-                folder->setExpanded(true, true);
+                renameText = folder->name;
+                renameFolder = folder;
+                firstFrameRename = true;
             }
             if (ImGui::MenuItem("New Folder"))
             {
@@ -179,19 +185,18 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
                 renameFolder = folder->childFolders.back().get();
                 firstFrameRename = true;
             }
-            for (auto& r : g_resourceTypes)
+            if (ImGui::BeginMenu("New Resource..."))
             {
-                if (ImGui::MenuItem(tmpStr("New %s", r.value.name)))
+                for (auto& r : g_resourceTypes)
                 {
-                    folder->childResources.push(newResource(r.value.resourceType)->guid);
+                    if (ImGui::MenuItem(tmpStr("New %s", r.value.name)))
+                    {
+                        folder->childResources.push(newResource(r.value.resourceType)->guid);
+                    }
                 }
+                ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Rename"))
-            {
-                renameText = folder->name;
-                renameFolder = folder;
-                firstFrameRename = true;
-            }
+            // TODO: Always show Delete option, but prompt for confirmation if folder is not empty
             if (folder->childFolders.empty() && folder->childResources.empty())
             {
                 if (ImGui::MenuItem("Delete"))

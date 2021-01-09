@@ -407,13 +407,13 @@ public:
     VehicleTuning defaultTuning;
 
     bool showInCarLot = true;
-    Str64 description ="";
+    Str64 description;
     Vec3 defaultColorHsv = Vec3(0.f, 0.f, 0.95f);
     f32 defaultShininess = 1.f;
     i32 price = 0;
     Array<PerformanceUpgrade> availableUpgrades;
     SmallArray<WeaponSlot, 4> weaponSlots;
-    i64 modelGuid;
+    i64 modelGuid = 0;
 
     // not serialized
     // TODO: this should be moved into VehicleTuning
@@ -448,7 +448,6 @@ public:
         //initializeTuning(configuration, tuning);
         loadModelData(tuning);
     }
-    void loadModelData(const char* modelName, VehicleTuning& tuning);
     void loadModelData(VehicleTuning& tuning);
     void initStandardUpgrades();
 

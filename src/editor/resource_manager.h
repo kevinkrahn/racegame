@@ -153,7 +153,7 @@ public:
 
 template <typename CB>
 bool chooseResource(ResourceType resourceType, i64& current, const char* name,
-        CB const& filter=[]()->bool{})
+        CB const& filter=[](Resource* r){ return true; })
 {
     Resource* resource = g_res.getResource(current);
     if (!resource)

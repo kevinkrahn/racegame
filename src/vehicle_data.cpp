@@ -222,13 +222,6 @@ void VehicleConfiguration::addUpgrade(i32 upgradeIndex)
     }
 }
 
-void VehicleData::loadModelData(const char* modelName, VehicleTuning& tuning)
-{
-    Model* model = g_res.getModel(modelName);
-    modelGuid = model->guid;
-    loadModelData(tuning);
-}
-
 void VehicleData::loadModelData(VehicleTuning& tuning)
 {
 #if 1
@@ -252,6 +245,10 @@ void VehicleData::loadModelData(VehicleTuning& tuning)
     tuning.chassisBatch.begin();
     tuning.chassisOneMaterialBatch.begin();
 
+    if (modelGuid == 0)
+    {
+        return;
+    }
     Model* model = g_res.getModel(modelGuid);
 
     for (auto& obj : model->objects)

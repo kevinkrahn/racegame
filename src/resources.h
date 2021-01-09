@@ -158,7 +158,7 @@ public:
         auto iter = resources.get(guid);
         if (!iter || iter->get()->type != ResourceType::MODEL)
         {
-            FATAL_ERROR("Model not found: ", guid);
+            FATAL_ERROR("Model not found: %x", guid);
         }
         return (Model*)iter->get();
     }
@@ -168,7 +168,7 @@ public:
         auto iter = resourceNameMap.get(name);
         if (!iter || (*iter)->type != ResourceType::MODEL)
         {
-            FATAL_ERROR("Model not found: ", name);
+            FATAL_ERROR("Model not found: %s", name);
         }
         return (Model*)*iter;
     }
@@ -178,7 +178,7 @@ public:
         auto iter = resources.get(guid);
         if (!iter || iter->get()->type != ResourceType::SOUND)
         {
-            FATAL_ERROR("Sound not found: ", guid);
+            FATAL_ERROR("Sound not found: %x", guid);
         }
         return (Sound*)iter->get();
     }
@@ -188,7 +188,7 @@ public:
         auto iter = resourceNameMap.get(name);
         if (!iter || (*iter)->type != ResourceType::SOUND)
         {
-            FATAL_ERROR("Sound not found: ", name);
+            FATAL_ERROR("Sound not found: %s", name);
         }
         return (Sound*)*iter;
     }
@@ -218,7 +218,7 @@ public:
         auto iter = resources.get(guid);
         if (!iter || iter->get()->type != ResourceType::TRACK)
         {
-            FATAL_ERROR("Track not found: ", guid);
+            FATAL_ERROR("Track not found: %x", guid);
         }
         return (TrackData*)iter->get();
     }
@@ -228,7 +228,7 @@ public:
         auto iter = resourceNameMap.get(name);
         if (!iter || (*iter)->type != ResourceType::TRACK)
         {
-            FATAL_ERROR("Track not found: ", name);
+            FATAL_ERROR("Track not found: %s", name);
         }
         return (*iter)->guid;
     }

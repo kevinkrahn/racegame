@@ -112,16 +112,10 @@ public:
     void onEditorTabGui(Scene* scene, Renderer* renderer, f32 deltaTime) override
     {
         ImGui::Spacing();
-        if (ImGui::BeginCombo("Terrain Type", scene->terrain->surfaceMaterials[(i32)scene->terrain->terrainType].name))
+        if (chooseResource(ResourceType::MATERIAL, scene->terrain->materialGuid, "Terrain Material",
+                [](Resource* r){ return ((Material*)r)->materialType == MaterialType::TERRAIN; }))
         {
-            for (i32 i=0; i<(i32)ARRAY_SIZE(scene->terrain->surfaceMaterials); ++i)
-            {
-                if (ImGui::Selectable(scene->terrain->surfaceMaterials[i].name))
-                {
-                    scene->terrain->terrainType = (Terrain::TerrainType)i;
-                }
-            }
-            ImGui::EndCombo();
+            scene->terrain->regenerateMaterial();
         }
 
         Vec2 terrainMin(scene->terrain->x1, scene->terrain->y1);
@@ -152,6 +146,7 @@ public:
         }
 
         ImGui::Gap();
+        // TODO: Make brush settings per-tool
         ImGui::SliderFloat("Brush Radius", &brushRadius, 2.f, 40.f);
         ImGui::SliderFloat("Brush Falloff", &brushFalloff, 0.2f, 10.f);
         ImGui::SliderFloat("Brush Strength", &brushStrength, -30.f, 30.f);
@@ -160,6 +155,7 @@ public:
         {
             if (ImGui::ListBoxHeader("Paint Material", {0, 85}))
             {
+                // TODO: Show texture for each
                 auto& m = scene->terrain->getSurfaceMaterial();
                 for (i32 i=0; i<4; ++i)
                 {

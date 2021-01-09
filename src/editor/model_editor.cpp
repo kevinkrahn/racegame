@@ -259,80 +259,8 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
             }
             */
 
-            ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f);
-            ImVec2 size = { ImGui::GetWindowWidth() * 0.65f, 300.f };
-            ImGui::SetNextWindowSizeConstraints(size, size);
-            if (ImGui::BeginCombo("Material",
-                    obj.materialGuid ? g_res.getMaterial(obj.materialGuid)->name.data() : "None"))
-            {
-                dirty = true;
-
-                static Str64 searchString;
-                static Array<Material*> searchResults;
-                searchResults.clear();
-
-                if (ImGui::IsWindowAppearing())
-                {
-                    ImGui::SetKeyboardFocusHere();
-                    searchString = "";
-                }
-                ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
-                bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
-                ImGui::PopItemWidth();
-                ImGui::SameLine();
-                if (ImGui::Button("!", ImVec2(16, 0)))
-                {
-                    Resource* r = g_game.resourceManager->getOpenedResource(ResourceType::MATERIAL);
-                    if (r)
-                    {
-                        for (u32 index : selectedObjects)
-                        {
-                            model->objects[index].materialGuid = r->guid;
-                        }
-                        ImGui::CloseCurrentPopup();
-                    }
-                }
-
-                g_res.iterateResourceType(ResourceType::MATERIAL, [&](Resource* res){
-                    Material* mat = (Material*)res;
-                    if (searchString.empty() || mat->name.find(searchString))
-                    {
-                        searchResults.push(mat);
-                    }
-                });
-                searchResults.sort([](auto a, auto b) {
-                    return a->name < b->name;
-                });
-
-                if (enterPressed)
-                {
-                    for (u32 index : selectedObjects)
-                    {
-                        model->objects[index].materialGuid = searchResults[0]->guid;
-                    }
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::BeginChild("Search Results", { 0, 0 }))
-                {
-                    for (Material* mat : searchResults)
-                    {
-                        ImGui::PushID(mat->guid);
-                        if (ImGui::Selectable(mat->name.data()))
-                        {
-                            for (u32 index : selectedObjects)
-                            {
-                                model->objects[index].materialGuid = mat->guid;
-                            }
-                            ImGui::CloseCurrentPopup();
-                        }
-                        ImGui::PopID();
-                    }
-                    ImGui::EndChild();
-                }
-
-                ImGui::EndCombo();
-            }
+            dirty |= chooseResource(ResourceType::MATERIAL, obj.materialGuid, "Material",
+                    [](Resource* r){ return ((Material*)r)->materialType == MaterialType::NORMAL; });
 
             ImGui::End();
         }

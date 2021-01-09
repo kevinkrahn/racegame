@@ -49,6 +49,7 @@ class Terrain : public Entity
 public:
     f32 x1 = 0, y1 = 0, x2 = 0, y2 = 0;
     f32 tileSize = 2.0f;
+    i64 materialGuid = 0;
 
     Terrain()
     {
@@ -86,7 +87,9 @@ public:
     Vec3 computeNormal(u32 width, u32 height, u32 x, u32 y);
     void regenerateMesh();
     void regenerateCollisionMesh(class Scene* scene);
+    void regenerateMaterial();
 
+    // TODO: remove
     enum TerrainType
     {
         GRASS,
@@ -97,6 +100,7 @@ public:
     };
     i32 terrainType = TerrainType::GRASS;
 
+    // TODO: remove
     struct SurfaceMaterial
     {
         const char* name = "";
@@ -105,6 +109,7 @@ public:
         f32 texScale[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
     } surfaceMaterials[TerrainType::MAX];
 
+    // TODO: remove
     SurfaceMaterial const& getSurfaceMaterial() const { return surfaceMaterials[terrainType]; }
 
     bool isOffroadAt(f32 x, f32 y) const;
