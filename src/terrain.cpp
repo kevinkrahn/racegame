@@ -181,6 +181,7 @@ void Terrain::regenerateMaterial()
     if (!materialGuid)
     {
         materialGuid = g_res.getMaterial("terrain_grass_material")->guid;
+        // TODO: find out why this doesn't work
         //materialGuid = g_res.getMaterial(0x2f682da3)->guid;
         material = g_res.getMaterial(materialGuid);
     }

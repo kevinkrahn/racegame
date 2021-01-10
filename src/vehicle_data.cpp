@@ -28,7 +28,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
 
     // create floor
     PxRigidStatic* actor = g_game.physx.physics->createRigidStatic(PxTransform(PxIdentity));
-    Mesh* floorMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+    Mesh* floorMesh = g_res.getModel("misc")->getMeshByName("Quad");
     PxShape* shape = PxRigidActorExt::createExclusiveShape(*actor,
             PxTriangleMeshGeometry(floorMesh->getCollisionMesh(),
                 PxMeshScale(200.f)), *g_game.physx.materials.track);

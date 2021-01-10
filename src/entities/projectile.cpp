@@ -6,7 +6,7 @@
 
 void Projectile::onCreate(Scene* scene)
 {
-    bulletMesh = g_res.getModel("misc")->getMeshByName("world.Bullet");
+    bulletMesh = g_res.getModel("misc")->getMeshByName("Bullet");
     switch(projectileType)
     {
         case BLASTER:
@@ -246,7 +246,7 @@ void Projectile::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         } break;
         case BOUNCER:
         {
-            Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
+            Mesh* mesh = g_res.getModel("misc")->getMeshByName("Sphere");
             Mat4 transform = Mat4::translation(position) * Mat4::scaling(Vec3(0.4f));
             drawSimple(rw, mesh, &g_res.white, transform, Vec3(1.f), Vec3(0.5f));
             drawBillboard(rw, g_res.getTexture("flare"), position,

@@ -22,8 +22,7 @@ public:
         rw.setName("Material Preview");
         rw.setSize(200, 200);
         rw.setBloomForceOff(true);
-        // TODO: find out why normal maps don't look right in the preview
-        const char* previewMeshes[] = { "world.Sphere", "world.UnitCube", "world.Quad" };
+        const char* previewMeshes[] = { "Sphere", "UnitCube", "Quad" };
         Mesh* previewMesh = g_res.getModel("misc")->getMeshByName(previewMeshes[previewMeshIndex]);
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.5f));
         rw.setViewportCount(1);

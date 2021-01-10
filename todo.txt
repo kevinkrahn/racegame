@@ -88,7 +88,6 @@
 - Make general purpose IMGUI function for an editable list, with delete, reordering, and removing 
 - Postfix all fields that reference another asset with "Guid", then when attempting to delete an asset,
   check if any other asset references it.
-- Allow any 4 materials to be painted on terrain, or make a terrain-layer resource
 - Allow any material to be used for track, or add track-material resource
 - Optimize vehicle initTuning() by skipping the batching for vehicle previews
 - Improve force feedback
@@ -96,3 +95,4 @@
 - Disable highlight behind some railing types
 - Remove dirty flag from all resource editor code and use IsAnyItemActive() or simply make opening the resource cause it to become dirty.
 - Add normal map strength material option
+- Redo menu

@@ -238,7 +238,7 @@ void TrackGraph::debugDraw(DebugDraw* dbg, Renderer* renderer) const
         ++pathPointDrawCount;
     }
 
-    Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("world.Arrow");
+    Mesh* arrowMesh = g_res.getModel("misc")->getMeshByName("Arrow");
     for (u32 i=0; i<nodes.size(); ++i)
     {
         Node const& c = nodes[i];

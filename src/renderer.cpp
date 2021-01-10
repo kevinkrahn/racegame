@@ -443,7 +443,7 @@ void Renderer::render(f32 deltaTime)
         glUniform3fv(2, 1, (GLfloat*)&color);
         glUniform1i(3, 0);
         glUniform1i(4, 0);
-        Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
+        Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("Sphere");
         glBindVertexArray(sphereMesh->vao);
         glDrawElements(GL_TRIANGLES, sphereMesh->numIndices, GL_UNSIGNED_INT, 0);
     }

@@ -517,7 +517,7 @@ public:
             showSelectedSplineProperties();
         }
 
-        Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("world.Sphere");
+        Mesh* sphereMesh = g_res.getModel("misc")->getMeshByName("Sphere");
         for (auto spline : splineEntities)
         {
             Vec4 orange = { 1.f, 0.5f, 0.f, 1.f };
@@ -623,7 +623,7 @@ public:
                 renderWorld.setName("Spline Model Icon");
                 renderWorld.setSize(iconSize*2, iconSize*2);
                 renderWorld.setClearColor(true, Vec4(0.15f, 0.15f, 0.15f, 1.f));
-                Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+                Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
                 drawSimple(&renderWorld, quadMesh, &g_res.white,
                             Mat4::translation(Vec3(0, 0, -0.01f)) *
                             Mat4::translation(Vec3(120.f)), Vec3(0.15f));

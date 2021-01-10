@@ -35,7 +35,7 @@ public:
         rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
         rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
 
-        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
 
         const char* vehicleName = "None";

@@ -374,7 +374,7 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
 
     if (showFloor)
     {
-        drawSimple(rw, g_res.getModel("misc")->getMeshByName("world.Quad"), &g_res.white,
+        drawSimple(rw, g_res.getModel("misc")->getMeshByName("Quad"), &g_res.white,
                     Mat4::scaling(Vec3(40.f)), Vec3(0.1f));
     }
 

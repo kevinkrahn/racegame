@@ -90,22 +90,27 @@ vec3 trilinearNormal(sampler2D normalSampler, vec3 inWorldPosition, float texSca
 void main()
 {
 #if !defined DEPTH_ONLY
-#if 1
     vec3 blend = abs(inNormal);
     blend = max(blend - 0.2, 0.0);
     blend /= dot(blend, vec3(1));
+#if 1
+    // TODO: find out where the NaNs are coming from
+    if (isnan(blend.x)) blend.x = 0.0;
+    if (isnan(blend.y)) blend.y = 0.0;
+    if (isnan(blend.z)) blend.z = 0.0;
+#endif
 
-    vec4 tex1 = trilinear(colorSampler1, inWorldPosition, texScale.x, blend);
-    vec4 tex2 = trilinear(colorSampler2, inWorldPosition, texScale.y, blend);
-    vec4 tex3 = trilinear(colorSampler3, inWorldPosition, texScale.z, blend);
-    vec4 tex4 = trilinear(colorSampler4, inWorldPosition, texScale.w, blend);
+    vec4 tex1 = inBlend.x > 0.001 ? trilinear(colorSampler1, inWorldPosition, texScale.x, blend) : vec4(0.0);
+    vec4 tex2 = inBlend.y > 0.001 ? trilinear(colorSampler2, inWorldPosition, texScale.y, blend) : vec4(0.0);
+    vec4 tex3 = inBlend.z > 0.001 ? trilinear(colorSampler3, inWorldPosition, texScale.z, blend) : vec4(0.0);
+    vec4 tex4 = inBlend.w > 0.001 ? trilinear(colorSampler4, inWorldPosition, texScale.w, blend) : vec4(0.0);
     vec4 baseColor = inBlend.x*tex1 + inBlend.y*tex2 + inBlend.z*tex3 + inBlend.w*tex4;
 
 #if HIGH_QUALITY_TERRAIN_ENABLED
-    vec3 normal1 = trilinearNormal(normalSampler1, inWorldPosition, texScale.x, blend);
-    vec3 normal2 = trilinearNormal(normalSampler2, inWorldPosition, texScale.y, blend);
-    vec3 normal3 = trilinearNormal(normalSampler3, inWorldPosition, texScale.z, blend);
-    vec3 normal4 = trilinearNormal(normalSampler4, inWorldPosition, texScale.w, blend);
+    vec3 normal1 = inBlend.x > 0.001 ? trilinearNormal(normalSampler1, inWorldPosition, texScale.x, blend) : vec3(0.0);
+    vec3 normal2 = inBlend.y > 0.001 ? trilinearNormal(normalSampler2, inWorldPosition, texScale.y, blend) : vec3(0.0);
+    vec3 normal3 = inBlend.z > 0.001 ? trilinearNormal(normalSampler3, inWorldPosition, texScale.z, blend) : vec3(0.0);
+    vec3 normal4 = inBlend.w > 0.001 ? trilinearNormal(normalSampler4, inWorldPosition, texScale.w, blend) : vec3(0.0);
     vec3 normal = normalize(inBlend.x*normal1 + inBlend.y*normal2 + inBlend.z*normal3 + inBlend.w*normal4);
 #else
     vec3 normal = inNormal;
@@ -113,53 +118,6 @@ void main()
 
     outColor = lighting(baseColor, normal, inShadowCoord, inWorldPosition,
             20.0, 0.01, vec3(1.0), -0.1, 0.08, 2.5, vec3(0, 0, 0), 0.0, 0.0, 0.0);
-
-#else
-    vec3 blending = abs(inNormal);
-    blending.z *= (blending.z + 0.5);
-    blending.z *= (blending.z + 0.5);
-    blending.z *= (blending.z + 0.5);
-    blending.z *= (blending.z + 0.5);
-    blending = normalize(max(blending, 0.00001));
-    blending /= vec3(blending.x + blending.y + blending.z);
-
-    // TODO: make this better
-    if (isnan(blending.x))
-    {
-        blending.x = 0.00001;
-    }
-    if (isnan(blending.y))
-    {
-        blending.y = 0.00001;
-    }
-    if (isnan(blending.z))
-    {
-        blending.z = 0.00001;
-    }
-
-    vec3 xColor = texture(colorSampler2, inWorldPosition.yz * texScale.y).rgb;
-    vec3 yColor = texture(colorSampler2, inWorldPosition.xz * texScale.y).rgb;
-    vec3 zColor = texture(colorSampler1, inWorldPosition.xy * texScale.x).rgb;
-    vec4 tex1 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
-
-    zColor = texture(colorSampler2, inWorldPosition.xy * texScale.y).rgb;
-    vec4 tex2 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
-
-    xColor = texture(colorSampler3, inWorldPosition.yz * texScale.z).rgb;
-    yColor = texture(colorSampler3, inWorldPosition.xz * texScale.z).rgb;
-    zColor = texture(colorSampler3, inWorldPosition.xy * texScale.z).rgb;
-    vec4 tex3 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
-
-    xColor = texture(colorSampler4, inWorldPosition.yz * texScale.w).rgb;
-    yColor = texture(colorSampler4, inWorldPosition.xz * texScale.w).rgb;
-    zColor = texture(colorSampler4, inWorldPosition.xy * texScale.w).rgb;
-    vec4 tex4 = vec4(xColor * blending.x + yColor * blending.y + zColor * blending.z, 1.0);
-
-    vec4 baseColor = inBlend.x*tex1 + inBlend.y*tex2 + inBlend.z*tex3 + inBlend.w*tex4;
-
-    outColor = lighting(baseColor, normalize(inNormal), inShadowCoord, inWorldPosition,
-            20.0, 0.01, vec3(1.0), -0.1, 0.08, 2.5, vec3(0, 0, 0), 0.0, 0.0, 0.0);
-#endif
 
 #if defined BRUSH_ENABLED
     float d = length(inWorldPosition - brushPosition);

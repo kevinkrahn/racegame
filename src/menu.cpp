@@ -938,7 +938,7 @@ void Menu::showInitialCarLotMenu(u32 playerIndex)
 
 void Menu::updateVehiclePreviews()
 {
-    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
     for (u32 driverIndex=0; driverIndex<10; ++driverIndex)
     {
         RenderWorld& rw = vehiclePreviews[driverIndex];
@@ -1171,7 +1171,7 @@ void Menu::createVehiclePreview()
     addLogic([this](Widget& w){
         Vec2 vehicleIconSize = convertSize(vehiclePreviewSize);
 
-        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
         rw.setName("Garage");
         rw.setSize((u32)vehicleIconSize.x, (u32)vehicleIconSize.y);
         drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
@@ -1737,7 +1737,7 @@ void Menu::createCarLotMenu()
     {
         RenderWorld& rw = carLotRenderWorlds[i];
 
-        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+        Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
         rw.setName("Garage");
         rw.setBloomForceOff(true);
         rw.setSize((u32)convertSize(size.x)*2, (u32)convertSize(size.y)*2);

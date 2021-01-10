@@ -805,7 +805,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     trackPreview2D.setCamViewProjection(trackOrtho);
     trackPreview2D.beginUpdate(renderer, size, size);
 
-    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("world.Quad");
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
     trackPreview2D.drawItem(
         quadMesh->vao, quadMesh->numIndices,
         start->transform * Mat4::translation({ 0, 0, -2 })
@@ -815,7 +815,7 @@ void Scene::updateTrackPreview(Renderer* renderer, u32 size)
     trackPreview2D.drawItem(trackMesh->vao, (u32)trackMesh->numIndices, Mat4(1.f),
             Vec3(1.f), true, 1);
 
-    Mesh* mesh = g_res.getModel("misc")->getMeshByName("world.TrackArrow");
+    Mesh* mesh = g_res.getModel("misc")->getMeshByName("TrackArrow");
     for (auto const& v : vehicles)
     {
         Vec3 pos = v->getPosition();

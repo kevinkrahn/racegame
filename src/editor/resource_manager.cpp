@@ -302,6 +302,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             {
                 if (ImGui::MenuItem("Duplicate"))
                 {
+                    // TODO: the duplicated resource doesn't seem to be saved under the right folder
                     DataFile::Value data = DataFile::makeDict();
                     Serializer s(data, false);
                     childResource->serialize(s);

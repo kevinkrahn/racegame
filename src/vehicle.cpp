@@ -1203,7 +1203,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     Vec2 dirToTargetP = normalize(Vec2(currentPosition) - Vec2(targetP));
     previousTargetPosition = targetPathPoint.position;
 #if 0
-    Mesh* sphere = g_res.getModel("misc")->getMeshByName("world.Sphere");
+    Mesh* sphere = g_res.getModel("misc")->getMeshByName("Sphere");
     drawSimple(rw, sphere, &g_res.white, Mat4::translation(targetP),
                 Vec3(1, 0, 0)));
 #endif
