@@ -108,75 +108,6 @@ void Terrain::onCreate(Scene* scene)
     actor->userData = &physicsUserData;
     scene->getPhysicsScene()->addActor(*actor);
 
-    // TODO: remove
-    surfaceMaterials[0] = {
-        "Grass",
-        {
-            "Grass (With cliffs)",
-            "Rock",
-            "Sand (Offroad)",
-            "Grass 2"
-        },
-        {
-            g_res.getTexture("grass"),
-            g_res.getTexture("rock_moss"),
-            g_res.getTexture("sand"),
-            g_res.getTexture("grass"),
-        },
-        { 0.1f, 0.05f, 0.12f, 0.1f }
-    };
-
-    surfaceMaterials[1] = {
-        "Sand",
-        {
-            "Sand (With cliffs)",
-            "Rock",
-            "Sand (Offroad)",
-            "Dirt"
-        },
-        {
-            g_res.getTexture("desert"),
-            g_res.getTexture("desert_stone"),
-            g_res.getTexture("sand"),
-            g_res.getTexture("sand"),
-        },
-        { 0.1f, 0.1f, 0.12f, 0.1f }
-    };
-
-    surfaceMaterials[2] = {
-        "Snow",
-        {
-            "Snow (With cliffs)",
-            "Rock",
-            "Sand (Offroad)",
-            "Snow"
-        },
-        {
-            g_res.getTexture("snow"),
-            g_res.getTexture("rock"),
-            g_res.getTexture("sand"),
-            g_res.getTexture("snow"),
-        },
-        { 0.1f, 0.05f, 0.12f, 0.1f }
-    };
-
-    surfaceMaterials[3] = {
-        "Lava",
-        {
-            "Lava",
-            "Lava",
-            "Sand (Offroad)",
-            "Dirt"
-        },
-        {
-            g_res.getTexture("lava"),
-            g_res.getTexture("lava"),
-            g_res.getTexture("sand"),
-            g_res.getTexture("lava"),
-        },
-        { 0.05f, 0.1f, 0.12f, 0.1f }
-    };
-
     materials[0] = g_game.physx.materials.generic;
     materials[1] = g_game.physx.materials.offroad;
 
@@ -192,6 +123,8 @@ void Terrain::onCreate(Scene* scene)
 
 void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 {
+    regenerateMaterial();
+
     /*
     u32 width = (x2 - x1) / tileSize;
     u32 height = (y2 - y1) / tileSize;
@@ -220,20 +153,23 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         glDrawElements(GL_TRIANGLES, terrain->indexCount, GL_UNSIGNED_INT, 0);
     };
     auto renderColor = [](void* renderData){
-        Terrain* terrain = (Terrain*)renderData;
-        auto& m = terrain->getSurfaceMaterial();
-        glBindTextureUnit(6, m.textures[0]->handle);
-        glBindTextureUnit(7, m.textures[1]->handle);
-        glBindTextureUnit(8, m.textures[2]->handle);
-        glBindTextureUnit(9, m.textures[3]->handle);
-        glUniform3fv(3, 1, (GLfloat*)&terrain->brushSettings);
-        glUniform3fv(4, 1, (GLfloat*)&terrain->brushPosition);
-        glUniform4fv(5, 1, m.texScale);
-        glBindVertexArray(terrain->vao);
-        glDrawElements(GL_TRIANGLES, terrain->indexCount, GL_UNSIGNED_INT, 0);
+        Terrain* t = (Terrain*)renderData;
+        glBindTextureUnit(6, t->textures[0]->handle);
+        glBindTextureUnit(7, t->textures[1]->handle);
+        glBindTextureUnit(8, t->textures[2]->handle);
+        glBindTextureUnit(9, t->textures[3]->handle);
+        glBindTextureUnit(10, t->normalTextures[0]->handle);
+        glBindTextureUnit(11, t->normalTextures[1]->handle);
+        glBindTextureUnit(12, t->normalTextures[2]->handle);
+        glBindTextureUnit(13, t->normalTextures[3]->handle);
+        glUniform3fv(3, 1, (GLfloat*)&t->brushSettings);
+        glUniform3fv(4, 1, (GLfloat*)&t->brushPosition);
+        glUniform4fv(5, 1, t->texScale);
+        glBindVertexArray(t->vao);
+        glDrawElements(GL_TRIANGLES, t->indexCount, GL_UNSIGNED_INT, 0);
 
         // reset the brush settings every frame
-        terrain->setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
+        t->setBrushSettings(1.f, 1.f, 1.f, { 0, 0, 1000000 });
     };
     rw->depthPrepass(depthShader, { this, renderDepth });
     rw->shadowPass(depthShader, { this, renderDepth });
@@ -242,7 +178,19 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
 
 void Terrain::regenerateMaterial()
 {
-
+    if (!materialGuid)
+    {
+        materialGuid = g_res.getMaterial("terrain_grass_material")->guid;
+        //materialGuid = g_res.getMaterial(0x2f682da3)->guid;
+        material = g_res.getMaterial(materialGuid);
+    }
+    material = g_res.getMaterial(materialGuid);
+    for (u32 i=0; i<NUM_TERRAIN_LAYERS; ++i)
+    {
+        textures[i] = g_res.getTexture(material->terrainLayers[i].colorTextureGuid);
+        normalTextures[i] = g_res.getTexture(material->terrainLayers[i].normalTextureGuid);
+        texScale[i] = material->terrainLayers[i].textureScale;
+    }
 }
 
 bool Terrain::isOffroadAt(f32 x, f32 y) const
@@ -737,7 +685,7 @@ void Terrain::serializeState(Serializer& s)
     s.field(y1);
     s.field(x2);
     s.field(y2);
-    s.field(terrainType);
+    s.field(materialGuid);
 
     if (s.deserialize)
     {

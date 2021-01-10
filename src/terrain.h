@@ -5,6 +5,8 @@
 #include "entity.h"
 #include "gl.h"
 
+#define NUM_TERRAIN_LAYERS 4
+
 class Terrain : public Entity
 {
     struct Vertex
@@ -51,6 +53,11 @@ public:
     f32 tileSize = 2.0f;
     i64 materialGuid = 0;
 
+    struct Material* material = nullptr;
+    struct Texture* textures[NUM_TERRAIN_LAYERS];
+    struct Texture* normalTextures[NUM_TERRAIN_LAYERS];
+    f32 texScale[NUM_TERRAIN_LAYERS];
+
     Terrain()
     {
         resize(-256, -256, 256, 256);
@@ -89,28 +96,7 @@ public:
     void regenerateCollisionMesh(class Scene* scene);
     void regenerateMaterial();
 
-    // TODO: remove
-    enum TerrainType
-    {
-        GRASS,
-        SAND,
-        SNOW,
-        LAVA,
-        MAX
-    };
-    i32 terrainType = TerrainType::GRASS;
-
-    // TODO: remove
-    struct SurfaceMaterial
-    {
-        const char* name = "";
-        const char* textureNames[4];
-        struct Texture* textures[4];
-        f32 texScale[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
-    } surfaceMaterials[TerrainType::MAX];
-
-    // TODO: remove
-    SurfaceMaterial const& getSurfaceMaterial() const { return surfaceMaterials[terrainType]; }
+    Material* getMaterial() const { return material; }
 
     bool isOffroadAt(f32 x, f32 y) const;
 

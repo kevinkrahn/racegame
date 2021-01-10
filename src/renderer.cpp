@@ -25,6 +25,7 @@ void glShaderSources(GLuint shader, const char* src,
     buf.writef("#define POINT_LIGHTS_ENABLED %u\n", u32(g_game.config.graphics.pointLightsEnabled));
     buf.writef("#define MOTION_BLUR_ENABLED %u\n", u32(g_game.config.graphics.motionBlurEnabled));
     buf.writef("#define FOG_ENABLED %u\n", u32(g_game.config.graphics.fogEnabled));
+    buf.writef("#define HIGH_QUALITY_TERRAIN_ENABLED %u\n", u32(g_game.config.graphics.highQualityTerrainEnabled));
     buf.writef("#define MAX_POINT_LIGHTS %u\n", MAX_POINT_LIGHTS);
     buf.writef("#define LIGHT_SPLITS %u\n", LIGHT_SPLITS);
     for (auto const& d : defines)

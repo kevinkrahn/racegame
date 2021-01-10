@@ -24,6 +24,7 @@ struct Config
         bool motionBlurEnabled = true;
         bool pointLightsEnabled = true;
         bool fogEnabled = true;
+        bool highQualityTerrainEnabled = true;
 
         void serialize(Serializer& s)
         {
@@ -42,6 +43,7 @@ struct Config
             s.field(motionBlurEnabled);
             s.field(pointLightsEnabled);
             s.field(fogEnabled);
+            s.field(highQualityTerrainEnabled);
         }
     } graphics;
 

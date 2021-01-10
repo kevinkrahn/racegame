@@ -153,18 +153,32 @@ public:
 
         if (terrainTool == TerrainTool::PAINT)
         {
-            if (ImGui::ListBoxHeader("Paint Material", {0, 85}))
+            ImGui::Text("Paint Material");
+            for (i32 i=0; i<NUM_TERRAIN_LAYERS; ++i)
             {
-                // TODO: Show texture for each
-                auto& m = scene->terrain->getSurfaceMaterial();
-                for (i32 i=0; i<4; ++i)
+                Material* m = scene->terrain->getMaterial();
+                const u32 iconSize = 48;
+                if (i > 0)
                 {
-                    if (ImGui::Selectable(m.textureNames[i], i == paintMaterialIndex))
-                    {
-                        paintMaterialIndex = i;
-                    }
+                    ImGui::SameLine();
                 }
-                ImGui::ListBoxFooter();
+                ImGui::PushID(i);
+                bool isSelected = paintMaterialIndex == i;
+                if (isSelected)
+                {
+                    const u32 selectedColor = 0x992299EE;
+                    ImGui::PushStyleColor(ImGuiCol_Button, selectedColor);
+                }
+                if (ImGui::ImageButton((void*)(uintptr_t)scene->terrain->textures[i]->getPreviewTexture(),
+                            ImVec2(iconSize, iconSize)))
+                {
+                    paintMaterialIndex = i;
+                }
+                if (isSelected)
+                {
+                    ImGui::PopStyleColor();
+                }
+                ImGui::PopID();
             }
         }
 
