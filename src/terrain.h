@@ -57,6 +57,7 @@ public:
     struct Texture* textures[NUM_TERRAIN_LAYERS];
     struct Texture* normalTextures[NUM_TERRAIN_LAYERS];
     f32 texScale[NUM_TERRAIN_LAYERS];
+    Vec3 fresnel[NUM_TERRAIN_LAYERS];
 
     Terrain()
     {

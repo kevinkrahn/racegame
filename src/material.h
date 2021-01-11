@@ -16,10 +16,10 @@ struct TerrainLayer
 {
     i64 colorTextureGuid = 0;
     i64 normalTextureGuid = 0;
-    f32 fresnelScale = 0.f;
-    f32 fresnelPower = 2.5f;
-    f32 fresnelBias = -0.2f;
     f32 textureScale = 0.1f;
+    f32 fresnelBias = -0.1f;
+    f32 fresnelScale = 0.08f;
+    f32 fresnelPower = 2.5f;
 
     bool isOffroad = false;
 
@@ -27,10 +27,10 @@ struct TerrainLayer
     {
         s.field(colorTextureGuid);
         s.field(normalTextureGuid);
+        s.field(textureScale);
+        s.field(fresnelBias);
         s.field(fresnelScale);
         s.field(fresnelPower);
-        s.field(fresnelBias);
-        s.field(textureScale);
         s.field(isOffroad);
     }
 };

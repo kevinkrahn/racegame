@@ -36,6 +36,10 @@ layout(location = 3) in vec4 inBlend;
 layout(location = 3) uniform vec3 brushSettings;
 layout(location = 4) uniform vec3 brushPosition;
 layout(location = 5) uniform vec4 texScale;
+layout(location = 6) uniform vec3 fresnel1;
+layout(location = 7) uniform vec3 fresnel2;
+layout(location = 8) uniform vec3 fresnel3;
+layout(location = 9) uniform vec3 fresnel4;
 
 layout(binding = 6)  uniform sampler2D colorSampler1;
 layout(binding = 7)  uniform sampler2D colorSampler2;
@@ -116,8 +120,10 @@ void main()
     vec3 normal = inNormal;
 #endif
 
+    vec3 fresnel = inBlend.x*fresnel1 + inBlend.y*fresnel2 + inBlend.z*fresnel3 + inBlend.w*fresnel4;
+
     outColor = lighting(baseColor, normal, inShadowCoord, inWorldPosition,
-            20.0, 0.01, vec3(1.0), -0.1, 0.08, 2.5, vec3(0, 0, 0), 0.0, 0.0, 0.0);
+            20.0, 0.01, vec3(1.0), fresnel.x, fresnel.y, fresnel.z, vec3(0, 0, 0), 0.0, 0.0, 0.0);
 
 #if defined BRUSH_ENABLED
     float d = length(inWorldPosition - brushPosition);

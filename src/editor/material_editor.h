@@ -87,9 +87,9 @@ public:
                 ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
                 ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
 
+                ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
                 ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
                 ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
-                ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
 
                 ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
                 ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
@@ -107,9 +107,9 @@ public:
                         chooseTexture(TextureType::COLOR, layer.colorTextureGuid, "Color Texture");
                         chooseTexture(TextureType::NORMAL_MAP, layer.normalTextureGuid, "Normal Map");
                         ImGui::DragFloat("Texture Scale", (f32*)&layer.textureScale, 0.01f, 0.f, 50.f);
+                        ImGui::DragFloat("Fresnel Bias", (f32*)&layer.fresnelBias, 0.005f, -1.f, 1.f);
                         ImGui::DragFloat("Fresnel Scale", (f32*)&layer.fresnelScale, 0.005f, 0.f, 1.f);
                         ImGui::DragFloat("Fresnel Power", (f32*)&layer.fresnelPower, 0.009f, 0.f, 200.f);
-                        ImGui::DragFloat("Fresnel Bias", (f32*)&layer.fresnelBias, 0.005f, -1.f, 1.f);
                         ImGui::TreePop();
                     }
                 }

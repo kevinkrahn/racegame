@@ -165,6 +165,10 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         glUniform3fv(3, 1, (GLfloat*)&t->brushSettings);
         glUniform3fv(4, 1, (GLfloat*)&t->brushPosition);
         glUniform4fv(5, 1, t->texScale);
+        glUniform3fv(6, 1, (f32*)&t->fresnel[0]);
+        glUniform3fv(7, 1, (f32*)&t->fresnel[1]);
+        glUniform3fv(8, 1, (f32*)&t->fresnel[2]);
+        glUniform3fv(9, 1, (f32*)&t->fresnel[3]);
         glBindVertexArray(t->vao);
         glDrawElements(GL_TRIANGLES, t->indexCount, GL_UNSIGNED_INT, 0);
 
@@ -188,9 +192,11 @@ void Terrain::regenerateMaterial()
     material = g_res.getMaterial(materialGuid);
     for (u32 i=0; i<NUM_TERRAIN_LAYERS; ++i)
     {
-        textures[i] = g_res.getTexture(material->terrainLayers[i].colorTextureGuid);
-        normalTextures[i] = g_res.getTexture(material->terrainLayers[i].normalTextureGuid);
-        texScale[i] = material->terrainLayers[i].textureScale;
+        auto& l = material->terrainLayers[i];
+        textures[i] = g_res.getTexture(l.colorTextureGuid);
+        normalTextures[i] = g_res.getTexture(l.normalTextureGuid);
+        texScale[i] = l.textureScale;
+        fresnel[i] = Vec3(l.fresnelBias, l.fresnelScale, l.fresnelPower);
     }
 }
 
