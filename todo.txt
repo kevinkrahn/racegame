@@ -40,7 +40,7 @@
 - Add challenges mode where you have to do crazy things to complete the challenge, for example
   (beat a lap time, destroy n number of cars with a time limit). These challenges would be unlocked
   as you complete leagues in championship mode.
-- Add water
+- Add water, river tool (follow spline and animate UVs? Could also generate flow vectors by raycasting, so water flows around obstacles)
 - Think of a name for the game (Battlemobiles?)
 - Add vehicle reflection on the floor of garage
 - Add suicide ability that creates a massive explosion
@@ -97,3 +97,7 @@
 - Redo menu
 - Convert fonts into resource
 - Add heightmap for each texture on terrain to make better transitions
+- Show log messages on screen so I don't miss them
+- Remove all standard library usage to improve compile times
+- Encode roughness/specular/heightmap in alpha channel of terrain texture and normal map
+- Redo terrain system with chunks

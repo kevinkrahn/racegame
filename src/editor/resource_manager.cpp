@@ -229,6 +229,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
 void ResourceManager::showFolderContents(ResourceFolder* folder)
 {
     const u32 selectedColor = 0x992299EE;
+    i64 duplicatedResourceGuid = 0;
     for (auto it = folder->childResources.begin(); it != folder->childResources.end();)
     {
         if (!searchText.empty() && !resourceIsMatch(*it, searchText.data()))
@@ -296,16 +297,13 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             {
                 if (ImGui::MenuItem("Duplicate"))
                 {
-                    // TODO: the duplicated resource doesn't seem to be saved under the right folder
-                    DataFile::Value data = DataFile::makeDict();
-                    Serializer s(data, false);
-                    childResource->serialize(s);
+                    auto data = Serializer::toDict(*childResource);
                     Resource* resource = newResource(childResource->type);
                     data.dict().val()["guid"] = resource->guid;
                     data.dict().val()["name"].string().val()
                         = tmpStr("%s_copy", data.dict().val()["name"].string().val().data());
-                    s.deserialize = true;
-                    resource->serialize(s);
+                    Serializer::fromDict(data, *resource);
+                    duplicatedResourceGuid = resource->guid;
                 }
                 if (ImGui::MenuItem("Rename"))
                 {
@@ -345,6 +343,10 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
         {
             ++it;
         }
+    }
+    if (duplicatedResourceGuid)
+    {
+        folder->childResources.push(duplicatedResourceGuid);
     }
 }
 
@@ -456,7 +458,8 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         if (ImGui::BeginMenu("File"))
         {
             // TODO: Make the shortcut actually work
-            if (ImGui::MenuItem("Save", "Ctrl+S"))
+            //if (ImGui::MenuItem("Save", "Ctrl+S"))
+            if (ImGui::MenuItem("Save"))
             {
                 saveResources();
             }

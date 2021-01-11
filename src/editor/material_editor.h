@@ -98,6 +98,7 @@ public:
             }
             else if (mat.materialType == MaterialType::TERRAIN)
             {
+                // TODO: show preview for terrain material
                 for (u32 i=0; i<ARRAY_SIZE(mat.terrainLayers); ++i)
                 {
                     if (ImGui::TreeNodeEx(&mat.terrainLayers[i], ImGuiTreeNodeFlags_DefaultOpen,
@@ -113,6 +114,10 @@ public:
                         ImGui::TreePop();
                     }
                 }
+            }
+            else if (mat.materialType == MaterialType::TRACK)
+            {
+                // TODO: implement
             }
 
             ImGui::End();
