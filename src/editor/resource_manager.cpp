@@ -275,12 +275,9 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             ImGui::PushID((void*)childResource->guid);
             f32 cursorPos = ImGui::GetCursorPosX();
             ImGui::TreeNodeEx("                                           ", flags);
-            if (ImGui::IsItemClicked())
+            if (ImGui::IsItemClicked() && ImGui::IsMouseDoubleClicked(0))
             {
-                if (ImGui::IsMouseDoubleClicked(0))
-                {
-                    openResource(childResource);
-                }
+                openResource(childResource);
             }
             ImGui::PopID();
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))

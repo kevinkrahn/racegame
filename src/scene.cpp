@@ -1237,6 +1237,10 @@ void Scene::serialize(Serializer& s)
     s.field(totalLaps);
     s.field(version);
     s.field(paths);
+    s.field(sunDir);
+    s.field(sunDirZ);
+    s.field(sunColor);
+    s.field(sunStrength);
 
     if (s.deserialize)
     {

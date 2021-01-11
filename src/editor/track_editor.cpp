@@ -106,11 +106,9 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
         scene->totalLaps = (u32)clamp(totalLaps, 1, 10);
 
         ImGui::Gap();
-        ImGui::Columns(2);
         ImGui::Checkbox("Show Grid", &gridSettings.show);
-        ImGui::NextColumn();
+        ImGui::SameLine(0.f, 16.f);
         ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
-        ImGui::Columns(1);
         ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
         gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
 

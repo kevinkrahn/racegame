@@ -156,12 +156,9 @@ template <typename CB>
 bool chooseResource(ResourceType resourceType, i64& current, const char* name,
         CB const& filter=[](Resource* r){ return true; })
 {
+    bool changed = false;
     Resource* resource = g_res.getResource(current);
-    if (!resource)
-    {
-        current = 0;
-    }
-    // TODO: Add X to clear selection
+
     auto& style = ImGui::GetStyle();
     u32 previewTexture = 0;
     if (resource)
@@ -170,18 +167,43 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
     }
     if (previewTexture)
     {
+        f32 cx = ImGui::GetCursorPosX();
         ImGui::Image((void*)(uintptr_t)previewTexture, { 48, 48 });
+        ImGui::SameLine(cx + 48 - 18);
+        ImGui::SetNextItemWidth(20);
+        if (ImGui::Button(tmpStr("X###X%s", name)))
+        {
+            current = 0;
+            changed = true;
+        }
         ImGui::SameLine();
-        ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
-        ImGui::SetNextWindowSize({ ImGui::GetWindowWidth() * 0.65f - 56, 300.f });
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
+        ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 200.f };
+        ImGui::SetNextWindowSizeConstraints(size, size);
     }
     else
     {
-        ImGui::SetNextWindowSize({ 0.f, 300.f });
+        if (resource)
+        {
+            ImGui::SetNextItemWidth(20);
+            if (ImGui::Button(tmpStr("X###X%s", name)))
+            {
+                current = 0;
+                changed = true;
+            }
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.65f - 20 - style.ItemSpacing.x);
+            ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 20 - style.ItemSpacing.x, 200.f };
+            ImGui::SetNextWindowSizeConstraints(size, size);
+        }
+        else
+        {
+            ImVec2 size = { ImGui::GetWindowWidth() * 0.65f, 200.f };
+            ImGui::SetNextWindowSizeConstraints(size, size);
+        }
     }
 
-    bool changed = false;
-    if (ImGui::BeginCombo(name, current == 0 ? "None" : resource->name.data()))
+    if (ImGui::BeginCombo(name, resource ? resource->name.data() : "None"))
     {
         static Str64 searchString;
         static Array<Resource*> searchResults;
@@ -192,26 +214,9 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
             ImGui::SetKeyboardFocusHere();
             searchString = "";
         }
-#if 0
-        ImGui::PushItemWidth(ImGui::GetWindowWidth() - 32);
-        bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-        if (ImGui::Button("!", ImVec2(16, 0)))
-        {
-            // TODO: use last focused one or the last opened
-            Resource* openedResource = getOpenedResource(resourceType);
-            if (openedResource)
-            {
-                current = openedResource->guid;
-                changed = true;
-                ImGui::CloseCurrentPopup();
-            }
-        }
-#else
+
         ImGui::PushItemWidth(ImGui::GetWindowWidth() - style.ItemSpacing.x);
         bool enterPressed = ImGui::InputText("", &searchString, ImGuiInputTextFlags_EnterReturnsTrue);
-#endif
 
         g_res.iterateResourceType(resourceType, [&filter](Resource* resource){
             if (filter(resource))
@@ -250,14 +255,31 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
                 }
                 ImGui::PopID();
             }
-            ImGui::EndChild();
         }
+        ImGui::EndChild();
 
         ImGui::EndCombo();
     }
     else
     {
-        ImGui::SetNextWindowSize({ 0, 0 });
+        if (ImGui::BeginDragDropTarget())
+        {
+            const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+            if (payload)
+            {
+                assert(payload->DataSize == sizeof(DragDropPayload));
+                DragDropPayload data = *(DragDropPayload*)payload->Data;
+                if (!data.isFolder && data.resourceDragged->type == resourceType && filter(resource))
+                {
+                    if (ImGui::AcceptDragDropPayload("Drag Resource"))
+                    {
+                        current = data.resourceDragged->guid;
+                        changed = true;
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
     }
 
     return changed;
