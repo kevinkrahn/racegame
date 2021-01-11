@@ -258,11 +258,22 @@ public:
                 ImGui::InputFloatClamp("Clutch Strength", &t.clutchStrength, 0.1f, 100.f);
                 ImGui::InputFloatClamp("Gear Switch Delay", &t.gearSwitchTime, 0.f, 2.f);
                 ImGui::InputFloatClamp("Autobox Switch Delay", &t.autoBoxSwitchTime, 0.f, 2.f);
-                const char* gearName[] = { "Reverse", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th" };
+                const char* gearName[] = { "Reverse", "Neutral", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th" };
                 for (u32 i=0; i<t.gearRatios.size(); ++i)
                 {
                     ImGui::SetNextItemWidth(164.f);
-                    ImGui::InputFloatClamp(gearName[i], &t.gearRatios[i], i == 0 ? -10.f : 0.1f, i == 0 ? -0.1f : 10.f);
+                    if (i == 0)
+                    {
+                        ImGui::InputFloatClamp(gearName[i], &t.gearRatios[i], -10.f, -0.1f);
+                    }
+                    else if (i == 1)
+                    {
+                        ImGui::InputFloatClamp(gearName[i], &t.gearRatios[i], 0.f, 0.f);
+                    }
+                    else
+                    {
+                        ImGui::InputFloatClamp(gearName[i], &t.gearRatios[i], 0.1f, 10.f);
+                    }
                 }
                 if (ImGui::Button("Add Gear") && t.gearRatios.size() < t.gearRatios.maximumSize())
                 {
