@@ -36,11 +36,10 @@ public:
         renderer->addRenderWorld(&rw);
 
         bool isOpen = true;
-        bool dirty = false;
         if (ImGui::Begin(tmpStr("Material Properties###Material Properties %i", n), &isOpen))
         {
             ImGui::PushItemWidth(200);
-            dirty |= ImGui::InputText("##Name", &mat.name);
+            ImGui::InputText("##Name", &mat.name);
             ImGui::PopItemWidth();
             ImGui::Gap();
 
@@ -49,54 +48,53 @@ public:
             ImGui::Image((void*)(uintptr_t)rw.getTexture()->handle, { 200, 200 }, { 1.f, 1.f }, { 0.f, 0.f });
             ImGui::NextColumn();
 
-            ImGui::Text(mat.name.data());
             ImGui::Guid(mat.guid);
 
             const char* materialTypeNames = "Normal\0Terrain\0Track\0";
-            dirty |= ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
+            ImGui::Combo("Type", (i32*)&mat.materialType, materialTypeNames);
 
             const char* previewMeshNames = "Sphere\0Box\0Plane\0";
-            dirty |= ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
+            ImGui::Combo("Preview", &previewMeshIndex, previewMeshNames);
 
             ImGui::Columns(1);
             ImGui::Gap();
 
             if (mat.materialType == MaterialType::NORMAL)
             {
-                dirty |= chooseTexture(TextureType::COLOR, mat.colorTexture, "Color Texture");
-                dirty |= chooseTexture(TextureType::NORMAL_MAP, mat.normalMapTexture, "Normal Map");
+                chooseTexture(TextureType::COLOR, mat.colorTexture, "Color Texture");
+                chooseTexture(TextureType::NORMAL_MAP, mat.normalMapTexture, "Normal Map");
 
                 ImGui::Columns(2, nullptr, false);
-                dirty |= ImGui::Checkbox("Culling", &mat.isCullingEnabled);
-                dirty |= ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
-                dirty |= ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
-                dirty |= ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
+                ImGui::Checkbox("Culling", &mat.isCullingEnabled);
+                ImGui::Checkbox("Cast Shadow", &mat.castsShadow);
+                ImGui::Checkbox("Depth Read", &mat.isDepthReadEnabled);
+                ImGui::Checkbox("Depth Write", &mat.isDepthWriteEnabled);
                 ImGui::NextColumn();
-                dirty |= ImGui::Checkbox("Visible", &mat.isVisible);
-                dirty |= ImGui::Checkbox("Wireframe", &mat.displayWireframe);
-                dirty |= ImGui::Checkbox("Transparent", &mat.isTransparent);
-                dirty |= ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
+                ImGui::Checkbox("Visible", &mat.isVisible);
+                ImGui::Checkbox("Wireframe", &mat.displayWireframe);
+                ImGui::Checkbox("Transparent", &mat.isTransparent);
+                ImGui::Checkbox("Vertex Colors", &mat.useVertexColors);
                 ImGui::Columns(1);
 
-                dirty |= ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
-                dirty |= ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
-                dirty |= ImGui::InputFloat("Depth Offset", &mat.depthOffset);
+                ImGui::DragFloat("Alpha Cutoff", &mat.alphaCutoff, 0.005f, 0.f, 1.f);
+                ImGui::DragFloat("Shadow Alpha Cutoff", &mat.shadowAlphaCutoff, 0.005f, 0.f, 1.f);
+                ImGui::InputFloat("Depth Offset", &mat.depthOffset);
 
-                dirty |= ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
-                dirty |= ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
-                dirty |= ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
-                dirty |= ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
-                dirty |= ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
-                dirty |= ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
+                ImGui::ColorEdit3("Base Color", (f32*)&mat.color);
+                ImGui::ColorEdit3("Emit", (f32*)&mat.emit);
+                ImGui::DragFloat("Emit Strength", (f32*)&mat.emitPower, 0.01f, 0.f, 80.f);
+                ImGui::ColorEdit3("Specular Color", (f32*)&mat.specularColor);
+                ImGui::DragFloat("Specular Power", (f32*)&mat.specularPower, 0.05f, 0.f, 1000.f);
+                ImGui::DragFloat("Specular Strength", (f32*)&mat.specularStrength, 0.005f, 0.f, 1.f);
 
-                dirty |= ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
-                dirty |= ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
-                dirty |= ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
+                ImGui::DragFloat("Fresnel Scale", (f32*)&mat.fresnelScale, 0.005f, 0.f, 1.f);
+                ImGui::DragFloat("Fresnel Power", (f32*)&mat.fresnelPower, 0.009f, 0.f, 200.f);
+                ImGui::DragFloat("Fresnel Bias", (f32*)&mat.fresnelBias, 0.005f, -1.f, 1.f);
 
-                dirty |= ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
-                dirty |= ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
-                dirty |= ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
-                dirty |= ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
+                ImGui::DragFloat("Reflection Strength", (f32*)&mat.reflectionStrength, 0.005f, 0.f, 1.f);
+                ImGui::DragFloat("Reflection LOD", (f32*)&mat.reflectionLod, 0.01f, 0.f, 10.f);
+                ImGui::DragFloat("Reflection Bias", (f32*)&mat.reflectionBias, 0.005f, -1.f, 1.f);
+                ImGui::DragFloat("Wind", (f32*)&mat.windAmount, 0.01f, 0.f, 5.f);
             }
             else if (mat.materialType == MaterialType::TERRAIN)
             {
@@ -106,12 +104,12 @@ public:
                                 "Terrain Layer %i", i+1))
                     {
                         auto& layer = mat.terrainLayers[i];
-                        dirty |= chooseTexture(TextureType::COLOR, layer.colorTextureGuid, "Color Texture");
-                        dirty |= chooseTexture(TextureType::NORMAL_MAP, layer.normalTextureGuid, "Normal Map");
-                        dirty |= ImGui::DragFloat("Fresnel Scale", (f32*)&layer.fresnelScale, 0.005f, 0.f, 1.f);
-                        dirty |= ImGui::DragFloat("Fresnel Power", (f32*)&layer.fresnelPower, 0.009f, 0.f, 200.f);
-                        dirty |= ImGui::DragFloat("Fresnel Bias", (f32*)&layer.fresnelBias, 0.005f, -1.f, 1.f);
-                        dirty |= ImGui::DragFloat("Texture Scale", (f32*)&layer.textureScale, 0.01f, 0.f, 50.f);
+                        chooseTexture(TextureType::COLOR, layer.colorTextureGuid, "Color Texture");
+                        chooseTexture(TextureType::NORMAL_MAP, layer.normalTextureGuid, "Normal Map");
+                        ImGui::DragFloat("Texture Scale", (f32*)&layer.textureScale, 0.01f, 0.f, 50.f);
+                        ImGui::DragFloat("Fresnel Scale", (f32*)&layer.fresnelScale, 0.005f, 0.f, 1.f);
+                        ImGui::DragFloat("Fresnel Power", (f32*)&layer.fresnelPower, 0.009f, 0.f, 200.f);
+                        ImGui::DragFloat("Fresnel Bias", (f32*)&layer.fresnelBias, 0.005f, -1.f, 1.f);
                         ImGui::TreePop();
                     }
                 }
@@ -123,11 +121,6 @@ public:
         if (!isOpen)
         {
             rm->markClosed(r);
-        }
-
-        if (dirty)
-        {
-            rm->markDirty(mat.guid);
         }
     }
 };

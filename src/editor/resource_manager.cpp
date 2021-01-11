@@ -271,12 +271,6 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
         {
             u32 flags = ImGuiTreeNodeFlags_Leaf
                 | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            /*
-            if (selectedTexture == tex && isTextureWindowOpen)
-            {
-                flags |= ImGuiTreeNodeFlags_Selected;
-            }
-            */
             ImGui::PushID((void*)childResource->guid);
             f32 cursorPos = ImGui::GetCursorPosX();
             ImGui::TreeNodeEx("                                           ", flags);
@@ -331,7 +325,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                     g_resourceTypes[childResource->type].resourceIcon)->getPreviewHandle(), { 16, 16 });
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 24.f);
-            ImGui::Text(childResource->name.data());
+            ImGui::Text("%s%s", childResource->name.data(), isDirty(childResource->guid) ? "*" : "");
         }
         ImGui::PopStyleColor();
         if (removed)
@@ -388,6 +382,7 @@ void ResourceManager::openResource(Resource* resource)
             windowID,
         });
     }
+    markDirty(resource->guid);
 }
 
 void ResourceManager::closeResource(Resource* resource)

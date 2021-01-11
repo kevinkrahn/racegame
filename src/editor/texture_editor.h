@@ -8,7 +8,6 @@ class TextureEditor : public ResourceEditor
 public:
     void onUpdate(Resource* r, ResourceManager* rm, class Renderer* renderer, f32 deltaTime, u32 n) override
     {
-        bool dirty = false;
         Texture& tex = *(Texture*)r;
         bool changed = false;
 
@@ -16,7 +15,7 @@ public:
         if (ImGui::Begin(tmpStr("Texture Properties###Texture Properties %i", n), &isOpen))
         {
             ImGui::PushItemWidth(150);
-            dirty |= ImGui::InputText("##Name", &tex.name);
+            ImGui::InputText("##Name", &tex.name);
             ImGui::PopItemWidth();
             ImGui::SameLine();
             if (tex.getSourceFileCount() == 1)
@@ -29,7 +28,6 @@ public:
                     {
                         tex.setSourceFile(0, path::relative(filename));
                         tex.regenerate();
-                        dirty = true;
                     }
                 }
                 ImGui::SameLine();
@@ -37,7 +35,6 @@ public:
             if (ImGui::Button("Reimport"))
             {
                 tex.reloadSourceFiles();
-                dirty = true;
             }
 
             ImGui::Gap();
@@ -72,7 +69,6 @@ public:
                         {
                             tex.setSourceFile(i, path::relative(filename));
                             tex.regenerate();
-                            dirty = true;
                         }
                     }
                     if (!sf.path.empty())
@@ -119,12 +115,6 @@ public:
         if (changed)
         {
             tex.regenerate();
-            dirty = true;
-        }
-
-        if (dirty)
-        {
-            rm->markDirty(r->guid);
         }
     }
 };

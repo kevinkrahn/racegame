@@ -389,7 +389,6 @@ void VehicleData::render(RenderWorld* rw, Mat4 const& transform,
     if (config.dirty)
     {
         config.reloadMaterials();
-        config.dirty = false;
     }
 
     Mat4 defaultWheelTransforms[NUM_WHEELS];

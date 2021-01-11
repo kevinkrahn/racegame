@@ -10,12 +10,11 @@ public:
     {
         Sound& sound = *(Sound*)r;
 
-        bool dirty = false;
         bool isOpen = true;
         if (ImGui::Begin(tmpStr("Sound Properties###Sound Properties %i", n), &isOpen))
         {
             ImGui::PushItemWidth(150);
-            dirty |= ImGui::InputText("##Name", &sound.name);
+            ImGui::InputText("##Name", &sound.name);
             ImGui::PopItemWidth();
             ImGui::SameLine();
             if (ImGui::Button("Load Sound"))
@@ -27,13 +26,11 @@ public:
                     sound.sourceFilePath = path::relative(filename);
                     sound.loadFromFile(filename);
                 }
-                dirty = true;
             }
             ImGui::SameLine();
             if (!sound.sourceFilePath.empty() && ImGui::Button("Reimport"))
             {
                 sound.loadFromFile(tmpStr("%s/%s", ASSET_DIRECTORY, sound.sourceFilePath.data()));
-                dirty = true;
             }
 
             ImGui::Gap();
@@ -42,8 +39,8 @@ public:
             ImGui::Text("Format: %s", sound.format == AudioFormat::RAW ? "WAV" : "OGG VORBIS");
             ImGui::Guid(sound.guid);
 
-            dirty |= ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
-            dirty |= ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
+            ImGui::SliderFloat("Volume", &sound.volume, 0.f, 1.f);
+            ImGui::SliderFloat("Falloff Distance", &sound.falloffDistance, 50.f, 1000.f);
 
             ImGui::Gap();
 
@@ -64,11 +61,6 @@ public:
         if (!isOpen)
         {
             rm->markClosed(r);
-        }
-
-        if (dirty)
-        {
-            rm->markDirty(r->guid);
         }
     }
 };

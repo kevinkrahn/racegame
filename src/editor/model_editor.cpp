@@ -76,15 +76,10 @@ void ModelEditor::showSceneSelection()
 
 void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer, f32 deltaTime, u32 n)
 {
-    bool dirty = false;
     if (ImGui::Begin("Model Editor"))
     {
         ImGui::PushItemWidth(150);
-        if (ImGui::InputText("##Name", &model->name))
-        {
-            dirty = true;
-            g_game.resourceManager->markDirty(model->guid);
-        }
+        ImGui::InputText("##Name", &model->name);
         ImGui::PopItemWidth();
 
         ImGui::SameLine();
@@ -97,7 +92,6 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                 model->sourceFilePath = path::relative(path);
                 model->sourceSceneName = "";
                 loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.data()));
-                dirty = true;
             }
         }
         showSceneSelection();
@@ -107,7 +101,6 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
             if (model->sourceFilePath.size() > 0)
             {
                 loadBlenderFile(tmpStr("%s/%s", ASSET_DIRECTORY, model->sourceFilePath.data()));
-                dirty = true;
             }
         }
 
@@ -128,7 +121,7 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                 "Internal\0Static Prop\0Dynamic Prop\0Spline\0Vehicle\0");
         if (model->modelUsage == ModelUsage::DYNAMIC_PROP)
         {
-            dirty |= ImGui::InputFloat("Density", &model->density);
+            ImGui::InputFloat("Density", &model->density);
         }
         if (model->modelUsage == ModelUsage::STATIC_PROP || model->modelUsage == ModelUsage::DYNAMIC_PROP)
         {
@@ -139,7 +132,6 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                     if (ImGui::Selectable(propCategoryNames[i]))
                     {
                         model->category = (PropCategory)i;
-                        dirty = true;
                     }
                 }
                 ImGui::EndCombo();
@@ -233,7 +225,6 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                 {
                     model->objects[index].isCollider = obj.isCollider;
                 }
-                dirty = true;
             }
 
             if (ImGui::Checkbox("Is Visible", &obj.isVisible))
@@ -242,7 +233,6 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                 {
                     model->objects[index].isVisible = obj.isVisible;
                 }
-                dirty = true;
             }
 
             /*
@@ -255,20 +245,14 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
                         model->objects[index].isPaint = obj.isPaint;
                     }
                 }
-                dirty = true;
             }
             */
 
-            dirty |= chooseResource(ResourceType::MATERIAL, obj.materialGuid, "Material",
+            chooseResource(ResourceType::MATERIAL, obj.materialGuid, "Material",
                     [](Resource* r){ return ((Material*)r)->materialType == MaterialType::NORMAL; });
 
             ImGui::End();
         }
-    }
-
-    if (dirty)
-    {
-        g_game.resourceManager->markDirty(model->guid);
     }
 
     // end gui

@@ -64,8 +64,6 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
         }
     }
 
-    g_game.resourceManager->markDirty(scene->guid);
-
     if (ImGui::Begin("Track Editor"))
     {
         ImGui::InputText("##Name", &scene->name);

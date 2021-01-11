@@ -5,7 +5,6 @@
 #include "bounding_box.h"
 #include "renderer.h"
 
-// TODO: this class should be part of RenderWorld
 class DebugDraw
 {
     struct Vertex

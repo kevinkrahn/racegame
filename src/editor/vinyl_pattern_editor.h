@@ -18,13 +18,12 @@ public:
         VinylPattern& p = *(VinylPattern*)r;
 
         bool isOpen = true;
-        bool dirty = false;
         if (ImGui::Begin(tmpStr("Vinyl Pattern Properties###Vinyl Pattern Properties %i", n), &isOpen))
         {
-            dirty |= ImGui::InputText("##Name", &p.name);
+            ImGui::InputText("##Name", &p.name);
             ImGui::Guid(p.guid);
-            dirty |= ImGui::Checkbox("Useable by Player", &p.canBeUsedByPlayer);
-            dirty |= chooseTexture(TextureType::COLOR, p.colorTextureGuid, "Color Texture");
+            ImGui::Checkbox("Useable by Player", &p.canBeUsedByPlayer);
+            chooseTexture(TextureType::COLOR, p.colorTextureGuid, "Color Texture");
             //rm->chooseTexture(TextureType::NORMAL_MAP, p.normalTextureGuid, "Normal Map");
             //rm->chooseTexture(TextureType::COLOR, p.normalTextureGuid, "Shininess Map");
         }
@@ -33,11 +32,6 @@ public:
         if (!isOpen)
         {
             rm->markClosed(r);
-        }
-
-        if (dirty)
-        {
-            rm->markDirty(r->guid);
         }
     }
 };

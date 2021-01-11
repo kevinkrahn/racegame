@@ -93,6 +93,7 @@
 - Improve force feedback
 - Highlight player vehicle in each viewport before race starts
 - Disable highlight behind some railing types
-- Remove dirty flag from all resource editor code and use IsAnyItemActive() or simply make opening the resource cause it to become dirty.
 - Add normal map strength material option
 - Redo menu
+- Convert fonts into resource
+- Add heightmap for each texture on terrain to make better transitions

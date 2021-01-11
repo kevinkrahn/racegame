@@ -22,11 +22,9 @@ public:
         }
     }
 
-    bool drawVehiclePreview(Renderer* renderer, RenderWorld& rw, VehicleTuning& tuning,
+    void drawVehiclePreview(Renderer* renderer, RenderWorld& rw, VehicleTuning& tuning,
             AIVehicleConfiguration& ai)
     {
-        bool dirty = false;
-
         rw.setName("AI Vehicle Preview");
         rw.setBloomForceOff(true);
         u32 rs = 160;
@@ -62,7 +60,7 @@ public:
                 {
                     ai.vehicleGuid = r->guid;
                     ((VehicleData*)r)->initTuning(ai.config, tuning);
-                    dirty = true;
+                    ai.config.reloadMaterials();
                 }
                 if (isSelected)
                 {
@@ -74,8 +72,14 @@ public:
 
         if (ImGui::TreeNodeEx("Paint", ImGuiTreeNodeFlags_DefaultOpen, "Paint"))
         {
-            dirty |= ImGui::ColorEdit3("Color", (f32*)&ai.config.cosmetics.color);
-            dirty |= ImGui::SliderFloat("Shininess", &ai.config.cosmetics.paintShininess, 0.f, 1.f);
+            if (ImGui::ColorEdit3("Color", (f32*)&ai.config.cosmetics.color))
+            {
+                ai.config.reloadMaterials();
+            }
+            if (ImGui::SliderFloat("Shininess", &ai.config.cosmetics.paintShininess, 0.f, 1.f))
+            {
+                ai.config.reloadMaterials();
+            }
             ImGui::TreePop();
         }
 
@@ -110,7 +114,6 @@ public:
                         if (ImGui::Selectable(r->name.data()))
                         {
                             ai.config.cosmetics.vinylGuids[layerIndex] = r->guid;
-                            dirty = true;
                         }
                         if (isSelected)
                         {
@@ -119,7 +122,7 @@ public:
                     });
                     ImGui::EndCombo();
                 }
-                dirty |= ImGui::ColorEdit4("Color", (f32*)&ai.config.cosmetics.vinylColors[layerIndex]);
+                ImGui::ColorEdit4("Color", (f32*)&ai.config.cosmetics.vinylColors[layerIndex]);
                 ImGui::TreePop();
             }
         }
@@ -149,7 +152,6 @@ public:
                             {
                                 ai.config.weaponIndices[slotIndex] = i;
                                 ai.config.weaponUpgradeLevel[slotIndex] = weapon.info.maxUpgradeLevel;
-                                dirty = true;
                             }
                             if (isSelected)
                             {
@@ -163,8 +165,6 @@ public:
             }
         }
         ImGui::Columns(1);
-
-        return dirty;
     }
 
     void init(Resource* r) override
@@ -186,19 +186,18 @@ public:
         AIDriverData& ai = *(AIDriverData*)r;
 
         bool isOpen = true;
-        bool dirty = false;
         if (ImGui::Begin(tmpStr("AI Driver Properties###AI Driver Properties %i", n), &isOpen))
         {
-            dirty |= ImGui::InputText("##Name", &ai.name);
+            ImGui::InputText("##Name", &ai.name);
             ImGui::Guid(ai.guid);
             ImGui::Gap();
-            dirty |= ImGui::SliderFloat("Driving Skill", &ai.drivingSkill, 0.f, 1.f);
+            ImGui::SliderFloat("Driving Skill", &ai.drivingSkill, 0.f, 1.f);
             ImGui::HelpMarker("How optimal of a path the AI takes on the track.");
-            dirty |= ImGui::SliderFloat("Aggression", &ai.aggression, 0.f, 1.f);
+            ImGui::SliderFloat("Aggression", &ai.aggression, 0.f, 1.f);
             ImGui::HelpMarker("How often the AI will go out of its way to attack other drivers.");
-            dirty |= ImGui::SliderFloat("Awareness", &ai.awareness, 0.f, 1.f);
+            ImGui::SliderFloat("Awareness", &ai.awareness, 0.f, 1.f);
             ImGui::HelpMarker("How much the AI will attempt to avoid hitting other drivers and obstacles.");
-            dirty |= ImGui::SliderFloat("Fear", &ai.fear, 0.f, 1.f);
+            ImGui::SliderFloat("Fear", &ai.fear, 0.f, 1.f);
             ImGui::HelpMarker("How much the AI will try to evade other drivers.");
 
             ImGui::Gap();
@@ -226,7 +225,6 @@ public:
                         ai.vehicles.erase(ai.vehicles.begin() + i);
                         vehicleRenderData[i]->rw.destroy();
                         vehicleRenderData.erase(vehicleRenderData.begin() + i);
-                        dirty = true;
                         ImGui::EndPopup();
                         if (isOpen)
                         {
@@ -238,12 +236,8 @@ public:
                 }
                 if (isOpen)
                 {
-                    dirty |= drawVehiclePreview(renderer, vehicleRenderData[i]->rw,
+                    drawVehiclePreview(renderer, vehicleRenderData[i]->rw,
                             vehicleRenderData[i]->tuning, ai.vehicles[i]);
-                    if (dirty)
-                    {
-                        ai.vehicles[i].config.reloadMaterials();
-                    }
                     ImGui::TreePop();
                 }
                 ++i;
@@ -268,11 +262,6 @@ public:
         if (!isOpen)
         {
             rm->markClosed(r);
-        }
-
-        if (dirty)
-        {
-            rm->markDirty(r->guid);
         }
     }
 };

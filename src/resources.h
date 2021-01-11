@@ -53,7 +53,6 @@ void registerResourceType(ResourceType resourceType, const char* name, const cha
 class Resources
 {
 private:
-    // TODO: convert fonts into resource
     Map<const char*, Map<u32, Font>> fonts;
     // TODO: use bigger map size than the default 64 because there are a lot of resources
     Map<i64, OwnedPtr<Resource>> resources;
