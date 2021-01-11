@@ -146,8 +146,7 @@ struct WorldInfo
     Mat4 orthoProjection;
     Vec3 sunDirection;
     f32 time;
-    Vec3 sunColor;
-    f32 pad;
+    Vec4 sunColor;
     Mat4 cameraViewProjection;
     Mat4 cameraProjection;
     Mat4 cameraView;
@@ -296,7 +295,7 @@ public:
 
     void addPointLight(Vec3 const& position, Vec3 const& color, f32 radius, f32 falloff);
     //void addSpotLight(Vec3 const& position, Vec3 const& direction, Vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
-    void addDirectionalLight(Vec3 const& direction, Vec3 const& color);
+    void addDirectionalLight(Vec3 const& direction, Vec3 const& color, f32 strength=1.f);
     void setMotionBlur(u32 viewportIndex, Vec2 const& motionBlur);
 
     void updateWorldTime(f64 time);

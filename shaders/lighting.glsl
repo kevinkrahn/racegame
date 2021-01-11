@@ -67,14 +67,14 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     shadow *= cloudShadow;
 
     // directional light
-    const float sunPower = 1.0;
+    float sunPower = sunColor.w;
     const vec3 ambientDirection = normalize(vec3(0.3, 0.1, 0.8));
     float directLight = max(dot(normal, sunDirection) * sunPower * shadow, 0.055)
         + max(dot(normal, ambientDirection) * 0.07, 0.0);
     vec3 halfDir = normalize(sunDirection + camDir);
     vec3 specularLight = specularColor * (pow(max(dot(normal, halfDir), 0.0), specularPower) * specularStrength) * sunPower;
 
-    lightOut += color.rgb * directLight;
+    lightOut += color.rgb * sunColor.rgb * directLight;
     lightOut += specularLight * shadow;
 
     // point lights

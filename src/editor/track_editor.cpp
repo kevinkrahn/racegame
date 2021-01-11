@@ -104,11 +104,21 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
         i32 totalLaps = (i32)scene->totalLaps;
         ImGui::InputInt("Laps", &totalLaps);
         scene->totalLaps = (u32)clamp(totalLaps, 1, 10);
+
         ImGui::Gap();
+        ImGui::Columns(2);
         ImGui::Checkbox("Show Grid", &gridSettings.show);
+        ImGui::NextColumn();
         ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
+        ImGui::Columns(1);
         ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
         gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
+
+        ImGui::Gap();
+        ImGui::SliderAngle("Sun Angle", &scene->sunDir);
+        ImGui::SliderAngle("Sun Angle Z", &scene->sunDirZ, -89.9999f, 89.999f);
+        ImGui::ColorEdit3("Sun Color", (f32*)&scene->sunColor);
+        ImGui::SliderFloat("Sun Strength", &scene->sunStrength, 0.f, 5.f, "%.2f");
 
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 

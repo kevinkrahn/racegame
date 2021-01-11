@@ -138,6 +138,11 @@ public:
     Track* track = nullptr;
     Start* start = nullptr;
 
+    f32 sunDir = 0.8f;
+    f32 sunDirZ = -1.f;
+    Vec3 sunColor = Vec3(1.f);
+    f32 sunStrength = 1.f;
+
     Scene(TrackData* data=nullptr);
     ~Scene();
 

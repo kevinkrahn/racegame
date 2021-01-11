@@ -485,10 +485,10 @@ Camera& RenderWorld::setViewportCamera(u32 index, Vec3 const& from,
     return cam;
 }
 
-void RenderWorld::addDirectionalLight(Vec3 const& direction, Vec3 const& color)
+void RenderWorld::addDirectionalLight(Vec3 const& direction, Vec3 const& color, f32 strength)
 {
     worldInfo.sunDirection = -normalize(direction);
-    worldInfo.sunColor = color;
+    worldInfo.sunColor = Vec4(color, strength);
 }
 
 void RenderWorld::addPointLight(Vec3 const& position, Vec3 const& color, f32 radius, f32 falloff)

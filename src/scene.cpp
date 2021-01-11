@@ -303,9 +303,9 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 		}
     }
     rw->setViewportCount(viewportCount);
-    //rw->addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
-    // TODO: make light direction configurable in editor
-    rw->addDirectionalLight(Vec3(0.2f, 0.5f, -0.8f), Vec3(1.0));
+    //rw->addDirectionalLight(Vec3(0.2f, 0.5f, -0.8f), Vec3(1.0));
+    rw->addDirectionalLight(Vec3(lengthdir(sunDir, 1.f) * cosf(sunDirZ), sinf(sunDirZ)),
+            sunColor, sunStrength);
 
     if (!isPaused)
     {
