@@ -52,24 +52,28 @@ struct WeaponSlot
     {
         for (u32 i=0; i<ARRAY_SIZE(tagGroups); ++i)
         {
-            bool allMatch = true;
             for (u32 j=0; j<ARRAY_SIZE(tagGroups[i].tags); ++j)
             {
+                if (tagGroups[i].tags[j].empty())
+                {
+                    continue;
+                }
+                bool match = false;
                 for (u32 k=0; k<ARRAY_SIZE(w.tags); ++k)
                 {
-                    // TODO: this is completely wrong, fix it
-                    if (tagGroups[i].tags[j] != w.tags[k])
+                    if (tagGroups[i].tags[j] == w.tags[k])
                     {
-                        allMatch = false;
+                        match = true;
+                        break;
                     }
                 }
-            }
-            if (allMatch)
-            {
-                return true;
+                if (!match)
+                {
+                    return false;
+                }
             }
         }
-        return false;
+        return true;
     }
 };
 
