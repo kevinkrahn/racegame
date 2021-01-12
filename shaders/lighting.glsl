@@ -5,7 +5,10 @@ layout(binding = 4) uniform sampler2D ssaoTexture;
 
 float getShadow(sampler2DShadow tex, vec3 shadowCoord)
 {
-#if 0
+#if SHADOW_FILTERING_QUALITY == 0
+    const uint count = 1;
+    vec2 offsets[count] = vec2[](vec2(0.0, 0.0));
+#elif SHADOW_FILTERING_QUALITY == 1
     const uint count = 4;
     vec2 offsets[count] = vec2[](
         vec2(-0.9420162, -0.39906216),
@@ -27,12 +30,14 @@ float getShadow(sampler2DShadow tex, vec3 shadowCoord)
         vec2(-0.6038000, -0.41527000)
     );
 #endif
+    //const float offsetDivider = 800.0;
+    const float offsetDivider = 1200.0;
 
     float shadow = 0.0;
     for (uint i=0; i<count; ++i)
     {
         vec3 texCoord;
-        texCoord.xy = shadowCoord.xy + offsets[i] / 800.0;
+        texCoord.xy = shadowCoord.xy + offsets[i] / offsetDivider;
         texCoord.z = shadowCoord.z;
         shadow += texture(tex, texCoord) / count;
     }

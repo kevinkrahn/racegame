@@ -19,6 +19,7 @@ void glShaderSources(GLuint shader, const char* src,
     buf.write("#version 450\n");
     buf.writef("#define MAX_VIEWPORTS %u\n", MAX_VIEWPORTS);
     buf.writef("#define SHADOWS_ENABLED %u\n", u32(g_game.config.graphics.shadowsEnabled));
+    buf.writef("#define SHADOW_FILTERING_QUALITY %u\n", u32(g_game.config.graphics.shadowFilteringQuality));
     buf.writef("#define SSAO_ENABLED %u\n", u32(g_game.config.graphics.ssaoEnabled));
     buf.writef("#define BLOOM_ENABLED %u\n", u32(g_game.config.graphics.bloomEnabled));
     buf.writef("#define SHARPEN_ENABLED %u\n", u32(g_game.config.graphics.sharpenEnabled));

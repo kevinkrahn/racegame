@@ -1647,6 +1647,7 @@ void Menu::createCarLotMenu()
             vehicles.push(v);
         }
 	});
+	// TODO: sort by price
 
     if (!garage.previewVehicle)
     {

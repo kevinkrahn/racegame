@@ -100,3 +100,4 @@
 - Remove all standard library usage to improve compile times
 - Encode roughness/specular/heightmap in alpha channel of terrain texture and normal map
 - Redo terrain system with chunks
+- Add configurable fog in editor

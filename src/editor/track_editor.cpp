@@ -79,8 +79,12 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
 	        });
 
             g_game.state.drivers.clear();
+#if 0
             g_game.state.drivers.push(Driver(true, true, true, 0,
                         vehicles[irandom(scene->randomSeries, 0, vehicles.size())]));
+#else
+            g_game.state.drivers.push(Driver(true, true, true, 0, vehicles[2]));
+#endif
             auto conf = g_game.state.drivers.back().getVehicleConfig();
             auto vd = g_game.state.drivers.back().getVehicleData();
             conf->cosmetics.color =

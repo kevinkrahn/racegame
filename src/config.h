@@ -5,6 +5,13 @@
 
 const char* CONFIG_FILE_PATH = "config.txt";
 
+enum struct ConfigLevel
+{
+    LOW = 0,
+    MEDIUM = 1,
+    HIGH = 2,
+};
+
 struct Config
 {
     struct Graphics
@@ -12,6 +19,7 @@ struct Config
         u32 resolutionX = 1280;
         u32 resolutionY = 720;
         u32 shadowMapResolution = 2048;
+        ConfigLevel shadowFilteringQuality = ConfigLevel::MEDIUM;
         u32 maxFPS = 200;
         u32 msaaLevel = 0;
         bool fullscreen = false;
@@ -31,6 +39,7 @@ struct Config
             s.field(resolutionX);
             s.field(resolutionY);
             s.field(shadowMapResolution);
+            s.field(shadowFilteringQuality);
             s.field(maxFPS);
             s.field(msaaLevel);
             s.field(fullscreen);
