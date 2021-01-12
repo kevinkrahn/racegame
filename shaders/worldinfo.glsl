@@ -24,6 +24,9 @@ layout (std140, binding = 0) uniform WorldInfo
     vec3 cameraPosition;
     mat4 shadowViewProjectionBias;
     LightPartition lightPartitions[LIGHT_SPLITS][LIGHT_SPLITS];
+    vec3 fogColor;
+    float fogDensity;
     vec2 invResolution;
+    float fogBeginDistance;
 };
 

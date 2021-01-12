@@ -132,12 +132,8 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 
     // fog
 #if FOG_ENABLED
-    const vec3 fogColor = vec3(0.5, 0.6, 1);
-    const float density = 0.0015;
     const float LOG2 = -1.442695;
-    //float fogIntensity = 1.0 - clamp(exp(-density * (distanceToCamera - 90)), 0.0, 1.0);
-    //float fogIntensity = 1.0 - clamp(exp(-density * distanceToCamera), 0.0, 1.0);
-    float d = density * distanceToCamera;
+    float d = fogDensity * max(distanceToCamera - fogBeginDistance, 0.0);
     float fogIntensity = 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
     lightOut = mix(lightOut, fogColor, fogIntensity);
 #endif

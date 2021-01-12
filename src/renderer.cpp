@@ -507,6 +507,13 @@ void RenderWorld::setMotionBlur(u32 viewportIndex, Vec2 const& motionBlur)
     this->motionBlur[viewportIndex] = motionBlur;
 }
 
+void RenderWorld::setFog(Vec3 const& fogColor, f32 fogDensity, f32 fogBeginDistance)
+{
+    worldInfo.fogColor = fogColor;
+    worldInfo.fogDensity = fogDensity;
+    worldInfo.fogBeginDistance = fogBeginDistance;
+}
+
 void RenderWorld::updateWorldTime(f64 time)
 {
     worldInfo.time = (f32)time;

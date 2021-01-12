@@ -93,11 +93,12 @@
 - Highlight player vehicle in each viewport before race starts
 - Disable highlight behind some railing types
 - Add normal map strength material option
-- Redo menu
+- Keep previous frames around for better motion blur
 - Convert fonts into resource
 - Add heightmap for each texture on terrain to make better transitions
-- Show log messages on screen so I don't miss them
 - Remove all standard library usage to improve compile times
 - Encode roughness/specular/heightmap in alpha channel of terrain texture and normal map
+- Show log messages on screen so I don't miss them
 - Redo terrain system with chunks
-- Add configurable fog in editor
+- Redo menu
+- Add ability to change ambient lighting in editor

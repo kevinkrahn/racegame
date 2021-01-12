@@ -143,6 +143,10 @@ public:
     Vec3 sunColor = Vec3(1.f);
     f32 sunStrength = 1.f;
 
+    Vec3 fogColor = Vec3(0.5f, 0.6f, 1.f);
+    f32 fogDensity = 0.0015f;
+    f32 fogBeginDistance = 5.f;
+
     Scene(TrackData* data=nullptr);
     ~Scene();
 

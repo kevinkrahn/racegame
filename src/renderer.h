@@ -153,8 +153,11 @@ struct WorldInfo
     Vec4 cameraPosition;
     Mat4 shadowViewProjectionBias;
     LightPartition lightPartitions[LIGHT_SPLITS][LIGHT_SPLITS];
+    Vec3 fogColor = { 0.5f, 0.6f, 1.f };
+    f32 fogDensity = 0.0015f;
     Vec2 invResolution;
-    f32 pad2[2];
+    f32 fogBeginDistance = 5.f;
+    f32 pad;
 };
 
 // TODO: profile to see if using a map improves performance vs a sorted array
@@ -297,6 +300,7 @@ public:
     //void addSpotLight(Vec3 const& position, Vec3 const& direction, Vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
     void addDirectionalLight(Vec3 const& direction, Vec3 const& color, f32 strength=1.f);
     void setMotionBlur(u32 viewportIndex, Vec2 const& motionBlur);
+    void setFog(Vec3 const& fogColor, f32 fogDensity, f32 fogBeginDistance);
 
     void updateWorldTime(f64 time);
     void createFramebuffers();
