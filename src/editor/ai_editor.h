@@ -52,22 +52,16 @@ public:
                 { 1.f, 1.f }, { 0.f, 0.f });
         ImGui::NextColumn();
 
-        if (ImGui::BeginCombo("Vehicle", vehicleName))
+        if (chooseResource(ResourceType::VEHICLE, ai.vehicleGuid, "Vehicle", [](Resource* r){
+            return true;
+        }))
         {
-            g_res.iterateResourceType(ResourceType::VEHICLE, [&](Resource* r){
-                bool isSelected = ai.vehicleGuid == r->guid;
-                if (ImGui::Selectable(r->name.data()))
-                {
-                    ai.vehicleGuid = r->guid;
-                    ((VehicleData*)r)->initTuning(ai.config, tuning);
-                    ai.config.reloadMaterials();
-                }
-                if (isSelected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            });
-            ImGui::EndCombo();
+            VehicleData* v = (VehicleData*)g_res.getResource(ai.vehicleGuid);
+            if (v)
+            {
+                v->initTuning(ai.config, tuning);
+                ai.config.reloadMaterials();
+            }
         }
 
         if (ImGui::TreeNodeEx("Paint", ImGuiTreeNodeFlags_DefaultOpen, "Paint"))

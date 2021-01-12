@@ -158,9 +158,10 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
 {
     bool changed = false;
     Resource* resource = g_res.getResource(current);
-
     auto& style = ImGui::GetStyle();
+    auto width = ImGui::CalcItemWidth();
     u32 previewTexture = 0;
+
     if (resource)
     {
         previewTexture = resource->getPreviewTexture();
@@ -169,16 +170,20 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
     {
         f32 cx = ImGui::GetCursorPosX();
         ImGui::Image((void*)(uintptr_t)previewTexture, { 48, 48 });
-        ImGui::SameLine(cx + 48 - 18);
+        ImGui::SameLine(cx + 48 - 17);
         ImGui::SetNextItemWidth(20);
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.f, 0.6f, 0.6f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.f, 0.7f, 0.7f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.f, 0.8f, 0.8f));
         if (ImGui::Button(tmpStr("X###X%s", name)))
         {
             current = 0;
             changed = true;
         }
+        ImGui::PopStyleColor(3);
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.65f - 56);
-        ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 56, 200.f };
+        ImGui::SetNextItemWidth(width - 56);
+        ImVec2 size = { width - 56, 200.f };
         ImGui::SetNextWindowSizeConstraints(size, size);
     }
     else
@@ -186,19 +191,23 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
         if (resource)
         {
             ImGui::SetNextItemWidth(20);
+            ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.f, 0.6f, 0.6f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.f, 0.7f, 0.7f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.f, 0.8f, 0.8f));
             if (ImGui::Button(tmpStr("X###X%s", name)))
             {
                 current = 0;
                 changed = true;
             }
+            ImGui::PopStyleColor(3);
             ImGui::SameLine();
-            ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.65f - 20 - style.ItemSpacing.x);
-            ImVec2 size = { ImGui::GetWindowWidth() * 0.65f - 20 - style.ItemSpacing.x, 200.f };
+            ImGui::SetNextItemWidth(width - 17 - style.ItemSpacing.x);
+            ImVec2 size = { width - 17 - style.ItemSpacing.x, 200.f };
             ImGui::SetNextWindowSizeConstraints(size, size);
         }
         else
         {
-            ImVec2 size = { ImGui::GetWindowWidth() * 0.65f, 200.f };
+            ImVec2 size = { width, 200.f };
             ImGui::SetNextWindowSizeConstraints(size, size);
         }
     }
@@ -221,6 +230,7 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
         g_res.iterateResourceType(resourceType, [&filter](Resource* resource){
             if (filter(resource))
             {
+                // TODO: make this case-insensitive
                 if (searchString.empty() || resource->name.find(searchString))
                 {
                     searchResults.push(resource);
