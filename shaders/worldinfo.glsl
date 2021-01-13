@@ -17,7 +17,8 @@ layout (std140, binding = 0) uniform WorldInfo
     mat4 orthoProjection;
     vec3 sunDirection;
     float time;
-    vec4 sunColor;
+    vec3 sunColor;
+    float pad1;
     mat4 cameraViewProjection;
     mat4 cameraProjection;
     mat4 cameraView;
@@ -28,5 +29,8 @@ layout (std140, binding = 0) uniform WorldInfo
     float fogDensity;
     vec2 invResolution;
     float fogBeginDistance;
+    float cloudShadowStrength;
+    vec3 ambientColor;
+    float ambientStrength;
 };
 

@@ -34,6 +34,7 @@ float unpackKey(vec2 p)
 
 void main()
 {
+#if 1
     ivec2 ssC = ivec2(gl_FragCoord.xy);
 
     vec4 temp = texelFetch(sourceTexture, ssC, 0);
@@ -47,13 +48,17 @@ void main()
     float totalWeight = BASE;
     sum *= totalWeight;
 
+    ivec2 texSize = textureSize(sourceTexture, 0);
     for (int r = -R; r <= R; ++r)
     {
         if (r != 0)
         {
-            temp = texelFetch(sourceTexture, ssC + axis * (r * SCALE), 0);
+            ivec2 coord = clamp(ssC + axis * (r * SCALE), ivec2(0, 0), texSize - 1);
+            // original
+            //ivec2 coord = ssC + axis * (r * SCALE);
+            temp = texelFetch(sourceTexture, coord, 0);
             float tapKey = unpackKey(temp.KEY_COMPONENTS);
-            VALUE_TYPE value  = temp.VALUE_COMPONENTS;
+            VALUE_TYPE value = temp.VALUE_COMPONENTS;
             float weight = 0.3 + gaussian[abs(r)];
             weight *= max(0.0, 1.0 - (EDGE_SHARPNESS * 2000.0) * abs(tapKey - key));
             sum += value * weight;
@@ -63,5 +68,9 @@ void main()
 
     const float epsilon = 0.0001;
     outColor.VALUE_COMPONENTS = sum / (totalWeight + epsilon);
+#else
+    ivec2 ssC = ivec2(gl_FragCoord.xy);
+    outColor.r = texelFetch(sourceTexture, ssC, 0).r;
+#endif
 }
 #endif

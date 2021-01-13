@@ -76,14 +76,16 @@ vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR)
 {
     int mipLevel = clamp(findMSB(int(ssR)) - LOG_MAX_OFFSET, 0, MAX_MIP_LEVEL);
     ivec2 ssP = ivec2(ssR * unitOffset) + ssC;
+    ivec2 size = textureSize(cszTexture, mipLevel);
+    ivec2 mipP = clamp(ssP >> mipLevel, ivec2(0, 0), size - ivec2(1, 0));
     vec3 P;
-    ivec2 mipP = clamp(ssP >> mipLevel, ivec2(0), textureSize(cszTexture, mipLevel) - ivec2(1));
     P.z = texelFetch(cszTexture, mipP, mipLevel).r;
     P = reconstructCSPosition(vec2(ssP) + vec2(0.5), P.z);
     return P;
 }
 
-float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in int tapIndex, in float randomPatternRotationAngle) {
+float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in int tapIndex, in float randomPatternRotationAngle)
+{
     float ssR;
     vec2 unitOffset = tapLocation(tapIndex, randomPatternRotationAngle, ssR);
     ssR *= ssDiskRadius;
@@ -99,7 +101,8 @@ float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in i
     float f = max(radius2 - vv, 0.0); return f * f * f * max((vn - bias) / (epsilon + vv), 0.0);
 }
 
-void main() {
+void main()
+{
     ivec2 ssC = ivec2(gl_FragCoord.xy);
 
     vec3 C = getPosition(ssC);
@@ -111,13 +114,15 @@ void main() {
     float diskRadius = -projScale * radius / C.z;
 
     float sum = 0.0;
-    for (int i = 0; i < NUM_SAMPLES; ++i) {
+    for (int i = 0; i < NUM_SAMPLES; ++i)
+    {
         sum += sampleAO(ssC, C, n_C, diskRadius, i, randomPatternRotationAngle);
     }
 
     float A = max(0.0, 1.0 - sum * intensityDivR6 * (5.0 / NUM_SAMPLES));
 
-    if (abs(dFdx(C.z)) < 0.02) {
+    if (abs(dFdx(C.z)) < 0.02)
+    {
         A -= dFdx(A) * ((ssC.x & 1) - 0.5);
     }
     if (abs(dFdy(C.z)) < 0.02) {

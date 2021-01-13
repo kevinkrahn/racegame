@@ -128,6 +128,15 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
         ImGui::SliderFloat("Fog Density", &scene->fogDensity, 0.f, 0.018f, "%.5f");
         ImGui::SliderFloat("Fog Begin Distance", &scene->fogBeginDistance, 0.f, 100.f, "%.1f");
 
+        ImGui::Gap();
+        ImGui::ColorEdit3("Ambient Color", (f32*)&scene->ambientColor);
+        ImGui::SliderFloat("Ambient Strength", (f32*)&scene->ambientStrength, 0.f, 5.f, "%.3f");
+        chooseTexture(TextureType::CUBE_MAP, scene->reflectionCubemapGuid, "Reflection Cubemap");
+
+        ImGui::Gap();
+        ImGui::SliderFloat("Cloud Shadow Strength", (f32*)&scene->cloudShadowStrength, 0.f, 1.f, "%.2f");
+        chooseTexture(TextureType::COLOR, scene->cloudShadowTextureGuid, "Cloud Shadow Texture");
+
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 
         u32 previousModeIndex = activeModeIndex;

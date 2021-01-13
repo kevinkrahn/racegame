@@ -305,8 +305,12 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
     rw->setViewportCount(viewportCount);
     //rw->addDirectionalLight(Vec3(0.2f, 0.5f, -0.8f), Vec3(1.0));
     rw->addDirectionalLight(Vec3(lengthdir(sunDir, 1.f) * cosf(sunDirZ), sinf(sunDirZ)),
-            sunColor, sunStrength);
+            sunColor * sunStrength);
     rw->setFog(fogColor, fogDensity, fogBeginDistance);
+    rw->setAmbient(ambientColor, ambientStrength,
+            reflectionCubemapGuid ? g_res.getTexture(reflectionCubemapGuid) : nullptr);
+    rw->setCloudShadow(cloudShadowStrength,
+            cloudShadowTextureGuid ? g_res.getTexture(cloudShadowTextureGuid) : nullptr);
 
     if (!isPaused)
     {
@@ -1242,6 +1246,11 @@ void Scene::serialize(Serializer& s)
     s.field(sunDirZ);
     s.field(sunColor);
     s.field(sunStrength);
+    s.field(ambientColor);
+    s.field(ambientStrength);
+    s.field(reflectionCubemapGuid);
+    s.field(cloudShadowTextureGuid);
+    s.field(cloudShadowStrength);
 
     if (s.deserialize)
     {

@@ -82,7 +82,7 @@ public:
             if (renderData->alpha > 0.f)
             {
                 rw->addPointLight(Vec3(vehicleTransform * Vec4(t.position() + Vec3(-0.25f, 0, 0.25f), 1.f)),
-                        Vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 3.f, 2.f);
+                        Vec3(1.f, 0.6f, 0.05f) * renderData->alpha, 4.f, 2.f);
             }
         }
 

@@ -101,4 +101,4 @@
 - Show log messages on screen so I don't miss them
 - Redo terrain system with chunks
 - Redo menu
-- Add ability to change ambient lighting in editor
+- Add height-based fog

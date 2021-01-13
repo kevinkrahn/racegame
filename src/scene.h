@@ -147,6 +147,13 @@ public:
     f32 fogDensity = 0.0015f;
     f32 fogBeginDistance = 5.f;
 
+    Vec3 ambientColor = Vec3(0.1f);
+    f32 ambientStrength = 1.f;
+    i64 reflectionCubemapGuid = 0;
+
+    i64 cloudShadowTextureGuid = 0;
+    f32 cloudShadowStrength = 0.25f;
+
     Scene(TrackData* data=nullptr);
     ~Scene();
 

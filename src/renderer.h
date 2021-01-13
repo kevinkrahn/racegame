@@ -144,9 +144,10 @@ struct LightPartition
 struct WorldInfo
 {
     Mat4 orthoProjection;
-    Vec3 sunDirection;
+    Vec3 sunDirection = Vec3(-0.5, 0, -0.5);
     f32 time;
-    Vec4 sunColor;
+    Vec3 sunColor = Vec3(1.0);
+    f32 pad1;
     Mat4 cameraViewProjection;
     Mat4 cameraProjection;
     Mat4 cameraView;
@@ -154,10 +155,12 @@ struct WorldInfo
     Mat4 shadowViewProjectionBias;
     LightPartition lightPartitions[LIGHT_SPLITS][LIGHT_SPLITS];
     Vec3 fogColor = { 0.5f, 0.6f, 1.f };
-    f32 fogDensity = 0.0015f;
+    f32 fogDensity = 0.f;
     Vec2 invResolution;
     f32 fogBeginDistance = 5.f;
-    f32 pad;
+    f32 cloudShadowStrength = 0.f;
+    Vec3 ambientColor = Vec3(0.1f);
+    f32 ambientStrength = 1.f;
 };
 
 // TODO: profile to see if using a map improves performance vs a sorted array
@@ -181,6 +184,8 @@ class RenderWorld
     Vec4 clearColor = { 0.15f, 0.35f, 0.9f, 1.f };
     bool clearColorEnabled = false;
     bool pickBufferEnabled = false;
+    Texture* reflectionCubemap;
+    Texture* cloudShadowTexture;
 
     const char* name = "";
     WorldInfo worldInfo;
@@ -298,9 +303,11 @@ public:
 
     void addPointLight(Vec3 const& position, Vec3 const& color, f32 radius, f32 falloff);
     //void addSpotLight(Vec3 const& position, Vec3 const& direction, Vec3 const& color, f32 innerRadius, f32 outerRadius, f32 attenuation);
-    void addDirectionalLight(Vec3 const& direction, Vec3 const& color, f32 strength=1.f);
+    void addDirectionalLight(Vec3 const& direction, Vec3 const& color);
     void setMotionBlur(u32 viewportIndex, Vec2 const& motionBlur);
     void setFog(Vec3 const& fogColor, f32 fogDensity, f32 fogBeginDistance);
+    void setAmbient(Vec3 const& color, f32 ambientStrength, Texture* reflectionCubemap);
+    void setCloudShadow(f32 strength, Texture* cloudShadowTexture);
 
     void updateWorldTime(f64 time);
     void createFramebuffers();

@@ -79,6 +79,7 @@ void main()
 {
     outColor = texture(texSampler, inTexCoord) * color;
 #if defined LIT && SHADOWS_ENABLED
+    // TODO: use lower quality shadow filtering for billboards
     outColor = lighting(outColor,
             vec3(0, 0, 1), inShadowCoord, inWorldPosition, 0.f, 0.f, vec3(1.0),
             0.f, 0.f, 0.f, vec3(0.f), 0.0, 0.0, 0.0);

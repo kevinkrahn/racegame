@@ -486,10 +486,10 @@ Camera& RenderWorld::setViewportCamera(u32 index, Vec3 const& from,
     return cam;
 }
 
-void RenderWorld::addDirectionalLight(Vec3 const& direction, Vec3 const& color, f32 strength)
+void RenderWorld::addDirectionalLight(Vec3 const& direction, Vec3 const& color)
 {
     worldInfo.sunDirection = -normalize(direction);
-    worldInfo.sunColor = Vec4(color, strength);
+    worldInfo.sunColor = color;
 }
 
 void RenderWorld::addPointLight(Vec3 const& position, Vec3 const& color, f32 radius, f32 falloff)
@@ -512,6 +512,19 @@ void RenderWorld::setFog(Vec3 const& fogColor, f32 fogDensity, f32 fogBeginDista
     worldInfo.fogColor = fogColor;
     worldInfo.fogDensity = fogDensity;
     worldInfo.fogBeginDistance = fogBeginDistance;
+}
+
+void RenderWorld::setAmbient(Vec3 const& color, f32 ambientStrength, Texture* reflectionCubemap)
+{
+    worldInfo.ambientColor = color;
+    worldInfo.ambientStrength = ambientStrength;
+    this->reflectionCubemap = reflectionCubemap;
+}
+
+void RenderWorld::setCloudShadow(f32 strength, Texture* cloudShadowTexture)
+{
+    worldInfo.cloudShadowStrength = strength;
+    this->cloudShadowTexture = cloudShadowTexture;
 }
 
 void RenderWorld::updateWorldTime(f64 time)
@@ -640,12 +653,10 @@ void RenderWorld::createFramebuffers()
                 glTexImage2D(GL_TEXTURE_2D, i - 1, GL_R32F, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
             }
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            Vec4 borderColor(1.f);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
 
             glGenFramebuffers(ARRAY_SIZE(fb.cszFramebuffers), fb.cszFramebuffers);
             for (u32 i=0; i<ARRAY_SIZE(fb.cszFramebuffers); ++i)
@@ -660,20 +671,18 @@ void RenderWorld::createFramebuffers()
             glGenTextures(1, &fb.saoTexture);
             glBindTexture(GL_TEXTURE_2D, fb.saoTexture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
 
             glGenTextures(1, &fb.saoBlurTexture);
             glBindTexture(GL_TEXTURE_2D, fb.saoBlurTexture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, fb.renderWidth, fb.renderHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&borderColor);
 
             glGenFramebuffers(1, &fb.saoFramebuffer);
             glBindFramebuffer(GL_FRAMEBUFFER, fb.saoFramebuffer);
@@ -1002,6 +1011,15 @@ void RenderWorld::setShadowMatrices(WorldInfo& worldInfo, WorldInfo& worldInfoSh
 
 void RenderWorld::render(Renderer* renderer, f32 deltaTime)
 {
+    if (!reflectionCubemap)
+    {
+        reflectionCubemap = g_res.getTexture("sky_cubemap");
+    }
+    if (!cloudShadowTexture)
+    {
+        cloudShadowTexture = g_res.getTexture("cloud_shadow");
+    }
+
     auto comparator = [](TransparentRenderItem const& a, TransparentRenderItem const& b) {
         if (a.priority != b.priority) return a.priority < b.priority;
         return a.shader < b.shader;
@@ -1260,7 +1278,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     // color pass
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "Main Color Pass");
     glBindFramebuffer(GL_FRAMEBUFFER, fb.mainFramebuffer);
-    glBindTextureUnit(1, g_res.getTexture("sky_cubemap")->handle);
+    glBindTextureUnit(1, reflectionCubemap->handle);
     glBindTextureUnit(3, g_res.getTexture("cloud_shadow")->handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glStencilMask(0xFF);
