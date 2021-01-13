@@ -70,12 +70,13 @@ namespace ImGui
 
     inline void Guid(i64 guid)
     {
-        ImGui::TextDisabled("GUID: %x", guid);
+        u32* b = (u32*)&guid;
+        ImGui::TextDisabled("GUID: %x%x", b[1], b[0]);
         ImGui::SameLine();
         if (ImGui::SmallButton("Copy"))
         {
             ImGui::LogToClipboard();
-            ImGui::LogText("%x", guid);
+            ImGui::LogText("%x%x", b[1], b[0]);
             ImGui::LogFinish();
         }
     }
