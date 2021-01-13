@@ -30,7 +30,11 @@ vec3 reconstructNonUnitCSFaceNormal(vec3 C)
     return cross(dFdy(C), dFdx(C));
 }
 
+#if SSAO_QUALITY == 1
 #define NUM_SAMPLES 15
+#else
+#define NUM_SAMPLES 26
+#endif
 #define LOG_MAX_OFFSET 3
 #define MAX_MIP_LEVEL 4
 #define NUM_SPIRAL_TURNS 7

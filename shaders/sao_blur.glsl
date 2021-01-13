@@ -13,8 +13,12 @@ layout(location = 0) uniform ivec2 axis;
 
 layout(binding = 4) uniform sampler2D sourceTexture;
 
-#define EDGE_SHARPNESS 1.0
+#if SSAO_QUALITY == 1
 #define SCALE 2
+#else
+#define SCALE 1
+#endif
+#define EDGE_SHARPNESS 1.0
 #define R 3
 #define VALUE_TYPE float
 #define VALUE_COMPONENTS r

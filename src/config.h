@@ -25,8 +25,7 @@ struct Config
         bool fullscreen = false;
         bool vsync = true;
         bool shadowsEnabled = true;
-        bool ssaoEnabled = true;
-        bool ssaoHighQuality = false; // TODO: Implement
+        ConfigLevel ssaoQuality = ConfigLevel::HIGH;
         bool bloomEnabled = true;
         bool sharpenEnabled = false;
         bool motionBlurEnabled = true;
@@ -45,8 +44,7 @@ struct Config
             s.field(fullscreen);
             s.field(vsync);
             s.field(shadowsEnabled);
-            s.field(ssaoEnabled);
-            s.field(ssaoHighQuality);
+            s.field(ssaoQuality);
             s.field(bloomEnabled);
             s.field(sharpenEnabled);
             s.field(motionBlurEnabled);

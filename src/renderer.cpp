@@ -20,7 +20,7 @@ void glShaderSources(GLuint shader, const char* src,
     buf.writef("#define MAX_VIEWPORTS %u\n", MAX_VIEWPORTS);
     buf.writef("#define SHADOWS_ENABLED %u\n", u32(g_game.config.graphics.shadowsEnabled));
     buf.writef("#define SHADOW_FILTERING_QUALITY %u\n", u32(g_game.config.graphics.shadowFilteringQuality));
-    buf.writef("#define SSAO_ENABLED %u\n", u32(g_game.config.graphics.ssaoEnabled));
+    buf.writef("#define SSAO_QUALITY %u\n", u32(g_game.config.graphics.ssaoQuality));
     buf.writef("#define BLOOM_ENABLED %u\n", u32(g_game.config.graphics.bloomEnabled));
     buf.writef("#define SHARPEN_ENABLED %u\n", u32(g_game.config.graphics.sharpenEnabled));
     buf.writef("#define POINT_LIGHTS_ENABLED %u\n", u32(g_game.config.graphics.pointLightsEnabled));
@@ -639,7 +639,7 @@ void RenderWorld::createFramebuffers()
 
         assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
-        if (g_game.config.graphics.ssaoEnabled)
+        if (g_game.config.graphics.ssaoQuality != ConfigLevel::LOW)
         {
             // csv framebuffers
             glGenTextures(1, &fb.cszTexture);
@@ -1192,7 +1192,7 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
     }
 
     // generate csz texture
-    if (g_game.config.graphics.ssaoEnabled)
+    if (g_game.config.graphics.ssaoQuality != ConfigLevel::LOW)
     {
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 1, -1, "SSAO");
 

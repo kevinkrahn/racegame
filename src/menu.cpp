@@ -2217,20 +2217,10 @@ void Menu::showGraphicsSettingsMenu()
     y += size.y + 10;
 
     SmallArray<Str32> ssaoQualityNames = { "Off", "Normal", "High" };
-    i32 ssaoQualityIndex = 0;
-    if (tmpConfig.graphics.ssaoEnabled)
-    {
-        ssaoQualityIndex = 1;
-        if (tmpConfig.graphics.ssaoHighQuality)
-        {
-            ssaoQualityIndex = 2;
-        }
-    }
 
     addSelector("SSAO", "Darkens occluded areas of the world for improved realism.", { 0, y }, size,
-        ssaoQualityNames, ssaoQualityIndex, [this](i32 valueIndex){
-            tmpConfig.graphics.ssaoEnabled = valueIndex > 0;
-            tmpConfig.graphics.ssaoHighQuality = valueIndex == 2;
+        ssaoQualityNames, (i32)tmpConfig.graphics.ssaoQuality, [this](i32 valueIndex){
+            tmpConfig.graphics.ssaoQuality = (ConfigLevel)valueIndex;
         });
     y += size.y + 10;
 
