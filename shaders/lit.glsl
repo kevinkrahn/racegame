@@ -171,9 +171,10 @@ void main()
             fresnel.x, fresnel.y, fresnel.z, emit, reflection.x, reflection.y, reflection.z);
 #if defined VEHICLE
     float shieldAmount =
-        pow((sin(time * 4.f + inLocalPosition.x * 4.f + inLocalPosition.z * 4.f) + 1.f) * 0.5f, 2.f);
+        pow((sin(time * 4.f + inLocalPosition.x * 3.f + inLocalPosition.z * 3.f) + 1.f) * 0.5f, 2.f);
     outColor.rgb = mix(outColor.rgb, shield.rgb, shield.a * shieldAmount * 0.5f);
     outColor.rgb += shield.rgb * shield.a * shieldAmount;
+    outColor.rgb += vec3(pow(shield.a * shieldAmount, 4.0) * 0.15f);
 #endif
 #endif
 #endif
