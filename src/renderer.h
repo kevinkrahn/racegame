@@ -123,8 +123,8 @@ struct FullscreenFramebuffers
     GLuint fullscreenBlurFramebuffer;
 };
 
-const u32 MAX_POINT_LIGHTS = 6;
-const u32 LIGHT_SPLITS = 10;
+const u32 MAX_POINT_LIGHTS = 18;
+const u32 LIGHT_SPLITS = 5;
 
 struct PointLight
 {
@@ -162,6 +162,8 @@ struct WorldInfo
     Vec3 ambientColor = Vec3(0.1f);
     f32 ambientStrength = 1.f;
 };
+
+static_assert(sizeof(WorldInfo) <= kilobytes(16));
 
 // TODO: profile to see if using a map improves performance vs a sorted array
 struct RenderItems

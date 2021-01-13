@@ -120,7 +120,7 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
 #if SSAO_QUALITY > 0
 #ifndef NO_SSAO
     ssaoAmount = clamp(
-        texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r + luminance(lightOut) * 0.65, 0.0, 1.0);
+        texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r + luminance(lightOut) * 0.7, 0.0, 1.0);
     lightOut *= ssaoAmount;
 #endif
 #endif
