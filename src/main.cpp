@@ -2,6 +2,7 @@
 
 #include "math.cpp"
 #include "game.cpp"
+#include "threadpool.cpp"
 #include "scene.cpp"
 #include "renderer.cpp"
 #include "batcher.cpp"

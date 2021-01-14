@@ -136,6 +136,7 @@ void Game::run()
     windowWidth = w;
     windowHeight = h;
 
+    g_threadPool.start();
     g_res.initResourceTypes();
     renderer.reset(new Renderer());
     renderer->init();

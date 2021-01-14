@@ -53,7 +53,7 @@ public:
     f32 tileSize = 2.0f;
     i64 materialGuid = 0;
 
-    struct Material* material = nullptr;
+    class Material* material = nullptr;
     struct Texture* textures[NUM_TERRAIN_LAYERS];
     struct Texture* normalTextures[NUM_TERRAIN_LAYERS];
     f32 texScale[NUM_TERRAIN_LAYERS];

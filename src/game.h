@@ -5,6 +5,7 @@
 #include "menu.h"
 #include "config.h"
 #include "buffer.h"
+#include "threadpool.h"
 #include "editor/resource_manager.h"
 
 namespace GameMode

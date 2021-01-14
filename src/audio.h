@@ -3,6 +3,7 @@
 #include "misc.h"
 #include "math.h"
 #include "resource.h"
+#include "threadpool.h"
 
 enum struct AudioFormat
 {
@@ -64,21 +65,6 @@ enum struct SoundType
     GAME_SFX,
     MENU_SFX,
     MUSIC
-};
-
-class LockGuard
-{
-    SDL_mutex* mutex;
-
-public:
-    LockGuard(SDL_mutex* mutex) : mutex(mutex)
-    {
-        SDL_LockMutex(mutex);
-    }
-    ~LockGuard()
-    {
-        SDL_UnlockMutex(mutex);
-    }
 };
 
 using SoundHandle = u32;
@@ -143,7 +129,7 @@ class Audio
 
     RandomSeries randomSeries;
 
-    SDL_mutex* audioMutex;
+    Mutex audioMutex;
 
 public:
     void init();

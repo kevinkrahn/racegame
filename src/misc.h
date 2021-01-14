@@ -33,57 +33,42 @@ char* hex(i64 n)
     return tmpStr("%x%x", b[1], b[0]);
 }
 
+char* printCallback(const char* buf, void* user, int len)
+{
+    char tmp[STB_SPRINTF_MIN + 1];
+    memcpy(tmp, buf, len);
+    tmp[len] = '\0';
+    fputs(tmp, (FILE*)user);
+    return (char*)buf;
+}
+
 void print(const char* format, ...)
 {
-    auto callback = [](const char* buf, void* user, int len) -> char* {
-        char tmp[STB_SPRINTF_MIN + 1];
-        memcpy(tmp, buf, len);
-        tmp[len] = '\0';
-        fputs(tmp, stdout);
-        return (char*)buf;
-    };
-
     char tmp[STB_SPRINTF_MIN];
     va_list argptr;
     va_start(argptr, format);
-    stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
+    stbsp_vsprintfcb(printCallback, stdout, tmp, format, argptr);
     va_end(argptr);
 }
 
 void println(const char* format="", ...)
 {
-    auto callback = [](const char* buf, void* user, int len) -> char* {
-        char tmp[STB_SPRINTF_MIN + 1];
-        memcpy(tmp, buf, len);
-        tmp[len] = '\0';
-        fputs(tmp, stdout);
-        return (char*)buf;
-    };
-
     char tmp[STB_SPRINTF_MIN];
     va_list argptr;
     va_start(argptr, format);
-    stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
+    stbsp_vsprintfcb(printCallback, stdout, tmp, format, argptr);
     va_end(argptr);
     fputc('\n', stdout);
 }
 
 void error(const char* format="", ...)
 {
-    auto callback = [](const char* buf, void* user, int len) -> char* {
-        char tmp[STB_SPRINTF_MIN + 1];
-        memcpy(tmp, buf, len);
-        tmp[len] = '\0';
-        fputs(tmp, stderr);
-        return (char*)buf;
-    };
-
     char tmp[STB_SPRINTF_MIN];
     va_list argptr;
     va_start(argptr, format);
-    stbsp_vsprintfcb(callback, nullptr, tmp, format, argptr);
+    stbsp_vsprintfcb(printCallback, stderr, tmp, format, argptr);
     va_end(argptr);
-    putc('\n', stderr);
+    fputc('\n', stderr);
 }
 
 #define showError(...) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", tmpStr(__VA_ARGS__), nullptr); }

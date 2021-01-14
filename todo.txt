@@ -29,7 +29,6 @@
 - Don't store alpha channel for textures that don't need it (24-bit textures)
 - Add difficulty levels
 - Add passive ability that gives a bit of ammo when destroyed
-- Fix stutter when race starts or hide it with black screen that fades out
 - Shoot out shell casings when minigun is fired
 - Fix transform gizmo (or use https://github.com/CedricGuillemet/ImGuizmo)
 - Glue should probably slow vehicles down more
