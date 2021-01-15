@@ -131,6 +131,18 @@ void Game::run()
 
     SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
 
+    const char* ext[] = {
+        "GL_EXT_texture_compression_s3tc",
+        "GL_EXT_texture_compression_dxt1",
+        "GL_EXT_texture_compression_latc",
+        "GL_ARB_texture_compression_rgtc",
+        "GL_EXT_texture_compression_rgtc",
+    };
+    for (auto& s : ext)
+    {
+        println("%s : %i", s, SDL_GL_ExtensionSupported(s));
+    }
+
     i32 w, h;
     SDL_GL_GetDrawableSize(window, &w, &h);
     windowWidth = w;

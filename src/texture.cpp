@@ -103,6 +103,8 @@ void Texture::initGLTexture(u32 index)
         case TextureType::NORMAL_MAP:
             internalFormat = GL_RGBA8;
             baseFormat = GL_RGBA;
+            //GL_COMPRESSED_RED_GREEN_RGTC2_EXT
+            //GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT
             break;
         case TextureType::GRAYSCALE:
             internalFormat = unpackAlignment == 1 ? GL_R8 : GL_SR8_EXT;
