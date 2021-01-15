@@ -52,9 +52,9 @@ layout(binding = 11) uniform sampler2D normalSampler2;
 layout(binding = 12) uniform sampler2D normalSampler3;
 layout(binding = 13) uniform sampler2D normalSampler4;
 
-vec4 linear(sampler2D colorSampler, vec3 inWorldPosition, float texScale)
+vec3 linear(sampler2D colorSampler, vec3 inWorldPosition)
 {
-    return texture(colorSampler, inWorldPosition.xy * texScale);
+    return texture(colorSampler, inWorldPosition.xy).rgb;
 }
 
 void main()

@@ -89,14 +89,15 @@ def fetch_dependencies():
 
     # Dear ImGui
     if fetch('https://github.com/ocornut/imgui.git', 'imgui'):
-        fixfilename = 'external/imgui/examples/imgui_impl_sdl.cpp'
-        f = open(fixfilename, 'r')
-        cpp = f.read()
-        f.close()
-        newcpp = cpp.replace("#include <SDL.h>", "#include <SDL2/SDL.h>")
-        f = open(fixfilename, 'w')
-        f.write(newcpp)
-        f.close()
+        #fixfilename = 'external/imgui/backends/imgui_impl_sdl.cpp'
+        #f = open(fixfilename, 'r')
+        #cpp = f.read()
+        #f.close()
+        #newcpp = cpp.replace("#include <SDL.h>", "#include <SDL2/SDL.h>")
+        #f = open(fixfilename, 'w')
+        #f.write(newcpp)
+        #f.close()
+        pass
 
 
 def build_assets(force):
