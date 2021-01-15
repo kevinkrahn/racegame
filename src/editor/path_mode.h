@@ -271,15 +271,27 @@ public:
 
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 
-        if (ImGui::Button("Move Up", { buttonSize.x / 2 - 4, 0 }))
+        if (ImGui::ArrowButton("Move Up", ImGuiDir_Up))
         {
             moveUp(scene);
         }
 
         ImGui::SameLine();
-        if (ImGui::Button("Move Down", { buttonSize.x / 2 - 4, 0 }))
+        if (ImGui::ArrowButton("Move Down", ImGuiDir_Down))
         {
-            moveUp(scene);
+            moveDown(scene);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Delete"))
+        {
+            deletePath(scene);
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Duplicate"))
+        {
+            duplicatePath(scene);
         }
 
         if (ImGui::BeginCombo("Source Path",
@@ -298,16 +310,6 @@ public:
         if (ImGui::Button("New Path From Graph", buttonSize))
         {
             addNewPath(scene);
-        }
-
-        if (ImGui::Button("Delete Path", buttonSize))
-        {
-            deletePath(scene);
-        }
-
-        if (ImGui::Button("Duplicate Path", buttonSize))
-        {
-            duplicatePath(scene);
         }
 
         if (ImGui::Button("Generate Paths", buttonSize))
