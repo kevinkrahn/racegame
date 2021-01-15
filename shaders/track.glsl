@@ -41,8 +41,13 @@ void main()
     vec3 p = inWorldPosition * texScale;
     vec3 blend = trilinearBlend(inNormal);
     vec4 color = vec4(trilinearRgb(colorSampler, p, blend), 1.0);
+#if HIGH_QUALITY_TRACK_ENABLED
     float spec = trilinearR(specSampler, p, blend);
     vec3 worldNormal = trilinearNormal(normalSampler, inNormal, p, blend);
+#else
+    float spec = 0.045;
+    vec3 worldNormal = inNormal;
+#endif
 
     outColor = lighting(color, worldNormal, inShadowCoord, inWorldPosition,
             100.0, spec * 2.0, vec3(1.0), 0.0, 0.0, 0.0, vec3(0, 0, 0), 0.0, 0.0, 0.0);
