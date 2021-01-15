@@ -2265,6 +2265,9 @@ void Menu::showGraphicsSettingsMenu()
     addButton("APPLY", nullptr, { -290, 350 }, buttonSize, [this]{
         g_game.config = tmpConfig;
         g_game.renderer->updateSettingsVersion();
+        g_res.iterateResourceType(ResourceType::TEXTURE, [](Resource* r) {
+            ((Texture*)r)->onUpdateGlobalTextureSettings();
+        });
         SDL_SetWindowFullscreen(g_game.window, g_game.config.graphics.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
         g_game.config.save();

@@ -33,6 +33,7 @@ struct Config
         bool fogEnabled = true;
         bool highQualityTerrainEnabled = true;
         bool highQualityTrackEnabled = true;
+        u32 anisotropicFilteringLevel = 4;
 
         void serialize(Serializer& s)
         {
@@ -53,6 +54,7 @@ struct Config
             s.field(fogEnabled);
             s.field(highQualityTerrainEnabled);
             s.field(highQualityTrackEnabled);
+            s.field(anisotropicFilteringLevel);
         }
     } graphics;
 

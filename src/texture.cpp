@@ -1,5 +1,6 @@
 #include "texture.h"
 #include "resources.h"
+#include "game.h"
 
 void Texture::loadSourceFile(u32 index)
 {
@@ -150,7 +151,8 @@ void Texture::initGLTexture(u32 index)
         glTextureParameteri(s.previewHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(s.previewHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
-    glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, max((f32)anisotropy, 1.f));
+    glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, min(max((f32)anisotropy, 1.f),
+                max((f32)g_game.config.graphics.anisotropicFilteringLevel, 1.f)));
     glTextureParameterf(s.previewHandle, GL_TEXTURE_LOD_BIAS, lodBias);
     if (generateMipMaps)
     {
@@ -160,6 +162,15 @@ void Texture::initGLTexture(u32 index)
 #ifndef NDEBUG
     glObjectLabel(GL_TEXTURE, s.previewHandle, name.size(), name.data());
 #endif
+}
+
+void Texture::onUpdateGlobalTextureSettings()
+{
+    for (auto& s : sourceFiles)
+    {
+        glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, min(max((f32)anisotropy, 1.f),
+                max((f32)g_game.config.graphics.anisotropicFilteringLevel, 1.f)));
+    }
 }
 
 void Texture::initCubemap()

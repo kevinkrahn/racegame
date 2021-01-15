@@ -110,6 +110,7 @@ public:
     u32 getSourceFileCount() const { return (u32)sourceFiles.size(); }
     i32 getTextureType() const { return textureType; }
     void destroy();
+    void onUpdateGlobalTextureSettings();
 
     ~Texture()
     {
