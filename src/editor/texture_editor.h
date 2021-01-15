@@ -94,6 +94,11 @@ public:
                 tex.setTextureType(textureType);
             }
 
+            changed |= ImGui::Checkbox("Compressed", &tex.compressed);
+            if (textureType != TextureType::GRAYSCALE)
+            {
+                changed |= ImGui::Checkbox("Preserve Alpha", &tex.preserveAlpha);
+            }
             changed |= ImGui::Checkbox("Repeat", &tex.repeat);
             changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
             changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);

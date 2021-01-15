@@ -33,6 +33,8 @@ struct Texture : public Resource
 public:
     bool repeat = true;
     bool generateMipMaps = true;
+    bool compressed = false;
+    bool preserveAlpha = true;
     f32 lodBias = -0.2f;
     i32 anisotropy = 8;
     i32 filter = TextureFilter::TRILINEAR;
@@ -61,6 +63,8 @@ public:
 
         s.field(textureType);
         s.field(repeat);
+        s.field(compressed);
+        s.field(preserveAlpha);
         s.field(generateMipMaps);
         s.field(lodBias);
         s.field(anisotropy);
@@ -75,6 +79,7 @@ public:
 
 private:
     i32 textureType = TextureType::COLOR;
+    u32 unpackAlignment = 4;
 
     Array<SourceFile> sourceFiles;
 
@@ -92,8 +97,8 @@ public:
     GLuint handle = 0;
 
     Texture() { setTextureType(TextureType::COLOR); }
-    Texture(const char* name, u32 width, u32 height, u8* data, u32 dataSize, u32 textureType)
-        : textureType(textureType), width(width), height(height)
+    Texture(const char* name, u32 width, u32 height, u8* data, u32 dataSize, u32 textureType, u32 unpackAlignment=4)
+        : textureType(textureType), width(width), height(height), unpackAlignment(unpackAlignment)
     {
         this->name = name;
         sourceFiles.push({ "", Array<u8>(data, data+dataSize), width, height });

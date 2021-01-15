@@ -103,21 +103,26 @@ void Texture::initGLTexture(u32 index)
         case TextureType::NORMAL_MAP:
             internalFormat = GL_RGBA8;
             baseFormat = GL_RGBA;
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
             break;
         case TextureType::GRAYSCALE:
-            internalFormat = GL_R8;
-            //internalFormat = GL_SR8_EXT;
-            baseFormat = GL_RED;
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            internalFormat = unpackAlignment == 1 ? GL_R8 : GL_SR8_EXT;
+            baseFormat = unpackAlignment == 1 ? GL_RED : GL_RGBA;
             break;
         case TextureType::COLOR:
         default:
-            internalFormat = GL_SRGB8_ALPHA8;
+            internalFormat = preserveAlpha ? GL_SRGB8_ALPHA8 : GL_SRGB8;
+#if 0
+            if (compressed)
+            {
+                internalFormat = preserveAlpha
+                    ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
+                    : GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
+            }
+#endif
             baseFormat = GL_RGBA;
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
             break;
     }
+    glPixelStorei(GL_UNPACK_ALIGNMENT, unpackAlignment);
 
     SourceFile& s = sourceFiles[index];
     u32 mipLevels = generateMipMaps ? 1 + (u32)(log2f((f32)max(s.width, s.height))) : 1;
@@ -126,6 +131,12 @@ void Texture::initGLTexture(u32 index)
     glTextureStorage2D(s.previewHandle, mipLevels, internalFormat, s.width, s.height);
     glTextureSubImage2D(s.previewHandle, 0, 0, 0, s.width, s.height, baseFormat,
             GL_UNSIGNED_BYTE, s.data.data());
+
+    if (internalFormat == GL_SR8_EXT)
+    {
+        GLint swizzle[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
+        glTextureParameteriv(s.previewHandle, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+    }
     if (repeat)
     {
         glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_S, GL_REPEAT);
