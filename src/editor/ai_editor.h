@@ -185,6 +185,7 @@ public:
             ImGui::InputText("##Name", &ai.name);
             ImGui::Guid(ai.guid);
             ImGui::Gap();
+            ImGui::Checkbox("Used in Championship", &ai.usedForChampionshipAI);
             ImGui::SliderFloat("Driving Skill", &ai.drivingSkill, 0.f, 1.f);
             ImGui::HelpMarker("How optimal of a path the AI takes on the track.");
             ImGui::SliderFloat("Aggression", &ai.aggression, 0.f, 1.f);

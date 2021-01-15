@@ -66,76 +66,79 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
 
     if (ImGui::Begin("Track Editor"))
     {
-        ImGui::InputText("##Name", &scene->name);
+        if (testDriverGuid == 0)
+        {
+            testDriverGuid = 0x509a48c028a15188;
+        }
 
+        ImGui::InputText("##Name", &scene->name);
         ImGui::SameLine();
         if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
         {
-            // TODO: Add options to include AI drivers and configure player vehicle
-	        Array<i64> vehicles;
-	        g_res.iterateResourceType(ResourceType::VEHICLE, [&](Resource* r){
-                auto v = (VehicleData*)r;
-                if (v->showInCarLot) { vehicles.push(v->guid); }
-	        });
-
-            g_game.state.drivers.clear();
-#if 0
-            g_game.state.drivers.push(Driver(true, true, true, 0,
-                        vehicles[irandom(scene->randomSeries, 0, vehicles.size())]));
-#else
-            g_game.state.drivers.push(Driver(true, true, true, 0, vehicles[2]));
-#endif
-            auto conf = g_game.state.drivers.back().getVehicleConfig();
-            auto vd = g_game.state.drivers.back().getVehicleData();
-            conf->cosmetics.color =
-                srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-            conf->weaponIndices[0] = 14;
-            conf->weaponUpgradeLevel[0] = 5;
-            conf->weaponIndices[1] = 6;
-            conf->weaponUpgradeLevel[1] = 5;
-            conf->weaponIndices[2] = 15;
-            conf->weaponIndices[3] = 15;
-
-            for (auto& mode : modes)
+            AIDriverData* d = (AIDriverData*)g_res.getResource(testDriverGuid);
+            if (d && !d->vehicles.empty() && d->vehicles.back().vehicleGuid != 0)
             {
-                mode->onBeginTest(scene);
-            }
+                g_game.state.drivers.clear();
+                g_game.state.drivers.push(
+                        Driver(true, true, true, 0, d->vehicles.back().vehicleGuid, testDriverGuid));
+                g_game.state.drivers.back().vehicleConfig = d->vehicles.back().config;
 
-            scene->startRace();
+                for (auto& mode : modes)
+                {
+                    mode->onBeginTest(scene);
+                }
+
+                scene->startRace();
+            }
+        }
+        ImGui::Guid(scene->guid);
+        ImGui::Gap();
+
+        chooseResource(ResourceType::AI_DRIVER_DATA, testDriverGuid, "Test Driver", [](Resource* r){
+            AIDriverData* d = (AIDriverData*)r;
+            return !d->vehicles.empty() && d->vehicles.back().vehicleGuid != 0;
+        });
+
+        if (ImGui::TreeNode("Race Settings"))
+        {
+            ImGui::SliderInt("Laps", (i32*)&scene->totalLaps, 1, 10);
+            ImGui::TreePop();
         }
 
-        ImGui::Gap();
-        i32 totalLaps = (i32)scene->totalLaps;
-        ImGui::InputInt("Laps", &totalLaps);
-        scene->totalLaps = (u32)clamp(totalLaps, 1, 10);
+        if (ImGui::TreeNode("Environment"))
+        {
+            ImGui::SliderAngle("Sun Angle", &scene->sunDir);
+            ImGui::SliderAngle("Sun Angle Z", &scene->sunDirZ, -89.9999f, 89.999f);
+            ImGui::ColorEdit3("Sun Color", (f32*)&scene->sunColor);
+            ImGui::SliderFloat("Sun Strength", &scene->sunStrength, 0.f, 5.f, "%.2f");
 
-        ImGui::Gap();
-        ImGui::Checkbox("Show Grid", &gridSettings.show);
-        ImGui::SameLine(0.f, 16.f);
-        ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
-        ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
-        gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
+            ImGui::Gap();
+            ImGui::ColorEdit3("Fog Color", (f32*)&scene->fogColor);
+            ImGui::SliderFloat("Fog Density", &scene->fogDensity, 0.f, 0.018f, "%.5f");
+            ImGui::SliderFloat("Fog Begin Distance", &scene->fogBeginDistance, 0.f, 100.f, "%.1f");
 
-        // TODO: Should there be a seperate tab for sun, fog, .etc?
-        ImGui::Gap();
-        ImGui::SliderAngle("Sun Angle", &scene->sunDir);
-        ImGui::SliderAngle("Sun Angle Z", &scene->sunDirZ, -89.9999f, 89.999f);
-        ImGui::ColorEdit3("Sun Color", (f32*)&scene->sunColor);
-        ImGui::SliderFloat("Sun Strength", &scene->sunStrength, 0.f, 5.f, "%.2f");
+            ImGui::Gap();
+            ImGui::ColorEdit3("Ambient Color", (f32*)&scene->ambientColor);
+            ImGui::SliderFloat("Ambient Strength", (f32*)&scene->ambientStrength, 0.f, 5.f, "%.3f");
+            chooseTexture(TextureType::CUBE_MAP, scene->reflectionCubemapGuid, "Reflection Cubemap");
 
-        ImGui::Gap();
-        ImGui::ColorEdit3("Fog Color", (f32*)&scene->fogColor);
-        ImGui::SliderFloat("Fog Density", &scene->fogDensity, 0.f, 0.018f, "%.5f");
-        ImGui::SliderFloat("Fog Begin Distance", &scene->fogBeginDistance, 0.f, 100.f, "%.1f");
+            ImGui::Gap();
+            ImGui::SliderFloat("Cloud Shadow Strength", (f32*)&scene->cloudShadowStrength, 0.f, 1.f, "%.2f");
+            chooseTexture(TextureType::COLOR, scene->cloudShadowTextureGuid, "Cloud Shadow Texture");
 
-        ImGui::Gap();
-        ImGui::ColorEdit3("Ambient Color", (f32*)&scene->ambientColor);
-        ImGui::SliderFloat("Ambient Strength", (f32*)&scene->ambientStrength, 0.f, 5.f, "%.3f");
-        chooseTexture(TextureType::CUBE_MAP, scene->reflectionCubemapGuid, "Reflection Cubemap");
+            ImGui::TreePop();
+        }
 
-        ImGui::Gap();
-        ImGui::SliderFloat("Cloud Shadow Strength", (f32*)&scene->cloudShadowStrength, 0.f, 1.f, "%.2f");
-        chooseTexture(TextureType::COLOR, scene->cloudShadowTextureGuid, "Cloud Shadow Texture");
+        if (ImGui::TreeNode("Grid Settings"))
+        {
+            ImGui::Checkbox("Show Grid", &gridSettings.show);
+            ImGui::SameLine(0.f, 16.f);
+            ImGui::Checkbox("Snap to Grid", &gridSettings.snap);
+            ImGui::InputFloat("Grid Size", &gridSettings.cellSize, 0.1f, 0.f, "%.1f");
+            gridSettings.cellSize = clamp(gridSettings.cellSize, 0.1f, 20.f);
+
+            ImGui::TreePop();
+        }
 
         auto buttonSize = ImVec2(ImGui::GetWindowWidth() * 0.65f, 0);
 

@@ -101,3 +101,4 @@
 - Redo terrain system with chunks
 - Redo menu
 - Add height-based fog
+- Add special cosmetic options for each vehicle, by toggling model pieces on and off

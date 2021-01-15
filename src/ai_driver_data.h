@@ -71,6 +71,8 @@ struct AIVehicleConfiguration
 struct AIDriverData : public Resource
 {
 public:
+    bool usedForChampionshipAI = true;
+
     f32 drivingSkill = 0.5f; // [0,1] how optimal of a path the AI takes on the track
     f32 aggression = 0.5f;   // [0,1] how likely the AI is to go out of its way to attack other drivers
     f32 awareness = 0.5f;    // [0,1] how likely the AI is to attempt to avoid hitting other drivers and obstacles
@@ -84,6 +86,7 @@ public:
     {
         Resource::serialize(s);
 
+        s.field(usedForChampionshipAI);
         s.field(drivingSkill);
         s.field(aggression);
         s.field(awareness);

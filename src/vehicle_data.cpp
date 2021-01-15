@@ -238,7 +238,6 @@ void VehicleData::loadModelData(VehicleTuning& tuning)
     tuning.wheelWidthRear = 0.f;
     tuning.collisionWidth = 0.f;
     tuning.collisionLength = 0.f;
-    tuning.centerOfMass = Vec3(0.f);
     exhaustHoles.clear();
 #endif
 

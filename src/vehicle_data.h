@@ -445,7 +445,6 @@ public:
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning)
     {
         defaultTuning.copy(&tuning);
-        //initializeTuning(configuration, tuning);
         loadModelData(tuning);
     }
     void loadModelData(VehicleTuning& tuning);
