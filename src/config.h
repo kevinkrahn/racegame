@@ -34,6 +34,7 @@ struct Config
         bool highQualityTerrainEnabled = true;
         bool highQualityTrackEnabled = true;
         u32 anisotropicFilteringLevel = 4;
+        bool cloudShadowsEnabled = true;
 
         void serialize(Serializer& s)
         {
@@ -55,6 +56,7 @@ struct Config
             s.field(highQualityTerrainEnabled);
             s.field(highQualityTrackEnabled);
             s.field(anisotropicFilteringLevel);
+            s.field(cloudShadowsEnabled);
         }
     } graphics;
 

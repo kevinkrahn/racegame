@@ -103,3 +103,4 @@
 - Add height-based fog
 - Add special cosmetic options for each vehicle, by toggling model pieces on and off
 - Show track editor settings (like grid settings) in a fixed window over the viewport
+- Generate and store mipmaps beforehand instead of at runtime

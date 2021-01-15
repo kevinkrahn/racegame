@@ -71,9 +71,12 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     vec3 camDir = toCamera / distanceToCamera;
 
     float shadow = getSunShadow(shadowDepthSampler, shadowCoord);
+
+#if CLOUD_SHADOWS_ENABLED
     float cloudShadow = 1.0 - (texture(cloudShadowTexture,
             vec2(worldPosition.xy * 0.002) + vec2(time * 0.02, 0.0)).r * cloudShadowStrength);
     shadow *= cloudShadow;
+#endif
 
     // directional light
     vec3 directSunLight = max(dot(normal, sunDirection) * shadow, 0.0) * color.rgb * sunColor;
