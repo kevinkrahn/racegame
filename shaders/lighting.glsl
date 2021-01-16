@@ -59,6 +59,23 @@ float luminance(vec3 color)
     return dot(color, vec3(0.2126, 0.7152, 0.0722));
 }
 
+vec3 textureNormal(sampler2D normalSampler, vec2 texCoord, float normalMapStrength, mat3 TBN)
+{
+#if 0
+    vec3 normal = texture(normalSampler, texCoord).rgb * 2.0 - 1.0;
+    normal = normal * vec3(1.0, 1.0, normalMapStrength);
+    normal = TBN * normal;
+    return normal;
+#else
+    vec3 normal;
+    normal.xy = texture(normalSampler, texCoord).rg * 2.0 - 1.0;
+    normal.z = sqrt(1.0 - normal.x*normal.x - normal.y*normal.y);
+    normal = normal * vec3(1.0, 1.0, normalMapStrength);
+    normal = TBN * normal;
+    return normal;
+#endif
+}
+
 // TODO: investigate other BRDFs (diffuse-oren-nayar)
 vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
         float specularPower, float specularStrength, vec3 specularColor,

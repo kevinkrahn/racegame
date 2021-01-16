@@ -70,7 +70,6 @@ public:
         s.field(anisotropy);
         s.field(filter);
         s.field(sourceFiles);
-        s.field(version);
         s.field(srgbSourceData);
 
         if (s.deserialize)
@@ -88,7 +87,6 @@ private:
     void initGLTexture(u32 index);
     void initCubemap();
 
-    u32 version = 0;
     GLuint cubemapHandle = 0;
 
 public:
@@ -100,14 +98,13 @@ public:
 
     Texture() { setTextureType(TextureType::COLOR); }
     Texture(const char* name, u32 width, u32 height, u8* data, u32 dataSize, u32 textureType, bool srgb=false)
-        : textureType(textureType), width(width), height(height), version(1), srgbSourceData(srgb)
+        : textureType(textureType), width(width), height(height), srgbSourceData(srgb)
     {
         this->name = name;
         sourceFiles.push({ "", Array<u8>(data, data+dataSize), width, height });
         regenerate();
     }
 
-    i32 getNumSourceChannels() const;
     bool sourceFilesExist();
     void regenerate();
     bool reloadSourceFiles();

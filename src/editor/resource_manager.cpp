@@ -533,6 +533,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     if (activeExclusiveEditor)
     {
         activeExclusiveEditor->onUpdate(activeExclusiveResource, this, renderer, deltaTime, 0);
+        // TODO: find out why this doesn't work
         //markDirty(activeExclusiveResource->guid);
     }
 }

@@ -16,10 +16,6 @@ class ModelEditor : public ResourceEditor
     DataFile::Value blenderData;
     Array<u32> selectedObjects;
     EditorCamera camera;
-    bool showGrid = true;
-    bool showFloor = false;
-    bool showBoundingBox = false;
-    bool showColliders = false;
     DebugDraw debugDraw;
 
 #if 0

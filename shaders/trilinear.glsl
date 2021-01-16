@@ -26,22 +26,29 @@ float trilinearR(sampler2D colorSampler, vec3 inP, vec3 blend)
     return color;
 }
 
+vec3 _textureNormal(sampler2D normalSampler, vec2 texCoord)
+{
+#if 0
+    vec3 normal = texture(normalSampler, texCoord).rgb * 2.0 - 1.0;
+#else
+    vec3 normal;
+    // TODO: Is this right?
+    //normal.xy = texture(normalSampler, texCoord).rg * (255.0 / 128.0) - 1.0;
+    normal.xy = texture(normalSampler, texCoord).rg * 2.0 - 1.0;
+    normal.z = sqrt(1.0 - normal.x*normal.x - normal.y*normal.y);
+#endif
+    return normal;
+}
+
 vec3 trilinearNormal(sampler2D normalSampler, vec3 inN, vec3 inP, vec3 blend)
 {
     vec2 uvX = inP.zy;
     vec2 uvY = inP.xz;
     vec2 uvZ = inP.xy;
 
-#if 0
-    // TODO: compare visual difference when normalization is enabled
-    vec3 xNormal = normalize(texture(normalSampler, uvX).rgb * 2.0 - 1.0);
-    vec3 yNormal = normalize(texture(normalSampler, uvY).rgb * 2.0 - 1.0);
-    vec3 zNormal = normalize(texture(normalSampler, uvZ).rgb * 2.0 - 1.0);
-#else
-    vec3 xNormal = texture(normalSampler, uvX).rgb * 2.0 - 1.0;
-    vec3 yNormal = texture(normalSampler, uvY).rgb * 2.0 - 1.0;
-    vec3 zNormal = texture(normalSampler, uvZ).rgb * 2.0 - 1.0;
-#endif
+    vec3 xNormal = _textureNormal(normalSampler, uvX);
+    vec3 yNormal = _textureNormal(normalSampler, uvY);
+    vec3 zNormal = _textureNormal(normalSampler, uvZ);
     xNormal = vec3(xNormal.xy + inN.zy, abs(xNormal.z) * inN.x);
     yNormal = vec3(yNormal.xy + inN.xz, abs(yNormal.z) * inN.y);
     zNormal = vec3(zNormal.xy + inN.xy, abs(zNormal.z) * inN.z);

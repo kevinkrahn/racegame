@@ -83,27 +83,14 @@ static Array<u8> compressBC5(u16* data, i32 w, i32 h)
     return outData;
 }
 
-i32 Texture::getNumSourceChannels() const
-{
-    switch (textureType)
-    {
-        case TextureType::COLOR:
-        case TextureType::CUBE_MAP:
-            return 4;
-        case TextureType::GRAYSCALE:
-            return 1;
-        case TextureType::NORMAL_MAP:
-            return 2;
-    }
-    return 0;
-}
-
 bool Texture::loadSourceFile(u32 index)
 {
-    this->version = 1;
-
     i32 w, h;
-    i32 channels = getNumSourceChannels();
+    i32 channels = 4;
+    if (textureType == TextureType::GRAYSCALE)
+    {
+        channels = 1;
+    }
     const char* fullPath = tmpStr("%s/%s", ASSET_DIRECTORY, sourceFiles[index].path.data());
     u8* data = (u8*)stbi_load(fullPath, &w, &h, &channels, channels);
     if (!data)
@@ -115,6 +102,28 @@ bool Texture::loadSourceFile(u32 index)
     this->height = (u32)h;
     sourceFiles[index].width = width;
     sourceFiles[index].height = height;
+    Array<u8> sourceData;
+
+    // convert RGBA to RG
+    if (textureType == TextureType::NORMAL_MAP)
+    {
+        channels = 2;
+        sourceData.resize(w * h * channels);
+        for (i32 j=0; j<h; ++j)
+        {
+            for (i32 i=0; i<w; ++i)
+            {
+                i32 offset = j * w + i;
+                *((u16*)sourceData.data() + offset) = *(u16*)((u32*)data + offset);
+            }
+        }
+    }
+    else
+    {
+        sourceData.assign(data, data + w * h * channels);
+    }
+    stbi_image_free(data);
+
     if (compressed)
     {
         switch(textureType)
@@ -122,21 +131,20 @@ bool Texture::loadSourceFile(u32 index)
             case TextureType::COLOR:
             case TextureType::CUBE_MAP:
                 sourceFiles[index].data = move(
-                    compressDXT((u32*)data, w, h, preserveAlpha && textureType == TextureType::COLOR));
+                    compressDXT((u32*)sourceData.data(), w, h, preserveAlpha && textureType == TextureType::COLOR));
                 break;
             case TextureType::GRAYSCALE:
-                sourceFiles[index].data = move(compressBC4(data, w, h));
+                sourceFiles[index].data = move(compressBC4(sourceData.data(), w, h));
                 break;
             case TextureType::NORMAL_MAP:
-                sourceFiles[index].data = move(compressBC5((u16*)data, w, h));
+                sourceFiles[index].data = move(compressBC5((u16*)sourceData.data(), w, h));
                 break;
         }
     }
     else
     {
-        sourceFiles[index].data.assign(data, data + width * height * channels);
+        sourceFiles[index].data = move(sourceData);
     }
-    stbi_image_free(data);
     return true;
 }
 
@@ -243,35 +251,16 @@ void Texture::initGLTexture(u32 index)
     switch (textureType)
     {
         case TextureType::NORMAL_MAP:
-            if (version == 0)
-            {
-                internalFormat = GL_RGBA8;
-                baseFormat = GL_RGBA;
-            }
-            else
-            {
-                //internalFormat = compressed ? GL_COMPRESSED_RG_RGTC2 : GL_RG8;
-                //baseFormat = compressed ? internalFormat : GL_RG;
-                //unpackAlignment = 2;
-                internalFormat = compressed ? GL_COMPRESSED_RG_RGTC2 : GL_RGBA8;
-                baseFormat = compressed ? internalFormat : GL_RGBA;
-                unpackAlignment = 4;
-            }
+            internalFormat = compressed ? GL_COMPRESSED_RG_RGTC2 : GL_RG8;
+            baseFormat = compressed ? internalFormat : GL_RG;
+            unpackAlignment = 2;
             break;
         case TextureType::GRAYSCALE:
-            if (version == 0)
-            {
-                internalFormat = GL_SR8_EXT;
-                baseFormat = GL_RGBA;
-            }
-            else
-            {
-                // NOTE: Compressed grayscale textures are always in linear color space
-                internalFormat = compressed
-                    ? GL_COMPRESSED_RED_RGTC1 : (srgbSourceData ? GL_SR8_EXT : GL_R8);
-                baseFormat = compressed ? internalFormat : GL_RED;
-                unpackAlignment = 1;
-            }
+            // NOTE: Compressed grayscale textures are always in linear color space
+            internalFormat = compressed
+                ? GL_COMPRESSED_RED_RGTC1 : (srgbSourceData ? GL_SR8_EXT : GL_R8);
+            baseFormat = compressed ? internalFormat : GL_RED;
+            unpackAlignment = 1;
             break;
         case TextureType::CUBE_MAP:
             internalFormat = compressed ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_SRGB8;

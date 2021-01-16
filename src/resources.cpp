@@ -73,7 +73,7 @@ void Resources::loadResource(DataFile::Value& data)
 void Resources::load()
 {
     constexpr u8 whiteBytes[] = { 255, 255, 255, 255 };
-    constexpr u8 identityNormalBytes[] = { 128, 128, 255, 255 };
+    constexpr u8 identityNormalBytes[] = { 128, 128 };
     white = Texture("white", 1, 1, (u8*)whiteBytes, sizeof(whiteBytes), TextureType::COLOR);
     white.guid = 0;
     identityNormal = Texture("identityNormal", 1, 1, (u8*)identityNormalBytes,

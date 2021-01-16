@@ -109,13 +109,10 @@ void main()
 #endif
 
 #if !defined DEPTH_ONLY
-    vec3 normal = inNormal;
-
 #if defined NORMAL_MAP
-    const float normalMapStrength = 1.8;
-    normal = texture2D(normalSampler, inTexCoord).rgb * 2.0 - 1.0;
-    normal = normal * vec3(1.0, 1.0, normalMapStrength);
-    normal = inTBN * normal;
+    vec3 normal = textureNormal(normalSampler, inTexCoord, 1.8, inTBN);
+#else
+    vec3 normal = inNormal;
 #endif
 
 #if defined OUT_ID

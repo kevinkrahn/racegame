@@ -4,6 +4,11 @@
 #include "../game.h"
 #include "../collision_flags.h"
 
+static bool showGrid = true;
+static bool showFloor = false;
+static bool showBoundingBox = false;
+static bool showColliders = false;
+
 ModelEditor::ModelEditor()
 {
 }
@@ -111,6 +116,7 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
             ImGui::Text(tmpStr("Scene: %s", model->sourceSceneName.data()));
         }
         ImGui::Guid(model->guid);
+
         ImGui::Checkbox("Show Grid", &showGrid);
         ImGui::Checkbox("Show Floor", &showFloor);
         ImGui::Checkbox("Show Bounds", &showBoundingBox);
@@ -311,8 +317,11 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
     //Vec3 rayDir = camera.getMouseRay(rw);
     //Camera const& cam = camera.getCamera();
     rw->updateWorldTime(g_game.currentTime);
+    rw->setCloudShadow(0.f, nullptr);
     //rw->setShadowBounds(model->getBoundingbox(Mat4(1.f)).expand(5.f));
     rw->setShadowBounds(BoundingBox{ Vec3(-50), Vec3(50) });
+    rw->setFog(Vec3(0), 0.f, 0.f);
+    rw->setAmbient(Vec3(0.25f, 0.3f, 0.45f), 1.1f, nullptr);
 
     if (const u32* pixelID = rw->getPickPixelResult())
     {
@@ -358,8 +367,9 @@ void ModelEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
 
     if (showFloor)
     {
+        f32 minZ = model->getBoundingbox(Mat4(1.f)).min.z;
         drawSimple(rw, g_res.getModel("misc")->getMeshByName("Quad"), &g_res.white,
-                    Mat4::scaling(Vec3(40.f)), Vec3(0.1f));
+                    Mat4::translation(Vec3(0, 0, minZ)) * Mat4::scaling(Vec3(40.f)), Vec3(0.1f));
     }
 
     for (u32 i=0; i<(u32)model->objects.size(); ++i)

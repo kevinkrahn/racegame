@@ -88,12 +88,13 @@ public:
 
             const char* textureTypeNames = "Color\0Grayscale\0Normal Map\0Cube Map\0";
             i32 textureType = tex.getTextureType();
-            changed |= ImGui::Combo("Type", &textureType, textureTypeNames);
+            ImGui::Combo("Type", &textureType, textureTypeNames);
             if (textureType != tex.getTextureType())
             {
                 if (tex.sourceFilesExist())
                 {
                     tex.setTextureType(textureType);
+                    tex.reloadSourceFiles();
                 }
             }
 
