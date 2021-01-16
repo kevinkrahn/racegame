@@ -1835,7 +1835,7 @@ void Menu::createWeaponsMenu(WeaponSlot const& slot, i32& weaponIndex, u32& upgr
     for (i32 i=0; i<(i32)g_weapons.size(); ++i)
     {
         auto& weapon = g_weapons[i];
-        if (weapon.info.weaponType != slot.weaponType || slot.matchesWeapon(weapon.info))
+        if (weapon.info.weaponType != slot.weaponType || !slot.matchesWeapon(weapon.info))
         {
             continue;
         }
