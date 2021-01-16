@@ -25,7 +25,7 @@
 - Add ability to snap spline to edge of track in editor 
 - Improve AI when slipping on oil (counter-steer)
 - Undo/Redo in editor
-- Add texture compression (stb_dxt.h) DXT1 for no alpha, DXT5 with alpha, grayscale BC4?
+- Add BC4 texture compression for grayscale images
 - Normal map compression, probably with BC5 and store only XY and derive Z in shader
     http://developer.download.nvidia.com/whitepapers/2008/real-time-normal-map-dxt-compression.pdf
     https://sv-journal.org/2014-1/06/en/index.php?lang=en

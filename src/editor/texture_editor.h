@@ -91,15 +91,39 @@ public:
             changed |= ImGui::Combo("Type", &textureType, textureTypeNames);
             if (textureType != tex.getTextureType())
             {
-                tex.setTextureType(textureType);
+                if (tex.sourceFilesExist())
+                {
+                    tex.setTextureType(textureType);
+                }
             }
 
-            changed |= ImGui::Checkbox("Compressed", &tex.compressed);
-            if (textureType != TextureType::GRAYSCALE)
+            bool compressed = tex.compressed;
+            if (ImGui::Checkbox("Compressed", &tex.compressed))
             {
-                changed |= ImGui::Checkbox("Preserve Alpha", &tex.preserveAlpha);
+                if (!tex.reloadSourceFiles())
+                {
+                    tex.compressed = compressed;
+                }
             }
-            changed |= ImGui::Checkbox("Repeat", &tex.repeat);
+            if (textureType == TextureType::GRAYSCALE)
+            {
+                ImGui::HelpMarker("Compressed grayscale images cannot be in SRGB color space.");
+            }
+            if (textureType == TextureType::COLOR)
+            {
+                bool preserveAlpha = tex.preserveAlpha;
+                if (ImGui::Checkbox("Preserve Alpha", &tex.preserveAlpha))
+                {
+                    if (!tex.reloadSourceFiles())
+                    {
+                        tex.preserveAlpha = preserveAlpha;
+                    }
+                }
+            }
+            if (textureType != TextureType::CUBE_MAP)
+            {
+                changed |= ImGui::Checkbox("Repeat", &tex.repeat);
+            }
             changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
             changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);
 

@@ -53,6 +53,8 @@
 #define STB_INCLUDE_LINE_GLSL
 #define STB_INCLUDE_IMPLEMENTATION
 #include <stb_include.h>
+#define STB_DXT_IMPLEMENTATION
+#include <stb_dxt.h>
 
 #if 1
 int main(int argc, char** argv)

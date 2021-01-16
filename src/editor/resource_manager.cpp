@@ -320,7 +320,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
                     g_resourceTypes[childResource->type].resourceIcon)->getPreviewHandle(), { 16, 16 });
             ImGui::SameLine(0, 0);
             ImGui::SetCursorPosX(cursorPos + 24.f);
-            ImGui::Text("%s%s", childResource->name.data(), isDirty(childResource->guid) ? "*" : "");
+            ImGui::Text("%s%s", childResource->name.data(), isResourceDirty(childResource->guid) ? "*" : "");
         }
         ImGui::PopStyleColor();
         if (removed)
@@ -520,6 +520,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     for (OpenedResource const& r : openedResources)
     {
         r.editor->onUpdate(r.resource, this, renderer, deltaTime, r.windowID);
+        markDirty(r.resource->guid);
     }
 
     // TODO: fix escape behavior (it only works when a window is focused)
@@ -532,5 +533,6 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
     if (activeExclusiveEditor)
     {
         activeExclusiveEditor->onUpdate(activeExclusiveResource, this, renderer, deltaTime, 0);
+        //markDirty(activeExclusiveResource->guid);
     }
 }

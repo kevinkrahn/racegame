@@ -130,13 +130,12 @@ class ResourceManager
 
     bool showFolder(ResourceFolder* folder);
     void showFolderContents(ResourceFolder* folder);
-    void markDirty(i64 guid) { resourcesModified.set(guid, true); }
-    bool isDirty(i64 guid) { return !!resourcesModified.get(guid); }
 
 public:
     ResourceManager();
     void onUpdate(Renderer* renderer, f32 deltaTime);
     void markClosed(Resource* r) { resourcesClosed.set(r, true); }
+    void markDirty(i64 guid) { resourcesModified.set(guid, true); }
     bool isResourceDirty(i64 guid) const { return resourcesModified.get(guid); }
     Resource* newResource(ResourceType type);
     void openResource(Resource* resource);

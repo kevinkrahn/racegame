@@ -3,7 +3,6 @@
 #include "math.h"
 #include "gl.h"
 #include "resource.h"
-#include <stb_image.h>
 
 namespace TextureFilter
 {
@@ -35,6 +34,7 @@ public:
     bool generateMipMaps = true;
     bool compressed = false;
     bool preserveAlpha = true;
+    bool srgbSourceData = true;
     f32 lodBias = -0.2f;
     i32 anisotropy = 8;
     i32 filter = TextureFilter::TRILINEAR;
@@ -70,6 +70,8 @@ public:
         s.field(anisotropy);
         s.field(filter);
         s.field(sourceFiles);
+        s.field(version);
+        s.field(srgbSourceData);
 
         if (s.deserialize)
         {
@@ -79,14 +81,14 @@ public:
 
 private:
     i32 textureType = TextureType::COLOR;
-    u32 unpackAlignment = 4;
 
     Array<SourceFile> sourceFiles;
 
-    void loadSourceFile(u32 index);
+    bool loadSourceFile(u32 index);
     void initGLTexture(u32 index);
     void initCubemap();
 
+    u32 version = 0;
     GLuint cubemapHandle = 0;
 
 public:
@@ -97,16 +99,18 @@ public:
     GLuint handle = 0;
 
     Texture() { setTextureType(TextureType::COLOR); }
-    Texture(const char* name, u32 width, u32 height, u8* data, u32 dataSize, u32 textureType, u32 unpackAlignment=4)
-        : textureType(textureType), width(width), height(height), unpackAlignment(unpackAlignment)
+    Texture(const char* name, u32 width, u32 height, u8* data, u32 dataSize, u32 textureType, bool srgb=false)
+        : textureType(textureType), width(width), height(height), version(1), srgbSourceData(srgb)
     {
         this->name = name;
         sourceFiles.push({ "", Array<u8>(data, data+dataSize), width, height });
         regenerate();
     }
 
+    i32 getNumSourceChannels() const;
+    bool sourceFilesExist();
     void regenerate();
-    void reloadSourceFiles();
+    bool reloadSourceFiles();
     void setTextureType(u32 textureType);
     void setSourceFile(u32 index, const char* path);
     GLuint getPreviewHandle() const { return sourceFiles[0].previewHandle; }

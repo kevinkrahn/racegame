@@ -65,7 +65,7 @@ Font::Font(const char* filename, f32 fontSize, u32 startingChar, u32 numGlyphs)
     lineHeight = ((ascent - descent) + lineGap) * scale;
 
     textureAtlas = Texture(filename, w, h, texData.data(), (u32)texData.size(),
-            TextureType::GRAYSCALE, 1);
+            TextureType::GRAYSCALE, false);
 }
 
 Vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const

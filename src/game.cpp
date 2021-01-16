@@ -16,7 +16,7 @@ void Game::initPhysX()
     public:
         virtual void reportError(PxErrorCode::Enum code, const char* message, const char* file, int line)
         {
-            error("%s: %i: %s\n", file, line, message);
+            error("%s: %i: %s", file, line, message);
         }
     } errorCallback;
 
@@ -74,7 +74,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
         return;
     }
     println("OpenGL Debug (%i): %s", id, message);
-    //assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
+    assert(severity != GL_DEBUG_SEVERITY_HIGH_ARB);
 }
 #endif
 
@@ -130,18 +130,6 @@ void Game::run()
 #endif
 
     SDL_GL_SetSwapInterval(g_game.config.graphics.vsync ? 1 : 0);
-
-    const char* ext[] = {
-        "GL_EXT_texture_compression_s3tc",
-        "GL_EXT_texture_compression_dxt1",
-        "GL_EXT_texture_compression_latc",
-        "GL_ARB_texture_compression_rgtc",
-        "GL_EXT_texture_compression_rgtc",
-    };
-    for (auto& s : ext)
-    {
-        println("%s : %i", s, SDL_GL_ExtensionSupported(s));
-    }
 
     i32 w, h;
     SDL_GL_GetDrawableSize(window, &w, &h);
