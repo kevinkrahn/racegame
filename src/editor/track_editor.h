@@ -23,7 +23,6 @@ class TrackEditor : public ResourceEditor
     SmallArray<OwnedPtr<EditorMode>> modes;
     u32 activeModeIndex = 0;
     GridSettings gridSettings;
-    i64 testDriverGuid = 0;
 
 public:
     ~TrackEditor();

@@ -162,6 +162,8 @@ bool chooseResource(ResourceType resourceType, i64& current, const char* name,
     auto width = ImGui::CalcItemWidth();
     u32 previewTexture = 0;
 
+    // TODO: Add option to hide the "X" button
+
     if (resource)
     {
         previewTexture = resource->getPreviewTexture();

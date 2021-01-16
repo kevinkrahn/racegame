@@ -64,15 +64,29 @@ void TrackEditor::onUpdate(Resource* r, ResourceManager* rm, Renderer* renderer,
         }
     }
 
+#if 0
+    ImGuiWindowFlags overlayFlags =
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+        ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove;
+    const f32 overlayDistance = 10.f;
+    auto& io = ImGui::GetIO();
+    ImVec2 overlayPos = ImVec2(io.DisplaySize.x - overlayDistance, overlayDistance);
+    ImVec2 overlayPosPivot = ImVec2(1.0f, 0.0f);
+    ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always, overlayPosPivot);
+    if (ImGui::Begin("Grid Settings", nullptr, overlayFlags))
+#endif
+
+    static i64 testDriverGuid = 0;
     if (ImGui::Begin("Track Editor"))
     {
+        ImGui::InputText("##Name", &scene->name);
+        ImGui::SameLine();
+
         if (testDriverGuid == 0)
         {
             testDriverGuid = 0x509a48c028a15188;
         }
-
-        ImGui::InputText("##Name", &scene->name);
-        ImGui::SameLine();
         if (ImGui::Button("Test Drive") || g_input.isKeyPressed(KEY_F5))
         {
             AIDriverData* d = (AIDriverData*)g_res.getResource(testDriverGuid);
