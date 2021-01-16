@@ -10,7 +10,8 @@
 
 inline bool resourceIsMatch(i64 guid, const char* searchText)
 {
-    Str16 guidStr = Str16::format("%x", guid);
+    u32* b = (u32*)&guid;
+    Str32 guidStr = Str32::format("%x%x", b[1], b[0]);
     if (guidStr == searchText)
     {
         return true;
