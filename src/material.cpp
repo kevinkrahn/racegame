@@ -93,7 +93,11 @@ void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stenc
     auto renderColor = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
         glBindTextureUnit(0, d->textureColor);
-        glBindTextureUnit(5, d->textureNormal);
+		if (d->textureNormal)
+		{
+			// TODO: Perhaps it would be better to just bind the identityNormal texture instead
+			glBindTextureUnit(5, d->textureNormal);
+		}
         glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
         glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform3fv(2, 1, (GLfloat*)&d->color);
@@ -110,7 +114,6 @@ void Material::draw(RenderWorld* rw, Mat4 const& transform, Mesh* mesh, u8 stenc
     auto renderDepth = [](void* renderData) {
         MaterialRenderData* d = (MaterialRenderData*)renderData;
         glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
-        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         if (d->alphaCutoff > 0.f)
         {
             glBindTextureUnit(0, d->textureColor);
@@ -323,7 +326,6 @@ void drawSimple(RenderWorld* rw, Mesh* mesh, Texture* tex, Mat4 const& transform
     auto renderDepth = [](void* renderData) {
         SimpleRenderData* d = (SimpleRenderData*)renderData;
         glUniformMatrix4fv(0, 1, GL_FALSE, d->worldTransform.valuePtr());
-        glUniformMatrix3fv(1, 1, GL_FALSE, d->normalTransform.valuePtr());
         glUniform1f(8, 0.f);
         glBindVertexArray(d->vao);
         glDrawElements(GL_TRIANGLES, d->indexCount, GL_UNSIGNED_INT, 0);

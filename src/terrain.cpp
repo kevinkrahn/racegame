@@ -162,14 +162,20 @@ void Terrain::onRender(RenderWorld* rw, Scene* scene, f32 deltaTime)
         glBindTextureUnit(11, t->normalTextures[1]->handle);
         glBindTextureUnit(12, t->normalTextures[2]->handle);
         glBindTextureUnit(13, t->normalTextures[3]->handle);
-        glUniform3fv(3, 1, (GLfloat*)&t->brushSettings);
-        glUniform3fv(4, 1, (GLfloat*)&t->brushPosition);
+		if (g_game.isEditing)
+		{
+			glUniform3fv(3, 1, (GLfloat*)&t->brushSettings);
+			glUniform3fv(4, 1, (GLfloat*)&t->brushPosition);
+		}
         glUniform4fv(5, 1, t->texScale);
-        glUniform3fv(6, 1, (f32*)&t->fresnel[0]);
-        glUniform3fv(7, 1, (f32*)&t->fresnel[1]);
-        glUniform3fv(8, 1, (f32*)&t->fresnel[2]);
-        glUniform3fv(9, 1, (f32*)&t->fresnel[3]);
-        glBindVertexArray(t->vao);
+		if (g_game.config.graphics.highQualityTerrainEnabled)
+		{
+			glUniform3fv(6, 1, (f32*)&t->fresnel[0]);
+			glUniform3fv(7, 1, (f32*)&t->fresnel[1]);
+			glUniform3fv(8, 1, (f32*)&t->fresnel[2]);
+			glUniform3fv(9, 1, (f32*)&t->fresnel[3]);
+		}
+		glBindVertexArray(t->vao);
         glDrawElements(GL_TRIANGLES, t->indexCount, GL_UNSIGNED_INT, 0);
 
         // reset the brush settings every frame
