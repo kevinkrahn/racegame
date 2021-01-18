@@ -127,13 +127,11 @@ public:
 
     ~Array()
     {
-        u32 count = 0;
         if constexpr (!IsArithmetic<T>::value)
         {
             for (auto& l : *this)
             {
                 l.~T();
-                count++;
             }
         }
         if (data_)
@@ -331,8 +329,6 @@ public:
 
     void resize(u32 newSize)
     {
-        u32 tmp = size_;
-
         // call destructors if shrinking
         if (newSize < size_)
         {
@@ -342,21 +338,23 @@ public:
             }
         }
 
-        size_ = newSize;
-        if (size_ > capacity_)
+        if (newSize > capacity_)
         {
-            capacity_ = size_;
+            capacity_ = newSize;
             reallocate();
         }
 
         // initialize any new elements
-        if (size_ > tmp)
+        if (newSize > size_)
         {
-            for (T* ptr = data_+tmp; ptr != data_ + size_; ++ptr)
+            T* endPtr = data_ + newSize;
+            for (T* ptr = data_+size_; ptr != endPtr; ++ptr)
             {
                 new (ptr) T;
             }
         }
+
+        size_ = newSize;
     }
 
     T& front()

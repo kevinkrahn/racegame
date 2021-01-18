@@ -3,10 +3,14 @@
 #include "game.h"
 
 #include <stb_image.h>
+#include <stb_image_resize.h>
 #include <stb_dxt.h>
 
 static Array<u8> compressDXT(u32* data, i32 w, i32 h, bool alpha)
 {
+    assert(w >= 4 && h >=4);
+    assert(w % 4 == 0 && h % 4 == 0);
+
     u32 block[16];
     u32 compressedBlockSize = alpha ? 16 : 8;
     Array<u8> outData((w * h) / 16 * compressedBlockSize);
@@ -33,6 +37,9 @@ static Array<u8> compressDXT(u32* data, i32 w, i32 h, bool alpha)
 
 static Array<u8> compressBC4(u8* data, i32 w, i32 h)
 {
+    assert(w >= 4 && h >=4);
+    assert(w % 4 == 0 && h % 4 == 0);
+
     u8 block[16];
     const u32 compressedBlockSize = 8;
     Array<u8> outData((w * h) / 16 * compressedBlockSize);
@@ -59,6 +66,9 @@ static Array<u8> compressBC4(u8* data, i32 w, i32 h)
 
 static Array<u8> compressBC5(u16* data, i32 w, i32 h)
 {
+    assert(w >= 4 && h >=4);
+    assert(w % 4 == 0 && h % 4 == 0);
+
     u16 block[16];
     const u32 compressedBlockSize = 16;
     Array<u8> outData((w * h) / 16 * compressedBlockSize);
@@ -85,65 +95,155 @@ static Array<u8> compressBC5(u16* data, i32 w, i32 h)
 
 bool Texture::loadSourceFile(u32 index)
 {
-    i32 w, h;
+    i32 w, h, outChannels;
     i32 channels = 4;
     if (textureType == TextureType::GRAYSCALE)
     {
         channels = 1;
     }
     const char* fullPath = tmpStr("%s/%s", ASSET_DIRECTORY, sourceFiles[index].path.data());
-    u8* data = (u8*)stbi_load(fullPath, &w, &h, &channels, channels);
+    println("Loading image %s", fullPath);
+    u8* data = (u8*)stbi_load(fullPath, &w, &h, &outChannels, channels);
     if (!data)
     {
         error("Failed to load image: %s (%s)", fullPath, stbi_failure_reason());
         return false;
     }
+    if (width % 4 != 0 || height % 4 != 0)
+    {
+        stbi_image_free(data);
+        showError("Image dimensions must be a multiple of 4");
+        return false;
+    }
+    if (width < 4 || height < 4)
+    {
+        stbi_image_free(data);
+        showError("Image width and height must be at least 4 pixels");
+        return false;
+    }
+
     this->width = (u32)w;
     this->height = (u32)h;
     sourceFiles[index].width = width;
     sourceFiles[index].height = height;
-    Array<u8> sourceData;
 
-    // convert RGBA to RG
+    // smallest mipmap dimension is 4 pixels
+    u32 mipLevels = generateMipMaps ? (1 + (u32)max((i32)log2(min(width, height)) - 2, 0)) : 1;
+    Array<Array<u8>> sourceData(mipLevels);
+    sourceData[0].assign(data, data + w * h * channels);
+    stbi_image_free(data);
+    for (u32 level=1; level<mipLevels; ++level)
+    {
+        i32 sourceWidth = w >> (level - 1);
+        i32 sourceHeight = h >> (level - 1);
+        i32 outputWidth = w >> level;
+        i32 outputHeight = h >> level;
+
+        if (outputWidth % 4 != 0 || outputHeight % 4 != 0)
+        {
+            println("Mip #%i dimensions are not a multiple of 4 (%ix%i), so mip #%i will be the maximum mip level",
+                    level, outputWidth, outputHeight, level-1);
+            sourceData.resize(level);
+            mipLevels = level;
+            break;
+        }
+
+        sourceData[level].resize(outputWidth * outputHeight * channels);
+        auto wrapMode = repeat ? STBIR_EDGE_WRAP : STBIR_EDGE_CLAMP;
+        i32 flags = 0;
+
+        println("Resizing mip #%i from %ix%i to %ix%i", level, sourceWidth, sourceHeight,
+                outputWidth, outputHeight);
+
+        if (textureType == TextureType::GRAYSCALE)
+        {
+            assert(channels == 1);
+            if (!compressed && srgbSourceData)
+            {
+                if (!stbir_resize_uint8_srgb_edgemode(sourceData[level-1].data(), sourceWidth, sourceHeight,
+                        0, sourceData[level].data(), outputWidth, outputHeight, 0, channels,
+                        STBIR_ALPHA_CHANNEL_NONE, flags, wrapMode))
+                {
+                    error("Image resize for 1-channel linear image failed");
+                }
+            }
+            else
+            {
+                if (!stbir_resize_uint8_generic(sourceData[level-1].data(), sourceWidth, sourceHeight,
+                        0, sourceData[level].data(), outputWidth, outputHeight, 0, channels,
+                        STBIR_ALPHA_CHANNEL_NONE, flags, wrapMode, STBIR_FILTER_DEFAULT,
+                        STBIR_COLORSPACE_LINEAR, nullptr))
+                {
+                    error("Image resize for 1-channel srgb image failed");
+                }
+            }
+        }
+        else
+        {
+            assert(channels == 4);
+            i32 alphaChannel = 3;
+            if (!stbir_resize_uint8_srgb_edgemode(sourceData[level-1].data(), sourceWidth, sourceHeight,
+                    0, sourceData[level].data(), outputWidth, outputHeight, 0, channels,
+                    alphaChannel, flags, wrapMode))
+            {
+                error("Image resize for 4-channel srgb image failed");
+            }
+        }
+    }
+
+    // convert RGBA to RG for normal maps
     if (textureType == TextureType::NORMAL_MAP)
     {
         channels = 2;
-        sourceData.resize(w * h * channels);
-        for (i32 j=0; j<h; ++j)
+        for (u32 level=0; level<mipLevels; ++level)
         {
-            for (i32 i=0; i<w; ++i)
+            i32 width = w >> level;
+            i32 height = h >> level;
+            Array<u8> rgData(width * height * channels);
+            for (i32 j=0; j<height; ++j)
             {
-                i32 offset = j * w + i;
-                *((u16*)sourceData.data() + offset) = *(u16*)((u32*)data + offset);
+                for (i32 i=0; i<width; ++i)
+                {
+                    i32 offset = j * width + i;
+                    *((u16*)rgData.data() + offset) = *(u16*)((u32*)sourceData[level].data() + offset);
+                }
+            }
+            sourceData[level] = move(rgData);
+        }
+    }
+
+    if (compressed)
+    {
+        sourceFiles[index].mipLevels.resize(mipLevels);
+        for (u32 level=0; level<mipLevels; ++level)
+        {
+            i32 sw = w >> level;
+            i32 sh = h >> level;
+            switch(textureType)
+            {
+                case TextureType::COLOR:
+                case TextureType::CUBE_MAP:
+                    println("Compressing mip #%i %ix%i with DXT", level, sw, sh);
+                    sourceFiles[index].mipLevels[level] = move(
+                        compressDXT((u32*)sourceData[level].data(), sw, sh,
+                        preserveAlpha && textureType == TextureType::COLOR));
+                    break;
+                case TextureType::GRAYSCALE:
+                    println("Compressing mip #%i %ix%i with BC4", level, sw, sh);
+                    sourceFiles[index].mipLevels[level] = move(
+                        compressBC4(sourceData[level].data(), sw, sh));
+                    break;
+                case TextureType::NORMAL_MAP:
+                    println("Compressing mip #%i %ix%i with BC5", level, sw, sh);
+                    sourceFiles[index].mipLevels[level] = move(
+                        compressBC5((u16*)sourceData[level].data(), sw, sh));
+                    break;
             }
         }
     }
     else
     {
-        sourceData.assign(data, data + w * h * channels);
-    }
-    stbi_image_free(data);
-
-    if (compressed)
-    {
-        switch(textureType)
-        {
-            case TextureType::COLOR:
-            case TextureType::CUBE_MAP:
-                sourceFiles[index].data = move(
-                    compressDXT((u32*)sourceData.data(), w, h, preserveAlpha && textureType == TextureType::COLOR));
-                break;
-            case TextureType::GRAYSCALE:
-                sourceFiles[index].data = move(compressBC4(sourceData.data(), w, h));
-                break;
-            case TextureType::NORMAL_MAP:
-                sourceFiles[index].data = move(compressBC5((u16*)sourceData.data(), w, h));
-                break;
-        }
-    }
-    else
-    {
-        sourceFiles[index].data = move(sourceData);
+        sourceFiles[index].mipLevels = move(sourceData);
     }
     return true;
 }
@@ -241,7 +341,7 @@ void Texture::regenerate()
 
 void Texture::initGLTexture(u32 index)
 {
-    if (sourceFiles[index].data.empty())
+    if (sourceFiles[index].mipLevels.empty())
     {
         return;
     }
@@ -276,21 +376,29 @@ void Texture::initGLTexture(u32 index)
     glPixelStorei(GL_UNPACK_ALIGNMENT, unpackAlignment);
 
     SourceFile& s = sourceFiles[index];
-    u32 mipLevels = generateMipMaps ? 1 + (u32)(log2f((f32)max(s.width, s.height))) : 1;
+    u32 mipLevels = s.mipLevels.size();
+
     glCreateTextures(GL_TEXTURE_2D, 1, &s.previewHandle);
     glTextureStorage2D(s.previewHandle, mipLevels, internalFormat, s.width, s.height);
-    if (compressed)
+    for (u32 level=0; level<mipLevels; ++level)
     {
-        int v;
-        glGetTextureLevelParameteriv(s.previewHandle, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &v);
-        assert(s.data.size() == v);
-        glCompressedTextureSubImage2D(s.previewHandle, 0, 0, 0, s.width, s.height, baseFormat,
-                s.data.size(), s.data.data());
-    }
-    else
-    {
-        glTextureSubImage2D(s.previewHandle, 0, 0, 0, s.width, s.height, baseFormat,
-                GL_UNSIGNED_BYTE, s.data.data());
+        i32 width = s.width >> level;
+        i32 height = s.height >> level;
+        if (compressed)
+        {
+#ifndef NDEBUG
+            int v;
+            glGetTextureLevelParameteriv(s.previewHandle, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &v);
+            assert(s.mipLevels[level].size() == v);
+#endif
+            glCompressedTextureSubImage2D(s.previewHandle, level, 0, 0, width, height, baseFormat,
+                    s.mipLevels[level].size(), s.mipLevels[level].data());
+        }
+        else
+        {
+            glTextureSubImage2D(s.previewHandle, level, 0, 0, width, height, baseFormat,
+                    GL_UNSIGNED_BYTE, s.mipLevels[level].data());
+        }
     }
 
     if (textureType == TextureType::GRAYSCALE)
@@ -326,10 +434,6 @@ void Texture::initGLTexture(u32 index)
     glTextureParameterf(s.previewHandle, GL_TEXTURE_MAX_ANISOTROPY, min(max((f32)anisotropy, 1.f),
                 max((f32)g_game.config.graphics.anisotropicFilteringLevel, 1.f)));
     glTextureParameterf(s.previewHandle, GL_TEXTURE_LOD_BIAS, lodBias);
-    if (generateMipMaps)
-    {
-        glGenerateTextureMipmap(s.previewHandle);
-    }
 
 #ifndef NDEBUG
     glObjectLabel(GL_TEXTURE, s.previewHandle, name.size(), name.data());
@@ -349,7 +453,7 @@ void Texture::initCubemap()
 {
     for (u32 i=0; i<6; ++i)
     {
-        if (sourceFiles[i].data.empty())
+        if (sourceFiles[i].mipLevels.empty())
         {
             return;
         }
@@ -380,7 +484,7 @@ void Texture::initCubemap()
                     baseFormat, sourceFiles[i].data.size(), sourceFiles[i].data.data());
 #else
             glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height,
-                    0, sourceFiles[i].data.size(), sourceFiles[i].data.data());
+                    0, sourceFiles[i].mipLevels[0].size(), sourceFiles[i].mipLevels[0].data());
 #endif
         }
         else
@@ -390,7 +494,7 @@ void Texture::initCubemap()
                     baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].data.data());
 #else
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height,
-                    0, baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].data.data());
+                    0, baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].mipLevels[0].data());
 #endif
         }
     }
@@ -400,6 +504,8 @@ void Texture::initCubemap()
     glTextureParameteri(cubemapHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTextureParameteri(cubemapHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(cubemapHandle, GL_TEXTURE_MAX_ANISOTROPY, anisotropy);
+
+    // TODO: Generate mipmaps for cubemaps like regular textures, and remove this
     if (generateMipMaps)
     {
         glGenerateTextureMipmap(cubemapHandle);

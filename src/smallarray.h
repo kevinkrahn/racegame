@@ -194,7 +194,7 @@ public:
         if (newSize > size_)
         {
             T* endPtr = data_ + newSize;
-            for (T* ptr = data_ +size_; ptr != endPtr; ++ptr)
+            for (T* ptr = data_+size_; ptr != endPtr; ++ptr)
             {
                 new (ptr) T;
             }

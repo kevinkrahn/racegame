@@ -60,7 +60,6 @@ void Renderer::loadShader(ShaderHandle handle)
     ShaderProgramSource const& d = shaderProgramSources[handle];
     char* filename = tmpStr("shaders/%s.glsl", d.name);
 
-    // TODO: remove dependency on stb_include
     char errorMsg[256];
     char* shaderStr = stb_include_file(filename, (char*)"", (char*)"shaders", errorMsg);
     if (!shaderStr)

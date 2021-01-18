@@ -293,6 +293,8 @@ void Game::run()
     }
 
     g_audio.close();
+    g_threadPool.signalCompletion();
+    g_threadPool.join();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();

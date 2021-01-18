@@ -475,6 +475,21 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
             }
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Tools"))
+        {
+            if (ImGui::MenuItem("Reimport Textures"))
+            {
+                // TODO: Do this work on multiple threads (add tasks to threadpool)
+                println("Reimporting all textures...");
+                g_res.iterateResourceType(ResourceType::TEXTURE, [this](Resource* r){
+                    auto t = (Texture*)r;
+                    println("Reloading %s %s", t->name.data(), hex(t->guid));
+                    t->reloadSourceFiles();
+                    markDirty(r->guid);
+                });
+            }
+            ImGui::EndMenu();
+        }
         ImGui::EndMainMenuBar();
     }
     if (exitEditor)

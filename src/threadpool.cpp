@@ -15,7 +15,7 @@ void ThreadPool::start()
 	const char* threadNames[] = { "Worker1", "Worker2", "Worker3", "Worker4" };
 	for (u32 i = 0; i < numThreads; ++i)
 	{
-	    SDL_CreateThread(threadFunc, threadNames[i], this);
+	    threads[i] = SDL_CreateThread(threadFunc, threadNames[i], this);
 	}
 }
 

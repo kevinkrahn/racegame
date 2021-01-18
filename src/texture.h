@@ -34,7 +34,7 @@ public:
     bool generateMipMaps = true;
     bool compressed = false;
     bool preserveAlpha = true;
-    bool srgbSourceData = true;
+    bool srgbSourceData = true; // NOTE: Only used for GRAYSCALE input data to handle font atlas
     f32 lodBias = -0.2f;
     i32 anisotropy = 8;
     i32 filter = TextureFilter::TRILINEAR;
@@ -42,7 +42,7 @@ public:
     struct SourceFile
     {
         Str64 path;
-        Array<u8> data;
+        Array<Array<u8>> mipLevels;
         u32 width = 0;
         u32 height = 0;
 
@@ -50,8 +50,8 @@ public:
 
         void serialize(Serializer& s)
         {
+            s.field(mipLevels);
             s.field(path);
-            s.field(data);
             s.field(width);
             s.field(height);
         }
@@ -101,7 +101,11 @@ public:
         : textureType(textureType), width(width), height(height), srgbSourceData(srgb)
     {
         this->name = name;
-        sourceFiles.push({ "", Array<u8>(data, data+dataSize), width, height });
+        SourceFile s;
+        s.mipLevels.push(Array<u8>(data, data+dataSize));
+        s.width = width;
+        s.height = height;
+        sourceFiles.push(move(s));
         regenerate();
     }
 
