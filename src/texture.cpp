@@ -149,7 +149,8 @@ bool Texture::loadSourceFile(u32 index)
         }
 
         sourceData[level].resize(outputWidth * outputHeight * channels);
-        auto wrapMode = repeat ? STBIR_EDGE_WRAP : STBIR_EDGE_CLAMP;
+        auto wrapMode = (repeat && textureType != TextureType::CUBE_MAP)
+            ? STBIR_EDGE_WRAP : STBIR_EDGE_CLAMP;
         // TODO: Investigate other filter modes. Do mipmaps look better when more or less blurry?
         // TODO: Add option to choose downsampling algorithm.
         auto filter = STBIR_FILTER_DEFAULT;
@@ -410,7 +411,7 @@ void Texture::initGLTexture(u32 index)
         GLint swizzle[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
         glTextureParameteriv(s.previewHandle, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
     }
-    if (repeat)
+    if (repeat && textureType != TextureType::CUBE_MAP)
     {
         glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTextureParameteri(s.previewHandle, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -455,51 +456,45 @@ void Texture::onUpdateGlobalTextureSettings()
 
 void Texture::initCubemap()
 {
+    u32 mipLevels = sourceFiles[0].mipLevels.size();
     for (u32 i=0; i<6; ++i)
     {
         if (sourceFiles[i].mipLevels.empty())
         {
             return;
         }
+        if (sourceFiles[i].mipLevels.size() != mipLevels)
+        {
+            showError("All faces must be the same size.");
+            return;
+        }
     }
 
-    u32 mipLevels = generateMipMaps ? 1 + (u32)(log2f((f32)max(width, height))) : 1;
     GLuint internalFormat = compressed ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_SRGB8;
     GLuint baseFormat = compressed ? internalFormat : GL_RGBA;
 
-#define DSA 0
-#if DSA
     glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapHandle);
     glTextureStorage2D(cubemapHandle, mipLevels, internalFormat, width, height);
-#else
-    glGenTextures(1, &cubemapHandle);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapHandle);
-#endif
     for (u32 i=0; i<6; ++i)
     {
-        if (compressed)
+        for (u32 level=0; level<mipLevels; ++level)
         {
-#if DSA
-            int v;
-            glGetTextureLevelParameteriv(cubemapHandle, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &v);
-            assert(sourceFiles[i].data.size() == v);
-            // TODO: find out why DSA doesn't work for compressed cubemaps
-            glCompressedTextureSubImage3D(cubemapHandle, 0, 0, 0, i, width, height, 1,
-                    baseFormat, sourceFiles[i].data.size(), sourceFiles[i].data.data());
-#else
-            glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height,
-                    0, sourceFiles[i].mipLevels[0].size(), sourceFiles[i].mipLevels[0].data());
-#endif
-        }
-        else
-        {
-#if DSA
-            glTextureSubImage3D(cubemapHandle, 0, 0, 0, i, width, height, 1,
-                    baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].data.data());
-#else
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height,
-                    0, baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].mipLevels[0].data());
-#endif
+            i32 mipWidth = width >> level;
+            i32 mipHeight = height >> level;
+            if (compressed)
+            {
+                int v;
+                glGetTextureLevelParameteriv(cubemapHandle, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &v);
+                assert(sourceFiles[i].mipLevels[level].size() == v/6);
+                glCompressedTextureSubImage3D(cubemapHandle, level, 0, 0, i, mipWidth, mipHeight, 1,
+                        baseFormat, sourceFiles[i].mipLevels[level].size(),
+                        sourceFiles[i].mipLevels[level].data());
+            }
+            else
+            {
+                glTextureSubImage3D(cubemapHandle, level, 0, 0, i, mipWidth, mipHeight, 1,
+                        baseFormat, GL_UNSIGNED_BYTE, sourceFiles[i].mipLevels[level].data());
+            }
         }
     }
     glTextureParameteri(cubemapHandle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -507,11 +502,6 @@ void Texture::initCubemap()
     glTextureParameteri(cubemapHandle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTextureParameteri(cubemapHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTextureParameteri(cubemapHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(cubemapHandle, GL_TEXTURE_MAX_ANISOTROPY, anisotropy);
-
-    // TODO: Generate mipmaps for cubemaps like regular textures, and remove this
-    if (generateMipMaps)
-    {
-        glGenerateTextureMipmap(cubemapHandle);
-    }
+    glTextureParameterf(cubemapHandle, GL_TEXTURE_MAX_ANISOTROPY, min(max((f32)anisotropy, 1.f),
+                max((f32)g_game.config.graphics.anisotropicFilteringLevel, 1.f)));
 }
