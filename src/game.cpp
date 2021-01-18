@@ -413,7 +413,7 @@ void Game::checkDebugKeys()
         }
 
         ImGui::Text("FPS: %.3f", 1.f / g_game.realDeltaTime);
-        ImGui::Text("Average FPS: %.3fms", 1.f / g_game.averageDeltaTime);
+        ImGui::Text("Average FPS: %.3f", 1.f / g_game.averageDeltaTime);
         ImGui::Text("Frame Time: %.3fms", g_game.realDeltaTime * 1000);
         ImGui::Text("CPU Time: %.3fms", g_game.cpuTime * 1000);
         ImGui::Text("Swap Wait Time: %.3fms", (g_game.realDeltaTime - g_game.cpuTime) * 1000);

@@ -483,9 +483,12 @@ void Texture::initCubemap()
             i32 mipHeight = height >> level;
             if (compressed)
             {
+#if 0
+				// returns different values on Intel vs NVidia
                 int v;
                 glGetTextureLevelParameteriv(cubemapHandle, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &v);
                 assert(sourceFiles[i].mipLevels[level].size() == v/6);
+#endif
                 glCompressedTextureSubImage3D(cubemapHandle, level, 0, 0, i, mipWidth, mipHeight, 1,
                         baseFormat, sourceFiles[i].mipLevels[level].size(),
                         sourceFiles[i].mipLevels[level].data());

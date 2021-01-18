@@ -106,3 +106,4 @@
 - Fix SSOA on terrain
 - Add option to change cloud shadow speed and direction
 - Go through all stb dependencies and use appropriate macros to avoid including std libs
+- Experiment with a weapons lock for first few seconds of race
