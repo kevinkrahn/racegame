@@ -150,6 +150,9 @@ bool Texture::loadSourceFile(u32 index)
 
         sourceData[level].resize(outputWidth * outputHeight * channels);
         auto wrapMode = repeat ? STBIR_EDGE_WRAP : STBIR_EDGE_CLAMP;
+        // TODO: Investigate other filter modes. Do mipmaps look better when more or less blurry?
+        // TODO: Add option to choose downsampling algorithm.
+        auto filter = STBIR_FILTER_DEFAULT;
         i32 flags = 0;
 
         println("Resizing mip #%i from %ix%i to %ix%i", level, sourceWidth, sourceHeight,
@@ -160,9 +163,10 @@ bool Texture::loadSourceFile(u32 index)
             assert(channels == 1);
             if (!compressed && srgbSourceData)
             {
-                if (!stbir_resize_uint8_srgb_edgemode(sourceData[level-1].data(), sourceWidth, sourceHeight,
+                if (!stbir_resize_uint8_generic(sourceData[level-1].data(), sourceWidth, sourceHeight,
                         0, sourceData[level].data(), outputWidth, outputHeight, 0, channels,
-                        STBIR_ALPHA_CHANNEL_NONE, flags, wrapMode))
+                        STBIR_ALPHA_CHANNEL_NONE, flags, wrapMode, filter,
+                        STBIR_COLORSPACE_SRGB, nullptr))
                 {
                     error("Image resize for 1-channel linear image failed");
                 }
@@ -171,7 +175,7 @@ bool Texture::loadSourceFile(u32 index)
             {
                 if (!stbir_resize_uint8_generic(sourceData[level-1].data(), sourceWidth, sourceHeight,
                         0, sourceData[level].data(), outputWidth, outputHeight, 0, channels,
-                        STBIR_ALPHA_CHANNEL_NONE, flags, wrapMode, STBIR_FILTER_DEFAULT,
+                        STBIR_ALPHA_CHANNEL_NONE, flags, wrapMode, filter,
                         STBIR_COLORSPACE_LINEAR, nullptr))
                 {
                     error("Image resize for 1-channel srgb image failed");
@@ -182,9 +186,9 @@ bool Texture::loadSourceFile(u32 index)
         {
             assert(channels == 4);
             i32 alphaChannel = 3;
-            if (!stbir_resize_uint8_srgb_edgemode(sourceData[level-1].data(), sourceWidth, sourceHeight,
+            if (!stbir_resize_uint8_generic(sourceData[level-1].data(), sourceWidth, sourceHeight,
                     0, sourceData[level].data(), outputWidth, outputHeight, 0, channels,
-                    alphaChannel, flags, wrapMode))
+                    alphaChannel, flags, wrapMode, filter, STBIR_COLORSPACE_SRGB, nullptr))
             {
                 error("Image resize for 4-channel srgb image failed");
             }

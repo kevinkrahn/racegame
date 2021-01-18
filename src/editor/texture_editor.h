@@ -123,7 +123,14 @@ public:
             }
             if (textureType != TextureType::CUBE_MAP)
             {
-                changed |= ImGui::Checkbox("Repeat", &tex.repeat);
+                if (ImGui::Checkbox("Repeat", &tex.repeat))
+                {
+                    changed = true;
+                    if (tex.generateMipMaps)
+                    {
+                        tex.reloadSourceFiles();
+                    }
+                }
             }
             changed |= ImGui::Checkbox("Generate Mip Maps", &tex.generateMipMaps);
             changed |= ImGui::InputFloat("LOD Bias", &tex.lodBias, 0.1f);
