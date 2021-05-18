@@ -65,10 +65,10 @@ namespace DataFile
     class Value
     {
     public:
-        using Dict = Map<Str64, Value>;
-        using Array = Array<Value>;
+        using Dict = ::Map<Str64, Value>;
+        using Array = ::Array<Value>;
         using ByteArray = ::Array<u8>;
-        using String = Str64;
+        using String = ::Str64;
 
         friend Value load(const char* filename);
 
@@ -579,6 +579,26 @@ namespace DataFile
 #define DESERIALIZE_ERROR(...) { return; }
 #endif
 
+// serialization functions
+
+class Serializer;
+namespace SerializerDetail
+{
+    template<typename T> void element(Serializer &s, const char* name, DataFile::Value& val, T& dest) ;
+    template<u32 N> void element(Serializer &s, const char* name, DataFile::Value& val, Str<N>& dest);
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, bool& dest);
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, f32& dest);
+    template<typename T> void realArray(Serializer &s, const char* name, DataFile::Value& val, T& dest);
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Vec2& dest);
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Vec3& dest);
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Vec4& dest);
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Quat& dest);
+    template<typename T> void array(Serializer &s, const char* name, DataFile::Value& val, T& dest);
+    template<typename T> void element(Serializer &s, const char* name, DataFile::Value& val, Array<T>& dest);
+    template<typename T, u32 N> void element(Serializer &s, const char* name, DataFile::Value& val, SmallArray<T, N>& dest);
+    template<typename T> void element(Serializer &s, const char* name, DataFile::Value& val, OwnedPtr<T>& dest);
+};
+
 class Serializer
 {
 public:
@@ -594,7 +614,7 @@ public:
     {
         if (!deserialize)
         {
-            element(name, dict[name], field);
+            SerializerDetail::element(*this, name, dict[name], field);
         }
     }
 
@@ -603,285 +623,12 @@ public:
     {
         if (deserialize)
         {
-            element(name, dict[name], field);
+            SerializerDetail::element(*this, name, dict[name], field);
             this->context = context;
         }
         else
         {
-            element(name, dict[name], field);
-        }
-    }
-
-    template<typename T>
-    void element(const char* name, DataFile::Value& val, T& dest)
-    {
-        if constexpr (IsEnum<T>::value)
-        {
-            if (deserialize)
-            {
-                auto v = val.integer();
-                if (!v.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
-                }
-                dest = (T)v.val();
-            }
-            else
-            {
-                val = (i64)dest;
-            }
-        }
-        else if constexpr (IsIntegral<T>::value)
-        {
-            if (deserialize)
-            {
-                auto v = val.integer();
-                if (!v.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
-                }
-                dest = (T)v.val();
-                if (v.val() > NumericLimits<T>::max || v.val() < NumericLimits<T>::min)
-                {
-                    error("%s: deserialized integer overflow", context);
-                }
-            }
-            else
-            {
-                val = (i64)dest;
-            }
-        }
-        else if constexpr (IsArray<T>::value)
-        {
-            u32 arraySize = (u32)(ARRAY_SIZE(dest));
-            if (deserialize)
-            {
-                auto v = val.array();
-                if (!v.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
-                }
-                if (v.val().size() < arraySize)
-                {
-                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
-                }
-                for (u32 i=0; i<arraySize; ++i)
-                {
-                    element(name, v.val()[i], dest[i]);
-                }
-            }
-            else
-            {
-                val = DataFile::makeArray();
-                val.array().val().reserve(arraySize);
-                for (u32 i=0; i<(u32)arraySize; ++i)
-                {
-                    DataFile::Value el;
-                    element(name, el, dest[i]);
-                    val.array().val().push(move(el));
-                }
-            }
-        }
-        else
-        {
-            if (deserialize)
-            {
-                auto v = val.dict();
-                if (!v.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read value as DICT: \"%s\"", name);
-                }
-                Serializer childSerializer(val, true);
-                dest.serialize(childSerializer);
-            }
-            else
-            {
-                auto childDict = DataFile::makeDict();
-                Serializer childSerializer(childDict, false);
-                dest.serialize(childSerializer);
-                val = childDict;
-            }
-        }
-    }
-
-    /*
-    template<> void element(const char* name, DataFile::Value& val, DataFile::Value::String& dest)
-    {
-        if (deserialize)
-        {
-            auto v = val.string();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"%s\"", name);
-            dest = v.val();
-        }
-        else val = dest;
-    }
-    */
-
-    template<u32 N> void element(const char* name, DataFile::Value& val, Str<N>& dest)
-    {
-        if (deserialize)
-        {
-            auto v = val.string();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"%s\"", name);
-            dest = v.val();
-        }
-        else val = dest;
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, bool& dest)
-    {
-        if (deserialize)
-        {
-            auto v = val.boolean();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as BOOL: \"%s\"", name);
-            dest = v.val();
-        }
-        else val = dest;
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, f32& dest)
-    {
-        if (deserialize)
-        {
-            auto v = val.real();
-            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as REAL: \"%s\"", name);
-            dest = v.val();
-        }
-        else val = dest;
-    }
-
-    template<typename T>
-    void realArray(const char* name, DataFile::Value& val, T& dest)
-    {
-        u32 count = sizeof(dest) / sizeof(f32);
-        if (deserialize)
-        {
-            auto v = val.array();
-            if (!v.hasValue() || v.val().size() < count)
-            {
-                DESERIALIZE_ERROR("Failed to read real ARRAY [%u] field: \"%s\"", count, name);
-            }
-            for (u32 i=0; i<count; ++i)
-            {
-                auto optionalValue = v.val()[i].real();
-                if (!optionalValue.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read real ARRAY [%u] field: \"%s\"", count, name);
-                }
-                ((f32*)&dest)[i] = optionalValue.val();
-            }
-        }
-        else
-        {
-            val = DataFile::makeArray();
-            val.array().val().reserve(count);
-            for (u32 i=0; i<count; ++i)
-            {
-                val.array().val().push(DataFile::makeReal(((f32*)&dest)[i]));
-            }
-        }
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, Vec2& dest)
-    {
-        realArray(name, val, dest);
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, Vec3& dest)
-    {
-        realArray(name, val, dest);
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, Vec4& dest)
-    {
-        realArray(name, val, dest);
-    }
-
-    template<> void element(const char* name, DataFile::Value& val, Quat& dest)
-    {
-        realArray(name, val, dest);
-    }
-
-    template<typename T>
-    void array(const char* name, DataFile::Value& val, T& dest)
-    {
-        using V = typename T::value_type;
-        if constexpr (IsArithmetic<V>::value)
-        {
-            if (deserialize)
-            {
-                auto v = val.bytearray();
-                if (!v.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"%s\"", name);
-                }
-                if (v.val().size() % sizeof(V) != 0)
-                {
-                    DESERIALIZE_ERROR("Cannot convert BYTEARRAY field: \"%s\"", name);
-                }
-                dest.assign(reinterpret_cast<V*>(v.val().data()),
-                        reinterpret_cast<V*>(v.val().data() + v.val().size()));
-            }
-            else
-            {
-                DataFile::Value::ByteArray bytes(reinterpret_cast<u8*>(dest.data()),
-                             reinterpret_cast<u8*>(dest.data() + dest.size()));
-                val.setBytearray(move(bytes));
-            }
-        }
-        else
-        {
-            if (deserialize)
-            {
-                auto v = val.array();
-                if (!v.hasValue())
-                {
-                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
-                }
-                dest.clear();
-                dest.reserve(v.val().size());
-                for (auto& item : v.val())
-                {
-                    V el;
-                    element(name, item, el);
-                    dest.push(move(el));
-                }
-            }
-            else
-            {
-                DataFile::Value::Array array;
-                array.reserve(dest.size());
-                for (auto& item : dest)
-                {
-                    DataFile::Value el;
-                    element(name, el, item);
-                    array.push(move(el));
-                }
-                val.setArray(move(array));
-            }
-        }
-    }
-
-    template<typename T> void element(const char* name, DataFile::Value& val, Array<T>& dest)
-    {
-        array(name, val, dest);
-    }
-
-    template<typename T, u32 N> void element(const char* name, DataFile::Value& val, SmallArray<T, N>& dest)
-    {
-        array(name, val, dest);
-    }
-
-    template<typename T> void element(const char* name, DataFile::Value& val, OwnedPtr<T>& dest)
-    {
-        if (deserialize)
-        {
-            dest.reset(new T);
-            element(name, val, *dest);
-        }
-        else
-        {
-            element(name, val, *dest);
+            SerializerDetail::element(*this, name, dict[name], field);
         }
     }
 
@@ -914,6 +661,282 @@ public:
         if (data.hasValue())
         {
             fromDict(data, val);
+        }
+    }
+};
+
+namespace SerializerDetail
+{
+    template<typename T>
+    void element(Serializer &s, const char* name, DataFile::Value& val, T& dest)
+    {
+        if constexpr (IsEnum<T>::value)
+        {
+            if (s.deserialize)
+            {
+                auto v = val.integer();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
+                }
+                dest = (T)v.val();
+            }
+            else
+            {
+                val = (i64)dest;
+            }
+        }
+        else if constexpr (IsIntegral<T>::value)
+        {
+            if (s.deserialize)
+            {
+                auto v = val.integer();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read enum value as INTEGER: \"%s\"", name);
+                }
+                dest = (T)v.val();
+                if (v.val() > NumericLimits<T>::max || v.val() < NumericLimits<T>::min)
+                {
+                    error("%s: deserialized integer overflow", s.context);
+                }
+            }
+            else
+            {
+                val = (i64)dest;
+            }
+        }
+        else if constexpr (IsArray<T>::value)
+        {
+            u32 arraySize = (u32)(ARRAY_SIZE(dest));
+            if (s.deserialize)
+            {
+                auto v = val.array();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
+                }
+                if (v.val().size() < arraySize)
+                {
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
+                }
+                for (u32 i=0; i<arraySize; ++i)
+                {
+                    element(s, name, v.val()[i], dest[i]);
+                }
+            }
+            else
+            {
+                val = DataFile::makeArray();
+                val.array().val().reserve(arraySize);
+                for (u32 i=0; i<(u32)arraySize; ++i)
+                {
+                    DataFile::Value el;
+                    element(s, name, el, dest[i]);
+                    val.array().val().push(move(el));
+                }
+            }
+        }
+        else
+        {
+            if (s.deserialize)
+            {
+                auto v = val.dict();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read value as DICT: \"%s\"", name);
+                }
+                Serializer childSerializer(val, true);
+                dest.serialize(childSerializer);
+            }
+            else
+            {
+                auto childDict = DataFile::makeDict();
+                Serializer childSerializer(childDict, false);
+                dest.serialize(childSerializer);
+                val = childDict;
+            }
+        }
+    }
+
+    /*
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, DataFile::Value::String& dest)
+    {
+        if (s.deserialize)
+        {
+            auto v = val.string();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"%s\"", name);
+            dest = v.val();
+        }
+        else val = dest;
+    }
+    */
+
+    template<u32 N> void element(Serializer &s, const char* name, DataFile::Value& val, Str<N>& dest)
+    {
+        if (s.deserialize)
+        {
+            auto v = val.string();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as STRING: \"%s\"", name);
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, bool& dest)
+    {
+        if (s.deserialize)
+        {
+            auto v = val.boolean();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as BOOL: \"%s\"", name);
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, f32& dest)
+    {
+        if (s.deserialize)
+        {
+            auto v = val.real();
+            if (!v.hasValue()) DESERIALIZE_ERROR("Failed to read value as REAL: \"%s\"", name);
+            dest = v.val();
+        }
+        else val = dest;
+    }
+
+    template<typename T>
+    void realArray(Serializer &s, const char* name, DataFile::Value& val, T& dest)
+    {
+        u32 count = sizeof(dest) / sizeof(f32);
+        if (s.deserialize)
+        {
+            auto v = val.array();
+            if (!v.hasValue() || v.val().size() < count)
+            {
+                DESERIALIZE_ERROR("Failed to read real ARRAY [%u] field: \"%s\"", count, name);
+            }
+            for (u32 i=0; i<count; ++i)
+            {
+                auto optionalValue = v.val()[i].real();
+                if (!optionalValue.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read real ARRAY [%u] field: \"%s\"", count, name);
+                }
+                ((f32*)&dest)[i] = optionalValue.val();
+            }
+        }
+        else
+        {
+            val = DataFile::makeArray();
+            val.array().val().reserve(count);
+            for (u32 i=0; i<count; ++i)
+            {
+                val.array().val().push(DataFile::makeReal(((f32*)&dest)[i]));
+            }
+        }
+    }
+
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Vec2& dest)
+    {
+        realArray(s, name, val, dest);
+    }
+
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Vec3& dest)
+    {
+        realArray(s, name, val, dest);
+    }
+
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Vec4& dest)
+    {
+        realArray(s, name, val, dest);
+    }
+
+    template<> void element(Serializer &s, const char* name, DataFile::Value& val, Quat& dest)
+    {
+        realArray(s, name, val, dest);
+    }
+
+    template<typename T>
+    void array(Serializer &s, const char* name, DataFile::Value& val, T& dest)
+    {
+        using V = typename T::value_type;
+        if constexpr (IsArithmetic<V>::value)
+        {
+            if (s.deserialize)
+            {
+                auto v = val.bytearray();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read BYTEARRAY field: \"%s\"", name);
+                }
+                if (v.val().size() % sizeof(V) != 0)
+                {
+                    DESERIALIZE_ERROR("Cannot convert BYTEARRAY field: \"%s\"", name);
+                }
+                dest.assign(reinterpret_cast<V*>(v.val().data()),
+                        reinterpret_cast<V*>(v.val().data() + v.val().size()));
+            }
+            else
+            {
+                DataFile::Value::ByteArray bytes(reinterpret_cast<u8*>(dest.data()),
+                                reinterpret_cast<u8*>(dest.data() + dest.size()));
+                val.setBytearray(move(bytes));
+            }
+        }
+        else
+        {
+            if (s.deserialize)
+            {
+                auto v = val.array();
+                if (!v.hasValue())
+                {
+                    DESERIALIZE_ERROR("Failed to read ARRAY field: \"%s\"", name);
+                }
+                dest.clear();
+                dest.reserve(v.val().size());
+                for (auto& item : v.val())
+                {
+                    V el;
+                    element(s, name, item, el);
+                    dest.push(move(el));
+                }
+            }
+            else
+            {
+                DataFile::Value::Array array;
+                array.reserve(dest.size());
+                for (auto& item : dest)
+                {
+                    DataFile::Value el;
+                    element(s, name, el, item);
+                    array.push(move(el));
+                }
+                val.setArray(move(array));
+            }
+        }
+    }
+
+    template<typename T> void element(Serializer &s, const char* name, DataFile::Value& val, Array<T>& dest)
+    {
+        array(s, name, val, dest);
+    }
+
+    template<typename T, u32 N> void element(Serializer &s, const char* name, DataFile::Value& val, SmallArray<T, N>& dest)
+    {
+        array(s, name, val, dest);
+    }
+
+    template<typename T> void element(Serializer &s, const char* name, DataFile::Value& val, OwnedPtr<T>& dest)
+    {
+        if (s.deserialize)
+        {
+            dest.reset(new T);
+            element(s, name, val, *dest);
+        }
+        else
+        {
+            element(s, name, val, *dest);
         }
     }
 };

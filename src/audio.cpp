@@ -304,20 +304,30 @@ void Audio::init()
     audioDevice = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
     if (!audioDevice)
     {
-        FATAL_ERROR("SDL_OpenAudioDevice error: ", SDL_GetError());
+        error("Failed to initialize audio device. SDL_OpenAudioDevice error: ", SDL_GetError());
     }
-
-    SDL_PauseAudioDevice(audioDevice, 0);
+    else
+    {
+        SDL_PauseAudioDevice(audioDevice, 0);
+    }
 }
 
 void Audio::close()
 {
-    SDL_CloseAudioDevice(audioDevice);
+    if (audioDevice)
+    {
+        SDL_CloseAudioDevice(audioDevice);
+    }
 }
 
 SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
         bool loop, f32 pitch, f32 volume, f32 pan)
 {
+    if (!audioDevice)
+    {
+        return 0;
+    }
+
     PlayingSound ps;
     ps.sound = sound;
     ps.isLooping = loop;
@@ -339,6 +349,11 @@ SoundHandle Audio::playSound(Sound* sound, SoundType soundType,
 SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
         Vec3 const& position, bool loop, f32 pitch, f32 volume, f32 pan)
 {
+    if (!audioDevice)
+    {
+        return 0;
+    }
+
     PlayingSound ps;
     ps.sound = sound;
     ps.isLooping = loop;
@@ -366,6 +381,11 @@ SoundHandle Audio::playSound3D(Sound* sound, SoundType soundType,
 
 void Audio::stopSound(SoundHandle handle)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::STOP;
@@ -375,6 +395,11 @@ void Audio::stopSound(SoundHandle handle)
 
 void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PITCH;
@@ -385,6 +410,11 @@ void Audio::setSoundPitch(SoundHandle handle, f32 pitch)
 
 void Audio::setSoundVolume(SoundHandle handle, f32 volume)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::VOLUME;
@@ -395,6 +425,11 @@ void Audio::setSoundVolume(SoundHandle handle, f32 volume)
 
 void Audio::setSoundPan(SoundHandle handle, f32 pan)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::PAN;
@@ -405,6 +440,11 @@ void Audio::setSoundPan(SoundHandle handle, f32 pan)
 
 void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::POSITION;
@@ -415,6 +455,11 @@ void Audio::setSoundPosition(SoundHandle handle, Vec3 const& position)
 
 void Audio::setSoundPaused(SoundHandle handle, bool paused)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     PlaybackModification pm;
     pm.type = PlaybackModification::SET_PAUSED;
@@ -425,6 +470,11 @@ void Audio::setSoundPaused(SoundHandle handle, bool paused)
 
 void Audio::setListeners(SmallArray<Vec3>const& listeners)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     listenerPositions.clear();
     for (auto& p : listeners)
@@ -435,6 +485,11 @@ void Audio::setListeners(SmallArray<Vec3>const& listeners)
 
 void Audio::stopAllGameplaySounds()
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
 
     PlaybackModification pm;
@@ -444,6 +499,11 @@ void Audio::stopAllGameplaySounds()
 
 void Audio::setPaused(bool paused)
 {
+    if (!audioDevice)
+    {
+        return;
+    }
+
     LockGuard lock(audioMutex);
     pauseGameplaySounds = paused;
 }

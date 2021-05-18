@@ -189,7 +189,8 @@ def build(build_type):
         build_dir = os.path.join('build', build_type)
         if not os.path.isdir(build_dir):
             ensureDir(build_dir)
-            if subprocess.run(['cmake', repoPath, '-DCMAKE_BUILD_TYPE='+build_type, '-DCMAKE_C_COMPILER=clang', '-DCMAKE_CXX_COMPILER=clang++'], cwd=build_dir).returncode != 0:
+            #if subprocess.run(['cmake', repoPath, '-DCMAKE_BUILD_TYPE='+build_type, '-DCMAKE_C_COMPILER=clang', '-DCMAKE_CXX_COMPILER=clang++'], cwd=build_dir).returncode != 0:
+            if subprocess.run(['cmake', repoPath, '-DCMAKE_BUILD_TYPE='+build_type], cwd=build_dir).returncode != 0:
                 return False
         if subprocess.run(['cmake', '--build', build_dir, '--parallel', job_count]).returncode != 0:
             return False
