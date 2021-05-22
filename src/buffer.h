@@ -31,6 +31,7 @@ public:
     Buffer(size_t size, size_t alignment=1) : size(size), pos(0), alignment(alignment)
     {
         assert(size > 0);
+        assert(alignment >= 1);
         data.reset(new u8[size]);
     }
 
@@ -61,6 +62,16 @@ public:
         return *this;
     }
 
+    void resize(size_t size, size_t alignment=1)
+    {
+        assert(size > 0);
+        assert(alignment >= 1);
+        this->size = size;
+        this->pos = 0;
+        this->alignment = alignment;
+        data.reset(new u8[size]);
+    }
+
     u8* bump(size_t len)
     {
         u8* prev = data.get() + pos;
@@ -74,7 +85,7 @@ public:
     template <typename T>
     T* bump(size_t len=1)
     {
-        return reinterpret_cast<T*>(bump(len * sizeof(T)));
+        return (T*)(bump(len * sizeof(T)));
     }
 
     u8* writeBytes(void* d, size_t len)
@@ -96,7 +107,7 @@ public:
     template <typename T>
     T* write(T const& v)
     {
-        return reinterpret_cast<T*>(writeBytes((void*)&v, sizeof(T)));
+        return (T*)(writeBytes((void*)&v, sizeof(T)));
     }
 
     void writeBuffer(const Buffer &buf)
@@ -117,7 +128,7 @@ public:
     template <typename T>
     T get() const
     {
-        return reinterpret_cast<T>(get());
+        return (T)(get());
     }
 };
 
