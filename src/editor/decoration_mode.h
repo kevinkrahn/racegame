@@ -377,7 +377,7 @@ public:
     {
         ImGui::Spacing();
 
-        ImGui::ListBoxHeader("Transform Mode", {0,70});
+        ImGui::BeginListBox("Transform Mode", {0,70});
         if (ImGui::Selectable("Translate [g]", transformGizmo.getTransformMode() == TransformMode::TRANSLATE))
         {
             transformGizmo.setTransformMode(TransformMode::TRANSLATE);
@@ -393,7 +393,7 @@ public:
             transformGizmo.setTransformMode(TransformMode::SCALE);
             transformGizmo.reset();
         }
-        ImGui::ListBoxFooter();
+        ImGui::EndListBox();
 
         ImGui::Gap();
 

@@ -255,7 +255,7 @@ public:
     {
         ImGui::Spacing();
 
-        if (ImGui::ListBoxHeader("AI Paths"))
+        if (ImGui::BeginListBox("AI Paths"))
         {
             for (u32 i=0; i<scene->getPaths().size(); ++i)
             {
@@ -265,7 +265,7 @@ public:
                     selectedPoints.clear();
                 }
             }
-            ImGui::ListBoxFooter();
+            ImGui::EndListBox();
             ImGui::HelpMarker("Paths that the AI drivers will follow. The most optimal paths should be first in the list.");
         }
 

@@ -89,79 +89,20 @@ def fetch_dependencies():
 
     # Dear ImGui
     if fetch('https://github.com/ocornut/imgui.git', 'imgui'):
-        #fixfilename = 'external/imgui/backends/imgui_impl_sdl.cpp'
-        #f = open(fixfilename, 'r')
-        #cpp = f.read()
-        #f.close()
-        #newcpp = cpp.replace("#include <SDL.h>", "#include <SDL2/SDL.h>")
-        #f = open(fixfilename, 'w')
-        #f.write(newcpp)
-        #f.close()
+        fixfilename = 'external/imgui/backends/imgui_impl_sdl.cpp'
+        f = open(fixfilename, 'r')
+        cpp = f.read()
+        f.close()
+        newcpp = cpp.replace("#include <SDL.h>", "#include <SDL2/SDL.h>")
+        f = open(fixfilename, 'w')
+        f.write(newcpp)
+        f.close()
         pass
 
 
-def build_assets(force):
-    timestampCacheFilename = os.path.join('build', 'asset_timestamps')
-    timestampCache = {}
-
-    if not force:
-        try:
-            with open(timestampCacheFilename, 'rb') as file:
-                timestampCache = pickle.load(file)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-
-    def exportFile(blendFile):
-        blenderCommand = 'blender' if sys.platform != 'win32' else 'C:/Program Files/Blender Foundation/Blender 2.81/blender.exe'
-        output = subprocess.check_output([blenderCommand, '-b', blendFile, '-P', 'blender_exporter.py', '--enable-autoexec']).decode('utf-8')
-        #print(output)
-        return 'Saved to file:' in output
-
-    def copyFile(file, dest):
-        ensureDir(os.path.dirname(dest))
-        shutil.copy2(file, dest)
-
-    if False:
-        modified = False
-        for file in glob.glob('assets/**/*', recursive=True):
-            if not os.path.isfile(file):
-                continue
-
-            timestamp = os.path.getmtime(file)
-            #print(file, ':', timestamp)
-            if timestampCache.get(file, 0) < timestamp:
-                if file.endswith(".blend"):
-                    print('Exporting', file)
-                    if exportFile(file):
-                        modified = True
-                        timestampCache[file] = timestamp
-                else:
-                    print('Copying', file)
-                    copyFile(file, os.path.join('bin', os.path.relpath(file, 'assets')))
-                    modified = True
-                    timestampCache[file] = timestamp
-
-        for file in glob.glob('shaders/**/*', recursive=True):
-            if not os.path.isfile(file):
-                continue
-            #if timestampCache.get(file, 0) < timestamp:
-            #print('Copying', file)
-            copyFile(file, os.path.join('bin', file))
-            modified = True
-            timestampCache[file] = timestamp
-
-        if modified:
-            ensureDir('build')
-            with open(timestampCacheFilename, 'wb') as file:
-                pickle.dump(timestampCache, file)
-        else:
-            print('No assets to save')
-
-    for file in glob.glob('shaders/**/*', recursive=True):
-        if not os.path.isfile(file):
-            continue
-        copyFile(file, os.path.join('bin', file))
+def copyFile(file, dest):
+    ensureDir(os.path.dirname(dest))
+    shutil.copy2(file, dest)
 
 def build(build_type):
     job_count = str(os.cpu_count())
@@ -212,7 +153,6 @@ parser.add_argument('--release', help='Compile in release mode.', dest='build_ty
 subparsers = parser.add_subparsers(dest='command')
 compile = subparsers.add_parser('compile')
 clean = subparsers.add_parser('clean')
-assets = subparsers.add_parser('assets')
 deps = subparsers.add_parser('deps')
 
 args = parser.parse_args()
@@ -224,13 +164,16 @@ if args.command == 'compile':
     build(args.build_type)
 elif args.command == 'clean':
     cleanBuild()
-elif args.command == 'assets':
-    build_assets(False)
 elif args.command == 'deps':
     fetch_dependencies()
 else:
     fetch_dependencies()
-    build_assets(False)
+
+    for file in glob.glob('shaders/**/*', recursive=True):
+        if not os.path.isfile(file):
+            continue
+        copyFile(file, os.path.join('bin', file))
+
     if build(args.build_type):
         subprocess.run([os.path.abspath(os.path.join('bin', 'game'))], cwd=os.path.abspath('bin'))
 

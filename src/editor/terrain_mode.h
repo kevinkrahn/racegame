@@ -132,7 +132,7 @@ public:
         }
 
         ImGui::Gap();
-        if (ImGui::ListBoxHeader("Terrain Tool", {0, 145}))
+        if (ImGui::BeginListBox("Terrain Tool", {0, 145}))
         {
             const char* toolNames[] = { "Raise / Lower", "Perturb", "Flatten", "Smooth", "Erode", "Match Track", "Paint" };
             for (i32 i=0; i<(i32)TerrainTool::MAX; ++i)
@@ -142,7 +142,7 @@ public:
                     terrainTool = (TerrainTool)i;
                 }
             }
-            ImGui::ListBoxFooter();
+            ImGui::EndListBox();
         }
 
         ImGui::Gap();
