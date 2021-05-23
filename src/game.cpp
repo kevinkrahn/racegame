@@ -8,6 +8,8 @@
 #include "audio.h"
 #include "weapon.h"
 #include "imgui.h"
+#include "gui.h"
+#include "widgets.h"
 
 void Game::initPhysX()
 {
@@ -149,6 +151,8 @@ void Game::run()
     initializeVehicleData();
     registerEntities();
 
+    gui::init();
+
     println("Loaded resources in %.2f seconds", getTime() - loadStartTime);
 
     changeScene("race1");
@@ -216,6 +220,7 @@ void Game::run()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
+        gui::onBeginUpdate(deltaTime);
 
         if (isEditing)
         {
@@ -226,6 +231,8 @@ void Game::run()
             currentScene->onUpdate(renderer.get(), deltaTime);
         }
         menu.onUpdate(renderer.get(), deltaTime);
+        gui::widgetsDemo();
+        gui::onUpdate(renderer.get(), windowWidth, windowHeight, deltaTime);
         checkDebugKeys();
         ImGui::Render();
         renderer->render(deltaTime);

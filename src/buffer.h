@@ -94,6 +94,8 @@ public:
         {
             return data.get() + pos;
         }
+        // TODO: buffer shouldn't reallocate because that messes up pointers
+        // TODO: make this a template parameter
         if (pos + len > size)
         {
             u8* newData = new u8[size * 2];
@@ -107,7 +109,12 @@ public:
     template <typename T>
     T* write(T const& v)
     {
-        return (T*)(writeBytes((void*)&v, sizeof(T)));
+        u8* prev = data.get() + pos;
+        pos += align(sizeof(T), alignment);
+        assert(pos <= size);
+        new (prev) T(v);
+
+        return (T*)prev;
     }
 
     void writeBuffer(const Buffer &buf)
