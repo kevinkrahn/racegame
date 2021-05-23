@@ -7,8 +7,8 @@
 #include "input.h"
 #include "renderer.h"
 
-//#define WIDGET(name) struct ###name : public gui::_Widget<#name>
 #define WIDGET(name) struct name : public gui::Widget
+#define STATEFUL_WIDGET(name) struct name : public gui::StatefulWidget
 
 namespace gui
 {
@@ -17,7 +17,11 @@ namespace gui
         enum
         {
             BLOCK_INPUT = 1 << 0,
-            CLIP_OVERFLOW = 1 << 1,
+
+            STATUS_MOUSE_OVER = 1 << 1,
+            STATUS_MOUSE_DOWN = 1 << 2,
+            STATUS_SELECTED = 1 << 3,
+            STATUS_FOCUSED = 1 << 4,
         };
     };
 
@@ -53,6 +57,13 @@ namespace gui
             : left(horizontal), top(vertical), right(horizontal), bottom(vertical) {}
     };
 
+    struct InputStatus
+    {
+        Vec2 mousePos;
+        bool mousePressed;
+        bool mouseHandled;
+    };
+
     struct Widget
     {
         Widget* root = nullptr;
@@ -62,11 +73,12 @@ namespace gui
         Vec2 computedPosition = { 0, 0 };
         Vec2 computedSize = { 0, 0 };
         Vec2 desiredPosition = { 0, 0 };
+        // 0 = size to content; INFINITY = take up as much space as possible
         Vec2 desiredSize = { INFINITY, INFINITY };
         u32 flags = 0;
 
         Widget* build() { return this; }
-        virtual void layout(Constraints const& constraints)
+        virtual void computeSize(Constraints const& constraints)
         {
             computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
             computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
@@ -77,28 +89,68 @@ namespace gui
             childConstraints.minHeight = 0.f;
             childConstraints.maxHeight = computedSize.y;
 
-            assert(childConstraints.minWidth <= childConstraints.maxWidth);
-            assert(childConstraints.minHeight <= childConstraints.maxHeight);
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->computeSize(childConstraints);
+            }
+        }
+
+        void handleInput(InputStatus& input)
+        {
+            bool isMouseOver =
+                pointInRectangle(input.mousePos, computedPosition, computedPosition + computedSize);
+
+            if (isMouseOver)
+            {
+                flags |= WidgetFlags::STATUS_MOUSE_OVER;
+            }
+
+            if (!input.mouseHandled)
+            {
+                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                {
+                    onClick(input);
+                    flags |= WidgetFlags::STATUS_MOUSE_DOWN;
+                }
+            }
 
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->computedPosition = this->computedPosition + child->desiredPosition;
-                child->layout(childConstraints);
-            }
-        }
-        void render(Renderer* renderer)
-        {
-            this->onRender(renderer);
-            for (Widget* child = childFirst; child; child = child->neighbor) {
-                child->render(renderer);
+                child->handleInput(input);
             }
         }
 
-        virtual void onRender(Renderer* renderer) {}
-        virtual void onClick() {}
+        virtual void layout()
+        {
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->computedPosition = computedPosition + child->desiredPosition;
+                child->layout();
+            }
+        }
+
+        virtual void render(Renderer* renderer) {}
+
+        void doRender(Renderer* renderer)
+        {
+            this->render(renderer);
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->doRender(renderer);
+            }
+        }
+
+        virtual void onClick(InputStatus& input) {}
+
         virtual void onGainedFocus() {}
         virtual void onLostFocus() {}
     };
+
+    struct StatefulWidget : public Widget
+    {
+
+    };
+
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
 
@@ -123,14 +175,17 @@ namespace gui
         f32 aspectRatio = (f32)w / (f32)h;
         f32 baseHeight = 720;
         root.desiredSize = { baseHeight * aspectRatio, baseHeight };
-        root.desiredPosition = { 0, 0 };
-        root.computedSize = root.desiredSize;
-        root.computedPosition = root.desiredPosition;
 
-        //Vec2 screenDimMultiplier = Vec2((f32)w, (f32)h) / root.computedSize;
+        root.computeSize(Constraints());
+        root.layout();
 
-        root.layout(Constraints());
-        root.render(renderer);
+        InputStatus inputStatus;
+        inputStatus.mousePressed = g_input.isMouseButtonPressed(MOUSE_LEFT);
+        inputStatus.mousePos = g_input.getMousePosition();
+        inputStatus.mouseHandled = false;
+        root.handleInput(inputStatus);
+
+        root.doRender(renderer);
     }
 
     template <typename T>
