@@ -15,7 +15,7 @@ namespace gui
         Vec4 color;
 
         Text(Font* font, const char* text, Vec4 color=Vec4(1.0))
-            : font(font), text(text), color(color) {}
+            : Widget("Text"), font(font), text(text), color(color) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -44,7 +44,7 @@ namespace gui
         bool preserveAspectRatio = true;
 
         Image(Texture* tex, bool preserveAspectRatio=true)
-            : tex(tex), preserveAspectRatio(preserveAspectRatio) {}
+            : Widget("Image"), tex(tex), preserveAspectRatio(preserveAspectRatio) {}
         virtual void computeSize(Constraints const& constraints) override
         {
             if (desiredSize.x == 0.f)
@@ -109,15 +109,14 @@ namespace gui
         HAlign halign = HAlign::LEFT;
         VAlign valign = VAlign::TOP;
 
-        Container() {}
+        Container() : Widget("Container") {}
         Container(Insets const& padding, Insets const& margin = {},
                 Constraints const& additionalConstraints = {}, Vec4 const& backgroundColor = Vec4(0),
                 HAlign halign = HAlign::LEFT, VAlign valign = VAlign::TOP)
-            : padding(padding), margin(margin), additionalConstraints(additionalConstraints),
+            : Widget("Contaienr"), padding(padding), margin(margin), additionalConstraints(additionalConstraints),
               backgroundColor(backgroundColor), halign(halign), valign(valign) {}
-
         Container(Vec4 const& backgroundColor = Vec4(0))
-            : backgroundColor(backgroundColor) {}
+            : Widget("Container"), backgroundColor(backgroundColor) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -168,7 +167,7 @@ namespace gui
 
         virtual void layout() override
         {
-            if (childFirst)
+            for (Widget* child = childFirst; child; child = child->neighbor)
             {
                 Vec2 childPos(0, 0);
 
@@ -179,11 +178,11 @@ namespace gui
                 else if (halign == HAlign::RIGHT)
                 {
                     childPos.x =
-                        computedSize.x - childFirst->computedSize.x - margin.right - padding.right;
+                        computedSize.x - child->computedSize.x - margin.right - padding.right;
                 }
                 else if (halign == HAlign::CENTER)
                 {
-                    childPos.x = computedSize.x * 0.5f - childFirst->computedSize.x * 0.5f;
+                    childPos.x = computedSize.x * 0.5f - child->computedSize.x * 0.5f;
                 }
 
                 if (valign == VAlign::TOP)
@@ -193,16 +192,16 @@ namespace gui
                 else if (valign == VAlign::BOTTOM)
                 {
                     childPos.y =
-                        computedSize.y - childFirst->computedSize.y - margin.bottom - padding.bottom;
+                        computedSize.y - child->computedSize.y - margin.bottom - padding.bottom;
                 }
                 else if (valign == VAlign::CENTER)
                 {
-                    childPos.y = computedSize.y * 0.5f - childFirst->computedSize.y * 0.5f;
+                    childPos.y = computedSize.y * 0.5f - child->computedSize.y * 0.5f;
                 }
 
-                childFirst->computedPosition =
-                    computedPosition + childFirst->desiredPosition + childPos;
-                childFirst->layout();
+                child->computedPosition =
+                    computedPosition + child->desiredPosition + childPos;
+                child->layout();
             }
         }
 
@@ -219,6 +218,8 @@ namespace gui
 
     struct Row : public Widget
     {
+        Row() : Widget("Row") {}
+
         virtual void computeSize(Constraints const& constraints) override
         {
             Constraints childConstraints;
@@ -261,6 +262,8 @@ namespace gui
 
     struct Column : public Widget
     {
+        Column() : Widget("Row") {}
+
         virtual void computeSize(Constraints const& constraints) override
         {
             Constraints childConstraints;
@@ -305,7 +308,7 @@ namespace gui
     {
         u32 columns;
 
-        Grid(u32 columns) : columns(columns) {}
+        Grid(u32 columns) : Widget("Grid"), columns(columns) {}
 
         Widget* build()
         {
@@ -379,24 +382,39 @@ namespace gui
         // are not processed by later stages
     };
 
-    template <typename C>
+    namespace ButtonFlags
+    {
+        enum
+        {
+            BACK,
+        };
+    };
+
+    template <typename C=noop_t>
     struct Button : public Widget
     {
         C clickCallback;
         Container* bg;
         Container* border;
+        u32 buttonFlags;
 
-        Button(C const& callback) : clickCallback(callback) {}
+        Button(C const& callback=NOOP, u32 buttonFlags=0, const char* name="Button")
+            : Widget(name), clickCallback(callback), buttonFlags(buttonFlags) {}
+        Button(C const& callback=NOOP, u32 buttonFlags=0)
+            : Button(callback, buttonFlags) {}
 
         struct ButtonState
         {
             f32 hoverIntensity = 0.f;
             f32 hoverTimer = 0.f;
             f32 hoverValue = 0.f;
+            bool isPressed = false;
         };
 
         Widget* build()
         {
+            pushID("btn");
+
             flags |= WidgetFlags::BLOCK_INPUT;
 
             border = add(this, Container(Insets(4), {}, {}, Vec4(1)), desiredSize);
@@ -408,41 +426,56 @@ namespace gui
 
         virtual void render(RenderContext& ctx) override
         {
-            pushID(ctx, "btn");
-            ButtonState* state = getState<ButtonState>(ctx);
+            ButtonState* state = getState<ButtonState>();
 
-            if (flags & (WidgetFlags::STATUS_FOCUSED | WidgetFlags::STATUS_MOUSE_OVER))
+            if (flags & (WidgetFlags::STATUS_FOCUSED |
+                         WidgetFlags::STATUS_MOUSE_OVER | WidgetFlags::STATUS_SELECTED))
             {
                 state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
                 state->hoverTimer += ctx.deltaTime;
-                state->hoverValue = 0.05f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f * 0.2f;
+                state->hoverValue = 0.05f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f * 0.1f;
             }
             else
             {
-                state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 4.f, 0.f);
+                state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
                 state->hoverTimer = 0.f;
-                state->hoverValue = max(state->hoverValue - ctx.deltaTime * 4.f, 0.f);
+                state->hoverValue = max(state->hoverValue - ctx.deltaTime, 0.f);
             }
 
-            if (flags & (WidgetFlags::STATUS_MOUSE_PRESSED))
+            if (flags & (WidgetFlags::STATUS_MOUSE_PRESSED) ||
+                    ((buttonFlags & ButtonFlags::BACK) && g_input.didGoBack()))
             {
+                state->isPressed = true;
                 clickCallback();
             }
 
-            border->backgroundColor = Vec4(mix(Vec3(1,0,0), Vec3(1), state->hoverIntensity), 1.f);
-            bg->backgroundColor = Vec4(Vec3(state->hoverValue * state->hoverIntensity), 1.f);
+            const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
+            const Vec4 COLOR_NOT_SELECTED = Vec4(1.f);
+
+            if (state->isPressed)
+            {
+                border->backgroundColor = COLOR_SELECTED;
+                bg->backgroundColor = COLOR_SELECTED;
+            }
+            else
+            {
+                border->backgroundColor = mix(COLOR_NOT_SELECTED, COLOR_SELECTED, state->hoverIntensity);
+                bg->backgroundColor = Vec4(Vec3(state->hoverValue * state->hoverIntensity), 1.f);
+            }
         }
     };
 
-    template <typename C>
+    template <typename C=noop_t>
     struct TextButton : public Button<C>
     {
         const char* text;
 
-        TextButton(const char* text, C const& callback=[]{}) : Button<C>(callback), text(text) {}
+        TextButton(const char* text, C const& callback=NOOP, u32 buttonFlags=0)
+            : Button<C>(callback, buttonFlags, "TextButton"), text(text) {}
 
         Widget* build()
         {
+            this->pushID(text);
             auto btn = Button<C>::build();
             Font* font = &g_res.getFont("font", 30);
             add(btn, Text(font, text));
@@ -451,7 +484,6 @@ namespace gui
 
         virtual void render(RenderContext& ctx) override
         {
-            pushID(ctx, text);
             Button<C>::render(ctx);
         }
     };
@@ -476,14 +508,81 @@ namespace gui
 
     struct Window : public Widget {  };
 
+    template <typename CB1=noop_t, typename CB2=noop_t>
+    struct SlideAnimation : public Widget
+    {
+        f32 animationLength;
+        CB1 cb1;
+        CB2 cb2;
+        bool isDirectionForward = true;
+
+        struct AnimationState
+        {
+            f32 animationProgress = 0.f;
+            bool finished = false;
+        };
+
+        SlideAnimation(f32 animationLength = 1.f, CB1 const& cb1=NOOP, CB2 const& cb2=NOOP, bool isDirectionForward=true)
+            : Widget("SlideAnimation"), animationLength(animationLength),
+              cb1(cb1), cb2(cb2), isDirectionForward(isDirectionForward) {}
+
+        Widget* build()
+        {
+            pushID("SlideAnimation");
+            return this;
+        }
+
+        virtual void layout() override
+        {
+            auto state = getState<AnimationState>();
+            if (isDirectionForward)
+            {
+                state->animationProgress =
+                    min(state->animationProgress + g_game.deltaTime * (1.f / animationLength), 1.f);
+                if (state->animationProgress == 1.f && !state->finished)
+                {
+                    cb1();
+                    state->finished = true;
+                }
+            }
+            else
+            {
+                state->animationProgress =
+                    max(state->animationProgress - g_game.deltaTime * (1.f / animationLength), 0.f);
+                if (state->animationProgress == 0.f && !state->finished)
+                {
+                    cb2();
+                    state->finished = true;
+                }
+            }
+
+            //f32 t = easeInOutBezier(state->animationProgress);
+            f32 t = easeInOutParametric(state->animationProgress);
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->computedPosition = computedPosition + child->desiredPosition
+                    - Vec2(0, (1.f - t) * g_game.windowHeight);
+                child->layout();
+            }
+        }
+    };
+
     void widgetsDemo()
     {
-        add(&gui::root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(20), Vec2(50));
-        add(&gui::root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(40), Vec2(100));
+        static bool animateIn = true;
 
-        auto container = add(&gui::root,
+        auto root = add(&gui::root, SlideAnimation(1.f, []{
+            println("Animation intro finished!");
+        }, [] {
+            println("Animation outro finished!");
+        }, animateIn));
+
+        add(root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(20), Vec2(50));
+        add(root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(40), Vec2(100));
+
+        auto container = add(root,
                 Container({}, {}, {}, Vec4(1, 0, 0, 1.f), HAlign::CENTER, VAlign::CENTER),
-                Vec2(500 + cosf(g_game.currentTime * 3.f) * 50, 0), Vec2(200));
+                Vec2(500, 0), Vec2(200));
         container = add(container, Container(Insets(20), Insets(20), {}, Vec4(0, 0, 0, 0.8f)), Vec2(0));
 
         Font* font1 = &g_res.getFont("font", 30);
@@ -510,19 +609,23 @@ namespace gui
         add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        add(c, TextButton("Goodbye", [] { println("Farewell, comos!"); }), Vec2(0));
+        add(c, TextButton("Goodbye", [] {
+            println("Farewell, comos!");
+            animateIn = false;
+        }, ButtonFlags::BACK), Vec2(0));
 
-        auto gridContainer = add(&gui::root,
+        auto gridContainer = add(root,
                 Container(Insets(20), {}, {}, Vec4(0, 1, 0, 0.25f), HAlign::CENTER, VAlign::CENTER),
-                Vec2(600 + sinf(g_game.currentTime * 3.f) * 50, 400), Vec2(800, 200));
+                Vec2(600, 400), Vec2(800, 200));
         auto grid = add(gridContainer, Grid(4));
         for (u32 i=0; i<8; ++i)
         {
             auto container = add(grid,
                 Container(Insets(10), {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER),
                 Vec2(INFINITY, 80));
-            //add(container, Text(font1, "hi"));
-            add(container, TextButton(tmpStr("Button %i", i), []{}));
+            add(container, TextButton(tmpStr("Button %i", i), []{
+                println("clicked");
+            }));
         }
     }
 };

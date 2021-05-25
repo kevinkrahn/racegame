@@ -141,19 +141,23 @@ enum ControllerAxis
     AXIS_COUNT
 };
 
+const f32 BEGIN_REPEAT_DELAY = 0.4f;
+const f32 JOYSTICK_DEADZONE = 0.25f;
+
 class Controller
 {
     friend class Input;
 
 private:
+    Str64 guid;
     SDL_GameController* controller = nullptr;
     SDL_Haptic* haptic = nullptr;
+    f32 axis[AXIS_COUNT] = {};
+    f32 repeatTimer = 0.f;
     bool buttonDown[BUTTON_COUNT] = {};
     bool buttonPressed[BUTTON_COUNT] = {};
     bool buttonReleased[BUTTON_COUNT] = {};
-    f32 axis[AXIS_COUNT] = {};
     bool anyButtonPressed = false;
-    Str64 guid;
 
 public:
     Controller(SDL_GameController* controller, SDL_Haptic* haptic, Str64 const& guid)
@@ -334,6 +338,129 @@ public:
     f32 getMouseScroll()
     {
         return (f32)mouseScrollY;
+    }
+
+    bool didSelect()
+    {
+        bool result = isKeyPressed(KEY_RETURN);
+        for (auto& pair : getControllers())
+        {
+            if (pair.value.isButtonPressed(BUTTON_A))
+            {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    bool didGoBack()
+    {
+        if (isKeyPressed(KEY_ESCAPE))
+        {
+            return true;
+        }
+        for (auto& c : getControllers())
+        {
+            if (c.value.isButtonPressed(BUTTON_B))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    i32 didChangeSelectionX()
+    {
+        i32 result = (i32)(isKeyPressed(KEY_RIGHT, true) || didSelect())
+                    - (i32)isKeyPressed(KEY_LEFT, true);
+
+        for (auto& pair : getControllers())
+        {
+            Controller& controller = pair.value;
+            i32 tmpResult = (i32)controller.isButtonPressed(BUTTON_DPAD_RIGHT) -
+                            (i32)controller.isButtonPressed(BUTTON_DPAD_LEFT);
+            if (!tmpResult)
+            {
+                if (controller.repeatTimer == 0.f)
+                {
+                    f32 xaxis = controller.getAxis(AXIS_LEFT_X);
+                    if (xaxis < -JOYSTICK_DEADZONE)
+                    {
+                        tmpResult = -1;
+                        controller.repeatTimer = 0.1f;
+                    }
+                    else if (xaxis > JOYSTICK_DEADZONE)
+                    {
+                        tmpResult = 1;
+                        controller.repeatTimer = 0.1f;
+                    }
+                }
+            }
+            if (tmpResult)
+            {
+                result = tmpResult;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    i32 didChangeSelectionY()
+    {
+        i32 result = (i32)isKeyPressed(KEY_DOWN, true)
+                    - (i32)isKeyPressed(KEY_UP, true);
+
+        for (auto& pair : getControllers())
+        {
+            Controller& controller = pair.value;
+
+            i32 tmpResult = (i32)controller.isButtonPressed(BUTTON_DPAD_DOWN) -
+                            (i32)controller.isButtonPressed(BUTTON_DPAD_UP);
+            if (!tmpResult)
+            {
+                if (controller.repeatTimer == 0.f)
+                {
+                    f32 yaxis = pair.value.getAxis(AXIS_LEFT_Y);
+                    if (yaxis < -JOYSTICK_DEADZONE)
+                    {
+                        tmpResult = -1;
+                        controller.repeatTimer = 0.1f;
+                    }
+                    else if (yaxis > JOYSTICK_DEADZONE)
+                    {
+                        tmpResult = 1;
+                        controller.repeatTimer = 0.1f;
+                    }
+                }
+            }
+            if (tmpResult)
+            {
+                result = tmpResult;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    Vec2 getMovement()
+    {
+        Vec2 result = Vec2(
+                (f32)isKeyDown(KEY_RIGHT) - (f32)isKeyDown(KEY_LEFT),
+                (f32)isKeyDown(KEY_UP) - (f32)isKeyDown(KEY_DOWN));
+        for (auto& pair : getControllers())
+        {
+            Controller& controller = pair.value;
+            result.x += (f32)controller.isButtonDown(BUTTON_DPAD_RIGHT) -
+                        (f32)controller.isButtonDown(BUTTON_DPAD_LEFT);
+            result.x += controller.getAxis(AXIS_LEFT_X);
+            result.y += (f32)controller.isButtonDown(BUTTON_DPAD_UP) -
+                        (f32)controller.isButtonDown(BUTTON_DPAD_DOWN);
+            result.y += controller.getAxis(AXIS_LEFT_Y);
+        }
+        return result;
     }
 
     void onFrameBegin()

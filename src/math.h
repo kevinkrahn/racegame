@@ -621,6 +621,17 @@ inline f32 pointDirection(Vec2 v1, Vec2 v2)
     return -atan2f(d.x, d.y);
 }
 
+inline f32 easeInOutBezier(f32 t)
+{
+    return t * t * (3.f - 2.f * t);
+}
+
+inline f32 easeInOutParametric(f32 t)
+{
+    f32 sqr = t * t;
+    return sqr / (2.f * (sqr - t) + 1.f);
+}
+
 inline f32 lerp(f32 from, f32 to, f32 t)
 {
     return from + (to - from) * t;
