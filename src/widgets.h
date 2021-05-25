@@ -327,17 +327,22 @@ namespace gui
     {
         C clickCallback;
         Container* bg;
+        Container* border;
 
         Button(C const& callback) : clickCallback(callback) {}
 
         struct ButtonState
         {
             f32 hoverIntensity = 0.f;
+            f32 hoverTimer = 0.f;
+            f32 hoverValue = 0.f;
         };
 
         Widget* build()
         {
-            auto border = add(this, Container(Insets(4), {}, {}, Vec4(1)), Vec2(0), desiredSize);
+            flags |= WidgetFlags::BLOCK_INPUT;
+
+            border = add(this, Container(Insets(4), {}, {}, Vec4(1)), Vec2(0), desiredSize);
             bg = add(border,
                     Container(Insets(10), {}, {}, Vec4(0, 0, 0, 1), HAlign::CENTER, VAlign::CENTER),
                     Vec2(0), desiredSize);
@@ -346,10 +351,29 @@ namespace gui
 
         virtual void render(RenderContext& ctx) override
         {
-            ctx.keyBuf.write(".btn");
-            ButtonState* state = getState<ButtonState>(ctx.keyBuf);
-            state->hoverIntensity += ctx.deltaTime + computedPosition.y * 0.0001f;
-            bg->backgroundColor = Vec4(Vec3((sinf(state->hoverIntensity) + 1.f) * 0.5f), 1.f);
+            pushID(ctx, "btn");
+            ButtonState* state = getState<ButtonState>(ctx);
+
+            if (flags & (WidgetFlags::STATUS_FOCUSED | WidgetFlags::STATUS_MOUSE_OVER))
+            {
+                state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
+                state->hoverTimer += ctx.deltaTime;
+                state->hoverValue = 0.05f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f * 0.2f;
+            }
+            else
+            {
+                state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 4.f, 0.f);
+                state->hoverTimer = 0.f;
+                state->hoverValue = max(state->hoverValue - ctx.deltaTime * 4.f, 0.f);
+            }
+
+            if (flags & (WidgetFlags::STATUS_MOUSE_PRESSED))
+            {
+                clickCallback();
+            }
+
+            border->backgroundColor = Vec4(mix(Vec3(1,0,0), Vec3(1), state->hoverIntensity), 1.f);
+            bg->backgroundColor = Vec4(Vec3(state->hoverValue * state->hoverIntensity), 1.f);
         }
     };
 
@@ -370,8 +394,7 @@ namespace gui
 
         virtual void render(RenderContext& ctx) override
         {
-            ctx.keyBuf.write(".txtbtn.");
-            ctx.keyBuf.write(text);
+            pushID(ctx, text);
             Button<C>::render(ctx);
         }
     };

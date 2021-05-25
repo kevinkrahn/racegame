@@ -280,7 +280,6 @@ public:
 
     bool isMouseButtonPressed(u32 button)
     {
-
         assert(button < MOUSE_BUTTON_COUNT);
         return mouseButtonPressed[button];
     }

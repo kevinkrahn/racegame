@@ -15,10 +15,14 @@ namespace gui
         {
             BLOCK_INPUT = 1 << 0,
 
-            STATUS_MOUSE_OVER = 1 << 1,
-            STATUS_MOUSE_DOWN = 1 << 2,
-            STATUS_SELECTED = 1 << 3,
-            STATUS_FOCUSED = 1 << 4,
+            STATUS_MOUSE_OVER      = 1 << 1,
+            STATUS_MOUSE_DOWN      = 1 << 2,
+            STATUS_MOUSE_PRESSED   = 1 << 3,
+            STATUS_MOUSE_RELEASED  = 1 << 4,
+            STATUS_SELECTED        = 1 << 5,
+            STATUS_FOCUSED         = 1 << 6,
+            STATUS_GAINED_FOCUSED  = 1 << 7,
+            STATUS_LOST_FOCUSED    = 1 << 8,
         };
     };
 
@@ -31,7 +35,7 @@ namespace gui
 
         Constraints() {}
         Constraints(Constraints const& other) = default;
-        Constraints(Constraints&& other) = default;
+        Constraints(Constraints && other) = default;
         Constraints(f32 minWidth, f32 maxWidth=INFINITY, f32 minHeight=INFINITY, f32 maxHeight=INFINITY)
             : minWidth(minWidth), maxWidth(maxWidth), minHeight(minHeight), maxHeight(maxHeight) {}
     };
@@ -57,19 +61,45 @@ namespace gui
     struct InputStatus
     {
         Vec2 mousePos;
-        bool mousePressed;
-        bool mouseHandled;
+        bool mousePressed : 1;
+        bool mouseDown : 1;
+        bool mouseReleased : 1;
+        bool inputHandled : 1;
     };
+
+    template <typename T>
+    struct WidgetState
+    {
+        T state;
+        u32 frameCountWhenLastAccessed = 0;
+    };
+
+    struct WidgetStateNode
+    {
+        Str32 name;
+        // TODO: Use u16 offset into widgetStateNodeStorage instead of pointers
+        WidgetStateNode* childFirst = nullptr;
+        WidgetStateNode* childLast = nullptr;
+        WidgetStateNode* neighbor = nullptr;
+        void* state = nullptr;
+#ifndef NDEBUG
+        WidgetStateNode* parent = nullptr;
+#endif
+    };
+    //static_assert(sizeof(WidgetStateNode) == 64);
 
     struct RenderContext
     {
         Renderer* renderer;
-        StrBuf& keyBuf;
+        WidgetStateNode* currentWidgetStateNode;
         f32 deltaTime;
+        u32 stateDepth = 0;
     };
 
     struct Widget
     {
+        // TODO: Use u32 byte offset into widgetBuffer instead of pointers
+        // if buffer is aligned to 16-byte boundries I could even use a u16
         Widget* root = nullptr;
         Widget* childFirst = nullptr;
         Widget* childLast = nullptr;
@@ -126,20 +156,21 @@ namespace gui
 
         void handleInput(InputStatus& input)
         {
-            bool isMouseOver =
-                pointInRectangle(input.mousePos, computedPosition, computedPosition + computedSize);
-
-            if (isMouseOver)
+            if (flags & WidgetFlags::BLOCK_INPUT)
             {
-                flags |= WidgetFlags::STATUS_MOUSE_OVER;
-            }
+                bool isMouseOver =
+                    pointInRectangle(input.mousePos, computedPosition, computedPosition + computedSize);
 
-            if (!input.mouseHandled)
-            {
-                if (g_input.isMouseButtonPressed(MOUSE_LEFT))
+                if (isMouseOver)
                 {
-                    onClick(input);
-                    flags |= WidgetFlags::STATUS_MOUSE_DOWN;
+                    flags |= WidgetFlags::STATUS_MOUSE_OVER;
+
+                    if (input.mousePressed)
+                    {
+                        flags |= WidgetFlags::STATUS_MOUSE_PRESSED;
+                    }
+
+                    return;
                 }
             }
 
@@ -163,15 +194,14 @@ namespace gui
         void doRender(RenderContext& ctx)
         {
             this->render(ctx);
-            u32 prevSize = ctx.keyBuf.size();
+
+            WidgetStateNode* prevNode = ctx.currentWidgetStateNode;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
                 child->doRender(ctx);
-                ctx.keyBuf.setSize(prevSize);
+                ctx.currentWidgetStateNode = prevNode;
             }
         }
-
-        virtual void onClick(InputStatus& input) {}
 
         virtual void onGainedFocus() {}
         virtual void onLostFocus() {}
@@ -182,17 +212,42 @@ namespace gui
 
     Buffer widgetBuffer;
     Buffer widgetStateBuffer;
-    Map<Str64, void*> widgetStateMap;
+    SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
+    WidgetStateNode rootWidgetStateNode;
     Widget root;
     u32 frameCount;
     u32 widgetCount;
 
-    template <typename T>
-    struct WidgetState
+    void pushID(RenderContext& ctx, const char* id)
     {
-        T state;
-        u32 frameCountWhenLastAccessed = 0;
-    };
+        ctx.stateDepth++;
+
+        for (WidgetStateNode* child = ctx.currentWidgetStateNode->childFirst;
+             child; child = child->neighbor)
+        {
+            if (strcmp(id, child->name.data()) == 0)
+            {
+                ctx.currentWidgetStateNode = child;
+                return;
+            }
+        }
+
+        widgetStateNodeStorage.push(WidgetStateNode{ Str32(id) });
+        WidgetStateNode* newNode = &widgetStateNodeStorage.back();
+        newNode->parent = ctx.currentWidgetStateNode;
+
+        if (!ctx.currentWidgetStateNode->childFirst)
+        {
+            ctx.currentWidgetStateNode->childFirst = newNode;
+        }
+        else
+        {
+            ctx.currentWidgetStateNode->childLast->neighbor = newNode;
+        }
+
+        ctx.currentWidgetStateNode->childLast = newNode;
+        ctx.currentWidgetStateNode = newNode;
+    }
 
     // TODO: what about modal dialogs?
 
@@ -223,14 +278,19 @@ namespace gui
 
         InputStatus inputStatus;
         inputStatus.mousePressed = g_input.isMouseButtonPressed(MOUSE_LEFT);
+        inputStatus.mouseDown = g_input.isMouseButtonDown(MOUSE_LEFT);
+        inputStatus.mouseReleased = g_input.isMouseButtonReleased(MOUSE_LEFT);
         inputStatus.mousePos = g_input.getMousePosition();
-        inputStatus.mouseHandled = false;
+        inputStatus.inputHandled = false;
         root.handleInput(inputStatus);
 
-        static StrBuf buf;
-        buf.clear();
-        buf.write("root");
-        RenderContext ctx{renderer, buf, deltaTime};
+        rootWidgetStateNode.name = "root";
+
+        RenderContext ctx;
+        ctx.renderer = renderer;
+        ctx.currentWidgetStateNode = &rootWidgetStateNode;
+        ctx.deltaTime = deltaTime;
+
         root.doRender(ctx);
     }
 
@@ -261,28 +321,27 @@ namespace gui
         return w;
     }
 
-    // TODO: This could be greatly optimized. Should build a tree for the key on the way down the render tree
     template <typename T>
-    inline T* getState(StrBuf const& buf)
+    inline T* getState(RenderContext& ctx)
     {
-        Str64* s = (Str64*)buf.data(); // HACK (Str64 happens to be nothing but an array of characters)
-        void** statePtr = widgetStateMap.get(*s);
-        if (!statePtr)
+        if (ctx.currentWidgetStateNode->state)
         {
-            WidgetState<T>* newState = widgetStateBuffer.writeDefault<WidgetState<T>>();
-            widgetStateMap.set(*s, newState);
-            newState->frameCountWhenLastAccessed = frameCount;
-            return &newState->state;
+            WidgetState<T>* state = (WidgetState<T>*)ctx.currentWidgetStateNode->state;
+
+            // if the state for this key was not accessed last frame, reset it
+            if (state->frameCountWhenLastAccessed < frameCount - 1)
+            {
+                state->state = T{};
+            }
+            state->frameCountWhenLastAccessed = frameCount;
+
+            return &state->state;
         }
 
-        WidgetState<T>* state = *(WidgetState<T>**)statePtr;
+        WidgetState<T>* newState = widgetStateBuffer.writeDefault<WidgetState<T>>();
+        newState->frameCountWhenLastAccessed = frameCount;
+        ctx.currentWidgetStateNode->state = (void*)newState;
 
-        // if the state for this key was not accessed last frame, reset it
-        if (state->frameCountWhenLastAccessed < frameCount - 1)
-        {
-            state->state = T{};
-        }
-        state->frameCountWhenLastAccessed = frameCount;
-        return &state->state;
+        return &newState->state;
     }
 }
