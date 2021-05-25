@@ -9,6 +9,8 @@
 
 namespace gui
 {
+    struct Widget;
+
     namespace WidgetFlags
     {
         enum
@@ -92,7 +94,7 @@ namespace gui
     };
     //static_assert(sizeof(WidgetStateNode) == 64);
 
-    struct RenderContext
+    struct WidgetContext
     {
         Renderer* renderer;
         f32 deltaTime;
@@ -107,14 +109,16 @@ namespace gui
 
     const f32 REFERENCE_HEIGHT = 1080.f;
 
-    u32 frameCount;
     u32 widgetCount;
+    u32 frameCount;
 
     Buffer widgetBuffer;
     Buffer widgetStateBuffer;
     SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
-    struct Widget* selectedWidget = nullptr;
-    struct Widget* focusedWidget = nullptr;
+    Widget* root = nullptr;
+    Widget* selectedWidget = nullptr;
+    Widget* focusedWidget = nullptr;
+    SmallArray<Widget*> selectionContexts;
 
     struct Widget
     {
@@ -221,18 +225,18 @@ namespace gui
             }
         }
 
-        virtual void layout()
+        virtual void layout(WidgetContext& ctx)
         {
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
                 child->computedPosition = computedPosition + child->desiredPosition;
-                child->layout();
+                child->layout(ctx);
             }
         }
 
-        virtual void render(RenderContext& ctx) {}
+        virtual void render(WidgetContext& ctx) {}
 
-        void doRender(RenderContext& ctx)
+        void doRender(WidgetContext& ctx)
         {
             computedSize *= ctx.scale;
             computedPosition *= ctx.scale;
@@ -300,10 +304,9 @@ namespace gui
         }
     };
 
-    Widget root("Root");
-
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
+
     // TODO: what about modal dialogs?
 
     void init()
@@ -315,40 +318,25 @@ namespace gui
 
     void onBeginUpdate(f32 deltaTime)
     {
-        root = Widget("Root");
-        root.root = &root;
-        root.stateNode = &widgetStateNodeStorage.front();
         widgetBuffer.clear();
+        selectionContexts.clear();
         widgetCount = 0;
+
+        root = widgetBuffer.write<Widget>(Widget("Root"));
+        root->root = root;
+        root->stateNode = &widgetStateNodeStorage.front();
     }
 
     void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count)
     {
         frameCount = count;
 
-        root.desiredSize = { (f32)w, (f32)h };
-
-        root.computeSize(Constraints());
-        root.layout();
-
         f32 aspectRatio = (f32)w / (f32)h;
         Vec2 referenceScreenSize(REFERENCE_HEIGHT * aspectRatio, REFERENCE_HEIGHT);
         Vec2 actualScreenSize((f32)w, (f32)h);
         Vec2 sizeMultiplier = actualScreenSize / referenceScreenSize;
 
-        MouseInput mouseInput;
-        mouseInput.mousePressed = g_input.isMouseButtonPressed(MOUSE_LEFT);
-        mouseInput.mouseDown = g_input.isMouseButtonDown(MOUSE_LEFT);
-        mouseInput.mouseReleased = g_input.isMouseButtonReleased(MOUSE_LEFT);
-        mouseInput.mousePos = g_input.getMousePosition() / actualScreenSize * referenceScreenSize;
-
-        root.handleMouseInput(mouseInput);
-
-        if (selectedWidget)
-        {
-        }
-
-        RenderContext ctx;
+        WidgetContext ctx;
         ctx.renderer = renderer;
         ctx.deltaTime = deltaTime;
         ctx.aspectRatio = aspectRatio;
@@ -356,7 +344,23 @@ namespace gui
         ctx.actualScreenSize = actualScreenSize;
         ctx.scale = (f32)h / REFERENCE_HEIGHT;
 
-        root.doRender(ctx);
+        root->desiredSize = { (f32)w, (f32)h };
+        root->computeSize(Constraints());
+        root->layout(ctx);
+
+        MouseInput mouseInput;
+        mouseInput.mousePressed = g_input.isMouseButtonPressed(MOUSE_LEFT);
+        mouseInput.mouseDown = g_input.isMouseButtonDown(MOUSE_LEFT);
+        mouseInput.mouseReleased = g_input.isMouseButtonReleased(MOUSE_LEFT);
+        mouseInput.mousePos = g_input.getMousePosition() / actualScreenSize * referenceScreenSize;
+
+        root->handleMouseInput(mouseInput);
+
+        if (selectedWidget)
+        {
+        }
+
+        root->doRender(ctx);
     }
 
     template <typename T>
@@ -389,4 +393,23 @@ namespace gui
 
         return w;
     }
+
+    void setDefaultSelection(Widget* widget)
+    {
+
+    }
+
+    // TODO: Add push api.
+    // push(Container())
+    // pushSize()
+    // pushPosition()
+    //
+    // add(Button())
+    // add(Button())
+    // add(Button())
+    // add(Button())
+    // ...
+    // popPosition()
+    // popSize()
+    // pop()
 }

@@ -32,7 +32,7 @@ namespace gui
             assert(constraints.maxHeight > 0);
         }
 
-        virtual void render(RenderContext& ctx) override
+        virtual void render(WidgetContext& ctx) override
         {
             ui::text(font, text, computedPosition, Vec3(1.f), 1.f);
         }
@@ -94,7 +94,7 @@ namespace gui
             assert(childFirst == nullptr);
         }
 
-        virtual void render(RenderContext& ctx) override
+        virtual void render(WidgetContext& ctx) override
         {
             ui::rect(0, tex, computedPosition, computedSize);
         }
@@ -165,7 +165,7 @@ namespace gui
                 : maxDim.y + verticalInset;
         }
 
-        virtual void layout() override
+        virtual void layout(WidgetContext& ctx) override
         {
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
@@ -201,11 +201,11 @@ namespace gui
 
                 child->computedPosition =
                     computedPosition + child->desiredPosition + childPos;
-                child->layout();
+                child->layout(ctx);
             }
         }
 
-        virtual void render(RenderContext& ctx) override
+        virtual void render(WidgetContext& ctx) override
         {
             if (backgroundColor.a > 0.f)
             {
@@ -246,7 +246,7 @@ namespace gui
                 : maxHeight;
         }
 
-        virtual void layout() override
+        virtual void layout(WidgetContext& ctx) override
         {
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
@@ -254,7 +254,7 @@ namespace gui
                 // TODO: collapse adjacent margins
                 child->computedPosition =
                     computedPosition + child->desiredPosition + Vec2(offset, 0.f);
-                child->layout();
+                child->layout(ctx);
                 offset += child->computedSize.x;
             }
         }
@@ -290,7 +290,7 @@ namespace gui
                 : totalHeight;
         }
 
-        virtual void layout() override
+        virtual void layout(WidgetContext& ctx) override
         {
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
@@ -298,7 +298,7 @@ namespace gui
                 // TODO: collapse adjacent margins
                 child->computedPosition =
                     computedPosition + child->desiredPosition + Vec2(0.f, offset);
-                child->layout();
+                child->layout(ctx);
                 offset += child->computedSize.y;
             }
         }
@@ -349,7 +349,7 @@ namespace gui
                 : totalHeight;
         }
 
-        virtual void layout() override
+        virtual void layout(WidgetContext& ctx) override
         {
             f32 totalHeight = 0.f;
             f32 maxRowHeight = 0.f;
@@ -358,7 +358,7 @@ namespace gui
             {
                 child->computedPosition =
                     computedPosition + Vec2(rowChildCount * computedSize.x / columns, totalHeight);
-                child->layout();
+                child->layout(ctx);
 
                 maxRowHeight = max(maxRowHeight, child->computedSize.y);
 
@@ -424,7 +424,7 @@ namespace gui
             return bg;
         }
 
-        virtual void render(RenderContext& ctx) override
+        virtual void render(WidgetContext& ctx) override
         {
             ButtonState* state = getState<ButtonState>();
 
@@ -482,7 +482,7 @@ namespace gui
             return btn;
         }
 
-        virtual void render(RenderContext& ctx) override
+        virtual void render(WidgetContext& ctx) override
         {
             Button<C>::render(ctx);
         }
@@ -532,7 +532,7 @@ namespace gui
             return this;
         }
 
-        virtual void layout() override
+        virtual void layout(WidgetContext& ctx) override
         {
             auto state = getState<AnimationState>();
             if (isDirectionForward)
@@ -562,7 +562,7 @@ namespace gui
             {
                 child->computedPosition = computedPosition + child->desiredPosition
                     - Vec2(0, (1.f - t) * g_game.windowHeight);
-                child->layout();
+                child->layout(ctx);
             }
         }
     };
@@ -571,7 +571,7 @@ namespace gui
     {
         static bool animateIn = true;
 
-        auto root = add(&gui::root, SlideAnimation(1.f, []{
+        auto root = add(gui::root, SlideAnimation(1.f, []{
             println("Animation intro finished!");
         }, [] {
             println("Animation outro finished!");
@@ -603,7 +603,8 @@ namespace gui
         add(row, Text(font2, "GOODNESS"));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0));
+        setDefaultSelection(
+            add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0)));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
         add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0));
