@@ -99,7 +99,7 @@ namespace gui
     struct Widget
     {
         // TODO: Use u32 byte offset into widgetBuffer instead of pointers
-        // if buffer is aligned to 16-byte boundries I could even use a u16
+        // if buffer is aligned to 16-byte boundaries I could even use a u16
         Widget* root = nullptr;
         Widget* childFirst = nullptr;
         Widget* childLast = nullptr;
@@ -139,19 +139,12 @@ namespace gui
                 }
             }
 
-            if (desiredSize.x == 0.f)
-            {
-                assert(childFirst);
-                desiredSize.x = maxDim.x;
-            }
-            computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
-
-            if (desiredSize.y == 0.f)
-            {
-                assert(childFirst);
-                desiredSize.y = maxDim.y;
-            }
-            computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
+            computedSize.x = desiredSize.x > 0.f
+                ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                : maxDim.x;
+            computedSize.y = desiredSize.y > 0.f
+                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                : maxDim.y;
         }
 
         void handleInput(InputStatus& input)
@@ -202,9 +195,6 @@ namespace gui
                 ctx.currentWidgetStateNode = prevNode;
             }
         }
-
-        virtual void onGainedFocus() {}
-        virtual void onLostFocus() {}
     };
 
     // TODO: make the Widget small enough
@@ -295,7 +285,7 @@ namespace gui
     }
 
     template <typename T>
-    T* add(Widget* parent, T const& widget, Vec2 position={0,0}, Vec2 size={INFINITY,INFINITY},
+    T* add(Widget* parent, T const& widget, Vec2 size={INFINITY,INFINITY}, Vec2 position={0,0},
             u32 flags=0)
     {
         T* w = widgetBuffer.write<T>(widget);

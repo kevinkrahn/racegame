@@ -20,8 +20,12 @@ namespace gui
         virtual void computeSize(Constraints const& constraints) override
         {
             desiredSize = font->stringDimensions(text);
+#if 0
             computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
             computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
+#else
+            computedSize = desiredSize;
+#endif
 
             assert(childFirst == nullptr);
             assert(constraints.maxWidth > 0);
@@ -130,6 +134,7 @@ namespace gui
             actualConstraints.maxHeight =
                 clamp(additionalConstraints.maxHeight, constraints.minHeight, constraints.maxHeight);
 
+            Vec2 maxDim(0, 0);
             if (childFirst)
             {
                 f32 w = desiredSize.x > 0.f
@@ -146,25 +151,19 @@ namespace gui
                 childConstraints.minHeight = 0.f;
                 childConstraints.maxHeight = max(h - verticalInset, 0.f);
 
-                childFirst->computeSize(childConstraints);
-
-                // TODO: Should be a standard way to specify that a widget has at most one child
-                assert(!childFirst->neighbor);
+                for (Widget* child = childFirst; child; child = child->neighbor)
+                {
+                    child->computeSize(childConstraints);
+                    maxDim = max(maxDim, child->computedSize);
+                }
             }
 
-            if (desiredSize.x == 0.f)
-            {
-                assert(childFirst);
-                desiredSize.x = childFirst->computedSize.x + horizontalInset;
-            }
-            computedSize.x = clamp(desiredSize.x, actualConstraints.minWidth, actualConstraints.maxWidth);
-
-            if (desiredSize.y == 0.f)
-            {
-                assert(childFirst);
-                desiredSize.y = childFirst->computedSize.y + verticalInset;
-            }
-            computedSize.y = clamp(desiredSize.y, actualConstraints.minHeight, actualConstraints.maxHeight);
+            computedSize.x = desiredSize.x > 0.f
+                ? clamp(desiredSize.x, actualConstraints.minWidth, actualConstraints.maxWidth)
+                : maxDim.x + horizontalInset;
+            computedSize.y = desiredSize.y > 0.f
+                ? clamp(desiredSize.y, actualConstraints.minHeight, actualConstraints.maxHeight)
+                : maxDim.y + verticalInset;
         }
 
         virtual void layout() override
@@ -211,9 +210,9 @@ namespace gui
         {
             if (backgroundColor.a > 0.f)
             {
-                ui::rect(0, nullptr, computedPosition + Vec2(margin.left, margin.top),
+                ui::rectBlur(0, nullptr, computedPosition + Vec2(margin.left, margin.top),
                     computedSize - Vec2(margin.left + margin.right, margin.top + margin.bottom),
-                    backgroundColor.rgb, backgroundColor.a);
+                    backgroundColor);
             }
         }
     };
@@ -238,17 +237,12 @@ namespace gui
                 assert(child->desiredSize.x != INFINITY);
             }
 
-            if (desiredSize.x == 0.f)
-            {
-                desiredSize.x = totalWidth;
-            }
-            computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
-
-            if (desiredSize.y == 0.f)
-            {
-                desiredSize.y = maxHeight;
-            }
-            computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
+            computedSize.x = desiredSize.x > 0.f
+                ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                : totalWidth;
+            computedSize.y = desiredSize.y > 0.f
+                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                : maxHeight;
         }
 
         virtual void layout() override
@@ -256,6 +250,7 @@ namespace gui
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
+                // TODO: collapse adjacent margins
                 child->computedPosition =
                     computedPosition + child->desiredPosition + Vec2(offset, 0.f);
                 child->layout();
@@ -284,17 +279,12 @@ namespace gui
                 assert(child->desiredSize.y != INFINITY);
             }
 
-            if (desiredSize.x == 0.f)
-            {
-                desiredSize.x = maxWidth;
-            }
-            computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
-
-            if (desiredSize.y == 0.f)
-            {
-                desiredSize.y = totalHeight;
-            }
-            computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
+            computedSize.x = desiredSize.x > 0.f
+                ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                : maxWidth;
+            computedSize.y = desiredSize.y > 0.f
+                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                : totalHeight;
         }
 
         virtual void layout() override
@@ -302,6 +292,7 @@ namespace gui
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
+                // TODO: collapse adjacent margins
                 child->computedPosition =
                     computedPosition + child->desiredPosition + Vec2(0.f, offset);
                 child->layout();
@@ -310,7 +301,73 @@ namespace gui
         }
     };
 
-    struct Grid : public Widget { };
+    struct Grid : public Widget
+    {
+        u32 columns;
+
+        Grid(u32 columns) : columns(columns) {}
+
+        Widget* build()
+        {
+            assert(desiredSize.x > 0.f);
+            return this;
+        }
+
+        virtual void computeSize(Constraints const& constraints) override
+        {
+            computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
+
+            Constraints childConstraints;
+            childConstraints.minWidth = 0.f;
+            childConstraints.maxWidth = computedSize.x / columns;
+            childConstraints.minHeight = 0.f;
+            childConstraints.maxHeight = constraints.maxHeight;
+
+            f32 totalHeight = 0.f;
+            f32 maxRowHeight = 0.f;
+            u32 rowChildCount = 0;
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->computeSize(childConstraints);
+                maxRowHeight = max(maxRowHeight, child->computedSize.y);
+
+                if (++rowChildCount == columns)
+                {
+                    totalHeight += maxRowHeight;
+                    maxRowHeight = 0.f;
+                    rowChildCount = 0;
+                }
+
+                assert(child->desiredSize.y != INFINITY);
+            }
+
+            computedSize.y = desiredSize.y > 0.f
+                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                : totalHeight;
+        }
+
+        virtual void layout() override
+        {
+            f32 totalHeight = 0.f;
+            f32 maxRowHeight = 0.f;
+            u32 rowChildCount = 0;
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->computedPosition =
+                    computedPosition + Vec2(rowChildCount * computedSize.x / columns, totalHeight);
+                child->layout();
+
+                maxRowHeight = max(maxRowHeight, child->computedSize.y);
+
+                if (++rowChildCount == columns)
+                {
+                    totalHeight += maxRowHeight;
+                    maxRowHeight = 0.f;
+                    rowChildCount = 0;
+                }
+            }
+        }
+    };
 
     struct FlexibleColumn : public Widget { };
 
@@ -342,10 +399,10 @@ namespace gui
         {
             flags |= WidgetFlags::BLOCK_INPUT;
 
-            border = add(this, Container(Insets(4), {}, {}, Vec4(1)), Vec2(0), desiredSize);
+            border = add(this, Container(Insets(4), {}, {}, Vec4(1)), desiredSize);
             bg = add(border,
                     Container(Insets(10), {}, {}, Vec4(0, 0, 0, 1), HAlign::CENTER, VAlign::CENTER),
-                    Vec2(0), desiredSize);
+                    desiredSize);
             return bg;
         }
 
@@ -421,38 +478,51 @@ namespace gui
 
     void widgetsDemo()
     {
-        add(&gui::root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(50), Vec2(20));
-        add(&gui::root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(100), Vec2(40));
+        add(&gui::root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(20), Vec2(50));
+        add(&gui::root, Container({}, {}, {}, Vec4(0, 1, 0, 0.5f)), Vec2(40), Vec2(100));
 
         auto container = add(&gui::root,
                 Container({}, {}, {}, Vec4(1, 0, 0, 1.f), HAlign::CENTER, VAlign::CENTER),
-                Vec2(200), Vec2(350, 450));
-        container = add(container, Container(Insets(20), Insets(20), {}, Vec4(0, 0, 0, 0.8f)), Vec2(0), Vec2(0));
+                Vec2(500 + cosf(g_game.currentTime * 3.f) * 50, 0), Vec2(200));
+        container = add(container, Container(Insets(20), Insets(20), {}, Vec4(0, 0, 0, 0.8f)), Vec2(0));
 
         Font* font1 = &g_res.getFont("font", 30);
         Font* font2 = &g_res.getFont("font_bold", 40);
 
-        auto column = add(container, Column(), Vec2(0), Vec2(0));
-        auto c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        auto column = add(container, Column(), Vec2(0));
+        auto c = add(column, Container(Insets(5)), Vec2(0));
         add(c, Text(font1, "Hello"));
-        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        c = add(column, Container(Insets(5)), Vec2(0));
         add(c, Text(font2, "World!"));
-        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        c = add(column, Container(Insets(5)), Vec2(0));
         add(c, Text(font1, "Hello"));
-        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        c = add(column, Container(Insets(5)), Vec2(0));
         add(c, Text(font2, "World!"));
-        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        auto row = add(c, Row(), Vec2(0), Vec2(0));
+        c = add(column, Container(Insets(5)), Vec2(0));
+        auto row = add(c, Row(), Vec2(0));
         add(row, Text(font1, "Oh my"));
         add(row, Text(font2, "GOODNESS"));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0), Vec2(0, 0));
+        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0), Vec2(0, 0));
+        add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        add(c, TextButton("Goodbye", [] { println("Farewell, comos!"); }), Vec2(0), Vec2(0, 0));
+        add(c, TextButton("Goodbye", [] { println("Farewell, comos!"); }), Vec2(0));
+
+        auto gridContainer = add(&gui::root,
+                Container(Insets(20), {}, {}, Vec4(0, 1, 0, 0.25f), HAlign::CENTER, VAlign::CENTER),
+                Vec2(600 + sinf(g_game.currentTime * 3.f) * 50, 400), Vec2(800, 200));
+        auto grid = add(gridContainer, Grid(4));
+        for (u32 i=0; i<8; ++i)
+        {
+            auto container = add(grid,
+                Container(Insets(10), {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER),
+                Vec2(INFINITY, 80));
+            //add(container, Text(font1, "hi"));
+            add(container, TextButton(tmpStr("Button %i", i), []{}));
+        }
     }
 };
