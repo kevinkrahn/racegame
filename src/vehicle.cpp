@@ -316,6 +316,17 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     cameraTarget = smoothMove(cameraTarget,
             pos + Vec3(normalize(forwardVector.xy), 0.f) * forwardSpeed * 0.3f,
             5.f, deltaTime);
+    // TODO: Find the best camera setup (speed, and whether to follow forward direction or velocity)
+    /*
+    cameraTarget = smoothMove(cameraTarget,
+            pos + Vec3(normalize(forwardVector.xy), 0.f) * forwardSpeed * 0.5f,
+            3.f, deltaTime);
+    */
+    /*
+    auto vel = getRigidBody()->getLinearVelocity();
+    cameraTarget = smoothMove(cameraTarget,
+            pos + Vec3(vel.x, vel.y, 0.f) * 0.5f, 8.f, deltaTime);
+    */
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
     Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
     cameraFrom = cameraTarget + cameraDir * camDistance;

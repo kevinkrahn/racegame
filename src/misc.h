@@ -22,6 +22,7 @@ char* tmpStr(const char* format, ...)
     auto count = stbsp_vsnprintf(buf, 4096, format, argptr);
     va_end(argptr);
 
+    // TODO: guard against overflow
     g_tmpMem.bump(count+1);
 
     return buf;

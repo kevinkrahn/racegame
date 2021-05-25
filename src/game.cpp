@@ -232,7 +232,7 @@ void Game::run()
         }
         menu.onUpdate(renderer.get(), deltaTime);
         gui::widgetsDemo();
-        gui::onUpdate(renderer.get(), windowWidth, windowHeight, deltaTime);
+        gui::onUpdate(renderer.get(), windowWidth, windowHeight, deltaTime, frameCount);
         checkDebugKeys();
         ImGui::Render();
         renderer->render(deltaTime);
@@ -376,10 +376,12 @@ void Game::checkDebugKeys()
         isTrackGraphDebugVisualizationEnabled = !isTrackGraphDebugVisualizationEnabled;
     }
 
+    /*
     if (g_input.isKeyPressed(KEY_F6))
     {
         isMotionGridDebugVisualizationEnabled = !isMotionGridDebugVisualizationEnabled;
     }
+    */
 
     if (g_input.isKeyPressed(KEY_F7))
     {
@@ -448,7 +450,7 @@ void Game::checkDebugKeys()
         ImGui::Checkbox("Debug Camera", &isDebugCameraEnabled);
         ImGui::Checkbox("Physics Visualization", &isPhysicsDebugVisualizationEnabled);
         ImGui::Checkbox("Track Graph Visualization", &isTrackGraphDebugVisualizationEnabled);
-        ImGui::Checkbox("Motion Grid Visualization", &isMotionGridDebugVisualizationEnabled);
+        //ImGui::Checkbox("Motion Grid Visualization", &isMotionGridDebugVisualizationEnabled);
         ImGui::Checkbox("Path Visualization", &isPathVisualizationEnabled);
 
         if (currentScene)

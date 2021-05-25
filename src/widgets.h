@@ -6,9 +6,9 @@
 
 namespace gui
 {
-    WIDGET(Stack) {};
+    struct Stack : public Widget {};
 
-    WIDGET(Text)
+    struct Text : public Widget
     {
         Font* font;
         const char* text;
@@ -28,13 +28,13 @@ namespace gui
             assert(constraints.maxHeight > 0);
         }
 
-        virtual void render(Renderer* renderer) override
+        virtual void render(RenderContext& ctx) override
         {
             ui::text(font, text, computedPosition, Vec3(1.f), 1.f);
         }
     };
 
-    WIDGET(Image)
+    struct Image : public Widget
     {
         Texture* tex;
         bool preserveAspectRatio = true;
@@ -90,13 +90,13 @@ namespace gui
             assert(childFirst == nullptr);
         }
 
-        virtual void render(Renderer* renderer) override
+        virtual void render(RenderContext& ctx) override
         {
             ui::rect(0, tex, computedPosition, computedSize);
         }
     };
 
-    WIDGET(Container)
+    struct Container : public Widget
     {
         Insets padding;
         Insets margin;
@@ -132,11 +132,11 @@ namespace gui
 
             if (childFirst)
             {
-                f32 w = desiredSize.x > 0
+                f32 w = desiredSize.x > 0.f
                     ? clamp(desiredSize.x, actualConstraints.minWidth, actualConstraints.maxWidth)
                     : actualConstraints.maxWidth;
 
-                f32 h = desiredSize.y > 0
+                f32 h = desiredSize.y > 0.f
                     ? clamp(desiredSize.y, actualConstraints.minHeight, actualConstraints.maxHeight)
                     : actualConstraints.maxHeight;
 
@@ -148,7 +148,7 @@ namespace gui
 
                 childFirst->computeSize(childConstraints);
 
-                // TODO: Should be a standard way to specify that a widget has no children
+                // TODO: Should be a standard way to specify that a widget has at most one child
                 assert(!childFirst->neighbor);
             }
 
@@ -207,7 +207,7 @@ namespace gui
             }
         }
 
-        virtual void render(Renderer* renderer) override
+        virtual void render(RenderContext& ctx) override
         {
             if (backgroundColor.a > 0.f)
             {
@@ -216,10 +216,9 @@ namespace gui
                     backgroundColor.rgb, backgroundColor.a);
             }
         }
-
     };
 
-    WIDGET(Row)
+    struct Row : public Widget
     {
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -236,6 +235,7 @@ namespace gui
                 child->computeSize(childConstraints);
                 totalWidth += child->computedSize.x;
                 maxHeight = max(maxHeight, child->computedSize.y);
+                assert(child->desiredSize.x != INFINITY);
             }
 
             if (desiredSize.x == 0.f)
@@ -264,7 +264,7 @@ namespace gui
         }
     };
 
-    WIDGET(Column)
+    struct Column : public Widget
     {
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -281,6 +281,7 @@ namespace gui
                 child->computeSize(childConstraints);
                 totalHeight += child->computedSize.y;
                 maxWidth = max(maxWidth, child->computedSize.x);
+                assert(child->desiredSize.y != INFINITY);
             }
 
             if (desiredSize.x == 0.f)
@@ -309,35 +310,91 @@ namespace gui
         }
     };
 
-    WIDGET(Grid) { };
+    struct Grid : public Widget { };
 
-    WIDGET(FlexibleColumn) { };
+    struct FlexibleColumn : public Widget { };
 
-    WIDGET(FlexibleRow) { };
+    struct FlexibleRow : public Widget { };
 
-    WIDGET(ScrollPanel) { };
+    struct ScrollPanel : public Widget
+    {
+        // TODO: unlink the children that won't be visible, in the earliest pass possible, so they
+        // are not processed by later stages
+    };
 
-    WIDGET(TextButton) { };
+    template <typename C>
+    struct Button : public Widget
+    {
+        C clickCallback;
+        Container* bg;
 
-    WIDGET(IconButton) { };
+        Button(C const& callback) : clickCallback(callback) {}
 
-    WIDGET(TextEdit) { };
+        struct ButtonState
+        {
+            f32 hoverIntensity = 0.f;
+        };
 
-    WIDGET(TextArea) { };
+        Widget* build()
+        {
+            auto border = add(this, Container(Insets(4), {}, {}, Vec4(1)), Vec2(0), desiredSize);
+            bg = add(border,
+                    Container(Insets(10), {}, {}, Vec4(0, 0, 0, 1), HAlign::CENTER, VAlign::CENTER),
+                    Vec2(0), desiredSize);
+            return bg;
+        }
 
-    WIDGET(ColorPicker) { };
+        virtual void render(RenderContext& ctx) override
+        {
+            ctx.keyBuf.write(".btn");
+            ButtonState* state = getState<ButtonState>(ctx.keyBuf);
+            state->hoverIntensity += ctx.deltaTime + computedPosition.y * 0.0001f;
+            bg->backgroundColor = Vec4(Vec3((sinf(state->hoverIntensity) + 1.f) * 0.5f), 1.f);
+        }
+    };
 
-    WIDGET(Toggle) { };
+    template <typename C>
+    struct TextButton : public Button<C>
+    {
+        const char* text;
 
-    WIDGET(RadioButton) { };
+        TextButton(const char* text, C const& callback=[]{}) : Button<C>(callback), text(text) {}
 
-    WIDGET(Slider) { };
+        Widget* build()
+        {
+            auto btn = Button<C>::build();
+            Font* font = &g_res.getFont("font", 30);
+            add(btn, Text(font, text));
+            return btn;
+        }
 
-    WIDGET(Select) { };
+        virtual void render(RenderContext& ctx) override
+        {
+            ctx.keyBuf.write(".txtbtn.");
+            ctx.keyBuf.write(text);
+            Button<C>::render(ctx);
+        }
+    };
 
-    WIDGET(Tabs) { };
+    struct IconButton : public Widget { };
 
-    WIDGET(Window) {  };
+    struct TextEdit : public Widget { };
+
+    struct TextArea : public Widget { };
+
+    struct ColorPicker : public Widget { };
+
+    struct Toggle : public Widget { };
+
+    struct RadioButton : public Widget { };
+
+    struct Slider : public Widget { };
+
+    struct Select : public Widget { };
+
+    struct Tabs : public Widget { };
+
+    struct Window : public Widget {  };
 
     void widgetsDemo()
     {
@@ -353,12 +410,26 @@ namespace gui
         Font* font2 = &g_res.getFont("font_bold", 40);
 
         auto column = add(container, Column(), Vec2(0), Vec2(0));
-        add(column, Text(font1, "Hello"));
-        add(column, Text(font2, "World!"));
-        add(column, Text(font1, "Hello"));
-        add(column, Text(font2, "World!"));
-        auto row = add(column, Row(), Vec2(0), Vec2(0));
+        auto c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, Text(font1, "Hello"));
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, Text(font2, "World!"));
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, Text(font1, "Hello"));
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, Text(font2, "World!"));
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        auto row = add(c, Row(), Vec2(0), Vec2(0));
         add(row, Text(font1, "Oh my"));
-        //add(row, Text(font2, "GOODNESS"));
+        add(row, Text(font2, "GOODNESS"));
+
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0), Vec2(0, 0));
+
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0), Vec2(0, 0));
+
+        c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
+        add(c, TextButton("Goodbye", [] { println("Farewell, comos!"); }), Vec2(0), Vec2(0, 0));
     }
 };

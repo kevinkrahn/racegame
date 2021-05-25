@@ -7,9 +7,6 @@
 #include "input.h"
 #include "renderer.h"
 
-#define WIDGET(name) struct name : public gui::Widget
-#define STATEFUL_WIDGET(name) struct name : public gui::StatefulWidget
-
 namespace gui
 {
     namespace WidgetFlags
@@ -64,6 +61,13 @@ namespace gui
         bool mouseHandled;
     };
 
+    struct RenderContext
+    {
+        Renderer* renderer;
+        StrBuf& keyBuf;
+        f32 deltaTime;
+    };
+
     struct Widget
     {
         Widget* root = nullptr;
@@ -80,19 +84,44 @@ namespace gui
         Widget* build() { return this; }
         virtual void computeSize(Constraints const& constraints)
         {
-            computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
-            computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
+            Vec2 maxDim(0, 0);
 
-            Constraints childConstraints;
-            childConstraints.minWidth = 0.f;
-            childConstraints.maxWidth = computedSize.x;
-            childConstraints.minHeight = 0.f;
-            childConstraints.maxHeight = computedSize.y;
-
-            for (Widget* child = childFirst; child; child = child->neighbor)
+            if (childFirst)
             {
-                child->computeSize(childConstraints);
+                f32 w = desiredSize.x > 0.f
+                    ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                    : constraints.maxWidth;
+
+                f32 h = desiredSize.y > 0.f
+                    ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                    : constraints.maxHeight;
+
+                Constraints childConstraints;
+                childConstraints.minWidth = 0.f;
+                childConstraints.maxWidth = w;
+                childConstraints.minHeight = 0.f;
+                childConstraints.maxHeight = h;
+
+                for (Widget* child = childFirst; child; child = child->neighbor)
+                {
+                    child->computeSize(childConstraints);
+                    maxDim = max(maxDim, child->computedSize);
+                }
             }
+
+            if (desiredSize.x == 0.f)
+            {
+                assert(childFirst);
+                desiredSize.x = maxDim.x;
+            }
+            computedSize.x = clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth);
+
+            if (desiredSize.y == 0.f)
+            {
+                assert(childFirst);
+                desiredSize.y = maxDim.y;
+            }
+            computedSize.y = clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight);
         }
 
         void handleInput(InputStatus& input)
@@ -129,14 +158,16 @@ namespace gui
             }
         }
 
-        virtual void render(Renderer* renderer) {}
+        virtual void render(RenderContext& ctx) {}
 
-        void doRender(Renderer* renderer)
+        void doRender(RenderContext& ctx)
         {
-            this->render(renderer);
+            this->render(ctx);
+            u32 prevSize = ctx.keyBuf.size();
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->doRender(renderer);
+                child->doRender(ctx);
+                ctx.keyBuf.setSize(prevSize);
             }
         }
 
@@ -146,21 +177,29 @@ namespace gui
         virtual void onLostFocus() {}
     };
 
-    struct StatefulWidget : public Widget
-    {
-
-    };
-
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
 
     Buffer widgetBuffer;
+    Buffer widgetStateBuffer;
+    Map<Str64, void*> widgetStateMap;
     Widget root;
+    u32 frameCount;
+    u32 widgetCount;
+
+    template <typename T>
+    struct WidgetState
+    {
+        T state;
+        u32 frameCountWhenLastAccessed = 0;
+    };
+
     // TODO: what about modal dialogs?
 
     void init()
     {
-        widgetBuffer.resize(megabytes(4), 16);
+        widgetBuffer.resize(megabytes(1), 16);
+        widgetStateBuffer.resize(megabytes(1), 8);
     }
 
     void onBeginUpdate(f32 deltaTime)
@@ -168,10 +207,13 @@ namespace gui
         root = Widget{};
         root.root = &root;
         widgetBuffer.clear();
+        widgetCount = 0;
     }
 
-    void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime)
+    void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count)
     {
+        frameCount = count;
+
         f32 aspectRatio = (f32)w / (f32)h;
         f32 baseHeight = 720;
         root.desiredSize = { baseHeight * aspectRatio, baseHeight };
@@ -185,7 +227,11 @@ namespace gui
         inputStatus.mouseHandled = false;
         root.handleInput(inputStatus);
 
-        root.doRender(renderer);
+        static StrBuf buf;
+        buf.clear();
+        buf.write("root");
+        RenderContext ctx{renderer, buf, deltaTime};
+        root.doRender(ctx);
     }
 
     template <typename T>
@@ -196,16 +242,47 @@ namespace gui
         w->desiredPosition = position;
         w->desiredSize = size;
         w->flags = flags;
+        w->root = w;
         w->root = w->build();
 
-        if (!parent->root->childFirst) {
+        if (!parent->root->childFirst)
+        {
             parent->root->childFirst = w;
-        } else {
+        }
+        else
+        {
             parent->root->childLast->neighbor = w;
         }
 
         parent->root->childLast = w;
 
+        ++widgetCount;
+
         return w;
+    }
+
+    // TODO: This could be greatly optimized. Should build a tree for the key on the way down the render tree
+    template <typename T>
+    inline T* getState(StrBuf const& buf)
+    {
+        Str64* s = (Str64*)buf.data(); // HACK (Str64 happens to be nothing but an array of characters)
+        void** statePtr = widgetStateMap.get(*s);
+        if (!statePtr)
+        {
+            WidgetState<T>* newState = widgetStateBuffer.writeDefault<WidgetState<T>>();
+            widgetStateMap.set(*s, newState);
+            newState->frameCountWhenLastAccessed = frameCount;
+            return &newState->state;
+        }
+
+        WidgetState<T>* state = *(WidgetState<T>**)statePtr;
+
+        // if the state for this key was not accessed last frame, reset it
+        if (state->frameCountWhenLastAccessed < frameCount - 1)
+        {
+            state->state = T{};
+        }
+        state->frameCountWhenLastAccessed = frameCount;
+        return &state->state;
     }
 }

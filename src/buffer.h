@@ -95,7 +95,7 @@ public:
             return data.get() + pos;
         }
         // TODO: buffer shouldn't reallocate because that messes up pointers
-        // TODO: make this a template parameter
+        // There are two possibilities: make this a template parameter or simply allocate a new chunk
         if (pos + len > size)
         {
             u8* newData = new u8[size * 2];
@@ -113,7 +113,16 @@ public:
         pos += align(sizeof(T), alignment);
         assert(pos <= size);
         new (prev) T(v);
+        return (T*)prev;
+    }
 
+    template <typename T>
+    T* writeDefault()
+    {
+        u8* prev = data.get() + pos;
+        pos += align(sizeof(T), alignment);
+        assert(pos <= size);
+        new (prev) T();
         return (T*)prev;
     }
 

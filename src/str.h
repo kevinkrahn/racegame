@@ -184,6 +184,13 @@ public:
         }
     }
 
+    void setSize(u32 size)
+    {
+        ensureCapacity(size + 1);
+        len_ = size;
+        buf_[len_] = '\0';
+    }
+
     char* data() const { return buf_; }
     u32 size() const { return len_; }
     char* begin() { return buf_; }

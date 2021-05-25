@@ -107,6 +107,20 @@ public:
         size_ = 0;
     }
 
+    VALUE* getOrDefault(KEY const& key)
+    {
+        u32 index = mapHash(key) % SIZE;
+        auto ptr = get(index, key);
+        if (ptr)
+        {
+            return &ptr->value;
+        }
+
+        elements_[index].push({ key, {} });
+        ++size_;
+        return &elements_[index].back().value;
+    }
+
     bool set(KEY const& key, VALUE const& value)
     {
         u32 index = mapHash(key) % SIZE;
@@ -170,13 +184,7 @@ public:
 
     VALUE& operator [] (KEY const& key)
     {
-        VALUE* val = get(key);
-        if (!val)
-        {
-            set(key, {});
-            return *get(key);
-        }
-        return *val;
+        return *getOrDefault(key);
     }
 
     struct ConstIterator
