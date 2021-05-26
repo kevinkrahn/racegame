@@ -661,8 +661,7 @@ namespace gui
         add(row, Text(font2, "GOODNESS"));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0), Vec2(0),
-            WidgetFlags::DEFAULT_SELECTION);
+        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0), Vec2(0));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
         add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0));
@@ -671,7 +670,7 @@ namespace gui
         add(c, TextButton("Goodbye", [] {
             println("Farewell, comos!");
             animateIn = false;
-        }, ButtonFlags::BACK), Vec2(0));
+        }, ButtonFlags::BACK), Vec2(0), Vec2(0), WidgetFlags::DEFAULT_SELECTION);
 
         auto gridContainer = add(root,
                 Container(Insets(20), {}, {}, Vec4(0, 1, 0, 0.25f), HAlign::CENTER, VAlign::CENTER),

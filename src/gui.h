@@ -135,6 +135,7 @@ namespace gui
         Widget(const char* name) {}
 #endif
 
+        Vec2 center() const { return computedPosition + computedSize * 0.5f; }
         void pushID(const char* id);
         void doRender(WidgetContext& ctx);
 
@@ -146,9 +147,29 @@ namespace gui
         virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent const& input);
         virtual void layout(WidgetContext& ctx);
         virtual void render(WidgetContext& ctx) {}
+
+        void navigate(struct Navigation& nav);
     };
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
+
+    struct Navigation
+    {
+        f32 motionX;
+        f32 motionY;
+        f32 xRef;
+        f32 yRef;
+        Vec2 fromPos;
+        Vec2 fromSize;
+        Widget* minSelectTargetX = nullptr;
+        Widget* minSelectTargetY = nullptr;
+        Widget* maxSelectTargetX = nullptr;
+        Widget* maxSelectTargetY = nullptr;
+        f32 minDistX = FLT_MAX;
+        f32 minDistY = FLT_MAX;
+        f32 maxDistX = FLT_MIN;
+        f32 maxDistY = FLT_MIN;
+    };
 
     const auto NOOP = []{};
     using noop_t = void(*)();
@@ -176,6 +197,16 @@ namespace gui
     void addInputCapture(Widget* w)
     {
         inputCaptureWidgets.push(w);
+    }
+
+    void pushInputCapture(Widget* w)
+    {
+        inputCaptureStack.push({ w->stateNode, nullptr });
+    }
+
+    void popInputCapure()
+    {
+        inputCaptureStack.pop();
     }
 
     void onBeginUpdate(f32 deltaTime);

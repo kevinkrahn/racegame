@@ -151,9 +151,120 @@ namespace gui
             {
                 return true;
             }
+
+            i32 motionX = 0;
+            i32 motionY = 0;
+            switch (ev.type)
+            {
+                case INPUT_KEYBOARD_PRESSED:
+                case INPUT_KEYBOARD_REPEAT:
+                    if (ev.keyboard.key == KEY_LEFT) motionX = -1;
+                    else if (ev.keyboard.key == KEY_RIGHT) motionX = 1;
+                    else if (ev.keyboard.key == KEY_UP) motionY = -1;
+                    else if (ev.keyboard.key == KEY_DOWN) motionY = 1;
+                    break;
+                case INPUT_CONTROLLER_BUTTON_PRESSED:
+                case INPUT_CONTROLLER_BUTTON_REPEAT:
+                    if (ev.controller.button == BUTTON_DPAD_LEFT) motionX = -1;
+                    else if (ev.controller.button == BUTTON_DPAD_RIGHT) motionX = 1;
+                    else if (ev.controller.button == BUTTON_DPAD_UP) motionY = -1;
+                    else if (ev.controller.button == BUTTON_DPAD_DOWN) motionY = 1;
+                    break;
+                case INPUT_CONTROLLER_AXIS_TRIGGERED:
+                case INPUT_CONTROLLER_AXIS_REPEAT:
+                    if (ev.controller.axis == AXIS_RIGHT_X) motionX = sign(ev.controller.axisVal);
+                    else if (ev.controller.axis == AXIS_RIGHT_Y) motionY = sign(ev.controller.axisVal);
+                    break;
+                default:
+                    break;
+            }
+
+            if (motionX || motionY)
+            {
+                Widget* previousSelectedWidget = selectedWidget;
+
+                Navigation nav = {};
+                nav.motionX = motionX;
+                nav.motionY = motionY;
+                nav.xRef = selectedWidget->center().x + (selectedWidget->computedSize.x * motionX * 0.5f);
+                nav.yRef = selectedWidget->center().y + (selectedWidget->computedSize.y * motionY * 0.5f);
+                nav.fromPos = selectedWidget->center();
+                nav.fromSize = selectedWidget->computedSize;
+                navigate(nav);
+
+                if (nav.minSelectTargetX)
+                {
+                    selectedWidget = nav.minSelectTargetX;
+                }
+                else if (nav.maxSelectTargetX)
+                {
+                    selectedWidget = nav.maxSelectTargetX;
+                }
+                if (nav.minSelectTargetY)
+                {
+                    selectedWidget = nav.minSelectTargetY;
+                }
+                else if (nav.maxSelectTargetY)
+                {
+                    selectedWidget = nav.maxSelectTargetY;
+                }
+
+                if (selectedWidget != previousSelectedWidget)
+                {
+                    ctx.selectedWidgetStateNode = selectedWidget->stateNode;
+                    g_audio.playSound(g_res.getSound("select"), SoundType::MENU_SFX);
+                }
+
+                return true;
+            }
         }
 
         return false;
+    }
+
+    void Widget::navigate(Navigation& nav)
+    {
+        for (Widget* child = childFirst; child; child=child->neighbor)
+        {
+            if (child->flags & WidgetFlags::SELECTABLE)
+            {
+                Vec2 c = child->center();
+                Vec2 s = child->computedSize;
+                if (nav.motionX)
+                {
+                    f32 xDist = nav.motionX * ((c.x - (s.x * nav.motionX) * 0.5f) - nav.xRef);
+                    //f32 yDist = absolute((c.y + s.y * 0.5f) - (nav.fromPos.y + nav.fromSize.y * 0.5f)) * 0.5f;
+                    f32 yDist = absolute(c.y - nav.fromPos.y) * 0.5f;
+                    if (xDist > 0.f && xDist + yDist < nav.minDistX)
+                    {
+                        nav.minDistX = xDist + yDist;
+                        nav.minSelectTargetX = child;
+                    }
+                    if (xDist + yDist < nav.maxDistX)
+                    {
+                        nav.maxDistX = xDist + yDist;
+                        nav.maxSelectTargetX = child;
+                    }
+                }
+                if (nav.motionY)
+                {
+                    f32 yDist = nav.motionY * ((c.y - (s.y * nav.motionY) * 0.5f) - nav.yRef);
+                    //f32 xDist = absolute((c.x + s.x * 0.5f) - (nav.fromPos.x + nav.fromSize.x * 0.5f)) * 0.5f;
+                    f32 xDist = absolute(c.x - nav.fromPos.x) * 0.5f;
+                    if (yDist > 0.f && yDist + xDist < nav.minDistY)
+                    {
+                        nav.minDistY = yDist + xDist;
+                        nav.minSelectTargetY = child;
+                    }
+                    if (yDist + xDist < nav.maxDistY)
+                    {
+                        nav.maxDistY = yDist + xDist;
+                        nav.maxSelectTargetY = child;
+                    }
+                }
+            }
+            child->navigate(nav);
+        }
     }
 
     bool Widget::handleMouseInput(InputCaptureContext& ctx, InputEvent const& input)
