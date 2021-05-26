@@ -415,7 +415,7 @@ namespace gui
         {
             pushID("btn");
 
-            flags |= WidgetFlags::BLOCK_INPUT;
+            flags |= WidgetFlags::BLOCK_INPUT | WidgetFlags::SELECTABLE;
 
             border = add(this, Container(Insets(4), {}, {}, Vec4(1)), desiredSize);
             bg = add(border,
@@ -443,6 +443,7 @@ namespace gui
             }
 
             if (flags & (WidgetFlags::STATUS_MOUSE_PRESSED) ||
+                    // TODO: this should be moved out somewhere so input can be captured
                     ((buttonFlags & ButtonFlags::BACK) && g_input.didGoBack()))
             {
                 state->isPressed = true;
@@ -567,6 +568,18 @@ namespace gui
         }
     };
 
+    struct InputCapture : public Widget
+    {
+        InputCapture() : Widget("InputCapture") {}
+
+        Widget* build()
+        {
+            pushID("InputCapture");
+            addInputCapture(this);
+            return this;
+        }
+    };
+
     void widgetsDemo()
     {
         static bool animateIn = true;
@@ -603,8 +616,8 @@ namespace gui
         add(row, Text(font2, "GOODNESS"));
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
-        setDefaultSelection(
-            add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0)));
+        add(c, TextButton("Click Me!!!", [] { println("Hello world!"); }), Vec2(0), Vec2(0),
+            WidgetFlags::DEFAULT_SELECTION);
 
         c = add(column, Container(Insets(5)), Vec2(0), Vec2(0));
         add(c, TextButton("Click Me Also!!!", [] { println("Greetings, Universe!"); }), Vec2(0));

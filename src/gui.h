@@ -15,8 +15,14 @@ namespace gui
     {
         enum
         {
-            BLOCK_INPUT = 1 << 0,
+            // for widget API
+            DEFAULT_SELECTION = 1 << 1,
 
+            // internal
+            BLOCK_INPUT       = 1 << 8,
+            SELECTABLE        = 1 << 9,
+
+            // status
             STATUS_MOUSE_OVER      = 1 << 16,
             STATUS_MOUSE_DOWN      = 1 << 17,
             STATUS_MOUSE_PRESSED   = 1 << 18,
@@ -116,9 +122,12 @@ namespace gui
     Buffer widgetStateBuffer;
     SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
     Widget* root = nullptr;
-    Widget* selectedWidget = nullptr;
-    Widget* focusedWidget = nullptr;
-    SmallArray<Widget*> selectionContexts;
+    SmallArray<Widget*, 64> inputCaptureWidgets;
+
+    // Use pointers to WidgetStateNodes to identify the input captures
+    // Can't use a pointers to Widgets because they are not preserved across frames
+    SmallArray<WidgetStateNode*> inputCaptureStack;
+    WidgetStateNode* selectedWidget = nullptr;
 
     struct Widget
     {
@@ -128,6 +137,9 @@ namespace gui
         Widget* childFirst = nullptr;
         Widget* childLast = nullptr;
         Widget* neighbor = nullptr;
+#ifndef NDEBUG
+        Widget* parent = nullptr;
+#endif
         WidgetStateNode* stateNode = nullptr;
 
         Vec2 computedSize = { 0, 0 };
@@ -142,7 +154,6 @@ namespace gui
 #ifndef NDEBUG
         // for debug purposes
         const char* name = "";
-        Widget* parent = nullptr;
 #endif
 
 #ifndef NDEBUG
@@ -225,6 +236,11 @@ namespace gui
             }
         }
 
+        virtual void handleInput()
+        {
+
+        }
+
         virtual void layout(WidgetContext& ctx)
         {
             for (Widget* child = childFirst; child; child = child->neighbor)
@@ -238,6 +254,7 @@ namespace gui
 
         void doRender(WidgetContext& ctx)
         {
+            // TODO: Don't perform scaling like this; doesn't work well with fonts
             computedSize *= ctx.scale;
             computedPosition *= ctx.scale;
             this->render(ctx);
@@ -307,8 +324,6 @@ namespace gui
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
 
-    // TODO: what about modal dialogs?
-
     void init()
     {
         widgetBuffer.resize(megabytes(1), 16);
@@ -316,15 +331,22 @@ namespace gui
         widgetStateNodeStorage.push(WidgetStateNode{ Str32("root") });
     }
 
+    void addInputCapture(Widget* w)
+    {
+        inputCaptureWidgets.push(w);
+    }
+
     void onBeginUpdate(f32 deltaTime)
     {
         widgetBuffer.clear();
-        selectionContexts.clear();
         widgetCount = 0;
+        inputCaptureWidgets.clear();
 
         root = widgetBuffer.write<Widget>(Widget("Root"));
         root->root = root;
         root->stateNode = &widgetStateNodeStorage.front();
+
+        addInputCapture(root);
     }
 
     void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count)
@@ -354,11 +376,19 @@ namespace gui
         mouseInput.mouseReleased = g_input.isMouseButtonReleased(MOUSE_LEFT);
         mouseInput.mousePos = g_input.getMousePosition() / actualScreenSize * referenceScreenSize;
 
+        // TODO: allow mouse clicking to change input capture
+        // maybe call into the active widget or input capture to see if we can click out
         root->handleMouseInput(mouseInput);
 
-        if (selectedWidget)
+        if (inputCaptureStack.empty())
         {
+            inputCaptureStack.push(root->stateNode);
         }
+
+        Widget** activeInputCapture =
+            inputCaptureWidgets.findIf([&](Widget* w) { return w->stateNode == inputCaptureStack.back(); });
+        assert(activeInputCapture);
+        (*activeInputCapture)->handleInput();
 
         root->doRender(ctx);
     }
@@ -394,10 +424,19 @@ namespace gui
         return w;
     }
 
-    void setDefaultSelection(Widget* widget)
+#if 0
+    Widget* findParentWithFlags(Widget* w, u32 flags)
     {
-
+        for (Widget* p = w; p; p = p->parent)
+        {
+            if ((p->flags & flags) == flags)
+            {
+                return p;
+            }
+        }
+        return nullptr;
     }
+#endif
 
     // TODO: Add push api.
     // push(Container())
