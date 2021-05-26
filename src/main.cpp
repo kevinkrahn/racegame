@@ -27,6 +27,7 @@
 #include "dynamic_buffer.cpp"
 #include "decal.cpp"
 #include "menu.cpp"
+#include "gui.cpp"
 #include "weapon.cpp"
 #include "entities/projectile.cpp"
 #include "entities/mine.cpp"

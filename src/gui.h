@@ -9,30 +9,22 @@
 
 namespace gui
 {
-    struct Widget;
-
     namespace WidgetFlags
     {
         enum
         {
-            // for widget API
+            // for external widget API
             DEFAULT_SELECTION = 1 << 1,
 
             // internal
             BLOCK_INPUT       = 1 << 8,
             SELECTABLE        = 1 << 9,
 
-            // status
+            // status (set during layout and input phase, read during render phase)
             STATUS_MOUSE_OVER      = 1 << 16,
-            STATUS_MOUSE_DOWN      = 1 << 17,
-            STATUS_MOUSE_PRESSED   = 1 << 18,
-            STATUS_MOUSE_RELEASED  = 1 << 19,
             STATUS_SELECTED        = 1 << 20,
             STATUS_GAINED_SELECTED = 1 << 21,
             STATUS_LOST_SELECTED   = 1 << 22,
-            STATUS_FOCUSED         = 1 << 23,
-            STATUS_GAINED_FOCUSED  = 1 << 24,
-            STATUS_LOST_FOCUSED    = 1 << 25,
         };
     };
 
@@ -71,14 +63,6 @@ namespace gui
             : left(horizontal), top(vertical), right(horizontal), bottom(vertical) {}
     };
 
-    struct MouseInput
-    {
-        Vec2 mousePos;
-        bool mousePressed : 1;
-        bool mouseDown : 1;
-        bool mouseReleased : 1;
-    };
-
     template <typename T>
     struct WidgetState
     {
@@ -110,24 +94,13 @@ namespace gui
         f32 scale;
     };
 
-    const auto NOOP = []{};
-    using noop_t = void(*)();
-
-    const f32 REFERENCE_HEIGHT = 1080.f;
-
-    u32 widgetCount;
-    u32 frameCount;
-
-    Buffer widgetBuffer;
-    Buffer widgetStateBuffer;
-    SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
-    Widget* root = nullptr;
-    SmallArray<Widget*, 64> inputCaptureWidgets;
-
     // Use pointers to WidgetStateNodes to identify the input captures
     // Can't use a pointers to Widgets because they are not preserved across frames
-    SmallArray<WidgetStateNode*> inputCaptureStack;
-    WidgetStateNode* selectedWidget = nullptr;
+    struct InputCaptureContext
+    {
+        WidgetStateNode* inputCaptureStateNode = nullptr;
+        WidgetStateNode* selectedWidgetStateNode = nullptr;
+    };
 
     struct Widget
     {
@@ -162,167 +135,36 @@ namespace gui
         Widget(const char* name) {}
 #endif
 
+        void pushID(const char* id);
+        void doRender(WidgetContext& ctx);
+
         Widget* build() { return this; }
-        virtual void computeSize(Constraints const& constraints)
-        {
-            Vec2 maxDim(0, 0);
 
-            if (childFirst)
-            {
-                f32 w = desiredSize.x > 0.f
-                    ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
-                    : constraints.maxWidth;
-
-                f32 h = desiredSize.y > 0.f
-                    ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
-                    : constraints.maxHeight;
-
-                Constraints childConstraints;
-                childConstraints.minWidth = 0.f;
-                childConstraints.maxWidth = w;
-                childConstraints.minHeight = 0.f;
-                childConstraints.maxHeight = h;
-
-                for (Widget* child = childFirst; child; child = child->neighbor)
-                {
-                    child->computeSize(childConstraints);
-                    maxDim = max(maxDim, child->computedSize);
-                }
-            }
-
-            computedSize.x = desiredSize.x > 0.f
-                ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
-                : maxDim.x;
-            computedSize.y = desiredSize.y > 0.f
-                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
-                : maxDim.y;
-        }
-
-        void handleMouseInput(MouseInput& input)
-        {
-            bool isMouseOver =
-                pointInRectangle(input.mousePos, computedPosition, computedPosition + computedSize);
-
-            if (!isMouseOver)
-            {
-                return;
-            }
-
-            if (flags & WidgetFlags::BLOCK_INPUT)
-            {
-                flags |= WidgetFlags::STATUS_MOUSE_OVER;
-
-                if (input.mousePressed)
-                {
-                    flags |= WidgetFlags::STATUS_MOUSE_PRESSED;
-                }
-
-                if (input.mouseDown)
-                {
-                    flags |= WidgetFlags::STATUS_MOUSE_DOWN;
-                }
-
-                if (input.mouseReleased)
-                {
-                    flags |= WidgetFlags::STATUS_MOUSE_RELEASED;
-                }
-
-                return;
-            }
-
-            for (Widget* child = childFirst; child; child = child->neighbor)
-            {
-                child->handleMouseInput(input);
-            }
-        }
-
-        virtual void handleInput()
-        {
-
-        }
-
-        virtual void layout(WidgetContext& ctx)
-        {
-            for (Widget* child = childFirst; child; child = child->neighbor)
-            {
-                child->computedPosition = computedPosition + child->desiredPosition;
-                child->layout(ctx);
-            }
-        }
-
+        virtual void computeSize(Constraints const& constraints);
+        virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev);
+        virtual bool handleInputEvent(InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) { return false; }
+        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent const& input);
+        virtual void layout(WidgetContext& ctx);
         virtual void render(WidgetContext& ctx) {}
-
-        void doRender(WidgetContext& ctx)
-        {
-            // TODO: Don't perform scaling like this; doesn't work well with fonts
-            computedSize *= ctx.scale;
-            computedPosition *= ctx.scale;
-            this->render(ctx);
-
-            for (Widget* child = childFirst; child; child = child->neighbor)
-            {
-                child->doRender(ctx);
-            }
-        }
-
-        void pushID(const char* id)
-        {
-            for (WidgetStateNode* child = stateNode->childFirst;
-                child; child = child->neighbor)
-            {
-                if (strcmp(id, child->name.data()) == 0)
-                {
-                    stateNode = child;
-                    return;
-                }
-            }
-
-            widgetStateNodeStorage.push(WidgetStateNode{ Str32(id) });
-            WidgetStateNode* newNode = &widgetStateNodeStorage.back();
-#ifndef NDEBUG
-            newNode->parent = stateNode;
-#endif
-
-            if (!stateNode->childFirst)
-            {
-                stateNode->childFirst = newNode;
-            }
-            else
-            {
-                stateNode->childLast->neighbor = newNode;
-            }
-
-            stateNode->childLast = newNode;
-            stateNode = newNode;
-        }
-
-        template <typename T>
-        inline T* getState()
-        {
-            if (stateNode->state)
-            {
-                WidgetState<T>* state = (WidgetState<T>*)stateNode->state;
-
-                // if the state for this key was not accessed last frame, reset it
-                if (state->frameCountWhenLastAccessed < frameCount - 1)
-                {
-                    state->state = T{};
-                }
-                state->frameCountWhenLastAccessed = frameCount;
-
-                return &state->state;
-            }
-
-            WidgetState<T>* newState = widgetStateBuffer.writeDefault<WidgetState<T>>();
-            newState->frameCountWhenLastAccessed = frameCount;
-            stateNode->state = (void*)newState;
-
-            return &newState->state;
-        }
     };
-
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
+
+    const auto NOOP = []{};
+    using noop_t = void(*)();
+
+    const f32 REFERENCE_HEIGHT = 1080.f;
+
+    u32 widgetCount;
+    u32 frameCount;
+
+    Buffer widgetBuffer;
+    Buffer widgetStateBuffer;
+    SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
+    Widget* root = nullptr;
+    SmallArray<Widget*, 64> inputCaptureWidgets;
+
+    SmallArray<InputCaptureContext> inputCaptureStack;
 
     void init()
     {
@@ -336,62 +178,8 @@ namespace gui
         inputCaptureWidgets.push(w);
     }
 
-    void onBeginUpdate(f32 deltaTime)
-    {
-        widgetBuffer.clear();
-        widgetCount = 0;
-        inputCaptureWidgets.clear();
-
-        root = widgetBuffer.write<Widget>(Widget("Root"));
-        root->root = root;
-        root->stateNode = &widgetStateNodeStorage.front();
-
-        addInputCapture(root);
-    }
-
-    void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count)
-    {
-        frameCount = count;
-
-        f32 aspectRatio = (f32)w / (f32)h;
-        Vec2 referenceScreenSize(REFERENCE_HEIGHT * aspectRatio, REFERENCE_HEIGHT);
-        Vec2 actualScreenSize((f32)w, (f32)h);
-        Vec2 sizeMultiplier = actualScreenSize / referenceScreenSize;
-
-        WidgetContext ctx;
-        ctx.renderer = renderer;
-        ctx.deltaTime = deltaTime;
-        ctx.aspectRatio = aspectRatio;
-        ctx.referenceScreenSize = referenceScreenSize;
-        ctx.actualScreenSize = actualScreenSize;
-        ctx.scale = (f32)h / REFERENCE_HEIGHT;
-
-        root->desiredSize = { (f32)w, (f32)h };
-        root->computeSize(Constraints());
-        root->layout(ctx);
-
-        MouseInput mouseInput;
-        mouseInput.mousePressed = g_input.isMouseButtonPressed(MOUSE_LEFT);
-        mouseInput.mouseDown = g_input.isMouseButtonDown(MOUSE_LEFT);
-        mouseInput.mouseReleased = g_input.isMouseButtonReleased(MOUSE_LEFT);
-        mouseInput.mousePos = g_input.getMousePosition() / actualScreenSize * referenceScreenSize;
-
-        // TODO: allow mouse clicking to change input capture
-        // maybe call into the active widget or input capture to see if we can click out
-        root->handleMouseInput(mouseInput);
-
-        if (inputCaptureStack.empty())
-        {
-            inputCaptureStack.push(root->stateNode);
-        }
-
-        Widget** activeInputCapture =
-            inputCaptureWidgets.findIf([&](Widget* w) { return w->stateNode == inputCaptureStack.back(); });
-        assert(activeInputCapture);
-        (*activeInputCapture)->handleInput();
-
-        root->doRender(ctx);
-    }
+    void onBeginUpdate(f32 deltaTime);
+    void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count);
 
     template <typename T>
     T* add(Widget* parent, T const& widget, Vec2 size={INFINITY,INFINITY}, Vec2 position={0,0},
@@ -424,19 +212,33 @@ namespace gui
         return w;
     }
 
-#if 0
-    Widget* findParentWithFlags(Widget* w, u32 flags)
+    template <typename T>
+    inline T* getState(Widget* w)
     {
-        for (Widget* p = w; p; p = p->parent)
+        if (w->stateNode->state)
         {
-            if ((p->flags & flags) == flags)
+            WidgetState<T>* state = (WidgetState<T>*)w->stateNode->state;
+
+            // if the state for this key was not accessed last frame, reset it
+            if (state->frameCountWhenLastAccessed < frameCount - 1)
             {
-                return p;
+                state->state = T{};
             }
+            state->frameCountWhenLastAccessed = frameCount;
+
+            return &state->state;
         }
-        return nullptr;
+
+        WidgetState<T>* newState = widgetStateBuffer.writeDefault<WidgetState<T>>();
+        newState->frameCountWhenLastAccessed = frameCount;
+        w->stateNode->state = (void*)newState;
+
+        return &newState->state;
     }
-#endif
+
+    Widget* findAncestorByStateNode(Widget* w, WidgetStateNode* state);
+    Widget* findAncestorByFlags(Widget* w, u32 flags);
+    Widget* findParent(Widget* w, u32 flags);
 
     // TODO: Add push api.
     // push(Container())

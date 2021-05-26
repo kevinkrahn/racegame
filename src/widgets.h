@@ -424,12 +424,65 @@ namespace gui
             return bg;
         }
 
+        void press()
+        {
+            getState<ButtonState>(this)->isPressed = true;
+            clickCallback();
+        }
+
+        virtual bool handleInputEvent(
+                InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
+        {
+            if (ctx.selectedWidgetStateNode == stateNode)
+            {
+                if (ev.type == INPUT_KEYBOARD_PRESSED)
+                {
+                    if (ev.keyboard.key == KEY_RETURN
+                            || (ev.keyboard.key == KEY_ESCAPE && (buttonFlags & ButtonFlags::BACK)))
+                    {
+                        press();
+                        return true;
+                    }
+                }
+                else if (ev.type == INPUT_CONTROLLER_BUTTON_PRESSED)
+                {
+                    if (ev.controller.button == BUTTON_B && (buttonFlags & ButtonFlags::BACK))
+                    {
+                        press();
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent const& input)
+            override
+        {
+            bool isMouseOver =
+                pointInRectangle(input.mouse.mousePos, computedPosition, computedPosition + computedSize);
+
+            if (!isMouseOver)
+            {
+                return false;
+            }
+
+            ctx.selectedWidgetStateNode = stateNode;
+
+            if (input.type == INPUT_MOUSE_BUTTON_PRESSED && input.mouse.button == MOUSE_LEFT)
+            {
+                press();
+            }
+
+            return true;
+        }
+
         virtual void render(WidgetContext& ctx) override
         {
-            ButtonState* state = getState<ButtonState>();
+            ButtonState* state = getState<ButtonState>(this);
 
-            if (flags & (WidgetFlags::STATUS_FOCUSED |
-                         WidgetFlags::STATUS_MOUSE_OVER | WidgetFlags::STATUS_SELECTED))
+            if (flags & (WidgetFlags::STATUS_SELECTED))
             {
                 state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
                 state->hoverTimer += ctx.deltaTime;
@@ -440,14 +493,6 @@ namespace gui
                 state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
                 state->hoverTimer = 0.f;
                 state->hoverValue = max(state->hoverValue - ctx.deltaTime, 0.f);
-            }
-
-            if (flags & (WidgetFlags::STATUS_MOUSE_PRESSED) ||
-                    // TODO: this should be moved out somewhere so input can be captured
-                    ((buttonFlags & ButtonFlags::BACK) && g_input.didGoBack()))
-            {
-                state->isPressed = true;
-                clickCallback();
             }
 
             const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
@@ -535,7 +580,7 @@ namespace gui
 
         virtual void layout(WidgetContext& ctx) override
         {
-            auto state = getState<AnimationState>();
+            auto state = getState<AnimationState>(this);
             if (isDirectionForward)
             {
                 state->animationProgress =

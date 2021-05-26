@@ -11,6 +11,9 @@
 const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
 const Vec4 COLOR_NOT_SELECTED = Vec4(1.f);
 
+#define JOYSTICK_DEADZONE 0.1f
+#define BEGIN_REPEAT_DELAY 0.1f
+
 const char* championshipTracks[] = {
     // a
     "race1",

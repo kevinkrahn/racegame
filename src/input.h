@@ -6,7 +6,8 @@
 // These values line up with SDL_Button* defines
 enum MouseButton
 {
-    MOUSE_LEFT = 1,
+    MOUSE_UNKNOWN = 0,
+    MOUSE_LEFT,
     MOUSE_MIDDLE,
     MOUSE_RIGHT,
     MOUSE_X1,
@@ -14,7 +15,7 @@ enum MouseButton
     MOUSE_BUTTON_COUNT
 };
 
-enum Keys
+enum Key
 {
     KEY_UNKNOWN = 0,
     KEY_A = 4,
@@ -141,8 +142,68 @@ enum ControllerAxis
     AXIS_COUNT
 };
 
-const f32 BEGIN_REPEAT_DELAY = 0.4f;
-const f32 JOYSTICK_DEADZONE = 0.25f;
+struct MouseEvent
+{
+    Vec2 mousePos;
+    Vec2 mouseDelta;
+    MouseButton button;
+};
+
+struct MouseWheelEvent
+{
+    i32 scrollX;
+    i32 scrollY;
+};
+
+struct KeyboardEvent
+{
+    Key key;
+};
+
+struct ControllerEvent
+{
+    class Controller* controller;
+    i32 controllerID;
+    f32 axisVal;
+    ControllerAxis axis;
+    ControllerButton button;
+};
+
+enum InputEventType
+{
+    INPUT_MOUSE_BUTTON_PRESSED,
+    INPUT_MOUSE_BUTTON_DOWN,
+    INPUT_MOUSE_BUTTON_RELEASED,
+    INPUT_MOUSE_WHEEL,
+    INPUT_MOUSE_MOVE,
+    INPUT_KEYBOARD_PRESSED,
+    INPUT_KEYBOARD_DOWN,
+    INPUT_KEYBOARD_RELEASED,
+    INPUT_KEYBOARD_REPEAT,
+    INPUT_CONTROLLER_BUTTON_PRESSED,
+    INPUT_CONTROLLER_BUTTON_DOWN,
+    INPUT_CONTROLLER_BUTTON_RELEASED,
+    INPUT_CONTROLLER_BUTTON_REPEAT,
+    INPUT_CONTROLLER_AXIS_TRIGGERED,
+    INPUT_CONTROLLER_AXIS,
+    INPUT_CONTROLLER_AXIS_RELEASED,
+    INPUT_CONTROLLER_AXIS_REPEAT,
+};
+
+struct InputEvent
+{
+    InputEventType type;
+    union
+    {
+        MouseEvent mouse;
+        MouseWheelEvent mouseWheel;
+        KeyboardEvent keyboard;
+        ControllerEvent controller;
+    };
+};
+
+const f32 CONTROLLER_BEGIN_REPEAT_DELAY = 0.4f;
+const f32 CONTROLLER_REPEAT_INTERVAL = 0.15f;
 
 class Controller
 {
@@ -153,7 +214,11 @@ private:
     SDL_GameController* controller = nullptr;
     SDL_Haptic* haptic = nullptr;
     f32 axis[AXIS_COUNT] = {};
+    bool axisTriggered[AXIS_COUNT] = {};;
+    bool axisReleased[AXIS_COUNT] = {};;
+
     f32 repeatTimer = 0.f;
+    // TODO: Store these as bitsets
     bool buttonDown[BUTTON_COUNT] = {};
     bool buttonPressed[BUTTON_COUNT] = {};
     bool buttonReleased[BUTTON_COUNT] = {};
@@ -200,6 +265,18 @@ public:
         return axis[index];
     }
 
+    bool isAxisTriggered(u32 index) const
+    {
+        assert(index < AXIS_COUNT);
+        return axisTriggered[index];
+    }
+
+    bool isAxisReleased(u32 index) const
+    {
+        assert(index < AXIS_COUNT);
+        return axisReleased[index];
+    }
+
     Str64 const& getGuid() const { return guid; }
 };
 
@@ -212,6 +289,7 @@ private:
     bool mouseButtonPressed[MOUSE_BUTTON_COUNT];
     bool mouseButtonReleased[MOUSE_BUTTON_COUNT];
 
+    // TODO: Store these as bitsets
     bool keyDown[KEY_COUNT];
     bool keyPressed[KEY_COUNT];
     bool keyReleased[KEY_COUNT];
@@ -222,10 +300,15 @@ private:
     bool mouseMoved = false;
     i32 mouseScrollX;
     i32 mouseScrollY;
+    // TODO: it would be faster and take less space to make this a list
+    // there will never be more than a few controllers, so a linear search
+    // would be faster than a map lookup
     Map<i32, Controller> controllers;
 
     //Str64 inputText;
     f32 joystickDeadzone = 0.08f;
+
+    Array<InputEvent> events;
 
 public:
     void init(SDL_Window* window)
@@ -340,111 +423,6 @@ public:
         return (f32)mouseScrollY;
     }
 
-    bool didSelect()
-    {
-        bool result = isKeyPressed(KEY_RETURN);
-        for (auto& pair : getControllers())
-        {
-            if (pair.value.isButtonPressed(BUTTON_A))
-            {
-                result = true;
-                break;
-            }
-        }
-        return result;
-    }
-
-    bool didGoBack()
-    {
-        if (isKeyPressed(KEY_ESCAPE))
-        {
-            return true;
-        }
-        for (auto& c : getControllers())
-        {
-            if (c.value.isButtonPressed(BUTTON_B))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    i32 didChangeSelectionX()
-    {
-        i32 result = (i32)(isKeyPressed(KEY_RIGHT, true) || didSelect())
-                    - (i32)isKeyPressed(KEY_LEFT, true);
-
-        for (auto& pair : getControllers())
-        {
-            Controller& controller = pair.value;
-            i32 tmpResult = (i32)controller.isButtonPressed(BUTTON_DPAD_RIGHT) -
-                            (i32)controller.isButtonPressed(BUTTON_DPAD_LEFT);
-            if (!tmpResult)
-            {
-                if (controller.repeatTimer == 0.f)
-                {
-                    f32 xaxis = controller.getAxis(AXIS_LEFT_X);
-                    if (xaxis < -JOYSTICK_DEADZONE)
-                    {
-                        tmpResult = -1;
-                        controller.repeatTimer = 0.1f;
-                    }
-                    else if (xaxis > JOYSTICK_DEADZONE)
-                    {
-                        tmpResult = 1;
-                        controller.repeatTimer = 0.1f;
-                    }
-                }
-            }
-            if (tmpResult)
-            {
-                result = tmpResult;
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    i32 didChangeSelectionY()
-    {
-        i32 result = (i32)isKeyPressed(KEY_DOWN, true)
-                    - (i32)isKeyPressed(KEY_UP, true);
-
-        for (auto& pair : getControllers())
-        {
-            Controller& controller = pair.value;
-
-            i32 tmpResult = (i32)controller.isButtonPressed(BUTTON_DPAD_DOWN) -
-                            (i32)controller.isButtonPressed(BUTTON_DPAD_UP);
-            if (!tmpResult)
-            {
-                if (controller.repeatTimer == 0.f)
-                {
-                    f32 yaxis = pair.value.getAxis(AXIS_LEFT_Y);
-                    if (yaxis < -JOYSTICK_DEADZONE)
-                    {
-                        tmpResult = -1;
-                        controller.repeatTimer = 0.1f;
-                    }
-                    else if (yaxis > JOYSTICK_DEADZONE)
-                    {
-                        tmpResult = 1;
-                        controller.repeatTimer = 0.1f;
-                    }
-                }
-            }
-            if (tmpResult)
-            {
-                result = tmpResult;
-                break;
-            }
-        }
-
-        return result;
-    }
-
     Vec2 getMovement()
     {
         Vec2 result = Vec2(
@@ -463,12 +441,7 @@ public:
         return result;
     }
 
-    void onFrameBegin()
-    {
-        //inputText.clear();
-    }
-
-    void onFrameEnd()
+    void onFrameEnd(f32 deltaTime)
     {
         memset(keyPressed, 0, sizeof(keyPressed));
         memset(keyReleased, 0, sizeof(keyReleased));
@@ -479,15 +452,81 @@ public:
         {
             memset(controller.value.buttonPressed, 0, sizeof(controller.value.buttonPressed));
             memset(controller.value.buttonReleased, 0, sizeof(controller.value.buttonReleased));
+            memset(controller.value.axisTriggered, 0, sizeof(controller.value.axisTriggered));
+            memset(controller.value.axisReleased, 0, sizeof(controller.value.axisReleased));
             controller.value.anyButtonPressed = false;
+            controller.value.repeatTimer = max(controller.value.repeatTimer - deltaTime, 0.f);
         }
         mouseMoved = false;
 
         mouseScrollX = 0;
         mouseScrollY = 0;
+
+        for (auto it = events.begin(); it != events.end();)
+        {
+            bool erase = false;
+            switch (it->type)
+            {
+                case INPUT_MOUSE_MOVE:
+                case INPUT_MOUSE_WHEEL:
+                case INPUT_MOUSE_BUTTON_PRESSED:
+                case INPUT_MOUSE_BUTTON_RELEASED:
+                case INPUT_KEYBOARD_PRESSED:
+                case INPUT_KEYBOARD_RELEASED:
+                case INPUT_KEYBOARD_REPEAT:
+                case INPUT_CONTROLLER_AXIS_RELEASED:
+                case INPUT_CONTROLLER_AXIS_TRIGGERED:
+                case INPUT_CONTROLLER_AXIS_REPEAT:
+                case INPUT_CONTROLLER_BUTTON_PRESSED:
+                case INPUT_CONTROLLER_BUTTON_REPEAT:
+                case INPUT_CONTROLLER_BUTTON_RELEASED:
+                    erase = true;
+                    break;
+                case INPUT_MOUSE_BUTTON_DOWN:
+                    erase |= !mouseButtonDown[it->mouse.button];
+                    break;
+                case INPUT_KEYBOARD_DOWN:
+                    erase |= !keyDown[it->keyboard.key];
+                    break;
+                case INPUT_CONTROLLER_BUTTON_DOWN:
+                    erase |= !it->controller.controller->buttonDown[it->controller.button];
+                    if (it->controller.controller->buttonDown[it->controller.button]
+                            && it->controller.controller->repeatTimer == 0.f)
+                    {
+                        it->controller.controller->repeatTimer = CONTROLLER_REPEAT_INTERVAL;
+                        InputEvent ev = *it;
+                        ev.type = INPUT_CONTROLLER_BUTTON_REPEAT;
+                        events.push(ev);
+                    }
+                    break;
+                case INPUT_CONTROLLER_AXIS:
+                    erase = true;
+                    if (absolute(it->controller.controller->axis[it->controller.axis]) >= joystickDeadzone
+                            && it->controller.controller->repeatTimer == 0.f)
+                    {
+                        it->controller.controller->repeatTimer = CONTROLLER_REPEAT_INTERVAL;
+                        InputEvent ev = *it;
+                        ev.type = INPUT_CONTROLLER_AXIS_REPEAT;
+                        events.push(ev);
+                    }
+                    break;
+            }
+            if (erase)
+            {
+                it = events.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        assert(events.size() < 100);
     }
 
     //Str64 const& getInputText() const { return inputText; }
+
+    Array<InputEvent> const& getEvents() const { return events; }
 
     void handleEvent(SDL_Event const& e)
     {
@@ -500,10 +539,21 @@ public:
                 {
                     keyDown[key] = true;
                     keyPressed[key] = true;
+
+                    InputEvent ev{ INPUT_KEYBOARD_PRESSED };
+                    ev.keyboard = { (Key)key };
+                    events.push(ev);
+
+                    ev.type = INPUT_KEYBOARD_DOWN;
+                    events.push(ev);
                 }
                 else
                 {
                     keyRepeat[key] = true;
+
+                    InputEvent ev{ INPUT_KEYBOARD_REPEAT };
+                    ev.keyboard = { (Key)key };
+                    events.push(ev);
                 }
             } break;
             case SDL_KEYUP:
@@ -511,28 +561,55 @@ public:
                 u32 key = e.key.keysym.scancode;
                 keyDown[key] = false;
                 keyReleased[key] = true;
+
+                InputEvent ev{ INPUT_KEYBOARD_RELEASED };
+                ev.keyboard = { (Key)key };
+                events.push(ev);
             } break;
             case SDL_MOUSEBUTTONDOWN:
             {
                 u32 button = e.button.button;
                 mouseButtonDown[button] = true;
                 mouseButtonPressed[button] = true;
+
+                InputEvent ev{ INPUT_MOUSE_BUTTON_PRESSED };
+                ev.mouse = { Vec2((f32)e.button.x, (f32)e.button.y), {}, (MouseButton)button };
+                events.push(ev);
+
+                ev.type = INPUT_MOUSE_BUTTON_DOWN;
+                events.push(ev);
             } break;
             case SDL_MOUSEBUTTONUP:
             {
                 u32 button = e.button.button;
                 mouseButtonDown[button] = false;
                 mouseButtonReleased[button] = true;
+
+                InputEvent ev{ INPUT_MOUSE_BUTTON_RELEASED };
+                ev.mouse = { Vec2((f32)e.button.x, (f32)e.button.y), {}, (MouseButton)button };
+                events.push(ev);
             } break;
             case SDL_MOUSEWHEEL:
             {
                 i32 flip = e.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
                 mouseScrollX += e.wheel.x * flip;
                 mouseScrollY += e.wheel.y * flip;
+
+                InputEvent ev{ INPUT_MOUSE_WHEEL };
+                ev.mouseWheel = { mouseScrollX, mouseScrollY };
+                events.push(ev);
             } break;
             case SDL_MOUSEMOTION:
             {
                 mouseMoved = true;
+
+                InputEvent ev{ INPUT_MOUSE_MOVE };
+                ev.mouse = {
+                    Vec2((f32)e.motion.x, (f32)e.motion.y),
+                    Vec2((f32)e.motion.xrel, (f32)e.motion.yrel),
+                    MOUSE_UNKNOWN,
+                };
+                events.push(ev);
             } break;
             case SDL_CONTROLLERDEVICEADDED:
             {
@@ -572,8 +649,31 @@ public:
                 auto ctl = controllers.get(which);
                 if (ctl)
                 {
+                    f32 prevAl = ctl->axis[axis];
                     f32 val = value / 32768.f;
                     ctl->axis[axis] = absolute(val) < joystickDeadzone ? 0.f : val;
+
+                    if (absolute(val) >= joystickDeadzone)
+                    {
+                        InputEvent ev{ INPUT_CONTROLLER_AXIS };
+                        ev.controller = { ctl, which, ctl->axis[axis], (ControllerAxis)axis };
+                        events.push(ev);
+
+                        if (absolute(prevAl) < joystickDeadzone)
+                        {
+                            InputEvent ev{ INPUT_CONTROLLER_AXIS_TRIGGERED };
+                            ev.controller = { ctl, which, ctl->axis[axis], (ControllerAxis)axis };
+                            events.push(ev);
+
+                            ctl->repeatTimer = CONTROLLER_BEGIN_REPEAT_DELAY;
+                        }
+                    }
+                    else if (absolute(prevAl) >= joystickDeadzone)
+                    {
+                        InputEvent ev{ INPUT_CONTROLLER_AXIS_RELEASED };
+                        ev.controller = { ctl, which, ctl->axis[axis], (ControllerAxis)axis };
+                        events.push(ev);
+                    }
                 }
             } break;
             case SDL_CONTROLLERBUTTONDOWN:
@@ -586,6 +686,14 @@ public:
                     ctl->buttonPressed[button] = true;
                     ctl->buttonDown[button] = true;
                     ctl->anyButtonPressed = true;
+                    ctl->repeatTimer = CONTROLLER_BEGIN_REPEAT_DELAY;
+
+                    InputEvent ev{ INPUT_CONTROLLER_BUTTON_PRESSED };
+                    ev.controller = { ctl, which, 0.f, ControllerAxis(0), (ControllerButton)button };
+                    events.push(ev);
+
+                    ev.type = INPUT_CONTROLLER_BUTTON_DOWN;
+                    events.push(ev);
                 }
             } break;
             case SDL_CONTROLLERBUTTONUP:
@@ -598,6 +706,9 @@ public:
                     ctl->buttonDown[button] = false;
                     ctl->buttonReleased[button] = true;
                 }
+                InputEvent ev{ INPUT_CONTROLLER_BUTTON_RELEASED };
+                ev.controller = { ctl, which, 0.f, ControllerAxis(0), (ControllerButton)button };
+                events.push(ev);
             } break;
             case SDL_TEXTINPUT:
             {

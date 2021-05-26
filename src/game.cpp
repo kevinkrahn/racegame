@@ -165,7 +165,6 @@ void Game::run()
     while (true)
     {
         f64 frameStartTime = getTime();
-        g_input.onFrameBegin();
 
         while (SDL_PollEvent(&event) != 0)
         {
@@ -240,7 +239,7 @@ void Game::run()
         {
             currentScene->onEndUpdate();
         }
-        g_input.onFrameEnd();
+        g_input.onFrameEnd(deltaTime);
 
         frameIndex = (frameIndex + 1) % MAX_BUFFERED_FRAMES;
         ++frameCount;
