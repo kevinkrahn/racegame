@@ -114,7 +114,7 @@ Vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
 }
 
 void Font::draw(const char* text, Vec2 pos, Vec3 color, f32 alpha,
-            f32 scale, HAlign halign, VAlign valign)
+            f32 scale, HAlign halign, VAlign valign, Mat4 const& transform)
 {
     char* str = (char*)text;
     Vec2 p = pos;
@@ -200,6 +200,10 @@ void Font::draw(const char* text, Vec2 pos, Vec3 color, f32 alpha,
             { { p1.x, p2.y }, { t1.x, t2.y } },
             { p2, t2 }
         };
+        for (u32 i=0; i<4; ++i)
+        {
+            points[i].xy = (transform * Vec4(points[i].xy, 0.f, 1.f)).xy;
+        }
 
         Vec4 col(color, alpha);
         glUniform4fv(0, 4, (GLfloat*)&points);

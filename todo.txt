@@ -90,7 +90,7 @@
 - Highlight player vehicle in each viewport before race starts
 - Disable highlight behind some railing types
 - Add normal map strength material option
-- Keep previous frames around for better motion blur
+- Keep previous frames around for better motion blur (or investigate better motion blur shader)
 - Convert fonts into resource
 - Add heightmap for each texture on terrain to make better transitions
 - Remove all standard library usage to improve compile times
@@ -107,3 +107,4 @@
 - Add option to change cloud shadow speed and direction
 - Go through all stb dependencies and use appropriate macros to avoid including std libs
 - Experiment with a weapons lock for first few seconds of race
+- Give acceleration boost to vehicles that just respawned

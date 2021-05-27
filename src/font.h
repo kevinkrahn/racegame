@@ -43,6 +43,6 @@ public:
     f32 getHeight() const { return height; }
     f32 getLineHeight() const { return lineHeight; }
 
-    void draw(const char* text, Vec2 pos, Vec3 color, f32 alpha=1.f,
-            f32 scale=1.f, HAlign halign=HAlign::LEFT, VAlign valign=VAlign::TOP);
+    void draw(const char* text, Vec2 pos, Vec3 color, f32 alpha=1.f, f32 scale=1.f,
+            HAlign halign=HAlign::LEFT, VAlign valign=VAlign::TOP, Mat4 const& t=Mat4(1.f));
 };

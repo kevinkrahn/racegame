@@ -177,6 +177,20 @@ Mat4 Mat4::faceDirection(const Vec3 &forwardVector, const Vec3 &upVector)
     return Mat4(forwardVector, right, up);
 }
 
+Mat4 Mat4::skewX(f32 skew)
+{
+    Mat4 r(1.f);
+    r[0][1] = tanf(skew);
+    return r;
+}
+
+Mat4 Mat4::skewY(f32 skew)
+{
+    Mat4 r(1.f);
+    r[1][0] = tanf(skew);
+    return r;
+}
+
 Mat4 inverse(Mat4 const& m)
 {
     Mat4 inv;

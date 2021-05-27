@@ -2322,17 +2322,24 @@ void Menu::showMode()
         static bool animateIn = true;
         static const char* helpMessage = "";
 
-        gui::Widget* root = add(gui::root, FadeAnimation(1.f, animateIn));
-        root = add(root, SlideAnimation(1.f, animateIn));
+        gui::Widget* root = add(gui::root, FadeAnimation(0.5f, animateIn));
+
+        /*
+        Mat4 perspective(1.f);
+        perspective[2][3] = 0.001f;
+
+        root = add(root, Transform(perspective, true));
+        //root = add(root, Transform(Mat4::rotationZ(sinf(g_game.currentTime) * 0.5f)));
+        //root = add(root, Transform(Mat4::translation(Vec3(cosf(g_game.currentTime) * 100, 0.f, 0.f))));
+        //root = add(root, Transform(Mat4::translation(Vec3(0.f, sinf(g_game.currentTime) * 100, 0.f))));
+        */
+        root = add(root, SlideAnimation(0.75f, animateIn));
 
         Font* smallFont = &g_res.getFont("font", 20);
-        /*
-        auto tc = add(root,
-                Container(Insets(10), {}, {}, Vec4(0, 0, 0, (sinf(g_game.currentTime) + 1.f) * 0.5f), HAlign::CENTER));
-        add(tc, Text(smallFont, helpMessage))->position(0, 800);
-        */
 
         gui::Widget* container = add(root, Container({}, {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER));
+        //auto t = add(container, Transform(Mat4::rotationY(sinf(g_game.currentTime * 2.f) * 0.5f)))->size(500, 0);
+        //auto t = add(container, Transform(Mat4::translation(Vec3(0, 0, sinf(g_game.currentTime * 2.f) * 30.f))))->size(500, 0);
         container = add(container, Container(Insets(40), {}, {}, Vec4(0, 0, 0, 0.65f)))->size(500, 0);
 
         Vec2 btnSize(INFINITY, 60);

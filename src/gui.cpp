@@ -24,13 +24,13 @@ namespace gui
         Vec2 actualScreenSize((f32)w, (f32)h);
         Vec2 sizeMultiplier = actualScreenSize / referenceScreenSize;
 
-        WidgetContext ctx;
-        ctx.renderer = renderer;
+        GuiContext ctx;
+        //ctx.renderer = renderer;
         ctx.deltaTime = deltaTime;
         ctx.aspectRatio = aspectRatio;
         ctx.referenceScreenSize = referenceScreenSize;
         ctx.actualScreenSize = actualScreenSize;
-        ctx.scale = (f32)h / REFERENCE_HEIGHT;
+        //ctx.scale = (f32)h / REFERENCE_HEIGHT;
 
         root->desiredSize = { (f32)w, (f32)h };
         root->computeSize(Constraints());
@@ -74,7 +74,11 @@ namespace gui
             }
         }
 
-        root->doRender(ctx);
+        RenderContext rtx;
+        rtx.renderer = renderer;
+        rtx.transform = Mat4(1.f);
+        rtx.alpha = 1.f;
+        root->render(ctx, rtx);
     }
 
     void Widget::computeSize(Constraints const& constraints)
@@ -112,11 +116,12 @@ namespace gui
             : maxDim.y;
     }
 
-    void Widget::layout(WidgetContext& ctx)
+    void Widget::layout(GuiContext& ctx)
     {
         for (Widget* child = childFirst; child; child = child->neighbor)
         {
-            child->computedPosition = computedPosition + child->desiredPosition;
+            child->positionWithinParent = child->desiredPosition;
+            child->computedPosition = computedPosition + child->positionWithinParent;
             child->layout(ctx);
         }
     }
@@ -126,7 +131,8 @@ namespace gui
         if (ev.type <= INPUT_MOUSE_MOVE)
         {
             // pipe mouse events to the widgets that the mouse is over
-            handleMouseInput(ctx, ev);
+            InputEvent mouseEvent = ev;
+            handleMouseInput(ctx, mouseEvent);
         }
 
         Widget* selectedWidget = nullptr;
@@ -267,7 +273,7 @@ namespace gui
         }
     }
 
-    bool Widget::handleMouseInput(InputCaptureContext& ctx, InputEvent const& input)
+    bool Widget::handleMouseInput(InputCaptureContext& ctx, InputEvent& input)
     {
         bool isMouseOver =
             pointInRectangle(input.mouse.mousePos, computedPosition, computedPosition + computedSize);
@@ -294,16 +300,11 @@ namespace gui
         return false;
     }
 
-    void Widget::doRender(WidgetContext& ctx)
+    void Widget::render(GuiContext& ctx, RenderContext& rtx)
     {
-        // TODO: Don't perform scaling like this; doesn't work well with fonts
-        computedSize *= ctx.scale;
-        computedPosition *= ctx.scale;
-        this->render(ctx);
-
         for (Widget* child = childFirst; child; child = child->neighbor)
         {
-            child->doRender(ctx);
+            child->render(ctx, rtx);
         }
     }
 

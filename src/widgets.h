@@ -45,9 +45,9 @@ namespace gui
             assert(constraints.maxHeight > 0);
         }
 
-        virtual void render(WidgetContext& ctx) override
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            ui::text(font, text, computedPosition, Vec3(1.f), 1.f);
+            ui::text(font, text, computedPosition, Vec3(1.f), rtx.alpha);
         }
     };
 
@@ -107,9 +107,9 @@ namespace gui
             assert(childFirst == nullptr);
         }
 
-        virtual void render(WidgetContext& ctx) override
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            ui::rect(0, tex, computedPosition, computedSize);
+            ui::rect(0, tex, computedPosition, computedSize, Vec3(1.f), rtx.alpha);
         }
     };
 
@@ -178,7 +178,7 @@ namespace gui
                 : maxDim.y + verticalInset;
         }
 
-        virtual void layout(WidgetContext& ctx) override
+        virtual void layout(GuiContext& ctx) override
         {
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
@@ -212,20 +212,21 @@ namespace gui
                     childPos.y = computedSize.y * 0.5f - child->computedSize.y * 0.5f;
                 }
 
-                child->computedPosition =
-                    computedPosition + child->desiredPosition + childPos;
+                child->positionWithinParent = child->desiredPosition + childPos;
+                child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
             }
         }
 
-        virtual void render(WidgetContext& ctx) override
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
             if (backgroundColor.a > 0.f)
             {
                 ui::rectBlur(0, nullptr, computedPosition + Vec2(margin.left, margin.top),
                     computedSize - Vec2(margin.left + margin.right, margin.top + margin.bottom),
-                    backgroundColor);
+                    backgroundColor, rtx.alpha);
             }
+            Widget::render(ctx, rtx);
         }
     };
 
@@ -261,14 +262,13 @@ namespace gui
                 : maxHeight;
         }
 
-        virtual void layout(WidgetContext& ctx) override
+        virtual void layout(GuiContext& ctx) override
         {
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                // TODO: collapse adjacent margins
-                child->computedPosition =
-                    computedPosition + child->desiredPosition + Vec2(offset, 0.f);
+                child->positionWithinParent = child->desiredPosition + Vec2(offset, 0.f);
+                child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
                 offset += child->computedSize.x + itemSpacing;
             }
@@ -307,14 +307,13 @@ namespace gui
                 : totalHeight - itemSpacing;
         }
 
-        virtual void layout(WidgetContext& ctx) override
+        virtual void layout(GuiContext& ctx) override
         {
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                // TODO: collapse adjacent margins
-                child->computedPosition =
-                    computedPosition + child->desiredPosition + Vec2(0.f, offset);
+                child->positionWithinParent = child->desiredPosition + Vec2(0.f, offset);
+                child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
                 offset += child->computedSize.y + itemSpacing;
             }
@@ -368,15 +367,16 @@ namespace gui
                 : totalHeight - itemSpacing;
         }
 
-        virtual void layout(WidgetContext& ctx) override
+        virtual void layout(GuiContext& ctx) override
         {
             f32 totalHeight = 0.f;
             f32 maxRowHeight = 0.f;
             u32 rowChildCount = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->computedPosition =
-                    computedPosition + Vec2(rowChildCount * computedSize.x / columns, totalHeight);
+                child->positionWithinParent =
+                    Vec2(rowChildCount * computedSize.x / columns, totalHeight);
+                child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
 
                 maxRowHeight = max(maxRowHeight, child->computedSize.y);
@@ -476,7 +476,7 @@ namespace gui
             return false;
         }
 
-        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent const& input)
+        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input)
             override
         {
             bool isMouseOver =
@@ -497,7 +497,7 @@ namespace gui
             return true;
         }
 
-        virtual void render(WidgetContext& ctx) override
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
             ButtonState* state = getState<ButtonState>(this);
 
@@ -529,6 +529,8 @@ namespace gui
                 border->backgroundColor = mix(COLOR_NOT_SELECTED, COLOR_SELECTED, state->hoverIntensity);
                 bg->backgroundColor = Vec4(Vec3(state->hoverValue * state->hoverIntensity), 1.f);
             }
+
+            Widget::render(ctx, rtx);
         }
     };
 
@@ -620,20 +622,21 @@ namespace gui
 
         Widget* build()
         {
-            this->pushID("SlideAnimation");
+            pushID("SlideAnimation");
             return this;
         }
 
-        virtual void layout(WidgetContext& ctx) override
+        virtual void layout(GuiContext& ctx) override
         {
-            auto state = this->animate();
+            auto state = animate();
 
             //f32 t = easeInOutBezier(state->animationProgress);
             f32 t = easeInOutParametric(state->animationProgress);
-            for (Widget* child = this->childFirst; child; child = child->neighbor)
+            for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->computedPosition = this->computedPosition + child->desiredPosition
-                    - Vec2(0, (1.f - t) * g_game.windowHeight);
+                child->positionWithinParent =
+                    child->desiredPosition - Vec2(0, (1.f - t) * g_game.windowHeight);
+                child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
             }
         }
@@ -646,30 +649,92 @@ namespace gui
 
         Widget* build()
         {
-            this->pushID("FadeAnimation");
+            pushID("FadeAnimation");
             return this;
         }
 
-        virtual void layout(WidgetContext& ctx) override
+        virtual void layout(GuiContext& ctx) override
         {
-            auto state = this->animate();
-            for (Widget* child = this->childFirst; child; child = child->neighbor)
+            auto state = animate();
+            for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->computedPosition = this->computedPosition + child->desiredPosition;
+                child->computedPosition = computedPosition + child->desiredPosition;
                 child->layout(ctx);
             }
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            auto state = getState<AnimationState>(this);
+            RenderContext r = rtx;
+            r.alpha = rtx.alpha * state->animationProgress;
+            Widget::render(ctx, r);
         }
     };
 
     struct InputCapture : public Widget
     {
-        InputCapture() : Widget("InputCapture") {}
+        const char* name;
+
+        InputCapture(const char* name=nullptr) : Widget("InputCapture"), name(name) {}
 
         Widget* build()
         {
-            pushID("InputCapture");
+            pushID(name ? name : "InputCapture");
             addInputCapture(this);
             return this;
+        }
+    };
+
+    struct Transform : public Widget
+    {
+        Mat4 transform;
+        bool center;
+
+        Transform(Mat4 const& transform, bool center=true)
+            : Widget("Transform"), transform(transform), center(center) {}
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            if (center)
+            {
+                Vec2 offset = -(computedPosition + computedSize * 0.5f);
+                transform = Mat4::translation(Vec3(-offset, 0.f)) *
+                    transform * Mat4::translation(Vec3(offset, 0.f));
+            }
+            Widget::layout(ctx);
+        }
+
+        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input) override
+        {
+            // TODO: Make this work for more than just 2D transformations
+            Vec2 prevMousePos = input.mouse.mousePos;
+            input.mouse.mousePos = (inverse(transform) * Vec4(input.mouse.mousePos, 0.f, 1.f)).xy;
+            bool result = Widget::handleMouseInput(ctx, input);
+            input.mouse.mousePos = prevMousePos;
+            return result;
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            Mat4 oldTransform = rtx.transform;
+            rtx.transform = rtx.transform * transform;
+            ui::setTransform(rtx.transform);
+            Widget::render(ctx, rtx);
+            ui::setTransform(oldTransform);
+        }
+    };
+
+    struct Clip : public Widget
+    {
+        Clip() : Widget("Clip") {}
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            // TODO
+            /* ui::clip();
+            */
+            Widget::render(ctx, rtx);
         }
     };
 

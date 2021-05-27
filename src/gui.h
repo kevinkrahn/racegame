@@ -84,14 +84,19 @@ namespace gui
     };
     //static_assert(sizeof(WidgetStateNode) == 64);
 
-    struct WidgetContext
+    struct GuiContext
     {
-        Renderer* renderer;
         f32 deltaTime;
         f32 aspectRatio;
         Vec2 referenceScreenSize;
         Vec2 actualScreenSize;
-        f32 scale;
+    };
+
+    struct RenderContext
+    {
+        Renderer* renderer;
+        Mat4 transform;
+        f32 alpha;
     };
 
     // Use pointers to WidgetStateNodes to identify the input captures
@@ -120,6 +125,7 @@ namespace gui
         Vec2 desiredSize = { INFINITY, INFINITY };
 
         Vec2 computedPosition = { 0, 0 };
+        Vec2 positionWithinParent = { 0, 0 };
         Vec2 desiredPosition = { 0, 0 };
 
         u32 flags = 0;
@@ -136,7 +142,6 @@ namespace gui
 #endif
         Vec2 center() const { return computedPosition + computedSize * 0.5f; }
         void pushID(const char* id);
-        void doRender(WidgetContext& ctx);
         void navigate(struct Navigation& nav);
         Widget* build() { return this; }
         Widget* position(Vec2 position) { desiredSize = position; return this; }
@@ -148,9 +153,9 @@ namespace gui
         virtual void computeSize(Constraints const& constraints);
         virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev);
         virtual bool handleInputEvent(InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) { return false; }
-        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent const& input);
-        virtual void layout(WidgetContext& ctx);
-        virtual void render(WidgetContext& ctx) {}
+        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input);
+        virtual void layout(GuiContext& ctx);
+        virtual void render(GuiContext& ctx, RenderContext& rtx);
     };
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);

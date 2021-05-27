@@ -39,6 +39,17 @@ namespace ui
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
+    Mat4 transform(1.f);
+
+    void setTransform(Mat4 const& t) { transform = t; }
+    void transformQuad(Quad& q, Mat4 const& t)
+    {
+        for (u32 i=0; i<4; ++i)
+        {
+            q.points[i].xy = (t * Vec4(q.points[i].xy, 0.f, 1.f)).xy;
+        }
+    }
+
     void rect(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
             Vec3 const& color=Vec3(1.f), f32 alpha=1.f)
     {
@@ -57,6 +68,8 @@ namespace ui
         q.color1 = Vec4(color, 1.f);
         q.color2 = Vec4(color, 1.f);
         q.alpha = alpha;
+
+        transformQuad(q, transform);
 
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
@@ -77,6 +90,8 @@ namespace ui
         q.color1 = Vec4(color, 1.f);
         q.color2 = Vec4(color, 1.f);
         q.alpha = alpha;
+
+        transformQuad(q, transform);
 
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
@@ -100,6 +115,8 @@ namespace ui
         q.color2 = color;
         q.alpha = alpha;
 
+        transformQuad(q, transform);
+
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
@@ -122,6 +139,8 @@ namespace ui
         q.color2 = color2;
         q.alpha = alpha;
 
+        transformQuad(q, transform);
+
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
@@ -142,6 +161,8 @@ namespace ui
         q.color2 = color;
         q.alpha = alpha;
 
+        transformQuad(q, transform);
+
         g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
     }
 
@@ -155,6 +176,7 @@ namespace ui
         f32 scale = 1.f;
         HAlign halign;
         VAlign valign;
+        Mat4 transform;
     };
 
     void text(Font* font, const char* s, Vec2 pos, Vec3 color, f32 alpha=1.f,
@@ -171,10 +193,11 @@ namespace ui
         text.scale = scale;
         text.halign = halign;
         text.valign = valign;
+        text.transform = transform;
 
         g_game.renderer->add2D(shader, TEXT, [text]{
             text.font->draw(text.text, text.pos, text.color, text.alpha, text.scale,
-                    text.halign, text.valign);
+                    text.halign, text.valign, text.transform);
         });
     }
 };

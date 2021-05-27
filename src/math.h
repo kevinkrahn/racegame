@@ -368,6 +368,8 @@ struct Vec4
         {
             f32 r, g, b, a;
         };
+        Vec2 xy;
+        Vec2 rg;
         Vec3 xyz;
         Vec3 rgb;
         f32 data[4];
@@ -376,6 +378,8 @@ struct Vec4
     Vec4(f32 x, f32 y, f32 z, f32 w) : x(x), y(y), z(z), w(w) {}
     explicit Vec4(f32 x) : x(x), y(x), z(x), w(x) {}
     Vec4(Vec3 const& v, f32 w) : x(v.x), y(v.y), z(v.z), w(w) {}
+    Vec4(Vec2 const& v, f32 z, f32 w) : x(v.x), y(v.y), z(z), w(w) {}
+    Vec4(Vec2 const& v1, Vec2 const& v2) : x(v1.x), y(v1.y), z(v2.x), w(v2.y) {}
     Vec4() = default;
 
     void operator=(Vec4 const& rhs)
@@ -1101,6 +1105,8 @@ struct alignas(16) Mat4
     static Mat4 scaling(Vec3 const& scale);
     static Mat4 translation(Vec3 const& trans);
     static Mat4 faceDirection(Vec3 const& forwardVector, Vec3 const& upVector);
+    static Mat4 skewX(f32 skew);
+    static Mat4 skewY(f32 skew);
 
     Vec3 const& xAxis() const
     {
