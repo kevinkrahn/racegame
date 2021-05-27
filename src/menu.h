@@ -131,6 +131,7 @@ class Menu
         repeatTimer = 0.f;
         fadeIn = true;
         fadeInTimer = 0.f;
+        mode = NONE;
     }
 
     void resetTransient()
@@ -204,4 +205,15 @@ public:
     void showPauseMenu();
     void showInitialCarLotMenu(u32 playerIndex);
     void onUpdate(class Renderer* renderer, f32 deltaTime);
+
+    enum
+    {
+        NONE,
+        MAIN_MENU,
+        SETTINGS,
+        PAUSE_MENU,
+        NEW_CHAMPIONSHIP,
+    };
+    u32 mode = NONE;
+    void showMode();
 };

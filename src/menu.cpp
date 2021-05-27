@@ -7,6 +7,7 @@
 #include "scene.h"
 #include "weapon.h"
 #include "vehicle.h"
+#include "widgets.h"
 
 const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
 const Vec4 COLOR_NOT_SELECTED = Vec4(1.f);
@@ -721,39 +722,7 @@ Widget* Menu::addTitle(const char* text, Vec2 pos)
 void Menu::showMainMenu()
 {
     reset();
-
-    addTitle("Main Menu");
-
-    Vec2 size(380, 200);
-    Vec2 smallSize(380, 100);
-    selectedWidget = addButton("CHAMPIONSHIP", "Start a new championship with up to 4 players!", { -400, -200 }, size, [this]{
-        showNewChampionshipMenu();
-    }, WidgetFlags::FADE_OUT);
-    addButton("LOAD CHAMPIONSHIP", "Resume a previous championship.", { -0, -200 }, size, [this]{
-        reset();
-        g_game.loadGame();
-        showChampionshipMenu();
-        g_game.changeScene(championshipTracks[g_game.state.currentRace]);
-    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
-    addButton("QUICK RACE", "Jump into a race straightaway!", { 400, -200 }, size, [this]{
-        reset();
-        startQuickRace();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK);
-    addButton("SETTINGS", "Settings change things.", { -400, -30 }, smallSize, [this]{
-        showSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
-    addButton("EDITOR", "Edit things.", { 0, -30 }, smallSize, [this]{
-        reset();
-        g_game.loadEditor();
-    }, WidgetFlags::FADE_OUT);
-    addButton("CHALLENGES", "Test your abilities in varied and challenging scenarios.", { 400, -30 },
-            smallSize, []{}, WidgetFlags::FADE_OUT);
-
-    addButton("EXIT", "Terminate your entertainment experience.", {0, 300}, {200, 50}, []{
-        g_game.shouldExit = true;
-    }, /*WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK*/ 0);
-
-    addHelpMessage({0, 100});
+    mode = MAIN_MENU;
 }
 
 void Menu::showNewChampionshipMenu()
@@ -2320,74 +2289,6 @@ void Menu::showControlsSettingsMenu()
     }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
 
-#if 0
-void Menu::audioOptions()
-{
-    g_gui.beginPanel("Audio Options", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
-            0.5f, false, true);
-
-    g_gui.slider("Master Volume", 0.f, 1.f, tmpConfig.audio.masterVolume);
-    g_gui.slider("Vehicle Volume", 0.f, 1.f, tmpConfig.audio.vehicleVolume);
-    g_gui.slider("SFX Volume", 0.f, 1.f, tmpConfig.audio.sfxVolume);
-    g_gui.slider("Music Volume", 0.f, 1.f, tmpConfig.audio.musicVolume);
-
-    g_gui.gap(20);
-    if (g_gui.button("Save"))
-    {
-        g_game.config.audio = tmpConfig.audio;
-        g_game.config.save();
-        showMainMenu();
-        g_gui.popSelection();
-    }
-
-    if (g_gui.button("Reset to Defaults"))
-    {
-        Config defaultConfig;
-        tmpConfig.audio = defaultConfig.audio;
-    }
-
-    if (g_gui.button("Cancel") || g_gui.didGoBack())
-    {
-        showSettingsMenu();
-        g_gui.popSelection();
-    }
-
-    g_gui.end();
-}
-
-void Menu::gameplayOptions()
-{
-    g_gui.beginPanel("Gameplay Options", { g_game.windowWidth/2, g_game.windowHeight*0.15f },
-            0.5f, false, true);
-
-    g_gui.slider("HUD Track Scale", 0.5f, 2.f, tmpConfig.gameplay.hudTrackScale);
-    g_gui.slider("HUD Text Scale", 0.5f, 2.f, tmpConfig.gameplay.hudTextScale);
-
-    g_gui.gap(20);
-    if (g_gui.button("Save"))
-    {
-        g_game.config.gameplay = tmpConfig.gameplay;
-        g_game.config.save();
-        showMainMenu();
-        g_gui.popSelection();
-    }
-
-    if (g_gui.button("Reset to Defaults"))
-    {
-        Config defaultConfig;
-        tmpConfig.gameplay = defaultConfig.gameplay;
-    }
-
-    if (g_gui.button("Cancel") || g_gui.didGoBack())
-    {
-        showSettingsMenu();
-        g_gui.popSelection();
-    }
-
-    g_gui.end();
-}
-#endif
-
 void Menu::showPauseMenu()
 {
     reset();
@@ -2412,8 +2313,97 @@ void Menu::showPauseMenu()
     });
 }
 
+void Menu::showMode()
+{
+    using namespace gui;
+
+    if (mode == MAIN_MENU)
+    {
+        static bool animateIn = true;
+        static const char* helpMessage = "";
+
+        gui::Widget* root = add(gui::root, FadeAnimation(1.f, animateIn));
+        root = add(root, SlideAnimation(1.f, animateIn));
+
+        Font* smallFont = &g_res.getFont("font", 20);
+        /*
+        auto tc = add(root,
+                Container(Insets(10), {}, {}, Vec4(0, 0, 0, (sinf(g_game.currentTime) + 1.f) * 0.5f), HAlign::CENTER));
+        add(tc, Text(smallFont, helpMessage))->position(0, 800);
+        */
+
+        gui::Widget* container = add(root, Container({}, {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER));
+        container = add(container, Container(Insets(40), {}, {}, Vec4(0, 0, 0, 0.65f)))->size(500, 0);
+
+        Vec2 btnSize(INFINITY, 60);
+        auto column = add(container, Column(10))->size(Vec2(0));
+
+        Font* bigFont = &g_res.getFont("font_bold", 60);
+        auto textContainer = add(column, Container(Insets(10), {}, {}, Vec4(0), HAlign::CENTER))
+            ->size(INFINITY, 70);
+        add(textContainer, Text(bigFont, "MAIN MENU"));
+
+        add(column, TextButton("Championship"))
+            ->onPress([&]{ showNewChampionshipMenu(); })
+            ->onSelect([]{ helpMessage = "Begin a new championship!"; })
+            ->size(btnSize);
+
+        add(column, TextButton("Load Championship"))
+            ->onPress([&]{
+                reset();
+                g_game.loadGame();
+                showChampionshipMenu();
+                g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+            })
+            ->onSelect([]{ helpMessage = "Resume a previous championship."; })
+            ->size(btnSize);
+
+        add(column, TextButton("Quick Race"))
+            ->onPress([&]{
+                reset();
+                startQuickRace();
+            })
+            ->onSelect([]{ helpMessage = "Jump into a race without delay!"; })
+            ->size(btnSize);
+
+        add(column, TextButton("Settings"))
+            ->onPress([&]{
+                showSettingsMenu();
+            })
+            ->onSelect([]{ helpMessage = "Change things."; })
+            ->size(btnSize);
+
+        add(column, TextButton("Editor"))
+            ->onPress([&]{
+                reset();
+                g_game.loadEditor();
+            })
+            ->onSelect([]{ helpMessage = "Edit things."; })
+            ->size(btnSize);
+
+        add(column, TextButton("Challenges"))
+            ->onPress([&]{
+            })
+            ->onSelect([]{ helpMessage = "Challenge things."; })
+            ->size(btnSize);
+
+        add(column, TextButton("Exit"))
+            ->onPress([&]{
+                g_game.shouldExit = true;
+            })
+            ->onSelect([]{ helpMessage = "Terminate your racing experience."; })
+            ->size(btnSize);
+
+        auto tc = add(column, Container(Insets(10), {}, {}, Vec4(0,0,0,0.8f), HAlign::CENTER))
+            ->size(INFINITY, 0);
+        add(tc, Text(smallFont, helpMessage));
+    }
+}
+
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
+    showMode();
+
     if (g_game.currentScene && !g_game.currentScene->isRaceInProgress && !g_game.isEditing)
     {
         Texture* tex = g_res.getTexture("checkers_fade");

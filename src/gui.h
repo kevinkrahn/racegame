@@ -134,12 +134,16 @@ namespace gui
 #else
         Widget(const char* name) {}
 #endif
-
         Vec2 center() const { return computedPosition + computedSize * 0.5f; }
         void pushID(const char* id);
         void doRender(WidgetContext& ctx);
-
+        void navigate(struct Navigation& nav);
         Widget* build() { return this; }
+        Widget* position(Vec2 position) { desiredSize = position; return this; }
+        Widget* position(f32 x, f32 y) { return position(Vec2(x, y)); }
+        Widget* size(Vec2 size) { desiredSize = size; return this;}
+        Widget* size(f32 sizeX, f32 sizeY) { return size(Vec2(sizeX, sizeY)); }
+        Widget* addFlags(u32 flags) { flags |= flags; return this; }
 
         virtual void computeSize(Constraints const& constraints);
         virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev);
@@ -147,8 +151,6 @@ namespace gui
         virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent const& input);
         virtual void layout(WidgetContext& ctx);
         virtual void render(WidgetContext& ctx) {}
-
-        void navigate(struct Navigation& nav);
     };
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
@@ -184,7 +186,6 @@ namespace gui
     SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
     Widget* root = nullptr;
     SmallArray<Widget*, 64> inputCaptureWidgets;
-
     SmallArray<InputCaptureContext> inputCaptureStack;
 
     void init()
@@ -213,13 +214,9 @@ namespace gui
     void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count);
 
     template <typename T>
-    T* add(Widget* parent, T const& widget, Vec2 size={INFINITY,INFINITY}, Vec2 position={0,0},
-            u32 flags=0)
+    T* add(Widget* parent, T const& widget)
     {
         T* w = widgetBuffer.write<T>(widget);
-        w->desiredPosition = position;
-        w->desiredSize = size;
-        w->flags = flags;
         w->stateNode = parent->stateNode;
         w->root = w;
         w->root = w->build();

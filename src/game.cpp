@@ -230,7 +230,7 @@ void Game::run()
             currentScene->onUpdate(renderer.get(), deltaTime);
         }
         menu.onUpdate(renderer.get(), deltaTime);
-        gui::widgetsDemo();
+        //gui::widgetsDemo();
         gui::onUpdate(renderer.get(), windowWidth, windowHeight, deltaTime, frameCount);
         checkDebugKeys();
         ImGui::Render();
