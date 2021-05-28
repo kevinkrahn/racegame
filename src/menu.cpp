@@ -2317,13 +2317,20 @@ void Menu::showMode()
 {
     using namespace gui;
 
+    static bool animateIn = true;
+    const f32 animationLength = 0.35f;
+
+    static const char* helpMessage = "";
+    static Function<void()> selection = []{ assert(false); };
+
+    gui::Widget* root = add(gui::root, FadeAnimation(animationLength, animateIn))
+        ->onAnimationReverseEnd([&]{
+            selection();
+            animateIn = true;
+        });
+
     if (mode == MAIN_MENU)
     {
-        static bool animateIn = true;
-        static const char* helpMessage = "";
-
-        gui::Widget* root = add(gui::root, FadeAnimation(0.5f, animateIn));
-
         /*
         Mat4 perspective(1.f);
         perspective[2][3] = 0.001f;
@@ -2332,15 +2339,16 @@ void Menu::showMode()
         //root = add(root, Transform(Mat4::rotationZ(sinf(g_game.currentTime) * 0.5f)));
         //root = add(root, Transform(Mat4::translation(Vec3(cosf(g_game.currentTime) * 100, 0.f, 0.f))));
         //root = add(root, Transform(Mat4::translation(Vec3(0.f, sinf(g_game.currentTime) * 100, 0.f))));
+        //root = add(root, SlideAnimation(0.75f, animateIn));
         */
-        root = add(root, SlideAnimation(0.75f, animateIn));
 
         Font* smallFont = &g_res.getFont("font", 20);
 
         gui::Widget* container = add(root, Container({}, {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER));
-        //auto t = add(container, Transform(Mat4::rotationY(sinf(g_game.currentTime * 2.f) * 0.5f)))->size(500, 0);
+        //auto t = add(container, Transform(Mat4::rotationZ(sinf(g_game.currentTime * 2.f) * 0.5f)))->size(500, 0);
         //auto t = add(container, Transform(Mat4::translation(Vec3(0, 0, sinf(g_game.currentTime * 2.f) * 30.f))))->size(500, 0);
-        container = add(container, Container(Insets(40), {}, {}, Vec4(0, 0, 0, 0.65f)))->size(500, 0);
+        auto t = add(container, ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(500, 0);
+        container = add(t, Container(Insets(40), {}, {}, Vec4(0, 0, 0, 0.65f)))->size(500, 0);
 
         Vec2 btnSize(INFINITY, 60);
         auto column = add(container, Column(10))->size(Vec2(0));
@@ -2350,60 +2358,50 @@ void Menu::showMode()
             ->size(INFINITY, 70);
         add(textContainer, Text(bigFont, "MAIN MENU"));
 
-        add(column, TextButton("Championship"))
-            ->onPress([&]{ showNewChampionshipMenu(); })
-            ->onSelect([]{ helpMessage = "Begin a new championship!"; })
-            ->size(btnSize);
+        auto button = [&](const char* name, const char* helpText, auto onPress) {
+            auto fade = add(column, FadeAnimation(animationLength, animateIn, name))->size(btnSize);
+            auto scale = add(fade, ScaleAnimation(0.7f, 1.f, animationLength, animateIn));
+            return add(scale, TextButton(name))
+                ->onPress([&] {
+                    animateIn = false;
+                    selection = onPress;
+                })
+                ->onSelect([helpText]{
+                    helpMessage = helpText;
+                });
+        };
 
-        add(column, TextButton("Load Championship"))
-            ->onPress([&]{
-                reset();
-                g_game.loadGame();
-                showChampionshipMenu();
-                g_game.changeScene(championshipTracks[g_game.state.currentRace]);
-            })
-            ->onSelect([]{ helpMessage = "Resume a previous championship."; })
-            ->size(btnSize);
-
-        add(column, TextButton("Quick Race"))
-            ->onPress([&]{
-                reset();
-                startQuickRace();
-            })
-            ->onSelect([]{ helpMessage = "Jump into a race without delay!"; })
-            ->size(btnSize);
-
-        add(column, TextButton("Settings"))
-            ->onPress([&]{
-                showSettingsMenu();
-            })
-            ->onSelect([]{ helpMessage = "Change things."; })
-            ->size(btnSize);
-
-        add(column, TextButton("Editor"))
-            ->onPress([&]{
-                reset();
-                g_game.loadEditor();
-            })
-            ->onSelect([]{ helpMessage = "Edit things."; })
-            ->size(btnSize);
-
-        add(column, TextButton("Challenges"))
-            ->onPress([&]{
-            })
-            ->onSelect([]{ helpMessage = "Challenge things."; })
-            ->size(btnSize);
-
-        add(column, TextButton("Exit"))
-            ->onPress([&]{
-                g_game.shouldExit = true;
-            })
-            ->onSelect([]{ helpMessage = "Terminate your racing experience."; })
-            ->size(btnSize);
+        button("CHAMPIONSHIP", "Begin a new championship!", [&]{ showNewChampionshipMenu(); });
+        button("LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
+            reset();
+            g_game.loadGame();
+            showChampionshipMenu();
+            g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+        });
+        button("QUICK RACE", "Jump into a race without delay!", [&]{
+            reset();
+            startQuickRace();
+        });
+        button("SETTINGS", "Change things.", [&]{
+            showSettingsMenu();
+        });
+        button("EDITOR", "Edit things.", [&]{
+            reset();
+            g_game.loadEditor();
+        });
+        button("CHALLENGES", "Challenge things.", [&]{
+        });
+        button("EXIT", "Terminate your racing experience.", [&]{
+            g_game.shouldExit = true;
+        });
 
         auto tc = add(column, Container(Insets(10), {}, {}, Vec4(0,0,0,0.8f), HAlign::CENTER))
             ->size(INFINITY, 0);
         add(tc, Text(smallFont, helpMessage));
+    }
+    else if (mode == SETTINGS)
+    {
+
     }
 }
 

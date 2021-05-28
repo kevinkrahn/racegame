@@ -571,121 +571,6 @@ namespace gui
 
     struct Window : public Widget {  };
 
-    struct Animation : public Widget
-    {
-        f32 animationLength;
-        bool isDirectionForward = true;
-
-        struct AnimationState
-        {
-            f32 animationProgress = 0.f;
-            bool finished = false;
-        };
-
-        Animation(f32 animationLength = 1.f, bool isDirectionForward=true, const char* name="Animation")
-            : Widget(name), animationLength(animationLength), isDirectionForward(isDirectionForward) {}
-
-        CALLBACK(Animation, onAnimationEnd);
-        CALLBACK(Animation, onAnimationReverseEnd);
-
-        AnimationState* animate()
-        {
-            auto state = getState<AnimationState>(this);
-            if (isDirectionForward)
-            {
-                state->animationProgress =
-                    min(state->animationProgress + g_game.deltaTime * (1.f / animationLength), 1.f);
-                if (state->animationProgress == 1.f && !state->finished)
-                {
-                    INVOKE_CALLBACK(onAnimationEnd);
-                    state->finished = true;
-                }
-            }
-            else
-            {
-                state->animationProgress =
-                    max(state->animationProgress - g_game.deltaTime * (1.f / animationLength), 0.f);
-                if (state->animationProgress == 0.f && !state->finished)
-                {
-                    INVOKE_CALLBACK(onAnimationReverseEnd);
-                    state->finished = true;
-                }
-            }
-            return state;
-        }
-    };
-
-    struct SlideAnimation : public Animation
-    {
-        SlideAnimation(f32 animationLength = 1.f, bool isDirectionForward=true)
-            : Animation(animationLength, isDirectionForward, "SlideAnimation") {}
-
-        Widget* build()
-        {
-            pushID("SlideAnimation");
-            return this;
-        }
-
-        virtual void layout(GuiContext& ctx) override
-        {
-            auto state = animate();
-
-            //f32 t = easeInOutBezier(state->animationProgress);
-            f32 t = easeInOutParametric(state->animationProgress);
-            for (Widget* child = childFirst; child; child = child->neighbor)
-            {
-                child->positionWithinParent =
-                    child->desiredPosition - Vec2(0, (1.f - t) * g_game.windowHeight);
-                child->computedPosition = computedPosition + child->positionWithinParent;
-                child->layout(ctx);
-            }
-        }
-    };
-
-    struct FadeAnimation : public Animation
-    {
-        FadeAnimation(f32 animationLength = 1.f, bool isDirectionForward=true)
-            : Animation(animationLength, isDirectionForward, "FadeAnimation") {}
-
-        Widget* build()
-        {
-            pushID("FadeAnimation");
-            return this;
-        }
-
-        virtual void layout(GuiContext& ctx) override
-        {
-            auto state = animate();
-            for (Widget* child = childFirst; child; child = child->neighbor)
-            {
-                child->computedPosition = computedPosition + child->desiredPosition;
-                child->layout(ctx);
-            }
-        }
-
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
-        {
-            auto state = getState<AnimationState>(this);
-            RenderContext r = rtx;
-            r.alpha = rtx.alpha * state->animationProgress;
-            Widget::render(ctx, r);
-        }
-    };
-
-    struct InputCapture : public Widget
-    {
-        const char* name;
-
-        InputCapture(const char* name=nullptr) : Widget("InputCapture"), name(name) {}
-
-        Widget* build()
-        {
-            pushID(name ? name : "InputCapture");
-            addInputCapture(this);
-            return this;
-        }
-    };
-
     struct Transform : public Widget
     {
         Mat4 transform;
@@ -722,6 +607,153 @@ namespace gui
             ui::setTransform(rtx.transform);
             Widget::render(ctx, rtx);
             ui::setTransform(oldTransform);
+        }
+    };
+
+    struct Animation : public Widget
+    {
+        f32 animationLength;
+        bool isDirectionForward = true;
+
+        struct AnimationState
+        {
+            f32 animationProgress = 0.f;
+            bool finishedBegin = false;
+            bool finishedEnd = false;
+        };
+
+        Animation(f32 animationLength = 1.f, bool isDirectionForward=true, const char* name="Animation")
+            : Widget(name), animationLength(animationLength), isDirectionForward(isDirectionForward) {}
+
+        CALLBACK(Animation, onAnimationEnd);
+        CALLBACK(Animation, onAnimationReverseEnd);
+
+        AnimationState* animate()
+        {
+            auto state = getState<AnimationState>(this);
+            if (isDirectionForward)
+            {
+                state->animationProgress =
+                    min(state->animationProgress + g_game.deltaTime * (1.f / animationLength), 1.f);
+                if (state->animationProgress == 1.f && !state->finishedBegin)
+                {
+                    INVOKE_CALLBACK(onAnimationEnd);
+                    state->finishedBegin = true;
+                }
+                if (state->animationProgress < 1.f)
+                {
+                    state->finishedBegin = false;
+                }
+            }
+            else
+            {
+                state->animationProgress =
+                    max(state->animationProgress - g_game.deltaTime * (1.f / animationLength), 0.f);
+                if (state->animationProgress == 0.f && !state->finishedEnd)
+                {
+                    INVOKE_CALLBACK(onAnimationReverseEnd);
+                    state->finishedEnd = true;
+                }
+                if (state->animationProgress > 0.f)
+                {
+                    state->finishedEnd = false;
+                }
+            }
+            return state;
+        }
+    };
+
+    struct SlideAnimation : public Animation
+    {
+        SlideAnimation(f32 animationLength = 1.f, bool isDirectionForward=true)
+            : Animation(animationLength, isDirectionForward, "SlideAnimation") {}
+
+        Widget* build()
+        {
+            pushID("SlideAnimation");
+            return this;
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            auto state = animate();
+
+            //f32 t = easeInOutBezier(state->animationProgress);
+            f32 t = easeInOutParametric(state->animationProgress);
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->positionWithinParent =
+                    child->desiredPosition - Vec2(0, (1.f - t) * g_game.windowHeight);
+                child->computedPosition = computedPosition + child->positionWithinParent;
+                child->layout(ctx);
+            }
+        }
+    };
+
+    struct FadeAnimation : public Animation
+    {
+        FadeAnimation(f32 animationLength = 1.f, bool isDirectionForward=true,
+                const char* name="FadeAnimation")
+            : Animation(animationLength, isDirectionForward, name) {}
+
+        Widget* build()
+        {
+            pushID(name);
+            return this;
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            auto state = animate();
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->computedPosition = computedPosition + child->desiredPosition;
+                child->layout(ctx);
+            }
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            auto state = getState<AnimationState>(this);
+            RenderContext r = rtx;
+            r.alpha = rtx.alpha * state->animationProgress;
+            Widget::render(ctx, r);
+        }
+    };
+
+    struct ScaleAnimation : public Animation
+    {
+        f32 startScale;
+        f32 endScale;
+        Transform* transform;
+
+        ScaleAnimation(f32 startScale=0.5f, f32 endScale=1.f,
+                f32 animationLength = 1.f, bool isDirectionForward=true)
+            : Animation(animationLength, isDirectionForward, "ScaleAnimation"),
+              startScale(startScale), endScale(endScale) {}
+
+        Widget* build()
+        {
+            pushID("ScaleAnimation");
+            auto state = animate();
+            f32 t = easeInOutParametric(state->animationProgress);
+            Mat4 scale =
+                Mat4::scaling(Vec3(Vec2(lerp(startScale, endScale, t)), 1.f));
+            return add(this, Transform(scale))->size(desiredSize)->position(desiredPosition);
+        }
+    };
+
+    struct InputCapture : public Widget
+    {
+        const char* name;
+
+        InputCapture(const char* name=nullptr) : Widget("InputCapture"), name(name) {}
+
+        Widget* build()
+        {
+            pushID(name ? name : "InputCapture");
+            addInputCapture(this);
+            return this;
         }
     };
 

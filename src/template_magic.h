@@ -153,7 +153,7 @@ public:
     Function(F&& f)
     {
         static_assert(sizeof(F) <= sizeof(storage));
-        new (storage) FunctionInvoker<F, Result, Args...>(move(f));
+        new (storage) FunctionInvoker<typename RemoveReference<F>::type, Result, Args...>(move(f));
     }
 
     Function() {}
