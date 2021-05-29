@@ -11,12 +11,23 @@ namespace gui
         root = widgetBuffer.write<Widget>(Widget("Root"));
         root->root = root;
         root->stateNode = &widgetStateNodeStorage.front();
+        root->addFlags(WidgetFlags::INPUT_CAPTURE);
 
         addInputCapture(root);
+        if (inputCaptureStack.empty())
+        {
+            inputCaptureStack.push({ root->stateNode, nullptr });
+        }
     }
 
     void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count)
     {
+        if (nextInputCapture.inputCaptureStateNode)
+        {
+            inputCaptureStack.push(nextInputCapture);
+            nextInputCapture = {};
+        }
+
         frameCount = count;
 
         f32 aspectRatio = (f32)w / (f32)h;
@@ -36,11 +47,6 @@ namespace gui
         root->computeSize(Constraints());
         root->layout(ctx);
 
-        if (inputCaptureStack.empty())
-        {
-            inputCaptureStack.push({ root->stateNode, nullptr });
-        }
-
         auto& context = inputCaptureStack.back();
 
         Widget** activeInputCapture =
@@ -50,26 +56,32 @@ namespace gui
         assert(activeInputCapture);
 
         WidgetStateNode* previouslySelectedWidgetStateNode = context.selectedWidgetStateNode;
+        Widget* selectedWidget =
+            (*activeInputCapture)->findSelectedWidget(context.selectedWidgetStateNode);
+        if (selectedWidget)
+        {
+            context.selectedWidgetStateNode = selectedWidget->stateNode;
+        }
+
         for (auto const& ev : g_input.getEvents())
         {
-            if (!(*activeInputCapture)->handleInputCaptureEvent(context, ev))
+            if (!(*activeInputCapture)->handleInputCaptureEvent(context, ev, selectedWidget))
             {
-                // TODO: What should happen in this case?
-                //root->handleInputCaptureEvent(inputCaptureStack.front(), ev);
+                // TODO: loop through other input captures and see if they will handle the event
+                // e.g. selecting something with the mouse
             }
         }
 
         if (context.selectedWidgetStateNode)
         {
-            Widget* selectedWidget = findAncestorByStateNode(
-                    *activeInputCapture, context.selectedWidgetStateNode);
+            if (previouslySelectedWidgetStateNode != context.selectedWidgetStateNode)
+            {
+                selectedWidget = findAncestorByStateNode(
+                        *activeInputCapture, context.selectedWidgetStateNode);
+                selectedWidget->flags |= WidgetFlags::STATUS_GAINED_SELECTED;
+            }
             if (selectedWidget)
             {
-                if (previouslySelectedWidgetStateNode != selectedWidget->stateNode)
-                {
-                    selectedWidget->flags |= WidgetFlags::STATUS_GAINED_SELECTED;
-                }
-
                 selectedWidget->flags |= WidgetFlags::STATUS_SELECTED;
             }
         }
@@ -79,6 +91,12 @@ namespace gui
         rtx.transform = Mat4(1.f);
         rtx.alpha = 1.f;
         root->render(ctx, rtx);
+
+        if (popInputStackNextFrame)
+        {
+            inputCaptureStack.pop();
+            popInputStackNextFrame = false;
+        }
     }
 
     void Widget::computeSize(Constraints const& constraints)
@@ -126,19 +144,12 @@ namespace gui
         }
     }
 
-    bool Widget::handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev)
+    Widget* Widget::findSelectedWidget(WidgetStateNode* stateNode)
     {
-        if (ev.type <= INPUT_MOUSE_MOVE)
-        {
-            // pipe mouse events to the widgets that the mouse is over
-            InputEvent mouseEvent = ev;
-            handleMouseInput(ctx, mouseEvent);
-        }
-
         Widget* selectedWidget = nullptr;
-        if (ctx.selectedWidgetStateNode)
+        if (stateNode)
         {
-            selectedWidget = findAncestorByStateNode(this, ctx.selectedWidgetStateNode);
+            selectedWidget = findAncestorByStateNode(this, stateNode);
         }
         else
         {
@@ -146,9 +157,25 @@ namespace gui
                     WidgetFlags::SELECTABLE | WidgetFlags::DEFAULT_SELECTION);
             if (!selectedWidget)
             {
+                // select the first selectable widget by default
                 selectedWidget = findAncestorByFlags(this, WidgetFlags::SELECTABLE);
             }
-            ctx.selectedWidgetStateNode = selectedWidget->stateNode;
+        }
+
+        return selectedWidget;
+    }
+
+    bool Widget::handleInputCaptureEvent(InputCaptureContext& ctx,
+            InputEvent const& ev, Widget* selectedWidget)
+    {
+        if (ev.type == INPUT_MOUSE_MOVE ||
+                       INPUT_MOUSE_BUTTON_PRESSED ||
+                       INPUT_MOUSE_BUTTON_DOWN ||
+                       INPUT_MOUSE_BUTTON_RELEASED)
+        {
+            // pipe mouse events to the widgets that the mouse is over
+            InputEvent mouseEvent = ev;
+            handleMouseInput(ctx, mouseEvent);
         }
 
         if (selectedWidget)
@@ -225,6 +252,19 @@ namespace gui
             }
         }
 
+        return handleInputEvent(ctx, this, ev);
+    }
+
+    bool Widget::handleInputEvent(
+            InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev)
+    {
+        for (Widget* child = childFirst; child; child=child->neighbor)
+        {
+            if (child->handleInputEvent(ctx, inputCapture, ev))
+            {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -269,7 +309,10 @@ namespace gui
                     }
                 }
             }
-            child->navigate(nav);
+            if (!(child->flags & WidgetFlags::INPUT_CAPTURE))
+            {
+                child->navigate(nav);
+            }
         }
     }
 
@@ -347,10 +390,13 @@ namespace gui
         }
         for (Widget* child = w->childFirst; child; child = child->neighbor)
         {
-            Widget* t = findAncestorByStateNode(child, state);
-            if (t)
+            if (!(child->flags & WidgetFlags::INPUT_CAPTURE))
             {
-                return t;
+                Widget* t = findAncestorByStateNode(child, state);
+                if (t)
+                {
+                    return t;
+                }
             }
         }
         return nullptr;
@@ -364,10 +410,13 @@ namespace gui
         }
         for (Widget* child = w->childFirst; child; child = child->neighbor)
         {
-            Widget* t = findAncestorByFlags(child, flags);
-            if (t)
+            if (!(child->flags & WidgetFlags::INPUT_CAPTURE))
             {
-                return t;
+                Widget* t = findAncestorByFlags(child, flags);
+                if (t)
+                {
+                    return t;
+                }
             }
         }
         return nullptr;

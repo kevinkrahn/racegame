@@ -141,6 +141,9 @@ public:
 template <typename>
 class Function;
 
+// TODO: make a version that holds a reference to the invokable object instead of storing it.
+// this would be useful for passing callbacks to functions
+
 template <typename Result, typename... Args>
 class Function<Result(Args...)>
 {
@@ -157,16 +160,15 @@ public:
     }
 
     Function() {}
-    Function(Function const&) = default;
-    Function(Function&&) = default;
-    Function& operator = (Function const&) = default;
-    Function& operator = (Function&&) = default;
+    Function(Function const& other) = default;
+    Function(Function&& other) = default;
+    Function& operator = (Function const& other) = default;
+    Function& operator = (Function&& other) = default;
 
-    ~Function() { reinterpret_cast<InvokerBaseType*>(storage)->~InvokerBaseType(); }
+    //~Function() { ((InvokerBaseType*)storage)->~InvokerBaseType(); }
 
     Result operator()(Args... args) const
     {
-        //assert(*((unsigned long long*)storage) != 0);
         return ((InvokerBaseType*)storage)->invoke(forward<Args>(args)...);
     }
 };

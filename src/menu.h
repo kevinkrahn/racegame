@@ -117,11 +117,14 @@ class Menu
     f32 beginRepeatTimer = 0.f;
     f32 repeatTimer = 0.f;
     f32 fadeInTimer = 0.f;
+    f32 pauseTimer = 0.f;
     bool fadeIn = true;
-    f32 blackFadeAlpha = 0.f;
     GarageData garage;
     RenderWorld vehiclePreviews[10];
     void updateVehiclePreviews();
+
+    bool fadeToBlack = false;
+    f32 blackFadeAlpha = 1.f;
 
     void reset()
     {

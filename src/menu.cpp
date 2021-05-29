@@ -2094,26 +2094,10 @@ void Menu::showSettingsMenu()
 {
     tmpConfig = g_game.config;
     reset();
-
-    addTitle("Settings");
-    Vec2 size(350, 150);
-    selectedWidget = addButton("GRAPHICS", "", { -185, -180 }, size, [this]{
-        showGraphicsSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
-    addButton("AUDIO", "", { -185, -10 }, size, [this]{
-        showAudioSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
-    addButton("GAMEPLAY", "", { 185, -180 }, size, [this]{
-        showGameplaySettingsMenu();
-    }, WidgetFlags::FADE_OUT);
-    addButton("CONTROLS", "", { 185, -10 }, size, [this]{
-        showControlsSettingsMenu();
-    }, WidgetFlags::FADE_OUT);
-    addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
-        showMainMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
+    mode = SETTINGS;
 }
 
+#if 0
 void Menu::showGraphicsSettingsMenu()
 {
     reset();
@@ -2261,56 +2245,13 @@ void Menu::showGraphicsSettingsMenu()
         showSettingsMenu();
     }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
 }
-
-void Menu::showAudioSettingsMenu()
-{
-    reset();
-    addTitle("Audio Settings");
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
-        showSettingsMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
-}
-
-void Menu::showGameplaySettingsMenu()
-{
-    reset();
-    addTitle("Gameplay Settings");
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
-        showSettingsMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
-}
-
-void Menu::showControlsSettingsMenu()
-{
-    reset();
-    addTitle("Control Settings");
-    selectedWidget = addButton("BACK", "", { 0, 200 }, {290, 50}, [this]{
-        showSettingsMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
-}
+#endif
 
 void Menu::showPauseMenu()
 {
     reset();
-    fadeInTimer = 400.f;
-
-    addBackgroundBox({0,0}, {400, 400}, 0.8f);
-
-    Font* font = &g_res.getFont("font_bold", (u32)convertSize(55));
-    addLabel([]{ return "PAUSED"; }, {0, -160}, font);
-    Vec2 size(350, 80);
-    selectedWidget = addButton("RESUME", "", {0, -70}, size, [this]{
-        reset();
-        g_game.currentScene->setPaused(false);
-    }, WidgetFlags::BACK);
-    addButton("FORFEIT RACE", "", {0, 30}, size, [this]{
-        reset();
-        g_game.currentScene->setPaused(false);
-        g_game.currentScene->forfeitRace();
-    });
-    addButton("QUIT TO DESKTOP", "", {0, 130}, size, []{
-        g_game.shouldExit = true;
-    });
+    pauseTimer = 0.f;
+    mode = PAUSE_MENU;
 }
 
 void Menu::showMode()
@@ -2318,96 +2259,169 @@ void Menu::showMode()
     using namespace gui;
 
     static bool animateIn = true;
-    const f32 animationLength = 0.35f;
+    const f32 animationLength = 0.4f;
 
     static const char* helpMessage = "";
     static Function<void()> selection = []{ assert(false); };
 
-    gui::Widget* root = add(gui::root, FadeAnimation(animationLength, animateIn))
-        ->onAnimationReverseEnd([&]{
-            selection();
-            animateIn = true;
-        });
+    Font* smallFont = &g_res.getFont("font", 20);
+    Font* bigFont = &g_res.getFont("font_bold", 60);
 
-    if (mode == MAIN_MENU)
-    {
-        /*
-        Mat4 perspective(1.f);
-        perspective[2][3] = 0.001f;
-
-        root = add(root, Transform(perspective, true));
-        //root = add(root, Transform(Mat4::rotationZ(sinf(g_game.currentTime) * 0.5f)));
-        //root = add(root, Transform(Mat4::translation(Vec3(cosf(g_game.currentTime) * 100, 0.f, 0.f))));
-        //root = add(root, Transform(Mat4::translation(Vec3(0.f, sinf(g_game.currentTime) * 100, 0.f))));
-        //root = add(root, SlideAnimation(0.75f, animateIn));
-        */
-
-        Font* smallFont = &g_res.getFont("font", 20);
-
-        gui::Widget* container = add(root, Container({}, {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER));
-        //auto t = add(container, Transform(Mat4::rotationZ(sinf(g_game.currentTime * 2.f) * 0.5f)))->size(500, 0);
-        //auto t = add(container, Transform(Mat4::translation(Vec3(0, 0, sinf(g_game.currentTime * 2.f) * 30.f))))->size(500, 0);
-        auto t = add(container, ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(500, 0);
-        container = add(t, Container(Insets(40), {}, {}, Vec4(0, 0, 0, 0.65f)))->size(500, 0);
-
+    auto button = [&](gui::Widget* parent, const char* name, const char* helpText, auto onPress,
+            u32 buttonFlags=0, bool fadeOutToBlack=false) {
         Vec2 btnSize(INFINITY, 60);
-        auto column = add(container, Column(10))->size(Vec2(0));
-
-        Font* bigFont = &g_res.getFont("font_bold", 60);
-        auto textContainer = add(column, Container(Insets(10), {}, {}, Vec4(0), HAlign::CENTER))
-            ->size(INFINITY, 70);
-        add(textContainer, Text(bigFont, "MAIN MENU"));
-
-        auto button = [&](const char* name, const char* helpText, auto onPress) {
-            auto fade = add(column, FadeAnimation(animationLength, animateIn, name))->size(btnSize);
-            auto scale = add(fade, ScaleAnimation(0.7f, 1.f, animationLength, animateIn));
-            return add(scale, TextButton(name))
-                ->onPress([&] {
+        return parent
+            ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn, name))->size(btnSize)
+            ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
+            ->add(TextButton(name, buttonFlags))
+                ->onPress([onPress, this, fadeOutToBlack] {
                     animateIn = false;
+                    fadeToBlack = fadeOutToBlack;
                     selection = onPress;
                 })
                 ->onSelect([helpText]{
                     helpMessage = helpText;
                 });
-        };
+    };
 
-        button("CHAMPIONSHIP", "Begin a new championship!", [&]{ showNewChampionshipMenu(); });
-        button("LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
+    auto panel = [&](gui::Widget* parent, Vec2 size, bool outline=true) {
+        if (outline)
+        {
+            return parent->add(Outline(Insets(2), COLOR_OUTLINE_NOT_SELECTED))->size(0,0)
+                         ->add(Container(Insets(40), {}, COLOR_BG_PANEL))->size(size);
+        }
+        return parent->add(Container(Insets(40), {}, COLOR_BG_PANEL))->size(size);
+    };
+
+    auto container = gui::root
+        ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
+        ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn))
+            ->onAnimationReverseEnd([&]{
+                selection();
+                animateIn = true;
+            })
+            ->size(0,0)
+        ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(0,0);
+
+    if (mode == MAIN_MENU)
+    {
+        auto inputCapture = container->add(InputCapture(!animateIn, "MainMenu"))->size(Vec2(0));
+        makeActive(inputCapture);
+
+        auto column = panel(inputCapture, Vec2(600, 0))->add(Column(10))->size(Vec2(0));
+
+        column
+            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
+            ->add(Text(bigFont, "MAIN MENU"));
+
+        button(column, "CHAMPIONSHIP", "Begin a new championship!", [&]{ showNewChampionshipMenu(); });
+        button(column, "LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
             reset();
             g_game.loadGame();
             showChampionshipMenu();
             g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         });
-        button("QUICK RACE", "Jump into a race without delay!", [&]{
+        button(column, "QUICK RACE", "Jump into a race without delay!", [&]{
+            popInputCapture();
             reset();
             startQuickRace();
-        });
-        button("SETTINGS", "Change things.", [&]{
+            fadeToBlack = false;
+        }, 0, true);
+        button(column, "SETTINGS", "Change things.", [&]{
             showSettingsMenu();
         });
-        button("EDITOR", "Edit things.", [&]{
+        button(column, "EDITOR", "Edit things.", [&]{
+            popInputCapture();
             reset();
             g_game.loadEditor();
         });
-        button("CHALLENGES", "Challenge things.", [&]{
+        button(column, "CHALLENGES", "Challenge things.", [&]{
         });
-        button("EXIT", "Terminate your racing experience.", [&]{
+        button(column, "EXIT", "Terminate your racing experience.", [&]{
             g_game.shouldExit = true;
         });
 
-        auto tc = add(column, Container(Insets(10), {}, {}, Vec4(0,0,0,0.8f), HAlign::CENTER))
-            ->size(INFINITY, 0);
-        add(tc, Text(smallFont, helpMessage));
+        column
+            ->add(Container(Insets(10), {}, Vec4(0,0,0,0.8f), HAlign::CENTER, VAlign::CENTER))
+                ->size(INFINITY, 40)
+            ->add(Text(smallFont, helpMessage));
     }
     else if (mode == SETTINGS)
     {
+        auto inputCapture = container->add(InputCapture(!animateIn, "SettingsMenu"))->size(Vec2(0));
+        makeActive(inputCapture);
+
+        auto column = panel(inputCapture, Vec2(600, 0))->add(Column(10))->size(Vec2(0));
+
+        column
+            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
+            ->add(Text(bigFont, "SETTINGS"));
+
+        button(column, "GRAPHICS SETTINGS", "Tweak graphics settings for the optimal gameplay experience", [&]{
+        });
+        button(column, "AUDIO SETTINGS", "Tweak audio settings.", [&]{
+        });
+        button(column, "CONTROLS", "Tweak graphics settings for the optimal gameplay experience", [&]{
+        });
+        auto b = button(column, "BACK", "Return to main menu", [&]{
+            popInputCapture();
+            showMainMenu();
+        }, ButtonFlags::BACK);
+
+        column
+            ->add(Container(Insets(10), {}, Vec4(0,0,0,0.8f), HAlign::CENTER))
+                ->size(INFINITY, 40)
+            ->add(Text(smallFont, helpMessage));
+    }
+    else if (mode == NEW_CHAMPIONSHIP)
+    {
 
     }
-}
+    else if (mode == PAUSE_MENU)
+    {
+        auto inputCapture = container->add(InputCapture(pauseTimer == 0.f, "PauseMenu"))->size(Vec2(0));
+        makeActive(inputCapture);
 
-void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
-{
-    showMode();
+        auto column = inputCapture
+            ->add(FadeAnimation(0.f, 1.f, animationLength, true))->size(0,0)
+            ->add(Container(Insets(30), {}, Vec4(0, 0, 0, 0.8f)))->size(Vec2(450, 0))
+            ->add(Column(12))->size(Vec2(0));
+
+        column
+            ->add(Container(Insets(0), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 55)
+            ->add(Text(bigFont, "PAUSED"));
+
+        auto pauseMenuButton = [&](const char* name, auto onPress, u32 buttonFlags=0) {
+            Vec2 btnSize(INFINITY, 60);
+            return column
+                ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn, name))->size(btnSize)
+                ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
+                ->add(TextButton(name, buttonFlags))
+                    ->onPress(onPress);
+        };
+
+        pauseMenuButton("RESUME", [&]{
+            popInputCapture();
+            reset();
+            g_game.currentScene->setPaused(false);
+        }, ButtonFlags::BACK);
+
+        pauseMenuButton("FORFEIT RACE", [&]{
+            popInputCapture();
+            reset();
+            g_game.currentScene->setPaused(false);
+            g_game.currentScene->forfeitRace();
+        });
+
+        pauseMenuButton("QUIT TO DESKTOP", []{
+            g_game.shouldExit = true;
+        });
+    }
+
+    /*
+    gui::root->add(FadeAnimation(1.f, 0.f, animationLength, fadeIn, "FadeToBlack"))
+             ->add(Container(Vec4(0, 0, 0, 1)));
+             */
 
     if (g_game.currentScene && !g_game.currentScene->isRaceInProgress && !g_game.isEditing)
     {
@@ -2420,6 +2434,28 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     Vec2(0.f, 0.001f),
                     Vec2(g_game.windowWidth/convertSize(tex->width * 0.5f), 0.999f));
     }
+
+    if (!fadeToBlack)
+    {
+        blackFadeAlpha = max(blackFadeAlpha - g_game.deltaTime * (1.f / (animationLength - 0.02f)), 0.f);
+    }
+    else
+    {
+        blackFadeAlpha = min(blackFadeAlpha + g_game.deltaTime * (1.f / (animationLength - 0.02f)), 1.f);
+    }
+
+    if (blackFadeAlpha > 0.f)
+    {
+        ui::rectBlur(10000, &g_res.white, {0,0}, Vec2(g_game.windowWidth, g_game.windowHeight),
+                    Vec4(0,0,0,1), blackFadeAlpha);
+    }
+
+    pauseTimer += g_game.deltaTime;
+}
+
+void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
+{
+    showMode();
 
     bool gainRepeat = false;
     for (auto& pair : g_input.getControllers())
@@ -2557,24 +2593,13 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         }
     }
 
-    if (blackFadeAlpha > 0.f)
-    {
-        ui::rectBlur(10000, &g_res.white, {0,0}, Vec2(g_game.windowWidth, g_game.windowHeight),
-                    Vec4(0,0,0,1), blackFadeAlpha);
-    }
-
     if (fadeIn)
     {
         fadeInTimer += deltaTime * 2100.f;
-        blackFadeAlpha = clamp(blackFadeAlpha-deltaTime*5.f, 0.f, 1.f);
     }
     else
     {
         fadeInTimer -= deltaTime * 2100.f;
-        if ((selectedWidget->flags & WidgetFlags::FADE_TO_BLACK) && fadeInTimer < REFERENCE_HEIGHT * 0.35f)
-        {
-            blackFadeAlpha = clamp(blackFadeAlpha+deltaTime*5.f, 0.f, 1.f);
-        }
         if (fadeInTimer < -100.f)
         {
             activatedWidget = selectedWidget;

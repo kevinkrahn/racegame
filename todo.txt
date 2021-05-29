@@ -108,3 +108,4 @@
 - Go through all stb dependencies and use appropriate macros to avoid including std libs
 - Experiment with a weapons lock for first few seconds of race
 - Give acceleration boost to vehicles that just respawned
+- Add ability to store more ammo for primary weapons

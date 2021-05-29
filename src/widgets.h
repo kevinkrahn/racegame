@@ -19,6 +19,12 @@
 
 namespace gui
 {
+    const Vec4 COLOR_OUTLINE_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
+    const Vec4 COLOR_OUTLINE_NOT_SELECTED = Vec4(0.9f, 0.9f, 0.9f, 1.f);
+    const Vec4 COLOR_BG_WIDGET = Vec4(Vec3(0), 0.95f);
+    const Vec4 COLOR_BG_WIDGET_SELECTED = Vec4(Vec3(0.1f), 0.8f);
+    const Vec4 COLOR_BG_PANEL = Vec4(Vec3(0), 0.65f);
+
     struct Stack : public Widget {};
 
     struct Text : public Widget
@@ -113,20 +119,133 @@ namespace gui
         }
     };
 
+    struct Border : public Widget
+    {
+        Insets borders;
+        Vec4 color;
+
+        Border(Insets const& borders, Vec4 color)
+            : Widget("Border"), borders(borders), color(color) {}
+
+        virtual void computeSize(Constraints const& constraints) override
+        {
+            Vec2 maxDim(0, 0);
+
+            if (childFirst)
+            {
+                f32 w = desiredSize.x > 0.f
+                    ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                    : constraints.maxWidth;
+
+                f32 h = desiredSize.y > 0.f
+                    ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                    : constraints.maxHeight;
+
+                Constraints childConstraints;
+                childConstraints.minWidth = 0.f;
+                childConstraints.maxWidth = w - (borders.left + borders.right);
+                childConstraints.minHeight = 0.f;
+                childConstraints.maxHeight = h - (borders.top + borders.bottom);
+
+                for (Widget* child = childFirst; child; child = child->neighbor)
+                {
+                    child->computeSize(childConstraints);
+                    maxDim = max(maxDim, child->computedSize);
+                }
+            }
+
+            computedSize.x = desiredSize.x > 0.f
+                ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                : maxDim.x + (borders.left + borders.right);
+            computedSize.y = desiredSize.y > 0.f
+                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                : maxDim.y + (borders.top + borders.bottom);
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            for (Widget* child = childFirst; child; child = child->neighbor)
+            {
+                child->positionWithinParent = child->desiredPosition + Vec2(borders.left, borders.top);
+                child->computedPosition = computedPosition + child->positionWithinParent;
+                child->layout(ctx);
+            }
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            if (borders.top != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition,
+                        Vec2(computedSize.x, borders.top), color, rtx.alpha);
+            }
+            if (borders.bottom != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition + Vec2(0, computedSize.y - borders.bottom),
+                        Vec2(computedSize.x, borders.bottom), color, rtx.alpha);
+            }
+            if (borders.left != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition,
+                        Vec2(borders.left, computedSize.y), color, rtx.alpha);
+            }
+            if (borders.right != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition + Vec2(computedSize.x - borders.right, 0),
+                        Vec2(borders.right, computedSize.y), color, rtx.alpha);
+            }
+            Widget::render(ctx, rtx);
+        }
+    };
+
+    struct Outline : public Widget
+    {
+        Insets borders;
+        Vec4 color;
+
+        Outline(Insets const& borders, Vec4 color)
+            : Widget("Outline"), borders(borders), color(color) {}
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            Widget::render(ctx, rtx);
+
+            if (borders.top != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition,
+                        Vec2(computedSize.x, borders.top), color, rtx.alpha);
+            }
+            if (borders.bottom != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition + Vec2(0, computedSize.y - borders.bottom),
+                        Vec2(computedSize.x, borders.bottom), color, rtx.alpha);
+            }
+            if (borders.left != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition,
+                        Vec2(borders.left, computedSize.y), color, rtx.alpha);
+            }
+            if (borders.right != 0.f)
+            {
+                ui::rectBlur(0, nullptr, computedPosition + Vec2(computedSize.x - borders.right, 0),
+                        Vec2(borders.right, computedSize.y), color, rtx.alpha);
+            }
+        }
+    };
+
     struct Container : public Widget
     {
         Insets padding;
         Insets margin;
-        Constraints additionalConstraints;
         Vec4 backgroundColor = Vec4(0);
         HAlign halign = HAlign::LEFT;
         VAlign valign = VAlign::TOP;
 
         Container() : Widget("Container") {}
         Container(Insets const& padding, Insets const& margin = {},
-                Constraints const& additionalConstraints = {}, Vec4 const& backgroundColor = Vec4(0),
-                HAlign halign = HAlign::LEFT, VAlign valign = VAlign::TOP)
-            : Widget("Contaienr"), padding(padding), margin(margin), additionalConstraints(additionalConstraints),
+                Vec4 const& backgroundColor = Vec4(0), HAlign halign = HAlign::LEFT,
+                VAlign valign = VAlign::TOP)
+            : Widget("Container"), padding(padding), margin(margin),
               backgroundColor(backgroundColor), halign(halign), valign(valign) {}
         Container(Vec4 const& backgroundColor = Vec4(0))
             : Widget("Container"), backgroundColor(backgroundColor) {}
@@ -136,26 +255,16 @@ namespace gui
             f32 horizontalInset = padding.left + padding.right + margin.left + margin.right;
             f32 verticalInset = padding.top + padding.bottom + margin.top + margin.bottom;
 
-            Constraints actualConstraints;
-            actualConstraints.minWidth =
-                clamp(additionalConstraints.minWidth, constraints.minWidth, constraints.maxWidth);
-            actualConstraints.maxWidth =
-                clamp(additionalConstraints.maxWidth, constraints.minWidth, constraints.maxWidth);
-            actualConstraints.minHeight =
-                clamp(additionalConstraints.minHeight, constraints.minHeight, constraints.maxHeight);
-            actualConstraints.maxHeight =
-                clamp(additionalConstraints.maxHeight, constraints.minHeight, constraints.maxHeight);
-
             Vec2 maxDim(0, 0);
             if (childFirst)
             {
                 f32 w = desiredSize.x > 0.f
-                    ? clamp(desiredSize.x, actualConstraints.minWidth, actualConstraints.maxWidth)
-                    : actualConstraints.maxWidth;
+                    ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
+                    : constraints.maxWidth;
 
                 f32 h = desiredSize.y > 0.f
-                    ? clamp(desiredSize.y, actualConstraints.minHeight, actualConstraints.maxHeight)
-                    : actualConstraints.maxHeight;
+                    ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
+                    : constraints.maxHeight;
 
                 Constraints childConstraints;
                 childConstraints.minWidth = 0.f;
@@ -171,10 +280,10 @@ namespace gui
             }
 
             computedSize.x = desiredSize.x > 0.f
-                ? clamp(desiredSize.x, actualConstraints.minWidth, actualConstraints.maxWidth)
+                ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
                 : maxDim.x + horizontalInset;
             computedSize.y = desiredSize.y > 0.f
-                ? clamp(desiredSize.y, actualConstraints.minHeight, actualConstraints.maxHeight)
+                ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
                 : maxDim.y + verticalInset;
         }
 
@@ -405,15 +514,14 @@ namespace gui
     {
         enum
         {
-            BACK,
-            TRIGGER_INPUT_CAPTURE,
+            BACK = 1 << 0,
         };
     };
 
     struct Button : public Widget
     {
         Container* bg;
-        Container* border;
+        Outline* outline;
         u32 buttonFlags;
 
         Button(u32 buttonFlags=0, const char* name="Button")
@@ -433,9 +541,9 @@ namespace gui
 
             flags |= WidgetFlags::BLOCK_INPUT | WidgetFlags::SELECTABLE;
 
-            border = (Container*)add(this, Container(Insets(4), {}, {}, Vec4(1)))->size(desiredSize);
-            bg = (Container*)add(border,
-                    Container(Insets(10), {}, {}, Vec4(0, 0, 0, 1), HAlign::CENTER, VAlign::CENTER))
+            outline = (Outline*)this->add(Outline(Insets(2), {}))->size(desiredSize);
+            bg = (Container*)outline->add(
+                    Container(Insets(10), {}, COLOR_BG_WIDGET, HAlign::CENTER, VAlign::CENTER))
                 ->size(desiredSize);
             return bg;
         }
@@ -443,9 +551,10 @@ namespace gui
         CALLBACK(Button, onPress);
         CALLBACK(Button, onSelect);
 
-        void press()
+        void press(InputCaptureContext& ctx)
         {
             getState<ButtonState>(this)->isPressed = true;
+            ctx.selectedWidgetStateNode = stateNode;
             INVOKE_CALLBACK(onPress);
         }
 
@@ -454,22 +563,24 @@ namespace gui
         {
             if (ctx.selectedWidgetStateNode == stateNode)
             {
-                if (ev.type == INPUT_KEYBOARD_PRESSED)
+                if ((ev.type == INPUT_KEYBOARD_PRESSED && ev.keyboard.key == KEY_RETURN)
+                    || (ev.type == INPUT_CONTROLLER_BUTTON_PRESSED && ev.controller.button == BUTTON_A))
                 {
-                    if (ev.keyboard.key == KEY_RETURN
-                            || (ev.keyboard.key == KEY_ESCAPE && (buttonFlags & ButtonFlags::BACK)))
-                    {
-                        press();
-                        return true;
-                    }
+                    press(ctx);
+                    return true;
                 }
-                else if (ev.type == INPUT_CONTROLLER_BUTTON_PRESSED)
+            }
+            if (buttonFlags & ButtonFlags::BACK)
+            {
+                if (ev.type == INPUT_KEYBOARD_PRESSED && ev.keyboard.key == KEY_ESCAPE)
                 {
-                    if (ev.controller.button == BUTTON_B && (buttonFlags & ButtonFlags::BACK))
-                    {
-                        press();
-                        return true;
-                    }
+                    press(ctx);
+                    return true;
+                }
+                else if (ev.type == INPUT_CONTROLLER_BUTTON_PRESSED && ev.controller.button == BUTTON_B)
+                {
+                    press(ctx);
+                    return true;
                 }
             }
 
@@ -491,7 +602,7 @@ namespace gui
 
             if (input.type == INPUT_MOUSE_BUTTON_PRESSED && input.mouse.button == MOUSE_LEFT)
             {
-                press();
+                press(ctx);
             }
 
             return true;
@@ -507,27 +618,29 @@ namespace gui
 
                 state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
                 state->hoverTimer += ctx.deltaTime;
-                state->hoverValue = 0.05f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f * 0.1f;
+                state->hoverValue = 0.1f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f;
+
+                outline->borders = Insets(4);
+                outline->color = COLOR_OUTLINE_SELECTED;
             }
             else
             {
                 state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
                 state->hoverTimer = 0.f;
-                state->hoverValue = max(state->hoverValue - ctx.deltaTime, 0.f);
-            }
+                state->hoverValue = max(state->hoverValue - ctx.deltaTime * 2.f, 0.f);
 
-            const Vec4 COLOR_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
-            const Vec4 COLOR_NOT_SELECTED = Vec4(1.f);
+                outline->borders = Insets(2);
+                outline->color = COLOR_OUTLINE_NOT_SELECTED;
+            }
 
             if (state->isPressed)
             {
-                border->backgroundColor = COLOR_SELECTED;
-                bg->backgroundColor = COLOR_SELECTED;
+                bg->backgroundColor = COLOR_OUTLINE_SELECTED;
             }
             else
             {
-                border->backgroundColor = mix(COLOR_NOT_SELECTED, COLOR_SELECTED, state->hoverIntensity);
-                bg->backgroundColor = Vec4(Vec3(state->hoverValue * state->hoverIntensity), 1.f);
+                bg->backgroundColor = mix(COLOR_BG_WIDGET,
+                        COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
             }
 
             Widget::render(ctx, rtx);
@@ -546,7 +659,7 @@ namespace gui
             pushID(text);
             auto btn = Button::build();
             Font* font = &g_res.getFont("font", 30);
-            add(btn, Text(font, text));
+            btn->add(Text(font, text));
             return btn;
         }
     };
@@ -692,9 +805,14 @@ namespace gui
 
     struct FadeAnimation : public Animation
     {
-        FadeAnimation(f32 animationLength = 1.f, bool isDirectionForward=true,
+        f32 fromAlpha;
+        f32 toAlpha;
+
+        FadeAnimation(f32 fromAlpha=0.f, f32 toAlpha=1.f,
+                f32 animationLength = 1.f, bool isDirectionForward=true,
                 const char* name="FadeAnimation")
-            : Animation(animationLength, isDirectionForward, name) {}
+            : Animation(animationLength, isDirectionForward, name), fromAlpha(fromAlpha),
+              toAlpha(toAlpha) {}
 
         Widget* build()
         {
@@ -716,7 +834,7 @@ namespace gui
         {
             auto state = getState<AnimationState>(this);
             RenderContext r = rtx;
-            r.alpha = rtx.alpha * state->animationProgress;
+            r.alpha = rtx.alpha * lerp(fromAlpha, toAlpha, state->animationProgress);
             Widget::render(ctx, r);
         }
     };
@@ -739,21 +857,76 @@ namespace gui
             f32 t = easeInOutParametric(state->animationProgress);
             Mat4 scale =
                 Mat4::scaling(Vec3(Vec2(lerp(startScale, endScale, t)), 1.f));
-            return add(this, Transform(scale))->size(desiredSize)->position(desiredPosition);
+            return this->add(Transform(scale))->size(desiredSize)->position(desiredPosition);
         }
     };
 
     struct InputCapture : public Widget
     {
         const char* name;
+        bool blockInput = false;
+        bool hideChildrenWhenInactive = false;
+        bool active = false;
 
-        InputCapture(const char* name=nullptr) : Widget("InputCapture"), name(name) {}
+        InputCapture(bool blockInput, const char* name=nullptr)
+            : Widget("InputCapture"), name(name), blockInput(blockInput)
+        {
+            flags |= WidgetFlags::INPUT_CAPTURE;
+        }
 
         Widget* build()
         {
             pushID(name ? name : "InputCapture");
             addInputCapture(this);
+            active = isActiveInputCapture(this);
             return this;
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            if (!active && hideChildrenWhenInactive)
+            {
+                return;
+            }
+            Widget::layout(ctx);
+        }
+
+        virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev,
+                Widget* selectedWidget) override
+        {
+            if (blockInput)
+            {
+                return false;
+            }
+            return Widget::handleInputCaptureEvent(ctx, ev, selectedWidget);
+        }
+
+        virtual bool handleInputEvent(
+                InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
+        {
+            if (blockInput)
+            {
+                return false;
+            }
+            return Widget::handleInputEvent(ctx, inputCapture, ev);
+        }
+
+        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input) override
+        {
+            if (!active || blockInput)
+            {
+                return false;
+            }
+            return Widget::handleMouseInput(ctx, input);
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            if (!active && hideChildrenWhenInactive)
+            {
+                return;
+            }
+            Widget::render(ctx, rtx);
         }
     };
 
@@ -774,78 +947,37 @@ namespace gui
     {
         static bool animateIn = true;
 
-        auto root = add(gui::root, SlideAnimation(1.f, animateIn))
+        auto root = gui::root->add(SlideAnimation(1.f, animateIn))
             ->onAnimationEnd([]{
                 println("Animation intro finished!");
             })->onAnimationReverseEnd([]{
                 println("Animation outro finished!");
             });
 
-        auto container = add(root, Container({}, {}, {}, Vec4(1, 0, 0, 1.f), HAlign::CENTER, VAlign::CENTER))
+        auto container = root->add(Container({}, {}, Vec4(1, 0, 0, 1.f), HAlign::CENTER, VAlign::CENTER))
             ->size(500, 0)->position(200, 200);
-        container = add(container, Container(Insets(20), Insets(20), {}, Vec4(0, 0, 0, 0.8f)))
+        container = container->add(Container(Insets(20), Insets(20), Vec4(0, 0, 0, 0.8f)))
             ->size(Vec2(0));
 
         Font* font1 = &g_res.getFont("font", 30);
         Font* font2 = &g_res.getFont("font_bold", 40);
 
-        auto column = add(container, Column())
-            ->size(Vec2(0));
-        auto c = add(column, Container(Insets(5)))
-            ->size(Vec2(0));
-        add(c, Text(font1, "Hello"));
-        c = add(column, Container(Insets(5)))
-            ->size(Vec2(0));
-        add(c, Text(font2, "World!"));
-        c = add(column, Container(Insets(5)))
-            ->size(Vec2(0));
-        add(c, Text(font1, "Hello"));
-        c = add(column, Container(Insets(5)))
-            ->size(Vec2(0));
-        add(c, Text(font2, "World!"));
-        c = add(column, Container(Insets(5)))
-            ->size(Vec2(0));
-        auto row = add(c, Row())
-            ->size(Vec2(0));
-        add(row, Text(font1, "Oh my"));
-        add(row, Text(font2, "GOODNESS"));
+        auto column = container->add(Column())->size(Vec2(0));
+        column
+            ->add(Container(Insets(5)))->size(Vec2(0))
+            ->add(Text(font1, "Hello"));
+        column
+            ->add(Container(Insets(5)))->size(Vec2(0))
+            ->add(Text(font2, "World!"));
+        column
+            ->add(Container(Insets(5)))->size(Vec2(0))
+            ->add(Text(font1, "Hello"));
+        column
+            ->add(Container(Insets(5)))->size(Vec2(0))
+            ->add(Text(font2, "World!"));
 
-        c = add(column, Container(Insets(5)))
-            ->size(Vec2(0))->position(Vec2(0));
-
-        add(c, TextButton("Click Me!!!"))
-            ->onPress([] { println("Hello world!"); })
-            ->size(0,0)->position(0,0);
-
-        c = add(column, Container(Insets(5)))
-            ->size(0,0)->position(0,0);
-        add(c, TextButton("Click Me Also!!!"))
-            ->onPress([] { println("Greetings, Universe!"); })
-            ->size(Vec2(0));
-
-        c = add(column, Container(Insets(5)))
-            ->size(0,0)->position(0,0);
-        add(c, TextButton("Goodbye", ButtonFlags::BACK))
-            ->onPress([] {
-                println("Farewell, comos!");
-                animateIn = false;
-            })
-            ->size(0,0)
-            ->position(0,0)
-            ->addFlags(WidgetFlags::DEFAULT_SELECTION);
-
-        auto gridContainer = add(root,
-                Container(Insets(20), {}, {}, Vec4(0, 1, 0, 0.25f), HAlign::CENTER, VAlign::CENTER))
-            ->size(600, 400)->position(800, 200);
-        auto grid = add(gridContainer, Grid(4));
-        for (u32 i=0; i<8; ++i)
-        {
-            auto container = add(grid,
-                Container(Insets(10), {}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
-                ->size(INFINITY, 80);
-            add(container, TextButton(tmpStr("Button %i", i)))->onPress([]{
-                println("clicked");
-            });
-        }
+        auto row = column->add(Row())->size(Vec2(0));
+        row->add(Text(font1, "Oh my"));
+        row->add(Text(font2, "GOODNESS"));
     }
 };

@@ -5,14 +5,13 @@
 #pragma warning(disable:4244)
 #endif
 
-#include <utility>
 #include <functional>
 #include <SDL2/SDL_assert.h>
+#include <assert.h>
 
 #include "template_magic.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-#define assert(...) SDL_assert(__VA_ARGS__);
 
 typedef unsigned char      u8;
 typedef unsigned short     u16;
@@ -24,3 +23,6 @@ typedef int                i32;
 typedef long long          i64;
 typedef float              f32;
 typedef double             f64;
+
+#define FORCE_INLINE __attribute__((always_inline))
+#define FORCE_FLATTEN __attribute__((flatten))

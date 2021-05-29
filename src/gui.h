@@ -9,6 +9,10 @@
 
 namespace gui
 {
+    struct Widget;
+
+    const f32 REFERENCE_HEIGHT = 1080.f;
+
     namespace WidgetFlags
     {
         enum
@@ -19,6 +23,7 @@ namespace gui
             // internal
             BLOCK_INPUT       = 1 << 8,
             SELECTABLE        = 1 << 9,
+            INPUT_CAPTURE     = 1 << 10,
 
             // status (set during layout and input phase, read during render phase)
             STATUS_MOUSE_OVER      = 1 << 16,
@@ -43,6 +48,8 @@ namespace gui
         Constraints(f32 width, f32 height)
             : minWidth(width), maxWidth(width),
               minHeight(height), maxHeight(height) {}
+
+        Constraints& operator = (Constraints const&) = default;
     };
 
     struct Insets
@@ -61,6 +68,8 @@ namespace gui
             : left(left), top(top), right(right), bottom(bottom) {}
         Insets(f32 horizontal, f32 vertical)
             : left(horizontal), top(vertical), right(horizontal), bottom(vertical) {}
+
+        Insets& operator = (Insets const&) = default;
     };
 
     template <typename T>
@@ -107,6 +116,18 @@ namespace gui
         WidgetStateNode* selectedWidgetStateNode = nullptr;
     };
 
+    u32 widgetCount;
+    u32 frameCount;
+
+    Buffer widgetBuffer;
+    Buffer widgetStateBuffer;
+    SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
+    Widget* root = nullptr;
+    SmallArray<Widget*, 64> inputCaptureWidgets;
+    SmallArray<InputCaptureContext> inputCaptureStack;
+    InputCaptureContext nextInputCapture;
+    bool popInputStackNextFrame = false;
+
     struct Widget
     {
         // TODO: Use u32 byte offset into widgetBuffer instead of pointers
@@ -148,14 +169,45 @@ namespace gui
         Widget* position(f32 x, f32 y) { return position(Vec2(x, y)); }
         Widget* size(Vec2 size) { desiredSize = size; return this;}
         Widget* size(f32 sizeX, f32 sizeY) { return size(Vec2(sizeX, sizeY)); }
-        Widget* addFlags(u32 flags) { flags |= flags; return this; }
+        Widget* addFlags(u32 flags) { this->flags |= flags; return this; }
+        Widget* findSelectedWidget(WidgetStateNode* stateNode);
 
         virtual void computeSize(Constraints const& constraints);
-        virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev);
-        virtual bool handleInputEvent(InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) { return false; }
+        virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev,
+                Widget* selectedWidget);
+        virtual bool handleInputEvent(InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev);
         virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input);
         virtual void layout(GuiContext& ctx);
         virtual void render(GuiContext& ctx, RenderContext& rtx);
+
+        template <typename T>
+        T* add(T const& widget)
+        {
+            Widget* parent = this->root;
+
+            T* w = widgetBuffer.write<T>(widget);
+            w->stateNode = parent->stateNode;
+            w->root = w;
+            w->root = w->build();
+#ifndef NDEBUG
+            w->parent = parent;
+#endif
+
+            if (!parent->root->childFirst)
+            {
+                parent->root->childFirst = w;
+            }
+            else
+            {
+                parent->root->childLast->neighbor = w;
+            }
+
+            parent->root->childLast = w;
+
+            ++widgetCount;
+
+            return w;
+        }
     };
     // TODO: make the Widget small enough
     //static_assert(sizeof(Widget) == 64);
@@ -178,21 +230,6 @@ namespace gui
         f32 maxDistY = FLT_MIN;
     };
 
-    const auto NOOP = []{};
-    using noop_t = void(*)();
-
-    const f32 REFERENCE_HEIGHT = 1080.f;
-
-    u32 widgetCount;
-    u32 frameCount;
-
-    Buffer widgetBuffer;
-    Buffer widgetStateBuffer;
-    SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
-    Widget* root = nullptr;
-    SmallArray<Widget*, 64> inputCaptureWidgets;
-    SmallArray<InputCaptureContext> inputCaptureStack;
-
     void init()
     {
         widgetBuffer.resize(megabytes(1), 16);
@@ -202,48 +239,41 @@ namespace gui
 
     void addInputCapture(Widget* w)
     {
+        assert(w->flags & WidgetFlags::INPUT_CAPTURE);
         inputCaptureWidgets.push(w);
     }
 
     void pushInputCapture(Widget* w)
     {
-        inputCaptureStack.push({ w->stateNode, nullptr });
+        assert(w->flags & WidgetFlags::INPUT_CAPTURE);
+        nextInputCapture = { w->stateNode, nullptr };
     }
 
-    void popInputCapure()
+    void popInputCapture()
     {
-        inputCaptureStack.pop();
+        // if the input capture stack is empty that means someone popped the stack too many times
+        // the root should always remain on the stack
+        assert(inputCaptureStack.size() > 1);
+        popInputStackNextFrame = true;
+    }
+
+    bool isActiveInputCapture(Widget* w)
+    {
+        assert(w->flags & WidgetFlags::INPUT_CAPTURE);
+        return !inputCaptureStack.empty()
+            && inputCaptureStack.back().inputCaptureStateNode == w->stateNode;
+    }
+
+    void makeActive(Widget* w)
+    {
+        if (!isActiveInputCapture(w))
+        {
+            pushInputCapture(w);
+        }
     }
 
     void onBeginUpdate(f32 deltaTime);
     void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count);
-
-    template <typename T>
-    T* add(Widget* parent, T const& widget)
-    {
-        T* w = widgetBuffer.write<T>(widget);
-        w->stateNode = parent->stateNode;
-        w->root = w;
-        w->root = w->build();
-#ifndef NDEBUG
-        w->parent = parent;
-#endif
-
-        if (!parent->root->childFirst)
-        {
-            parent->root->childFirst = w;
-        }
-        else
-        {
-            parent->root->childLast->neighbor = w;
-        }
-
-        parent->root->childLast = w;
-
-        ++widgetCount;
-
-        return w;
-    }
 
     template <typename T>
     inline T* getState(Widget* w)
