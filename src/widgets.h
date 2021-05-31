@@ -115,7 +115,7 @@ namespace gui
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            ui::rect(0, tex, computedPosition, computedSize, Vec3(1.f), rtx.alpha);
+            ui::rectBlur(0, tex, computedPosition, computedSize, Vec4(1.f), rtx.alpha);
         }
     };
 
@@ -388,7 +388,7 @@ namespace gui
     {
         f32 itemSpacing;
 
-        Column(f32 itemSpacing=0.f) : Widget("Row"), itemSpacing(itemSpacing) {}
+        Column(f32 itemSpacing=0.f) : Widget("Column"), itemSpacing(itemSpacing) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -823,11 +823,7 @@ namespace gui
         virtual void layout(GuiContext& ctx) override
         {
             auto state = animate();
-            for (Widget* child = childFirst; child; child = child->neighbor)
-            {
-                child->computedPosition = computedPosition + child->desiredPosition;
-                child->layout(ctx);
-            }
+            Widget::layout(ctx);
         }
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
@@ -857,7 +853,14 @@ namespace gui
             f32 t = easeInOutParametric(state->animationProgress);
             Mat4 scale =
                 Mat4::scaling(Vec3(Vec2(lerp(startScale, endScale, t)), 1.f));
-            return this->add(Transform(scale))->size(desiredSize)->position(desiredPosition);
+            transform = this->add(Transform(scale));
+            return transform;
+        }
+
+        virtual void computeSize(Constraints const& constraints) override
+        {
+            transform->size(desiredSize);
+            Widget::computeSize(constraints);
         }
     };
 
@@ -936,10 +939,12 @@ namespace gui
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            // TODO
-            /* ui::clip();
-            */
-            Widget::render(ctx, rtx);
+            RenderContext r = rtx;
+            r.scissorPos = computedPosition;
+            r.scissorSize = computedSize;
+            ui::setScissor(r.scissorPos, r.scissorSize);
+            Widget::render(ctx, r);
+            ui::setScissor(rtx.scissorPos, rtx.scissorSize);
         }
     };
 

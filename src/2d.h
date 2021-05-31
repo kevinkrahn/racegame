@@ -40,14 +40,68 @@ namespace ui
     }
 
     Mat4 transform(1.f);
+    Vec2 scissorPos(0,0);
+    Vec2 scissorSize(INFINITY, INFINITY);
 
-    void setTransform(Mat4 const& t) { transform = t; }
-    void transformQuad(Quad& q, Mat4 const& t)
+    void setScissor(Vec2 pos, Vec2 size)
     {
+        scissorPos = pos;
+        scissorSize = size;
+    }
+    void setTransform(Mat4 const& t) { transform = t; }
+    bool transformQuad(Quad& q, Mat4 const& transform, Vec2 scissorPos, Vec2 scissorSize)
+    {
+        // clip
+        Vec2 sp1 = scissorPos;
+        Vec2 sp2 = scissorPos + scissorSize;
+        Vec2 size = q.points[3].xy - q.points[0].xy;
+        Vec2 p1 = q.points[0].xy;
+        Vec2 uv1 = q.points[0].uv;
+        Vec2 uv2 = q.points[3].uv;
+
+        q.points[0].xy = Vec2(
+                clamp(q.points[0].xy.x, sp1.x, sp2.x),
+                clamp(q.points[0].xy.y, sp1.y, sp2.y));
+        Vec2 t = (q.points[0].xy - p1) / size;
+        q.points[0].uv.u = lerp(uv1.u, uv2.u, t.u);
+        q.points[0].uv.v = lerp(uv1.v, uv2.v, t.v);
+
+        q.points[1].xy = Vec2(
+                clamp(q.points[1].xy.x, sp1.x, sp2.x),
+                clamp(q.points[1].xy.y, sp1.y, sp2.y));
+        t = (q.points[1].xy - p1) / size;
+        q.points[1].uv.u = lerp(uv1.u, uv2.u, t.u);
+        q.points[1].uv.v = lerp(uv1.v, uv2.v, t.v);
+
+        q.points[2].xy = Vec2(
+                clamp(q.points[2].xy.x, sp1.x, sp2.x),
+                clamp(q.points[2].xy.y, sp1.y, sp2.y));
+        t = (q.points[2].xy - p1) / size;
+        q.points[2].uv.u = lerp(uv1.u, uv2.u, t.u);
+        q.points[2].uv.v = lerp(uv1.v, uv2.v, t.v);
+
+        q.points[3].xy = Vec2(
+                clamp(q.points[3].xy.x, sp1.x, sp2.x),
+                clamp(q.points[3].xy.y, sp1.y, sp2.y));
+        t = (q.points[3].xy - p1) / size;
+        q.points[3].uv.u = lerp(uv1.u, uv2.u, t.u);
+        q.points[3].uv.v = lerp(uv1.v, uv2.v, t.v);
+
+        // TODO: see if it is actually faster to eliminate degenerate geometry
+#if 0
+        if (q.points[0].xy.x == q.points[1].xy.x || q.points[0].xy.y == q.points[2].xy.y)
+        {
+            return false;
+        }
+#endif
+
+        // transform
         for (u32 i=0; i<4; ++i)
         {
-            q.points[i].xy = (t * Vec4(q.points[i].xy, 0.f, 1.f)).xy;
+            q.points[i].xy = (transform * Vec4(q.points[i].xy, 0.f, 1.f)).xy;
         }
+
+        return true;
     }
 
     void rect(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
@@ -69,9 +123,10 @@ namespace ui
         q.color2 = Vec4(color, 1.f);
         q.alpha = alpha;
 
-        transformQuad(q, transform);
-
-        g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        if (transformQuad(q, transform, scissorPos, scissorSize))
+        {
+            g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        }
     }
 
     void rectUV(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
@@ -91,9 +146,10 @@ namespace ui
         q.color2 = Vec4(color, 1.f);
         q.alpha = alpha;
 
-        transformQuad(q, transform);
-
-        g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        if (transformQuad(q, transform, scissorPos, scissorSize))
+        {
+            g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        }
     }
 
     void rectBlur(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
@@ -115,9 +171,10 @@ namespace ui
         q.color2 = color;
         q.alpha = alpha;
 
-        transformQuad(q, transform);
-
-        g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        if (transformQuad(q, transform, scissorPos, scissorSize))
+        {
+            g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        }
     }
 
     void rectBlur(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
@@ -139,9 +196,10 @@ namespace ui
         q.color2 = color2;
         q.alpha = alpha;
 
-        transformQuad(q, transform);
-
-        g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        if (transformQuad(q, transform, scissorPos, scissorSize))
+        {
+            g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        }
     }
 
     void rectUVBlur(i32 priority, Texture* tex, Vec2 pos, Vec2 size,
@@ -161,9 +219,10 @@ namespace ui
         q.color2 = color;
         q.alpha = alpha;
 
-        transformQuad(q, transform);
-
-        g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        if (transformQuad(q, transform, scissorPos, scissorSize))
+        {
+            g_game.renderer->add2D(shader, priority, [q]{ drawQuad(q); });
+        }
     }
 
     struct Text
@@ -177,6 +236,8 @@ namespace ui
         HAlign halign;
         VAlign valign;
         Mat4 transform;
+        Vec2 scissorPos;
+        Vec2 scissorSize;
     };
 
     void text(Font* font, const char* s, Vec2 pos, Vec3 color, f32 alpha=1.f,
@@ -194,10 +255,12 @@ namespace ui
         text.halign = halign;
         text.valign = valign;
         text.transform = transform;
+        text.scissorPos = scissorPos;
+        text.scissorSize = scissorSize;
 
         g_game.renderer->add2D(shader, TEXT, [text]{
             text.font->draw(text.text, text.pos, text.color, text.alpha, text.scale,
-                    text.halign, text.valign, text.transform);
+                    text.halign, text.valign, text.transform, text.scissorPos, text.scissorSize);
         });
     }
 };

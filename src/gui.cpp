@@ -90,6 +90,8 @@ namespace gui
         rtx.renderer = renderer;
         rtx.transform = Mat4(1.f);
         rtx.alpha = 1.f;
+        rtx.scissorPos = Vec2(0, 0);
+        rtx.scissorSize = actualScreenSize;
         root->render(ctx, rtx);
 
         if (popInputStackNextFrame)

@@ -641,6 +641,11 @@ inline f32 lerp(f32 from, f32 to, f32 t)
     return from + (to - from) * t;
 }
 
+inline Vec2 lerp(Vec2 const& from, Vec2 const& to, f32 t)
+{
+    return from + (to - from) * t;
+}
+
 inline Vec3 lerp(Vec3 const& from, Vec3 const& to, f32 t)
 {
     return from + (to - from) * t;

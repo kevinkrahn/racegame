@@ -106,10 +106,12 @@ namespace gui
         Renderer* renderer;
         Mat4 transform;
         f32 alpha;
+        Vec2 scissorPos;
+        Vec2 scissorSize;
     };
 
     // Use pointers to WidgetStateNodes to identify the input captures
-    // Can't use a pointers to Widgets because they are not preserved across frames
+    // Can't use pointers to Widgets because they are not preserved across frames
     struct InputCaptureContext
     {
         WidgetStateNode* inputCaptureStateNode = nullptr;
@@ -146,6 +148,7 @@ namespace gui
         Vec2 desiredSize = { INFINITY, INFINITY };
 
         Vec2 computedPosition = { 0, 0 };
+        // TODO: Remove this. It doesn't seem to be necessary and it takes up space
         Vec2 positionWithinParent = { 0, 0 };
         Vec2 desiredPosition = { 0, 0 };
 
@@ -165,7 +168,7 @@ namespace gui
         void pushID(const char* id);
         void navigate(struct Navigation& nav);
         Widget* build() { return this; }
-        Widget* position(Vec2 position) { desiredSize = position; return this; }
+        Widget* position(Vec2 position) { desiredPosition = position; return this; }
         Widget* position(f32 x, f32 y) { return position(Vec2(x, y)); }
         Widget* size(Vec2 size) { desiredSize = size; return this;}
         Widget* size(f32 sizeX, f32 sizeY) { return size(Vec2(sizeX, sizeY)); }

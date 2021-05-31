@@ -2301,14 +2301,16 @@ void Menu::showMode()
                 animateIn = true;
             })
             ->size(0,0)
-        ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(0,0);
+        ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
+            ->size(0, 0);
 
     if (mode == MAIN_MENU)
     {
-        auto inputCapture = container->add(InputCapture(!animateIn, "MainMenu"))->size(Vec2(0));
+        auto inputCapture = container->add(InputCapture(!animateIn, "MainMenu"))->size(0,0);
         makeActive(inputCapture);
 
-        auto column = panel(inputCapture, Vec2(600, 0))->add(Column(10))->size(Vec2(0));
+        auto column = panel(inputCapture, Vec2(600, 0))
+            ->add(Column(10))->size(0, 0);
 
         column
             ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
@@ -2357,13 +2359,13 @@ void Menu::showMode()
             ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
             ->add(Text(bigFont, "SETTINGS"));
 
-        button(column, "GRAPHICS SETTINGS", "Tweak graphics settings for the optimal gameplay experience", [&]{
+        button(column, "GRAPHICS SETTINGS", "Tweak graphics for performance or visual quality.", [&]{
         });
         button(column, "AUDIO SETTINGS", "Tweak audio settings.", [&]{
         });
-        button(column, "CONTROLS", "Tweak graphics settings for the optimal gameplay experience", [&]{
+        button(column, "CONTROLS", "Change controller or keyboard layout.", [&]{
         });
-        auto b = button(column, "BACK", "Return to main menu", [&]{
+        auto b = button(column, "BACK", "Return to main menu.", [&]{
             popInputCapture();
             showMainMenu();
         }, ButtonFlags::BACK);

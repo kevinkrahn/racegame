@@ -1,6 +1,7 @@
 #include "font.h"
 #include "renderer.h"
 #include "game.h"
+#include "2d.h"
 #include <stb_rect_pack.h>
 #include <stb_truetype.h>
 
@@ -113,8 +114,8 @@ Vec2 Font::stringDimensions(const char* str, bool onlyFirstLine) const
     return { max(currentWidth, maxWidth), currentHeight };
 }
 
-void Font::draw(const char* text, Vec2 pos, Vec3 color, f32 alpha,
-            f32 scale, HAlign halign, VAlign valign, Mat4 const& transform)
+void Font::draw(const char* text, Vec2 pos, Vec3 color, f32 alpha, f32 scale,
+        HAlign halign, VAlign valign, Mat4 const& transform, Vec2 scissorPos, Vec2 scissorSize)
 {
     char* str = (char*)text;
     Vec2 p = pos;
@@ -178,37 +179,25 @@ void Font::draw(const char* text, Vec2 pos, Vec3 color, f32 alpha,
 
         f32 x0 = floorf(p.x + g.xOff * scale);
         f32 y0 = floorf(p.y + g.yOff * scale);
-        //f32 x1 = floorf(x0 + (g.x1 - g.x0) * textureAtlas.width * scale);
-        //f32 y1 = floorf(y0 + (g.y1 - g.y0) * textureAtlas.height * scale);
-        //f32 x1 = x0 + g.width * scale;
-        //f32 y1 = y0 + g.height * scale;
         f32 x1 = floorf(x0 + g.width * scale);
         f32 y1 = floorf(y0 + g.height * scale);
 
-        struct QuadPoint
-        {
-            Vec2 xy;
-            Vec2 uv;
-        };
         Vec2 p1 = { x0, y0 };
         Vec2 p2 = { x1, y1 };
         Vec2 t1 = { g.x0, g.y0 };
         Vec2 t2 = { g.x1, g.y1 };
-        QuadPoint points[4] = {
-            { p1, t1 },
-            { { p2.x, p1.y }, { t2.x, t1.y } },
-            { { p1.x, p2.y }, { t1.x, t2.y } },
-            { p2, t2 }
-        };
-        for (u32 i=0; i<4; ++i)
+        ui::Quad q;
+        q.points[0] = { p1, t1 };
+        q.points[1] = { { p2.x, p1.y }, { t2.x, t1.y } };
+        q.points[2] = { { p1.x, p2.y }, { t1.x, t2.y } };
+        q.points[3] = { p2, t2 };
+        if (ui::transformQuad(q, transform, scissorPos, scissorSize))
         {
-            points[i].xy = (transform * Vec4(points[i].xy, 0.f, 1.f)).xy;
+            Vec4 col(color, alpha);
+            glUniform4fv(0, 4, (GLfloat*)&q.points);
+            glUniform4fv(4, 1, (GLfloat*)&col);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         }
-
-        Vec4 col(color, alpha);
-        glUniform4fv(0, 4, (GLfloat*)&points);
-        glUniform4fv(4, 1, (GLfloat*)&col);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         p.x += g.advance * scale;
 
