@@ -11,8 +11,6 @@ namespace gui
 {
     struct Widget;
 
-    const f32 REFERENCE_HEIGHT = 1080.f;
-
     namespace WidgetFlags
     {
         enum
@@ -128,8 +126,7 @@ namespace gui
     Widget* root = nullptr;
     SmallArray<Widget*, 64> inputCaptureWidgets;
     SmallArray<InputCaptureContext> inputCaptureStack;
-    //InputCaptureContext nextInputCapture;
-    //bool popInputStackNextFrame = false;
+    f32 guiScale = 1.f;
 
     struct Widget
     {
@@ -169,9 +166,11 @@ namespace gui
         void pushID(const char* id);
         void navigate(struct Navigation& nav);
         Widget* build() { return this; }
-        Widget* position(Vec2 position) { desiredPosition = position; return this; }
-        Widget* position(f32 x, f32 y) { return position(Vec2(x, y)); }
-        Widget* size(Vec2 size) { desiredSize = size; return this;}
+        Widget* absolutePosition(Vec2 position) { desiredPosition = position; return this; }
+        Widget* absolutePosition(f32 x, f32 y) { return absolutePosition(Vec2(x, y)); }
+        Widget* position(Vec2 position) { return absolutePosition(position * guiScale); }
+        Widget* position(f32 x, f32 y) { return absolutePosition(Vec2(x, y) * guiScale); }
+        Widget* size(Vec2 size) { desiredSize = size * guiScale; return this;}
         Widget* size(f32 sizeX, f32 sizeY) { return size(Vec2(sizeX, sizeY)); }
         Widget* addFlags(u32 flags) { this->flags |= flags; return this; }
         Widget* findSelectedWidget(WidgetStateNode* stateNode);
@@ -311,18 +310,4 @@ namespace gui
     Widget* findAncestorByStateNode(Widget* w, WidgetStateNode* state);
     Widget* findAncestorByFlags(Widget* w, u32 flags);
     Widget* findParent(Widget* w, u32 flags);
-
-    // TODO: Add push api.
-    // push(Container())
-    // pushSize()
-    // pushPosition()
-    //
-    // add(Button())
-    // add(Button())
-    // add(Button())
-    // add(Button())
-    // ...
-    // popPosition()
-    // popSize()
-    // pop()
 }

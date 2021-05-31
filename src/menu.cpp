@@ -2145,8 +2145,9 @@ void Menu::showMode()
     static const char* helpMessage = "";
     static Function<void()> selection = []{ assert(false); };
 
-    Font* smallFont = &g_res.getFont("font", 20);
-    Font* bigFont = &g_res.getFont("font_bold", 60);
+    FontDescription smallFont = { "font", 20 };
+    FontDescription mediumFont = { "font", 30 };
+    FontDescription bigFont = { "font_bold", 60 };
 
     auto button = [&](gui::Widget* parent, const char* name, const char* helpText, auto onPress,
             u32 buttonFlags=0, bool fadeOutToBlack=false) {
@@ -2154,7 +2155,7 @@ void Menu::showMode()
         return parent
             ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn, name))->size(btnSize)
             ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
-            ->add(TextButton(name, buttonFlags))
+            ->add(TextButton(mediumFont, name, buttonFlags))
                 ->onPress([onPress, this, fadeOutToBlack] {
                     animateIn = false;
                     fadeToBlack = fadeOutToBlack;
@@ -2331,7 +2332,7 @@ void Menu::showMode()
         }
 
         // gap
-        column->add(Container())->size(INFINITY, 10);
+        column->add(Container())->size(INFINITY, 20);
 
         // TODO: ensure all player names are unique before starting championship
         button(column, "BEGIN", "Begin the championship!", [&]{
@@ -2369,7 +2370,7 @@ void Menu::showMode()
             return column
                 ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn, name))->size(btnSize)
                 ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
-                ->add(TextButton(name, buttonFlags))
+                ->add(Button(buttonFlags))
                     ->onPress(onPress);
         };
 

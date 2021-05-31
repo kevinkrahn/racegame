@@ -27,14 +27,23 @@ namespace gui
 
     struct Stack : public Widget {};
 
+    struct FontDescription
+    {
+        const char* fontName;
+        u32 fontSize;
+    };
+
     struct Text : public Widget
     {
         Font* font;
         const char* text;
         Vec4 color;
 
-        Text(Font* font, const char* text, Vec4 color=Vec4(1.0))
-            : Widget("Text"), font(font), text(text), color(color) {}
+        Text(FontDescription const& fontDescription, const char* text, Vec4 color=Vec4(1.0))
+            : Widget("Text"), text(text), color(color)
+        {
+            font = &g_res.getFont(fontDescription.fontName, (u32)(fontDescription.fontSize * guiScale));
+        }
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -68,11 +77,11 @@ namespace gui
         {
             if (desiredSize.x == 0.f)
             {
-                desiredSize.x = (f32)tex->width;
+                desiredSize.x = floor((f32)tex->width * guiScale);
             }
             if (desiredSize.y == 0.f)
             {
-                desiredSize.y = (f32)tex->height;
+                desiredSize.y = floor((f32)tex->height * guiScale);
             }
 
             if (preserveAspectRatio)
@@ -125,7 +134,13 @@ namespace gui
         Vec4 color;
 
         Border(Insets const& borders, Vec4 color)
-            : Widget("Border"), borders(borders), color(color) {}
+            : Widget("Border"), borders(borders), color(color)
+        {
+            this->borders.left   = floorf(borders.left   * guiScale);
+            this->borders.right  = floorf(borders.right  * guiScale);
+            this->borders.top    = floorf(borders.top    * guiScale);
+            this->borders.bottom = floorf(borders.bottom * guiScale);
+        }
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -204,7 +219,13 @@ namespace gui
         Vec4 color;
 
         Outline(Insets const& borders, Vec4 color)
-            : Widget("Outline"), borders(borders), color(color) {}
+            : Widget("Outline"), borders(borders), color(color)
+        {
+            this->borders.left   = floorf(borders.left   * guiScale);
+            this->borders.right  = floorf(borders.right  * guiScale);
+            this->borders.top    = floorf(borders.top    * guiScale);
+            this->borders.bottom = floorf(borders.bottom * guiScale);
+        }
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
@@ -246,9 +267,25 @@ namespace gui
                 Vec4 const& backgroundColor = Vec4(0), HAlign halign = HAlign::LEFT,
                 VAlign valign = VAlign::TOP)
             : Widget("Container"), padding(padding), margin(margin),
-              backgroundColor(backgroundColor), halign(halign), valign(valign) {}
+              backgroundColor(backgroundColor), halign(halign), valign(valign)
+        {
+            adjustScale();
+        }
         Container(Vec4 const& backgroundColor)
             : Widget("Container"), backgroundColor(backgroundColor) {}
+
+        void adjustScale()
+        {
+            padding.left   = floorf(padding.left   * guiScale);
+            padding.right  = floorf(padding.right  * guiScale);
+            padding.top    = floorf(padding.top    * guiScale);
+            padding.bottom = floorf(padding.bottom * guiScale);
+
+            margin.left   = floorf(margin.left   * guiScale);
+            margin.right  = floorf(margin.right  * guiScale);
+            margin.top    = floorf(margin.top    * guiScale);
+            margin.bottom = floorf(margin.bottom * guiScale);
+        }
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -343,7 +380,7 @@ namespace gui
     {
         f32 itemSpacing;
 
-        Row(f32 itemSpacing=0.f) : Widget("Row"), itemSpacing(itemSpacing) {}
+        Row(f32 itemSpacing=0.f) : Widget("Row"), itemSpacing(itemSpacing * guiScale) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -388,7 +425,7 @@ namespace gui
     {
         f32 itemSpacing;
 
-        Column(f32 itemSpacing=0.f) : Widget("Column"), itemSpacing(itemSpacing) {}
+        Column(f32 itemSpacing=0.f) : Widget("Column"), itemSpacing(itemSpacing * guiScale) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -435,7 +472,7 @@ namespace gui
         f32 itemSpacing;
 
         Grid(u32 columns, f32 itemSpacing=0.f)
-            : Widget("Grid"), columns(columns), itemSpacing(itemSpacing) {}
+            : Widget("Grid"), columns(columns), itemSpacing(itemSpacing * guiScale) {}
 
         Widget* build()
         {
@@ -650,15 +687,15 @@ namespace gui
     struct TextButton : public Button
     {
         const char* text;
+        FontDescription font;
 
-        TextButton(const char* text, u32 buttonFlags=0)
-            : Button(buttonFlags, "TextButton"), text(text) {}
+        TextButton(FontDescription const& font, const char* text, u32 buttonFlags=0)
+            : Button(buttonFlags, "TextButton"), text(text), font(font) {}
 
         Widget* build()
         {
             pushID(text);
             auto btn = Button::build();
-            Font* font = &g_res.getFont("font", 30);
             btn->add(Text(font, text));
             return btn;
         }
@@ -947,42 +984,4 @@ namespace gui
             ui::setScissor(rtx.scissorPos, rtx.scissorSize);
         }
     };
-
-    void widgetsDemo()
-    {
-        static bool animateIn = true;
-
-        auto root = gui::root->add(SlideAnimation(1.f, animateIn))
-            ->onAnimationEnd([]{
-                println("Animation intro finished!");
-            })->onAnimationReverseEnd([]{
-                println("Animation outro finished!");
-            });
-
-        auto container = root->add(Container({}, {}, Vec4(1, 0, 0, 1.f), HAlign::CENTER, VAlign::CENTER))
-            ->size(500, 0)->position(200, 200);
-        container = container->add(Container(Insets(20), Insets(20), Vec4(0, 0, 0, 0.8f)))
-            ->size(Vec2(0));
-
-        Font* font1 = &g_res.getFont("font", 30);
-        Font* font2 = &g_res.getFont("font_bold", 40);
-
-        auto column = container->add(Column())->size(Vec2(0));
-        column
-            ->add(Container(Insets(5)))->size(Vec2(0))
-            ->add(Text(font1, "Hello"));
-        column
-            ->add(Container(Insets(5)))->size(Vec2(0))
-            ->add(Text(font2, "World!"));
-        column
-            ->add(Container(Insets(5)))->size(Vec2(0))
-            ->add(Text(font1, "Hello"));
-        column
-            ->add(Container(Insets(5)))->size(Vec2(0))
-            ->add(Text(font2, "World!"));
-
-        auto row = column->add(Row())->size(Vec2(0));
-        row->add(Text(font1, "Oh my"));
-        row->add(Text(font2, "GOODNESS"));
-    }
 };

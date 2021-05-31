@@ -26,10 +26,10 @@ namespace gui
 
         frameCount = count;
 
+        const f32 REFERENCE_HEIGHT = 1080.f;
         f32 aspectRatio = (f32)w / (f32)h;
         Vec2 referenceScreenSize(REFERENCE_HEIGHT * aspectRatio, REFERENCE_HEIGHT);
         Vec2 actualScreenSize((f32)w, (f32)h);
-        Vec2 sizeMultiplier = actualScreenSize / referenceScreenSize;
 
         GuiContext ctx;
         //ctx.renderer = renderer;
@@ -37,7 +37,6 @@ namespace gui
         ctx.aspectRatio = aspectRatio;
         ctx.referenceScreenSize = referenceScreenSize;
         ctx.actualScreenSize = actualScreenSize;
-        //ctx.scale = (f32)h / REFERENCE_HEIGHT;
 
         root->desiredSize = { (f32)w, (f32)h };
         root->computeSize(Constraints());
