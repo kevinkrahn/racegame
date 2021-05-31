@@ -2272,14 +2272,19 @@ void Menu::showMode()
         for (u32 i=0; i<4; ++i)
         {
             bool enabled = g_game.state.drivers.size() > i;
-            auto c = column->add(Container())->size(0,0);
+            auto c = column
+                ->add(Border(Insets(2), COLOR_OUTLINE_NOT_SELECTED))->size(0,0)
+                ->add(Container(Insets(10), {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
+                    ->size(INFINITY, 70);
             if (enabled)
             {
                 const char* icon = g_game.state.drivers[i].useKeyboard
                         ? "icon_keyboard" : "icon_controller";
                 auto row = c->add(Row(10))->size(INFINITY, 0);
-                row->add(Image(g_res.getTexture(icon)))->size(50, 50);
-                row->add(Text(smallFont, tmpStr(g_game.state.drivers[i].playerName.data())));
+                row->add(Image(g_res.getTexture(icon)))->size(45, 45);
+                row
+                    ->add(Container({}, {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))->size(0, INFINITY)
+                    ->add(Text(mediumFont, tmpStr(g_game.state.drivers[i].playerName.data())));
             }
             else
             {

@@ -20,10 +20,15 @@
 namespace gui
 {
     const Vec4 COLOR_OUTLINE_SELECTED = Vec4(1.f, 0.6f, 0.05f, 1.f);
-    const Vec4 COLOR_OUTLINE_NOT_SELECTED = Vec4(0.9f, 0.9f, 0.9f, 1.f);
+    const Vec4 COLOR_OUTLINE_NOT_SELECTED = Vec4(Vec3(0.8f), 1.f);
+    const Vec4 COLOR_OUTLINE_DISABLED = Vec4(0.f);
     const Vec4 COLOR_BG_WIDGET = Vec4(Vec3(0), 0.95f);
     const Vec4 COLOR_BG_WIDGET_SELECTED = Vec4(Vec3(0.1f), 0.8f);
+    const Vec4 COLOR_BG_WIDGET_DISABLED = Vec4(Vec3(0.06f), 0.3f);
     const Vec4 COLOR_BG_PANEL = Vec4(Vec3(0), 0.65f);
+    const Vec4 COLOR_TEXT_SELECTED = Vec4(1);
+    const Vec4 COLOR_TEXT_NOT_SELECTED = Vec4(Vec3(0.5f), 1.f);
+    const Vec4 COLOR_TEXT_DISABLED = Vec4(Vec3(0.5f), 0.5f);
 
     struct Stack : public Widget {};
 
@@ -62,7 +67,7 @@ namespace gui
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            ui::text(font, text, computedPosition, Vec3(1.f), rtx.alpha);
+            ui::text(font, text, computedPosition, color.rgb, rtx.alpha * color.a);
         }
     };
 
@@ -598,6 +603,11 @@ namespace gui
         virtual bool handleInputEvent(
                 InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
         {
+            if (flags & WidgetFlags::DISABLED)
+            {
+                return false;
+            }
+
             if (ctx.selectedWidgetStateNode == stateNode)
             {
                 if ((ev.type == INPUT_KEYBOARD_PRESSED && ev.keyboard.key == KEY_RETURN)
@@ -627,6 +637,11 @@ namespace gui
         virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input)
             override
         {
+            if (flags & WidgetFlags::DISABLED)
+            {
+                return false;
+            }
+
             bool isMouseOver =
                 pointInRectangle(input.mouse.mousePos, computedPosition, computedPosition + computedSize);
 
@@ -649,37 +664,51 @@ namespace gui
         {
             ButtonState* state = getState<ButtonState>(this);
 
-            if (flags & (WidgetFlags::STATUS_SELECTED))
+            if (flags & WidgetFlags::DISABLED)
             {
-                INVOKE_CALLBACK(onSelect);
-
-                state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
-                state->hoverTimer += ctx.deltaTime;
-                state->hoverValue = 0.1f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f;
-
-                outline->borders = Insets(4);
-                outline->color = COLOR_OUTLINE_SELECTED;
-            }
-            else
-            {
-                state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
+                state->hoverIntensity = 0.f;
                 state->hoverTimer = 0.f;
-                state->hoverValue = max(state->hoverValue - ctx.deltaTime * 2.f, 0.f);
+                state->hoverValue = 0.f;
 
                 outline->borders = Insets(2);
-                outline->color = COLOR_OUTLINE_NOT_SELECTED;
-            }
+                outline->color = COLOR_OUTLINE_DISABLED;
 
-            if (state->isPressed)
-            {
-                bg->backgroundColor = COLOR_OUTLINE_SELECTED;
+                bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
             }
             else
             {
-                bg->backgroundColor = mix(COLOR_BG_WIDGET,
-                        COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
-            }
+                if (flags & WidgetFlags::STATUS_SELECTED)
+                {
+                    INVOKE_CALLBACK(onSelect);
 
+                    state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
+                    state->hoverTimer += ctx.deltaTime;
+                    state->hoverValue = 0.1f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f;
+
+                    outline->borders = Insets(4);
+                    outline->color = COLOR_OUTLINE_SELECTED;
+                }
+                else
+                {
+                    state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
+                    state->hoverTimer = 0.f;
+                    state->hoverValue = max(state->hoverValue - ctx.deltaTime * 2.f, 0.f);
+
+                    outline->borders = Insets(2);
+                    outline->color = COLOR_OUTLINE_NOT_SELECTED;
+                }
+
+                if (state->isPressed)
+                {
+                    bg->backgroundColor = COLOR_OUTLINE_SELECTED;
+                }
+                else
+                {
+                    bg->backgroundColor = mix(COLOR_BG_WIDGET,
+                            COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
+                }
+
+            }
             Widget::render(ctx, rtx);
         }
     };
@@ -688,6 +717,7 @@ namespace gui
     {
         const char* text;
         FontDescription font;
+        Text* textWidget;
 
         TextButton(FontDescription const& font, const char* text, u32 buttonFlags=0)
             : Button(buttonFlags, "TextButton"), text(text), font(font) {}
@@ -696,8 +726,30 @@ namespace gui
         {
             pushID(text);
             auto btn = Button::build();
-            btn->add(Text(font, text));
+            textWidget = btn->add(Text(font, text));
             return btn;
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            ButtonState* state = getState<ButtonState>(this);
+
+            if (flags & WidgetFlags::DISABLED)
+            {
+                textWidget->color = COLOR_TEXT_DISABLED;
+            }
+            else
+            {
+                if (flags & WidgetFlags::STATUS_SELECTED)
+                {
+                    textWidget->color = COLOR_TEXT_SELECTED;
+                }
+                else
+                {
+                    textWidget->color = COLOR_TEXT_NOT_SELECTED;
+                }
+            }
+            Button::render(ctx, rtx);
         }
     };
 

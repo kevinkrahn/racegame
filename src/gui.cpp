@@ -149,11 +149,11 @@ namespace gui
         else
         {
             selectedWidget = findAncestorByFlags(this,
-                    WidgetFlags::SELECTABLE | WidgetFlags::DEFAULT_SELECTION);
+                    WidgetFlags::SELECTABLE | WidgetFlags::DEFAULT_SELECTION, WidgetFlags::DISABLED);
             if (!selectedWidget)
             {
                 // select the first selectable widget by default
-                selectedWidget = findAncestorByFlags(this, WidgetFlags::SELECTABLE);
+                selectedWidget = findAncestorByFlags(this, WidgetFlags::SELECTABLE, WidgetFlags::DISABLED);
             }
         }
 
@@ -267,7 +267,7 @@ namespace gui
     {
         for (Widget* child = childFirst; child; child=child->neighbor)
         {
-            if (child->flags & WidgetFlags::SELECTABLE)
+            if ((child->flags & WidgetFlags::SELECTABLE) && !(child->flags & WidgetFlags::DISABLED))
             {
                 Vec2 c = child->center();
                 Vec2 s = child->computedSize;
@@ -397,9 +397,9 @@ namespace gui
         return nullptr;
     }
 
-    Widget* findAncestorByFlags(Widget* w, u32 flags)
+    Widget* findAncestorByFlags(Widget* w, u32 matchFlags, u32 unmatchFlags)
     {
-        if ((w->flags & flags) == flags)
+        if ((w->flags & matchFlags) == matchFlags && (~w->flags & unmatchFlags) == unmatchFlags)
         {
             return w;
         }
@@ -407,7 +407,7 @@ namespace gui
         {
             if (!(child->flags & WidgetFlags::INPUT_CAPTURE))
             {
-                Widget* t = findAncestorByFlags(child, flags);
+                Widget* t = findAncestorByFlags(child, matchFlags, unmatchFlags);
                 if (t)
                 {
                     return t;
