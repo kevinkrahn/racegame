@@ -729,169 +729,7 @@ void Menu::showNewChampionshipMenu()
 {
     g_game.state = {};
     reset();
-
-    addTitle("New Championship");
-
-    addLabel([]{ return "Press SPACE or controller button to join"; }, { 0, -320 },
-            &g_res.getFont("font", (u32)convertSize(38)));
-    Vec2 size(250, 75);
-    selectedWidget = addButton("BACK", "Return to main menu.", { -280, 320 }, size, [this]{
-        showMainMenu();
-    }, WidgetFlags::FADE_OUT | WidgetFlags::BACK);
-    Widget* beginButton = addButton("BEGIN", "Begin the championship!", { 280, 320 }, size, [this]{
-        g_game.isEditing = false;
-        g_game.state.currentLeague = 0;
-        g_game.state.currentRace = 0;
-        g_game.state.gameMode = GameMode::CHAMPIONSHIP;
-        g_game.changeScene(championshipTracks[g_game.state.currentRace]);
-
-        // add AI drivers
-        RandomSeries series = randomSeed();
-        Array<AIDriverData*> aiDrivers;
-        g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
-            AIDriverData* d = (AIDriverData*)r;
-            if (d->vehicles.size() > 0)
-            {
-                bool valid = true;
-                for (auto& v : d->vehicles)
-                {
-                    if (!g_res.getVehicle(v.vehicleGuid))
-                    {
-                        valid = false;
-                    }
-                }
-                if (valid)
-                {
-                    aiDrivers.push(d);
-                }
-            }
-        });
-        for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
-        {
-            i32 aiIndex;
-            do { aiIndex = irandom(series, 0, (i32)aiDrivers.size()); }
-            while (g_game.state.drivers.findIf([&](Driver const& d){
-                return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
-            }));
-            g_game.state.drivers.push(Driver(false, false, false, 0, 0, aiDrivers[aiIndex]->guid));
-            g_game.state.drivers.back().aiUpgrades(series);
-        }
-        garage.playerIndex = 0;
-        showInitialCarLotMenu(garage.playerIndex);
-    }, WidgetFlags::FADE_OUT | WidgetFlags::FADE_TO_BLACK | WidgetFlags::DISABLED);
-
-    for (u32 i=0; i<4; ++i)
-    {
-        Vec2 size(750, 100);
-        Widget w;
-        w.pos = { 0, -220 + i * (size.y + 15) };
-        w.size = size;
-        w.flags = 0;
-        w.onSelect = []{};
-        w.onRender = [i](Widget& btn, bool isSelected){
-            f32 borderSize = convertSize(isSelected ? 5 : 2);
-            Vec4 borderColor = mix(COLOR_NOT_SELECTED, COLOR_SELECTED, btn.hover);
-            Vec2 center = Vec2(g_game.windowWidth, g_game.windowHeight) * 0.5f;
-            Vec2 size = convertSize(btn.size) * btn.fadeInScale;
-            Vec2 pos = convertSize(btn.pos) + center - size * 0.5f;
-            bool enabled = g_game.state.drivers.size() > i;
-            if (enabled)
-            {
-                ui::rectBlur(ui::BORDER, &g_res.white,
-                            pos - borderSize, size + borderSize * 2,
-                            borderColor, (0.5f + btn.hover * 0.5f) * btn.fadeInAlpha);
-                ui::rectBlur(ui::BORDER, &g_res.white, pos, size,
-                            Vec4(Vec3((sinf(btn.hoverTimer * 4.f) + 1.f)*0.5f*btn.hover*0.04f), 0.8f),
-                            btn.fadeInAlpha);
-
-                Font* font = &g_res.getFont("font", (u32)convertSize(38));
-                const char* text = tmpStr(g_game.state.drivers[i].playerName.data());
-                f32 textAlpha = isSelected ? 1.f : 0.5f;
-                ui::text(font, text,
-                            pos + Vec2(convertSize(20), size.y * 0.5f),
-                            Vec3(1.f), textAlpha * btn.fadeInAlpha, btn.fadeInScale,
-                            HAlign::LEFT, VAlign::CENTER);
-
-                const char* icon = g_game.state.drivers[i].useKeyboard
-                        ? "icon_keyboard" : "icon_controller";
-                f32 iconSize = convertSize(75);
-                f32 margin = convertSize(20);
-                ui::rectBlur(ui::IMAGE, g_res.getTexture(icon),
-                            pos + Vec2(size.x - iconSize - margin, size.y * 0.5f - iconSize * 0.5f),
-                            Vec2(iconSize), Vec4(1.f), btn.fadeInAlpha);
-
-                btn.flags = WidgetFlags::SELECTABLE | WidgetFlags::NAVIGATE_VERTICAL;
-
-            }
-            else
-            {
-                ui::rectBlur(ui::BORDER, &g_res.white, pos - borderSize,
-                        size + borderSize * 2, borderColor, 0.35f * btn.fadeInAlpha);
-                ui::rectBlur(ui::BG, &g_res.white, pos, size,
-                            Vec4(Vec3(0.f), 0.3f), btn.fadeInAlpha);
-                Font* font = &g_res.getFont("font", (u32)convertSize(30));
-                f32 textAlpha = 0.3f;
-                ui::text(font, "Empty Player Slot", pos + Vec2(convertSize(20), size.y * 0.5f),
-                            Vec3(1.f), textAlpha * btn.fadeInAlpha, btn.fadeInScale,
-                            HAlign::LEFT, VAlign::CENTER);
-                btn.flags = 0;
-            }
-        };
-        widgets.push(w);
-    }
-
-    addBackgroundBox({0,0}, {880, 780});
-    addLogic([this, beginButton]{
-        // TODO: ensure all player names are unique before starting championship
-        if (!g_game.state.drivers.empty())
-        {
-            beginButton->flags = beginButton->flags & ~WidgetFlags::DISABLED;
-        }
-
-        if (g_game.state.drivers.size() < 4)
-        {
-            if (g_input.isKeyPressed(KEY_SPACE) && fadeInTimer > 800.f)
-            {
-                bool keyboardPlayerExists = false;
-                for (auto& driver : g_game.state.drivers)
-                {
-                    if (driver.useKeyboard)
-                    {
-                        keyboardPlayerExists = true;
-                        break;
-                    }
-                }
-                if (!keyboardPlayerExists)
-                {
-                    g_game.state.drivers.push(Driver(true, true, true, 0));
-                    g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
-                }
-            }
-
-            for (auto& controller : g_input.getControllers())
-            {
-                if (controller.value.isAnyButtonPressed())
-                {
-                    bool controllerPlayerExists = false;
-                    for (auto& driver : g_game.state.drivers)
-                    {
-                        if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.key)
-                        {
-                            controllerPlayerExists = true;
-                            break;
-                        }
-                    }
-
-                    if (!controllerPlayerExists)
-                    {
-                        g_game.state.drivers.push(Driver(true, true, false, controller.key));
-                        g_game.state.drivers.back().controllerGuid = controller.value.getGuid();
-                        g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
-                    }
-                }
-            }
-        }
-    });
+    mode = NEW_CHAMPIONSHIP;
 }
 
 void Menu::showInitialCarLotMenu(u32 playerIndex)
@@ -2254,6 +2092,49 @@ void Menu::showPauseMenu()
     mode = PAUSE_MENU;
 }
 
+void Menu::beginChampionship()
+{
+    g_game.isEditing = false;
+    g_game.state.currentLeague = 0;
+    g_game.state.currentRace = 0;
+    g_game.state.gameMode = GameMode::CHAMPIONSHIP;
+    g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+
+    // add AI drivers
+    RandomSeries series = randomSeed();
+    Array<AIDriverData*> aiDrivers;
+    g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
+        AIDriverData* d = (AIDriverData*)r;
+        if (d->vehicles.size() > 0)
+        {
+            bool valid = true;
+            for (auto& v : d->vehicles)
+            {
+                if (!g_res.getVehicle(v.vehicleGuid))
+                {
+                    valid = false;
+                }
+            }
+            if (valid)
+            {
+                aiDrivers.push(d);
+            }
+        }
+    });
+    for (i32 i=(i32)g_game.state.drivers.size(); i<10; ++i)
+    {
+        i32 aiIndex;
+        do { aiIndex = irandom(series, 0, (i32)aiDrivers.size()); }
+        while (g_game.state.drivers.findIf([&](Driver const& d){
+            return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
+        }));
+        g_game.state.drivers.push(Driver(false, false, false, 0, 0, aiDrivers[aiIndex]->guid));
+        g_game.state.drivers.back().aiUpgrades(series);
+    }
+    garage.playerIndex = 0;
+    showInitialCarLotMenu(garage.playerIndex);
+}
+
 void Menu::showMode()
 {
     using namespace gui;
@@ -2316,7 +2197,7 @@ void Menu::showMode()
             ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
             ->add(Text(bigFont, "MAIN MENU"));
 
-        button(column, "CHAMPIONSHIP", "Begin a new championship!", [&]{ showNewChampionshipMenu(); });
+        button(column, "NEW CHAMPIONSHIP", "Begin a new championship!", [&]{ showNewChampionshipMenu(); });
         button(column, "LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
             reset();
             g_game.loadGame();
@@ -2365,19 +2246,109 @@ void Menu::showMode()
         });
         button(column, "CONTROLS", "Change controller or keyboard layout.", [&]{
         });
-        auto b = button(column, "BACK", "Return to main menu.", [&]{
+        button(column, "BACK", "Return to main menu.", [&]{
             popInputCapture();
             showMainMenu();
         }, ButtonFlags::BACK);
 
         column
-            ->add(Container(Insets(10), {}, Vec4(0,0,0,0.8f), HAlign::CENTER))
+            ->add(Container(Insets(10), {}, Vec4(0,0,0,0.8f), HAlign::CENTER, VAlign::CENTER))
                 ->size(INFINITY, 40)
             ->add(Text(smallFont, helpMessage));
     }
     else if (mode == NEW_CHAMPIONSHIP)
     {
+        auto inputCapture = container->add(InputCapture(!animateIn, "NewChampionship"))->size(0,0);
+        makeActive(inputCapture);
 
+        auto column = panel(inputCapture, Vec2(600, 0))
+            ->add(Column(10))->size(0, 0);
+
+        column
+            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
+            ->add(Text(bigFont, "NEW CHAMPIONSHIP"));
+
+        for (u32 i=0; i<4; ++i)
+        {
+            bool enabled = g_game.state.drivers.size() > i;
+            auto c = column->add(Container())->size(0,0);
+            if (enabled)
+            {
+                const char* icon = g_game.state.drivers[i].useKeyboard
+                        ? "icon_keyboard" : "icon_controller";
+                auto row = c->add(Row(10))->size(INFINITY, 0);
+                row->add(Image(g_res.getTexture(icon)))->size(50, 50);
+                row->add(Text(smallFont, tmpStr(g_game.state.drivers[i].playerName.data())));
+            }
+            else
+            {
+                c->add(Text(smallFont, "Empty Player Slot"));
+            }
+        }
+
+        if (g_game.state.drivers.size() < 4)
+        {
+            if (g_input.isKeyPressed(KEY_SPACE))
+            {
+                bool keyboardPlayerExists = false;
+                for (auto& driver : g_game.state.drivers)
+                {
+                    if (driver.useKeyboard)
+                    {
+                        keyboardPlayerExists = true;
+                        break;
+                    }
+                }
+                if (!keyboardPlayerExists)
+                {
+                    g_game.state.drivers.push(Driver(true, true, true, 0));
+                    g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
+                }
+            }
+
+            for (auto& controller : g_input.getControllers())
+            {
+                if (controller.value.isAnyButtonPressed())
+                {
+                    bool controllerPlayerExists = false;
+                    for (auto& driver : g_game.state.drivers)
+                    {
+                        if (driver.isPlayer && !driver.useKeyboard && driver.controllerID == controller.key)
+                        {
+                            controllerPlayerExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!controllerPlayerExists)
+                    {
+                        g_game.state.drivers.push(Driver(true, true, false, controller.key));
+                        g_game.state.drivers.back().controllerGuid = controller.value.getGuid();
+                        g_game.state.drivers.back().playerName = tmpStr("Player %u", g_game.state.drivers.size());
+                    }
+                }
+            }
+        }
+
+        // gap
+        column->add(Container())->size(INFINITY, 10);
+
+        // TODO: ensure all player names are unique before starting championship
+        button(column, "BEGIN", "Begin the championship!", [&]{
+            popInputCapture();
+            popInputCapture();
+            beginChampionship();
+        })->addFlags(g_game.state.drivers.empty() ? gui::WidgetFlags::DISABLED : 0);
+
+        button(column, "CANCEL", "Return to main menu.", [&]{
+            popInputCapture();
+            showMainMenu();
+        }, ButtonFlags::BACK);
+
+        column
+            ->add(Container(Insets(10), {}, Vec4(0,0,0,0.8f), HAlign::CENTER, VAlign::CENTER))
+                ->size(INFINITY, 40)
+            ->add(Text(smallFont, helpMessage));
     }
     else if (mode == PAUSE_MENU)
     {

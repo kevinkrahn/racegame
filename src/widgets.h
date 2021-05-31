@@ -247,7 +247,7 @@ namespace gui
                 VAlign valign = VAlign::TOP)
             : Widget("Container"), padding(padding), margin(margin),
               backgroundColor(backgroundColor), halign(halign), valign(valign) {}
-        Container(Vec4 const& backgroundColor = Vec4(0))
+        Container(Vec4 const& backgroundColor)
             : Widget("Container"), backgroundColor(backgroundColor) {}
 
         virtual void computeSize(Constraints const& constraints) override

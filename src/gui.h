@@ -19,6 +19,7 @@ namespace gui
         {
             // for external widget API
             DEFAULT_SELECTION = 1 << 1,
+            DISABLED          = 1 << 2,
 
             // internal
             BLOCK_INPUT       = 1 << 8,
@@ -127,8 +128,8 @@ namespace gui
     Widget* root = nullptr;
     SmallArray<Widget*, 64> inputCaptureWidgets;
     SmallArray<InputCaptureContext> inputCaptureStack;
-    InputCaptureContext nextInputCapture;
-    bool popInputStackNextFrame = false;
+    //InputCaptureContext nextInputCapture;
+    //bool popInputStackNextFrame = false;
 
     struct Widget
     {
@@ -246,10 +247,15 @@ namespace gui
         inputCaptureWidgets.push(w);
     }
 
+    void clearInputCaptures()
+    {
+        inputCaptureStack.resize(1);
+    }
+
     void pushInputCapture(Widget* w)
     {
         assert(w->flags & WidgetFlags::INPUT_CAPTURE);
-        nextInputCapture = { w->stateNode, nullptr };
+        inputCaptureStack.push({ w->stateNode, nullptr });
     }
 
     void popInputCapture()
@@ -257,7 +263,7 @@ namespace gui
         // if the input capture stack is empty that means someone popped the stack too many times
         // the root should always remain on the stack
         assert(inputCaptureStack.size() > 1);
-        popInputStackNextFrame = true;
+        inputCaptureStack.pop();
     }
 
     bool isActiveInputCapture(Widget* w)

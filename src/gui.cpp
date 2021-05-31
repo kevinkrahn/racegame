@@ -22,11 +22,7 @@ namespace gui
 
     void onUpdate(Renderer* renderer, i32 w, i32 h, f32 deltaTime, u32 count)
     {
-        if (nextInputCapture.inputCaptureStateNode)
-        {
-            inputCaptureStack.push(nextInputCapture);
-            nextInputCapture = {};
-        }
+        InputCaptureContext context = inputCaptureStack.back();
 
         frameCount = count;
 
@@ -46,8 +42,6 @@ namespace gui
         root->desiredSize = { (f32)w, (f32)h };
         root->computeSize(Constraints());
         root->layout(ctx);
-
-        auto& context = inputCaptureStack.back();
 
         Widget** activeInputCapture =
             inputCaptureWidgets.findIf([&](Widget* w) {
@@ -86,6 +80,12 @@ namespace gui
             }
         }
 
+        // if the input context the frame started with is still active, then assign the selected widget
+        if (inputCaptureStack.back().inputCaptureStateNode == context.inputCaptureStateNode)
+        {
+            inputCaptureStack.back().selectedWidgetStateNode = context.selectedWidgetStateNode;
+        }
+
         RenderContext rtx;
         rtx.renderer = renderer;
         rtx.transform = Mat4(1.f);
@@ -93,12 +93,6 @@ namespace gui
         rtx.scissorPos = Vec2(0, 0);
         rtx.scissorSize = actualScreenSize;
         root->render(ctx, rtx);
-
-        if (popInputStackNextFrame)
-        {
-            inputCaptureStack.pop();
-            popInputStackNextFrame = false;
-        }
     }
 
     void Widget::computeSize(Constraints const& constraints)
