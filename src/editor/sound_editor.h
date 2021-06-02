@@ -19,8 +19,11 @@ public:
             ImGui::SameLine();
             if (ImGui::Button("Load Sound"))
             {
+                SmallArray<const char*> formats;
+                formats.push("*.wav");
+                formats.push("*.off");
                 const char* filename =
-                    chooseFile(true, "Audio Files", { "*.wav", "*.ogg" }, tmpStr("%s/sounds", ASSET_DIRECTORY));
+                    chooseFile(true, "Audio Files", formats, tmpStr("%s/sounds", ASSET_DIRECTORY));
                 if (filename)
                 {
                     sound.sourceFilePath = path::relative(filename);

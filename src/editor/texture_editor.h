@@ -22,7 +22,11 @@ public:
             {
                 if (ImGui::Button("Load Image"))
                 {
-                    const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
+                    SmallArray<const char*> formats;
+                    formats.push("*.png");
+                    formats.push("*.jpg");
+                    formats.push("*.bmp");
+                    const char* filename = chooseFile(true, "Image Files", formats,
                             tmpStr("%s/textures", ASSET_DIRECTORY));
                     if (filename)
                     {
@@ -63,7 +67,11 @@ public:
                     ImGui::NextColumn();
                     if (ImGui::Button("Load File"))
                     {
-                        const char* filename = chooseFile(true, "Image Files", { "*.png", "*.jpg", "*.bmp" },
+                        SmallArray<const char*> formats;
+                        formats.push("*.png");
+                        formats.push("*.jpg");
+                        formats.push("*.bmp");
+                        const char* filename = chooseFile(true, "Image Files", formats,
                                     tmpStr("%s/textures", ASSET_DIRECTORY));
                         if (filename)
                         {

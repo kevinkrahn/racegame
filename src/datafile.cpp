@@ -306,7 +306,8 @@ Value Value::readValue(Buffer& buf)
         {
             u32 len = *buf.bump<u32>();
 #if 1
-            new (&value.array_) Array(len);
+            new (&value.array_) Array();
+            value.array_.resize(len);
             for (u32 i=0; i<len; ++i)
             {
                 value.array_[i] = readValue(buf);

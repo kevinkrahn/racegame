@@ -74,6 +74,7 @@ public:
     template <typename T>
     void iterateResourceType(ResourceType type, T const& cb)
     {
+        // TODO: Store a map of each resource type to make this faster
         for (auto& res : resources)
         {
             if (res.value->type == type)

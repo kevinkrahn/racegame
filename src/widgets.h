@@ -30,7 +30,10 @@ namespace gui
     const Vec4 COLOR_TEXT_NOT_SELECTED = Vec4(Vec3(0.5f), 1.f);
     const Vec4 COLOR_TEXT_DISABLED = Vec4(Vec3(0.5f), 0.5f);
 
-    struct Stack : public Widget {};
+    struct Stack : public Widget
+    {
+        Stack() : Widget("Stack") {}
+    };
 
     struct FontDescription
     {
@@ -74,10 +77,14 @@ namespace gui
     struct Image : public Widget
     {
         Texture* tex;
+        Vec4 color;
         bool preserveAspectRatio = true;
+        bool flip = false;
 
-        Image(Texture* tex, bool preserveAspectRatio=true)
-            : Widget("Image"), tex(tex), preserveAspectRatio(preserveAspectRatio) {}
+        Image(Texture* tex, bool preserveAspectRatio=true, bool flip=false, Vec4 const& color=Vec4(1))
+            : Widget("Image"), tex(tex), preserveAspectRatio(preserveAspectRatio), flip(flip),
+              color(color) {}
+
         virtual void computeSize(Constraints const& constraints) override
         {
             if (desiredSize.x == 0.f)
@@ -129,7 +136,16 @@ namespace gui
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            ui::rectBlur(0, tex, computedPosition, computedSize, Vec4(1.f), rtx.alpha);
+            Vec4 color(1.f);
+            if (flip)
+            {
+                ui::rectUVBlur(0, tex, computedPosition, computedSize, Vec2(0,1), Vec2(1,0),
+                        color, rtx.alpha);
+            }
+            else
+            {
+                ui::rectBlur(0, tex, computedPosition, computedSize, color, rtx.alpha);
+            }
         }
     };
 
@@ -598,6 +614,7 @@ namespace gui
             getState<ButtonState>(this)->isPressed = true;
             ctx.selectedWidgetStateNode = stateNode;
             INVOKE_CALLBACK(onPress);
+            g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
         }
 
         virtual bool handleInputEvent(

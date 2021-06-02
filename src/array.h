@@ -66,7 +66,6 @@ public:
 
     Array() {}
 
-    // TODO: get rid of initialize_list
     Array(std::initializer_list<T> list) : size_((u32)list.size()), capacity_((u32)list.size())
     {
         reallocate();

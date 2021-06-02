@@ -141,7 +141,7 @@ struct PropPrefabData
 {
     PropCategory category;
     Str64 name;
-    std::function<void(PlaceableEntity*)> doThing = [](auto){};
+    Function<void(PlaceableEntity*)> doThing = [](auto){};
 };
 
 class PlaceableEntity : public Entity

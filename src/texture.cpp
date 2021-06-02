@@ -204,7 +204,8 @@ bool Texture::loadSourceFile(u32 index)
         {
             i32 width = w >> level;
             i32 height = h >> level;
-            Array<u8> rgData(width * height * channels);
+            Array<u8> rgData;
+            rgData.resize(width * height * channels);
             for (i32 j=0; j<height; ++j)
             {
                 for (i32 i=0; i<width; ++i)

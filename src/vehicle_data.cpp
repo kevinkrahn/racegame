@@ -148,48 +148,47 @@ void VehicleData::initStandardUpgrades()
     suspension.suspensionSpringDamperRateDiff = 600.f;
     suspension.trackTireFrictionDiff = 0.05f;
 
-    availableUpgrades = {
-        {
-            "ENGINE",
-            "Upgrade the engine to improve acceleration and top speed.",
-            g_res.getTexture("icon_pistons")->guid,
-            1500,
-            5,
-            engine
-        },
-        {
-            "TIRES",
-            "Equip better tires for improved traction and overall handling.",
-            g_res.getTexture("icon_wheel")->guid,
-            1000,
-            5,
-            tires
-        },
-        {
-            "ARMOR",
-            "Upgrade armor to improve resistance against all forms of damage.",
-            g_res.getTexture("icon_armor")->guid,
-            1000,
-            5,
-            armor
-        },
-        {
-            "SUSPENSION",
-            "Upgrade the suspension to improve handling.",
-            g_res.getTexture("icon_suspension")->guid,
-            1250,
-            2,
-            suspension
-        },
-        {
-            "WEIGHT",
-            "Strips out unnecessary parts of the vehicle to improve acceleration and handling.",
-            g_res.getTexture("icon_weight")->guid,
-            1500,
-            2,
-            weight
-        },
-    };
+    availableUpgrades.clear();
+    availableUpgrades.push({
+        "ENGINE",
+        "Upgrade the engine to improve acceleration and top speed.",
+        g_res.getTexture("icon_pistons")->guid,
+        1500,
+        5,
+        engine
+    });
+    availableUpgrades.push({
+        "TIRES",
+        "Equip better tires for improved traction and overall handling.",
+        g_res.getTexture("icon_wheel")->guid,
+        1000,
+        5,
+        tires
+    });
+    availableUpgrades.push({
+        "ARMOR",
+        "Upgrade armor to improve resistance against all forms of damage.",
+        g_res.getTexture("icon_armor")->guid,
+        1000,
+        5,
+        armor
+    });
+    availableUpgrades.push({
+        "SUSPENSION",
+        "Upgrade the suspension to improve handling.",
+        g_res.getTexture("icon_suspension")->guid,
+        1250,
+        2,
+        suspension
+    });
+    availableUpgrades.push({
+        "WEIGHT",
+        "Strips out unnecessary parts of the vehicle to improve acceleration and handling.",
+        g_res.getTexture("icon_weight")->guid,
+        1500,
+        2,
+        weight
+    });
 }
 
 VehicleConfiguration::Upgrade* VehicleConfiguration::getUpgrade(i32 upgradeIndex)

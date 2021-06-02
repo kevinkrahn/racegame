@@ -272,12 +272,14 @@ namespace gui
             && inputCaptureStack.back().inputCaptureStateNode == w->stateNode;
     }
 
-    void makeActive(Widget* w)
+    bool makeActive(Widget* w)
     {
         if (!isActiveInputCapture(w))
         {
             pushInputCapture(w);
+            return true;
         }
+        return false;
     }
 
     void onBeginUpdate(f32 deltaTime);

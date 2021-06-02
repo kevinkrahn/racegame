@@ -17,7 +17,7 @@ void Projectile::onCreate(Scene* scene)
             this->velocity -= upVector * 0.7f;
             impactEmitter = ParticleEmitter(&scene->sparks, 5, 5,
                     Vec4(Vec3(0.04f, 1.f, 0.04f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
-            environmentImpactSounds = { "blaster_hit" };
+            environmentImpactSounds.push("blaster_hit");
             break;
         case PHANTOM:
             life = 2.5f;
@@ -28,7 +28,7 @@ void Projectile::onCreate(Scene* scene)
             this->velocity -= upVector * 0.7f;
             impactEmitter = ParticleEmitter(&scene->sparks, 5, 5,
                     Vec4(Vec3(1.f, 0.02f, 0.95f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
-            environmentImpactSounds = { "blaster_hit" };
+            environmentImpactSounds.push("blaster_hit");
             break;
         case BULLET:
         case BULLET_SMALL:
@@ -38,18 +38,14 @@ void Projectile::onCreate(Scene* scene)
             damage = 12;
             this->velocity -= upVector;
             impactEmitter = ParticleEmitter(&scene->sparks, 1, 1,
-                    Vec4(Vec3(1.f, 0.6f, 0.02f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
-            environmentImpactSounds = {
-                "richochet1",
-                "richochet2",
-                "richochet3",
-                "richochet4",
-            };
-            vehicleImpactSounds = {
-                "bullet_impact1",
-                "bullet_impact2",
-                "bullet_impact3",
-            };
+                Vec4(Vec3(1.f, 0.6f, 0.02f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
+            environmentImpactSounds.push("richochet1");
+            environmentImpactSounds.push("richochet2");
+            environmentImpactSounds.push("richochet3");
+            environmentImpactSounds.push("richochet4");
+            vehicleImpactSounds.push("bullet_impact1");
+            vehicleImpactSounds.push("bullet_impact2");
+            vehicleImpactSounds.push("bullet_impact3");
             break;
         case MISSILE:
             life = 4.f;
@@ -59,8 +55,8 @@ void Projectile::onCreate(Scene* scene)
             accel = 14.f;
             maxSpeed = 110.f;
             explosionStrength = 5.f;
-            environmentImpactSounds = { "explosion1" };
-            vehicleImpactSounds = { "explosion1" };
+            environmentImpactSounds.push("explosion1");
+            vehicleImpactSounds.push("explosion1");
             break;
         case HOMING_MISSILE:
             life = 4.25f;
@@ -71,8 +67,8 @@ void Projectile::onCreate(Scene* scene)
             homingSpeed = 85.f;
             maxSpeed = 100.f;
             explosionStrength = 6.f;
-            environmentImpactSounds = { "explosion1" };
-            vehicleImpactSounds = { "explosion1" };
+            environmentImpactSounds.push("explosion1");
+            vehicleImpactSounds.push("explosion1");
             break;
         case BOUNCER:
             life = 4.f;
@@ -82,7 +78,7 @@ void Projectile::onCreate(Scene* scene)
             bounceOffEnvironment = true;
             impactEmitter = ParticleEmitter(&scene->sparks, 5, 5,
                     Vec4(Vec3(0.3f, 0.3f, 1.f) * 2.f, 1.f), 0.5f, 6.f, 10.f);
-            environmentImpactSounds = { "bouncer_bounce" };
+            environmentImpactSounds.push("bouncer_bounce");
             break;
     }
 

@@ -5,10 +5,9 @@
 #pragma warning(disable:4244)
 #endif
 
-#include <functional>
-#include <SDL2/SDL_assert.h>
 #include <assert.h>
-
+#include <new>
+#include <initializer_list>
 #include "template_magic.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

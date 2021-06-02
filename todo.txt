@@ -97,7 +97,6 @@
 - Encode roughness/specular/heightmap in alpha channel of terrain texture and normal map
 - Show log messages on screen so I don't miss them
 - Redo terrain system with chunks
-- Redo menu
 - Add height-based fog
 - Add special cosmetic options for each vehicle, by toggling model pieces on and off
 - Show track editor settings (like grid settings) in a fixed window over the viewport
@@ -108,4 +107,6 @@
 - Go through all stb dependencies and use appropriate macros to avoid including std libs
 - Experiment with a weapons lock for first few seconds of race
 - Give acceleration boost to vehicles that just respawned
-- Add ability to store more ammo for primary weapons
+- Add passive ability to store more ammo for primary weapons
+- Add warning in editor for models with too high poly-count
+- Show poly-count in model-editor 
