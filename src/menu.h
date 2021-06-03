@@ -34,6 +34,15 @@ class Menu
         GARAGE_UPGRADES,
     };
 
+    struct Stat
+    {
+        const char* name = nullptr;
+        f32 value = 0.5f;
+    };
+
+    f32 currentStats[6];
+    f32 upgradeStats[6];
+
     Config tmpConfig;
     GarageData garage;
 
@@ -45,6 +54,7 @@ class Menu
 
     void beginChampionship();
     void startQuickRace();
+    void resetGarage();
     void showInitialCarLotMenu(u32 playerIndex);
 
 public:

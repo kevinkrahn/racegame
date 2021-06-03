@@ -400,10 +400,6 @@ struct VehicleConfiguration
 
 struct VehicleData : public Resource
 {
-protected:
-    virtual void initializeTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning) {}
-
-public:
     VehicleTuning defaultTuning;
 
     bool showInCarLot = true;
@@ -415,7 +411,6 @@ public:
     SmallArray<WeaponSlot, 4> weaponSlots;
     i64 modelGuid = 0;
 
-    // not serialized
     // TODO: this should be moved into VehicleTuning
     SmallArray<Mat4> exhaustHoles;
 
@@ -434,12 +429,11 @@ public:
         s.field(modelGuid);
     }
 
-    virtual ~VehicleData() {}
-    virtual void render(class RenderWorld* rw, Mat4 const& transform,
+    void render(class RenderWorld* rw, Mat4 const& transform,
             Mat4* wheelTransforms, VehicleConfiguration& config, VehicleTuning* tuning=nullptr,
             class Vehicle* vehicle=nullptr, bool isBraking=false, bool isHidden=false,
             Vec4 const& shield={0,0,0,0});
-    virtual void renderDebris(class RenderWorld* rw,
+    void renderDebris(class RenderWorld* rw,
             Array<VehicleDebris> const& debris, VehicleConfiguration& config);
 
     void initTuning(VehicleConfiguration const& configuration, VehicleTuning& tuning)

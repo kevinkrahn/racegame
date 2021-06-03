@@ -98,12 +98,19 @@ void Menu::startQuickRace()
     scene->startRace();
 }
 
+void Menu::resetGarage()
+{
+    memset(currentStats, 0, sizeof(currentStats));
+    memset(upgradeStats, 0, sizeof(upgradeStats));
+}
+
 void Menu::showInitialCarLotMenu(u32 playerIndex)
 {
     garage.initialCarSelect = true;
     garage.previewVehicle = nullptr;
     garage.driver = &g_game.state.drivers[playerIndex];
     mode = GARAGE_CAR_LOT;
+    resetGarage();
 }
 
 void Menu::beginChampionship()
@@ -159,6 +166,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     static Function<void()> selection = []{ assert(false); };
 
     FontDescription smallFont = { "font", 20 };
+    FontDescription smallishFont = { "font", 24 };
+    FontDescription smallishFontBold = { "font_bold", 24 };
     FontDescription mediumFont = { "font", 30 };
     FontDescription mediumFontBold = { "font_bold", 30 };
     FontDescription bigFont = { "font_bold", 60 };
@@ -183,9 +192,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         return parent->add(Container(Insets(40), {}, COLOR_BG_PANEL))->size(size);
     };
 
-    auto animateMenu = [](gui::Widget* parent, bool animateIn) {
+    auto animateMenu = [](gui::Widget* parent, bool animateIn, Vec2 size=Vec2(INFINITY)) {
         return parent
-            ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
+            ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))->size(size)
             ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn))
                 ->onAnimationReverseEnd([&]{
                     selection();
@@ -193,7 +202,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 })
                 ->size(0,0)
             ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
-                ->size(0, 0);
+                ->size(0,0);
     };
 
     if (mode == MAIN_MENU)
@@ -454,10 +463,30 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     else if (mode == GARAGE_CAR_LOT || mode == GARAGE_UPGRADES)
     {
         const Vec2 VEHICLE_PREVIEW_SIZE = {600,400};
-        const f32 SIDE_MENU_WIDTH = 400;
+        const f32 SIDE_MENU_WIDTH = 500;
+        const f32 SEP = 20;
 
         static bool animateInGarage = true;
-        auto menuContainer = animateMenu(gui::root, animateInGarage);
+
+        gui::root
+            ->add(FadeAnimation(0.f, 1.f, animationLength, animateInGarage))
+            ->add(Container({}, {}, Vec4(0, 0, 0, 0.2f)));
+
+        auto topLevelColumn = gui::root->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
+            ->add(Column(20))->size(0,0);
+        auto topLevelRow = topLevelColumn->add(Row(SEP))->size(0,0);
+        auto menuContainer = animateMenu(topLevelRow, animateInGarage, Vec2(VEHICLE_PREVIEW_SIZE.x, 0));
+
+        auto helpMessageContainer = topLevelColumn
+            ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
+                ->size(VEHICLE_PREVIEW_SIZE.x + SIDE_MENU_WIDTH + SEP, 40);
+
+        if (helpMessage && strlen(helpMessage) > 0)
+        {
+            helpMessageContainer
+                ->add(Container(Insets(15), {}, Vec4(0,0,0,0.5f)))->size(0,0)
+                ->add(Text(smallFont, helpMessage));
+        }
 
         auto column = menuContainer
             ->add(Container(Insets(0), {}, COLOR_BG_PANEL))
@@ -498,23 +527,43 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
         g_game.renderer->addRenderWorld(&rw);
 
-        column->add(Image(rw.getTexture(), true, true))->size(VEHICLE_PREVIEW_SIZE);
+        auto previewContainer = column->add(Container())->size(0,0);
+        previewContainer->add(Image(rw.getTexture(), true, true))->size(VEHICLE_PREVIEW_SIZE);
+        if (mode == GARAGE_CAR_LOT)
+        {
+            auto column = previewContainer
+                ->add(Container(Insets(20)))->size(0, 0)
+                ->add(Column(8))->size(0,0);
+
+            if (!garage.driver->getVehicleData())
+            {
+                if (garage.previewVehicle)
+                {
+                    column->add(Text(smallishFontBold, tmpStr("PRICE: %i", garage.previewVehicle->price)));
+                }
+            }
+            else if (garage.driver->getVehicleData() != garage.previewVehicle)
+            {
+                column->add(Text(smallishFont, tmpStr("PRICE: %i", garage.previewVehicle->price)));
+                column->add(Text(smallishFont, tmpStr("TRADE: %i", garage.driver->getVehicleValue())));
+                column->add(Text(smallishFontBold, tmpStr("TOTAL: %i",
+                                garage.previewVehicle->price - garage.driver->getVehicleValue())));
+            }
+        }
+
+        column->add(Container(Insets(10), {}, Vec4(0, 0, 0, 0.92f), HAlign::CENTER))->size(INFINITY, 0)
+              ->add(Text(smallishFontBold,
+                          garage.previewVehicle ? garage.previewVehicle->name.data() : ""));
 
         // stats
-        struct Stat
-        {
-            const char* name = nullptr;
-            f32 value = 0.5f;
+        const char* statNames[] = {
+            "ACCELERATION",
+            "TOP SPEED",
+            "ARMOR",
+            "MASS",
+            "GRIP",
+            "OFFROAD",
         };
-        Stat stats[] = {
-            { "ACCELERATION" },
-            { "TOP SPEED" },
-            { "ARMOR" },
-            { "MASS" },
-            { "GRIP" },
-            { "OFFROAD" },
-        };
-        static f32 statsUpgrade[ARRAY_SIZE(stats)] = { 0 };
         f32 targetStats[] = {
             garage.currentStats.acceleration,
             garage.currentStats.topSpeed,
@@ -535,21 +584,21 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         auto statsColumn = column
             ->add(Container(Insets(20)))->size(INFINITY, 0)
             ->add(Column())->size(INFINITY, 0);
-        for (u32 i=0; i<ARRAY_SIZE(stats); ++i)
+        for (u32 i=0; i<ARRAY_SIZE(targetStats); ++i)
         {
-            stats[i].value = smoothMove(stats[i].value, targetStats[i], 8.f, g_game.deltaTime);
-            statsUpgrade[i] = smoothMove(statsUpgrade[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
+            currentStats[i] = smoothMove(currentStats[i], targetStats[i], 8.f, g_game.deltaTime);
+            upgradeStats[i] = smoothMove(upgradeStats[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
 
             f32 barHeight = 10;
             f32 maxBarWidth = VEHICLE_PREVIEW_SIZE.x - 40;
-            statsColumn->add(Text(smallFont, stats[i].name));
+            statsColumn->add(Text(smallFont, statNames[i]));
             statsColumn->add(Container())->size(0, 5);
             auto bar = statsColumn
                 ->add(Container({}, {}, Vec4(0, 0, 0, 0.9f)))
                 ->size(maxBarWidth, barHeight);
 
-            f32 barWidth = maxBarWidth * stats[i].value;
-            f32 upgradeBarWidth = maxBarWidth * statsUpgrade[i];
+            f32 barWidth = maxBarWidth * currentStats[i];
+            f32 upgradeBarWidth = maxBarWidth * upgradeStats[i];
 
             if (upgradeBarWidth - barWidth > 0.001f)
             {
@@ -571,13 +620,18 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         if (mode == GARAGE_CAR_LOT)
         {
             static bool animateIn = true;
-            auto inputCapture = gui::root->add(InputCapture(!animateIn, "Garage Car Lot"));
+            auto inputCapture = topLevelRow
+                ->add(InputCapture(!animateIn, "Garage Car Lot"))->size(0,0);
             if (makeActive(inputCapture))
             {
                 animateIn = true;
             }
 
-            auto animation = animateMenu(inputCapture, animateIn);
+            auto menuContainer = animateMenu(inputCapture, animateIn, Vec2(SIDE_MENU_WIDTH, 0));
+
+            auto column = menuContainer
+                ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
+                ->add(Column(10))->size(INFINITY, 0);
 
 	        Array<VehicleData*> vehicles;
 	        g_res.iterateResourceType(ResourceType::VEHICLE, [&](Resource* r){
@@ -602,6 +656,92 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 garage.currentStats = garage.previewTuning.computeVehicleStats();
                 garage.upgradeStats = garage.currentStats;
             }
+
+            auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
+            static Array<RenderWorld> carLotRenderWorlds(vehicles.size());
+            static bool arePreviewsRendered = false;
+            Vec2 size(SIDE_MENU_WIDTH / 3);
+            for (i32 i=0; i<(i32)vehicles.size(); ++i)
+            {
+                RenderWorld& rw = carLotRenderWorlds[i];
+                VehicleData* v = vehicles[i];
+
+                if (!arePreviewsRendered)
+                {
+                    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
+                    rw.setName("Garage");
+                    rw.setBloomForceOff(true);
+                    rw.setSize((u32)size.x * gui::guiScale * 2, (u32)size.y * gui::guiScale * 2);
+                    drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
+
+                    VehicleConfiguration vehicleConfig;
+                    vehicleConfig.cosmetics.color =
+                        srgb(hsvToRgb(v->defaultColorHsv.x, v->defaultColorHsv.y, v->defaultColorHsv.z));
+                    vehicleConfig.cosmetics.hsv = v->defaultColorHsv;
+
+                    VehicleTuning tuning;
+                    v->initTuning(vehicleConfig, tuning);
+                    Mat4 vehicleTransform = Mat4::rotationZ(0.f);
+                    v->render(&rw, Mat4::translation(Vec3(0, 0, tuning.getRestOffset())) *
+                        vehicleTransform, nullptr, vehicleConfig, &tuning);
+                    rw.setViewportCount(1);
+                    rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
+                    rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+                    renderer->addRenderWorld(&rw);
+                }
+
+                auto btn = grid->add(Button(0, v->name.data(), 0))->onPress([v, this]{
+                    garage.previewVehicle = v;
+                    if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
+                    {
+                        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                        garage.previewTuning = garage.driver->getTuning();
+                        garage.currentStats = garage.previewTuning.computeVehicleStats();
+                        garage.upgradeStats = garage.currentStats;
+                    }
+                    else
+                    {
+                        garage.previewVehicleConfig = VehicleConfiguration{};
+                        auto vd = garage.previewVehicle;
+                        // TODO: this color logic (and this other stuff) should be encapsulated somewhere
+                        garage.previewVehicleConfig.cosmetics.color =
+                            srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
+                        garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
+                        garage.previewVehicleConfig.reloadMaterials();
+                        // TODO: cache tuning data
+                        garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                        garage.currentStats = garage.previewTuning.computeVehicleStats();
+                        garage.upgradeStats = garage.currentStats;
+                    }
+                })
+                    ->onSelect([&]{ helpMessage = garage.previewVehicle->description.data(); })
+                    ->size(size);
+                btn->add(Image(rw.getTexture(), false, true));
+            }
+            arePreviewsRendered = true;
+
+            column->add(Container())->size(0, 20);
+
+            i32 totalCost = garage.previewVehicle->price - garage.driver->getVehicleValue();
+            bool canBuy = garage.previewVehicle->guid != garage.driver->vehicleGuid &&
+                garage.driver->credits >= totalCost;
+            button(column, "BUY CAR", "", [totalCost, this]{
+                garage.driver->credits -= totalCost;
+                garage.driver->vehicleGuid = garage.previewVehicle->guid;
+                garage.driver->vehicleConfig = garage.previewVehicleConfig;
+            })->addFlags(canBuy ? 0 : WidgetFlags::DISABLED);
+
+            button(column, "DONE", "", [&]{
+                animateIn = false;
+                selection = [&]{
+                    garage.previewVehicle = garage.driver->getVehicleData();
+                    garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                    garage.previewTuning = garage.driver->getTuning();
+                    garage.currentStats = garage.previewTuning.computeVehicleStats();
+                    garage.upgradeStats = garage.currentStats;
+                    mode = GARAGE_UPGRADES;
+                };
+            })->addFlags(garage.driver->getVehicleData() ? 0 : WidgetFlags::DISABLED);
         }
         else if (mode == GARAGE_UPGRADES)
         {
@@ -620,9 +760,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
         f32 h = tex->height * 0.5f * gui::guiScale;
-        ui::rectUVBlur(-200, tex, Vec2(0), {w,h}, Vec2(0.f, 0.999f),
+        ui::rectUVBlur(100, tex, Vec2(0), {w,h}, Vec2(0.f, 0.999f),
                     Vec2(g_game.windowWidth/(tex->width * gui::guiScale * 0.5f), 0.001f));
-        ui::rectUVBlur(-200, tex, Vec2(0, g_game.windowHeight-h), {w,h},
+        ui::rectUVBlur(100, tex, Vec2(0, g_game.windowHeight-h), {w,h},
                     Vec2(0.f, 0.001f),
                     Vec2(g_game.windowWidth/(tex->width * gui::guiScale * 0.5f), 0.999f));
     }

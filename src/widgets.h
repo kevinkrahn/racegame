@@ -507,9 +507,10 @@ namespace gui
 
             Constraints childConstraints;
             childConstraints.minWidth = 0.f;
-            childConstraints.maxWidth = computedSize.x / columns;
+            childConstraints.maxWidth = (computedSize.x - itemSpacing * (columns - 1)) / columns;
             childConstraints.minHeight = 0.f;
-            childConstraints.maxHeight = constraints.maxHeight;
+            //childConstraints.maxHeight = constraints.maxHeight;
+            childConstraints.maxHeight = childConstraints.maxWidth;
 
             f32 totalHeight = 0.f;
             f32 maxRowHeight = 0.f;
@@ -519,9 +520,13 @@ namespace gui
                 child->computeSize(childConstraints);
                 maxRowHeight = max(maxRowHeight, child->computedSize.y);
 
-                if (++rowChildCount == columns)
+                if (rowChildCount == 0)
                 {
                     totalHeight += maxRowHeight + itemSpacing;
+                }
+
+                if (++rowChildCount == columns)
+                {
                     maxRowHeight = 0.f;
                     rowChildCount = 0;
                 }
@@ -538,21 +543,23 @@ namespace gui
         {
             f32 totalHeight = 0.f;
             f32 maxRowHeight = 0.f;
+            f32 nextX = 0.f;
             u32 rowChildCount = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->positionWithinParent =
-                    Vec2(rowChildCount * computedSize.x / columns, totalHeight);
+                child->positionWithinParent = Vec2(nextX, totalHeight);
                 child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
 
                 maxRowHeight = max(maxRowHeight, child->computedSize.y);
 
+                nextX += (computedSize.x - itemSpacing * (columns - 1)) / columns + itemSpacing;
                 if (++rowChildCount == columns)
                 {
                     totalHeight += maxRowHeight + itemSpacing;
                     maxRowHeight = 0.f;
                     rowChildCount = 0;
+                    nextX = 0.f;
                 }
             }
         }
@@ -572,7 +579,9 @@ namespace gui
     {
         enum
         {
-            BACK = 1 << 0,
+            BACK         = 1 << 0,
+            NO_ACTIVE    = 1 << 1,
+            FORCE_ACTIVE = 1 << 2,
         };
     };
 
@@ -581,9 +590,11 @@ namespace gui
         Container* bg;
         Outline* outline;
         u32 buttonFlags;
+        f32 padding;
+        const char* name;
 
-        Button(u32 buttonFlags=0, const char* name="Button")
-            : Widget(name), buttonFlags(buttonFlags) {}
+        Button(u32 buttonFlags=0, const char* name="Button", f32 padding=10.f)
+            : Widget(name), name(name), buttonFlags(buttonFlags), padding(padding) {}
 
         struct ButtonState
         {
@@ -595,13 +606,13 @@ namespace gui
 
         Widget* build()
         {
-            pushID("btn");
+            pushID(name);
 
             flags |= WidgetFlags::BLOCK_INPUT | WidgetFlags::SELECTABLE;
 
             outline = (Outline*)this->add(Outline(Insets(2), {}))->size(desiredSize);
             bg = (Container*)outline->add(
-                    Container(Insets(10), {}, COLOR_BG_WIDGET, HAlign::CENTER, VAlign::CENTER))
+                    Container(Insets(padding), {}, COLOR_BG_WIDGET, HAlign::CENTER, VAlign::CENTER))
                 ->size(desiredSize);
             return bg;
         }
@@ -611,7 +622,10 @@ namespace gui
 
         void press(InputCaptureContext& ctx)
         {
-            getState<ButtonState>(this)->isPressed = true;
+            if (!(buttonFlags & ButtonFlags::NO_ACTIVE))
+            {
+                getState<ButtonState>(this)->isPressed = true;
+            }
             ctx.selectedWidgetStateNode = stateNode;
             INVOKE_CALLBACK(onPress);
             g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
@@ -680,6 +694,15 @@ namespace gui
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
             ButtonState* state = getState<ButtonState>(this);
+
+            if (buttonFlags & ButtonFlags::FORCE_ACTIVE)
+            {
+                state->isPressed = true;
+            }
+            else if (!(flags & WidgetFlags::STATUS_SELECTED))
+            {
+                state->isPressed = false;
+            }
 
             if (flags & WidgetFlags::DISABLED)
             {
