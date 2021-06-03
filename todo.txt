@@ -93,7 +93,6 @@
 - Keep previous frames around for better motion blur (or investigate better motion blur shader)
 - Convert fonts into resource
 - Add heightmap for each texture on terrain to make better transitions
-- Remove all standard library usage to improve compile times
 - Encode roughness/specular/heightmap in alpha channel of terrain texture and normal map
 - Show log messages on screen so I don't miss them
 - Redo terrain system with chunks
@@ -110,3 +109,6 @@
 - Add passive ability to store more ammo for primary weapons
 - Add warning in editor for models with too high poly-count
 - Show poly-count in model-editor 
+- Add GUI debugger (show a tree, highlight rectangles, .etc)
+- Isolate usage of PhysX headers to single compilation unit to improve compile times
+- Switch to Makefile for Linux, Visual Studio project for windows

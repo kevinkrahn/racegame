@@ -163,7 +163,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     constexpr f32 animationLength = 0.4f;
 
     static const char* helpMessage = "";
-    static Function<void()> selection = []{ assert(false); };
 
     FontDescription smallFont = { "font", 20 };
     FontDescription smallishFont = { "font", 24 };
@@ -173,12 +172,13 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     FontDescription bigFont = { "font_bold", 60 };
 
     auto button = [&](gui::Widget* parent, const char* name, const char* helpText, auto onPress,
-            u32 buttonFlags=0) {
-        Vec2 btnSize(INFINITY, 60);
+            u32 buttonFlags=0, Texture* icon=nullptr) {
+        Vec2 btnSize(INFINITY, 70);
         return parent
+            ->add(PositionDelay(0.75f, name))->size(0,0)
             ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(btnSize)
             ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))
-            ->add(TextButton(mediumFont, name, buttonFlags))
+            ->add(TextButton(mediumFont, name, buttonFlags, icon))
                 ->onPress(onPress)
                 ->onSelect([helpText]{ helpMessage = helpText; });
     };
@@ -193,28 +193,22 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     };
 
     auto animateMenu = [](gui::Widget* parent, bool animateIn, Vec2 size=Vec2(INFINITY)) {
-        return parent
+        return (ScaleAnimation*)parent
             ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))->size(size)
-            ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn))
-                ->onAnimationReverseEnd([&]{
-                    selection();
-                    animateIn = true;
-                })
-                ->size(0,0)
-            ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))
-                ->size(0,0);
+            ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn))->size(0,0)
+            ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(0,0);
     };
 
     if (mode == MAIN_MENU)
     {
-        static bool animateIn = true;
-        auto inputCapture = gui::root->add(InputCapture(!animateIn, "Main Menu"));
-        if (makeActive(inputCapture))
-        {
-            animateIn = true;
-        }
+        auto inputCapture = gui::root->add(InputCapture("Main Menu"));
+        makeActive(inputCapture);
 
-        auto animation = animateMenu(inputCapture, animateIn);
+        static Function<void()> selection = []{ assert(false); };
+        auto animation = animateMenu(inputCapture, inputCapture->isEntering())
+            ->onAnimationReverseEnd([&]{
+                selection();
+            });
         auto column = panel(animation, Vec2(600, 0))->add(Column(10))->size(0, 0);
 
         column
@@ -222,7 +216,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             ->add(Text(bigFont, "MAIN MENU"));
 
         button(column, "NEW CHAMPIONSHIP", "Begin a new championship!", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             selection = [&]{
                 g_game.state = {};
                 mode = NEW_CHAMPIONSHIP;
@@ -239,7 +233,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             */
         });
         button(column, "QUICK RACE", "Jump into a race without delay!", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             fadeToBlack = true;
             selection = [&] {
                 gui::clearInputCaptures();
@@ -249,14 +243,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             };
         });
         button(column, "SETTINGS", "Change things.", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             selection = [&] {
                 tmpConfig = g_game.config;
                 mode = SETTINGS;
             };
         });
         button(column, "EDITOR", "Edit things.", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             selection = [&] {
                 clearInputCaptures();
                 g_game.loadEditor();
@@ -276,14 +270,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     else if (mode == SETTINGS)
     {
-        static bool animateIn = true;
-        auto inputCapture = gui::root->add(InputCapture(!animateIn, "Settings"));
-        if (makeActive(inputCapture))
-        {
-            animateIn = true;
-        }
+        auto inputCapture = gui::root->add(InputCapture("Settings"));
+        makeActive(inputCapture);
 
-        auto animation = animateMenu(inputCapture, animateIn);
+        static Function<void()> selection = []{ assert(false); };
+        auto animation = animateMenu(inputCapture, inputCapture->isEntering())
+            ->onAnimationReverseEnd([&]{ selection(); });
         auto column = panel(animation, Vec2(600, 0))->add(Column(10))->size(Vec2(0));
 
         column
@@ -297,7 +289,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         button(column, "CONTROLS", "Change controller or keyboard layout.", [&]{
         });
         button(column, "BACK", "Return to main menu.", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             selection = [&] {
                 popInputCapture();
                 mode = MAIN_MENU;
@@ -311,14 +303,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     else if (mode == NEW_CHAMPIONSHIP)
     {
-        static bool animateIn = true;
-        auto inputCapture = gui::root->add(InputCapture(!animateIn, "New Championship"));
-        if (makeActive(inputCapture))
-        {
-            animateIn = true;
-        }
+        auto inputCapture = gui::root->add(InputCapture("New Championship"));
+        makeActive(inputCapture);
 
-        auto animation = animateMenu(inputCapture, animateIn);
+        static Function<void()> selection = []{ assert(false); };
+        auto animation = animateMenu(inputCapture, inputCapture->isEntering())
+            ->onAnimationReverseEnd([&]{ selection(); });
         auto column = panel(animation, Vec2(600, 0))->add(Column(10))->size(0, 0);
 
         column
@@ -397,7 +387,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
         // TODO: ensure all player names are unique before starting championship
         button(column, "BEGIN", "Begin the championship!", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             fadeToBlack = true;
             selection = [&] {
                 gui::clearInputCaptures();
@@ -407,7 +397,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         })->addFlags(g_game.state.drivers.empty() ? gui::WidgetFlags::DISABLED : 0);
 
         button(column, "CANCEL", "Return to main menu.", [&]{
-            animateIn = false;
+            inputCapture->setEntering(false);
             selection = [&] {
                 popInputCapture();
                 mode = MAIN_MENU;
@@ -421,7 +411,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     else if (mode == PAUSE_MENU)
     {
-        auto inputCapture = gui::root->add(InputCapture(pauseTimer < 0.1f, "Pause Menu"));
+        auto inputCapture = gui::root->add(InputCapture("Pause Menu", pauseTimer < 0.1f));
         makeActive(inputCapture);
 
         auto column = inputCapture
@@ -453,7 +443,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             clearInputCaptures();
             g_game.currentScene->setPaused(false);
             g_game.currentScene->forfeitRace();
-            mode = NONE;
+            mode = MAIN_MENU;
         });
 
         pauseMenuButton("QUIT TO DESKTOP", []{
@@ -468,14 +458,15 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
         static bool animateInGarage = true;
 
+        // blurred background
         gui::root
             ->add(FadeAnimation(0.f, 1.f, animationLength, animateInGarage))
             ->add(Container({}, {}, Vec4(0, 0, 0, 0.2f)));
 
-        auto topLevelColumn = gui::root->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
+        Widget* topLevelColumn = gui::root->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
             ->add(Column(20))->size(0,0);
-        auto topLevelRow = topLevelColumn->add(Row(SEP))->size(0,0);
-        auto menuContainer = animateMenu(topLevelRow, animateInGarage, Vec2(VEHICLE_PREVIEW_SIZE.x, 0));
+        Widget* topLevelRow = topLevelColumn->add(Row(SEP))->size(0,0);
+        Widget* menuContainer = animateMenu(topLevelRow, animateInGarage, Vec2(VEHICLE_PREVIEW_SIZE.x, 0));
 
         auto helpMessageContainer = topLevelColumn
             ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
@@ -619,15 +610,13 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
         if (mode == GARAGE_CAR_LOT)
         {
-            static bool animateIn = true;
-            auto inputCapture = topLevelRow
-                ->add(InputCapture(!animateIn, "Garage Car Lot"))->size(0,0);
-            if (makeActive(inputCapture))
-            {
-                animateIn = true;
-            }
+            auto inputCapture =
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Car Lot"))->size(0,0);
+            makeActive(inputCapture);
 
-            auto menuContainer = animateMenu(inputCapture, animateIn, Vec2(SIDE_MENU_WIDTH, 0));
+            static Function<void()> selection = []{ assert(false); };
+            menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
+                ->onAnimationReverseEnd([&]{ selection(); });
 
             auto column = menuContainer
                 ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
@@ -690,32 +679,36 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     renderer->addRenderWorld(&rw);
                 }
 
-                auto btn = grid->add(Button(0, v->name.data(), 0))->onPress([v, this]{
-                    garage.previewVehicle = v;
-                    if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
-                    {
-                        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
-                        garage.previewTuning = garage.driver->getTuning();
-                        garage.currentStats = garage.previewTuning.computeVehicleStats();
-                        garage.upgradeStats = garage.currentStats;
-                    }
-                    else
-                    {
-                        garage.previewVehicleConfig = VehicleConfiguration{};
-                        auto vd = garage.previewVehicle;
-                        // TODO: this color logic (and this other stuff) should be encapsulated somewhere
-                        garage.previewVehicleConfig.cosmetics.color =
-                            srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-                        garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
-                        garage.previewVehicleConfig.reloadMaterials();
-                        // TODO: cache tuning data
-                        garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
-                        garage.currentStats = garage.previewTuning.computeVehicleStats();
-                        garage.upgradeStats = garage.currentStats;
-                    }
-                })
-                    ->onSelect([&]{ helpMessage = garage.previewVehicle->description.data(); })
-                    ->size(size);
+                auto btn = grid
+                    ->add(PositionDelay(1.f, v->name.data()))->size(0,0)
+                    ->add(FadeAnimation(0.f, 1.f, animationLength, true, v->name.data()))->size(0,0)
+                    ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+                    ->add(Button(0, v->name.data(), 0))->onPress([v, this]{
+                        garage.previewVehicle = v;
+                        if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
+                        {
+                            garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                            garage.previewTuning = garage.driver->getTuning();
+                            garage.currentStats = garage.previewTuning.computeVehicleStats();
+                            garage.upgradeStats = garage.currentStats;
+                        }
+                        else
+                        {
+                            garage.previewVehicleConfig = VehicleConfiguration{};
+                            auto vd = garage.previewVehicle;
+                            // TODO: this color logic (and this other stuff) should be encapsulated somewhere
+                            garage.previewVehicleConfig.cosmetics.color =
+                                srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
+                            garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
+                            garage.previewVehicleConfig.reloadMaterials();
+                            // TODO: cache tuning data
+                            garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                            garage.currentStats = garage.previewTuning.computeVehicleStats();
+                            garage.upgradeStats = garage.currentStats;
+                        }
+                    })
+                        ->onSelect([&]{ helpMessage = garage.previewVehicle->description.data(); })
+                        ->size(size);
                 btn->add(Image(rw.getTexture(), false, true));
             }
             arePreviewsRendered = true;
@@ -732,7 +725,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             })->addFlags(canBuy ? 0 : WidgetFlags::DISABLED);
 
             button(column, "DONE", "", [&]{
-                animateIn = false;
+                inputCapture->setEntering(false);
                 selection = [&]{
                     garage.previewVehicle = garage.driver->getVehicleData();
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
@@ -740,13 +733,87 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     garage.currentStats = garage.previewTuning.computeVehicleStats();
                     garage.upgradeStats = garage.currentStats;
                     mode = GARAGE_UPGRADES;
+                    gui::popInputCapture();
                 };
-            })->addFlags(garage.driver->getVehicleData() ? 0 : WidgetFlags::DISABLED);
+            }, ButtonFlags::BACK)
+                ->addFlags(garage.driver->getVehicleData() ? 0 : WidgetFlags::DISABLED);
         }
         else if (mode == GARAGE_UPGRADES)
         {
-            //auto inputCapture = container->add(InputCapture(!animateIn, "GarageUpgrades"))->size(0,0);
-            //makeActive(inputCapture);
+            auto inputCapture =
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Upgrades"))->size(0,0);
+            makeActive(inputCapture);
+
+            static Function<void()> selection = []{ assert(false); };
+            menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
+                ->onAnimationReverseEnd([&]{ selection(); });
+
+            auto column = menuContainer
+                ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
+                ->add(Column(10))->size(INFINITY, 0);
+
+            Texture* iconbg = g_res.getTexture("iconbg");
+
+            button(column, "PERFORMANCE", "Upgrades to enhance your vehicle's performance.", [&]{
+            }, 0, g_res.getTexture("icon_engine"));
+
+            button(column, "COSMETICS", "Change your vehicle's appearance.", [&]{
+            }, 0, g_res.getTexture("icon_spraycan"));
+
+            for (u32 i=0; i<garage.driver->getVehicleData()->weaponSlots.size(); ++i)
+            {
+                i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
+                WeaponSlot& slot = garage.driver->getVehicleData()->weaponSlots[i];
+                button(column, slot.name.data(), "Install or upgrade a weapon.", [&]{
+                        /*
+                        createWeaponsMenu(slot,
+                                garage.previewVehicleConfig.weaponIndices[i],
+                                garage.previewVehicleConfig.weaponUpgradeLevel[i]);
+                                */
+                    }, 0, installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
+            }
+
+            button(column, "CAR LOT", "Buy a new vehicle!", [&]{
+                inputCapture->setEntering(false);
+                selection = [&] {
+                    mode = GARAGE_CAR_LOT;
+                    gui::popInputCapture();
+                };
+            });
+
+            button(column, "DONE", nullptr, [&]{
+                animateInGarage = false;
+                inputCapture->setEntering(false);
+                selection = [&] {
+                    animateInGarage = true;
+                    gui::popInputCapture();
+                    if (garage.initialCarSelect)
+                    {
+                        garage.playerIndex += 1;
+                        i32 playerCount = 0;
+                        for (auto& driver : g_game.state.drivers)
+                        {
+                            if (driver.isPlayer)
+                            {
+                                ++playerCount;
+                            }
+                        }
+                        if (garage.playerIndex >= playerCount)
+                        {
+                            garage.initialCarSelect = false;
+                            //showChampionshipMenu();
+                        }
+                        else
+                        {
+                            showInitialCarLotMenu(garage.playerIndex);
+                        }
+                    }
+                    else
+                    {
+                        //showChampionshipMenu();
+                    }
+                };
+            }, ButtonFlags::BACK);
         }
     }
 

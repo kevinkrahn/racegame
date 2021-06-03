@@ -10,8 +10,12 @@ namespace gui
 
         root = widgetBuffer.write<Widget>(Widget("Root"));
         root->root = root;
-        root->stateNode = &widgetStateNodeStorage.front();
+        root->stateNode = &widgetStateNodeStorage[0];
         root->addFlags(WidgetFlags::INPUT_CAPTURE);
+
+        nullWidget = widgetBuffer.write<Widget>(Widget("Null Widget"));
+        nullWidget->root = nullWidget;
+        nullWidget->stateNode = &widgetStateNodeStorage[1];
 
         addInputCapture(root);
         if (inputCaptureStack.empty())

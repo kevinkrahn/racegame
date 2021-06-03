@@ -124,6 +124,7 @@ namespace gui
     Buffer widgetStateBuffer;
     SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
     Widget* root = nullptr;
+    Widget* nullWidget = nullptr;
     SmallArray<Widget*, 64> inputCaptureWidgets;
     SmallArray<InputCaptureContext> inputCaptureStack;
     f32 guiScale = 1.f;
@@ -238,6 +239,7 @@ namespace gui
         widgetBuffer.resize(megabytes(1), 16);
         widgetStateBuffer.resize(megabytes(1), 8);
         widgetStateNodeStorage.push(WidgetStateNode{ Str32("root") });
+        widgetStateNodeStorage.push(WidgetStateNode{ Str32("null") });
     }
 
     void addInputCapture(Widget* w)

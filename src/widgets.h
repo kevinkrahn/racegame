@@ -758,15 +758,31 @@ namespace gui
         const char* text;
         FontDescription font;
         Text* textWidget;
+        Texture* icon;
+        Image* imageWidget = nullptr;
 
-        TextButton(FontDescription const& font, const char* text, u32 buttonFlags=0)
-            : Button(buttonFlags, "TextButton"), text(text), font(font) {}
+        TextButton(FontDescription const& font, const char* text, u32 buttonFlags=0,
+                Texture* icon=nullptr)
+            : Button(buttonFlags, "TextButton"), text(text), font(font), icon(icon) {}
 
         Widget* build()
         {
             pushID(text);
             auto btn = Button::build();
-            textWidget = btn->add(Text(font, text));
+            if (icon)
+            {
+                auto row = btn->add(Row(20));
+                const f32 iconSize = 48;
+                imageWidget = (Image*)row->add(Image(icon, false))->size(iconSize, iconSize);
+                textWidget = row
+                    ->add(Container({}, {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
+                        ->size(0, iconSize)
+                    ->add(Text(font, text));
+            }
+            else
+            {
+                textWidget = btn->add(Text(font, text));
+            }
             return btn;
         }
 
@@ -777,23 +793,33 @@ namespace gui
             if (flags & WidgetFlags::DISABLED)
             {
                 textWidget->color = COLOR_TEXT_DISABLED;
+                if (imageWidget)
+                {
+                    imageWidget->color = COLOR_TEXT_DISABLED;
+                }
             }
             else
             {
                 if (flags & WidgetFlags::STATUS_SELECTED)
                 {
                     textWidget->color = COLOR_TEXT_SELECTED;
+                    if (imageWidget)
+                    {
+                        imageWidget->color = COLOR_TEXT_SELECTED;
+                    }
                 }
                 else
                 {
                     textWidget->color = COLOR_TEXT_NOT_SELECTED;
+                    if (imageWidget)
+                    {
+                        imageWidget->color = COLOR_TEXT_NOT_SELECTED;
+                    }
                 }
             }
             Button::render(ctx, rtx);
         }
     };
-
-    struct IconButton : public Widget { };
 
     struct TextEdit : public Widget { };
 
@@ -978,12 +1004,18 @@ namespace gui
         Widget* build()
         {
             pushID("ScaleAnimation");
+            transform = this->add(Transform(Mat4(1.f)));
+            return transform;
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
             auto state = animate();
             f32 t = easeInOutParametric(state->animationProgress);
             Mat4 scale =
                 Mat4::scaling(Vec3(Vec2(lerp(startScale, endScale, t)), 1.f));
-            transform = this->add(Transform(scale));
-            return transform;
+            transform->transform = scale;
+            Widget::layout(ctx);
         }
 
         virtual void computeSize(Constraints const& constraints) override
@@ -1000,7 +1032,12 @@ namespace gui
         bool hideChildrenWhenInactive = false;
         bool active = false;
 
-        InputCapture(bool blockInput, const char* name=nullptr)
+        struct InputCaptureState
+        {
+            bool isEntering = true;
+        };
+
+        InputCapture(const char* name=nullptr, bool blockInput=false)
             : Widget("InputCapture"), name(name), blockInput(blockInput)
         {
             flags |= WidgetFlags::INPUT_CAPTURE;
@@ -1014,6 +1051,10 @@ namespace gui
             return this;
         }
 
+        bool isEntering() { return getState<InputCaptureState>(this)->isEntering; }
+
+        void setEntering(bool entering) { getState<InputCaptureState>(this)->isEntering = entering;  }
+
         virtual void layout(GuiContext& ctx) override
         {
             if (!active && hideChildrenWhenInactive)
@@ -1026,7 +1067,7 @@ namespace gui
         virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev,
                 Widget* selectedWidget) override
         {
-            if (blockInput)
+            if (blockInput || !isEntering())
             {
                 return false;
             }
@@ -1036,7 +1077,7 @@ namespace gui
         virtual bool handleInputEvent(
                 InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
         {
-            if (blockInput)
+            if (blockInput || !isEntering())
             {
                 return false;
             }
@@ -1045,7 +1086,7 @@ namespace gui
 
         virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input) override
         {
-            if (!active || blockInput)
+            if (!active || blockInput || !isEntering())
             {
                 return false;
             }
@@ -1074,6 +1115,78 @@ namespace gui
             ui::setScissor(r.scissorPos, r.scissorSize);
             Widget::render(ctx, r);
             ui::setScissor(rtx.scissorPos, rtx.scissorSize);
+        }
+    };
+
+    struct Delay : public Widget
+    {
+        f32 delay;
+        const char* name;
+
+        struct DelayState
+        {
+            f32 timer = 0.f;
+        };
+
+        Delay(f32 delay, const char* name) : Widget("Delay"), delay(delay), name(name) {}
+
+        Widget* build()
+        {
+            pushID(name);
+            auto state = getState<DelayState>(this);
+            if (state->timer > delay)
+            {
+                return this;
+            }
+            return nullWidget;
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            auto state = getState<DelayState>(this);
+            state->timer += ctx.deltaTime;
+            Widget::layout(ctx);
+        }
+    };
+
+    struct PositionDelay : public Widget
+    {
+        f32 amount;
+        f32 delay;
+        const char* name;
+
+        struct DelayState
+        {
+            f32 timer = 0.f;
+        };
+
+        PositionDelay(f32 amount, const char* name)
+            : Widget("Position Delay"), amount(amount), name(name) {};
+
+        Widget* build()
+        {
+            pushID(name);
+            return this;
+        }
+
+        virtual void layout(GuiContext& ctx) override
+        {
+            auto state = getState<DelayState>(this);
+            state->timer += ctx.deltaTime;
+            delay = computedPosition.y / ctx.actualScreenSize.y * amount;
+            if (state->timer > delay)
+            {
+                Widget::layout(ctx);
+            }
+        }
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            auto state = getState<DelayState>(this);
+            if (state->timer > delay)
+            {
+                Widget::render(ctx, rtx);
+            }
         }
     };
 };
