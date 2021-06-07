@@ -813,14 +813,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
             button(column, "PERFORMANCE", "Upgrades to enhance your vehicle's performance.", [&]{
                 inputCapture->setEntering(false);
-                selection = [&] {
+                selection = [this] {
                     mode = GARAGE_PERFORMANCE;
                 };
             }, 0, g_res.getTexture("icon_engine"));
 
             button(column, "COSMETICS", "Change your vehicle's appearance.", [&]{
                 inputCapture->setEntering(false);
-                selection = [&] {
+                selection = [this] {
                     mode = GARAGE_COSMETICS;
                 };
             }, 0, g_res.getTexture("icon_spraycan"));
@@ -829,18 +829,18 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
                 WeaponSlot& slot = garage.driver->getVehicleData()->weaponSlots[i];
-                button(column, slot.name.data(), "Install or upgrade a weapon.", [&]{
+                button(column, slot.name.data(), "Install or upgrade a weapon.", [this, i, inputCapture]{
                     inputCapture->setEntering(false);
-                    selection = [&] {
+                    currentWeaponSlotIndex = i;
+                    selection = [this] {
                         mode = GARAGE_WEAPON;
-                        currentWeaponSlotIndex = i;
                     };
                 }, 0, installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
             }
 
             button(column, "CAR LOT", "Buy a new vehicle!", [&]{
                 inputCapture->setEntering(false);
-                selection = [&] {
+                selection = [this] {
                     mode = GARAGE_CAR_LOT;
                 };
             });
@@ -848,7 +848,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             button(column, "DONE", nullptr, [&]{
                 animateInGarage = false;
                 inputCapture->setEntering(false);
-                selection = [&] {
+                selection = [this] {
                     animateInGarage = true;
                     gui::popInputCapture();
                     if (garage.initialCarSelect)
@@ -948,7 +948,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
             button(column, "BACK", "", [&]{
                 inputCapture->setEntering(false);
-                selection = [&]{
+                selection = [this]{
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                     garage.previewTuning = garage.driver->getTuning();
                     garage.currentStats = garage.previewTuning.computeVehicleStats();
@@ -978,7 +978,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
             button(column, "BACK", "", [&]{
                 inputCapture->setEntering(false);
-                selection = [&]{
+                selection = [this]{
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                     mode = GARAGE_UPGRADES;
                     gui::popInputCapture();
@@ -1002,10 +1002,66 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
             Vec2 size(SIDE_MENU_WIDTH / 3);
 
+            i32 weaponIndex = garage.previewVehicleConfig.weaponIndices[currentWeaponSlotIndex];
+            i32 upgradeLevel = garage.previewVehicleConfig.weaponUpgradeLevel[currentWeaponSlotIndex];
+            WeaponSlot& slot = garage.driver->getVehicleData()->weaponSlots[currentWeaponSlotIndex];
+
+            for (i32 i=0; i<(i32)g_weapons.size(); ++i)
+            {
+                auto& weapon = g_weapons[i];
+
+                if (weapon.info.weaponType != slot.weaponType || !slot.matchesWeapon(weapon.info))
+                {
+                    continue;
+                }
+
+                u32 weaponUpgradeLevel = (weaponIndex == i) ? upgradeLevel: 0;
+                bool isPurchasable = garage.driver->credits >= g_weapons[i].info.price
+                    && weaponUpgradeLevel < g_weapons[i].info.maxUpgradeLevel
+                    && (weaponIndex == -1 || weaponIndex == i);
+
+                auto btn = squareButton(grid, weapon.info.icon, weapon.info.name,
+                        tmpStr("%i", weapon.info.price), size, weaponUpgradeLevel,
+                        (i32)weapon.info.maxUpgradeLevel, 28.f);
+                btn->addFlags(isPurchasable ? 0 : WidgetFlags::DISABLED);
+
+                if (isPurchasable)
+                {
+                    btn->onGainedSelect([this, i]{
+                        helpMessage = g_weapons[i].info.description;
+                    });
+
+                    btn->onPress([this, i]{
+                        // TODO: Play sound that is more appropriate for a weapon
+                        g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
+                        garage.previewVehicleConfig.weaponIndices[currentWeaponSlotIndex] = i;
+                        garage.previewVehicleConfig.weaponUpgradeLevel[currentWeaponSlotIndex] += 1;
+
+                        garage.driver->credits -= g_weapons[i].info.price;
+                    });
+                }
+                else
+                {
+                    btn->onPress([]{ g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX); });
+                }
+            }
+
+            button(column, "SELL", "Sell the currently equipped item for half the original value.",
+                [this]{
+                garage.driver->credits += g_weapons[currentWeaponSlotIndex].info.price / 2;
+                garage.previewVehicleConfig.weaponUpgradeLevel[currentWeaponSlotIndex] -= 1;
+                // TODO: use different sound for selling
+                g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
+                if (garage.previewVehicleConfig.weaponUpgradeLevel[currentWeaponSlotIndex] == 0)
+                {
+                    garage.previewVehicleConfig.weaponIndices[currentWeaponSlotIndex] = -1;
+                }
+            })->addFlags(upgradeLevel > 0 ? 0 : WidgetFlags::DISABLED);
+
             button(column, "BACK", "", [&]{
                 inputCapture->setEntering(false);
-                selection = [&]{
-                    garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                selection = [this]{
+                    garage.driver->vehicleConfig = garage.previewVehicleConfig;
                     mode = GARAGE_UPGRADES;
                     gui::popInputCapture();
                 };

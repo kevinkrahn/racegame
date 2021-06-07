@@ -24,7 +24,7 @@ namespace gui
     const Vec4 COLOR_OUTLINE_DISABLED = Vec4(0.f);
     const Vec4 COLOR_BG_WIDGET = Vec4(Vec3(0), 0.95f);
     const Vec4 COLOR_BG_WIDGET_SELECTED = Vec4(Vec3(0.1f), 0.8f);
-    const Vec4 COLOR_BG_WIDGET_DISABLED = Vec4(Vec3(0.06f), 0.3f);
+    const Vec4 COLOR_BG_WIDGET_DISABLED = Vec4(Vec3(0.06f), 0.8f);
     const Vec4 COLOR_BG_PANEL = Vec4(Vec3(0), 0.65f);
     const Vec4 COLOR_TEXT = Vec4(1);
 
@@ -730,7 +730,7 @@ namespace gui
 
                 bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
 
-                r.alpha *= 0.55f;
+                r.alpha *= 0.5f;
             }
             else
             {
