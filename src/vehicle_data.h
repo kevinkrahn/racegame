@@ -440,6 +440,11 @@ struct VehicleData : public Resource
     {
         defaultTuning.copy(&tuning);
         loadModelData(tuning);
+
+        for (auto& upgrade : configuration.performanceUpgrades)
+        {
+            tuning.applyUpgrade(availableUpgrades[upgrade.upgradeIndex], upgrade.upgradeLevel);
+        }
     }
     void loadModelData(VehicleTuning& tuning);
     void initStandardUpgrades();

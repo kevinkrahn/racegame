@@ -157,7 +157,8 @@ namespace gui
         {
             selectedWidget = findAncestorByStateNode(this, stateNode);
         }
-        else
+
+        if (!stateNode || !selectedWidget)
         {
             selectedWidget = findAncestorByFlags(this,
                     WidgetFlags::SELECTABLE | WidgetFlags::DEFAULT_SELECTION, WidgetFlags::DISABLED);
@@ -396,7 +397,7 @@ namespace gui
         }
         for (Widget* child = w->childFirst; child; child = child->neighbor)
         {
-            if (!(child->flags & WidgetFlags::INPUT_CAPTURE))
+            if (!(child->flags & (WidgetFlags::INPUT_CAPTURE | WidgetFlags::DISABLED)))
             {
                 Widget* t = findAncestorByStateNode(child, state);
                 if (t)

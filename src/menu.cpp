@@ -165,6 +165,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     static const char* helpMessage = "";
 
     FontDescription smallFont = { "font", 20 };
+    FontDescription smallFontBold = { "font_bold", 20 };
     FontDescription smallishFont = { "font", 24 };
     FontDescription smallishFontBold = { "font_bold", 24 };
     FontDescription mediumFont = { "font", 30 };
@@ -618,12 +619,24 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             ->add(Column())->size(INFINITY, 0);
         for (u32 i=0; i<ARRAY_SIZE(targetStats); ++i)
         {
-            currentStats[i] = smoothMove(currentStats[i], targetStats[i], 8.f, g_game.deltaTime);
-            upgradeStats[i] = smoothMove(upgradeStats[i], targetStatsUpgrade[i], 8.f, g_game.deltaTime);
+            currentStats[i] = smoothMove(currentStats[i], targetStats[i], 10.f, g_game.deltaTime);
+            upgradeStats[i] = smoothMove(upgradeStats[i], targetStatsUpgrade[i], 10.f, g_game.deltaTime);
 
             f32 barHeight = 10;
             f32 maxBarWidth = VEHICLE_PREVIEW_SIZE.x - 40;
-            statsColumn->add(Text(smallFont, statNames[i]));
+            auto row = statsColumn->add(Row(8))->size(0,0);
+            row->add(Text(smallFont, tmpStr("%s: %.1f", statNames[i],
+                            currentStats[i] * 100)));
+
+            Vec4 green = Vec4(0.01f, 0.7f, 0.01f, 0.9f);
+            Vec4 red = Vec4(0.8f, 0.01f, 0.01f, 0.9f);
+            if (absolute(currentStats[i] - upgradeStats[i]) > 0.001f)
+            {
+                row->add(Text(smallFontBold,
+                    tmpStr("%s%.1f", currentStats[i] < upgradeStats[i] ? "+" : "-",
+                        absolute(currentStats[i] - upgradeStats[i]) * 100),
+                    currentStats[i] < upgradeStats[i] ? green : red));
+            }
             statsColumn->add(Container())->size(0, 5);
             auto bar = statsColumn
                 ->add(Container({}, {}, Vec4(0, 0, 0, 0.9f)))
@@ -634,13 +647,13 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
             if (upgradeBarWidth - barWidth > 0.001f)
             {
-                bar->add(Container({}, {}, Vec4(0.01f, 0.7f, 0.01f, 0.9f)))
+                bar->add(Container({}, {}, green))
                    ->size(upgradeBarWidth, barHeight);
             }
 
             if (upgradeBarWidth - barWidth < -0.001f)
             {
-                bar->add(Container({}, {}, Vec4(0.8f, 0.01f, 0.01f, 0.9f)))
+                bar->add(Container({}, {}, red))
                    ->size(barWidth, barHeight);
             }
 
@@ -852,7 +865,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         if (garage.playerIndex >= playerCount)
                         {
                             garage.initialCarSelect = false;
-                            //showChampionshipMenu();
+                            mode = CHAMPIONSHIP_MENU;
                         }
                         else
                         {
@@ -861,7 +874,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     }
                     else
                     {
-                        //showChampionshipMenu();
+                        mode = CHAMPIONSHIP_MENU;
                     }
                 };
             }, ButtonFlags::BACK);
@@ -905,7 +918,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
                 if (isPurchasable)
                 {
-                    btn->onGainedSelect([&]{
+                    btn->onGainedSelect([&upgrade, upgradeLevel, this, i]{
                         helpMessage = upgrade.description.data();
 
                         if (upgradeLevel < upgrade.maxUpgradeLevel)
@@ -925,19 +938,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         garage.previewTuning = garage.driver->getTuning();
                         garage.currentStats = garage.previewTuning.computeVehicleStats();
                         garage.upgradeStats = garage.currentStats;
-
-                        /*
-                        auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.findIf(
-                                [i](auto& u) { return u.upgradeIndex == i; });
-                        if (currentUpgrade->upgradeLevel < upgrade.maxUpgradeLevel)
-                        {
-                            garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
-                            garage.previewVehicleConfig.addUpgrade(i);
-                            garage.previewVehicle->initTuning(
-                                    garage.previewVehicleConfig, garage.previewTuning);
-                            garage.upgradeStats = garage.previewTuning.computeVehicleStats();
-                        }
-                        */
                     });
                 }
                 else
@@ -949,6 +949,11 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             button(column, "BACK", "", [&]{
                 inputCapture->setEntering(false);
                 selection = [&]{
+                    garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                    garage.previewTuning = garage.driver->getTuning();
+                    garage.currentStats = garage.previewTuning.computeVehicleStats();
+                    garage.upgradeStats = garage.currentStats;
+
                     mode = GARAGE_UPGRADES;
                     gui::popInputCapture();
                 };
@@ -956,9 +961,55 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         }
         else if (mode == GARAGE_COSMETICS)
         {
+            auto inputCapture =
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
+            makeActive(inputCapture);
+
+            static Function<void()> selection = []{ assert(false); };
+            menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
+                ->onAnimationReverseEnd([&]{ selection(); });
+
+            auto column = menuContainer
+                ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
+                ->add(Column(10))->size(INFINITY, 0);
+
+            auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
+            Vec2 size(SIDE_MENU_WIDTH / 3);
+
+            button(column, "BACK", "", [&]{
+                inputCapture->setEntering(false);
+                selection = [&]{
+                    garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                    mode = GARAGE_UPGRADES;
+                    gui::popInputCapture();
+                };
+            }, ButtonFlags::BACK);
         }
         else if (mode == GARAGE_WEAPON)
         {
+            auto inputCapture =
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
+            makeActive(inputCapture);
+
+            static Function<void()> selection = []{ assert(false); };
+            menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
+                ->onAnimationReverseEnd([&]{ selection(); });
+
+            auto column = menuContainer
+                ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
+                ->add(Column(10))->size(INFINITY, 0);
+
+            auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
+            Vec2 size(SIDE_MENU_WIDTH / 3);
+
+            button(column, "BACK", "", [&]{
+                inputCapture->setEntering(false);
+                selection = [&]{
+                    garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                    mode = GARAGE_UPGRADES;
+                    gui::popInputCapture();
+                };
+            }, ButtonFlags::BACK);
         }
     }
     else if (mode == CHAMPIONSHIP_MENU)
