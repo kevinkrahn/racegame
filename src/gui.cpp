@@ -77,11 +77,18 @@ namespace gui
                         *activeInputCapture, context.selectedWidgetStateNode);
                 selectedWidget->flags |= WidgetFlags::STATUS_GAINED_SELECTED;
             }
+            if (previousInputCaptureContext.inputCaptureStateNode != context.inputCaptureStateNode
+                    && selectedWidget)
+            {
+                selectedWidget->flags |= WidgetFlags::STATUS_GAINED_SELECTED;
+            }
             if (selectedWidget)
             {
                 selectedWidget->flags |= WidgetFlags::STATUS_SELECTED;
+                selectedWidget->handleStatus();
             }
         }
+        previousInputCaptureContext = context;
 
         // if the input context the frame started with is still active, then assign the selected widget
         if (inputCaptureStack.back().inputCaptureStateNode == context.inputCaptureStateNode)

@@ -121,12 +121,16 @@ namespace gui
     u32 frameCount;
 
     Buffer widgetBuffer;
+    // TODO: Maybe widgetStateBuffer and widgetStateNodeStorage should go into the input
+    // capture context. This would correctly preserve state when the stack is pushed and
+    // free the state memory when the stack is popped.
     Buffer widgetStateBuffer;
     SmallArray<WidgetStateNode, 1024> widgetStateNodeStorage;
     Widget* root = nullptr;
     Widget* nullWidget = nullptr;
     SmallArray<Widget*, 64> inputCaptureWidgets;
     SmallArray<InputCaptureContext> inputCaptureStack;
+    InputCaptureContext previousInputCaptureContext;
     f32 guiScale = 1.f;
 
     struct Widget
@@ -183,6 +187,7 @@ namespace gui
         virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input);
         virtual void layout(GuiContext& ctx);
         virtual void render(GuiContext& ctx, RenderContext& rtx);
+        virtual void handleStatus() {}
 
         template <typename T>
         T* add(T const& widget)

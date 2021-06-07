@@ -26,9 +26,7 @@ namespace gui
     const Vec4 COLOR_BG_WIDGET_SELECTED = Vec4(Vec3(0.1f), 0.8f);
     const Vec4 COLOR_BG_WIDGET_DISABLED = Vec4(Vec3(0.06f), 0.3f);
     const Vec4 COLOR_BG_PANEL = Vec4(Vec3(0), 0.65f);
-    const Vec4 COLOR_TEXT_SELECTED = Vec4(1);
-    const Vec4 COLOR_TEXT_NOT_SELECTED = Vec4(Vec3(0.5f), 1.f);
-    const Vec4 COLOR_TEXT_DISABLED = Vec4(Vec3(0.5f), 0.5f);
+    const Vec4 COLOR_TEXT = Vec4(1);
 
     struct Stack : public Widget
     {
@@ -71,6 +69,20 @@ namespace gui
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
             ui::text(font, text, computedPosition, color.rgb, rtx.alpha * color.a);
+        }
+    };
+
+    struct Alpha : public Widget
+    {
+        f32 alpha;
+
+        Alpha(f32 alpha) : Widget("Alpha"), alpha(alpha) {}
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            RenderContext r = rtx;
+            r.alpha = alpha;
+            Widget::render(ctx, r);
         }
     };
 
@@ -278,7 +290,7 @@ namespace gui
     struct Container : public Widget
     {
         Insets padding;
-        Insets margin;
+        Insets margin; // TODO: remove this if it is never used
         Vec4 backgroundColor = Vec4(0);
         HAlign halign = HAlign::LEFT;
         VAlign valign = VAlign::TOP;
@@ -619,6 +631,8 @@ namespace gui
 
         CALLBACK(Button, onPress);
         CALLBACK(Button, onSelect);
+        CALLBACK(Button, onGainedSelect);
+        CALLBACK(Button, onLostSelect);
 
         void press(InputCaptureContext& ctx)
         {
@@ -694,6 +708,7 @@ namespace gui
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
             ButtonState* state = getState<ButtonState>(this);
+            RenderContext r = rtx;
 
             if (buttonFlags & ButtonFlags::FORCE_ACTIVE)
             {
@@ -714,13 +729,13 @@ namespace gui
                 outline->color = COLOR_OUTLINE_DISABLED;
 
                 bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
+
+                r.alpha *= 0.55f;
             }
             else
             {
                 if (flags & WidgetFlags::STATUS_SELECTED)
                 {
-                    INVOKE_CALLBACK(onSelect);
-
                     state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
                     state->hoverTimer += ctx.deltaTime;
                     state->hoverValue = 0.1f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f;
@@ -749,7 +764,23 @@ namespace gui
                 }
 
             }
-            Widget::render(ctx, rtx);
+            Widget::render(ctx, r);
+        }
+
+        virtual void handleStatus() override
+        {
+            if (flags & WidgetFlags::STATUS_SELECTED)
+            {
+                INVOKE_CALLBACK(onSelect);
+            }
+            if (flags & WidgetFlags::STATUS_GAINED_SELECTED)
+            {
+                INVOKE_CALLBACK(onGainedSelect);
+            }
+            if (flags & WidgetFlags::STATUS_LOST_SELECTED)
+            {
+                INVOKE_CALLBACK(onLostSelect);
+            }
         }
     };
 
@@ -757,9 +788,7 @@ namespace gui
     {
         const char* text;
         FontDescription font;
-        Text* textWidget;
         Texture* icon;
-        Image* imageWidget = nullptr;
 
         TextButton(FontDescription const& font, const char* text, u32 buttonFlags=0,
                 Texture* icon=nullptr)
@@ -773,51 +802,15 @@ namespace gui
             {
                 auto row = btn->add(Row(20));
                 const f32 iconSize = 48;
-                imageWidget = (Image*)row->add(Image(icon, false))->size(iconSize, iconSize);
-                textWidget = row
-                    ->add(Container({}, {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
-                        ->size(0, iconSize)
+                row->add(Image(icon, false))->size(iconSize, iconSize);
+                row->add(Container({}, {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))->size(0, iconSize)
                     ->add(Text(font, text));
             }
             else
             {
-                textWidget = btn->add(Text(font, text));
+                btn->add(Text(font, text));
             }
             return btn;
-        }
-
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
-        {
-            ButtonState* state = getState<ButtonState>(this);
-
-            if (flags & WidgetFlags::DISABLED)
-            {
-                textWidget->color = COLOR_TEXT_DISABLED;
-                if (imageWidget)
-                {
-                    imageWidget->color = COLOR_TEXT_DISABLED;
-                }
-            }
-            else
-            {
-                if (flags & WidgetFlags::STATUS_SELECTED)
-                {
-                    textWidget->color = COLOR_TEXT_SELECTED;
-                    if (imageWidget)
-                    {
-                        imageWidget->color = COLOR_TEXT_SELECTED;
-                    }
-                }
-                else
-                {
-                    textWidget->color = COLOR_TEXT_NOT_SELECTED;
-                    if (imageWidget)
-                    {
-                        imageWidget->color = COLOR_TEXT_NOT_SELECTED;
-                    }
-                }
-            }
-            Button::render(ctx, rtx);
         }
     };
 

@@ -175,12 +175,48 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             u32 buttonFlags=0, Texture* icon=nullptr) {
         Vec2 btnSize(INFINITY, 70);
         return parent
-            ->add(PositionDelay(0.75f, name))->size(0,0)
+            ->add(PositionDelay(0.65f, name))->size(0,0)
             ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(btnSize)
             ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))
             ->add(TextButton(mediumFont, name, buttonFlags, icon))
                 ->onPress(onPress)
-                ->onSelect([helpText]{ helpMessage = helpText; });
+                ->onGainedSelect([helpText]{ helpMessage = helpText; });
+    };
+
+    auto squareButton = [&](gui::Widget* parent, Texture* tex, const char* name, const char* price,
+            Vec2 size, i32 upgradeCount=0, i32 upgradeMax=0, f32 padding=0.f, bool flipImage=false) {
+        auto btn = parent
+            ->add(PositionDelay(0.7f, name))->size(0,0)
+            ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
+            ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+            ->add(Button(0, name, 0.f))->size(size);
+        btn->add(Container(Insets(padding)))->add(Image(tex, false, flipImage));
+        btn
+            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
+            ->add(Text(smallFont, name, COLOR_TEXT));
+        btn
+            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::BOTTOM))
+            ->add(Text(smallFont, price, COLOR_TEXT));
+        if (upgradeMax > 0)
+        {
+            Texture* tex1 = g_res.getTexture("button");
+            Texture* tex2 = g_res.getTexture("button_glow");
+            f32 notchSize = 16;
+
+            auto column = btn
+                ->add(Container(Insets(10), {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
+                ->add(Column(5))->size(0, 0);
+            for (i32 i=0; i<upgradeMax; ++i)
+            {
+                auto stack = column->add(Stack())->size(notchSize, notchSize);
+                stack->add(Image(tex1, false));
+                if (i < upgradeCount)
+                {
+                    stack->add(Image(tex2, false));
+                }
+            }
+        }
+        return (Button*)btn;
     };
 
     auto panel = [&](gui::Widget* parent, Vec2 size, bool outline=true) {
@@ -450,7 +486,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             g_game.shouldExit = true;
         });
     }
-    else if (mode == GARAGE_CAR_LOT || mode == GARAGE_UPGRADES)
+    else if (mode >= GARAGE_CAR_LOT)
     {
         const Vec2 VEHICLE_PREVIEW_SIZE = {600,400};
         const f32 SIDE_MENU_WIDTH = 500;
@@ -539,6 +575,11 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 column->add(Text(smallishFont, tmpStr("TRADE: %i", garage.driver->getVehicleValue())));
                 column->add(Text(smallishFontBold, tmpStr("TOTAL: %i",
                                 garage.previewVehicle->price - garage.driver->getVehicleValue())));
+            }
+            else
+            {
+                column->add(Text(smallishFontBold,
+                            tmpStr("VALUE: %i", garage.driver->getVehicleValue())));
             }
         }
 
@@ -679,37 +720,40 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     renderer->addRenderWorld(&rw);
                 }
 
-                auto btn = grid
-                    ->add(PositionDelay(1.f, v->name.data()))->size(0,0)
-                    ->add(FadeAnimation(0.f, 1.f, animationLength, true, v->name.data()))->size(0,0)
-                    ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
-                    ->add(Button(0, v->name.data(), 0))->onPress([v, this]{
-                        garage.previewVehicle = v;
-                        if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
-                        {
-                            garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
-                            garage.previewTuning = garage.driver->getTuning();
-                            garage.currentStats = garage.previewTuning.computeVehicleStats();
-                            garage.upgradeStats = garage.currentStats;
-                        }
-                        else
-                        {
-                            garage.previewVehicleConfig = VehicleConfiguration{};
-                            auto vd = garage.previewVehicle;
-                            // TODO: this color logic (and this other stuff) should be encapsulated somewhere
-                            garage.previewVehicleConfig.cosmetics.color =
-                                srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
-                            garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
-                            garage.previewVehicleConfig.reloadMaterials();
-                            // TODO: cache tuning data
-                            garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
-                            garage.currentStats = garage.previewTuning.computeVehicleStats();
-                            garage.upgradeStats = garage.currentStats;
-                        }
-                    })
-                        ->onSelect([&]{ helpMessage = garage.previewVehicle->description.data(); })
-                        ->size(size);
-                btn->add(Image(rw.getTexture(), false, true));
+                i32 totalCost = v->price - garage.driver->getVehicleValue();
+                bool enabled = v->guid == garage.driver->vehicleGuid ||
+                    garage.driver->credits >= totalCost;
+
+                auto btn = squareButton(grid, rw.getTexture(), v->name.data(),
+                        garage.driver->getVehicleData() == v
+                            ? "OWNED" : tmpStr("%i", v->price), size,
+                        garage.driver->getVehicleData() == v ? 1 : 0, 1, 0.f, true);
+                btn->addFlags(enabled ? 0 : WidgetFlags::DISABLED);
+                btn->onPress([v, this]{
+                    garage.previewVehicle = v;
+                    if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
+                    {
+                        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                        garage.previewTuning = garage.driver->getTuning();
+                        garage.currentStats = garage.previewTuning.computeVehicleStats();
+                        garage.upgradeStats = garage.currentStats;
+                    }
+                    else
+                    {
+                        garage.previewVehicleConfig = VehicleConfiguration{};
+                        auto vd = garage.previewVehicle;
+                        // TODO: this color logic (and this other stuff) should be encapsulated somewhere
+                        garage.previewVehicleConfig.cosmetics.color =
+                            srgb(hsvToRgb(vd->defaultColorHsv.x, vd->defaultColorHsv.y, vd->defaultColorHsv.z));
+                        garage.previewVehicleConfig.cosmetics.hsv = vd->defaultColorHsv;
+                        garage.previewVehicleConfig.reloadMaterials();
+                        // TODO: cache tuning data
+                        garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                        garage.currentStats = garage.previewTuning.computeVehicleStats();
+                        garage.upgradeStats = garage.currentStats;
+                    }
+                });
+                btn->onGainedSelect([v]{ helpMessage = v->description.data(); });
             }
             arePreviewsRendered = true;
 
@@ -755,9 +799,17 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             Texture* iconbg = g_res.getTexture("iconbg");
 
             button(column, "PERFORMANCE", "Upgrades to enhance your vehicle's performance.", [&]{
+                inputCapture->setEntering(false);
+                selection = [&] {
+                    mode = GARAGE_PERFORMANCE;
+                };
             }, 0, g_res.getTexture("icon_engine"));
 
             button(column, "COSMETICS", "Change your vehicle's appearance.", [&]{
+                inputCapture->setEntering(false);
+                selection = [&] {
+                    mode = GARAGE_COSMETICS;
+                };
             }, 0, g_res.getTexture("icon_spraycan"));
 
             for (u32 i=0; i<garage.driver->getVehicleData()->weaponSlots.size(); ++i)
@@ -765,19 +817,18 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
                 WeaponSlot& slot = garage.driver->getVehicleData()->weaponSlots[i];
                 button(column, slot.name.data(), "Install or upgrade a weapon.", [&]{
-                        /*
-                        createWeaponsMenu(slot,
-                                garage.previewVehicleConfig.weaponIndices[i],
-                                garage.previewVehicleConfig.weaponUpgradeLevel[i]);
-                                */
-                    }, 0, installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
+                    inputCapture->setEntering(false);
+                    selection = [&] {
+                        mode = GARAGE_WEAPON;
+                        currentWeaponSlotIndex = i;
+                    };
+                }, 0, installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
             }
 
             button(column, "CAR LOT", "Buy a new vehicle!", [&]{
                 inputCapture->setEntering(false);
                 selection = [&] {
                     mode = GARAGE_CAR_LOT;
-                    gui::popInputCapture();
                 };
             });
 
@@ -815,6 +866,104 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 };
             }, ButtonFlags::BACK);
         }
+        else if (mode == GARAGE_PERFORMANCE)
+        {
+            auto inputCapture =
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
+            makeActive(inputCapture);
+
+            static Function<void()> selection = []{ assert(false); };
+            menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
+                ->onAnimationReverseEnd([&]{ selection(); });
+
+            auto column = menuContainer
+                ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
+                ->add(Column(10))->size(INFINITY, 0);
+
+            auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
+            Vec2 size(SIDE_MENU_WIDTH / 3);
+
+            for (i32 i=0; i<(i32)garage.driver->getVehicleData()->availableUpgrades.size(); ++i)
+            {
+                auto& upgrade = garage.driver->getVehicleData()->availableUpgrades[i];
+                auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.findIf(
+                        [i](auto& u) { return u.upgradeIndex == i; });
+                bool isEquipped = !!currentUpgrade;
+                i32 upgradeLevel = 0;
+                i32 price = upgrade.price;
+                if (isEquipped)
+                {
+                    upgradeLevel = currentUpgrade->upgradeLevel;
+                    price = upgrade.price * (upgradeLevel + 1);
+                }
+
+                bool isPurchasable = garage.driver->credits >= price && upgradeLevel < upgrade.maxUpgradeLevel;
+
+                auto btn = squareButton(grid, g_res.getTexture(upgrade.iconGuid), upgrade.name.data(),
+                        tmpStr("%i", price), size, upgradeLevel, upgrade.maxUpgradeLevel, 28.f);
+                btn->addFlags(isPurchasable ? 0 : WidgetFlags::DISABLED);
+
+                if (isPurchasable)
+                {
+                    btn->onGainedSelect([&]{
+                        helpMessage = upgrade.description.data();
+
+                        if (upgradeLevel < upgrade.maxUpgradeLevel)
+                        {
+                            garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                            garage.previewVehicleConfig.addUpgrade(i);
+                            garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                            garage.upgradeStats = garage.previewTuning.computeVehicleStats();
+                        }
+                    });
+
+                    btn->onPress([this, price, i, &upgrade]{
+                        g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
+
+                        garage.driver->credits -= price;
+                        garage.driver->getVehicleConfig()->addUpgrade(i);
+                        garage.previewTuning = garage.driver->getTuning();
+                        garage.currentStats = garage.previewTuning.computeVehicleStats();
+                        garage.upgradeStats = garage.currentStats;
+
+                        /*
+                        auto currentUpgrade = garage.driver->getVehicleConfig()->performanceUpgrades.findIf(
+                                [i](auto& u) { return u.upgradeIndex == i; });
+                        if (currentUpgrade->upgradeLevel < upgrade.maxUpgradeLevel)
+                        {
+                            garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                            garage.previewVehicleConfig.addUpgrade(i);
+                            garage.previewVehicle->initTuning(
+                                    garage.previewVehicleConfig, garage.previewTuning);
+                            garage.upgradeStats = garage.previewTuning.computeVehicleStats();
+                        }
+                        */
+                    });
+                }
+                else
+                {
+                    btn->onPress([]{ g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX); });
+                }
+            }
+
+            button(column, "BACK", "", [&]{
+                inputCapture->setEntering(false);
+                selection = [&]{
+                    mode = GARAGE_UPGRADES;
+                    gui::popInputCapture();
+                };
+            }, ButtonFlags::BACK);
+        }
+        else if (mode == GARAGE_COSMETICS)
+        {
+        }
+        else if (mode == GARAGE_WEAPON)
+        {
+        }
+    }
+    else if (mode == CHAMPIONSHIP_MENU)
+    {
+
     }
 
     /*

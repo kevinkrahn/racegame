@@ -30,9 +30,15 @@ class Menu
         SETTINGS,
         PAUSE_MENU,
         NEW_CHAMPIONSHIP,
+        CHAMPIONSHIP_MENU,
         GARAGE_CAR_LOT,
         GARAGE_UPGRADES,
+        GARAGE_PERFORMANCE,
+        GARAGE_COSMETICS,
+        GARAGE_WEAPON,
     };
+
+    u32 currentWeaponSlotIndex = 0;
 
     struct Stat
     {
@@ -45,8 +51,6 @@ class Menu
 
     Config tmpConfig;
     GarageData garage;
-
-    RenderWorld vehiclePreviews[10];
 
     f32 pauseTimer = 0.f;
     bool fadeToBlack = false;
