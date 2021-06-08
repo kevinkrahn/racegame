@@ -4,7 +4,7 @@
 #include "2d.h"
 #include "font.h"
 
-#define CALLBACK(className, name) \
+#define DEFINE_CALLBACK(className, name) \
     void(*name ## Callback)(void*) = nullptr; \
     void* name ## CallbackData = nullptr; \
     template <typename _F_> \
@@ -629,10 +629,10 @@ namespace gui
             return bg;
         }
 
-        CALLBACK(Button, onPress);
-        CALLBACK(Button, onSelect);
-        CALLBACK(Button, onGainedSelect);
-        CALLBACK(Button, onLostSelect);
+        DEFINE_CALLBACK(Button, onPress);
+        DEFINE_CALLBACK(Button, onSelect);
+        DEFINE_CALLBACK(Button, onGainedSelect);
+        DEFINE_CALLBACK(Button, onLostSelect);
 
         void press(InputCaptureContext& ctx)
         {
@@ -886,8 +886,8 @@ namespace gui
         Animation(f32 animationLength = 1.f, bool isDirectionForward=true, const char* name="Animation")
             : Widget(name), animationLength(animationLength), isDirectionForward(isDirectionForward) {}
 
-        CALLBACK(Animation, onAnimationEnd);
-        CALLBACK(Animation, onAnimationReverseEnd);
+        DEFINE_CALLBACK(Animation, onAnimationEnd);
+        DEFINE_CALLBACK(Animation, onAnimationReverseEnd);
 
         AnimationState* animate()
         {
