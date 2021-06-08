@@ -659,6 +659,8 @@ public:
                         ev.controller = { ctl, which, ctl->axis[axis], (ControllerAxis)axis };
                         events.push(ev);
 
+                        // TODO: fix repeat (this doesn't work because the axis event doesn't fire
+                        // continuously, only on changes)
                         if (absolute(prevAl) < joystickDeadzone)
                         {
                             InputEvent ev{ INPUT_CONTROLLER_AXIS_TRIGGERED };

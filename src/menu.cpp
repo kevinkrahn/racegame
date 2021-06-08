@@ -214,7 +214,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             ->add(PositionDelay(0.7f, name))->size(0,0)
             ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
             ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
-            ->add(Button(0, name, 0.f))->size(size);
+            ->add(Button(ButtonFlags::NO_ACTIVE, name, 0.f))->size(size);
         btn->add(Container(Insets(padding)))->add(Image(tex, false, flipImage));
         btn
             ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
@@ -779,10 +779,9 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     garage.driver->credits >= totalCost;
 
                 auto btn = squareButton(grid, rw.getTexture(), v->name.data(),
-                        garage.driver->getVehicleData() == v
-                            ? "OWNED" : tmpStr("%i", v->price), size,
-                        garage.driver->getVehicleData() == v ? 1 : 0, 1, 0.f, true);
-                btn->addFlags(enabled ? 0 : WidgetFlags::DISABLED);
+                        garage.driver->getVehicleData() == v ? "OWNED" : tmpStr("%i", v->price),
+                        size, 0, 0, 0.f, true);
+                btn->addFlags(enabled ? 0 : WidgetFlags::FADED);
                 btn->onPress([v, this]{
                     garage.previewVehicle = v;
                     if (garage.previewVehicle->guid == garage.driver->vehicleGuid)
@@ -834,7 +833,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     gui::popInputCapture();
                 };
             }, ButtonFlags::BACK)
-                ->addFlags(garage.driver->getVehicleData() ? 0 : WidgetFlags::DISABLED);
+                ->addFlags(garage.driver->getVehicleData()
+                        ? WidgetFlags::DEFAULT_SELECTION : WidgetFlags::DISABLED);
         }
         else if (mode == GARAGE_UPGRADES)
         {
@@ -956,7 +956,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
                 auto btn = squareButton(grid, g_res.getTexture(upgrade.iconGuid), upgrade.name.data(),
                         tmpStr("%i", price), size, upgradeLevel, upgrade.maxUpgradeLevel, 28.f);
-                btn->addFlags(isPurchasable ? 0 : WidgetFlags::DISABLED);
+                btn->addFlags(isPurchasable ? 0 : WidgetFlags::FADED);
 
                 if (isPurchasable)
                 {
@@ -1065,27 +1065,26 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 auto btn = squareButton(grid, weapon.info.icon, weapon.info.name,
                         tmpStr("%i", weapon.info.price), size, weaponUpgradeLevel,
                         (i32)weapon.info.maxUpgradeLevel, 28.f);
-                btn->addFlags(isPurchasable ? 0 : WidgetFlags::DISABLED);
+                btn->addFlags(isPurchasable ? 0 : WidgetFlags::FADED);
+                btn->onGainedSelect([this, i]{
+                    helpMessage = g_weapons[i].info.description;
+                });
 
-                if (isPurchasable)
-                {
-                    btn->onGainedSelect([this, i]{
-                        helpMessage = g_weapons[i].info.description;
-                    });
-
-                    btn->onPress([this, i]{
+                btn->onPress([this, i, isPurchasable]{
+                    if (isPurchasable)
+                    {
                         // TODO: Play sound that is more appropriate for a weapon
                         g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
                         garage.previewVehicleConfig.weaponIndices[currentWeaponSlotIndex] = i;
                         garage.previewVehicleConfig.weaponUpgradeLevel[currentWeaponSlotIndex] += 1;
 
                         garage.driver->credits -= g_weapons[i].info.price;
-                    });
-                }
-                else
-                {
-                    btn->onPress([]{ g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX); });
-                }
+                    }
+                    else
+                    {
+                        g_audio.playSound(g_res.getSound("nono"), SoundType::MENU_SFX);
+                    }
+                });
             }
 
             button(column, "SELL", "Sell the currently equipped item for half the original value.",

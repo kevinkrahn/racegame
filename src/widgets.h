@@ -81,7 +81,7 @@ namespace gui
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
             RenderContext r = rtx;
-            r.alpha = alpha;
+            r.alpha *= alpha;
             Widget::render(ctx, r);
         }
     };
@@ -601,6 +601,7 @@ namespace gui
     {
         Container* bg;
         Outline* outline;
+        Alpha* alpha;
         u32 buttonFlags;
         f32 padding;
         const char* name;
@@ -623,7 +624,8 @@ namespace gui
             flags |= WidgetFlags::BLOCK_INPUT | WidgetFlags::SELECTABLE;
 
             outline = (Outline*)this->add(Outline(Insets(2), {}))->size(desiredSize);
-            bg = (Container*)outline->add(
+            alpha = (Alpha*)outline->add(Alpha(1.f))->size(desiredSize);
+            bg = (Container*)alpha->add(
                     Container(Insets(padding), {}, COLOR_BG_WIDGET, HAlign::CENTER, VAlign::CENTER))
                 ->size(desiredSize);
             return bg;
@@ -753,16 +755,23 @@ namespace gui
                     outline->color = COLOR_OUTLINE_NOT_SELECTED;
                 }
 
-                if (state->isPressed)
+                if (flags & WidgetFlags::FADED)
                 {
-                    bg->backgroundColor = COLOR_OUTLINE_SELECTED;
+                    bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
+                    alpha->alpha *= 0.5f;
                 }
                 else
                 {
-                    bg->backgroundColor = mix(COLOR_BG_WIDGET,
-                            COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
+                    if (state->isPressed)
+                    {
+                        bg->backgroundColor = COLOR_OUTLINE_SELECTED;
+                    }
+                    else
+                    {
+                        bg->backgroundColor = mix(COLOR_BG_WIDGET,
+                                COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
+                    }
                 }
-
             }
             Widget::render(ctx, r);
         }

@@ -18,6 +18,7 @@ namespace gui
             // for external widget API
             DEFAULT_SELECTION = 1 << 1,
             DISABLED          = 1 << 2,
+            FADED             = 1 << 3,
 
             // internal
             BLOCK_INPUT       = 1 << 8,
@@ -167,8 +168,10 @@ namespace gui
 #else
         Widget(const char* name) {}
 #endif
-        Vec2 center() const { return computedPosition + computedSize * 0.5f; }
+        // called by widgets in build() function
         void pushID(const char* id);
+
+        Vec2 center() const { return computedPosition + computedSize * 0.5f; }
         void navigate(struct Navigation& nav);
         Widget* build() { return this; }
         Widget* absolutePosition(Vec2 position) { desiredPosition = position; return this; }
