@@ -156,6 +156,30 @@ void Menu::beginChampionship()
     showInitialCarLotMenu(garage.playerIndex);
 }
 
+void Menu::updateVehiclePreviews()
+{
+    Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
+    for (u32 driverIndex=0; driverIndex<10; ++driverIndex)
+    {
+        RenderWorld& rw = vehiclePreviews[driverIndex];
+        rw.setName(tmpStr("Vehicle Icon %i", driverIndex));
+        u32 vehicleIconSize = (u32)(120 * gui::guiScale);
+        rw.setSize(vehicleIconSize, vehicleIconSize);
+        drawSimple(&rw, quadMesh, &g_res.white, Mat4::scaling(Vec3(20.f)), Vec3(0.02f));
+        Driver& driver = g_game.state.drivers[driverIndex];
+        if (driver.getVehicleData())
+        {
+            VehicleTuning t = driver.getTuning();
+            driver.getVehicleData()->render(&rw, Mat4::translation(Vec3(0, 0, t.getRestOffset())),
+                nullptr, *driver.getVehicleConfig(), &t);
+        }
+        rw.setViewportCount(1);
+        rw.addDirectionalLight(Vec3(-0.5f, 0.2f, -1.f), Vec3(1.0));
+        rw.setViewportCamera(0, Vec3(8.f, -8.f, 10.f), Vec3(0.f, 0.f, 1.f), 1.f, 50.f, 30.f);
+        g_game.renderer->addRenderWorld(&rw);
+    }
+}
+
 void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 {
     using namespace gui;
@@ -217,6 +241,23 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
             }
         }
+        return (Button*)btn;
+    };
+
+    auto garageButton = [&](gui::Widget* parent, u32 driverIndex, const char* description, Vec2 size) {
+        Driver& driver = g_game.state.drivers[driverIndex];
+        const char* name = driver.playerName.data();
+        auto btn = parent
+            ->add(PositionDelay(0.7f, name))->size(0,0)
+            ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
+            ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+            ->add(Button(0, name, 0.f))->size(size);
+        Texture* vehiclePreviewTex = vehiclePreviews[driverIndex].getTexture();
+        auto row = btn->add(Row());
+        row->add(Image(vehiclePreviewTex, false, true))->size(size.y, size.y);
+        auto col = row->add(Container(Insets(15)))->size(0,0)->add(Column(15))->size(0,0);
+        col->add(Text(mediumFont, tmpStr("%s's Garage", name), COLOR_TEXT));
+        col->add(Text(smallishFontBold, tmpStr("Credits: %i", driver.credits), COLOR_TEXT));
         return (Button*)btn;
     };
 
@@ -622,11 +663,11 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             currentStats[i] = smoothMove(currentStats[i], targetStats[i], 10.f, g_game.deltaTime);
             upgradeStats[i] = smoothMove(upgradeStats[i], targetStatsUpgrade[i], 10.f, g_game.deltaTime);
 
-            f32 barHeight = 10;
+            f32 barHeight = 6;
             f32 maxBarWidth = VEHICLE_PREVIEW_SIZE.x - 40;
             auto row = statsColumn->add(Row(8))->size(0,0);
-            row->add(Text(smallFont, tmpStr("%s: %.1f", statNames[i],
-                            currentStats[i] * 100)));
+            row->add(Text(smallFontBold, tmpStr("%s:", statNames[i])));
+            row->add(Text(smallFont, tmpStr("%.1f", currentStats[i] * 100)));
 
             Vec4 green = Vec4(0.01f, 0.7f, 0.01f, 0.9f);
             Vec4 red = Vec4(0.8f, 0.01f, 0.01f, 0.9f);
@@ -866,6 +907,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         {
                             garage.initialCarSelect = false;
                             mode = CHAMPIONSHIP_MENU;
+                            updateVehiclePreviews();
                         }
                         else
                         {
@@ -1070,7 +1112,76 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     }
     else if (mode == CHAMPIONSHIP_MENU)
     {
+        auto inputCapture = gui::root->add(InputCapture("Championship Menu"));
+        makeActive(inputCapture);
 
+        static Function<void()> selection = []{ assert(false); };
+        auto animation = animateMenu(inputCapture, inputCapture->isEntering())
+            ->onAnimationReverseEnd([&]{ selection(); });
+        auto column = panel(animation, Vec2(600, 0))->add(Column(10))->size(0, 0);
+
+        column
+            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
+            ->add(Text(bigFont, "CHAMPIONSHIP"));
+
+        i32 playerIndex = 0;
+        for (u32 driverIndex = 0; driverIndex < g_game.state.drivers.size(); ++driverIndex)
+        {
+            Driver& driver = g_game.state.drivers[driverIndex];
+            if (driver.isPlayer)
+            {
+                garageButton(column, driverIndex, "Buy, sell, or upgrade your vehicle.", Vec2(0, 120))
+                    ->onPress([inputCapture, this, playerIndex]{
+                    inputCapture->setEntering(false);
+                    selection = [this, playerIndex] {
+                        garage.driver = &g_game.state.drivers[playerIndex];
+                        garage.previewVehicle = garage.driver->getVehicleData();
+                        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                        garage.previewTuning = garage.driver->getTuning();
+                        garage.currentStats = garage.previewTuning.computeVehicleStats();
+                        garage.upgradeStats = garage.currentStats;
+                        mode = GARAGE_UPGRADES;
+                    };
+                });
+                ++playerIndex;
+            }
+        }
+
+        column->add(Container())->size(Vec2(20));
+
+        button(column, "BEGIN RACE", "Start the next race.", [&]{
+            inputCapture->setEntering(false);
+            fadeToBlack = true;
+            selection = [&] {
+                gui::clearInputCaptures();
+                Scene* scene = g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+                scene->startRace();
+                fadeToBlack = false;
+            };
+        });
+
+        button(column, "STANDINGS", "View the current championship standings.", [&]{
+            /*
+            inputCapture->setEntering(false);
+            selection = [&] {
+                // TODO
+            };
+            */
+        });
+
+        button(column, "QUIT", "Return to main menu.", [&]{
+            inputCapture->setEntering(false);
+            selection = [&] {
+                clearInputCaptures();
+                mode = MAIN_MENU;
+            };
+        });
+
+        // track preview
+        u32 trackPreviewSize = 380 * gui::guiScale;
+        g_game.currentScene->updateTrackPreview(g_game.renderer.get(), trackPreviewSize);
+        Texture* trackTex = g_game.currentScene->getTrackPreview2D().getTexture();
+        // TODO: draw the track preview
     }
 
     /*

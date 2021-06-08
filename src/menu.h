@@ -56,10 +56,13 @@ class Menu
     bool fadeToBlack = false;
     f32 blackFadeAlpha = 1.f;
 
+    RenderWorld vehiclePreviews[10];
+
     void beginChampionship();
     void startQuickRace();
     void resetGarage();
     void showInitialCarLotMenu(u32 playerIndex);
+    void updateVehiclePreviews();
 
 public:
     void showPauseMenu()
