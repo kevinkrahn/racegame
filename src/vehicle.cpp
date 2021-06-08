@@ -16,6 +16,7 @@ Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
         Driver* driver, VehicleTuning&& tuning, u32 vehicleIndex, i32 cameraIndex)
 {
     this->cameraTarget = transform.position() - camDistance * 0.5f;
+    this->cameraTargetMovePoint = this->cameraTarget;
     this->cameraFrom = cameraTarget;
     this->startTransform = transform;
     this->targetOffset = startOffset;
@@ -311,22 +312,20 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
             cameraTarget - getForwardVector() * 10.f + Vec3(0, 0, 3.f), 8.f, deltaTime);
     rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
 #else
+    /*
     Vec3 forwardVector = vehiclePhysics.getForwardVector();
     f32 forwardSpeed = vehiclePhysics.getForwardSpeed();
     cameraTarget = smoothMove(cameraTarget,
             pos + Vec3(normalize(forwardVector.xy), 0.f) * forwardSpeed * 0.3f,
             5.f, deltaTime);
-    // TODO: Find the best camera setup (speed, and whether to follow forward direction or velocity)
-    /*
-    cameraTarget = smoothMove(cameraTarget,
-            pos + Vec3(normalize(forwardVector.xy), 0.f) * forwardSpeed * 0.5f,
-            3.f, deltaTime);
     */
-    /*
     auto vel = getRigidBody()->getLinearVelocity();
-    cameraTarget = smoothMove(cameraTarget,
-            pos + Vec3(vel.x, vel.y, 0.f) * 0.5f, 8.f, deltaTime);
-    */
+    if (deadTimer == 0.f)
+    {
+        cameraTargetMovePoint = pos + Vec3(vel.x, vel.y, 0.f) * 0.375f;
+    }
+    cameraTarget = smoothMove(cameraTarget, cameraTargetMovePoint, 6.f, deltaTime);
+
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
     Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
     cameraFrom = cameraTarget + cameraDir * camDistance;

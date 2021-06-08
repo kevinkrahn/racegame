@@ -49,6 +49,7 @@ public:
     // gameplay data
     VehicleInput input;
 	bool finishedRace = false;
+	Vec3 cameraTargetMovePoint;
     Vec3 cameraTarget;
     Vec3 cameraFrom;
     f32 hitPoints = 0.f;
