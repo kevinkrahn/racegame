@@ -171,6 +171,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
 {
     TIMED_BLOCK();
 
+    // TODO: replace this using gui api
     if (cameraIndex >= 0)
     {
         Font& font1 = g_res.getFont("font_bold", (u32)(g_game.windowHeight * 0.04f));
@@ -202,10 +203,10 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         char* p = tmpStr("%u", lap);
         const char* lapStr = "LAP";
         f32 lapWidth = font1.stringDimensions(lapStr).x;
-        ui::text(&font1, lapStr, offset + Vec2(o20, d.y*o20), Vec3(1.f));
-        ui::text(&font2, p,
+        ui::text(0, &font1, lapStr, offset + Vec2(o20, d.y*o20), Vec3(1.f));
+        ui::text(0, &font2, p,
                     offset + Vec2(o25 + lapWidth, d.y*o20), Vec3(1.f));
-        ui::text(&font1, tmpStr("/%u", scene->getTotalLaps()),
+        ui::text(0, &font1, tmpStr("/%u", scene->getTotalLaps()),
                     offset + Vec2(o25 + lapWidth + font2.stringDimensions(p).x, d.y*o20),
                     Vec3(1.f));
 
@@ -217,8 +218,8 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         Vec3 col = mix(Vec3(0, 1, 0), Vec3(1, 0, 0), placement / 8.f);
 
         p = tmpStr("%u", placement + 1);
-        ui::text(&font2, p, offset + Vec2(o200, d.y*o20), col);
-        ui::text(&font1, placementSuffix,
+        ui::text(0, &font2, p, offset + Vec2(o200, d.y*o20), col);
+        ui::text(0, &font1, placementSuffix,
                     offset + Vec2(o200 + font2.stringDimensions(p).x, d.y*o20), col);
 
         // weapons
@@ -264,7 +265,7 @@ void Vehicle::drawHUD(Renderer* renderer, f32 deltaTime)
         {
             Vec2 p = floor(layout.offsets[cameraIndex] * dim + layout.scale * dim * 0.5f -
                     Vec2(0, layout.scale.y * dim.y * 0.3f) + Vec2(0, count * dim.y * 0.04f));
-            ui::text(&font3, it->text, p,
+            ui::text(0, &font3, it->text, p,
                 it->color, (sinf(it->time * 6.f) + 1.f) * 0.3f + 0.5f,
                 max(1.7f - it->time * 3.f, 1.f), HAlign::CENTER, VAlign::CENTER);
             ++count;

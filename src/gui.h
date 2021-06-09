@@ -108,6 +108,7 @@ namespace gui
         f32 alpha;
         Vec2 scissorPos;
         Vec2 scissorSize;
+        i32 priority;
     };
 
     // Use pointers to WidgetStateNodes to identify the input captures
@@ -180,6 +181,8 @@ namespace gui
         Widget* position(f32 x, f32 y) { return absolutePosition(Vec2(x, y) * guiScale); }
         Widget* size(Vec2 size) { desiredSize = size * guiScale; return this;}
         Widget* size(f32 sizeX, f32 sizeY) { return size(Vec2(sizeX, sizeY)); }
+        //Widget* grow() { return size(INFINITY, INFINITY); }
+        //Widget* shrink() { return size(0, 0); }
         Widget* addFlags(u32 flags) { this->flags |= flags; return this; }
         Widget* findSelectedWidget(WidgetStateNode* stateNode);
 

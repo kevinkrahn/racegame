@@ -5,15 +5,6 @@
 
 namespace ui
 {
-    enum Priority
-    {
-        BORDER = -100,
-        BG = -50,
-        IMAGE = 10,
-        ICON = 50,
-        TEXT = 100,
-    };
-
     struct Vertex
     {
         Vec2 xy;
@@ -240,7 +231,7 @@ namespace ui
         Vec2 scissorSize;
     };
 
-    void text(Font* font, const char* s, Vec2 pos, Vec3 color, f32 alpha=1.f,
+    void text(i32 priority, Font* font, const char* s, Vec2 pos, Vec3 color, f32 alpha=1.f,
             f32 scale=1.f, HAlign halign=HAlign::LEFT, VAlign valign=VAlign::TOP)
     {
         static ShaderHandle shader = getShaderHandle("quad2D", {});
@@ -258,7 +249,7 @@ namespace ui
         text.scissorPos = scissorPos;
         text.scissorSize = scissorSize;
 
-        g_game.renderer->add2D(shader, TEXT, [text]{
+        g_game.renderer->add2D(shader, priority, [text]{
             text.font->draw(text.text, text.pos, text.color, text.alpha, text.scale,
                     text.halign, text.valign, text.transform, text.scissorPos, text.scissorSize);
         });

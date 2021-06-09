@@ -567,7 +567,7 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (!(isPaused && renderer->getRenderWorld()->getViewportCount() == 4))
         {
             Vec2 size = trackPreview2D.getSize();
-            ui::rectUV(ui::IMAGE, trackPreview2D.getTexture(), hudTrackPos-size*0.5f,
+            ui::rectUV(0, trackPreview2D.getTexture(), hudTrackPos-size*0.5f,
                         size, {0,1}, {1,0});
         }
     }

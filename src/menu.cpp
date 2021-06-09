@@ -302,7 +302,6 @@ void Menu::displayRaceResults()
     using namespace gui;
 
     auto inputCapture = gui::root->add(InputCapture("Race Results"));
-    makeActive(inputCapture);
 
     auto animation = animateMenu(inputCapture, inputCapture->isEntering());
     animation->onAnimationReverseEnd([&]{
@@ -418,7 +417,6 @@ void Menu::displayStandings()
     using namespace gui;
 
     auto inputCapture = gui::root->add(InputCapture("Standings"));
-    makeActive(inputCapture);
 
     auto animation = animateMenu(inputCapture, inputCapture->isEntering());
     animation->onAnimationReverseEnd([&]{
@@ -494,7 +492,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     if (mode == MAIN_MENU)
     {
         auto inputCapture = gui::root->add(InputCapture("Main Menu"));
-        makeActive(inputCapture);
 
         static Function<void()> selection = []{ assert(false); };
         auto animation = animateMenu(inputCapture, inputCapture->isEntering())
@@ -567,7 +564,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     else if (mode == SETTINGS)
     {
         auto inputCapture = gui::root->add(InputCapture("Settings"));
-        makeActive(inputCapture);
 
         static Function<void()> selection = []{ assert(false); };
         auto animation = animateMenu(inputCapture, inputCapture->isEntering())
@@ -600,7 +596,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     else if (mode == NEW_CHAMPIONSHIP)
     {
         auto inputCapture = gui::root->add(InputCapture("New Championship"));
-        makeActive(inputCapture);
 
         static Function<void()> selection = []{ assert(false); };
         auto animation = animateMenu(inputCapture, inputCapture->isEntering())
@@ -708,7 +703,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     else if (mode == PAUSE_MENU)
     {
         auto inputCapture = gui::root->add(InputCapture("Pause Menu", pauseTimer < 0.1f));
-        makeActive(inputCapture);
 
         auto column = inputCapture
             ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))
@@ -924,7 +918,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             auto inputCapture =
                 (InputCapture*)topLevelRow->add(InputCapture("Garage Car Lot"))->size(0,0);
-            makeActive(inputCapture);
 
             static Function<void()> selection = []{ assert(false); };
             menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
@@ -1057,7 +1050,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             auto inputCapture =
                 (InputCapture*)topLevelRow->add(InputCapture("Garage Upgrades"))->size(0,0);
-            makeActive(inputCapture);
 
             static Function<void()> selection = []{ assert(false); };
             menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
@@ -1141,7 +1133,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             auto inputCapture =
                 (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
-            makeActive(inputCapture);
 
             static Function<void()> selection = []{ assert(false); };
             menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
@@ -1221,7 +1212,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             auto inputCapture =
                 (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
-            makeActive(inputCapture);
 
             static Function<void()> selection = []{ assert(false); };
             menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
@@ -1247,7 +1237,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             auto inputCapture =
                 (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
-            makeActive(inputCapture);
 
             static Function<void()> selection = []{ assert(false); };
             menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
@@ -1328,7 +1317,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
     else if (mode == CHAMPIONSHIP_MENU)
     {
         auto inputCapture = gui::root->add(InputCapture("Championship Menu"));
-        makeActive(inputCapture);
 
         static Function<void()> selection = []{ assert(false); };
         auto animation = animateMenu(inputCapture, inputCapture->isEntering())

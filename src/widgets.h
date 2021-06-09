@@ -33,6 +33,20 @@ namespace gui
         Stack() : Widget("Stack") {}
     };
 
+    struct Sized : public Widget
+    {
+        Constraints constraints;
+
+        Sized(Constraints const& constraints) : Widget("Sized"), constraints(constraints) {}
+
+        virtual void computeSize(Constraints const& constraints) override
+        {
+            this->constraints.maxWidth = clamp(this->constraints.maxWidth, 0.f, root->computedSize.x);
+            this->constraints.maxHeight = clamp(this->constraints.maxHeight, 0.f, root->computedSize.y);
+            Widget::computeSize(this->constraints);
+        }
+    };
+
     struct FontDescription
     {
         const char* fontName;
@@ -68,7 +82,7 @@ namespace gui
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            ui::text(font, text, computedPosition, color.rgb, rtx.alpha * color.a);
+            ui::text(rtx.priority, font, text, computedPosition, color.rgb, rtx.alpha * color.a);
         }
     };
 
@@ -80,9 +94,25 @@ namespace gui
 
         virtual void render(GuiContext& ctx, RenderContext& rtx) override
         {
-            RenderContext r = rtx;
-            r.alpha *= alpha;
-            Widget::render(ctx, r);
+            f32 prevAlpha = rtx.alpha;
+            rtx.alpha *= alpha;
+            Widget::render(ctx, rtx);
+            rtx.alpha = prevAlpha;
+        }
+    };
+
+    struct ZIndex : public Widget
+    {
+        i32 zindex;
+
+        ZIndex(i32 zindex) : Widget("ZIndex"), zindex(zindex) {}
+
+        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        {
+            i32 prevPriority = rtx.priority;
+            rtx.priority = zindex;
+            Widget::render(ctx, rtx);
+            rtx.priority = prevPriority;
         }
     };
 
@@ -151,12 +181,12 @@ namespace gui
             Vec4 color(1.f);
             if (flip)
             {
-                ui::rectUVBlur(0, tex, computedPosition, computedSize, Vec2(0,1), Vec2(1,0),
+                ui::rectUVBlur(rtx.priority, tex, computedPosition, computedSize, Vec2(0,1), Vec2(1,0),
                         color, rtx.alpha);
             }
             else
             {
-                ui::rectBlur(0, tex, computedPosition, computedSize, color, rtx.alpha);
+                ui::rectBlur(rtx.priority, tex, computedPosition, computedSize, color, rtx.alpha);
             }
         }
     };
@@ -224,23 +254,26 @@ namespace gui
         {
             if (borders.top != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition,
+                ui::rectBlur(rtx.priority, nullptr, computedPosition,
                         Vec2(computedSize.x, borders.top), color, rtx.alpha);
             }
             if (borders.bottom != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition + Vec2(0, computedSize.y - borders.bottom),
+                ui::rectBlur(rtx.priority, nullptr, computedPosition + Vec2(0, computedSize.y - borders.bottom),
                         Vec2(computedSize.x, borders.bottom), color, rtx.alpha);
             }
             if (borders.left != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition,
-                        Vec2(borders.left, computedSize.y), color, rtx.alpha);
+                ui::rectBlur(rtx.priority, nullptr, computedPosition + Vec2(0, borders.top),
+                        Vec2(borders.left, computedSize.y - borders.top - borders.bottom),
+                        color, rtx.alpha);
             }
             if (borders.right != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition + Vec2(computedSize.x - borders.right, 0),
-                        Vec2(borders.right, computedSize.y), color, rtx.alpha);
+                ui::rectBlur(rtx.priority, nullptr,
+                        computedPosition + Vec2(computedSize.x - borders.right, borders.top),
+                        Vec2(borders.right, computedSize.y - borders.top - borders.bottom),
+                        color, rtx.alpha);
             }
             Widget::render(ctx, rtx);
         }
@@ -266,23 +299,26 @@ namespace gui
 
             if (borders.top != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition,
+                ui::rectBlur(rtx.priority, nullptr, computedPosition,
                         Vec2(computedSize.x, borders.top), color, rtx.alpha);
             }
             if (borders.bottom != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition + Vec2(0, computedSize.y - borders.bottom),
+                ui::rectBlur(rtx.priority, nullptr, computedPosition + Vec2(0, computedSize.y - borders.bottom),
                         Vec2(computedSize.x, borders.bottom), color, rtx.alpha);
             }
             if (borders.left != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition,
-                        Vec2(borders.left, computedSize.y), color, rtx.alpha);
+                ui::rectBlur(rtx.priority, nullptr, computedPosition + Vec2(0, borders.top),
+                        Vec2(borders.left, computedSize.y - borders.top - borders.bottom),
+                        color, rtx.alpha);
             }
             if (borders.right != 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition + Vec2(computedSize.x - borders.right, 0),
-                        Vec2(borders.right, computedSize.y), color, rtx.alpha);
+                ui::rectBlur(rtx.priority, nullptr,
+                        computedPosition + Vec2(computedSize.x - borders.right, borders.top),
+                        Vec2(borders.right, computedSize.y - borders.top - borders.bottom),
+                        color, rtx.alpha);
             }
         }
     };
@@ -401,7 +437,7 @@ namespace gui
         {
             if (backgroundColor.a > 0.f)
             {
-                ui::rectBlur(0, nullptr, computedPosition + Vec2(margin.left, margin.top),
+                ui::rectBlur(rtx.priority, nullptr, computedPosition + Vec2(margin.left, margin.top),
                     computedSize - Vec2(margin.left + margin.right, margin.top + margin.bottom),
                     backgroundColor, rtx.alpha);
             }
@@ -1095,17 +1131,20 @@ namespace gui
     struct InputCapture : public Widget
     {
         const char* name;
-        bool blockInput = false;
+        bool blockInput;
+        bool autoActivate;
+
         bool hideChildrenWhenInactive = false;
         bool active = false;
 
         struct InputCaptureState
         {
             bool isEntering = true;
+            bool isFirstFrameActive = true;
         };
 
-        InputCapture(const char* name=nullptr, bool blockInput=false)
-            : Widget("InputCapture"), name(name), blockInput(blockInput)
+        InputCapture(const char* name=nullptr, bool blockInput=false, bool autoActivate=true)
+            : Widget("InputCapture"), name(name), blockInput(blockInput), autoActivate(autoActivate)
         {
             flags |= WidgetFlags::INPUT_CAPTURE;
         }
@@ -1115,6 +1154,15 @@ namespace gui
             pushID(name ? name : "InputCapture");
             addInputCapture(this);
             active = isActiveInputCapture(this);
+            auto state = getState<InputCaptureState>(this);
+            if (state->isFirstFrameActive)
+            {
+                if (autoActivate)
+                {
+                    makeActive(this);
+                }
+                state->isFirstFrameActive = false;
+            }
             return this;
         }
 
