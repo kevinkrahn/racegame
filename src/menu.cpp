@@ -141,18 +141,11 @@ void Menu::startQuickRace()
     Array<AIDriverData*> aiDrivers;
     g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
         AIDriverData* d = (AIDriverData*)r;
-        if (d->vehicles.size() > 0)
+        if (d->usedForChampionshipAI && d->vehicles.size() > 0)
         {
-            bool valid = true;
-            for (auto& v : d->vehicles)
-            {
-                if (!g_res.getVehicle(v.vehicleGuid))
-                {
-                    valid = false;
-                }
-            }
-            if (valid)
-            {
+            if (!d->vehicles.findIf([](AIVehicleConfiguration const& v) {
+                return !g_res.getVehicle(v.vehicleGuid);
+            })) {
                 aiDrivers.push(d);
             }
         }
@@ -220,18 +213,11 @@ void Menu::beginChampionship()
     Array<AIDriverData*> aiDrivers;
     g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
         AIDriverData* d = (AIDriverData*)r;
-        if (d->vehicles.size() > 0)
+        if (d->usedForChampionshipAI && d->vehicles.size() > 0)
         {
-            bool valid = true;
-            for (auto& v : d->vehicles)
-            {
-                if (!g_res.getVehicle(v.vehicleGuid))
-                {
-                    valid = false;
-                }
-            }
-            if (valid)
-            {
+            if (!d->vehicles.findIf([](AIVehicleConfiguration const& v) {
+                return !g_res.getVehicle(v.vehicleGuid);
+            })) {
                 aiDrivers.push(d);
             }
         }
@@ -277,6 +263,7 @@ void Menu::updateVehiclePreviews()
 void Menu::openRaceResults()
 {
     mode = RACE_RESULTS;
+    updateVehiclePreviews();
     // generate fake race results
 #if 0
     Scene* scene = g_game.currentScene.get();
@@ -302,6 +289,12 @@ void Menu::openRaceResults()
         scene->getRaceResults().push(result);
     }
 #endif
+}
+
+void Menu::openChampionshipMenu()
+{
+    mode = CHAMPIONSHIP_MENU;
+    updateVehiclePreviews();
 }
 
 void Menu::displayRaceResults()
@@ -430,7 +423,7 @@ void Menu::displayStandings()
     auto animation = animateMenu(inputCapture, inputCapture->isEntering());
     animation->onAnimationReverseEnd([&]{
         clearInputCaptures();
-        mode = CHAMPIONSHIP_MENU;
+        openChampionshipMenu();
         RandomSeries series = randomSeed();
         if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
         {
@@ -526,8 +519,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             selection = [&] {
                 g_game.loadGame();
                 clearInputCaptures();
-                mode = CHAMPIONSHIP_MENU;
                 g_game.changeScene(championshipTracks[g_game.state.currentRace]);
+                openChampionshipMenu();
             };
         });
         button(column, "QUICK RACE", "Jump into a race without delay!", [&]{
@@ -1130,8 +1123,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         if (garage.playerIndex >= playerCount)
                         {
                             garage.initialCarSelect = false;
-                            mode = CHAMPIONSHIP_MENU;
-                            updateVehiclePreviews();
+                            openChampionshipMenu();
                         }
                         else
                         {
@@ -1140,7 +1132,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     }
                     else
                     {
-                        mode = CHAMPIONSHIP_MENU;
+                        openChampionshipMenu();
                     }
                 };
             }, ButtonFlags::BACK);

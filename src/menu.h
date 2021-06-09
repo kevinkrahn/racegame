@@ -65,6 +65,7 @@ class Menu
     void resetGarage();
     void openInitialCarLotMenu(u32 playerIndex);
     void updateVehiclePreviews();
+    void openChampionshipMenu();
 
     void displayRaceResults();
     void displayStandings();
