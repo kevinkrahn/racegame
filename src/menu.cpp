@@ -9,6 +9,100 @@
 #include "vehicle.h"
 #include "widgets.h"
 
+constexpr f32 animationLength = 0.4f;
+const gui::FontDescription smallFont = { "font", 20 };
+const gui::FontDescription smallFontBold = { "font_bold", 20 };
+const gui::FontDescription smallishFont = { "font", 24 };
+const gui::FontDescription smallishFontBold = { "font_bold", 24 };
+const gui::FontDescription mediumFont = { "font", 30 };
+const gui::FontDescription mediumFontBold = { "font_bold", 30 };
+const gui::FontDescription bigFont = { "font_bold", 58 };
+
+static const char* helpMessage = "";
+
+template <typename T>
+gui::Button* button(gui::Widget* parent, const char* name, const char* helpText, T const& onPress,
+        u32 buttonFlags=0, Texture* icon=nullptr) {
+    return (gui::Button*)parent
+        ->add(gui::PositionDelay(0.65f, name))->size(0,0)
+        ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true))->size(0,0)
+        ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+        ->add(gui::TextButton(mediumFont, name, buttonFlags, icon))
+            ->onPress(onPress)
+            ->onGainedSelect([helpText]{ helpMessage = helpText; })
+            ->size(Vec2(INFINITY, 70));
+};
+
+gui::Button* squareButton(gui::Widget* parent, Texture* tex, const char* name, const char* price,
+        Vec2 size, i32 upgradeCount=0, i32 upgradeMax=0, f32 padding=0.f, bool flipImage=false) {
+    auto btn = parent
+        ->add(gui::PositionDelay(0.7f, name))->size(0,0)
+        ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
+        ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+        ->add(gui::Button(gui::ButtonFlags::NO_ACTIVE, name, 0.f))->size(size);
+    btn->add(gui::Container(gui::Insets(padding)))->add(gui::Image(tex, false, flipImage));
+    btn
+        ->add(gui::Container(gui::Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
+        ->add(gui::Text(smallFont, name, gui::COLOR_TEXT));
+    btn
+        ->add(gui::Container(gui::Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::BOTTOM))
+        ->add(gui::Text(smallFont, price, gui::COLOR_TEXT));
+    if (upgradeMax > 0)
+    {
+        Texture* tex1 = g_res.getTexture("button");
+        Texture* tex2 = g_res.getTexture("button_glow");
+        f32 notchSize = 16;
+
+        auto column = btn
+            ->add(gui::Container(gui::Insets(10), {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
+            ->add(gui::Column(5))->size(0, 0);
+        for (i32 i=0; i<upgradeMax; ++i)
+        {
+            auto stack = column->add(gui::Stack())->size(notchSize, notchSize);
+            stack->add(gui::Image(tex1, false));
+            if (i < upgradeCount)
+            {
+                stack->add(gui::Image(tex2, false));
+            }
+        }
+    }
+    return (gui::Button*)btn;
+};
+
+gui::Button* garageButton(Menu* menu, gui::Widget* parent, u32 driverIndex, const char* description, Vec2 size) {
+    Driver& driver = g_game.state.drivers[driverIndex];
+    const char* name = driver.playerName.data();
+    auto btn = parent
+        ->add(gui::PositionDelay(0.7f, name))->size(0,0)
+        ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
+        ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+        ->add(gui::Button(0, name, 0.f))->size(size);
+    // TODO: do the vehicle previews better somehow
+    Texture* vehiclePreviewTex = menu->vehiclePreviews[driverIndex].getTexture();
+    auto row = btn->add(gui::Row());
+    row->add(gui::Image(vehiclePreviewTex, false, true))->size(size.y, size.y);
+    auto col = row->add(gui::Container(gui::Insets(15)))->size(0,0)->add(gui::Column(15))->size(0,0);
+    col->add(gui::Text(mediumFont, tmpStr("%s's Garage", name), gui::COLOR_TEXT));
+    col->add(gui::Text(smallishFontBold, tmpStr("Credits: %i", driver.credits), gui::COLOR_TEXT));
+    return (gui::Button*)btn;
+};
+
+gui::Widget* panel(gui::Widget* parent, Vec2 size, bool outline=true) {
+    if (outline)
+    {
+        return parent->add(gui::Outline(gui::Insets(2), gui::COLOR_OUTLINE_NOT_SELECTED))->size(0,0)
+                        ->add(gui::Container(gui::Insets(40), {}, gui::COLOR_BG_PANEL))->size(size);
+    }
+    return parent->add(gui::Container(gui::Insets(40), {}, gui::COLOR_BG_PANEL))->size(size);
+};
+
+gui::Animation* animateMenu(gui::Widget* parent, bool animateIn, Vec2 size=Vec2(INFINITY)) {
+    return (gui::Animation*)parent
+        ->add(gui::Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))->size(size)
+        ->add(gui::FadeAnimation(0.f, 1.f, animationLength, animateIn))->size(0,0)
+        ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(0,0);
+};
+
 const char* championshipTracks[] = {
     // a
     "race1",
@@ -104,7 +198,7 @@ void Menu::resetGarage()
     memset(upgradeStats, 0, sizeof(upgradeStats));
 }
 
-void Menu::showInitialCarLotMenu(u32 playerIndex)
+void Menu::openInitialCarLotMenu(u32 playerIndex)
 {
     garage.initialCarSelect = true;
     garage.previewVehicle = nullptr;
@@ -153,7 +247,7 @@ void Menu::beginChampionship()
         g_game.state.drivers.back().aiUpgrades(series);
     }
     garage.playerIndex = 0;
-    showInitialCarLotMenu(garage.playerIndex);
+    openInitialCarLotMenu(garage.playerIndex);
 }
 
 void Menu::updateVehiclePreviews()
@@ -180,102 +274,229 @@ void Menu::updateVehiclePreviews()
     }
 }
 
-void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
+void Menu::openRaceResults()
+{
+    mode = RACE_RESULTS;
+    // generate fake race results
+#if 0
+    Scene* scene = g_game.currentScene.get();
+    scene->getRaceResults().clear();
+    RandomSeries series = randomSeed();
+    g_game.state.drivers.clear();
+    for (u32 i=0; i<10; ++i)
+    {
+        g_game.state.drivers.push(Driver(i==0, i==0, i==0, 0, i%2, 0));
+    }
+    for (u32 i=0; i<10; ++i)
+    {
+        RaceResult result;
+        result.driver = &g_game.state.drivers[i];
+        result.finishedRace = true;
+        result.placement = i;
+        result.statistics.accidents = irandom(series, 0, 10);
+        result.statistics.destroyed = irandom(series, 0, 10);
+        result.statistics.frags = irandom(series, 0, 50);
+        result.statistics.bonuses.push(RaceBonus{ "SMALL BONUS", 100 });
+        result.statistics.bonuses.push(RaceBonus{ "MEDIUM BONUS", 400 });
+        result.statistics.bonuses.push(RaceBonus{ "BIG BONUS", 500 });
+        scene->getRaceResults().push(result);
+    }
+#endif
+}
+
+void Menu::displayRaceResults()
 {
     using namespace gui;
 
-    constexpr f32 animationLength = 0.4f;
+    auto inputCapture = gui::root->add(InputCapture("Race Results"));
+    makeActive(inputCapture);
 
-    static const char* helpMessage = "";
+    auto animation = animateMenu(inputCapture, inputCapture->isEntering());
+    animation->onAnimationReverseEnd([&]{
+        clearInputCaptures();
 
-    FontDescription smallFont = { "font", 20 };
-    FontDescription smallFontBold = { "font_bold", 20 };
-    FontDescription smallishFont = { "font", 24 };
-    FontDescription smallishFontBold = { "font_bold", 24 };
-    FontDescription mediumFont = { "font", 30 };
-    FontDescription mediumFontBold = { "font_bold", 30 };
-    FontDescription bigFont = { "font_bold", 60 };
-
-    auto button = [&](gui::Widget* parent, const char* name, const char* helpText, auto onPress,
-            u32 buttonFlags=0, Texture* icon=nullptr) {
-        Vec2 btnSize(INFINITY, 70);
-        return parent
-            ->add(PositionDelay(0.65f, name))->size(0,0)
-            ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(btnSize)
-            ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))
-            ->add(TextButton(mediumFont, name, buttonFlags, icon))
-                ->onPress(onPress)
-                ->onGainedSelect([helpText]{ helpMessage = helpText; });
-    };
-
-    auto squareButton = [&](gui::Widget* parent, Texture* tex, const char* name, const char* price,
-            Vec2 size, i32 upgradeCount=0, i32 upgradeMax=0, f32 padding=0.f, bool flipImage=false) {
-        auto btn = parent
-            ->add(PositionDelay(0.7f, name))->size(0,0)
-            ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
-            ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
-            ->add(Button(ButtonFlags::NO_ACTIVE, name, 0.f))->size(size);
-        btn->add(Container(Insets(padding)))->add(Image(tex, false, flipImage));
-        btn
-            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
-            ->add(Text(smallFont, name, COLOR_TEXT));
-        btn
-            ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::BOTTOM))
-            ->add(Text(smallFont, price, COLOR_TEXT));
-        if (upgradeMax > 0)
+        if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
         {
-            Texture* tex1 = g_res.getTexture("button");
-            Texture* tex2 = g_res.getTexture("button_glow");
-            f32 notchSize = 16;
-
-            auto column = btn
-                ->add(Container(Insets(10), {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
-                ->add(Column(5))->size(0, 0);
-            for (i32 i=0; i<upgradeMax; ++i)
+            for (auto& r : g_game.currentScene->getRaceResults())
             {
-                auto stack = column->add(Stack())->size(notchSize, notchSize);
-                stack->add(Image(tex1, false));
-                if (i < upgradeCount)
+                r.driver->lastPlacement = r.placement;
+            }
+
+            mode = STANDINGS;
+            for (auto& row : g_game.currentScene->getRaceResults())
+            {
+                row.driver->credits += row.getCreditsEarned();
+                row.driver->leaguePoints += row.getLeaguePointsEarned();
+            }
+            ++g_game.state.currentRace;
+        }
+        else
+        {
+            openMainMenu();
+            g_game.currentScene->isCameraTourEnabled = true;
+        }
+    });
+
+    static const f32 columnWidth[] = { 65, 195, 145, 145, 115, 115, 205 };
+    static const char* columnTitle[] = {
+        "NO.",
+        "DRIVER",
+        "ACCIDENTS",
+        "DESTROYED",
+        "FRAGS",
+        "BONUS",
+        "CREDITS EARNED"
+    };
+    Vec2 iconSize(58);
+
+    auto column = animation
+        ->add(gui::Container(Insets(0, 10), {}, gui::COLOR_BG_PANEL))->size(0, 0)
+        ->add(Column(10, HAlign::CENTER))->size(0, 0);
+
+    column
+        ->add(Container(Insets(10)))->size(0, 70)
+        ->add(Text(bigFont, "RACE RESULTS"));
+
+    auto row = column->add(Row(8))->size(0,0);
+
+    row->add(Container())->size(columnWidth[0], 0)
+       ->add(Text(smallishFontBold, columnTitle[0]));
+    row->add(Container())->size(iconSize.x, 0);
+    row->add(Container())->size(columnWidth[1], 0)
+       ->add(Text(smallishFontBold, columnTitle[1]));
+    row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[2], 0)
+       ->add(Text(smallishFontBold, columnTitle[2]));
+    row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[3], 0)
+       ->add(Text(smallishFontBold, columnTitle[3]));
+    row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[4], 0)
+       ->add(Text(smallishFontBold, columnTitle[4]));
+    row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[5], 0)
+       ->add(Text(smallishFontBold, columnTitle[5]));
+    if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+    {
+        row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[6], 0)
+           ->add(Text(smallishFontBold, columnTitle[6]));
+    }
+
+    for (u32 i=0; i<g_game.state.drivers.size(); ++i)
+    {
+        auto row = column
+            ->add(gui::PositionDelay(0.75f, tmpStr("row %i", i)))->size(0,0)
+            ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true))->size(0,0)
+            ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+            ->add(Container(Insets(20, 0), {}, Vec4(0, 0, 0, 0.8f)))->size(0,0)
+            ->add(Row(8, HAlign::LEFT, VAlign::CENTER))->size(0,0);
+
+        auto& results = g_game.currentScene->getRaceResults()[i];
+        FontDescription font = results.driver->isPlayer ? smallishFontBold : smallishFont;
+        Vec4 color = results.driver->isPlayer ? gui::COLOR_OUTLINE_SELECTED : Vec4(1.f);
+        i32 driverIndex = g_game.state.drivers.findIndexIf([&results](Driver& d) {
+            return &d == results.driver;
+        });
+
+        row->add(Stack())->size(columnWidth[0], 0)
+           ->add(Text(font, tmpStr("%i", results.placement + 1), color));
+        row->add(Image(vehiclePreviews[driverIndex].getTexture(), false, true))->size(iconSize);
+        row->add(Stack())->size(columnWidth[1], 0)
+           ->add(Text(font, results.driver->playerName.data(), color));
+        row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[2], 0)
+           ->add(Text(font, tmpStr("%i", results.statistics.accidents), color));
+        row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[3], 0)
+           ->add(Text(font, tmpStr("%i", results.statistics.destroyed), color));
+        row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[4], 0)
+           ->add(Text(font, tmpStr("%i", results.statistics.frags), color));
+        row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[5], 0)
+           ->add(Text(font, tmpStr("%i", results.getBonus()), color));
+        if (g_game.state.gameMode == GameMode::CHAMPIONSHIP)
+        {
+            row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[6], 0)
+               ->add(Text(font, tmpStr("%i", results.getCreditsEarned()), color));
+        }
+    }
+
+    button(column, "OKAY", "", [this, inputCapture]{
+        g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
+        inputCapture->setEntering(false);
+    }, ButtonFlags::BACK)->size(250, 70);
+}
+
+void Menu::displayStandings()
+{
+    using namespace gui;
+
+    auto inputCapture = gui::root->add(InputCapture("Standings"));
+    makeActive(inputCapture);
+
+    auto animation = animateMenu(inputCapture, inputCapture->isEntering());
+    animation->onAnimationReverseEnd([&]{
+        clearInputCaptures();
+        mode = CHAMPIONSHIP_MENU;
+        RandomSeries series = randomSeed();
+        if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
+        {
+            for (auto& driver : g_game.state.drivers)
+            {
+                if (!driver.isPlayer)
                 {
-                    stack->add(Image(tex2, false));
+                    driver.aiUpgrades(series);
                 }
             }
+            g_game.saveGame();
+            g_game.changeScene(championshipTracks[g_game.state.currentRace]);
         }
-        return (Button*)btn;
-    };
+    });
 
-    auto garageButton = [&](gui::Widget* parent, u32 driverIndex, const char* description, Vec2 size) {
-        Driver& driver = g_game.state.drivers[driverIndex];
-        const char* name = driver.playerName.data();
-        auto btn = parent
-            ->add(PositionDelay(0.7f, name))->size(0,0)
-            ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
-            ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
-            ->add(Button(0, name, 0.f))->size(size);
-        Texture* vehiclePreviewTex = vehiclePreviews[driverIndex].getTexture();
-        auto row = btn->add(Row());
-        row->add(Image(vehiclePreviewTex, false, true))->size(size.y, size.y);
-        auto col = row->add(Container(Insets(15)))->size(0,0)->add(Column(15))->size(0,0);
-        col->add(Text(mediumFont, tmpStr("%s's Garage", name), COLOR_TEXT));
-        col->add(Text(smallishFontBold, tmpStr("Credits: %i", driver.credits), COLOR_TEXT));
-        return (Button*)btn;
-    };
+    auto column = animation
+        ->add(gui::Container(Insets(0, 10), {}, gui::COLOR_BG_PANEL))->size(0, 0)
+        ->add(Column(10, HAlign::CENTER))->size(0, 0);
 
-    auto panel = [&](gui::Widget* parent, Vec2 size, bool outline=true) {
-        if (outline)
-        {
-            return parent->add(Outline(Insets(2), COLOR_OUTLINE_NOT_SELECTED))->size(0,0)
-                         ->add(Container(Insets(40), {}, COLOR_BG_PANEL))->size(size);
-        }
-        return parent->add(Container(Insets(40), {}, COLOR_BG_PANEL))->size(size);
-    };
+    column
+        ->add(Container(Insets(10)))->size(0, 70)
+        ->add(Text(bigFont, "STANDINGS"));
 
-    auto animateMenu = [](gui::Widget* parent, bool animateIn, Vec2 size=Vec2(INFINITY)) {
-        return (ScaleAnimation*)parent
-            ->add(Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))->size(size)
-            ->add(FadeAnimation(0.f, 1.f, animationLength, animateIn))->size(0,0)
-            ->add(ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(0,0);
-    };
+    SmallArray<Driver*, 10> sortedDrivers;
+    for(auto& driver : g_game.state.drivers)
+    {
+        sortedDrivers.push(&driver);
+    }
+    sortedDrivers.sort([](Driver* a, Driver* b) { return a->leaguePoints > b->leaguePoints; });
+
+    for (u32 i=0; i<sortedDrivers.size(); ++i)
+    {
+        Driver* driver = sortedDrivers[i];
+        FontDescription font = driver->isPlayer ? smallishFontBold : smallishFont;
+        Vec4 color = driver->isPlayer ? COLOR_OUTLINE_SELECTED : Vec4(1.f);
+
+        auto row = column
+            ->add(gui::PositionDelay(0.75f, tmpStr("row %i", i)))->size(0,0)
+            ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true))->size(0,0)
+            ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+            ->add(Container(Insets(20, 0), {}, Vec4(0, 0, 0, 0.8f)))->size(0,0)
+            ->add(Row(8, HAlign::LEFT, VAlign::CENTER))->size(0,0);
+
+        row->add(Stack())->size(50, 0)
+           ->add(Text(font, tmpStr("%i", i+1), color));
+
+        Vec2 iconSize(64);
+        row->add(Image(vehiclePreviews[driver - g_game.state.drivers.begin()].getTexture(), false, true))
+           ->size(iconSize);
+
+        row->add(Stack())->size(200, 0)
+           ->add(Text(font, driver->playerName.data(), color));
+
+        row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(220, 0)
+           ->add(Text(mediumFontBold, tmpStr("%i", driver->leaguePoints), color));
+    }
+
+    button(column, "OKAY", "", [this, inputCapture]{
+        g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
+        inputCapture->setEntering(false);
+    }, ButtonFlags::BACK)->size(250, 70);
+}
+
+void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
+{
+    using namespace gui;
 
     if (mode == MAIN_MENU)
     {
@@ -301,14 +522,13 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             };
         });
         button(column, "LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
-            /*
-            animateIn = false;
+            inputCapture->setEntering(false);
             selection = [&] {
                 g_game.loadGame();
-                showChampionshipMenu();
+                clearInputCaptures();
+                mode = CHAMPIONSHIP_MENU;
                 g_game.changeScene(championshipTracks[g_game.state.currentRace]);
             };
-            */
         });
         button(column, "QUICK RACE", "Jump into a race without delay!", [&]{
             inputCapture->setEntering(false);
@@ -336,6 +556,11 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             };
         });
         button(column, "CHALLENGES", "Challenge things.", [&]{
+            inputCapture->setEntering(false);
+            selection = [&] {
+                clearInputCaptures();
+                openRaceResults();
+            };
         });
         button(column, "EXIT", "Terminate your racing experience.", [&]{
             g_game.shouldExit = true;
@@ -521,7 +746,6 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             clearInputCaptures();
             g_game.currentScene->setPaused(false);
             g_game.currentScene->forfeitRace();
-            mode = MAIN_MENU;
         });
 
         pauseMenuButton("QUIT TO DESKTOP", []{
@@ -911,7 +1135,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         }
                         else
                         {
-                            showInitialCarLotMenu(garage.playerIndex);
+                            openInitialCarLotMenu(garage.playerIndex);
                         }
                     }
                     else
@@ -1129,7 +1353,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             Driver& driver = g_game.state.drivers[driverIndex];
             if (driver.isPlayer)
             {
-                garageButton(column, driverIndex, "Buy, sell, or upgrade your vehicle.", Vec2(0, 120))
+                garageButton(this, column, driverIndex, "Buy, sell, or upgrade your vehicle.", Vec2(0, 120))
                     ->onPress([inputCapture, this, playerIndex]{
                     inputCapture->setEntering(false);
                     selection = [this, playerIndex] {
@@ -1160,12 +1384,10 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         });
 
         button(column, "STANDINGS", "View the current championship standings.", [&]{
-            /*
             inputCapture->setEntering(false);
             selection = [&] {
-                // TODO
+                mode = STANDINGS;
             };
-            */
         });
 
         button(column, "QUIT", "Return to main menu.", [&]{
@@ -1181,6 +1403,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         g_game.currentScene->updateTrackPreview(g_game.renderer.get(), trackPreviewSize);
         Texture* trackTex = g_game.currentScene->getTrackPreview2D().getTexture();
         // TODO: draw the track preview
+    }
+    else if (mode == RACE_RESULTS)
+    {
+        displayRaceResults();
+    }
+    else if (mode == STANDINGS)
+    {
+        displayStandings();
     }
 
     /*

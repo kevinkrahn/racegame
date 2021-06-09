@@ -412,8 +412,12 @@ namespace gui
     struct Row : public Widget
     {
         f32 itemSpacing;
+        f32 totalWidthOfChildren;
+        HAlign halign;
+        VAlign valign;
 
-        Row(f32 itemSpacing=0.f) : Widget("Row"), itemSpacing(itemSpacing * guiScale) {}
+        Row(f32 itemSpacing=0.f, HAlign halign = HAlign::LEFT, VAlign valign = VAlign::TOP)
+            : Widget("Row"), itemSpacing(itemSpacing * guiScale), halign(halign), valign(valign) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -423,19 +427,19 @@ namespace gui
             childConstraints.minHeight = 0.f;
             childConstraints.maxHeight = constraints.maxHeight;
 
-            f32 totalWidth = 0.f;
+            totalWidthOfChildren = 0.f;
             f32 maxHeight = 0.f;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
                 child->computeSize(childConstraints);
-                totalWidth += child->computedSize.x + itemSpacing;
+                totalWidthOfChildren += child->computedSize.x + itemSpacing;
                 maxHeight = max(maxHeight, child->computedSize.y);
                 assert(child->desiredSize.x != INFINITY);
             }
 
             computedSize.x = desiredSize.x > 0.f
                 ? clamp(desiredSize.x, constraints.minWidth, constraints.maxWidth)
-                : totalWidth - itemSpacing;
+                : totalWidthOfChildren - itemSpacing;
             computedSize.y = desiredSize.y > 0.f
                 ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
                 : maxHeight;
@@ -446,10 +450,39 @@ namespace gui
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->positionWithinParent = child->desiredPosition + Vec2(offset, 0.f);
+                if (halign == HAlign::LEFT)
+                {
+                    child->positionWithinParent.x = child->desiredPosition.x + offset;
+                    offset += child->computedSize.x + itemSpacing;
+                }
+                else if (halign == HAlign::RIGHT)
+                {
+                    offset += child->computedSize.x + itemSpacing;
+                    child->positionWithinParent.x = computedSize.x - offset + child->desiredPosition.x;
+                }
+                else if (halign == HAlign::CENTER)
+                {
+                    child->positionWithinParent.x = 0.5f * (computedSize.x - totalWidthOfChildren)
+                        + offset + child->desiredPosition.x;
+                    offset += child->computedSize.x + itemSpacing;
+                }
+
+                if (valign == VAlign::TOP)
+                {
+                    child->positionWithinParent.y = child->desiredPosition.y;
+                }
+                else if (valign == VAlign::BOTTOM)
+                {
+                    child->positionWithinParent.y = computedSize.y - child->desiredPosition.y;
+                }
+                else if (valign == VAlign::CENTER)
+                {
+                    child->positionWithinParent.y =
+                        0.5f * (computedSize.y - child->computedSize.y) - child->desiredPosition.y;
+                }
+
                 child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
-                offset += child->computedSize.x + itemSpacing;
             }
         }
     };
@@ -457,8 +490,12 @@ namespace gui
     struct Column : public Widget
     {
         f32 itemSpacing;
+        f32 totalHeightOfChildren;
+        HAlign halign;
+        VAlign valign;
 
-        Column(f32 itemSpacing=0.f) : Widget("Column"), itemSpacing(itemSpacing * guiScale) {}
+        Column(f32 itemSpacing=0.f, HAlign halign=HAlign::LEFT, VAlign valign=VAlign::TOP)
+            : Widget("Column"), itemSpacing(itemSpacing * guiScale), halign(halign), valign(valign) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -468,12 +505,12 @@ namespace gui
             childConstraints.minHeight = 0.f;
             childConstraints.maxHeight = constraints.maxHeight;
 
-            f32 totalHeight = 0.f;
+            totalHeightOfChildren = 0.f;
             f32 maxWidth = 0.f;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
                 child->computeSize(childConstraints);
-                totalHeight += child->computedSize.y + itemSpacing;
+                totalHeightOfChildren += child->computedSize.y + itemSpacing;
                 maxWidth = max(maxWidth, child->computedSize.x);
                 assert(child->desiredSize.y != INFINITY);
             }
@@ -483,7 +520,7 @@ namespace gui
                 : maxWidth;
             computedSize.y = desiredSize.y > 0.f
                 ? clamp(desiredSize.y, constraints.minHeight, constraints.maxHeight)
-                : totalHeight - itemSpacing;
+                : totalHeightOfChildren - itemSpacing;
         }
 
         virtual void layout(GuiContext& ctx) override
@@ -491,10 +528,39 @@ namespace gui
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
-                child->positionWithinParent = child->desiredPosition + Vec2(0.f, offset);
+                if (halign == HAlign::LEFT)
+                {
+                    child->positionWithinParent.x = child->desiredPosition.x;
+                }
+                else if (halign == HAlign::RIGHT)
+                {
+                    child->positionWithinParent.x = computedSize.x - child->desiredPosition.x;
+                }
+                else if (halign == HAlign::CENTER)
+                {
+                    child->positionWithinParent.x =
+                        0.5f * (computedSize.x - child->computedSize.x) - child->desiredPosition.x;
+                }
+
+                if (valign == VAlign::TOP)
+                {
+                    child->positionWithinParent.y = child->desiredPosition.y + offset;
+                    offset += child->computedSize.y + itemSpacing;
+                }
+                else if (valign == VAlign::BOTTOM)
+                {
+                    offset += child->computedSize.y + itemSpacing;
+                    child->positionWithinParent.y = computedSize.y - offset + child->desiredPosition.y;
+                }
+                else if (valign == VAlign::CENTER)
+                {
+                    child->positionWithinParent.y = 0.5f * (computedSize.y - totalHeightOfChildren)
+                        + offset + child->desiredPosition.y;
+                    offset += child->computedSize.y + itemSpacing;
+                }
+
                 child->computedPosition = computedPosition + child->positionWithinParent;
                 child->layout(ctx);
-                offset += child->computedSize.y + itemSpacing;
             }
         }
     };
@@ -809,11 +875,10 @@ namespace gui
             auto btn = Button::build();
             if (icon)
             {
-                auto row = btn->add(Row(20));
+                auto row = btn->add(Row(20, HAlign::LEFT, VAlign::CENTER));
                 const f32 iconSize = 48;
                 row->add(Image(icon, false))->size(iconSize, iconSize);
-                row->add(Container({}, {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))->size(0, iconSize)
-                    ->add(Text(font, text));
+                row->add(Text(font, text));
             }
             else
             {

@@ -423,12 +423,12 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
                 {
                     buildRaceResults();
                     stopRace();
-                    g_game.menu.showRaceResults();
+                    g_game.menu.openRaceResults();
                 }
 #else
                     buildRaceResults();
                     stopRace();
-                    g_game.menu.showRaceResults();
+                    g_game.menu.openRaceResults();
 #endif
             }
         }
@@ -1408,7 +1408,7 @@ void Scene::setPaused(bool paused)
     g_audio.setPaused(isPaused);
     if (isPaused)
     {
-        g_game.menu.showPauseMenu();
+        g_game.menu.openPauseMenu();
     }
 }
 
@@ -1418,11 +1418,11 @@ void Scene::forfeitRace()
     {
         buildRaceResults();
         stopRace();
-        g_game.menu.showRaceResults();
+        g_game.menu.openRaceResults();
     }
     else
     {
         stopRace();
-        g_game.menu.showMainMenu();
+        g_game.menu.openMainMenu();
     }
 }

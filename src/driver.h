@@ -18,6 +18,13 @@ struct Driver
     bool useKeyboard = false;
     VehicleConfiguration vehicleConfig;
 
+    Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
+            i32 controllerID=0, i64 vehicleGuid=0, i64 aiDriverGUID=0);
+
+    Driver() = default;
+    Driver(Driver&& other) = default;
+    Driver& operator = (Driver&& other) = default;
+
     VehicleConfiguration* getVehicleConfig()
     {
         return &vehicleConfig;
@@ -63,13 +70,6 @@ struct Driver
         }
         return value / 2;
     }
-
-    Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
-            i32 controllerID=0, i64 vehicleGuid=0, i64 aiDriverGUID=0);
-
-    Driver() = default;
-    Driver(Driver&& other) = default;
-    Driver& operator = (Driver&& other) = default;
 
     void aiUpgrades(RandomSeries& series);
 

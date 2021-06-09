@@ -30,6 +30,8 @@ class Menu
         SETTINGS,
         PAUSE_MENU,
         NEW_CHAMPIONSHIP,
+        RACE_RESULTS,
+        STANDINGS,
         CHAMPIONSHIP_MENU,
         GARAGE_CAR_LOT,
         GARAGE_UPGRADES,
@@ -37,6 +39,8 @@ class Menu
         GARAGE_COSMETICS,
         GARAGE_WEAPON,
     };
+
+    u32 mode = NONE;
 
     u32 currentWeaponSlotIndex = 0;
 
@@ -56,29 +60,29 @@ class Menu
     bool fadeToBlack = false;
     f32 blackFadeAlpha = 1.f;
 
-    RenderWorld vehiclePreviews[10];
-
     void beginChampionship();
     void startQuickRace();
     void resetGarage();
-    void showInitialCarLotMenu(u32 playerIndex);
+    void openInitialCarLotMenu(u32 playerIndex);
     void updateVehiclePreviews();
 
+    void displayRaceResults();
+    void displayStandings();
+
 public:
-    void showPauseMenu()
+    void openPauseMenu()
     {
         pauseTimer = 0.f;
         mode = PAUSE_MENU;
     }
-    void showMainMenu()
+    void openMainMenu()
     {
         mode = MAIN_MENU;
     }
-    void showRaceResults()
-    {
+    void openRaceResults();
 
-    }
     void onUpdate(class Renderer* renderer, f32 deltaTime);
 
-    u32 mode = NONE;
+    // TODO: don't do vehicle previews like this
+    RenderWorld vehiclePreviews[10];
 };

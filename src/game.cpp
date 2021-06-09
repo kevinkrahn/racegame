@@ -156,7 +156,7 @@ void Game::run()
     println("Loaded resources in %.2f seconds", getTime() - loadStartTime);
 
     changeScene("race1");
-    menu.showMainMenu();
+    menu.openMainMenu();
 
     deltaTime = 1.f / (f32)config.graphics.maxFPS;
     SDL_Event event;

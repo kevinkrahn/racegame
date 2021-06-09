@@ -12,7 +12,7 @@ Driver::Driver(bool hasCamera, bool isPlayer, bool useKeyboard,
     this->isPlayer = isPlayer;
 
     this->aiDriverGUID = aiDriverGUID;
-    if (aiDriverGUID != -0 && !isPlayer)
+    if (aiDriverGUID != 0 && !isPlayer)
     {
         this->playerName = g_res.getResource(aiDriverGUID)->name;
     }

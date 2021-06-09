@@ -435,7 +435,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         {
             ImGui::CloseCurrentPopup();
             g_game.isEditing = false;
-            g_game.menu.showMainMenu();
+            g_game.menu.openMainMenu();
         }
         ImGui::SameLine();
         if (ImGui::Button("No", {120, 0}))
