@@ -21,9 +21,8 @@ namespace gui
             FADED             = 1 << 3,
 
             // internal
-            BLOCK_INPUT       = 1 << 8,
-            SELECTABLE        = 1 << 9,
-            INPUT_CAPTURE     = 1 << 10,
+            SELECTABLE        = 1 << 8,
+            INPUT_CAPTURE     = 1 << 9,
 
             // status (set during layout and input phase, read during render phase)
             STATUS_MOUSE_OVER      = 1 << 16,
@@ -187,12 +186,14 @@ namespace gui
         Widget* findSelectedWidget(WidgetStateNode* stateNode);
 
         virtual void computeSize(Constraints const& constraints);
-        virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev,
-                Widget* selectedWidget);
-        virtual bool handleInputEvent(InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev);
-        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input);
-        virtual void layout(GuiContext& ctx);
-        virtual void render(GuiContext& ctx, RenderContext& rtx);
+        virtual bool handleInputCaptureEvent(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& ev, Widget* selectedWidget);
+        virtual bool handleInputEvent(GuiContext const& gtx, InputCaptureContext& ctx,
+                Widget* inputCapture, InputEvent const& ev);
+        virtual bool handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& input);
+        virtual void layout(GuiContext const& gtx);
+        virtual void render(GuiContext const& gtx, RenderContext const& rtx);
         virtual void handleStatus() {}
 
         template <typename T>

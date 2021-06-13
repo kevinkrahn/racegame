@@ -415,6 +415,9 @@ void Renderer::render(f32 deltaTime)
         return a.shader < b.shader;
     });
     */
+    renderItems2D.stableSort([](auto& a, auto& b) {
+        return a.priority < b.priority;
+    });
     ShaderHandle previousShader = -1;
     for (auto const& renderItem : renderItems2D)
     {

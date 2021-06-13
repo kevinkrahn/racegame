@@ -342,6 +342,11 @@ struct VehicleCosmeticConfiguration
         s.field(vinylColors);
         s.field(vinylColorsHSV);
     }
+
+    void computeColorFromHsv()
+    {
+        color = srgb(hsvToRgb(hsv.x, hsv.y, hsv.z));
+    }
 };
 
 struct VehicleConfiguration

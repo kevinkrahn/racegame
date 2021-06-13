@@ -80,7 +80,7 @@ namespace gui
             assert(constraints.maxHeight > 0);
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             ui::text(rtx.priority, font, text, computedPosition, color.rgb, rtx.alpha * color.a);
         }
@@ -92,12 +92,11 @@ namespace gui
 
         Alpha(f32 alpha) : Widget("Alpha"), alpha(alpha) {}
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
-            f32 prevAlpha = rtx.alpha;
-            rtx.alpha *= alpha;
-            Widget::render(ctx, rtx);
-            rtx.alpha = prevAlpha;
+            RenderContext c = rtx;
+            c.alpha *= alpha;
+            Widget::render(ctx, c);
         }
     };
 
@@ -107,12 +106,11 @@ namespace gui
 
         ZIndex(i32 zindex) : Widget("ZIndex"), zindex(zindex) {}
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
-            i32 prevPriority = rtx.priority;
-            rtx.priority = zindex;
-            Widget::render(ctx, rtx);
-            rtx.priority = prevPriority;
+            RenderContext c = rtx;
+            c.priority = zindex;
+            Widget::render(ctx, c);
         }
     };
 
@@ -176,7 +174,7 @@ namespace gui
             assert(childFirst == nullptr);
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             Vec4 color(1.f);
             if (flip)
@@ -240,7 +238,7 @@ namespace gui
                 : maxDim.y + (borders.top + borders.bottom);
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
@@ -250,7 +248,7 @@ namespace gui
             }
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             if (borders.top != 0.f)
             {
@@ -293,7 +291,7 @@ namespace gui
             this->borders.bottom = floorf(borders.bottom * guiScale);
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             Widget::render(ctx, rtx);
 
@@ -393,7 +391,7 @@ namespace gui
                 : maxDim.y + verticalInset;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             for (Widget* child = childFirst; child; child = child->neighbor)
             {
@@ -433,7 +431,7 @@ namespace gui
             }
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             if (backgroundColor.a > 0.f)
             {
@@ -481,7 +479,7 @@ namespace gui
                 : maxHeight;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
@@ -559,7 +557,7 @@ namespace gui
                 : totalHeightOfChildren - itemSpacing;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             f32 offset = 0;
             for (Widget* child = childFirst; child; child = child->neighbor)
@@ -653,7 +651,7 @@ namespace gui
                 : totalHeight - itemSpacing;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             f32 totalHeight = 0.f;
             f32 maxRowHeight = 0.f;
@@ -711,6 +709,11 @@ namespace gui
         Button(u32 buttonFlags=0, const char* name="Button", f32 padding=10.f)
             : Widget(name), name(name), buttonFlags(buttonFlags), padding(padding) {}
 
+        DEFINE_CALLBACK(Button, onPress);
+        DEFINE_CALLBACK(Button, onSelect);
+        DEFINE_CALLBACK(Button, onGainedSelect);
+        DEFINE_CALLBACK(Button, onLostSelect);
+
         struct ButtonState
         {
             f32 hoverIntensity = 0.f;
@@ -723,7 +726,7 @@ namespace gui
         {
             pushID(name);
 
-            flags |= WidgetFlags::BLOCK_INPUT | WidgetFlags::SELECTABLE;
+            flags |= WidgetFlags::SELECTABLE;
 
             outline = (Outline*)this->add(Outline(Insets(2), {}))->size(desiredSize);
             alpha = (Alpha*)outline->add(Alpha(1.f))->size(desiredSize);
@@ -732,11 +735,6 @@ namespace gui
                 ->size(desiredSize);
             return bg;
         }
-
-        DEFINE_CALLBACK(Button, onPress);
-        DEFINE_CALLBACK(Button, onSelect);
-        DEFINE_CALLBACK(Button, onGainedSelect);
-        DEFINE_CALLBACK(Button, onLostSelect);
 
         void press(InputCaptureContext& ctx)
         {
@@ -749,7 +747,7 @@ namespace gui
             g_audio.playSound(g_res.getSound("click"), SoundType::MENU_SFX);
         }
 
-        virtual bool handleInputEvent(
+        virtual bool handleInputEvent(GuiContext const& gtx,
                 InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
         {
             if (flags & WidgetFlags::DISABLED)
@@ -783,7 +781,8 @@ namespace gui
             return false;
         }
 
-        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input)
+        virtual bool handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& input)
             override
         {
             if (flags & WidgetFlags::DISABLED)
@@ -809,7 +808,7 @@ namespace gui
             return true;
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             ButtonState* state = getState<ButtonState>(this);
             RenderContext r = rtx;
@@ -934,7 +933,209 @@ namespace gui
 
     struct RadioButton : public Widget { };
 
-    struct Slider : public Widget { };
+    struct Slider : public Widget
+    {
+        f32* val;
+        const char* name;
+        Container* bg;
+        Outline* outline;
+        Alpha* alpha;
+        f32 minVal;
+        f32 maxVal;
+        FontDescription font;
+
+        DEFINE_CALLBACK(Slider, onChange);
+        DEFINE_CALLBACK(Slider, onSelect);
+        DEFINE_CALLBACK(Slider, onGainedSelect);
+        DEFINE_CALLBACK(Slider, onLostSelect);
+
+        struct SliderState
+        {
+            f32 hoverIntensity = 0.f;
+            f32 hoverTimer = 0.f;
+            f32 hoverValue = 0.f;
+            bool captureInput = false;
+        };
+
+        Slider(const char* name, FontDescription const& font, f32* val, f32 minVal=0.f, f32 maxVal=1.f)
+            : Widget("Slider"), name(name), font(font), val(val), minVal(minVal), maxVal(maxVal) {}
+
+        Widget* build()
+        {
+            pushID(name);
+
+            flags |= WidgetFlags::SELECTABLE | WidgetFlags::INPUT_CAPTURE;
+            addInputCapture(this);
+
+            outline = (Outline*)this->add(Outline(Insets(2), {}))->size(desiredSize);
+            alpha = (Alpha*)outline->add(Alpha(1.f))->size(desiredSize);
+            bg = (Container*)alpha->add(
+                    Container(Insets(8), {}, COLOR_BG_WIDGET, HAlign::CENTER, VAlign::CENTER))
+                ->size(desiredSize);
+            bg->add(Text(font, name));
+
+            return bg;
+        }
+
+        virtual bool handleInputEvent(GuiContext const& gtx, InputCaptureContext& ctx,
+                Widget* inputCapture, InputEvent const& ev) override
+        {
+            if (flags & WidgetFlags::DISABLED)
+            {
+                return false;
+            }
+
+            auto state = getState<SliderState>(this);
+            if (state->captureInput)
+            {
+                if (ev.keyboard.key == KEY_ESCAPE)
+                {
+                    state->captureInput = false;
+                    popInputCapture();
+                }
+                return true;
+            }
+
+            if (ctx.selectedWidgetStateNode == stateNode)
+            {
+                f32 adjustSpeed = 0.5f;
+                if ((ev.type == INPUT_KEYBOARD_DOWN && ev.keyboard.key == KEY_LEFT)
+                    || (ev.type == INPUT_CONTROLLER_BUTTON_DOWN
+                        && ev.controller.button == BUTTON_DPAD_LEFT))
+                {
+                    *val = clamp(*val - (maxVal - minVal) * adjustSpeed * gtx.deltaTime, minVal, maxVal);
+                    INVOKE_CALLBACK(onChange);
+                    return true;
+                }
+                else if ((ev.type == INPUT_KEYBOARD_DOWN && ev.keyboard.key == KEY_RIGHT)
+                    || (ev.type == INPUT_CONTROLLER_BUTTON_DOWN
+                        && ev.controller.button == BUTTON_DPAD_RIGHT))
+                {
+                    *val = clamp(*val + (maxVal - minVal) * adjustSpeed * gtx.deltaTime, minVal, maxVal);
+                    INVOKE_CALLBACK(onChange);
+                    return true;
+                }
+                else if (ev.type == INPUT_CONTROLLER_AXIS && ev.controller.axis == AXIS_RIGHT_X)
+                {
+                    *val = clamp(*val + (maxVal - minVal) * adjustSpeed * 1.25f
+                            * gtx.deltaTime * ev.controller.axisVal, minVal, maxVal);
+                    INVOKE_CALLBACK(onChange);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        virtual bool handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& input)
+            override
+        {
+            if (flags & WidgetFlags::DISABLED)
+            {
+                return false;
+            }
+
+            auto state = getState<SliderState>(this);
+            if (state->captureInput)
+            {
+                if (input.mouse.button == MOUSE_LEFT)
+                {
+                    f32 newVal = (input.mouse.mousePos.x - computedPosition.x) / computedSize.x
+                        * (maxVal - minVal);
+                    *val = clamp(newVal, minVal, maxVal);
+                    INVOKE_CALLBACK(onChange);
+
+                    if (input.type == INPUT_MOUSE_BUTTON_RELEASED)
+                    {
+                        state->captureInput = false;
+                        popInputCapture();
+                        return true;
+                    }
+                }
+
+                return true;
+            }
+
+            bool isMouseOver =
+                pointInRectangle(input.mouse.mousePos, computedPosition, computedPosition + computedSize);
+
+            if (isMouseOver)
+            {
+                ctx.selectedWidgetStateNode = stateNode;
+
+                if (input.type == INPUT_MOUSE_BUTTON_DOWN && input.mouse.button == MOUSE_LEFT)
+                {
+                    if (!state->captureInput)
+                    {
+                        state->captureInput = true;
+                        makeActive(this);
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
+        {
+            auto state = getState<SliderState>(this);
+            RenderContext r = rtx;
+
+            if (flags & WidgetFlags::DISABLED)
+            {
+                state->hoverIntensity = 0.f;
+                state->hoverTimer = 0.f;
+                state->hoverValue = 0.f;
+
+                outline->borders = Insets(2);
+                outline->color = COLOR_OUTLINE_DISABLED;
+
+                bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
+
+                r.alpha *= 0.5f;
+            }
+            else
+            {
+                if (flags & WidgetFlags::STATUS_SELECTED)
+                {
+                    state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
+                    state->hoverTimer += ctx.deltaTime;
+                    state->hoverValue = 0.1f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f;
+
+                    outline->borders = Insets(4);
+                    outline->color = COLOR_OUTLINE_SELECTED;
+                }
+                else
+                {
+                    state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
+                    state->hoverTimer = 0.f;
+                    state->hoverValue = max(state->hoverValue - ctx.deltaTime * 2.f, 0.f);
+
+                    outline->borders = Insets(2);
+                    outline->color = COLOR_OUTLINE_NOT_SELECTED;
+                }
+
+                if (flags & WidgetFlags::FADED)
+                {
+                    bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
+                    alpha->alpha *= 0.5f;
+                }
+                else
+                {
+                    bg->backgroundColor = COLOR_BG_WIDGET;
+                }
+            }
+
+            Widget::render(ctx, r);
+
+            ui::rectBlur(r.priority, nullptr, computedPosition + Vec2(0, 50),
+                Vec2(computedSize.x * (*val / (maxVal - minVal)), computedSize.y - 50),
+                Vec4(1, 0, 0, 0.5f), r.alpha);
+        }
+    };
 
     struct Select : public Widget { };
 
@@ -950,7 +1151,7 @@ namespace gui
         Transform(Mat4 const& transform, bool center=true)
             : Widget("Transform"), transform(transform), center(center) {}
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             if (center)
             {
@@ -961,23 +1162,23 @@ namespace gui
             Widget::layout(ctx);
         }
 
-        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input) override
+        virtual bool handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& input) override
         {
             // TODO: Make this work for more than just 2D transformations
-            Vec2 prevMousePos = input.mouse.mousePos;
-            input.mouse.mousePos = (inverse(transform) * Vec4(input.mouse.mousePos, 0.f, 1.f)).xy;
-            bool result = Widget::handleMouseInput(ctx, input);
-            input.mouse.mousePos = prevMousePos;
+            InputEvent ev = input;
+            ev.mouse.mousePos = (inverse(transform) * Vec4(input.mouse.mousePos, 0.f, 1.f)).xy;
+            bool result = Widget::handleMouseInput(gtx, ctx, ev);
             return result;
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
-            Mat4 oldTransform = rtx.transform;
-            rtx.transform = rtx.transform * transform;
+            RenderContext newRenderContext = rtx;
+            newRenderContext.transform = rtx.transform * transform;
+            ui::setTransform(newRenderContext.transform);
+            Widget::render(ctx, newRenderContext);
             ui::setTransform(rtx.transform);
-            Widget::render(ctx, rtx);
-            ui::setTransform(oldTransform);
         }
     };
 
@@ -1045,7 +1246,7 @@ namespace gui
             return this;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             auto state = animate();
 
@@ -1078,13 +1279,13 @@ namespace gui
             return this;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             auto state = animate();
             Widget::layout(ctx);
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             auto state = getState<AnimationState>(this);
             RenderContext r = rtx;
@@ -1111,7 +1312,7 @@ namespace gui
             return transform;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             auto state = animate();
             f32 t = easeInOutParametric(state->animationProgress);
@@ -1170,7 +1371,7 @@ namespace gui
 
         void setEntering(bool entering) { getState<InputCaptureState>(this)->isEntering = entering;  }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             if (!active && hideChildrenWhenInactive)
             {
@@ -1179,36 +1380,37 @@ namespace gui
             Widget::layout(ctx);
         }
 
-        virtual bool handleInputCaptureEvent(InputCaptureContext& ctx, InputEvent const& ev,
-                Widget* selectedWidget) override
+        virtual bool handleInputCaptureEvent(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& ev, Widget* selectedWidget) override
         {
             if (blockInput || !isEntering())
             {
                 return false;
             }
-            return Widget::handleInputCaptureEvent(ctx, ev, selectedWidget);
+            return Widget::handleInputCaptureEvent(gtx, ctx, ev, selectedWidget);
         }
 
         virtual bool handleInputEvent(
-                InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
+                GuiContext const& gtx, InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev) override
         {
             if (blockInput || !isEntering())
             {
                 return false;
             }
-            return Widget::handleInputEvent(ctx, inputCapture, ev);
+            return Widget::handleInputEvent(gtx, ctx, inputCapture, ev);
         }
 
-        virtual bool handleMouseInput(InputCaptureContext& ctx, InputEvent& input) override
+        virtual bool handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& input) override
         {
             if (!active || blockInput || !isEntering())
             {
                 return false;
             }
-            return Widget::handleMouseInput(ctx, input);
+            return Widget::handleMouseInput(gtx, ctx, input);
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             if (!active && hideChildrenWhenInactive)
             {
@@ -1222,7 +1424,7 @@ namespace gui
     {
         Clip() : Widget("Clip") {}
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             RenderContext r = rtx;
             r.scissorPos = computedPosition;
@@ -1256,7 +1458,7 @@ namespace gui
             return nullWidget;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             auto state = getState<DelayState>(this);
             state->timer += ctx.deltaTime;
@@ -1284,7 +1486,7 @@ namespace gui
             return this;
         }
 
-        virtual void layout(GuiContext& ctx) override
+        virtual void layout(GuiContext const& ctx) override
         {
             auto state = getState<DelayState>(this);
             state->timer += ctx.deltaTime;
@@ -1295,7 +1497,7 @@ namespace gui
             }
         }
 
-        virtual void render(GuiContext& ctx, RenderContext& rtx) override
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
             auto state = getState<DelayState>(this);
             if (state->timer > delay)

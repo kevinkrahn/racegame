@@ -20,13 +20,17 @@ const gui::FontDescription bigFont = { "font_bold", 58 };
 
 static const char* helpMessage = "";
 
+gui::Widget* animateButton(gui::Widget* parent, const char* name)
+{
+    return parent->add(gui::PositionDelay(0.65f, name))->size(0,0)
+                 ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true))->size(0,0)
+                 ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0);
+}
+
 template <typename T>
 gui::Button* button(gui::Widget* parent, const char* name, const char* helpText, T const& onPress,
         u32 buttonFlags=0, Texture* icon=nullptr) {
-    return (gui::Button*)parent
-        ->add(gui::PositionDelay(0.65f, name))->size(0,0)
-        ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true))->size(0,0)
-        ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
+    return (gui::Button*)animateButton(parent, name)
         ->add(gui::TextButton(mediumFont, name, buttonFlags, icon))
             ->onPress(onPress)
             ->onGainedSelect([helpText]{
@@ -1236,6 +1240,42 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
             auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
             Vec2 size(SIDE_MENU_WIDTH / 3);
+
+            animateButton(column, "PAINT HUE")->add(Slider("PAINT HUE", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.hsv.x))
+                ->onChange([this]{
+                    garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
+                    garage.previewVehicleConfig.reloadMaterials();
+                    garage.driver->getVehicleConfig()->cosmetics.hsv
+                        = garage.previewVehicleConfig.cosmetics.hsv;
+                    garage.driver->getVehicleConfig()->cosmetics.color
+                        = garage.previewVehicleConfig.cosmetics.color;
+                    garage.driver->getVehicleConfig()->reloadMaterials();
+                })->size(INFINITY, 70);
+
+            animateButton(column, "PAINT SATURATION")->add(Slider("PAINT SATURATION", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.hsv.y))
+                ->onChange([this]{
+                    garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
+                    garage.previewVehicleConfig.reloadMaterials();
+                    garage.driver->getVehicleConfig()->cosmetics.hsv
+                        = garage.previewVehicleConfig.cosmetics.hsv;
+                    garage.driver->getVehicleConfig()->cosmetics.color
+                        = garage.previewVehicleConfig.cosmetics.color;
+                    garage.driver->getVehicleConfig()->reloadMaterials();
+                })->size(INFINITY, 70);
+
+            animateButton(column, "PAINT BRIGHTNESS")->add(Slider("PAINT BRIGHTNESS", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.hsv.z))
+                ->onChange([this]{
+                    garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
+                    garage.previewVehicleConfig.reloadMaterials();
+                    garage.driver->getVehicleConfig()->cosmetics.hsv
+                        = garage.previewVehicleConfig.cosmetics.hsv;
+                    garage.driver->getVehicleConfig()->cosmetics.color
+                        = garage.previewVehicleConfig.cosmetics.color;
+                    garage.driver->getVehicleConfig()->reloadMaterials();
+                })->size(INFINITY, 70);
 
             button(column, "BACK", "", [&]{
                 inputCapture->setEntering(false);

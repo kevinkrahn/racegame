@@ -687,7 +687,6 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
         wheelInfo[i].rotationSpeed = vehicle4W->mWheelsDynData.getWheelRotationSpeed(i);
         wheelInfo[i].lateralSlip = info.lateralSlip;
         wheelInfo[i].longitudinalSlip = info.longitudinalSlip;
-        wheelInfo[i].oilCoverage = max(wheelInfo[i].oilCoverage - deltaTime, 0.f);
         wheelInfo[i].dustAmount = 0.f;
         wheelInfo[i].isTouchingTrack = false;
         wheelInfo[i].isOffroad = false;
@@ -696,6 +695,8 @@ void VehiclePhysics::updateWheelInfo(f32 deltaTime)
 
         if (!info.isInAir)
         {
+            wheelInfo[i].oilCoverage = max(wheelInfo[i].oilCoverage - deltaTime, 0.f);
+
             auto filterData = info.tireContactShape->getSimulationFilterData();
 
             // TODO: Is there some reason why the collision filter needs to be checked?

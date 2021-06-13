@@ -484,6 +484,7 @@ public:
                     break;
                 case INPUT_MOUSE_BUTTON_DOWN:
                     erase |= !mouseButtonDown[it->mouse.button];
+                    it->mouse.mousePos = getMousePosition();
                     break;
                 case INPUT_KEYBOARD_DOWN:
                     erase |= !keyDown[it->keyboard.key];

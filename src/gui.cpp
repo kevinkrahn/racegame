@@ -36,7 +36,6 @@ namespace gui
         Vec2 actualScreenSize((f32)w, (f32)h);
 
         GuiContext ctx;
-        //ctx.renderer = renderer;
         ctx.deltaTime = deltaTime;
         ctx.aspectRatio = aspectRatio;
         ctx.referenceScreenSize = referenceScreenSize;
@@ -62,7 +61,7 @@ namespace gui
 
         for (auto const& ev : g_input.getEvents())
         {
-            if (!(*activeInputCapture)->handleInputCaptureEvent(context, ev, selectedWidget))
+            if (!(*activeInputCapture)->handleInputCaptureEvent(ctx, context, ev, selectedWidget))
             {
                 // TODO: loop through other input captures and see if they will handle the event
                 // e.g. selecting something with the mouse
@@ -102,6 +101,7 @@ namespace gui
         rtx.alpha = 1.f;
         rtx.scissorPos = Vec2(0, 0);
         rtx.scissorSize = actualScreenSize;
+        rtx.priority = 0;
         root->render(ctx, rtx);
     }
 
@@ -140,13 +140,13 @@ namespace gui
             : maxDim.y;
     }
 
-    void Widget::layout(GuiContext& ctx)
+    void Widget::layout(GuiContext const& gtx)
     {
         for (Widget* child = childFirst; child; child = child->neighbor)
         {
             child->positionWithinParent = child->desiredPosition;
             child->computedPosition = computedPosition + child->positionWithinParent;
-            child->layout(ctx);
+            child->layout(gtx);
         }
     }
 
@@ -155,39 +155,61 @@ namespace gui
         Widget* selectedWidget = nullptr;
         if (stateNode)
         {
-            selectedWidget = findAncestorByStateNode(this, stateNode);
+            if (this->stateNode == stateNode)
+            {
+                selectedWidget = this;
+            }
+            else
+            {
+                selectedWidget = findAncestorByStateNode(this, stateNode);
+            }
         }
 
         if (!stateNode || !selectedWidget)
         {
-            selectedWidget = findAncestorByFlags(this,
-                    WidgetFlags::SELECTABLE | WidgetFlags::DEFAULT_SELECTION, WidgetFlags::DISABLED);
-            if (!selectedWidget)
+            u32 matchFlags = WidgetFlags::SELECTABLE | WidgetFlags::DEFAULT_SELECTION;
+            if ((this->flags & matchFlags) == matchFlags)
             {
-                // select the first selectable widget by default
-                selectedWidget = findAncestorByFlags(this, WidgetFlags::SELECTABLE, WidgetFlags::DISABLED);
+                selectedWidget = this;
+            }
+            else
+            {
+                selectedWidget = findAncestorByFlags(this, matchFlags, WidgetFlags::DISABLED);
+                if (!selectedWidget)
+                {
+                    if ((this->flags & WidgetFlags::SELECTABLE) == WidgetFlags::SELECTABLE)
+                    {
+                        selectedWidget = this;
+                    }
+                    else
+                    {
+                        // select the first selectable widget by default
+                        selectedWidget = findAncestorByFlags(this, WidgetFlags::SELECTABLE,
+                                WidgetFlags::DISABLED);
+                    }
+                }
             }
         }
 
         return selectedWidget;
     }
 
-    bool Widget::handleInputCaptureEvent(InputCaptureContext& ctx,
+    bool Widget::handleInputCaptureEvent(GuiContext const& gtx, InputCaptureContext& ctx,
             InputEvent const& ev, Widget* selectedWidget)
     {
         if (ev.type == INPUT_MOUSE_MOVE ||
-                       INPUT_MOUSE_BUTTON_PRESSED ||
-                       INPUT_MOUSE_BUTTON_DOWN ||
-                       INPUT_MOUSE_BUTTON_RELEASED)
+            ev.type == INPUT_MOUSE_BUTTON_PRESSED ||
+            ev.type == INPUT_MOUSE_BUTTON_DOWN ||
+            ev.type == INPUT_MOUSE_BUTTON_RELEASED)
         {
             // pipe mouse events to the widgets that the mouse is over
             InputEvent mouseEvent = ev;
-            handleMouseInput(ctx, mouseEvent);
+            return handleMouseInput(gtx, ctx, mouseEvent);
         }
 
         if (selectedWidget)
         {
-            if (selectedWidget->handleInputEvent(ctx, this, ev))
+            if (selectedWidget->handleInputEvent(gtx, ctx, this, ev))
             {
                 return true;
             }
@@ -259,15 +281,15 @@ namespace gui
             }
         }
 
-        return handleInputEvent(ctx, this, ev);
+        return handleInputEvent(gtx, ctx, this, ev);
     }
 
-    bool Widget::handleInputEvent(
+    bool Widget::handleInputEvent(GuiContext const& gtx,
             InputCaptureContext& ctx, Widget* inputCapture, InputEvent const& ev)
     {
         for (Widget* child = childFirst; child; child=child->neighbor)
         {
-            if (child->handleInputEvent(ctx, inputCapture, ev))
+            if (child->handleInputEvent(gtx, ctx, inputCapture, ev))
             {
                 return true;
             }
@@ -323,7 +345,7 @@ namespace gui
         }
     }
 
-    bool Widget::handleMouseInput(InputCaptureContext& ctx, InputEvent& input)
+    bool Widget::handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx, InputEvent const& input)
     {
         bool isMouseOver =
             pointInRectangle(input.mouse.mousePos, computedPosition, computedPosition + computedSize);
@@ -333,15 +355,9 @@ namespace gui
             return false;
         }
 
-        if (flags & WidgetFlags::BLOCK_INPUT)
-        {
-            flags |= WidgetFlags::STATUS_MOUSE_OVER;
-            return true;
-        }
-
         for (Widget* child = childFirst; child; child = child->neighbor)
         {
-            if (child->handleMouseInput(ctx, input))
+            if (child->handleMouseInput(gtx, ctx, input))
             {
                 return true;
             }
@@ -350,7 +366,7 @@ namespace gui
         return false;
     }
 
-    void Widget::render(GuiContext& ctx, RenderContext& rtx)
+    void Widget::render(GuiContext const& ctx, RenderContext const& rtx)
     {
         for (Widget* child = childFirst; child; child = child->neighbor)
         {
@@ -391,12 +407,12 @@ namespace gui
 
     Widget* findAncestorByStateNode(Widget* w, WidgetStateNode* state)
     {
-        if (w->stateNode == state)
-        {
-            return w;
-        }
         for (Widget* child = w->childFirst; child; child = child->neighbor)
         {
+            if (child->stateNode == state)
+            {
+                return child;
+            }
             if (!(child->flags & (WidgetFlags::INPUT_CAPTURE | WidgetFlags::DISABLED)))
             {
                 Widget* t = findAncestorByStateNode(child, state);
@@ -411,13 +427,15 @@ namespace gui
 
     Widget* findAncestorByFlags(Widget* w, u32 matchFlags, u32 unmatchFlags)
     {
-        if ((w->flags & matchFlags) == matchFlags && (~w->flags & unmatchFlags) == unmatchFlags)
-        {
-            return w;
-        }
         for (Widget* child = w->childFirst; child; child = child->neighbor)
         {
-            if (!(child->flags & WidgetFlags::INPUT_CAPTURE))
+            if ((child->flags & matchFlags) == matchFlags &&
+                    (~child->flags & unmatchFlags) == unmatchFlags)
+            {
+                return child;
+            }
+
+            if (!(child->flags & (WidgetFlags::INPUT_CAPTURE | WidgetFlags::DISABLED)))
             {
                 Widget* t = findAncestorByFlags(child, matchFlags, unmatchFlags);
                 if (t)
