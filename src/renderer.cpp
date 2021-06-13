@@ -409,10 +409,12 @@ void Renderer::render(f32 deltaTime)
     glEnable(GL_BLEND);
 
     // NOTE: stable sort to preserve the order the renderables were added
+    /*
     renderItems2D.stableSort([](auto& a, auto& b) {
         if (a.priority != b.priority) return a.priority < b.priority;
         return a.shader < b.shader;
     });
+    */
     ShaderHandle previousShader = -1;
     for (auto const& renderItem : renderItems2D)
     {

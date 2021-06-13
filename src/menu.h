@@ -59,6 +59,7 @@ class Menu
     f32 pauseTimer = 0.f;
     bool fadeToBlack = false;
     f32 blackFadeAlpha = 1.f;
+    bool isDialogOpen = false;
 
     void beginChampionship();
     void startQuickRace();

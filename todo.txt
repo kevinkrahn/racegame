@@ -115,3 +115,4 @@
 - Add stat to vehicles for ramming; some vehicles will have better ramming damage
 - Instead of having the camera constantly following the track in the menu, have it periodically
   switch between shots on the track, and have a race going on in the background
+- Add batching for 2D stuff

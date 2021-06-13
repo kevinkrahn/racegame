@@ -29,7 +29,12 @@ gui::Button* button(gui::Widget* parent, const char* name, const char* helpText,
         ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
         ->add(gui::TextButton(mediumFont, name, buttonFlags, icon))
             ->onPress(onPress)
-            ->onGainedSelect([helpText]{ helpMessage = helpText; })
+            ->onGainedSelect([helpText]{
+                if (helpText)
+                {
+                    helpMessage = helpText;
+                }
+            })
             ->size(Vec2(INFINITY, 70));
 };
 
@@ -96,11 +101,12 @@ gui::Widget* panel(gui::Widget* parent, Vec2 size, bool outline=true) {
     return parent->add(gui::Container(gui::Insets(40), {}, gui::COLOR_BG_PANEL))->size(size);
 };
 
-gui::Animation* animateMenu(gui::Widget* parent, bool animateIn, Vec2 size=Vec2(INFINITY)) {
+gui::Animation* animateMenu(gui::Widget* parent, bool animateIn, Vec2 size=Vec2(INFINITY),
+        f32 animLength = animationLength) {
     return (gui::Animation*)parent
         ->add(gui::Container({}, {}, Vec4(0), HAlign::CENTER, VAlign::CENTER))->size(size)
-        ->add(gui::FadeAnimation(0.f, 1.f, animationLength, animateIn))->size(0,0)
-        ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, animateIn))->size(0,0);
+        ->add(gui::FadeAnimation(0.f, 1.f, animLength, animateIn))->size(0,0)
+        ->add(gui::ScaleAnimation(0.7f, 1.f, animLength, animateIn))->size(0,0);
 };
 
 const char* championshipTracks[] = {
@@ -420,6 +426,7 @@ void Menu::displayStandings()
 
     auto animation = animateMenu(inputCapture, inputCapture->isEntering());
     animation->onAnimationReverseEnd([&]{
+        fadeToBlack = false;
         clearInputCaptures();
         openChampionshipMenu();
         RandomSeries series = randomSeed();
@@ -482,6 +489,10 @@ void Menu::displayStandings()
     button(column, "OKAY", "", [this, inputCapture]{
         g_audio.playSound(g_res.getSound("close"), SoundType::MENU_SFX);
         inputCapture->setEntering(false);
+        if (g_game.currentScene->guid != g_res.getTrackGuid(championshipTracks[g_game.state.currentRace]))
+        {
+            fadeToBlack = true;
+        }
     }, ButtonFlags::BACK)->size(250, 70);
 }
 
@@ -513,11 +524,13 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         });
         button(column, "LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
             inputCapture->setEntering(false);
+            fadeToBlack = true;
             selection = [&] {
                 g_game.loadGame();
                 clearInputCaptures();
                 g_game.changeScene(championshipTracks[g_game.state.currentRace]);
                 openChampionshipMenu();
+                fadeToBlack = false;
             };
         });
         button(column, "QUICK RACE", "Jump into a race without delay!", [&]{
@@ -1371,12 +1384,49 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         });
 
         button(column, "QUIT", "Return to main menu.", [&]{
-            inputCapture->setEntering(false);
-            selection = [&] {
-                clearInputCaptures();
-                mode = MAIN_MENU;
-            };
+            isDialogOpen = true;
         });
+
+        if (isDialogOpen)
+        {
+            static bool yes = false;
+
+            auto dialogInputCapture = gui::root->add(InputCapture("Dialog"));
+            dialogInputCapture
+                    ->add(FadeAnimation(0.f, 0.85f, 0.25f, dialogInputCapture->isEntering(),
+                        "DimBackground"))
+                    ->add(Container(Vec4(0, 0, 0, 1)));
+            auto animation = animateMenu(dialogInputCapture, dialogInputCapture->isEntering(),
+                    Vec2(INFINITY), 0.25f);
+            animation->onAnimationReverseEnd([&]{
+                popInputCapture();
+                isDialogOpen = false;
+                if (yes) {
+                    inputCapture->setEntering(false);
+                    selection = [this] {
+                        mode = MAIN_MENU;
+                    };
+                }
+            });
+
+            auto column = animation
+                ->add(Container(Insets(30), {}, Vec4(0, 0, 0, 1.f)))->size(750, 0)
+                ->add(Column(10, HAlign::CENTER))->size(INFINITY, 0);
+
+            column
+                ->add(Container(Insets(10)))->size(0, 70)
+                ->add(Text(mediumFont, "Are you sure you want to quit?"));
+
+            auto buttonRow = column->add(Row(50))->size(0, 0);
+            button(buttonRow, "NO", nullptr, [dialogInputCapture]{
+                dialogInputCapture->setEntering(false);
+                yes = false;
+            }, ButtonFlags::BACK)->size(200, 70);
+            button(buttonRow, "YES", nullptr, [dialogInputCapture]{
+                dialogInputCapture->setEntering(false);
+                yes = true;
+            })->size(200, 70);
+        }
 
         // track preview
         u32 trackPreviewSize = 380 * gui::guiScale;
