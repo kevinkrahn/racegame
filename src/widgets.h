@@ -897,12 +897,15 @@ namespace gui
     struct TextButton : public Button
     {
         const char* text;
+        const char* subText;
         FontDescription font;
+        FontDescription subFont;
         Texture* icon;
 
-        TextButton(FontDescription const& font, const char* text, u32 buttonFlags=0,
-                Texture* icon=nullptr)
-            : Button(buttonFlags, "TextButton"), text(text), font(font), icon(icon) {}
+        TextButton(FontDescription const& font, const char* text, FontDescription const& subFont={},
+                const char* subText=nullptr, u32 buttonFlags=0, Texture* icon=nullptr)
+            : Button(buttonFlags, "TextButton"), text(text), subText(subText), font(font),
+              subFont(subFont), icon(icon) {}
 
         Widget* build()
         {
@@ -913,7 +916,12 @@ namespace gui
                 auto row = btn->add(Row(20, HAlign::LEFT, VAlign::CENTER));
                 const f32 iconSize = 48;
                 row->add(Image(icon, false))->size(iconSize, iconSize);
-                row->add(Text(font, text));
+                auto col = row->add(Column(8))->size(0,0);
+                col->add(Text(font, text));
+                if (subText)
+                {
+                    col->add(Text(subFont, subText, Vec4(Vec3(1), 0.8f)));
+                }
             }
             else
             {

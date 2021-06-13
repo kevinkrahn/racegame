@@ -31,7 +31,7 @@ template <typename T>
 gui::Button* button(gui::Widget* parent, const char* name, const char* helpText, T const& onPress,
         u32 buttonFlags=0, Texture* icon=nullptr) {
     return (gui::Button*)animateButton(parent, name)
-        ->add(gui::TextButton(mediumFont, name, buttonFlags, icon))
+        ->add(gui::TextButton(mediumFont, name, {}, nullptr, buttonFlags, icon))
             ->onPress(onPress)
             ->onGainedSelect([helpText]{
                 if (helpText)
@@ -64,7 +64,7 @@ gui::Button* squareButton(gui::Widget* parent, Texture* tex, const char* name, c
 
         auto column = btn
             ->add(gui::Container(gui::Insets(10), {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
-            ->add(gui::Column(5))->size(0, 0);
+            ->add(gui::Column(5, HAlign::LEFT, VAlign::BOTTOM))->size(0, 0);
         for (i32 i=0; i<upgradeMax; ++i)
         {
             auto stack = column->add(gui::Stack())->size(notchSize, notchSize);
@@ -736,7 +736,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             return column
                 ->add(FadeAnimation(0.f, 1.f, animationLength, true, name))->size(btnSize)
                 ->add(ScaleAnimation(0.7f, 1.f, animationLength, true))
-                ->add(TextButton(mediumFont, name, buttonFlags))
+                ->add(TextButton(mediumFont, name, {}, nullptr, buttonFlags))
                     ->onPress(onPress);
         };
 
@@ -1096,13 +1096,21 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             {
                 i32 installedWeapon = garage.previewVehicleConfig.weaponIndices[i];
                 WeaponSlot& slot = garage.driver->getVehicleData()->weaponSlots[i];
-                button(column, slot.name.data(), "Install or upgrade a weapon.", [this, i, inputCapture]{
-                    inputCapture->setEntering(false);
-                    currentWeaponSlotIndex = i;
-                    selection = [this] {
-                        mode = GARAGE_WEAPON;
-                    };
-                }, 0, installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon);
+                animateButton(column, slot.name.data())
+                    ->add(TextButton(mediumFont, slot.name.data(), smallFont,
+                        installedWeapon == -1 ? "None" : g_weapons[installedWeapon].info.name, 0,
+                        installedWeapon == -1 ? iconbg : g_weapons[installedWeapon].info.icon))
+                    ->onPress([this, i, inputCapture]{
+                        inputCapture->setEntering(false);
+                        currentWeaponSlotIndex = i;
+                        selection = [this] {
+                            mode = GARAGE_WEAPON;
+                        };
+                    })
+                    ->onGainedSelect([]{
+                        helpMessage = "Install or upgrade a weapon.";
+                    })
+                    ->size(INFINITY, 70);
             }
 
             button(column, "CAR LOT", "Buy a new vehicle!", [&]{
