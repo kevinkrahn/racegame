@@ -1216,20 +1216,20 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         tmpStr("%i", price), size, upgradeLevel, upgrade.maxUpgradeLevel, 28.f);
                 btn->addFlags(isPurchasable ? 0 : WidgetFlags::FADED);
 
+                btn->onGainedSelect([&upgrade, upgradeLevel, this, i]{
+                    helpMessage = upgrade.description.data();
+
+                    if (upgradeLevel < upgrade.maxUpgradeLevel)
+                    {
+                        garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
+                        garage.previewVehicleConfig.addUpgrade(i);
+                        garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
+                        garage.upgradeStats = garage.previewTuning.computeVehicleStats();
+                    }
+                });
+
                 if (isPurchasable)
                 {
-                    btn->onGainedSelect([&upgrade, upgradeLevel, this, i]{
-                        helpMessage = upgrade.description.data();
-
-                        if (upgradeLevel < upgrade.maxUpgradeLevel)
-                        {
-                            garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
-                            garage.previewVehicleConfig.addUpgrade(i);
-                            garage.previewVehicle->initTuning(garage.previewVehicleConfig, garage.previewTuning);
-                            garage.upgradeStats = garage.previewTuning.computeVehicleStats();
-                        }
-                    });
-
                     btn->onPress([this, price, i, &upgrade]{
                         g_audio.playSound(g_res.getSound("airdrill"), SoundType::MENU_SFX);
 

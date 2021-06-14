@@ -572,6 +572,11 @@ inline f32 sign(f32 v)
     return v < 0.f ? -1.f : (v == 0.f ? 0.f : 1.f);
 }
 
+inline f32 percentRange(f32 val, f32 min, f32 max)
+{
+    return (val - min) / (max - min);
+}
+
 inline f32 lengthSquared(Vec2 v)
 {
     return v.x*v.x + v.y*v.y;

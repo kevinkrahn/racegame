@@ -7,9 +7,9 @@
 VehicleStats VehicleTuning::computeVehicleStats()
 {
     VehicleStats stats;
-    stats.topSpeed = topSpeed / 100.f;
-    stats.armor = maxHitPoints / 300.f;
-    stats.mass = chassisMass / 2500.f;
+    stats.topSpeed = percentRange(topSpeed, 20.f, 60.f);
+    stats.armor = percentRange(maxHitPoints, 80.f, 250.f);
+    stats.mass = percentRange(chassisMass, 500.f, 2500.f);
 
     static PxScene* physicsScene = nullptr;
     if (!physicsScene)
@@ -57,7 +57,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         if (v.getForwardSpeed() >= 28.f)
         {
             f32 time = iterations * timestep;
-            stats.acceleration = clamp((8.f - time) / 8.f, 0.f, 1.f);
+            stats.acceleration = 1.f - percentRange(time, 1.f, 5.f);
             //println("Acceleration time: %.2f", time);
             break;
         }
@@ -94,7 +94,7 @@ VehicleStats VehicleTuning::computeVehicleStats()
         if (magnitude < 0.1f)
         {
             f32 time = iterations * timestep;
-            stats.grip = clamp((0.8f - time) / 0.8f, 0.f, 1.f);
+            stats.grip = 1.f - percentRange(time, 0.1f, 0.68f);
             //println("Stop time: %.2f", time);
             break;
         }
@@ -115,7 +115,8 @@ VehicleStats VehicleTuning::computeVehicleStats()
         if (v.getForwardSpeed() >= 16.f)
         {
             f32 time = iterations * timestep;
-            stats.offroad = clamp((8.f - time) / 8.f, 0.f, 1.f);
+            //stats.offroad = clamp((8.f - time) / 8.f, 0.f, 1.f);
+            stats.offroad = 1.f - percentRange(time, 1.2f, 4.f);
             //println("Offroad acceleration time: %.2f", time);
             break;
         }
@@ -183,7 +184,7 @@ void VehicleData::initStandardUpgrades()
     });
     availableUpgrades.push({
         "WEIGHT",
-        "Strips out unnecessary parts of the vehicle to improve acceleration and handling.",
+        "Strips unnecessary parts of the vehicle to improve acceleration and handling.",
         g_res.getTexture("icon_weight")->guid,
         1500,
         2,
