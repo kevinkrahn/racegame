@@ -1564,7 +1564,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         {
             static bool yes = false;
 
-            auto dialogInputCapture = gui::root->add(InputCapture("Dialog"));
+            auto dialogInputCapture = gui::root->add(ZIndex(200))->add(InputCapture("Dialog"));
             dialogInputCapture
                     ->add(FadeAnimation(0.f, 0.85f, 0.25f, dialogInputCapture->isEntering(),
                         "DimBackground"))
@@ -1626,10 +1626,10 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         Texture* tex = g_res.getTexture("checkers_fade");
         f32 w = (f32)g_game.windowWidth;
         f32 h = tex->height * 0.5f * gui::guiScale;
-        ui::rectUVBlur(100, tex, Vec2(0), {w,h}, Vec2(0.f, 0.999f),
-                    Vec2(g_game.windowWidth/(tex->width * gui::guiScale * 0.5f), 0.001f));
-        ui::rectUVBlur(100, tex, Vec2(0, g_game.windowHeight-h), {w,h},
-                    Vec2(0.f, 0.001f),
+        ui::rectUV(100, tex, Vec2(0), {w,h}, Vec2(0.f, 0.999f),
+                    Vec2(g_game.windowWidth/(tex->width * gui::guiScale * 0.5f), 0.02f));
+        ui::rectUV(100, tex, Vec2(0, g_game.windowHeight-h), {w,h},
+                    Vec2(0.f, 0.02f),
                     Vec2(g_game.windowWidth/(tex->width * gui::guiScale * 0.5f), 0.999f));
     }
 

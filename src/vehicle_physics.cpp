@@ -435,19 +435,11 @@ void VehiclePhysics::setup(void* userData, PxScene* scene, Mat4 const& transform
     driveSimData.setDiffData(diff);
 
     PxVehicleEngineData engine;
-    engine.mPeakTorque = tuning.peakEngineTorque;
-    engine.mMaxOmega = tuning.maxEngineOmega;
+    engine.mPeakTorque = tuning.peakEngineTorque * 1.2f;
+    engine.mMaxOmega = tuning.maxEngineOmega * 1.f;
     engine.mDampingRateFullThrottle = tuning.engineDampingFullThrottle;
     engine.mDampingRateZeroThrottleClutchEngaged = tuning.engineDampingZeroThrottleClutchEngaged;
     engine.mDampingRateZeroThrottleClutchDisengaged = tuning.engineDampingZeroThrottleClutchDisengaged;
-
-#if 0
-    if (!driver->isPlayer)
-    {
-        engine.mPeakTorque += 1400.f;
-        engine.mMaxOmega += 300.f;
-    }
-#endif
 
     driveSimData.setEngineData(engine);
 
@@ -622,7 +614,7 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
             if (speedDiff > 0.f && accel > 0.f)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL,
-                        accel * clamp(1.f - speedDiff * 0.8f, 0.05f, 1.f));
+                        accel * clamp(1.f - speedDiff * 0.85f, 0.05f, 1.f));
                 vehicle4W->mDriveDynData.setCurrentGear(tuning->gearRatios.size() - 1);
             }
         }

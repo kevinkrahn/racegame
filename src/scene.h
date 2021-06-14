@@ -89,10 +89,12 @@ private:
 
     PxScene* physicsScene = nullptr;
     TrackPreview2D trackPreview2D;
-    Vec3 trackPreviewCameraFrom = { 0, 0, 0 };
-    Vec3 trackPreviewCameraTarget = { 0, 0, 0 };
-    Vec3 trackPreviewPosition = { 0, 0, 0 };
-    Vec3 trackPreviewVelocity = { 0, 0, 0 };
+    Vec3 trackPreviewCameraFrom;
+    Vec3 trackPreviewCameraTarget;
+    Vec3 trackPreviewDir;
+    Vec3 trackPreviewMoveDir;
+    f32 trackPreviewSpeed = 0.f;
+    f32 trackPreviewTimer = 0.f;
     u32 currentTrackPreviewPoint = 0;
     f64 worldTime = 0.0;
     bool readyToGo = false;

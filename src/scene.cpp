@@ -77,9 +77,6 @@ Scene::Scene(TrackData* data)
     assert(track != nullptr);
     assert(start != nullptr);
     track->buildTrackGraph(&trackGraph, start->transform);
-    trackPreviewPosition = start->position;
-    trackPreviewCameraTarget = trackPreviewPosition;
-    trackPreviewCameraFrom = trackPreviewPosition + normalize(Vec3(1.f, 1.f, 1.25f)) * 15.f;
 
     if (!g_game.isEditing)
     {
@@ -321,33 +318,28 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
         if (!g_game.isEditing && !isRaceInProgress && isCameraTourEnabled
                 && trackGraph.getPaths().size() > 0)
         {
-            // move the camera around the track
-            auto path = trackGraph.getPaths()[0];
-            Vec3 targetP = path[currentTrackPreviewPoint]->position;
-            Vec3 diff = targetP - trackPreviewPosition;
-            if (lengthSquared(diff) < square(30.f))
+            trackPreviewTimer -= deltaTime;
+            if (trackPreviewTimer <= 0.f)
             {
-                currentTrackPreviewPoint = (currentTrackPreviewPoint + 1) % (u32)path.size();
+                auto path = trackGraph.getPaths()[irandom(randomSeries, 0, trackGraph.getPaths().size())];
+                auto point = path[irandom(randomSeries, 0, path.size())];
+                trackPreviewCameraTarget = point->position;
+                trackPreviewMoveDir = point->direction;
+                trackPreviewDir = Vec3(
+                        random(randomSeries, -0.9f, 0.9f), random(randomSeries, -0.9f, 0.9f), 1.f);
+                trackPreviewTimer = random(randomSeries, 4.f, 10.f);
+                trackPreviewSpeed = trackPreviewTimer + random(randomSeries, 0.f, 1.f);
             }
-            f32 accel = 8.0f;
-            trackPreviewVelocity += normalize(diff) * deltaTime * accel;
-            f32 maxSpeed = 15.f;
-            if (length(trackPreviewVelocity) > maxSpeed)
-            {
-                trackPreviewVelocity = normalize(trackPreviewVelocity) * maxSpeed;
-            }
-            trackPreviewPosition += trackPreviewVelocity * deltaTime;
 
-            f32 camDistance = 100.f;
-            Vec3 cameraTarget = trackPreviewPosition;
-            Vec3 cameraFrom = cameraTarget + normalize(Vec3(1.f, 1.f, 1.25f)) * camDistance;
-
-            trackPreviewCameraTarget = smoothMove(trackPreviewCameraTarget, cameraTarget, 5.f, deltaTime);
-            trackPreviewCameraFrom = smoothMove(trackPreviewCameraFrom, cameraFrom, 5.f, deltaTime);
+            trackPreviewSpeed -= deltaTime * 0.8f;
+            const f32 camDistance = 100.f;
+            trackPreviewCameraTarget += trackPreviewMoveDir * trackPreviewSpeed * deltaTime;
+            trackPreviewCameraFrom =
+                trackPreviewCameraTarget + normalize(trackPreviewDir) * camDistance;
 
             rw->setViewportCamera(0, trackPreviewCameraFrom, trackPreviewCameraTarget, 25.f, 200.f);
 
-            listenerPositions.push(cameraTarget);
+            listenerPositions.push(trackPreviewCameraTarget);
         }
 
         // TODO: Use PhysX scratch buffer to reduce allocations

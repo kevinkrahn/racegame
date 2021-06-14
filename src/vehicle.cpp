@@ -1220,7 +1220,7 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 #endif
 
     input.accel = (scene->timeUntilStart() < ai.drivingSkill * 0.45f + 0.0025f) ? 1.f : 0.f;
-    input.accel *= 0.8f;
+    //input.accel *= 0.8f;
     input.brake = 0.f;
     input.steer = clamp(dot(Vec2(rightVector), dirToTargetP) * 1.2f, -1.f, 1.f);
     f32 aggression = min(max(((f32)scene->getWorldTime() - 3.f) * 0.3f, 0.f),
