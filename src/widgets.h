@@ -197,6 +197,11 @@ namespace gui
         Border(Insets const& borders, Vec4 color)
             : Widget("Border"), borders(borders), color(color)
         {
+            adjustScale();
+        }
+
+        void adjustScale()
+        {
             this->borders.left   = floorf(borders.left   * guiScale);
             this->borders.right  = floorf(borders.right  * guiScale);
             this->borders.top    = floorf(borders.top    * guiScale);
@@ -284,6 +289,11 @@ namespace gui
 
         Outline(Insets const& borders, Vec4 color)
             : Widget("Outline"), borders(borders), color(color)
+        {
+            adjustScale();
+        }
+
+        void adjustScale()
         {
             this->borders.left   = floorf(borders.left   * guiScale);
             this->borders.right  = floorf(borders.right  * guiScale);
@@ -855,6 +865,7 @@ namespace gui
                     outline->borders = Insets(2);
                     outline->color = COLOR_OUTLINE_NOT_SELECTED;
                 }
+                outline->adjustScale();
 
                 if (flags & WidgetFlags::FADED)
                 {
@@ -951,6 +962,9 @@ namespace gui
         f32 minVal;
         f32 maxVal;
         FontDescription font;
+        Texture* bgImage;
+        Vec4 color1;
+        Vec4 color2;
 
         DEFINE_CALLBACK(Slider, onChange);
         DEFINE_CALLBACK(Slider, onSelect);
@@ -965,8 +979,11 @@ namespace gui
             bool captureInput = false;
         };
 
-        Slider(const char* name, FontDescription const& font, f32* val, f32 minVal=0.f, f32 maxVal=1.f)
-            : Widget("Slider"), name(name), font(font), val(val), minVal(minVal), maxVal(maxVal) {}
+        Slider(const char* name, FontDescription const& font, f32* val, f32 minVal=0.f, f32 maxVal=1.f,
+                Texture* bgImage=nullptr, Vec4 const& color1 = {1,0,0,0.8f},
+                Vec4 const& color2 = {1,0,0,0.8f})
+            : Widget("Slider"), name(name), font(font), val(val), minVal(minVal), maxVal(maxVal),
+              bgImage(bgImage), color1(color1), color2(color2) {}
 
         Widget* build()
         {
@@ -1049,8 +1066,9 @@ namespace gui
             {
                 if (input.mouse.button == MOUSE_LEFT)
                 {
-                    f32 newVal = (input.mouse.mousePos.x - computedPosition.x) / computedSize.x
-                        * (maxVal - minVal);
+                    f32 s = floorf(4 * gui::guiScale);
+                    f32 newVal = (input.mouse.mousePos.x - computedPosition.x - s)
+                        / (computedSize.x - s * 2) * (maxVal - minVal);
                     *val = clamp(newVal, minVal, maxVal);
                     INVOKE_CALLBACK(onChange);
 
@@ -1133,15 +1151,34 @@ namespace gui
                 }
                 else
                 {
-                    bg->backgroundColor = COLOR_BG_WIDGET;
+                    bg->backgroundColor = mix(COLOR_BG_WIDGET,
+                            COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
                 }
+                outline->adjustScale();
             }
 
             Widget::render(ctx, r);
 
-            ui::rectBlur(r.priority, nullptr, computedPosition + Vec2(0, 50),
-                Vec2(computedSize.x * (*val / (maxVal - minVal)), computedSize.y - 50),
-                Vec4(1, 0, 0, 0.5f), r.alpha);
+            f32 borderSize = outline->borders.left;
+            f32 w = computedSize.x - borderSize * 2;
+            if (bgImage)
+            {
+                ui::rectBlur(r.priority, bgImage, computedPosition + Vec2(borderSize, 50),
+                    Vec2(w, computedSize.y - 50 - borderSize),
+                    color1, color2, r.alpha);
+
+                f32 handleWidth = 5 * gui::guiScale;
+                f32 handleX = computedPosition.x + borderSize + w * (*val / (maxVal - minVal));
+                ui::rectBlur(r.priority, nullptr,
+                    Vec2(handleX - handleWidth * 0.5f, computedPosition.y + 50),
+                    Vec2(handleWidth, computedSize.y - 50 - borderSize), Vec4(1), r.alpha);
+            }
+            else
+            {
+                ui::rectBlur(r.priority, nullptr, computedPosition + Vec2(borderSize, 50),
+                    Vec2(w * (*val / (maxVal - minVal)), computedSize.y - 50 - borderSize),
+                    color1, color2, r.alpha);
+            }
         }
     };
 

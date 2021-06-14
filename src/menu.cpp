@@ -1250,7 +1250,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             Vec2 size(SIDE_MENU_WIDTH / 3);
 
             animateButton(column, "PAINT HUE")->add(Slider("PAINT HUE", mediumFont,
-                        &garage.previewVehicleConfig.cosmetics.hsv.x))
+                        &garage.previewVehicleConfig.cosmetics.hsv.x, 0.f, 1.f,
+                        g_res.getTexture("hues"), Vec4(1), Vec4(1)))
                 ->onChange([this]{
                     garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
                     garage.previewVehicleConfig.reloadMaterials();
@@ -1262,7 +1263,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 })->size(INFINITY, 70);
 
             animateButton(column, "PAINT SATURATION")->add(Slider("PAINT SATURATION", mediumFont,
-                        &garage.previewVehicleConfig.cosmetics.hsv.y))
+                        &garage.previewVehicleConfig.cosmetics.hsv.y, 0.f, 1.f,
+                        &g_res.white,
+                        Vec4(hsvToRgb(
+                                garage.previewVehicleConfig.cosmetics.hsv.x, 0.f,
+                                garage.previewVehicleConfig.cosmetics.hsv.z), 1.f),
+                        Vec4(hsvToRgb(
+                                garage.previewVehicleConfig.cosmetics.hsv.x, 1.f,
+                                garage.previewVehicleConfig.cosmetics.hsv.z), 1.f)))
                 ->onChange([this]{
                     garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
                     garage.previewVehicleConfig.reloadMaterials();
@@ -1273,8 +1281,12 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     garage.driver->getVehicleConfig()->reloadMaterials();
                 })->size(INFINITY, 70);
 
+            Vec4 col = Vec4(srgb(hsvToRgb(
+                                    garage.previewVehicleConfig.cosmetics.hsv.x,
+                                    garage.previewVehicleConfig.cosmetics.hsv.y, 1.f)), 1.f);
             animateButton(column, "PAINT BRIGHTNESS")->add(Slider("PAINT BRIGHTNESS", mediumFont,
-                        &garage.previewVehicleConfig.cosmetics.hsv.z))
+                        &garage.previewVehicleConfig.cosmetics.hsv.z, 0.f, 1.f,
+                        g_res.getTexture("brightness_gradient"), col, col))
                 ->onChange([this]{
                     garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
                     garage.previewVehicleConfig.reloadMaterials();
@@ -1282,6 +1294,16 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         = garage.previewVehicleConfig.cosmetics.hsv;
                     garage.driver->getVehicleConfig()->cosmetics.color
                         = garage.previewVehicleConfig.cosmetics.color;
+                    garage.driver->getVehicleConfig()->reloadMaterials();
+                })->size(INFINITY, 70);
+
+            animateButton(column, "PAINT SHININESS")->add(Slider("PAINT SHININESS", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.paintShininess, 0.f, 1.f,
+                        g_res.getTexture("slider"), Vec4(1)))
+                ->onChange([this]{
+                    garage.previewVehicleConfig.reloadMaterials();
+                    garage.driver->getVehicleConfig()->cosmetics.paintShininess
+                        = garage.previewVehicleConfig.cosmetics.paintShininess;
                     garage.driver->getVehicleConfig()->reloadMaterials();
                 })->size(INFINITY, 70);
 
