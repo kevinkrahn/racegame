@@ -346,6 +346,12 @@ struct VehicleCosmeticConfiguration
     void computeColorFromHsv()
     {
         color = srgb(hsvToRgb(hsv.x, hsv.y, hsv.z));
+        for (u32 i=0; i<ARRAY_SIZE(vinylGuids); ++i)
+        {
+            vinylColors[i] = Vec4(srgb(hsvToRgb(
+                        vinylColorsHSV[i].x, vinylColorsHSV[i].y, vinylColorsHSV[i].z)),
+                        vinylColors[i].a);
+        }
     }
 };
 

@@ -119,11 +119,13 @@ namespace gui
         Texture* tex;
         Vec4 color;
         bool preserveAspectRatio = true;
-        bool flip = false;
+        bool flipX = false;
+        bool flipY = false;
 
-        Image(Texture* tex, bool preserveAspectRatio=true, bool flip=false, Vec4 const& color=Vec4(1))
-            : Widget("Image"), tex(tex), preserveAspectRatio(preserveAspectRatio), flip(flip),
-              color(color) {}
+        Image(Texture* tex, bool preserveAspectRatio=true, bool flipX=false, bool flipY=false,
+            Vec4 const& color=Vec4(1))
+            : Widget("Image"), tex(tex), preserveAspectRatio(preserveAspectRatio), flipX(flipX),
+              flipY(flipY), color(color) {}
 
         virtual void computeSize(Constraints const& constraints) override
         {
@@ -176,10 +178,11 @@ namespace gui
 
         virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
         {
-            Vec4 color(1.f);
-            if (flip)
+            if (flipX || flipY)
             {
-                ui::rectUVBlur(rtx.priority, tex, computedPosition, computedSize, Vec2(0,1), Vec2(1,0),
+                Vec2 uv1(flipX ? 1 : 0, flipY ? 1 : 0);
+                Vec2 uv2(flipX ? 0 : 1, flipY ? 0 : 1);
+                ui::rectUVBlur(rtx.priority, tex, computedPosition, computedSize, uv1, uv2,
                         color, rtx.alpha);
             }
             else
@@ -1182,7 +1185,216 @@ namespace gui
         }
     };
 
-    struct Select : public Widget { };
+    struct Select : public Widget
+    {
+        i32* val;
+        const char* name;
+        const char* valueName;
+        Container* bg;
+        Outline* outline;
+        Alpha* alpha;
+        Alpha* alpha2;
+        i32 count;
+        FontDescription font;
+        FontDescription smallFont;
+
+        DEFINE_CALLBACK(Select, onChange);
+        DEFINE_CALLBACK(Select, onSelect);
+        DEFINE_CALLBACK(Select, onGainedSelect);
+        DEFINE_CALLBACK(Select, onLostSelect);
+
+        struct SelectState
+        {
+            f32 hoverIntensity = 0.f;
+            f32 hoverTimer = 0.f;
+            f32 hoverValue = 0.f;
+        };
+
+        Select(const char* name, FontDescription const& font, FontDescription const& smallFont,
+                i32* val, i32 count, const char* valueName)
+            : Widget("Select"), name(name), font(font), smallFont(smallFont), val(val), count(count),
+              valueName(valueName) {}
+
+        Widget* build()
+        {
+            pushID(name);
+
+            flags |= WidgetFlags::SELECTABLE;
+
+            outline = (Outline*)this->add(Outline(Insets(2), {}))->size(desiredSize);
+            alpha = (Alpha*)outline->add(Alpha(1.f))->size(desiredSize);
+
+            bg = (Container*)alpha->add(
+                    Container(Insets(8), {}, COLOR_BG_WIDGET, HAlign::CENTER, VAlign::CENTER))
+                ->size(desiredSize);
+
+            alpha2 = alpha->add(Alpha(0.f));
+            alpha2->add(Container(Insets(8), {}, Vec4(0), HAlign::LEFT, VAlign::CENTER))
+                  ->add(Image(g_res.getTexture("cheveron"), false, false))->size(42, 42);
+            alpha2->add(Container(Insets(8), {}, Vec4(0), HAlign::RIGHT, VAlign::CENTER))
+                  ->add(Image(g_res.getTexture("cheveron"), false, true))->size(42, 42);
+
+            auto container = bg->add(Column(8, HAlign::CENTER))->size(0,0);
+            container->add(Text(font, name));
+            container->add(Text(smallFont, valueName));
+
+            return bg;
+        }
+
+        virtual bool handleInputEvent(GuiContext const& gtx, InputCaptureContext& ctx,
+                Widget* inputCapture, InputEvent const& ev) override
+        {
+            if (flags & WidgetFlags::DISABLED)
+            {
+                return false;
+            }
+
+            if (ctx.selectedWidgetStateNode == stateNode)
+            {
+                f32 adjustSpeed = 0.5f;
+                if ((ev.type == INPUT_KEYBOARD_PRESSED && ev.keyboard.key == KEY_LEFT)
+                    || (ev.type == INPUT_CONTROLLER_BUTTON_PRESSED
+                        && ev.controller.button == BUTTON_DPAD_LEFT))
+                {
+                    *val -= 1;
+                    if (*val < 0)
+                    {
+                        *val = count - 1;
+                    }
+                    INVOKE_CALLBACK(onChange);
+                    return true;
+                }
+                else if ((ev.type == INPUT_KEYBOARD_PRESSED && ev.keyboard.key == KEY_RIGHT)
+                    || (ev.type == INPUT_CONTROLLER_BUTTON_PRESSED
+                        && ev.controller.button == BUTTON_DPAD_RIGHT))
+                {
+                    *val += 1;
+                    if (*val >= count)
+                    {
+                        *val = 0;
+                    }
+                    INVOKE_CALLBACK(onChange);
+                    return true;
+                }
+                else if (ev.type == INPUT_CONTROLLER_AXIS_TRIGGERED
+                        && ev.controller.axis == AXIS_RIGHT_X)
+                {
+                    *val += (i32)sign(ev.controller.axisVal);
+                    if (*val < 0)
+                    {
+                        *val = count - 1;
+                    }
+                    else if (*val >= count)
+                    {
+                        *val = 0;
+                    }
+                    INVOKE_CALLBACK(onChange);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        virtual bool handleMouseInput(GuiContext const& gtx, InputCaptureContext& ctx,
+                InputEvent const& input)
+            override
+        {
+            if (flags & WidgetFlags::DISABLED)
+            {
+                return false;
+            }
+
+            bool isMouseOver =
+                pointInRectangle(input.mouse.mousePos, computedPosition, computedPosition + computedSize);
+
+            if (isMouseOver)
+            {
+                ctx.selectedWidgetStateNode = stateNode;
+
+                if (input.type == INPUT_MOUSE_BUTTON_PRESSED && input.mouse.button == MOUSE_LEFT)
+                {
+                    if (input.mouse.mousePos.x > center().x)
+                    {
+                        *val += 1;
+                        if (*val >= count)
+                        {
+                            *val = 0;
+                        }
+                    }
+                    else
+                    {
+                        *val -= 1;
+                        if (*val < 0)
+                        {
+                            *val = count - 1;
+                        }
+                    }
+                    INVOKE_CALLBACK(onChange);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual void render(GuiContext const& ctx, RenderContext const& rtx) override
+        {
+            auto state = getState<SelectState>(this);
+            RenderContext r = rtx;
+
+            if (flags & WidgetFlags::DISABLED)
+            {
+                state->hoverIntensity = 0.f;
+                state->hoverTimer = 0.f;
+                state->hoverValue = 0.f;
+
+                outline->borders = Insets(2);
+                outline->color = COLOR_OUTLINE_DISABLED;
+
+                bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
+
+                r.alpha *= 0.5f;
+            }
+            else
+            {
+                if (flags & WidgetFlags::STATUS_SELECTED)
+                {
+                    state->hoverIntensity = min(state->hoverIntensity + ctx.deltaTime * 4.f, 1.f);
+                    state->hoverTimer += ctx.deltaTime;
+                    state->hoverValue = 0.1f + (sinf(state->hoverTimer * 4.f) + 1.f) * 0.5f;
+
+                    outline->borders = Insets(4);
+                    outline->color = COLOR_OUTLINE_SELECTED;
+                }
+                else
+                {
+                    state->hoverIntensity = max(state->hoverIntensity - ctx.deltaTime * 2.f, 0.f);
+                    state->hoverTimer = 0.f;
+                    state->hoverValue = max(state->hoverValue - ctx.deltaTime * 2.f, 0.f);
+
+                    outline->borders = Insets(2);
+                    outline->color = COLOR_OUTLINE_NOT_SELECTED;
+                }
+
+                if (flags & WidgetFlags::FADED)
+                {
+                    bg->backgroundColor = COLOR_BG_WIDGET_DISABLED;
+                    alpha->alpha *= 0.5f;
+                }
+                else
+                {
+                    bg->backgroundColor = mix(COLOR_BG_WIDGET,
+                            COLOR_BG_WIDGET_SELECTED, state->hoverValue * state->hoverIntensity);
+                }
+                outline->adjustScale();
+            }
+            alpha2->alpha = state->hoverIntensity;
+
+            Widget::render(ctx, r);
+        }
+    };
 
     struct Tabs : public Widget { };
 

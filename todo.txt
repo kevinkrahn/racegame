@@ -116,3 +116,6 @@
 - Instead of having the camera constantly following the track in the menu, have it periodically
   switch between shots on the track, and have a race going on in the background
 - Add batching for 2D stuff
+- Add style stat for vehicles. Some vehicles naturally have more style than others.
+  Cosmetics upgrades (or even a performance upgrade that adds a wing, for example) would increase
+  the style stat. Higher style stat results in more credits earned each race.

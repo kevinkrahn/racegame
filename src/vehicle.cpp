@@ -972,7 +972,7 @@ void Vehicle::blowUp(f32 respawnTime)
     }
     deadTimer = respawnTime;
     scene->createExplosion(transform.position(), previousVelocity, 10.f);
-    if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.5f)
+    if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.75f)
     {
         scene->attackCredit(lastOpponentDamagedBy, vehicleIndex);
     }

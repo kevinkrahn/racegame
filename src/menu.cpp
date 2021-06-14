@@ -9,7 +9,7 @@
 #include "vehicle.h"
 #include "widgets.h"
 
-constexpr f32 animationLength = 0.4f;
+constexpr f32 animationLength = 0.38f;
 const gui::FontDescription smallFont = { "font", 20 };
 const gui::FontDescription smallFontBold = { "font_bold", 20 };
 const gui::FontDescription smallishFont = { "font", 24 };
@@ -49,7 +49,7 @@ gui::Button* squareButton(gui::Widget* parent, Texture* tex, const char* name, c
         ->add(gui::FadeAnimation(0.f, 1.f, animationLength, true, name))->size(0,0)
         ->add(gui::ScaleAnimation(0.7f, 1.f, animationLength, true))->size(0,0)
         ->add(gui::Button(gui::ButtonFlags::NO_ACTIVE, name, 0.f))->size(size);
-    btn->add(gui::Container(gui::Insets(padding)))->add(gui::Image(tex, false, flipImage));
+    btn->add(gui::Container(gui::Insets(padding)))->add(gui::Image(tex, false, false, flipImage));
     btn
         ->add(gui::Container(gui::Insets(10), {}, Vec4(0), HAlign::CENTER, VAlign::TOP))
         ->add(gui::Text(smallFont, name, gui::COLOR_TEXT));
@@ -89,7 +89,7 @@ gui::Button* garageButton(Menu* menu, gui::Widget* parent, u32 driverIndex, cons
     // TODO: do the vehicle previews better somehow
     Texture* vehiclePreviewTex = menu->vehiclePreviews[driverIndex].getTexture();
     auto row = btn->add(gui::Row());
-    row->add(gui::Image(vehiclePreviewTex, false, true))->size(size.y, size.y);
+    row->add(gui::Image(vehiclePreviewTex, false, false, true))->size(size.y, size.y);
     auto col = row->add(gui::Container(gui::Insets(15)))->size(0,0)->add(gui::Column(15))->size(0,0);
     col->add(gui::Text(mediumFont, tmpStr("%s's Garage", name), gui::COLOR_TEXT));
     col->add(gui::Text(smallishFontBold, tmpStr("Credits: %i", driver.credits), gui::COLOR_TEXT));
@@ -307,6 +307,33 @@ void Menu::openChampionshipMenu()
     updateVehiclePreviews();
 }
 
+void Menu::openVinylMenu(u32 layerIndex)
+{
+    static VinylPattern none;
+    none.name = "None";
+    none.guid = 0;
+    none.colorTextureGuid = 0;
+    vinyls.clear();
+    g_res.iterateResourceType(ResourceType::VINYL_PATTERN, [this](Resource* r) {
+        vinyls.push((VinylPattern*)r);
+    });
+    vinyls.sort([](VinylPattern* a, VinylPattern* b){ return a->name < b->name; });
+    vinyls.insert(vinyls.begin(), &none);
+
+    for (u32 i=0; i<vinyls.size(); ++i)
+    {
+        if (vinyls[i]->guid == garage.previewVehicleConfig.cosmetics.vinylGuids[currentVinylLayer])
+        {
+            vinylIndex = i;
+            break;
+        }
+    }
+
+    currentVinylLayer = layerIndex;
+
+    mode = GARAGE_COSMETICS_VINYL;
+}
+
 void Menu::displayRaceResults()
 {
     using namespace gui;
@@ -398,7 +425,7 @@ void Menu::displayRaceResults()
 
         row->add(Stack())->size(columnWidth[0], 0)
            ->add(Text(font, tmpStr("%i", results.placement + 1), color));
-        row->add(Image(vehiclePreviews[driverIndex].getTexture(), false, true))->size(iconSize);
+        row->add(Image(vehiclePreviews[driverIndex].getTexture(), false, false, true))->size(iconSize);
         row->add(Stack())->size(columnWidth[1], 0)
            ->add(Text(font, results.driver->playerName.data(), color));
         row->add(Container({}, {}, Vec4(0), HAlign::RIGHT))->size(columnWidth[2], 0)
@@ -480,8 +507,8 @@ void Menu::displayStandings()
            ->add(Text(font, tmpStr("%i", i+1), color));
 
         Vec2 iconSize(64);
-        row->add(Image(vehiclePreviews[driver - g_game.state.drivers.begin()].getTexture(), false, true))
-           ->size(iconSize);
+        row->add(Image(vehiclePreviews[driver - g_game.state.drivers.begin()].getTexture(), false,
+                false, true))->size(iconSize);
 
         row->add(Stack())->size(200, 0)
            ->add(Text(font, driver->playerName.data(), color));
@@ -803,9 +830,8 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         tmpStr("CREDITS: %i", garage.driver->credits), COLOR_OUTLINE_SELECTED));
 
         // vehicle preview
-        static RenderWorld rw;
-
         Mesh* quadMesh = g_res.getModel("misc")->getMeshByName("Quad");
+        RenderWorld& rw = garage.rw;
         rw.setName("Garage");
         rw.setSize(
                 (u32)VEHICLE_PREVIEW_SIZE.x * gui::guiScale,
@@ -825,7 +851,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         g_game.renderer->addRenderWorld(&rw);
 
         auto previewContainer = column->add(Container())->size(0,0);
-        previewContainer->add(Image(rw.getTexture(), true, true))->size(VEHICLE_PREVIEW_SIZE);
+        previewContainer->add(Image(rw.getTexture(), true, false, true))->size(VEHICLE_PREVIEW_SIZE);
         if (mode == GARAGE_CAR_LOT)
         {
             auto column = previewContainer
@@ -1236,7 +1262,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         else if (mode == GARAGE_COSMETICS)
         {
             auto inputCapture =
-                (InputCapture*)topLevelRow->add(InputCapture("Garage Performance"))->size(0,0);
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Cosmetics"))->size(0,0);
 
             static Function<void()> selection = []{ assert(false); };
             menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
@@ -1249,18 +1275,22 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
             Vec2 size(SIDE_MENU_WIDTH / 3);
 
+            auto reloadColors = [this]{
+                garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
+                garage.previewVehicleConfig.reloadMaterials();
+                garage.driver->getVehicleConfig()->cosmetics.paintShininess
+                    = garage.previewVehicleConfig.cosmetics.paintShininess;
+                garage.driver->getVehicleConfig()->cosmetics.hsv
+                    = garage.previewVehicleConfig.cosmetics.hsv;
+                garage.driver->getVehicleConfig()->cosmetics.color
+                    = garage.previewVehicleConfig.cosmetics.color;
+                garage.driver->getVehicleConfig()->reloadMaterials();
+            };
+
             animateButton(column, "PAINT HUE")->add(Slider("PAINT HUE", mediumFont,
                         &garage.previewVehicleConfig.cosmetics.hsv.x, 0.f, 1.f,
                         g_res.getTexture("hues"), Vec4(1), Vec4(1)))
-                ->onChange([this]{
-                    garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
-                    garage.previewVehicleConfig.reloadMaterials();
-                    garage.driver->getVehicleConfig()->cosmetics.hsv
-                        = garage.previewVehicleConfig.cosmetics.hsv;
-                    garage.driver->getVehicleConfig()->cosmetics.color
-                        = garage.previewVehicleConfig.cosmetics.color;
-                    garage.driver->getVehicleConfig()->reloadMaterials();
-                })->size(INFINITY, 70);
+                ->onChange(reloadColors)->size(INFINITY, 70);
 
             animateButton(column, "PAINT SATURATION")->add(Slider("PAINT SATURATION", mediumFont,
                         &garage.previewVehicleConfig.cosmetics.hsv.y, 0.f, 1.f,
@@ -1271,15 +1301,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         Vec4(hsvToRgb(
                                 garage.previewVehicleConfig.cosmetics.hsv.x, 1.f,
                                 garage.previewVehicleConfig.cosmetics.hsv.z), 1.f)))
-                ->onChange([this]{
-                    garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
-                    garage.previewVehicleConfig.reloadMaterials();
-                    garage.driver->getVehicleConfig()->cosmetics.hsv
-                        = garage.previewVehicleConfig.cosmetics.hsv;
-                    garage.driver->getVehicleConfig()->cosmetics.color
-                        = garage.previewVehicleConfig.cosmetics.color;
-                    garage.driver->getVehicleConfig()->reloadMaterials();
-                })->size(INFINITY, 70);
+                ->onChange(reloadColors)->size(INFINITY, 70);
 
             Vec4 col = Vec4(srgb(hsvToRgb(
                                     garage.previewVehicleConfig.cosmetics.hsv.x,
@@ -1287,31 +1309,112 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             animateButton(column, "PAINT BRIGHTNESS")->add(Slider("PAINT BRIGHTNESS", mediumFont,
                         &garage.previewVehicleConfig.cosmetics.hsv.z, 0.f, 1.f,
                         g_res.getTexture("brightness_gradient"), col, col))
-                ->onChange([this]{
-                    garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
-                    garage.previewVehicleConfig.reloadMaterials();
-                    garage.driver->getVehicleConfig()->cosmetics.hsv
-                        = garage.previewVehicleConfig.cosmetics.hsv;
-                    garage.driver->getVehicleConfig()->cosmetics.color
-                        = garage.previewVehicleConfig.cosmetics.color;
-                    garage.driver->getVehicleConfig()->reloadMaterials();
-                })->size(INFINITY, 70);
+                ->onChange(reloadColors)->size(INFINITY, 70);
 
             animateButton(column, "PAINT SHININESS")->add(Slider("PAINT SHININESS", mediumFont,
                         &garage.previewVehicleConfig.cosmetics.paintShininess, 0.f, 1.f,
                         g_res.getTexture("slider"), Vec4(1)))
-                ->onChange([this]{
-                    garage.previewVehicleConfig.reloadMaterials();
-                    garage.driver->getVehicleConfig()->cosmetics.paintShininess
-                        = garage.previewVehicleConfig.cosmetics.paintShininess;
-                    garage.driver->getVehicleConfig()->reloadMaterials();
-                })->size(INFINITY, 70);
+                ->onChange(reloadColors)->size(INFINITY, 70);
+
+            Texture* iconbg = g_res.getTexture("iconbg");
+            for (u32 i=0; i<3; ++i)
+            {
+                VinylPattern* vinylPattern = (VinylPattern*)g_res.getResource(
+                        garage.driver->getVehicleConfig()->cosmetics.vinylGuids[i]);
+                Texture* previewTexture = vinylPattern
+                    ? g_res.getTexture(vinylPattern->colorTextureGuid) : iconbg;
+                const char* name = tmpStr("VINYL LAYER %i", i+1);
+                const char* subText = vinylPattern ? vinylPattern->name.data() : "None";
+
+                animateButton(column, name)->add(TextButton(mediumFont, name, smallFont,
+                    subText, 0, previewTexture))
+                    ->onGainedSelect([]{ helpMessage = "Customize your vehicle with vinyls."; })
+                    ->onPress([this, inputCapture, i]{
+                        inputCapture->setEntering(false);
+                        selection = [this, i]{ openVinylMenu(i); };
+                    })
+                    ->size(INFINITY, 70);
+            }
 
             button(column, "BACK", "", [&]{
                 inputCapture->setEntering(false);
                 selection = [this]{
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
                     mode = GARAGE_UPGRADES;
+                    gui::popInputCapture();
+                };
+            }, ButtonFlags::BACK);
+        }
+        else if (mode == GARAGE_COSMETICS_VINYL)
+        {
+            auto inputCapture =
+                (InputCapture*)topLevelRow->add(InputCapture("Garage Vinyl"))->size(0,0);
+
+            static Function<void()> selection = []{ assert(false); };
+            menuContainer = animateMenu(inputCapture, inputCapture->isEntering(), Vec2(SIDE_MENU_WIDTH, 0))
+                ->onAnimationReverseEnd([&]{ selection(); });
+
+            auto column = menuContainer
+                ->add(Container(Insets(0), {}, Vec4(0)))->size(0,0)
+                ->add(Column(10))->size(INFINITY, 0);
+
+            auto grid = column->add(Grid(3, 4))->size(SIDE_MENU_WIDTH, 0);
+            Vec2 size(SIDE_MENU_WIDTH / 3);
+
+            animateButton(column, "LAYER IMAGE")
+                ->add(Select("LAYER IMAGE", mediumFont, smallFont, &vinylIndex,
+                        (i32)vinyls.size(), vinyls[vinylIndex]->name.data()))
+                ->onChange([this]{
+                    garage.previewVehicleConfig.cosmetics.vinylGuids[currentVinylLayer]
+                        = vinyls[vinylIndex]->guid;
+                    garage.driver->getVehicleConfig()->cosmetics.vinylGuids[currentVinylLayer]
+                        = garage.previewVehicleConfig.cosmetics.vinylGuids[currentVinylLayer];
+                })
+                ->size(INFINITY, 70);
+
+            auto reloadColors = [this]{
+                garage.previewVehicleConfig.cosmetics.computeColorFromHsv();
+                garage.previewVehicleConfig.reloadMaterials();
+                garage.driver->getVehicleConfig()->cosmetics.vinylColorsHSV[currentVinylLayer]
+                    = garage.previewVehicleConfig.cosmetics.vinylColorsHSV[currentVinylLayer];
+                garage.driver->getVehicleConfig()->cosmetics.vinylColors[currentVinylLayer]
+                    = garage.previewVehicleConfig.cosmetics.vinylColors[currentVinylLayer];
+                garage.driver->getVehicleConfig()->reloadMaterials();
+            };
+
+            animateButton(column, "LAYER HUE")->add(Slider("LAYER HUE", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.vinylColorsHSV[currentVinylLayer].x,
+                        0.f, 1.f, g_res.getTexture("hues"), Vec4(1), Vec4(1)))
+                ->onChange(reloadColors)->size(INFINITY, 70);
+
+            animateButton(column, "LAYER SATURATION")->add(Slider("LAYER SATURATION", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.vinylColorsHSV[currentVinylLayer].y,
+                        0.f, 1.f, &g_res.white,
+                        Vec4(hsvToRgb(
+                                garage.previewVehicleConfig.cosmetics.hsv.x, 0.f,
+                                garage.previewVehicleConfig.cosmetics.hsv.z), 1.f),
+                        Vec4(hsvToRgb(
+                                garage.previewVehicleConfig.cosmetics.hsv.x, 1.f,
+                                garage.previewVehicleConfig.cosmetics.hsv.z), 1.f)))
+                ->onChange(reloadColors)->size(INFINITY, 70);
+
+            Vec4 col = Vec4(srgb(hsvToRgb(
+                garage.previewVehicleConfig.cosmetics.vinylColorsHSV[currentVinylLayer].x,
+                garage.previewVehicleConfig.cosmetics.vinylColorsHSV[currentVinylLayer].y, 1.f)), 1.f);
+            animateButton(column, "LAYER BRIGHTNESS")->add(Slider("LAYER BRIGHTNESS", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.vinylColorsHSV[currentVinylLayer].z,
+                        0.f, 1.f, g_res.getTexture("brightness_gradient"), col, col))
+                ->onChange(reloadColors)->size(INFINITY, 70);
+
+            animateButton(column, "LAYER OPACITY")->add(Slider("LAYER OPACITY", mediumFont,
+                        &garage.previewVehicleConfig.cosmetics.vinylColors[currentVinylLayer].a,
+                        0.f, 1.f, g_res.getTexture("brightness_gradient"), Vec4(1), Vec4(1)))
+                ->onChange(reloadColors)->size(INFINITY, 70);
+
+            button(column, "BACK", "", [&]{
+                inputCapture->setEntering(false);
+                selection = [this]{
+                    mode = GARAGE_COSMETICS;
                     gui::popInputCapture();
                 };
             }, ButtonFlags::BACK);

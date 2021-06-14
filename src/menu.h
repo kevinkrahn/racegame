@@ -8,6 +8,8 @@
 
 struct GarageData
 {
+    RenderWorld rw;
+
     Driver* driver = nullptr;
 
     VehicleData* previewVehicle = nullptr;
@@ -37,12 +39,16 @@ class Menu
         GARAGE_UPGRADES,
         GARAGE_PERFORMANCE,
         GARAGE_COSMETICS,
+        GARAGE_COSMETICS_VINYL,
         GARAGE_WEAPON,
     };
 
     u32 mode = NONE;
 
     u32 currentWeaponSlotIndex = 0;
+    u32 currentVinylLayer = 0;
+    i32 vinylIndex = 0;
+    Array<VinylPattern*> vinyls;
 
     struct Stat
     {
@@ -67,6 +73,7 @@ class Menu
     void openInitialCarLotMenu(u32 playerIndex);
     void updateVehiclePreviews();
     void openChampionshipMenu();
+    void openVinylMenu(u32 layerIndex);
 
     void displayRaceResults();
     void displayStandings();
