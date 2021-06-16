@@ -100,6 +100,8 @@ class VehiclePhysics
     PxBatchQuery* batchQuery;
     PxVehicleDrivableSurfaceToTireFrictionPairs* frictionPairs;
 	f32 engineThrottle = 0.f;
+	f32 topSpeedHandicapPercent = 1.f;
+	f32 accelHandicapPercent = 1.f;
 	VehicleTuning* tuning;
 	PxWheelQueryResult wheelQueryResults[NUM_WHEELS];
 
@@ -134,4 +136,9 @@ public:
     f32 getAverageWheelRotationSpeed() const;
     f32 getEngineThrottle() const { return engineThrottle; }
     void addIgnoredGroundSpot(class Entity* e) { ignoredGroundSpots.push({ e, 1.f }); }
+    void setSpeedHandicap(f32 accelPercent, f32 topSpeedPercent)
+    {
+        accelHandicapPercent = accelPercent;
+        topSpeedHandicapPercent = topSpeedPercent;
+    }
 };

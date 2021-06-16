@@ -544,6 +544,24 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         specialAbilities[i]->update(scene, this, false, false, deltaTime);
     }
 
+    // placement handicap
+    if (scene->canGo() && scene->timeUntilStart() < -3.f)
+    {
+        f32 distanceOfFirstPlace = scene->getVehicleByPlacement(0)->getTraversedDistance();
+        f32 myDistance = getTraversedDistance();
+        f32 distanceDiff = distanceOfFirstPlace - myDistance;
+        f32 distanceBonus = min(distanceDiff * 0.0005f, 0.1f);
+
+        f32 t = (f32)placement / (f32)(scene->getVehicles().size() - 1);
+        f32 accelHandicap = lerp(0.9f, 1.f, t) + distanceBonus * 0.5f;
+        f32 topSpeedHandicap = lerp(0.9f, 1.05f, t) + distanceBonus;
+        vehiclePhysics.setSpeedHandicap(accelHandicap, topSpeedHandicap);
+    }
+    else
+    {
+        vehiclePhysics.setSpeedHandicap(1.f, 1.f);
+    }
+
     // update vehicle physics
     if (!finishedRace)
     {
@@ -646,11 +664,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
             }
 
             f32 lapDistance = scene->getTrackGraph().getStartNode()->t;
-            f32 myDistance = max((i32)currentLap - 1, 0) * lapDistance
-                + (lapDistance - graphResult.lapDistanceLowMark);
-            f32 otherDistance = max((i32)v->currentLap - 1, 0) * lapDistance
-                + (lapDistance - v->graphResult.lapDistanceLowMark);
-
+            f32 myDistance = getTraversedDistance();
+            f32 otherDistance = v->getTraversedDistance();
             if (myDistance - otherDistance > lapDistance + lappingOffset[v->vehicleIndex])
             {
                 lappingOffset[v->vehicleIndex] += lapDistance;
@@ -1211,20 +1226,23 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
     }
 
     // use reset if stuck
-    f32 facingTarget = dot(forwardVector, normalize(targetPathPoint.position - currentPosition));
-    if (((facingTarget < 0.4f && forwardSpeed < 5.f)
-        || (distance(currentPosition, targetPathPoint.position) > 24.f)) && !isInAir)
+    if (scene->timeUntilStart() < -3.f && !finishedRace)
     {
-        resetTimer += deltaTime;
-        if (resetTimer >= 2.f - ai.drivingSkill)
+        f32 facingTarget = dot(forwardVector, normalize(targetPathPoint.position - currentPosition));
+        if (((facingTarget < 0.4f && forwardSpeed < 5.f)
+            || (distance(currentPosition, targetPathPoint.position) > 24.f)) && !isInAir)
         {
-            input.reset = true;
+            resetTimer += deltaTime;
+            if (resetTimer >= 2.f - ai.drivingSkill)
+            {
+                input.reset = true;
+                resetTimer = 0.f;
+            }
+        }
+        else
+        {
             resetTimer = 0.f;
         }
-    }
-    else
-    {
-        resetTimer = 0.f;
     }
 
     // TODO: Use targetSpeed of the racingLine to modulate throttle
@@ -1556,4 +1574,12 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
 
     // TODO: make the sign correct in the first place
     input.steer *= -1.f;
+}
+
+f32 Vehicle::getTraversedDistance() const
+{
+    f32 lapDistance = scene->getTrackGraph().getStartNode()->t;
+    f32 distance = max((i32)currentLap - 1, 0) * lapDistance
+        + (lapDistance - graphResult.lapDistanceLowMark);
+    return distance;
 }

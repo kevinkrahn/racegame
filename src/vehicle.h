@@ -50,6 +50,7 @@ public:
     // gameplay data
     VehicleInput input;
 	bool finishedRace = false;
+	bool useResetTransform = false;
 	Vec3 cameraTargetMovePoint;
     Vec3 cameraTarget;
     Vec3 cameraFrom;
@@ -65,7 +66,6 @@ public:
     Mat4 startTransform;
 	f32 flipTimer = 0.f;
 	f32 deadTimer = 0.f;
-	bool useResetTransform = false;
 	f32 controlledBrakingTimer = 0.f;
 	u32 lastDamagedBy;
 	u32 lastOpponentDamagedBy = UINT32_MAX;
@@ -198,6 +198,7 @@ public:
     Vec3 getForwardVector() { return vehiclePhysics.getForwardVector(); }
     Vec3 getRightVector() { return vehiclePhysics.getRightVector(); }
     Vec3 getUpVector() { return vehiclePhysics.getUpVector(); }
+    f32 getTraversedDistance() const;
 
     void setMotionBlur(f32 strength, f32 resetTimer)
     {

@@ -67,6 +67,8 @@ struct RaceResult
 
     i32 getCreditsEarned() const
     {
+        // TODO: should there be some base amount that you always get for participating
+        // (assuming you didn't forfeit the race)?
         return getLeaguePointsEarned() + getBonus();
     }
 };
@@ -211,6 +213,7 @@ public:
     void addEntity(Entity* entity) { newEntities.push(OwnedPtr<Entity>(entity)); }
     Array<OwnedPtr<Entity>>& getEntities() { return entities; }
     Array<OwnedPtr<Vehicle>>& getVehicles() { return vehicles; }
+    Vehicle* getVehicleByPlacement(u32 placement) { return vehicles[placements[placement]].get(); }
 
     void writeTrackData();
 };

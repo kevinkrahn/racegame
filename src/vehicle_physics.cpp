@@ -610,11 +610,16 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
                         padSmoothingData, steerVsForwardSpeedTable, inputs, timestep,
                         isInAir, *vehicle4W);
             }
-            f32 speedDiff = forwardSpeed - (tuning->topSpeed - 0.8f);
-            if (speedDiff > 0.f && accel > 0.f)
+            f32 topSpeed = tuning->topSpeed * topSpeedHandicapPercent;
+            f32 speedDiff = forwardSpeed - (topSpeed - 0.8f);
+            if (accel > 0.f)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL,
-                        accel * clamp(1.f - speedDiff * 0.85f, 0.05f, 1.f));
+                        accel * accelHandicapPercent * clamp(1.f - speedDiff * 0.85f, 0.05f, 1.f));
+            }
+            if (speedDiff > 0.f && accel > 0.f)
+            {
+                // TODO: Is this even a good idea?
                 vehicle4W->mDriveDynData.setCurrentGear(tuning->gearRatios.size() - 1);
             }
         }
