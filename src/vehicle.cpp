@@ -362,8 +362,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 {
     TIMED_BLOCK();
 
-    bool isPlayerControlled = driver->isPlayer;
-
     for (u32 i=0; i<NUM_WHEELS; ++i)
     {
         tireMarkRibbons[i].update(deltaTime);
@@ -421,7 +419,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
     if (deadTimer > 0.f)
     {
-        deadTimer -= deltaTime;
         if (engineSound)
         {
             g_audio.setSoundVolume(engineSound, 0.f);
@@ -430,6 +427,8 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             g_audio.setSoundVolume(tireSound, 0.f);
         }
+
+        deadTimer -= deltaTime;
         if (deadTimer <= 0.f)
         {
             backupTimer = 0.f;
@@ -481,12 +480,10 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
 
             if (!finishedRace && scene->canGo())
             {
-#if 1
-                const f32 respawnSpeed = 6.f;
+                const f32 respawnSpeed = 7.f;
                 getRigidBody()->addForce(
                         convert(vehiclePhysics.getForwardVector() * respawnSpeed),
                         PxForceMode::eVELOCITY_CHANGE);
-#endif
             }
         }
         if (cameraIndex >= 0)
@@ -500,7 +497,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
     //rw->addPointLight(getPosition() + getForwardVector() * 3.f, Vec3(1.f, 0.9f, 0.8f), 5.f, 2.f);
 
     input = {};
-    if (isPlayerControlled)
+    if (driver->isPlayer)
     {
         updatePlayerInput(deltaTime, rw);
     }
@@ -851,6 +848,12 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         blowUp();
     }
 
+    if (input.reset && scene->canGo() && !isInAir)
+    {
+        // TODO: make the effect look different for reset vs regular explosion
+        blowUp(0.6f, false);
+    }
+
     // spawn smoke when critically damaged
     smokeTimerDamage = max(0.f, smokeTimerDamage - deltaTime);
     f32 damagePercent = hitPoints / tuning.maxHitPoints;
@@ -867,10 +870,6 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         scene->smoke.spawn(currentPosition + Vec3(0, 0, 0.5f),
             vel, 1.f - damagePercent, Vec4(Vec3(0.5f), 1.f), 0.5f);
         smokeTimerDamage = 0.015f;
-    }
-    if (g_input.isKeyPressed(KEY_R) && isPlayerControlled)
-    {
-        applyDamage(15, vehicleIndex);
     }
 
     // give air bonus if in air long enough
@@ -945,7 +944,7 @@ void Vehicle::applyDamage(f32 amount, u32 instigator)
     }
 }
 
-void Vehicle::blowUp(f32 respawnTime)
+void Vehicle::blowUp(f32 respawnTime, bool giveAttackCredit)
 {
     Mat4 transform = vehiclePhysics.getTransform();
     for (auto& d : tuning.debrisChunks)
@@ -972,13 +971,16 @@ void Vehicle::blowUp(f32 respawnTime)
     }
     deadTimer = respawnTime;
     scene->createExplosion(transform.position(), previousVelocity, 10.f);
-    if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.75f)
+    if (giveAttackCredit)
     {
-        scene->attackCredit(lastOpponentDamagedBy, vehicleIndex);
-    }
-    else
-    {
-        scene->attackCredit(lastDamagedBy, vehicleIndex);
+        if (scene->getWorldTime() - lastTimeDamagedByOpponent < 0.75f)
+        {
+            scene->attackCredit(lastOpponentDamagedBy, vehicleIndex);
+        }
+        else
+        {
+            scene->attackCredit(lastDamagedBy, vehicleIndex);
+        }
     }
     const char* sounds[] = {
         "explosion4",
@@ -1023,6 +1025,7 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
         input.holdShootRear = g_input.isKeyDown(KEY_V);
         input.switchFrontWeapon = g_input.isKeyPressed(KEY_X);
         input.switchRearWeapon = g_input.isKeyPressed(KEY_B);
+        input.reset = g_input.isKeyPressed(KEY_R);
     }
     else if (!driver->controllerGuid.empty())
     {
@@ -1043,6 +1046,7 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
             input.holdShootRear = controller->isButtonDown(BUTTON_LEFT_SHOULDER);
             input.switchFrontWeapon = controller->isButtonPressed(BUTTON_X);
             input.switchRearWeapon = controller->isButtonPressed(BUTTON_Y);
+            input.reset = controller->isButtonPressed(BUTTON_B);
         }
     }
     if (scene->getNumHumanDrivers() == 1)
@@ -1077,6 +1081,7 @@ void Vehicle::updatePlayerInput(f32 deltaTime, RenderWorld* rw)
             input.holdShootRear = input.holdShootRear || c->isButtonDown(BUTTON_LEFT_SHOULDER);
             input.switchFrontWeapon = input.switchFrontWeapon || c->isButtonPressed(BUTTON_X);
             input.switchRearWeapon = input.switchRearWeapon || c->isButtonPressed(BUTTON_Y);
+            input.reset = input.reset || c->isButtonPressed(BUTTON_B);
         }
     }
 
@@ -1205,8 +1210,24 @@ void Vehicle::updateAiInput(f32 deltaTime, RenderWorld* rw)
         // TODO: check if we have line of site to the path point
     }
 
-    // TODO: Use targetSpeed of the racingLine to modulate throttle
+    // use reset if stuck
+    f32 facingTarget = dot(forwardVector, normalize(targetPathPoint.position - currentPosition));
+    if (((facingTarget < 0.4f && forwardSpeed < 5.f)
+        || (distance(currentPosition, targetPathPoint.position) > 24.f)) && !isInAir)
+    {
+        resetTimer += deltaTime;
+        if (resetTimer >= 2.f - ai.drivingSkill)
+        {
+            input.reset = true;
+            resetTimer = 0.f;
+        }
+    }
+    else
+    {
+        resetTimer = 0.f;
+    }
 
+    // TODO: Use targetSpeed of the racingLine to modulate throttle
     Vec2 diff = Vec2(previousTargetPosition) - Vec2(targetPathPoint.position);
     Vec2 dir = lengthSquared(diff) > 0.f ? normalize(diff) : Vec2(forwardVector);
     Vec3 targetP = targetPathPoint.position -

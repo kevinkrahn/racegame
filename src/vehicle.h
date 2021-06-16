@@ -20,6 +20,7 @@ struct VehicleInput
     bool holdShootRear = false;
     bool switchFrontWeapon = false;
     bool switchRearWeapon = false;
+    bool reset = false;
 };
 
 class Vehicle
@@ -94,6 +95,7 @@ public:
 	f32 backupTimer = 0.f;
     f32 attackTimer = 0.f;
     f32 targetTimer = 0.f;
+    f32 resetTimer = 0.f;
     Vehicle* target = nullptr;
     f32 fearTimer = 0.f;
     f32 rearWeaponTimer = 0.f;
@@ -146,7 +148,7 @@ public:
     }
     bool isDead() const { return deadTimer > 0.f; }
 
-    void blowUp(f32 respawnTime=0.8f);
+    void blowUp(f32 respawnTime=0.7f, bool giveAttackCredit=true);
     void reset(Mat4 const& transform);
     void applyDamage(f32 amount, u32 instigator);
     void repair(f32 amount) { hitPoints = min(hitPoints + amount, this->tuning.maxHitPoints); }
