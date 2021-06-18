@@ -614,7 +614,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         {
             if (!scene->canGo())
             {
-                blowUp(2.f);
+                blowUp(2.15f);
                 useResetTransform = true;
             }
             else
@@ -863,7 +863,7 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         blowUp();
     }
 
-    if (input.reset && scene->canGo() && !isInAir)
+    if (input.reset && scene->canGo() && isOnTrack)
     {
         // TODO: make the effect look different for reset vs regular explosion
         blowUp(0.6f, false);

@@ -615,7 +615,7 @@ void VehiclePhysics::update(PxScene* scene, f32 timestep, bool digital, f32 acce
             if (accel > 0.f)
             {
                 vehicle4W->mDriveDynData.setAnalogInput(PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL,
-                        accel * accelHandicapPercent * clamp(1.f - speedDiff * 0.85f, 0.05f, 1.f));
+                        accel * min(accelHandicapPercent, 1.f) * clamp(1.f - speedDiff * 0.85f, 0.05f, 1.f));
             }
             if (speedDiff > 0.f && accel > 0.f)
             {

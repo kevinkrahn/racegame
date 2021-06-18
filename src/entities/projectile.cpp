@@ -35,7 +35,7 @@ void Projectile::onCreate(Scene* scene)
             life = 2.f;
             groundFollow = false;
             collisionRadius = 0.1f;
-            damage = 12;
+            damage = 11;
             this->velocity -= upVector;
             impactEmitter = ParticleEmitter(&scene->sparks, 1, 1,
                 Vec4(Vec3(1.f, 0.6f, 0.02f) * 2.f, 1.f), 0.5f, 6.f, 10.f);

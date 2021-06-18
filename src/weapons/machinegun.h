@@ -24,7 +24,7 @@ public:
         info.tags[0] = "hood-1";
         info.tags[1] = "narrow";
 
-        ammoUnitCount = 12;
+        ammoUnitCount = 18;
         fireMode = FireMode::CONTINUOUS;
 
         loadModelData("weapon_minigun");
@@ -80,7 +80,7 @@ public:
 
         ammo -= 1;
 
-        repeatTimer = 0.09f;
+        repeatTimer = 0.07f;
     }
 
     void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
