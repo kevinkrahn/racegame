@@ -24,6 +24,8 @@ void main()
 
 #elif defined FRAG
 
+#define SSAO_LUMINANCE_BIAS 0.25
+#define NO_REFLECTIONS 1
 #include "lighting.glsl"
 #include "trilinear.glsl"
 

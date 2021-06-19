@@ -101,7 +101,6 @@
 - Show track editor settings (like grid settings) in a fixed window over the viewport
 - Generate and store mipmaps beforehand instead of at runtime
 - Fix depth fade to work at any camera distance
-- Fix SSOA on terrain
 - Add option to change cloud shadow speed and direction
 - Go through all stb dependencies and use appropriate macros to avoid including std libs
 - Experiment with a weapons lock for first few seconds of race

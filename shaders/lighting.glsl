@@ -139,8 +139,13 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     float ssaoAmount = 1.0;
 #if SSAO_QUALITY > 0
 #ifndef NO_SSAO
+
+#ifndef SSAO_LUMINANCE_BIAS
+#define SSAO_LUMINANCE_BIAS 0.0
+#endif
     ssaoAmount = min(
-        texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r + luminance(lightOut) * 0.75 + 0.1, 1.0);
+        texelFetch(ssaoTexture, ivec2(gl_FragCoord.xy), 0).r
+            + luminance(lightOut) * 0.75 + 0.1 + SSAO_LUMINANCE_BIAS, 1.0);
     lightOut *= ssaoAmount;
 #endif
 #endif
@@ -160,10 +165,12 @@ vec4 lighting(vec4 color, vec3 normal, vec3 shadowCoord, vec3 worldPosition,
     lightOut += ambientLight;
 
     // environment reflections
+#ifndef NO_REFLECTIONS
     vec3 I = normalize(worldPosition - cameraPosition);
     vec3 R = reflect(I, normal);
     lightOut += textureLod(cubemapSampler, R, reflectionLod).rgb
         * reflectionAmount * ssaoAmount * ambientStrength;
+#endif
 
     // fog
 #if FOG_ENABLED
