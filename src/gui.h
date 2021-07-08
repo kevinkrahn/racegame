@@ -325,5 +325,5 @@ namespace gui
 
     Widget* findAncestorByStateNode(Widget* w, WidgetStateNode* state);
     Widget* findAncestorByFlags(Widget* w, u32 matchFlags, u32 unmatchFlags);
-    Widget* findParent(Widget* w, u32 flags);
+    //Widget* findParent(Widget* w, u32 flags);
 }

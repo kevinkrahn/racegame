@@ -447,6 +447,7 @@ namespace gui
         return nullptr;
     }
 
+    /*
     Widget* findParent(Widget* w, u32 flags)
     {
         for (Widget* p = w; p; p = p->parent)
@@ -458,4 +459,5 @@ namespace gui
         }
         return nullptr;
     }
+    */
 };
