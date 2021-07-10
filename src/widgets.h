@@ -1532,7 +1532,7 @@ namespace gui
 
         Widget* build()
         {
-            pushID(name);
+            pushID("FadeAnimation");
             return this;
         }
 
