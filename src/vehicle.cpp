@@ -10,12 +10,12 @@
 #include "imgui.h"
 
 // TODO: play with this value to find best distance
-const f32 camDistance = 100.f;
+const f32 CAM_DISTANCE = 90.f;
 
 Vehicle::Vehicle(Scene* scene, Mat4 const& transform, Vec3 const& startOffset,
         Driver* driver, VehicleTuning&& tuning, u32 vehicleIndex, i32 cameraIndex)
 {
-    this->cameraTarget = transform.position() - camDistance * 0.5f;
+    this->cameraTarget = transform.position() - CAM_DISTANCE * 0.5f;
     this->cameraTargetMovePoint = this->cameraTarget;
     this->cameraFrom = cameraTarget;
     this->startTransform = transform;
@@ -321,15 +321,18 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
             5.f, deltaTime);
     */
     auto vel = getRigidBody()->getLinearVelocity();
+    const Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
     if (deadTimer == 0.f)
     {
         cameraTargetMovePoint = pos + Vec3(vel.x, vel.y, 0.f) * 0.375f;
+
+        // zoom the camera out more as the vehicle moves faster
+        cameraTargetMovePoint += min(vel.magnitude() * 0.08f, 15.f);
     }
     cameraTarget = smoothMove(cameraTarget, cameraTargetMovePoint, 6.f, deltaTime);
 
     cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
-    Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
-    cameraFrom = cameraTarget + cameraDir * camDistance;
+    cameraFrom = cameraTarget + cameraDir * CAM_DISTANCE;
     rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 18.f, 250.f);
     if (cameraIndex >= 0)
     {
