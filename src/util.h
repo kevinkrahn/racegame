@@ -8,7 +8,63 @@
 #include <windows.h>
 #else
 #include <dirent.h>
+#include <sys/stat.h>
 #endif
+
+template <typename T>
+void walkDirectory(const char* dir, T const& callback)
+{
+#if _WIN32
+    WIN32_FIND_DATA fileData;
+    HANDLE handle = FindFirstFile(tmpStr("%s\\*", dir), &fileData);
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        FATAL_ERROR("Failed to read directory: ", dir);
+    }
+    do
+    {
+        if (fileData.cFileName[0] != '.')
+        {
+            if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                callback(dir, fileData.cFileName, true);
+                const char* childDirectory = tmpStr("%s/%s", dir, fileData.cFileName);
+                walkDirectory(childDirectory, includeDirs, callback);
+            }
+            else
+            {
+                callback(dir, fileData.cFileName, false);
+            }
+        }
+    }
+    while (FindNextFileA(handle, &fileData) != 0);
+    FindClose(handle);
+#else
+    DIR* dirp = opendir(dir);
+    if (!dirp)
+    {
+        FATAL_ERROR("Failed to read directory: %s", dir);
+    }
+    dirent* dp;
+    while ((dp = readdir(dirp)))
+    {
+        if (dp->d_name[0] != '.')
+        {
+            if (dp->d_type == DT_DIR)
+            {
+                callback(dir, dp->d_name, true);
+				const char* childDirectory = tmpStr("%s/%s", dir, dp->d_name);
+				walkDirectory(childDirectory, callback);
+            }
+            else if (dp->d_type == DT_REG)
+            {
+                callback(dir, dp->d_name, false);
+            }
+        }
+    }
+    closedir(dirp);
+#endif
+}
 
 struct FileItem
 {
@@ -84,7 +140,21 @@ Array<FileItem> readDirectory(const char* dir, bool recursive=true)
         if (!a.isDirectory && b.isDirectory) return false;
         return strcmp(a.path, b.path) < 0;
     });
+
     return files;
+}
+
+void createDirectory(const char* dir)
+{
+#if _WIN32
+    LPSECURITY_ATTRIBUTES attr;
+    attr = nullptr;
+    // TODO: error checking
+    CreateDirectory(dir, attr);
+#else
+    // TODO: error checking
+    mkdir(dir, 0700);
+#endif
 }
 
 const char* chooseFile(bool open, const char* fileType,

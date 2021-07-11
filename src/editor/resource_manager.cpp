@@ -8,7 +8,7 @@ static void sortResources(ResourceFolder& folder)
     {
         if (!g_res.getResource(*it))
         {
-            showError("Resource %s does not exist, removing.", hex(*it));
+            showError("Resource %s does not exist, removing.", hex(*it).data());
             it = folder.childResources.erase(it);
         }
         else
@@ -34,23 +34,23 @@ void ResourceManager::saveResources()
     {
         g_game.currentScene->writeTrackData();
     }
-    for (auto& r : resourcesModified)
+
+    if (!resourcesModified.empty())
     {
-        if (auto res = g_res.getResource(r.key))
-        {
-            const char* guidHex = hex(r.key);
-            auto filename = Str512::format("%s/%s.dat", DATA_DIRECTORY, guidHex);
-            println("Saving resource %s, %s", filename.data(), res->name.data());
-            Serializer::toFile(*res, filename.data());
-        }
+        StrBuf buf;
+        buf.write(DATA_DIRECTORY);
+        createDirectory(buf.data());
+        resources.save(buf, resourcesModified);
+        resourcesModified.clear();
     }
-    resourcesModified.clear();
-    Serializer::toFile(resources, tmpStr("%s/%s", DATA_DIRECTORY, METADATA_FILE));
 }
 
 ResourceManager::ResourceManager()
 {
-    Serializer::fromFile(resources, tmpStr("%s/%s", DATA_DIRECTORY, METADATA_FILE));
+    StrBuf buf;
+    buf.write(DATA_DIRECTORY);
+    resources.load(buf);
+    sortResources(resources);
     resources.setExpanded(true);
 
     Map<i64, bool> resourceFolderMap;
@@ -328,7 +328,8 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
             // TODO: add confirmation dialog
             closeResource(childResource);
 
-            const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, hex(*it));
+            Str32 h = hex(*it);
+            const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, h.data());
             if (remove(filename) != 0)
             {
                 error("Failed to delete file: %s", filename);
@@ -483,7 +484,7 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
                 println("Reimporting all textures...");
                 g_res.iterateResourceType(ResourceType::TEXTURE, [this](Resource* r){
                     auto t = (Texture*)r;
-                    println("Reloading %s %s", t->name.data(), hex(t->guid));
+                    println("Reloading %s %s", t->name.data(), hex(t->guid).data());
                     t->reloadSourceFiles();
                     markDirty(r->guid);
                 });

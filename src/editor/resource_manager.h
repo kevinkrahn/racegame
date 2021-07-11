@@ -50,21 +50,6 @@ struct ResourceFolder
         return parent->hasParent(p);
     }
 
-    void serialize(Serializer& s)
-    {
-        s.field(name);
-        s.field(childFolders);
-        s.field(childResources);
-
-        if (s.deserialize)
-        {
-            for (auto& childFolder : childFolders)
-            {
-                childFolder->parent = this;
-            }
-        }
-    }
-
     bool containsMatch(const char* searchText)
     {
         for (i64 guid : childResources)
@@ -82,6 +67,69 @@ struct ResourceFolder
             }
         }
         return false;
+    }
+
+    void load(StrBuf const& buf)
+    {
+        Array<FileItem> items = readDirectory(buf.data(), false);
+        for (auto const& item : items)
+        {
+            if (item.isDirectory)
+            {
+                ResourceFolder* folder = new ResourceFolder();
+                folder->name = item.path;
+                StrBuf newBuf;
+                newBuf.write(buf);
+                newBuf.write('/');
+                newBuf.write(folder->name);
+                childFolders.push(OwnedPtr(folder));
+                folder->load(newBuf);
+            }
+            else
+            {
+                // TODO: the resource files are loaded twice; here and in resources.cpp
+                // should find some way to only do it once
+                auto data = DataFile::load(tmpStr("%s/%s", buf.data(), item.path));
+                auto guid = data.dict(true).val()["guid"].integer(0);
+                assert(guid != 0);
+                if (guid != 0)
+                {
+                    childResources.push(guid);
+                }
+            }
+        }
+    }
+
+    void save(StrBuf const& buf, Map<i64, bool> const& resourcesModified)
+    {
+        assert(name.size() > 0);
+
+        for (auto guid : childResources)
+        {
+            if (resourcesModified.get(guid))
+            {
+                if (auto res = g_res.getResource(guid))
+                {
+                    Str32 guidHex = hex(guid);
+                    StrBuf filenameBuf;
+                    filenameBuf.writef("%s/%s.dat", buf.data(), guidHex.data());
+                    println("Saving resource %s, %s", filenameBuf.data(), res->name.data());
+                    Serializer::toFile(*res, filenameBuf.data());
+                }
+            }
+        }
+
+        for (auto& folder : childFolders)
+        {
+            StrBuf newBuf;
+            newBuf.write(buf);
+            newBuf.write('/');
+            newBuf.write(folder->name);
+
+            createDirectory(newBuf.data());
+
+            folder->save(newBuf, resourcesModified);
+        }
     }
 };
 
@@ -126,6 +174,7 @@ class ResourceManager
 
     Map<ResourceType, RegisteredResourceEditor> registeredResourceEditors;
     Array<OpenedResource> openedResources;
+    // TODO: Make a Set<> datatype
     Map<i64, bool> resourcesModified;
     Map<Resource*, bool> resourcesClosed;
 

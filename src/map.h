@@ -96,7 +96,7 @@ private:
     }
 
 public:
-    bool empty() const { return size_ != 0; }
+    bool empty() const { return size_ == 0; }
     u32 size() const { return size_; }
     void clear()
     {

@@ -80,19 +80,13 @@ void Resources::load()
             sizeof(identityNormalBytes), TextureType::NORMAL_MAP);
     identityNormal.guid = 1;
 
-    Array<FileItem> resourceFiles = readDirectory(DATA_DIRECTORY);
-    for (auto& file : resourceFiles)
-    {
-        if (path::hasExt(file.path, ".dat") && !strstr(file.path, METADATA_FILE))
+    walkDirectory(DATA_DIRECTORY, [&](const char* dir, const char* name, bool isDir) {
+        if (isDir) {
+            return;
+        }
+        if (path::hasExt(name, ".dat"))
         {
-            auto data = DataFile::load(tmpStr("%s/%s", DATA_DIRECTORY, file.path));
-            /*
-            println("GUID: %s : %s : %x",
-                    file.path,
-                    hex(data.dict(true).val()["guid"].integer(0)),
-                    (u64)data.dict(true).val()["guid"].integer(0));
-            */
-            //println("Loading data file: %s, Asset Name: ", file.path, data.dict(true).val()["name"]);
+            auto data = DataFile::load(tmpStr("%s/%s", dir, name));
             if (data.array().hasValue())
             {
                 for (auto& el : data.array().val())
@@ -105,7 +99,7 @@ void Resources::load()
                 loadResource(data);
             }
         }
-    }
+    });
 
     for (auto& r : resources)
     {

@@ -144,6 +144,11 @@ public:
         write(s, (u32)strlen(s));
     }
 
+    void write(StrBuf const& buf)
+    {
+        write(buf.data(), buf.size());
+    }
+
     void write(const char* s, u32 n)
     {
         ensureCapacity(len_ + n + 1);

@@ -68,6 +68,7 @@ $(DEBUG_DIR)/%.o: %.cpp
 ## RELEASE
 
 release: prep $(RELEASE_EXE)
+	@strip $(RELEASE_EXE)
 	@cp $(RELEASE_EXE) $(BIN_DIR)/$(APP_NAME)
 
 ### LINK

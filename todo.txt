@@ -119,3 +119,5 @@
   Cosmetics upgrades (or even a performance upgrade that adds a wing, for example) would increase
   the style stat. Higher style stat results in more credits earned each race.
 - Experiment with changing FOV along with motion blur when boosting
+- Try out distance-field fonts
+- Do not allow invalid characters in folder names (because they are saved as folders on disk)
