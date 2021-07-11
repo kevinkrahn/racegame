@@ -6,6 +6,8 @@
 
 class WKineticArmor : public Weapon
 {
+    f32 timer = 0.f;
+
 public:
     WKineticArmor()
     {
@@ -25,6 +27,10 @@ public:
             vehicle->setShield(Vec3(1.f, 0.2f, 0.f), 1.f);
             //Vec3(0.05f, 0.15f, 1.f);
         }
+        else
+        {
+            timer = max(timer - deltaTime, 0.f);
+        }
     }
 
     void render(class RenderWorld* rw, Mat4 const& vehicleTransform,
@@ -35,15 +41,21 @@ public:
 
     f32 onDamage(f32 damage, Vehicle* vehicle) override
     {
-        if (ammo > 0)
+        if (ammo > 0 && damage > 8.f)
         {
-            if (damage > 8.f)
-            {
-                ammo = 0;
-                g_audio.playSound3D(g_res.getSound("kinetic_armor"), SoundType::GAME_SFX, vehicle->getPosition());
-            }
+            ammo = 0;
+            g_audio.playSound3D(g_res.getSound("kinetic_armor"), SoundType::GAME_SFX, vehicle->getPosition());
+
+            // Add a small time window of invulnerability. Without it would only absorb one bullet
+            // from a scattergun shot
+            timer = 0.1f;
+        }
+
+        if (timer > 0.f)
+        {
             return 0.f;
         }
+
         return damage;
     }
 };
