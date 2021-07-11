@@ -55,6 +55,7 @@ all: release
 
 debug: prep $(DEBUG_EXE)
 	@cp $(DEBUG_EXE) $(BIN_DIR)/$(APP_NAME)
+	@echo "Debug build successful"
 
 ### LINK
 $(DEBUG_EXE): $(DEBUG_OBJECTS)
@@ -70,6 +71,7 @@ $(DEBUG_DIR)/%.o: %.cpp
 release: prep $(RELEASE_EXE)
 	@strip $(RELEASE_EXE)
 	@cp $(RELEASE_EXE) $(BIN_DIR)/$(APP_NAME)
+	@echo "Release build successful"
 
 ### LINK
 $(RELEASE_EXE): $(RELEASE_OBJECTS)

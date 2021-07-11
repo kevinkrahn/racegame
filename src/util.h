@@ -7,6 +7,7 @@
 #define NOMINMAX
 #include <windows.h>
 #else
+#include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #endif
@@ -149,11 +150,52 @@ void createDirectory(const char* dir)
 #if _WIN32
     LPSECURITY_ATTRIBUTES attr;
     attr = nullptr;
-    // TODO: error checking
-    CreateDirectory(dir, attr);
+    auto result = CreateDirectory(dir, attr);
+    if (result == 0)
+    {
+        error("Failed to create directory: %s", dir);
+    }
 #else
-    // TODO: error checking
-    mkdir(dir, 0700);
+    auto result = mkdir(dir, 0700);
+    if (result != 0)
+    {
+        error("Failed to create directory: %s: %s", dir, strerror(errno));
+    }
+#endif
+}
+
+void renameFile(const char* oldFilename, const char* newFilename)
+{
+#if _WIN32
+    auto result = MoveFile(oldFilename, newFilename);
+    if (result == 0)
+    {
+        error("Failed to rename file: %s -> %s", oldFilename, newFilename);
+    }
+#else
+    auto result = rename(oldFilename, newFilename);
+    if (result != 0)
+    {
+        error("Failed to rename file: %s -> %s: %s", oldFilename, newFilename,
+                strerror(errno));
+    }
+#endif
+}
+
+void deleteFile(const char* path)
+{
+#if _WIN32
+    auto result = DeleteFileA(path);
+    if (result == 0)
+    {
+        error("Failed to delete file: %s", path);
+    }
+#else
+    auto result = remove(path);
+    if (result != 0)
+    {
+        error("Failed to delete file: %s: %s", path, strerror(errno));
+    }
 #endif
 }
 

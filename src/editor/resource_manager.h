@@ -31,6 +31,43 @@ struct ResourceFolder
     ResourceFolder* parent = nullptr;
     bool isExpanded = false;
 
+    void rename(const char* newName)
+    {
+        // TODO: create fs path api for working with paths
+        const char* relativePath = getParentPath();
+        const char* oldPath = tmpStr("%s/%s/%s", DATA_DIRECTORY, relativePath, name.data());
+        const char* newPath = tmpStr("%s/%s/%s", DATA_DIRECTORY, relativePath, newName);
+        renameFile(oldPath, newPath);
+        name = newName;
+    }
+
+    void deleteBackingDirectory()
+    {
+        const char* path = tmpStr("%s/%s/%s", DATA_DIRECTORY, getParentPath(), name.data());
+        deleteFile(path);
+    }
+
+    void deleteChildResourceFile(i64 guid)
+    {
+        Str32 h = hex(guid);
+        const char* filename = tmpStr("%s/%s/%s/%s.dat", DATA_DIRECTORY, getParentPath(),
+                name.data(), h.data());
+        deleteFile(filename);
+    }
+
+    const char* getParentPath()
+    {
+        const char* pth = "";
+        ResourceFolder* folder = parent;
+        // don't add the name of the root folder to the path
+        while (folder && folder->parent)
+        {
+            pth = tmpStr("%s/%s", folder->name.data(), pth);
+            folder = folder->parent;
+        }
+        return pth;
+    }
+
     void setExpanded(bool expanded, bool recurse=false)
     {
         isExpanded = expanded;
@@ -98,6 +135,12 @@ struct ResourceFolder
                 }
             }
         }
+    }
+
+    void createBackingDirectory()
+    {
+        const char* dir = tmpStr("%s/%s/%s", DATA_DIRECTORY, getParentPath(), name.data());
+        createDirectory(dir);
     }
 
     void save(StrBuf const& buf, Map<i64, bool> const& resourcesModified)

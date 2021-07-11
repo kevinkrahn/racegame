@@ -12,7 +12,6 @@
 
 const char* DATA_DIRECTORY = "../editor_data";
 const char* ASSET_DIRECTORY = "../assets";
-const char* METADATA_FILE = "metadata.dat";
 
 namespace ResourceFlags
 {

@@ -103,9 +103,16 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
         }
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 0));
         ImGui::PushID(tmpStr("Rename %u", renameID));
-        if (ImGui::InputText("", &renameText, ImGuiInputTextFlags_EnterReturnsTrue))
+        if (ImGui::InputText("", renameText.data(), renameText.MAX_SIZE,
+                ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCharFilter,
+                [](ImGuiInputTextCallbackData* data) {
+                    const char* allowedChars =
+                        " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_01234567890()|!#$";;
+                    return (data->EventChar < 256 && strchr(allowedChars, (char)data->EventChar))
+                        ? 0 : 1;
+                }))
         {
-            renameFolder->name = renameText;
+            renameFolder->rename(renameText.data());
         }
         ImGui::PopID();
         ImGui::PopStyleVar();
@@ -183,6 +190,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
                 folder->setExpanded(true);
                 renameText = folder->childFolders.back()->name;
                 renameFolder = folder->childFolders.back().get();
+                renameFolder->createBackingDirectory();
                 firstFrameRename = true;
             }
             if (ImGui::BeginMenu("New Resource..."))
@@ -212,6 +220,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
             {
                 if (showFolder(it->get()))
                 {
+                    (*it)->deleteBackingDirectory();
                     it = folder->childFolders.erase(it);
                 }
                 else
@@ -327,13 +336,7 @@ void ResourceManager::showFolderContents(ResourceFolder* folder)
         {
             // TODO: add confirmation dialog
             closeResource(childResource);
-
-            Str32 h = hex(*it);
-            const char* filename = tmpStr("%s/%s.dat", DATA_DIRECTORY, h.data());
-            if (remove(filename) != 0)
-            {
-                error("Failed to delete file: %s", filename);
-            }
+            folder->deleteChildResourceFile(*it);
             removed = true;
             it = folder->childResources.erase(it);
         }

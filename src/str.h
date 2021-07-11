@@ -10,7 +10,7 @@ class Str
     char buf_[SIZE] = {0};
 
 public:
-    static constexpr u32 MAX_SIZE = SIZE;
+    static constexpr u32 MAX_SIZE = SIZE - 1;
 
     Str() {};
     Str(const char* s) { *this = s; }
