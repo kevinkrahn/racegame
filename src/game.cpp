@@ -153,7 +153,8 @@ void Game::run()
 
     gui::init();
 
-    println("Loaded resources in %.2f seconds", getTime() - loadStartTime);
+    println("Loaded %i resources in %.2f seconds",
+            g_res.getResources().size(), getTime() - loadStartTime);
 
     changeScene("race1");
     menu.openMainMenu();

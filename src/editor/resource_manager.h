@@ -31,6 +31,19 @@ struct ResourceFolder
     ResourceFolder* parent = nullptr;
     bool isExpanded = false;
 
+    const char* getParentPath()
+    {
+        const char* pth = "";
+        ResourceFolder* folder = parent;
+        // don't add the name of the root folder to the path
+        while (folder && folder->parent)
+        {
+            pth = tmpStr("%s/%s", folder->name.data(), pth);
+            folder = folder->parent;
+        }
+        return pth;
+    }
+
     void rename(const char* newName)
     {
         // TODO: create fs path api for working with paths
@@ -39,6 +52,34 @@ struct ResourceFolder
         const char* newPath = tmpStr("%s/%s/%s", DATA_DIRECTORY, relativePath, newName);
         renameFile(oldPath, newPath);
         name = newName;
+    }
+
+    void moveBackingDirectory(ResourceFolder* from, ResourceFolder* to)
+    {
+        const char* oldPath = tmpStr("%s/%s/%s", DATA_DIRECTORY, getParentPath(), name.data());
+
+        auto removeIt = from->childFolders.findIf([&](auto& f) { return f.get() == this; });
+        assert(removeIt);
+
+        to->childFolders.push(move(*removeIt));
+        parent = to;
+
+        from->childFolders.erase(removeIt);
+
+        const char* newPath = tmpStr("%s/%s/%s", DATA_DIRECTORY, getParentPath(), name.data());
+        renameFile(oldPath, newPath);
+    }
+
+    void moveResource(i64 guid, ResourceFolder* to)
+    {
+        const char* oldPath =
+            tmpStr("%s/%s/%s/%s.dat", DATA_DIRECTORY, getParentPath(), name.data(), hex(guid).data());
+        const char* newPath =
+            tmpStr("%s/%s/%s/%s.dat", DATA_DIRECTORY, to->getParentPath(), to->name.data(), hex(guid).data());
+        renameFile(oldPath, newPath);
+
+        childResources.erase(childResources.find(guid));
+        to->childResources.push(guid);
     }
 
     void deleteBackingDirectory()
@@ -53,19 +94,6 @@ struct ResourceFolder
         const char* filename = tmpStr("%s/%s/%s/%s.dat", DATA_DIRECTORY, getParentPath(),
                 name.data(), h.data());
         deleteFile(filename);
-    }
-
-    const char* getParentPath()
-    {
-        const char* pth = "";
-        ResourceFolder* folder = parent;
-        // don't add the name of the root folder to the path
-        while (folder && folder->parent)
-        {
-            pth = tmpStr("%s/%s", folder->name.data(), pth);
-            folder = folder->parent;
-        }
-        return pth;
     }
 
     void setExpanded(bool expanded, bool recurse=false)
@@ -115,6 +143,7 @@ struct ResourceFolder
             {
                 ResourceFolder* folder = new ResourceFolder();
                 folder->name = item.path;
+                folder->parent = this;
                 StrBuf newBuf;
                 newBuf.write(buf);
                 newBuf.write('/');

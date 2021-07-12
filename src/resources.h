@@ -69,6 +69,7 @@ public:
         resource->name = newName;
         resourceNameMap.set(resource->name, resource);
     }
+    decltype(resources) const& getResources() const { return resources; }
 
     template <typename T>
     void iterateResourceType(ResourceType type, T const& cb)

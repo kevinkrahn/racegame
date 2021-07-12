@@ -184,7 +184,7 @@ bool ResourceManager::showFolder(ResourceFolder* folder)
             if (ImGui::MenuItem("New Folder"))
             {
                 OwnedPtr<ResourceFolder> newFolder(new ResourceFolder);
-                newFolder->name = "New Folder";
+                newFolder->name = tmpStr("New Folder %i", folder->childFolders.size() + 1);
                 newFolder->parent = folder;
                 folder->childFolders.push(move(newFolder));
                 folder->setExpanded(true);
@@ -517,20 +517,13 @@ void ResourceManager::onUpdate(Renderer *renderer, f32 deltaTime)
         {
             if (folderMove.payload.isFolder)
             {
-                auto removeIt = folderMove.payload.sourceFolder->childFolders.findIf(
-                            [&](auto& f) { return f.get() == folderMove.payload.folderDragged; });
-                assert(removeIt);
-                folderMove.dropFolder->childFolders.push(move(*removeIt));
-                folderMove.dropFolder->childFolders.back()->parent = folderMove.dropFolder;
-                folderMove.payload.sourceFolder->childFolders.erase(removeIt);
+                folderMove.payload.folderDragged->moveBackingDirectory(
+                        folderMove.payload.sourceFolder, folderMove.dropFolder);
             }
             else
             {
-                folderMove.payload.sourceFolder->childResources.erase(
-                        folderMove.payload.sourceFolder->childResources.find(
-                            folderMove.payload.resourceDragged->guid));
-                folderMove.dropFolder->childResources.push(
-                        folderMove.payload.resourceDragged->guid);
+                folderMove.payload.sourceFolder->moveResource(
+                        folderMove.payload.resourceDragged->guid, folderMove.dropFolder);
             }
         }
         folderMove.dropFolder = nullptr;
