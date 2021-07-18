@@ -30,7 +30,7 @@ void walkDirectory(const char* dir, T const& callback)
             {
                 callback(dir, fileData.cFileName, true);
                 const char* childDirectory = tmpStr("%s/%s", dir, fileData.cFileName);
-                walkDirectory(childDirectory, includeDirs, callback);
+                walkDirectory(childDirectory, callback);
             }
             else
             {
@@ -150,16 +150,16 @@ void createDirectory(const char* dir)
 #if _WIN32
     LPSECURITY_ATTRIBUTES attr;
     attr = nullptr;
-    auto result = CreateDirectory(dir, attr);
+    auto result = CreateDirectoryA(dir, attr);
     if (result == 0)
     {
-        error("Failed to create directory: %s", dir);
+        //error("Failed to create directory: %s", dir);
     }
 #else
     auto result = mkdir(dir, 0700);
     if (result != 0)
     {
-        error("Failed to create directory: %s: %s", dir, strerror(errno));
+        //error("Failed to create directory: %s: %s", dir, strerror(errno));
     }
 #endif
 }
@@ -178,6 +178,23 @@ void renameFile(const char* oldFilename, const char* newFilename)
     {
         error("Failed to rename file: %s -> %s: %s", oldFilename, newFilename,
                 strerror(errno));
+    }
+#endif
+}
+
+void deleteDirectory(const char* path)
+{
+#if _WIN32
+    auto result = RemoveDirectoryA(path);
+    if (result == 0)
+    {
+        error("Failed to delete directory: %s", path);
+    }
+#else
+    auto result = remove(path);
+    if (result != 0)
+    {
+        error("Failed to delete directory: %s: %s", path, strerror(errno));
     }
 #endif
 }

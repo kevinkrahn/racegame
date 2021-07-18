@@ -85,7 +85,7 @@ struct ResourceFolder
     void deleteBackingDirectory()
     {
         const char* path = tmpStr("%s/%s/%s", DATA_DIRECTORY, getParentPath(), name.data());
-        deleteFile(path);
+        deleteDirectory(path);
     }
 
     void deleteChildResourceFile(i64 guid)
