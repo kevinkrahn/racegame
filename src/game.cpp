@@ -268,10 +268,10 @@ void Game::run()
 
         g_tmpMem.clear();
 
-        const f64 maxDeltaTime = 1.f / 30.f;
-        f64 delta = min(getTime() - frameStartTime, maxDeltaTime);
+        const f64 maxDeltaTime = 1.f / g_game.config.graphics.minFPS;
+        f64 delta = getTime() - frameStartTime;
         realDeltaTime = (f32)delta;
-        deltaTime = (f32)(delta * timeDilation);
+        deltaTime = (f32)(min(delta, maxDeltaTime) * timeDilation);
         currentTime += delta * timeDilation;
 
         if (realDeltaTime > allTimeHighestDeltaTime)
@@ -420,7 +420,15 @@ void Game::checkDebugKeys()
             isImGuiDemoWindowOpen = !isImGuiDemoWindowOpen;
         }
 
-        ImGui::Text("FPS: %.3f", 1.f / g_game.realDeltaTime);
+        const f64 maxDeltaTime = 1.f / g_game.config.graphics.minFPS;
+        if (g_game.realDeltaTime > maxDeltaTime)
+        {
+            ImGui::Text("FPS: %.3f, (lagging)", 1.f / g_game.realDeltaTime);
+        }
+        else
+        {
+            ImGui::Text("FPS: %.3f", 1.f / g_game.realDeltaTime);
+        }
         ImGui::Text("Average FPS: %.3f", 1.f / g_game.averageDeltaTime);
         ImGui::Text("Frame Time: %.3fms", g_game.realDeltaTime * 1000);
         ImGui::Text("CPU Time: %.3fms", g_game.cpuTime * 1000);

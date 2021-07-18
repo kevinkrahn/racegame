@@ -21,6 +21,7 @@ struct Config
         u32 shadowMapResolution = 2048;
         ConfigLevel shadowFilteringQuality = ConfigLevel::MEDIUM;
         u32 maxFPS = 200;
+        u32 minFPS = 30;
         u32 msaaLevel = 0;
         bool fullscreen = false;
         bool vsync = true;
@@ -43,6 +44,7 @@ struct Config
             s.field(shadowMapResolution);
             s.field(shadowFilteringQuality);
             s.field(maxFPS);
+            s.field(minFPS);
             s.field(msaaLevel);
             s.field(fullscreen);
             s.field(vsync);

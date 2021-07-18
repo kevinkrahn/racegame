@@ -396,7 +396,7 @@ Buffer readFileBytes(const char* filename)
     SDL_RWops* file = SDL_RWFromFile(filename, "r+b");
     if (!file)
     {
-        FATAL_ERROR("File ", filename, " does not exist.");
+        FATAL_ERROR("File %s does not exist.", filename);
     }
     size_t size = SDL_RWsize(file);
     Buffer buffer(size);
@@ -410,7 +410,7 @@ StrBuf readFileString(const char* filename)
     SDL_RWops* file = SDL_RWFromFile(filename, "r+b");
     if (!file)
     {
-        FATAL_ERROR("File ", filename, " does not exist.");
+        FATAL_ERROR("File %s does not exist.", filename);
     }
     u32 size = (u32)SDL_RWsize(file);
     StrBuf buffer(size);
@@ -424,11 +424,11 @@ void writeFile(const char* filename, void* data, size_t len)
     SDL_RWops* file = SDL_RWFromFile(filename, "w+b");
     if (!file)
     {
-        FATAL_ERROR("Failed to open file for writing: ", filename);
+        FATAL_ERROR("Failed to open file for writing: %s", filename);
     }
     if (SDL_RWwrite(file, data, 1, len) != len)
     {
-        FATAL_ERROR("Failed to complete file write: ", filename);
+        FATAL_ERROR("Failed to complete file write: %s", filename);
     }
     SDL_RWclose(file);
 }

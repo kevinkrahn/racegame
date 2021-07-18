@@ -1602,7 +1602,10 @@ void RenderWorld::renderViewport(Renderer* renderer, u32 index, f32 deltaTime)
         glUseProgram(renderer->getShaderProgram(
                     isEditorActive ? "post_process_outline_editor" : "post_process_outline"));
         glUniform4fv(0, 1, (f32*)&highlightColor[index]);
-        glUniform2fv(1, 1, (f32*)&motionBlur[index]);
+        if (g_game.config.graphics.motionBlurEnabled)
+        {
+            glUniform2fv(1, 1, (f32*)&motionBlur[index]);
+        }
         for (u32 i=0; i<fb.bloomFramebuffers.size(); ++i)
         {
             glBindTextureUnit(1+i, fb.bloomColorTextures[i*2]);
