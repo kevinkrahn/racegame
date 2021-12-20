@@ -11,6 +11,7 @@ SOURCES =                  \
 	src/imgui.cpp          \
 	external/glad/glad.cpp
 INCLUDE_DIRS =                      \
+	/usr/include/SDL2 \
 	external                        \
 	external/sdl2                   \
 	external/sdl2/SDL2              \

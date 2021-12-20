@@ -100,6 +100,12 @@ struct Config
     }
 
     void save() { Serializer::toFile(*this, CONFIG_FILE_PATH); }
-    void load() { Serializer::fromFile(*this, CONFIG_FILE_PATH); }
+    void load()
+    {
+        if (fileExists(CONFIG_FILE_PATH))
+        {
+            Serializer::fromFile(*this, CONFIG_FILE_PATH);
+        }
+    }
 };
 

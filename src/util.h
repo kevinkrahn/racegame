@@ -419,6 +419,17 @@ StrBuf readFileString(const char* filename)
     return buffer;
 }
 
+bool fileExists(const char* filename)
+{
+    SDL_RWops* file = SDL_RWFromFile(filename, "r+b");
+    if (!file)
+    {
+        return false;
+    }
+    SDL_RWclose(file);
+    return true;
+}
+
 void writeFile(const char* filename, void* data, size_t len)
 {
     SDL_RWops* file = SDL_RWFromFile(filename, "w+b");

@@ -546,7 +546,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             ->add(Container(Insets(10), {}, Vec4(0), HAlign::CENTER))->size(INFINITY, 70)
             ->add(Text(bigFont, "MAIN MENU"));
 
-        button(column, "NEW CHAMPIONSHIP", "Begin a new championship!", [&]{
+        button(column, "NEW CHAMPIONSHIP", "Begin a new championship!", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&]{
                 g_game.state = {};
@@ -564,7 +564,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 fadeToBlack = false;
             };
         });
-        button(column, "QUICK RACE", "Jump into a race without delay!", [&]{
+        button(column, "QUICK RACE", "Jump into a race without delay!", [&, inputCapture]{
             inputCapture->setEntering(false);
             fadeToBlack = true;
             selection = [&] {
@@ -624,7 +624,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         });
         button(column, "CONTROLS", "Change controller or keyboard layout.", [&]{
         });
-        button(column, "BACK", "Return to main menu.", [&]{
+        button(column, "BACK", "Return to main menu.", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&] {
                 popInputCapture();
@@ -721,7 +721,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
         column->add(Container())->size(INFINITY, 20);
 
         // TODO: ensure all player names are unique before starting championship
-        button(column, "BEGIN", "Begin the championship!", [&]{
+        button(column, "BEGIN", "Begin the championship!", [&, inputCapture]{
             inputCapture->setEntering(false);
             fadeToBlack = true;
             selection = [&] {
@@ -731,7 +731,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             };
         })->addFlags(g_game.state.drivers.empty() ? gui::WidgetFlags::DISABLED : 0);
 
-        button(column, "CANCEL", "Return to main menu.", [&]{
+        button(column, "CANCEL", "Return to main menu.", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&] {
                 popInputCapture();
@@ -1074,7 +1074,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 garage.driver->vehicleConfig = garage.previewVehicleConfig;
             })->addFlags(canBuy ? 0 : WidgetFlags::DISABLED);
 
-            button(column, "DONE", "", [&]{
+            button(column, "DONE", "", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [&]{
                     garage.previewVehicle = garage.driver->getVehicleData();
@@ -1104,14 +1104,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
             Texture* iconbg = g_res.getTexture("iconbg");
 
-            button(column, "PERFORMANCE", "Upgrades to enhance your vehicle's performance.", [&]{
+            button(column, "PERFORMANCE", "Upgrades to enhance your vehicle's performance.", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this] {
                     mode = GARAGE_PERFORMANCE;
                 };
             }, 0, g_res.getTexture("icon_engine"));
 
-            button(column, "COSMETICS", "Change your vehicle's appearance.", [&]{
+            button(column, "COSMETICS", "Change your vehicle's appearance.", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this] {
                     mode = GARAGE_COSMETICS;
@@ -1139,14 +1139,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     ->size(INFINITY, 70);
             }
 
-            button(column, "CAR LOT", "Buy a new vehicle!", [&]{
+            button(column, "CAR LOT", "Buy a new vehicle!", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this] {
                     mode = GARAGE_CAR_LOT;
                 };
             });
 
-            button(column, "DONE", nullptr, [&]{
+            button(column, "DONE", nullptr, [&, inputCapture]{
                 animateInGarage = false;
                 inputCapture->setEntering(false);
                 selection = [this] {
@@ -1246,7 +1246,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
             }
 
-            button(column, "BACK", "", [&]{
+            button(column, "BACK", "", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this]{
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
@@ -1336,7 +1336,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     ->size(INFINITY, 70);
             }
 
-            button(column, "BACK", "", [&]{
+            button(column, "BACK", "", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this]{
                     garage.previewVehicleConfig = *garage.driver->getVehicleConfig();
@@ -1411,7 +1411,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                         0.f, 1.f, g_res.getTexture("brightness_gradient"), Vec4(1), Vec4(1)))
                 ->onChange(reloadColors)->size(INFINITY, 70);
 
-            button(column, "BACK", "", [&]{
+            button(column, "BACK", "", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this]{
                     mode = GARAGE_COSMETICS;
@@ -1490,7 +1490,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 }
             })->addFlags(upgradeLevel > 0 ? 0 : WidgetFlags::DISABLED);
 
-            button(column, "BACK", "", [&]{
+            button(column, "BACK", "", [&, inputCapture]{
                 inputCapture->setEntering(false);
                 selection = [this]{
                     garage.driver->vehicleConfig = garage.previewVehicleConfig;
@@ -1549,7 +1549,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
             };
         });
 
-        button(column, "STANDINGS", "View the current championship standings.", [&]{
+        button(column, "STANDINGS", "View the current championship standings.", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&] {
                 mode = STANDINGS;
@@ -1571,7 +1571,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                     ->add(Container(Vec4(0, 0, 0, 1)));
             auto animation = animateMenu(dialogInputCapture, dialogInputCapture->isEntering(),
                     Vec2(INFINITY), 0.25f);
-            animation->onAnimationReverseEnd([&]{
+            animation->onAnimationReverseEnd([&, inputCapture]{
                 popInputCapture();
                 isDialogOpen = false;
                 if (yes) {
