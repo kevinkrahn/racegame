@@ -553,7 +553,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 mode = NEW_CHAMPIONSHIP;
             };
         });
-        button(column, "LOAD CHAMPIONSHIP", "Resume a previous championship.", [&]{
+        button(column, "LOAD CHAMPIONSHIP", "Resume a previous championship.", [&, inputCapture]{
             inputCapture->setEntering(false);
             fadeToBlack = true;
             selection = [&] {
@@ -574,14 +574,14 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 mode = NONE;
             };
         });
-        button(column, "SETTINGS", "Change things.", [&]{
+        button(column, "SETTINGS", "Change things.", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&] {
                 tmpConfig = g_game.config;
                 mode = SETTINGS;
             };
         });
-        button(column, "EDITOR", "Edit things.", [&]{
+        button(column, "EDITOR", "Edit things.", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&] {
                 clearInputCaptures();
@@ -589,7 +589,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
                 mode = NONE;
             };
         });
-        button(column, "CHALLENGES", "Challenge things.", [&]{
+        button(column, "CHALLENGES", "Challenge things.", [&, inputCapture]{
             inputCapture->setEntering(false);
             selection = [&] {
                 clearInputCaptures();
@@ -1538,7 +1538,7 @@ void Menu::onUpdate(Renderer* renderer, f32 deltaTime)
 
         column->add(Container())->size(Vec2(20));
 
-        button(column, "BEGIN RACE", "Start the next race.", [&]{
+        button(column, "BEGIN RACE", "Start the next race.", [&, inputCapture]{
             inputCapture->setEntering(false);
             fadeToBlack = true;
             selection = [&] {

@@ -307,58 +307,62 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     Vec3 pos = lastValidPosition;
     pos.z = max(pos.z, -10.f);
 
-#if 0
-    cameraTarget = pos + Vec3(0, 0, 2.f);
-    cameraFrom = smoothMove(cameraFrom,
-            cameraTarget - getForwardVector() * 10.f + Vec3(0, 0, 3.f), 8.f, deltaTime);
-    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
-#else
-    /*
-    Vec3 forwardVector = vehiclePhysics.getForwardVector();
-    f32 forwardSpeed = vehiclePhysics.getForwardSpeed();
-    cameraTarget = smoothMove(cameraTarget,
-            pos + Vec3(normalize(forwardVector.xy), 0.f) * forwardSpeed * 0.3f,
-            5.f, deltaTime);
-    */
-    auto vel = getRigidBody()->getLinearVelocity();
-    const Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
-    if (deadTimer == 0.f)
+    if (g_game.config.gameplay.thirdPersonCameraEnabled) 
     {
-        cameraTargetMovePoint = pos + Vec3(vel.x, vel.y, 0.f) * 0.375f;
-
-        // zoom the camera out more as the vehicle moves faster
-        cameraTargetMovePoint += min(vel.magnitude() * 0.08f, 15.f);
+        rw->setClearColor(true);
+        cameraTarget = pos + Vec3(0, 0, 2.f);
+        cameraFrom = smoothMove(cameraFrom,
+                cameraTarget - getForwardVector() * 10.f + Vec3(0, 0, 3.f), 8.f, deltaTime);
+        rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 4.f, 200.f, 60.f);
     }
-    cameraTarget = smoothMove(cameraTarget, cameraTargetMovePoint, 6.f, deltaTime);
-
-    cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
-    cameraFrom = cameraTarget + cameraDir * CAM_DISTANCE;
-    rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 18.f, 250.f);
-    if (cameraIndex >= 0)
+    else
     {
-        rw->setHighlightColor(cameraIndex,
-                Vec4(driver->getVehicleConfig()->cosmetics.color, 1.f));
-
-        Mat4 m = Mat4(1.f);
-        m[0] = Vec4(-cameraDir, m[0].w);
-        m[1] = Vec4(normalize(
-                    cross(Vec3(0, 0, 1), Vec3(m[0]))), m[1].w);
-        m[2] = Vec4(normalize(
-                    cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
-
-        motionBlurStrength = smoothMove(motionBlurStrength, targetMotionBlurStrength, 2.f, deltaTime);
-
-        Vec3 vel = Vec4(m * Vec4(convert(getRigidBody()->getLinearVelocity()), 1.f)).xyz;
-        Vec2 motionBlur = vel.xy * motionBlurStrength * 0.008f;
-        rw->setMotionBlur(cameraIndex, motionBlur);
-
-        motionBlurResetTimer = max(motionBlurResetTimer - deltaTime, 0.f);
-        if (motionBlurResetTimer <= 0.f)
+        /*
+        Vec3 forwardVector = vehiclePhysics.getForwardVector();
+        f32 forwardSpeed = vehiclePhysics.getForwardSpeed();
+        cameraTarget = smoothMove(cameraTarget,
+                pos + Vec3(normalize(forwardVector.xy), 0.f) * forwardSpeed * 0.3f,
+                5.f, deltaTime);
+        */
+        auto vel = getRigidBody()->getLinearVelocity();
+        const Vec3 cameraDir = normalize(Vec3(1.f, 1.f, 1.25f));
+        if (deadTimer == 0.f)
         {
-            targetMotionBlurStrength = 0.f;
+            cameraTargetMovePoint = pos + Vec3(vel.x, vel.y, 0.f) * 0.375f;
+
+            // zoom the camera out more as the vehicle moves faster
+            cameraTargetMovePoint += min(vel.magnitude() * 0.08f, 15.f);
+        }
+        cameraTarget = smoothMove(cameraTarget, cameraTargetMovePoint, 6.f, deltaTime);
+
+        cameraTarget += screenShakeOffset * (screenShakeTimer * 0.5f);
+        cameraFrom = cameraTarget + cameraDir * CAM_DISTANCE;
+        rw->setViewportCamera(cameraIndex, cameraFrom, cameraTarget, 18.f, 250.f);
+        if (cameraIndex >= 0)
+        {
+            rw->setHighlightColor(cameraIndex,
+                    Vec4(driver->getVehicleConfig()->cosmetics.color, 1.f));
+
+            Mat4 m = Mat4(1.f);
+            m[0] = Vec4(-cameraDir, m[0].w);
+            m[1] = Vec4(normalize(
+                        cross(Vec3(0, 0, 1), Vec3(m[0]))), m[1].w);
+            m[2] = Vec4(normalize(
+                        cross(Vec3(m[0]), Vec3(m[1]))), m[2].w);
+
+            motionBlurStrength = smoothMove(motionBlurStrength, targetMotionBlurStrength, 2.f, deltaTime);
+
+            Vec3 vel = Vec4(m * Vec4(convert(getRigidBody()->getLinearVelocity()), 1.f)).xyz;
+            Vec2 motionBlur = vel.xy * motionBlurStrength * 0.008f;
+            rw->setMotionBlur(cameraIndex, motionBlur);
+
+            motionBlurResetTimer = max(motionBlurResetTimer - deltaTime, 0.f);
+            if (motionBlurResetTimer <= 0.f)
+            {
+                targetMotionBlurStrength = 0.f;
+            }
         }
     }
-#endif
 }
 
 void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
@@ -534,11 +538,11 @@ void Vehicle::onUpdate(RenderWorld* rw, f32 deltaTime)
         }
     }
 
-    if (input.switchFrontWeapon)
+    if (input.switchFrontWeapon && !frontWeapons.empty())
     {
         currentFrontWeaponIndex = (currentFrontWeaponIndex + 1) % frontWeapons.size();
     }
-    if (input.switchRearWeapon)
+    if (input.switchRearWeapon && !rearWeapons.empty())
     {
         currentRearWeaponIndex = (currentRearWeaponIndex + 1) % rearWeapons.size();
     }

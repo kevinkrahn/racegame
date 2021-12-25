@@ -42,7 +42,7 @@ DEBUG_DEPS = $(addprefix $(DEBUG_DIR)/, $(SOURCES:.cpp=.d))
 RELEASE_DIR = $(BUILD_DIR)/release
 RELEASE_EXE = $(RELEASE_DIR)/$(APP_NAME)
 RELEASE_OBJECTS = $(addprefix $(RELEASE_DIR)/, $(OBJECTS))
-RELEASE_CXXFLAGS = -DNDEBUG -ofast
+RELEASE_CXXFLAGS = -DNDEBUG -Ofast
 RELEASE_LDFLAGS = -Lexternal/physx/physx/bin/linux.clang/release/ $(addprefix -l:, $(PHYSX_LIBS))
 RELEASE_DEPS = $(addprefix $(RELEASE_DIR)/, $(SOURCES:.cpp=.d))
 
