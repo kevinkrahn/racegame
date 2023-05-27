@@ -84,6 +84,7 @@ struct Config
         f32 hudTextScale = 1.f;
         bool forceFeedbackEnabled = true;
         bool thirdPersonCameraEnabled = false;
+        u32 aiDriverCameraCount = 0;
 
         void serialize(Serializer& s)
         {
@@ -91,6 +92,7 @@ struct Config
             s.field(hudTextScale);
             s.field(forceFeedbackEnabled);
             s.field(thirdPersonCameraEnabled);
+            s.field(aiDriverCameraCount);
         }
     } gameplay;
 

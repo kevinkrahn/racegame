@@ -143,11 +143,9 @@ const char* championshipTracks[] = {
 
 void Menu::startQuickRace()
 {
-    g_game.state.drivers.clear();
     RandomSeries series = randomSeed();
     i32 driverCredits = irandom(series, 10000, 50000);
     println("Starting quick race with driver budget: %i", driverCredits);
-    g_game.state.drivers.clear();
     Array<AIDriverData*> aiDrivers;
     g_res.iterateResourceType(ResourceType::AI_DRIVER_DATA, [&](Resource* r) {
         AIDriverData* d = (AIDriverData*)r;
@@ -161,6 +159,8 @@ void Menu::startQuickRace()
         }
     });
     assert(aiDrivers.size() >= 10);
+
+    g_game.state.drivers.clear();
     for (u32 i=0; i<10; ++i)
     {
         i32 aiIndex;
@@ -168,14 +168,23 @@ void Menu::startQuickRace()
         while (g_game.state.drivers.findIf([&](Driver const& d){
             return d.aiDriverGUID == aiDrivers[aiIndex]->guid;
         }));
-        g_game.state.drivers.push(Driver(false, false, false, 0, 0, aiDrivers[aiIndex]->guid));
+        bool hasCamera = i < g_game.config.gameplay.aiDriverCameraCount;
+        g_game.state.drivers.push(Driver(hasCamera, false, false, 0, 0, aiDrivers[aiIndex]->guid));
         g_game.state.drivers.back().credits = driverCredits;
         g_game.state.drivers.back().aiUpgrades(series);
     }
-    Driver& playerDriver = g_game.state.drivers[irandom(series, 0, (i32)g_game.state.drivers.size())];
-    playerDriver.isPlayer = true;
-    playerDriver.hasCamera = true;
-    playerDriver.useKeyboard = true;
+
+    while (true)
+    {
+        Driver& drive = g_game.state.drivers[irandom(series, 0, (i32)g_game.state.drivers.size())];
+        if (drive.hasCamera == false)
+        { 
+            drive.isPlayer = true;
+            drive.hasCamera = true;
+            drive.useKeyboard = true;
+            break;
+        }
+    }
 
 #if 0
     g_game.state.drivers[0].hasCamera = true;
