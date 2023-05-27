@@ -307,7 +307,7 @@ void Vehicle::updateCamera(RenderWorld* rw, f32 deltaTime)
     Vec3 pos = lastValidPosition;
     pos.z = max(pos.z, -10.f);
 
-    if (g_game.config.gameplay.thirdPersonCameraEnabled) 
+    if (g_game.config.gameplay.thirdPersonCameraEnabled)
     {
         rw->setClearColor(true);
         cameraTarget = pos + Vec3(0, 0, 2.f);

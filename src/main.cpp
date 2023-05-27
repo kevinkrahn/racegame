@@ -59,21 +59,8 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <stb_image_resize.h>
 
-#if 1
 int main(int argc, char** argv)
 {
     g_game.run();
     return EXIT_SUCCESS;
 }
-#else
-#include "util.h"
-int main(int argc, char** argv)
-{
-    int b = 1;;
-    Function<bool(int)> f([b](int a) -> bool { return a > b; });
-    println("%i", f(0));
-    println("%i", f(1));
-    println("%i", f(2));
-    println("%i", f(3));
-}
-#endif

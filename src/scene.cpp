@@ -265,7 +265,8 @@ void Scene::onUpdate(Renderer* renderer, f32 deltaTime)
 
     RenderWorld* rw = renderer->getRenderWorld();
     rw->setShadowBounds({}, false);
-    rw->setClearColor(g_game.isEditing || g_game.isDebugCameraEnabled);
+    //rw->setClearColor(g_game.isEditing || g_game.isDebugCameraEnabled);
+    rw->setClearColor(true);
 
     if (!isPaused)
     {

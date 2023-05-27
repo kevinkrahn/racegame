@@ -1,7 +1,0 @@
-- Touchup pass on menu designs
-- Design a logo
-- World props, billboards, signs, .etc
-- Touch up the 3 existing vehicle models
-- 9 vehicle models (for a total of 12) (mini, hummer, mustang, truck, supercar)
-- Make models for all the weapons
-

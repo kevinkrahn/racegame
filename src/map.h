@@ -57,6 +57,7 @@ inline bool mapCompare(const char* const& lhs, const char* const& rhs)
     return strcmp(lhs, rhs) == 0;
 }
 
+// TODO: This data structure needs to be optimized. The current implementation leaves a lot to be desired.
 template <typename KEY, typename VALUE, u32 SIZE=64>
 class Map
 {
