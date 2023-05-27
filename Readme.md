@@ -8,8 +8,11 @@ The renderer is built with OpenGL.
 Vehicle physics are built with the PhysX library. The game also has an editor for building tracks, environments, and tweaking
 vehicle characteristics.
 
-## Features
-
+## Technical Details
+- Custom OpenGL renderer
+- PhysX vehicle simulation
+- Custom audio mixer
+- Blender exporter for loading meshes into editor
 - Splitscreen multiplayer
 - Controller and keyboard support
 - Track editor (including terrain editor)
@@ -24,7 +27,6 @@ vehicle characteristics.
 ## Screenshots
 
 ![](racegame.jpg)
-
 
 ## Libraries Used
 
